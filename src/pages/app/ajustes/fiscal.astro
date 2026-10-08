@@ -4,7 +4,7 @@ import SettingsSection from '../../../components/app/settings/SettingsSection.as
 import SettingsShell from '../../../components/app/SettingsShell.astro';
 import { getOrg } from '../../../lib/queries';
 import { REGIMENES_FISCALES, USOS_CFDI } from '../../../lib/sat';
-import { getCountryProfile, US_STATES } from '../../../lib/countries';
+import { caProvinceCode, getCountryProfile, US_STATES, CA_PROVINCES } from '../../../lib/countries';
 import { verifactuEnvioConfig } from '../../../lib/fiscal/verifactu/sif';
 import { declaracionResponsableONull, DECLARACION_RUTA } from '../../../lib/fiscal/verifactu/declaracion';
 import { currentLocale } from '../../../lib/context';
@@ -13,6 +13,7 @@ const ORG = await getOrg();
 const L = currentLocale();
 const isMx = ORG.countryCode === 'MX';
 const isUs = ORG.countryCode === 'US';
+const isCa = ORG.countryCode === 'CA';
 const isEs = ORG.countryCode === 'ES';
 const verifactuOn = ORG.verifactuModo === 'verifactu';
 // Certificado cargado no es lo mismo que registrar: con el envío a la AEAT
@@ -21,6 +22,10 @@ const verifactuRegistrando = verifactuOn && verifactuEnvioConfig().habilitado;
 const DECLARACION_DISPONIBLE = isEs && declaracionResponsableONull() !== null;
 const PROFILE = getCountryProfile(ORG.countryCode, L);
 const FM = ORG.fiscalMetadata || {};
+// Selector cerrado donde el código de la subdivisión decide algo: el sales tax
+// del estado en EE.UU., y en Canadá qué impuesto provincial se cobra con el GST.
+const REGION_OPTIONS = isUs ? US_STATES : isCa ? CA_PROVINCES : null;
+const REGION_VALUE = isCa ? (caProvinceCode(FM.region) ?? '') : (FM.region || '');
 // El ejemplo sale del prefijo real (el guardado o el del país), no de un
 // "INV-000001" fijo. España numera por serie Y ejercicio (regla 29), así que
 // el año va pegado al prefijo, igual que lo arma la emisión.
@@ -78,15 +83,17 @@ import { iconInner } from '../../../lib/icons';
                         <input class="s-input" id="fCity" data-field="fiscal_city" value={FM.city || ''} maxlength="100" />
                     </div>
                     <div class="s-field">
-                        <label for="fRegion">{L === 'en' ? 'State or region' : 'Estado, provincia o región'}</label>
-                        {isUs ? (
-                            // <select> cerrado para US: Stripe y el sembrado de sales
-                            // tax (Ajustes › Impuestos) necesitan el código de 2
-                            // letras exacto, no "Texas" escrito a mano.
+                        <label for="fRegion">{isCa
+                            ? (L === 'en' ? 'Province or territory' : 'Provincia o territorio')
+                            : (L === 'en' ? 'State or region' : 'Estado, provincia o región')}</label>
+                        {REGION_OPTIONS ? (
+                            // <select> cerrado para US y CA: Stripe y el sembrado de
+                            // impuestos (Ajustes › Impuestos) necesitan el código de 2
+                            // letras exacto, no "Texas" o "Québec" escrito a mano.
                             <select class="s-input" id="fRegion" data-field="fiscal_region">
-                                <option value="" selected={!FM.region}>{L === 'en' ? '— Select —' : '— Selecciona —'}</option>
-                                {US_STATES.map((s) => (
-                                    <option value={s.code} selected={FM.region === s.code}>{s.name}</option>
+                                <option value="" selected={!REGION_VALUE}>{L === 'en' ? '— Select —' : '— Selecciona —'}</option>
+                                {REGION_OPTIONS.map((s) => (
+                                    <option value={s.code} selected={REGION_VALUE === s.code}>{s.name}</option>
                                 ))}
                             </select>
                         ) : (
@@ -105,6 +112,17 @@ import { iconInner } from '../../../lib/icons';
                         <span class="s-hint">{(L === 'en' ? 'Example: ' : 'Ejemplo: ') + FOLIO_EJEMPLO}</span>
                     </div>
                 </div>
+                {isCa && (
+                    <div class="s-field">
+                        <label for="fQst">{L === 'en' ? 'QST registration number' : 'Número de registro de QST'}</label>
+                        <input class="s-input" id="fQst" data-field="fiscal_qst_number" value={FM.qst_number || ''}
+                            maxlength="20" autocomplete="off" placeholder="1234567890TQ0001"
+                            pattern="\s*[0-9]{10}\s*-?\s*[Tt][Qq]\s*-?\s*[0-9]{4}\s*" />
+                        <span class="s-hint">{L === 'en'
+                            ? 'Only if you are registered for the Quebec sales tax. It is printed on your invoices next to your GST/HST number.'
+                            : 'Solo si estás registrado en el impuesto de Quebec. Se imprime en tus facturas junto a tu número de GST/HST.'}</span>
+                    </div>
+                )}
                 {SMALL_BUSINESS && (
                     <div class="s-field">
                         <label class="s-toggle" style="margin-bottom:0.3rem">

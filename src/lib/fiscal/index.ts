@@ -22,6 +22,12 @@ export interface FiscalParty {
   email?: string;
   contactName?: string;
   address?: FiscalAddress;
+  /**
+   * Registros fiscales ADICIONALES al `taxId`, que la factura imprime junto a
+   * él. Canadá: el número de QST de Quebec (Revenu Québec), distinto del
+   * número de GST/HST de la CRA — sin él el cliente no recupera la QST.
+   */
+  extraTaxIds?: { kind: 'qst'; value: string }[];
 }
 
 export interface FiscalLineItem {

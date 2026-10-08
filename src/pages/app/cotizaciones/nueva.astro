@@ -318,6 +318,7 @@ import { iconInner } from '../../../lib/icons';
     T: ET, orgCurrency: ORG.moneda || 'MXN',
     taxOptions: TAX_OPTIONS, defaultTaxRate: DEFAULT_TAX_RATE, retenciones: RETENCIONES,
     taxLabel: TAX_LABEL, multiTax: MULTI_TAX,
+    taxCountry: PAIS, taxRegion: ORG.fiscalMetadata?.region || null,
 })} />
 <script>
     import { iconSvg } from '../../../lib/icons';
@@ -335,6 +336,7 @@ import { iconInner } from '../../../lib/icons';
     // sobreviva el bundle — este bloque ya rompió una vez por un `as any`.
     import { calculateDocumentTotals } from '../../../../packages/elements/src/engine';
     import { currencyDecimals } from '../../../lib/currency';
+    import { taxBreakdownRows } from '../../../lib/tax-components';
     import { wireTermPicker } from '../../../lib/term-picker-client';
 
     const BOOT = JSON.parse(document.getElementById('edBootQ')?.textContent || '{}');
@@ -557,9 +559,10 @@ import { iconInner } from '../../../lib/icons';
         // dirección contraria.
         const $taxes = document.getElementById('sumTaxes');
         if ($taxes) {
-            const filasImpuesto = totals.porTasa
-                .filter((tr) => tr.impuesto > 0)
-                .map((tr) => `<div class="sum-line sum-tax"><span>${escapeHtml(BOOT.taxLabel)} ${Math.round(tr.tasa * 10000) / 100}%</span><span class="editorial">${fmt(tr.impuesto)}</span></div>`);
+            // En Canadá un 14.975% son dos impuestos (GST + QST): un renglón por cada uno.
+            const filasImpuesto = taxBreakdownRows(totals.porTasa, {
+                country: BOOT.taxCountry, region: BOOT.taxRegion, taxLabel: BOOT.taxLabel, decimals: currencyDecimals(editorCurrency()),
+            }).map((tr) => `<div class="sum-line sum-tax"><span>${escapeHtml(tr.label)}</span><span class="editorial">${fmt(tr.impuesto)}</span></div>`);
             const filasRetencion = (totals.retenciones || [])
                 .map((r) => `<div class="sum-line sum-ret"><span>${escapeHtml(r.nombre)}</span><span class="editorial">−${fmt(r.monto)}</span></div>`);
             $taxes.innerHTML = [...filasImpuesto, ...filasRetencion].join('');

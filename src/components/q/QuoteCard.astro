@@ -8,6 +8,8 @@ import { resolveBrandProfile, brandStyle } from '../../lib/brand-profile';
 import '../../styles/brand-surface.css';
 import { money, lineTotal, quoteSubtotal, quoteTotal, quoteTaxBreakdown, quoteRetenciones } from '../../lib/queries';
 import { getCountryProfile } from '../../lib/countries';
+import { currencyDecimals } from '../../lib/currency';
+import { taxBreakdownRows } from '../../lib/tax-components';
 import { canCollectOnline } from '../../lib/payment-rail';
 import { payoutSpecFor } from '../../lib/payout-fields';
 import { splitAnticipo } from '../../lib/cobros';
@@ -47,6 +49,11 @@ const viva = !yaAprobada && !yaRechazada;
 // `paisCode === 'MX' ? null : 'Tax'`, así que a un negocio en Londres le decía
 // "Tax" genérico en vez de "VAT" y a uno en Sídney en vez de "GST".
 const TAX_LABEL = getCountryProfile(ORG.paisCode || 'MX', L).taxLabel;
+// Un renglón por impuesto: en Canadá el 14.975% de Quebec es GST + QST.
+const TAX_ROWS = taxBreakdownRows(quoteTaxBreakdown(q), {
+    country: ORG.paisCode || 'MX', region: ORG.fiscalRegion, taxLabel: TAX_LABEL,
+    decimals: currencyDecimals(q.baseCurrency || 'MXN'),
+});
 // Riel bancario del EMISOR. La fila de transferencia decía "CLABE" a cualquier
 // cliente, y un IBAN de Madrid o un routing number de Austin no lo son. Se
 // nombra con los mismos datos que pide Ajustes › Cobros para ese país.
@@ -309,8 +316,8 @@ import { iconInner } from '../../lib/icons';
         ))}
         <div class="qi-subtotals" data-tax-label={TAX_LABEL}>
             <div class="qt-row" data-total="subtotal"><span>{t(L, 'q.subtotal')}</span><span class="editorial">{money(quoteSubtotal(q))}</span></div>
-            {quoteTaxBreakdown(q).map((tr) => (
-                <div class="qt-row" data-total="tax"><span>{TAX_LABEL} {Math.round(tr.tasa * 10000) / 100}%</span><span class="editorial">{money(tr.impuesto)}</span></div>
+            {TAX_ROWS.map((tr) => (
+                <div class="qt-row" data-total="tax"><span>{tr.label}</span><span class="editorial">{money(tr.impuesto)}</span></div>
             ))}
             {quoteRetenciones(q).map((r) => (
                 <div class="qt-row qt-ret" data-total="ret"><span>{r.nombre}</span><span class="editorial">−{money(r.monto)}</span></div>
@@ -1642,7 +1649,7 @@ import { iconInner } from '../../lib/icons';
                 row.className = 'qt-row';
                 row.dataset.total = 'tax';
                 row.innerHTML = `<span></span><span class="editorial"></span>`;
-                row.children[0].textContent = `${label} ${Math.round(Number(im.tasa) * 10000) / 100}%`;
+                row.children[0].textContent = im.label || `${label} ${Math.round(Number(im.tasa) * 10000) / 100}%`;
                 row.children[1].textContent = moneyFmt(Number(im.impuesto));
                 nuevas.push(row);
             }

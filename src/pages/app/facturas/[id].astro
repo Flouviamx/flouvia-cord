@@ -16,6 +16,8 @@ import { getFacturaDetalle, getMyMembership, money } from '../../../lib/queries'
 import { memberCan } from '../../../lib/permissions';
 import { publicDocumentUrl } from '../../../lib/public-links';
 import { getCountryProfile } from '../../../lib/countries';
+import { currencyDecimals } from '../../../lib/currency';
+import { fmtTaxPct, splitTaxBucket } from '../../../lib/tax-components';
 import { currentLocale } from '../../../lib/context';
 import { getInvoiceTimeline } from '../../../lib/fiscal/timeline';
 import { invoiceEventDetail } from '../../../lib/fiscal/timeline-detail';
@@ -94,14 +96,25 @@ const INVOICE_STEPS = L === 'en'
 
 // Desglose por tasa a partir de las líneas del snapshot: es la forma de que una
 // factura con conceptos exentos y gravados cuadre a la vista.
+// La tasa es la congelada del concepto: dividir impuesto / subtotal ya
+// redondeados no la reproduce (y un 14.975% salía como 14.98%).
 const porTasa = new Map<number, { base: number; impuesto: number }>();
 for (const l of f?.lineas ?? []) {
-    const tasa = l.subtotal > 0 ? Math.round((l.impuesto / l.subtotal) * 10000) / 10000 : 0;
+    const tasa = Math.round((Number(l.taxRate) || (l.subtotal > 0 ? l.impuesto / l.subtotal : 0)) * 1e6) / 1e6;
     const acc = porTasa.get(tasa) ?? { base: 0, impuesto: 0 };
     acc.base += l.subtotal; acc.impuesto += l.impuesto;
     porTasa.set(tasa, acc);
 }
-const tasas = [...porTasa.entries()].sort((a, b) => a[0] - b[0]).filter(([, v]) => v.impuesto > 0);
+// Un renglón por impuesto: en Canadá un 14.975% es GST + QST.
+const tasas = [...porTasa.entries()].sort((a, b) => a[0] - b[0]).filter(([, v]) => v.impuesto > 0)
+    .flatMap(([tasa, v]) => {
+        const partes = splitTaxBucket(f?.pais ?? '', tasa * 100, v.base, v.impuesto, {
+            region: f?.emisor?.address?.region, decimals: currencyDecimals(f?.currency || 'MXN'),
+        });
+        return partes
+            ? partes.map((p) => ({ label: `${p.nombre} ${fmtTaxPct(p.tasa)}`, impuesto: p.impuesto }))
+            : [{ label: `${Math.round(tasa * 10000) / 100}%`, impuesto: v.impuesto }];
+    });
 
 const METODOS = [
     { v: 'transferencia', l: t(L, 'fact.d_m_transferencia') },
@@ -239,8 +252,8 @@ import { iconInner } from '../../../lib/icons';
 
                             <div class="fd-totals">
                                 <div class="fd-tline"><span>{t(L, 'fact.d_subtotal')}</span><span class="editorial">{money(f.subtotal)}</span></div>
-                                {tasas.map(([tasa, value]) => (
-                                    <div class="fd-tline fd-tax"><span>{Math.round(tasa * 10000) / 100}%</span><span class="editorial">{money(value.impuesto)}</span></div>
+                                {tasas.map((row) => (
+                                    <div class="fd-tline fd-tax"><span>{row.label}</span><span class="editorial">{money(row.impuesto)}</span></div>
                                 ))}
                                 <div class="fd-tline fd-total"><span>{t(L, 'fact.d_total')}</span><span class="editorial">{money(f.total)}</span></div>
                                 {f.acreditado > 0 && <div class="fd-tline"><span>{L === 'en' ? 'Credit notes applied' : 'Notas de crédito aplicadas'}</span><span class="editorial">−{money(f.acreditado)}</span></div>}

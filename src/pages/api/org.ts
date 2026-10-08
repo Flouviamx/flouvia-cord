@@ -310,6 +310,22 @@ export const PATCH: APIRoute = async ({ request }) => {
         if (!checked.ok) return json({ error: checked.reason, code: 'invalid_tax_id', field: 'fiscal_tax_id' }, 400);
         currentFiscalMetadata.tax_id = checked.normalized;
     }
+    // Número de QST (Revenu Québec): 10 dígitos + "TQ" + 4 dígitos. Solo
+    // existe en Canadá; fuera de ahí no se conserva.
+    if (body.fiscal_qst_number !== undefined) {
+        const qst = String(body.fiscal_qst_number ?? '').toUpperCase().replace(/[\s-]/g, '');
+        if (qst && !/^\d{10}TQ\d{4}$/.test(qst)) {
+            return json({
+                error: currentLocale() === 'en'
+                    ? 'The QST number has 10 digits, then TQ and 4 more digits (for example 1234567890TQ0001).'
+                    : 'El número de QST lleva 10 dígitos, luego TQ y 4 dígitos más (por ejemplo 1234567890TQ0001).',
+                field: 'fiscal_qst_number',
+            }, 400);
+        }
+        if (qst) currentFiscalMetadata.qst_number = qst;
+        else delete currentFiscalMetadata.qst_number;
+    }
+    if (countryCode !== 'CA') delete currentFiscalMetadata.qst_number;
     // La franquicia es un régimen de Francia y Alemania: al salir de esos
     // países (o en cualquier otro) no puede seguir imprimiendo su mención.
     if (countryCode !== 'FR' && countryCode !== 'DE') delete currentFiscalMetadata.vat_regime;

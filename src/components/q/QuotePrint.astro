@@ -1,6 +1,8 @@
 ---
 import { money, lineTotal, quoteSubtotal, quoteTotal, quoteTaxBreakdown, quoteRetenciones } from '../../lib/queries';
 import { getCountryProfile } from '../../lib/countries';
+import { currencyDecimals } from '../../lib/currency';
+import { taxBreakdownRows } from '../../lib/tax-components';
 import { currentLocale, setRequestCurrency } from '../../lib/context';
 import { brandStyle, brandColor, resolveBrandProfile } from '../../lib/brand-profile';
 import { t } from '../../i18n/app';
@@ -17,6 +19,11 @@ const condiciones = ORG.pdfCondiciones ? ORG.pdfCondiciones.split('\n').filter(B
 // proveedor está en Madrid.
 const PROFILE = getCountryProfile(ORG.countryCode || 'MX', L);
 const TAX_LABEL = PROFILE.taxLabel;
+// Un renglón por impuesto: en Canadá el 14.975% de Quebec es GST + QST.
+const TAX_ROWS = taxBreakdownRows(quoteTaxBreakdown(q), {
+    country: ORG.countryCode || 'MX', region: ORG.fiscalMetadata?.region, taxLabel: TAX_LABEL,
+    decimals: currencyDecimals(q.baseCurrency || ORG.moneda || 'MXN'),
+});
 const TAX_ID_LABEL = PROFILE.taxIdLabel;
 // Fuera de México el identificador se captura en el perfil fiscal
 // (`fiscal_metadata.tax_id`): el SIREN de París o la USt-IdNr. de Berlín no
@@ -123,8 +130,8 @@ const darkLogo = profile.logoDark || printLogo;
         <!-- Totales -->
         <section class="doc-totals">
             <div><span>{t(L, 'imp.subtotal')}</span><span class="editorial">{money(quoteSubtotal(q))}</span></div>
-            {quoteTaxBreakdown(q).map((tr) => (
-                <div><span>{TAX_LABEL} {Math.round(tr.tasa * 10000) / 100}%</span><span class="editorial">{money(tr.impuesto)}</span></div>
+            {TAX_ROWS.map((tr) => (
+                <div><span>{tr.label}</span><span class="editorial">{money(tr.impuesto)}</span></div>
             ))}
             {quoteRetenciones(q).map((r) => (
                 <div><span>{r.nombre}</span><span class="editorial">−{money(r.monto)}</span></div>

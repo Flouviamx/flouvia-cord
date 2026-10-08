@@ -963,6 +963,22 @@ Contratos que quedaron vigentes tras auditar Cord Invoicing en los 12 mercados.
   o un periodo; el PDF la imprime como "Leistungsdatum" / "Leistungszeitraum" en
   alemán. En Alemania es mención obligatoria (§ 14 Abs. 4 Nr. 6 UStG): si queda
   vacía, el PDF dice "entspricht dem Rechnungsdatum", que es la forma admitida.
+- **Canadá: impuestos compuestos.** QST (QC), PST (BC, SK) y RST (MB) se cobran
+  JUNTO al 5% de GST, no en su lugar. La línea conserva UNA tasa combinada
+  (14.975%, 12%, 11%) —motor, redondeo y rieles sin cambios— y el desglose la
+  separa en sus impuestos en el PDF, `/i`, `/q` (también su parche en vivo), la
+  impresión y el detalle de la cotización, el detalle de la factura y los tres
+  editores (`src/lib/tax-components.ts`: `splitTaxBucket`, `taxBreakdownRows`,
+  `taxDisplayRows`). El federal se calcula sobre la base y el provincial se queda
+  con el resto, así que la suma es exactamente lo cobrado. El 7% provincial se
+  llama RST si el emisor está en Manitoba y PST en el resto; en francés, TPS,
+  TVQ, TVH. El catálogo se siembra por provincia (`canadaTaxPresets`, tasas de la
+  CRA desde el 1 de abril de 2025): la combinada de la provincia como
+  predeterminada, más el GST solo y las HST de las armonizadas para vender hacia
+  ellas. La provincia es un selector (código de 2 letras; `caProvinceCode`
+  reconoce el texto libre anterior) y un catálogo nacional intacto se resiembra
+  al elegirla. El número de QST del emisor (`fiscal_metadata.qst_number`,
+  10 dígitos + TQ + 4) se imprime junto al de GST/HST.
 - **Columnas `date` en pantalla:** `fmtCalendarDate()` (`fmt-server.ts`), nunca
   `fmtDate()`. El driver entrega un `date` como medianoche del servidor y
   `fmtDate` lo convierte a la zona del negocio: en México el detalle de la

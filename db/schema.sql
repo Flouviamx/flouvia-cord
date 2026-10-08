@@ -3988,6 +3988,34 @@ delete from impuestos i
  where o.id = i.org_id and upper(coalesce(o.country_code, '')) = 'PE'
    and i.nombre = 'Retención IGV 3%' and i.kind = 'retencion' and i.tasa = 3 and i.es_default is not true;
 
+-- Canadá (oct 2026): QST, PST y RST se sembraban como tasas SUELTAS, y se
+-- cobran junto al 5% de GST, no en su lugar: una línea con "QST 9.975% (QC)"
+-- cobraba la QST sin el GST. Las filas intactas del preset pasan a la tasa
+-- combinada, que el desglose separa en sus dos impuestos. BC y MB comparten el
+-- 7% y quedan en una sola opción (el selector elige por tasa); la de MB se
+-- retira salvo que sea la predeterminada. Los documentos ya capturados
+-- conservan su tasa congelada.
+update impuestos i set nombre = 'GST 5% + QST 9.975% (QC)', tasa = 14.975
+  from orgs o
+ where o.id = i.org_id and upper(coalesce(o.country_code, '')) = 'CA'
+   and i.nombre = 'QST 9.975% (QC)' and i.kind = 'consumo' and i.tasa = 9.975;
+update impuestos i set nombre = 'GST 5% + PST 6% (SK)', tasa = 11
+  from orgs o
+ where o.id = i.org_id and upper(coalesce(o.country_code, '')) = 'CA'
+   and i.nombre = 'PST 6% (SK)' and i.kind = 'consumo' and i.tasa = 6;
+update impuestos i set nombre = 'GST 5% + PST/RST 7% (BC/MB)', tasa = 12
+  from orgs o
+ where o.id = i.org_id and upper(coalesce(o.country_code, '')) = 'CA'
+   and i.nombre = 'PST 7% (BC)' and i.kind = 'consumo' and i.tasa = 7;
+delete from impuestos i
+ using orgs o
+ where o.id = i.org_id and upper(coalesce(o.country_code, '')) = 'CA'
+   and i.nombre = 'RST 7% (MB)' and i.kind = 'consumo' and i.tasa = 7 and i.es_default is not true;
+update impuestos i set nombre = 'GST 5% + RST 7% (MB)', tasa = 12
+  from orgs o
+ where o.id = i.org_id and upper(coalesce(o.country_code, '')) = 'CA'
+   and i.nombre = 'RST 7% (MB)' and i.kind = 'consumo' and i.tasa = 7;
+
 -- ── Numeración de facturas: serie + ejercicio ───────────────────────────────
 -- `invoice_sequences` numeraba indefinidamente sin año ni serie: legal con
 -- serie única, pero incompatible con cualquier gestoría española, y cambiar

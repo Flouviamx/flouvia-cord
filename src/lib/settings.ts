@@ -74,7 +74,7 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
         // categoría; ahora que el índice las lista, una que te expulsa se nota.
         // El archivo se conserva para links viejos en correos.
         tabs: [
-            { id: 'fiscal', label: 'Datos fiscales', labelEn: 'Tax details', href: '/app/ajustes/fiscal', keywords: 'fiscal rfc nif cif nie ein tax id csd certificado certificate sello verifactu aeat sat cfdi regimen razon social domicilio facturacion invoicing' },
+            { id: 'fiscal', label: 'Datos fiscales', labelEn: 'Tax details', href: '/app/ajustes/fiscal', keywords: 'fiscal rfc nif cif nie ein tax id csd certificado certificate sello verifactu aeat sat cfdi regimen razon social domicilio facturacion invoicing qst tvq gst hst bn provincia province' },
         ],
     },
     {

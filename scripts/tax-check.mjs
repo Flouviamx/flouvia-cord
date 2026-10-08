@@ -28,6 +28,7 @@ import {
     taxKindLabel,
     taxPresetsFor,
 } from '../src/lib/countries.ts';
+import { splitTaxBucket } from '../src/lib/tax-components.ts';
 import { buildTaxOptions, defaultTaxRate } from '../src/lib/impuestos.ts';
 import { validNif, validNie, validCif, validSpainTaxId, validRfc } from '../src/lib/tax-id.ts';
 
@@ -133,6 +134,28 @@ assert.ok(taxPresetsFor('ES', '28').some((p) => p.nombre === 'IVA 21%'), 'Madrid
 assert.equal(US_STATE_TAX.LA, 5, 'Luisiana: la tasa estatal es 5% desde 2025');
 // Perú: la retención del IGV la practica el comprador al pagar, no el emisor.
 assert.ok(!taxPresetsFor('PE').some((p) => p.kind === 'retencion'), 'PE: el catálogo del emisor no lleva la retención del IGV');
+// Canadá: QST/PST/RST se cobran JUNTO al GST, nunca solas (tasas de la CRA
+// desde el 1 de abril de 2025; Nueva Escocia 14%).
+{
+    const ca = taxPresetsFor('CA');
+    assert.ok(!ca.some((p) => /^(QST|PST|RST)/.test(p.nombre)), 'CA: ningún impuesto provincial suelto en el catálogo');
+    assert.ok(ca.some((p) => p.nombre.startsWith('GST 5% + QST') && Math.abs(p.tasa - 14.975) < 1e-9), 'CA: QC combina GST + QST (14.975%)');
+    assert.ok(ca.some((p) => p.nombre.startsWith('HST 14%')), 'CA: HST de Nueva Escocia es 14%');
+    const qc = taxPresetsFor('CA', 'Québec');
+    assert.equal(qc.find((p) => p.esDefault)?.tasa, 14.975, 'CA/QC: la predeterminada es GST + QST');
+    assert.ok(qc.some((p) => p.nombre === 'HST 13% (ON)'), 'CA/QC: vender a Ontario cobra HST');
+    assert.equal(taxPresetsFor('CA', 'ON').find((p) => p.esDefault)?.nombre, 'HST 13%', 'CA/ON: HST 13%');
+    assert.equal(taxPresetsFor('CA', 'AB').find((p) => p.esDefault)?.nombre, 'GST 5%', 'CA/AB: solo GST');
+    assert.equal(taxPresetsFor('CA', 'MB').find((p) => p.esDefault)?.nombre, 'GST 5% + RST 7%', 'CA/MB: RST');
+    // El desglose suma EXACTAMENTE lo cobrado y nombra cada impuesto.
+    const partes = splitTaxBucket('CA', 14.975, 333.33, 49.92, { decimals: 2 });
+    assert.deepEqual(partes?.map((p) => p.nombre), ['GST', 'QST']);
+    assert.equal(partes?.[0].impuesto, 16.67, 'GST = 5% de la base');
+    assert.equal(Math.round(((partes?.[0].impuesto ?? 0) + (partes?.[1].impuesto ?? 0)) * 100) / 100, 49.92, 'GST + QST = impuesto del renglón');
+    assert.equal(splitTaxBucket('CA', 12, 100, 12, { region: 'MB' })?.[1].nombre, 'RST', 'MB: el 7% provincial es RST');
+    assert.equal(splitTaxBucket('CA', 14.975, 100, 14.98, { lang: 'fr' })?.[1].nombre, 'TVQ', 'en francés: TPS + TVQ');
+    assert.equal(splitTaxBucket('MX', 16, 100, 16), null, 'fuera de Canadá no se compone');
+}
 
 // ── 8. La constante muerta no vuelve a las superficies de dinero ────────────
 // Los totales que lee el cliente salen del motor compartido y de la tasa de la

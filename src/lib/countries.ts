@@ -273,6 +273,15 @@ const exempt = (nombre: string): TaxPreset => ({ nombre, kind: 'exento', tipo: '
 const std = (nombre: string, tasa: number): TaxPreset => ({ nombre, kind: 'consumo', tipo: 'iva', tasa, esDefault: true });
 const red = (nombre: string, tasa: number): TaxPreset => ({ nombre, kind: 'consumo', tipo: 'iva', tasa });
 
+// HST de las provincias armonizadas. Todo registrante de GST/HST la cobra al
+// vender HACIA esas provincias, viva donde viva: por eso está en el catálogo de
+// todas. Nueva Escocia bajó de 15% a 14% el 1 de abril de 2025 (CRA).
+const CA_HST: TaxPreset[] = [
+    red('HST 13% (ON)', 13),
+    red('HST 14% (NS)', 14),
+    red('HST 15% (NB/NL/PE)', 15),
+];
+
 export const TAX_PRESETS: Partial<Record<CountryCode, TaxPreset[]>> = {
     // Norteamérica
     // El 8% fronterizo es un decreto de estímulo prorrogado hasta el 31 de
@@ -292,22 +301,22 @@ export const TAX_PRESETS: Partial<Record<CountryCode, TaxPreset[]>> = {
         { nombre: 'Retención IVA 4% (autotransporte)', kind: 'retencion', tipo: 'ret_iva', tasa: 4, base: 'gravado' },
         { nombre: 'Retención IVA 6% (servicios de personal)', kind: 'retencion', tipo: 'ret_iva', tasa: 6, base: 'gravado' },
     ],
-    // GST/HST son federales. QST/PST/RST son IMPUESTOS PROVINCIALES aparte —en
-    // QC/BC/SK/MB se cobran junto al 5% de GST, no en su lugar— y aquí se
-    // ofrecen como una tasa seleccionable más, con el nombre de su provincia,
-    // para el negocio que solo necesita una tasa por línea. HST de Nueva
-    // Escocia bajó de 15% a 14% en abril de 2025; "HST 15%" sigue vigente en
-    // New Brunswick, Newfoundland & Labrador y Prince Edward Island.
+    // GST/HST son federales. QST/PST/RST son IMPUESTOS PROVINCIALES que en
+    // QC/BC/SK/MB se cobran JUNTO al 5% de GST, no en su lugar: por eso se
+    // ofrecen como tasa combinada ("GST 5% + QST 9.975%") y el desglose los
+    // separa (`splitTaxBucket`, src/lib/tax-components.ts). Antes eran tasas
+    // sueltas y una venta en Quebec cobraba la QST sin el GST, o al revés.
+    // Este es el catálogo SIN provincia; con ella, `canadaTaxPresets`.
     CA: [
         std('GST 5%', 5),
-        red('HST 13% (ON)', 13),
-        red('HST 14% (NS)', 14),
-        red('HST 15% (NB/NL/PE)', 15),
-        red('QST 9.975% (QC)', 9.975),
-        red('PST 7% (BC)', 7),
-        red('PST 6% (SK)', 6),
-        red('RST 7% (MB)', 7),
+        ...CA_HST,
+        red('GST 5% + QST 9.975% (QC)', 14.975),
+        // BC (PST) y MB (RST) comparten el 7%: una sola opción, porque el
+        // selector elige por tasa y dos iguales se pisaban.
+        red('GST 5% + PST/RST 7% (BC/MB)', 12),
+        red('GST 5% + PST 6% (SK)', 11),
         ZERO_RATED,
+        exempt('Exempt'),
     ],
 
     // Latinoamérica
@@ -428,6 +437,10 @@ export function taxPresetsFor(code: string, region?: string | null): TaxPreset[]
     if (normalized === 'ES') {
         const regional = spainRegionPresets(region);
         if (regional) return regional;
+    }
+    if (normalized === 'CA') {
+        const provincial = canadaTaxPresets(region);
+        if (provincial) return provincial;
     }
     return TAX_PRESETS[normalized] ?? [EXEMPT_ONLY[normalized] ?? EXENTO];
 }
@@ -656,6 +669,19 @@ export function subdivisionsFor(countryCode: string): { code: string; name: stri
     }
 }
 
+/**
+ * Código de 2 letras de una provincia canadiense a partir del código o del
+ * nombre ("Quebec", "Québec", "british columbia"). La provincia se capturaba
+ * como texto libre y el catálogo de impuestos necesita el código exacto.
+ */
+export function caProvinceCode(value?: string | null): string | null {
+    const raw = String(value || '').trim();
+    if (!raw) return null;
+    const plain = raw.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
+    const hit = CA_PROVINCES.find((p) => p.code === plain || p.name.toUpperCase() === plain);
+    return hit ? hit.code : null;
+}
+
 export function isUsState(code: string): boolean {
     const normalized = String(code || '').toUpperCase();
     return US_STATES.some((s) => s.code === normalized);
@@ -677,6 +703,41 @@ export const US_STATE_TAX: Record<string, number> = {
     OK: 4.5, OR: 0, PA: 6, RI: 7, SC: 6, SD: 4.2, TN: 7, TX: 6.25, UT: 6.1,
     VT: 6, VA: 5.3, WA: 6.5, WV: 6, WI: 5, WY: 4,
 };
+
+/**
+ * Catálogo de arranque de una provincia o territorio de Canadá, verificado
+ * contra la CRA ("GST/HST calculator", tasas desde el 1 de abril de 2025).
+ *
+ * La predeterminada es la de la provincia del negocio —combinada donde hay
+ * impuesto provincial aparte—; le acompañan el GST solo (ventas a provincias
+ * sin impuesto propio) y las HST de las armonizadas, que se cobran al vender
+ * hacia ellas. El impuesto provincial de OTRA provincia (QST, PST, RST) solo
+ * se cobra con registro ahí, así que no se siembra: se agrega a mano.
+ * `null` = provincia desconocida (se usa el catálogo nacional).
+ */
+export function canadaTaxPresets(region?: string | null): TaxPreset[] | null {
+    const near = (a: number, b: number) => Math.abs(a - b) < 1e-9;
+    const prov = caProvinceCode(region);
+    if (!prov) return null;
+    const propia: Record<string, TaxPreset> = {
+        QC: std('GST 5% + QST 9.975%', 14.975),
+        BC: std('GST 5% + PST 7%', 12),
+        MB: std('GST 5% + RST 7%', 12),
+        SK: std('GST 5% + PST 6%', 11),
+        ON: std('HST 13%', 13),
+        NS: std('HST 14%', 14),
+        NB: std('HST 15%', 15),
+        NL: std('HST 15%', 15),
+        PE: std('HST 15%', 15),
+    };
+    const principal = propia[prov];
+    const presets: TaxPreset[] = principal ? [principal, red('GST 5%', 5)] : [std('GST 5%', 5)];
+    for (const hst of CA_HST) {
+        if (!principal || !near(principal.tasa, hst.tasa) || principal.nombre.startsWith('GST')) presets.push(hst);
+    }
+    presets.push(ZERO_RATED, exempt('Exempt'));
+    return presets;
+}
 
 /**
  * Presets de sales tax para el estado del negocio — se usan al sembrar, NO

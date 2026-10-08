@@ -15,6 +15,7 @@ import QRCode from 'qrcode';
 import { mmAPuntos, VERIFACTU_QR_PRESENTACION } from './verifactu/qr';
 import { countryName, getCountryProfile, isEuCountry } from '../countries';
 import { currencyDecimals, normalizeCurrency } from '../currency';
+import { fmtTaxPct, splitTaxBucket } from '../tax-components';
 import {
   PdfDocument, measureText as measure, prepareImage, truncateText as truncate, wrapText as wrap,
   type Align, type FontKey, type RGB,
@@ -455,6 +456,8 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
     const partyTaxIdLabel = getCountryProfile(p.address?.countryCode || input.countryCode).taxIdLabel;
     const rows = [
       p.taxId ? `${partyTaxIdLabel}: ${p.taxId}` : '',
+      // Número de QST (Quebec): sin él, el cliente no recupera la QST.
+      ...(p.extraTaxIds ?? []).map((x) => `${lang === 'fr' ? 'TVQ' : 'QST'}: ${x.value}`),
       p.contactName || '',
       ...addressLines(p, lang),
       p.email || '',
@@ -575,6 +578,17 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
 
   // ── Totales ────────────────────────────────────────────────────────────────
   const taxRows = [...taxBuckets.entries()].filter(([rate]) => rate > 0).sort((a, b) => a[0] - b[0]);
+  // Un renglón por IMPUESTO, no por tasa: en Canadá un 14.975% son dos
+  // impuestos (GST + QST) que el cliente recupera por separado, y la factura
+  // los muestra así (src/lib/tax-components.ts). El resto de países conserva el
+  // renglón por tasa con la etiqueta del país.
+  const taxDisplay = taxRows.flatMap(([rate, bucket]) => {
+    const partes = splitTaxBucket(input.countryCode, rate * 100, bucket.base, bucket.amount, {
+      region: input.issuer.address?.region, lang, decimals,
+    });
+    if (!partes) return [{ label: `${profile.taxLabel} ${taxLabel(rate)}`, base: bucket.base, amount: bucket.amount }];
+    return partes.map((p) => ({ label: `${p.nombre} ${fmtTaxPct(p.tasa)}`, base: bucket.base, amount: p.impuesto }));
+  });
   const retenciones = (input.retenciones ?? []).filter((r) => Number(r.monto) > 0);
   const fxRate = Number(input.fxRate);
   const ledger = normalizeCurrency(input.ledgerCurrency ?? '', '');
@@ -584,7 +598,7 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
   // convertido no basta: es la cuota la que se declara.
   const issuerCountry = String(input.issuer.address?.countryCode || input.countryCode).toUpperCase();
   const taxInLedger = hasFx && isEuCountry(issuerCountry) && Number(input.taxTotal) > 0;
-  const totalsH = 16 + (taxRows.length || 1) * 16 + (retenciones.length ? 16 : 0) + retenciones.length * 16 + 42 + (hasFx ? 26 : 0) + (taxInLedger ? 11 : 0);
+  const totalsH = 16 + (taxDisplay.length || 1) * 16 + (retenciones.length ? 16 : 0) + retenciones.length * 16 + 42 + (hasFx ? 26 : 0) + (taxInLedger ? 11 : 0);
 
   if (y + totalsH > BOTTOM_LIMIT) { doc.addPage(); y = MARGIN + 8; }
   const totalsTop = y + 16;
@@ -599,10 +613,9 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
   };
 
   totalRow(tx('subtotal'), `${money(input.subtotal)} ${currency}`);
-  if (taxRows.length) {
-    for (const [rate, bucket] of taxRows) {
-      totalRow(`${profile.taxLabel} ${taxLabel(rate)} · ${tx('base')} ${money(bucket.base)}`,
-        `${money(bucket.amount)} ${currency}`, true);
+  if (taxDisplay.length) {
+    for (const row of taxDisplay) {
+      totalRow(`${row.label} · ${tx('base')} ${money(row.base)}`, `${money(row.amount)} ${currency}`, true);
     }
   } else if (Number(input.taxTotal) > 0) {
     totalRow(profile.taxLabel, `${money(input.taxTotal)} ${currency}`, true);

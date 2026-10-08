@@ -5,6 +5,8 @@ import WhatsAppIcon from '../../../components/app/WhatsAppIcon.astro';
 import { getCotizacion, getDocumentosFiscales, getMyMembership, getOrg, getSuscripcionByCotizacion, STATUS_META, money, lineTotal, quoteSubtotal, quoteTotal, quoteTaxBreakdown, quoteRetenciones } from '../../../lib/queries';
 import { documentTypeForOrg } from '../../../lib/fiscal/document-kind';
 import { getCountryProfile } from '../../../lib/countries';
+import { currencyDecimals } from '../../../lib/currency';
+import { taxBreakdownRows } from '../../../lib/tax-components';
 import { memberCan } from '../../../lib/permissions';
 import { publicDocumentUrl } from '../../../lib/public-links';
 import { currentLocale } from '../../../lib/context';
@@ -61,6 +63,11 @@ const quoteDocumentType = docsFiscales.find(d => ['pending', 'error'].includes(d
 // El nombre del impuesto sale del perfil del país, no de un ternario que le
 // decía "Tax" genérico a todo negocio fuera de México.
 const TAX_LABEL = getCountryProfile(ORG.countryCode || 'MX', L).taxLabel;
+// Un renglón por impuesto: en Canadá el 14.975% de Quebec es GST + QST.
+const TAX_ROWS = taxBreakdownRows(quoteTaxBreakdown(q), {
+    country: ORG.countryCode || 'MX', region: ORG.fiscalMetadata?.region, taxLabel: TAX_LABEL,
+    decimals: currencyDecimals(q.baseCurrency || ORG.moneda || 'MXN'),
+});
 const TAX_INCLUDED_LABEL = tf('id.precios_con_iva', { tax: TAX_LABEL });
 const PARTIAL_TAX_COPY = tf('id.de_mas_iva', { subtotal: money(quoteSubtotal(q)), tax: TAX_LABEL });
 
@@ -207,8 +214,8 @@ import { iconInner } from '../../../lib/icons';
                 )}
                 <div class="di-totals">
                     <div class="dt-line"><span>{t(L, 'id.subtotal')}</span><span class="editorial">{money(quoteSubtotal(q))}</span></div>
-                    {quoteTaxBreakdown(q).map((tr) => (
-                        <div class="dt-line"><span>{TAX_LABEL} {Math.round(tr.tasa * 10000) / 100}%</span><span class="editorial">{money(tr.impuesto)}</span></div>
+                    {TAX_ROWS.map((tr) => (
+                        <div class="dt-line"><span>{tr.label}</span><span class="editorial">{money(tr.impuesto)}</span></div>
                     ))}
                     {quoteRetenciones(q).map((r) => (
                         <div class="dt-line dt-ret"><span>{r.nombre}</span><span class="editorial">−{money(r.monto)}</span></div>

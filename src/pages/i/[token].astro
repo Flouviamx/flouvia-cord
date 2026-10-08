@@ -17,6 +17,8 @@ import { resolveViewer } from '../../lib/public-viewer';
 // FACTURA (Regla 21). Un símbolo fijo aquí mostraría "$" a un cliente en Madrid.
 import { moneyFull } from '../../lib/fmt';
 import { getCountryProfile } from '../../lib/countries';
+import { currencyDecimals } from '../../lib/currency';
+import { fmtTaxPct, taxDisplayRows } from '../../lib/tax-components';
 import { currentLocale } from '../../lib/context';
 import { t } from '../../i18n/app';
 import { publicInvoiceGuidance, publicInvoiceContact, publicInvoicePayability } from '../../lib/fiscal/public-invoice-state';
@@ -36,6 +38,11 @@ const esVistaPrevia = viewer.rol === 'seller';
 
 const color = /^#[0-9a-fA-F]{6}$/.test(f.org.color ?? '') ? f.org.color! : '#0a192f';
 const { puedePagar, puedePagarMp } = publicInvoicePayability(f, !!(import.meta.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY));
+// Canadá: GST y QST/PST/RST en renglones aparte — el cliente recupera cada uno
+// ante una autoridad distinta. `null` en el resto de países (un solo renglón).
+const impuestosPorNombre = taxDisplayRows(f.lineas, f.pais, {
+    region: f.emisor?.address?.region, decimals: currencyDecimals(f.currency || 'MXN'),
+});
 const regresoDePago = Astro.url.searchParams.get('pagado') === '1' && f.estado !== 'paid';
 const guidance = publicInvoiceGuidance({ ...f, puedePagar, regresoDePago }, L);
 const contact = publicInvoiceContact(f.org.email, f.org.telefono, f.numero ?? '', L);
@@ -150,6 +157,7 @@ import { iconInner } from '../../lib/icons';
                 <div>
                     <span class="iv-label">{t(L, 'fact.p_de')}</span>
                     <p class="iv-party">{f.emisor?.legalName ?? f.org.nombre}</p>
+                    {(f.emisor?.extraTaxIds ?? []).map((x: { value: string }) => <p class="iv-party-sub">QST {x.value}</p>)}
                     {f.org.email && <p class="iv-party-sub">{f.org.email}</p>}
                 </div>
                 <div>
@@ -185,8 +193,11 @@ import { iconInner } from '../../lib/icons';
 
             <section class="iv-totals">
                 <div class="iv-row"><span>{t(L, 'fact.p_subtotal')}</span><span class="editorial">{moneyFull(f.subtotal)}</span></div>
-                {f.impuestos > 0 && (
-                    <div class="iv-row"><span>{t(L, 'fact.p_impuestos')}</span><span class="editorial">{moneyFull(f.impuestos)}</span></div>
+                {f.impuestos > 0 && (impuestosPorNombre
+                    ? impuestosPorNombre.map((row) => (
+                        <div class="iv-row"><span>{row.nombre} {fmtTaxPct(row.tasa)}</span><span class="editorial">{moneyFull(row.impuesto)}</span></div>
+                    ))
+                    : <div class="iv-row"><span>{t(L, 'fact.p_impuestos')}</span><span class="editorial">{moneyFull(f.impuestos)}</span></div>
                 )}
                 <div class="iv-row iv-row-total"><span>{t(L, 'fact.p_total')}</span><span class="editorial">{moneyFull(f.total)}</span></div>
                 {f.pagado > 0 && (

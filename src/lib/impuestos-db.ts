@@ -158,7 +158,12 @@ export async function reseedTaxCatalogForTerritory(
         // Estados Unidos nace con solo "Exempt / Resale" hasta que declara su
         // estado: ese catálogo también cuenta como intacto.
         const usExemptOnly = previous.country.toUpperCase() === 'US' && rows.every((r: any) => String(r.kind) === 'exento');
-        if (!isUntouchedSeed(rows, oldPresets) && !usExemptOnly) return 0;
+        // Un catálogo sembrado ANTES de declarar la provincia es el nacional del
+        // mismo país, y también está intacto: sin esto, una cuenta canadiense
+        // que elige "Quebec" después del alta se quedaba con la lista nacional.
+        const nationalSeed = previous.country.toUpperCase() === next.country.toUpperCase()
+            && isUntouchedSeed(rows, taxPresetsFor(previous.country, null));
+        if (!isUntouchedSeed(rows, oldPresets) && !usExemptOnly && !nationalSeed) return 0;
         const newPresets = presetsFor(next.country, next.region);
         if (isUntouchedSeed(rows, newPresets) && rows.length === newPresets.length) return 0;
         await withOrgTx(orgId, sql`delete from impuestos where org_id = ${orgId}`);

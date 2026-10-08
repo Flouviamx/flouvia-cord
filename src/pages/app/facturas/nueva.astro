@@ -148,6 +148,8 @@ const BOOT = {
     // salen de dos aritméticas distintas, tarde o temprano difieren.
     retenciones: RETENCIONES,
     taxLabel: TAX_LABEL,
+    taxCountry: country,
+    taxRegion: ORG.fiscalMetadata?.region || null,
     ivaIncluido: DEFAULT_IVA_INCLUIDO,
     preselectCliente,
     catalogo: catalogo.map((p: any) => ({
@@ -534,6 +536,7 @@ import { iconInner } from '../../../lib/icons';
     import { createMoney } from '../../../lib/money-client';
     import { calculateDocumentTotals } from '../../../../packages/elements/src/engine';
     import { currencyDecimals } from '../../../lib/currency';
+    import { taxBreakdownRows } from '../../../lib/tax-components';
     import { termDueDate } from '../../../lib/payment-terms';
     import { wireTermPicker } from '../../../lib/term-picker-client';
 
@@ -658,9 +661,10 @@ import { iconInner } from '../../../lib/icons';
             $('sumTotal')!.textContent = fmt(totals.total);
             // Desglose por tasa: una línea por tipo. Con una sola tasa se ve
             // igual que antes; con varias es la única forma de cuadrar.
-            const filasImpuesto = totals.porTasa
-                .filter((t: any) => t.impuesto > 0)
-                .map((t: any) => `<div class="sum-line sum-tax"><span>${escapeHtml(BOOT.taxLabel)} ${Math.round(t.tasa * 10000) / 100}%</span><span class="editorial">${fmt(t.impuesto)}</span></div>`);
+            // En Canadá un 14.975% son dos impuestos (GST + QST): un renglón por cada uno.
+            const filasImpuesto = taxBreakdownRows(totals.porTasa, {
+                country: BOOT.taxCountry, region: BOOT.taxRegion, taxLabel: BOOT.taxLabel, decimals: currencyDecimals(currency),
+            }).map((t) => `<div class="sum-line sum-tax"><span>${escapeHtml(t.label)}</span><span class="editorial">${fmt(t.impuesto)}</span></div>`);
             // Una retención se RESTA. Se dibuja con el signo a la vista porque
             // un renglón positivo que en realidad baja el total es la clase de
             // detalle que nadie audita hasta que el cliente paga de menos.

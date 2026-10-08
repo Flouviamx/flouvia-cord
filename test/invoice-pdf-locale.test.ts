@@ -168,4 +168,20 @@ describe('idioma y menciones legales del PDF de factura', () => {
         const frConFecha = pdfText(createInvoicePdf(base({ serviceDate: '2026-09-15' })));
         expect(frConFecha).toContain('DATE DE LA PRESTATION');
     });
+    it('Canadá: GST y QST en renglones aparte, y el número de QST del emisor', () => {
+        const text = pdfText(createInvoicePdf(base({
+            countryCode: 'CA', currency: 'CAD',
+            issuer: { legalName: 'Atelier Nord inc.', taxId: '123456789RT0001', address: { countryCode: 'CA', region: 'QC', city: 'Montréal' },
+                extraTaxIds: [{ kind: 'qst', value: '1234567890TQ0001' }] },
+            recipient: { legalName: 'Client Ltée', address: { countryCode: 'CA', region: 'QC' } },
+            lines: [{ description: 'Services', quantity: 1, unitPrice: 1000, taxRate: 0.14975, subtotal: 1000, taxAmount: 149.75, total: 1149.75 }],
+            subtotal: 1000, taxTotal: 149.75, total: 1149.75,
+        })));
+        expect(text).toContain('GST 5%');
+        expect(text).toContain('QST 9.975%');
+        expect(text).toContain('50.00');
+        expect(text).toContain('99.75');
+        expect(text).toContain('QST: 1234567890TQ0001');
+        expect(text).not.toContain('GST/HST 14.975%');
+    });
 });

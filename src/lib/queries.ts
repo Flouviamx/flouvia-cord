@@ -30,6 +30,7 @@ import { onlinePaymentsSetup } from './payment-rail';
 import { fmtCalendarDate, fmtDate, fmtRelative, intlLocale, money } from './fmt-server';
 import { calculateDocumentTotals, retencionBase, type RetencionBase } from '../../packages/elements/src/engine';
 import { dueDateFor, venceDia } from './cobros';
+import { taxBreakdownRows } from './tax-components';
 import { taskBadge } from './tasks-db';
 import type { PublicViewer } from './public-viewer';
 import {
@@ -1832,6 +1833,7 @@ export async function getFacturaByToken(token: string) {
             precioUnitario: num(l.unitPrice),
             subtotal: num(l.subtotal),
             impuesto: num(l.taxAmount),
+            taxRate: num(l.taxRate),
             total: num(l.total),
         })),
         pagos: pagos.map((pg: any) => ({
@@ -2150,6 +2152,9 @@ export async function getCotizacionByToken(token: string) {
             portalPowered: canRemoveBranding ? ((rows[0].org_portal_powered as boolean) ?? true) : true,
             // Para el sello de confianza del link público (CFDI 4.0 solo aplica a México).
             paisCode: (rows[0].org_country_code as string) || 'MX',
+            // Provincia / estado del emisor: nombra los impuestos compuestos
+            // (en Manitoba el 7% provincial es RST, en Columbia Británica PST).
+            fiscalRegion: String((rows[0].org_fiscal_metadata as any)?.region || '') || null,
             // Entorno de PRUEBA: la página pública marca la cotización como de
             // prueba (cinta ámbar) — nadie debe confundirla con una real.
             esPrueba: (rows[0].org_es_prueba as boolean) ?? false,
@@ -2198,7 +2203,7 @@ export interface LiveSnapshot {
     }>;
     cobros: Array<{ id: string; tipo: string; monto: number; status: string; vence: string }>;
     /** Desglose por tasa, para que el parche en vivo dibuje las MISMAS filas que el SSR. */
-    impuestos: Array<{ tasa: number; impuesto: number }>;
+    impuestos: Array<{ tasa: number; impuesto: number; label: string }>;
     retenciones: Array<{ nombre: string; monto: number }>;
 }
 
@@ -2206,6 +2211,7 @@ export async function getLiveSnapshot(orgId: string, cotizacionId: string): Prom
     const [cabecera, items, cobros] = await withOrgTx(orgId,
         sql`select c.rev, c.status, c.subtotal, c.iva, c.total, c.vigencia, c.notas,
                    c.iva_incluido, c.retenciones_snapshot, o.iva_pct as org_iva_pct,
+                   o.country_code as org_country_code, o.fiscal_metadata->>'region' as org_region,
                    coalesce(c.base_currency, o.moneda) as quote_currency
               from cotizaciones c join orgs o on o.id = c.org_id
              where c.id = ${cotizacionId} and c.org_id = ${orgId}`,
@@ -2279,7 +2285,10 @@ export async function getLiveSnapshot(orgId: string, cotizacionId: string): Prom
             status: co.status as string,
             vence: co.vence ? fmtCalendarDate(co.vence as string) : '',
         })),
-        impuestos: desglose.porTasa.filter((t: any) => t.impuesto > 0).map((t: any) => ({ tasa: t.tasa, impuesto: t.impuesto })),
+        impuestos: taxBreakdownRows(desglose.porTasa, {
+            country: String(c.org_country_code || 'MX'), region: (c.org_region as string) || null,
+            decimals: currencyDecimals(normalizeCurrency(c.quote_currency as string)),
+        }),
         retenciones: desglose.retenciones.map((r: any) => ({ nombre: r.nombre, monto: r.monto })),
     };
 }

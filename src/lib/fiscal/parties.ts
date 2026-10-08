@@ -35,6 +35,8 @@ export function partiesFrom(head: any, issuerCountry: string): { issuer: FiscalP
       taxSystem: head.org_tax_system ? String(head.org_tax_system) : undefined,
       ...((issuerCountry === 'FR' || issuerCountry === 'DE') && fiscalMetadata.vat_regime === 'small_business'
         ? { vatRegime: 'small_business' as const } : {}),
+      ...(issuerCountry === 'CA' && fiscalMetadata.qst_number
+        ? { extraTaxIds: [{ kind: 'qst' as const, value: fiscalMetadata.qst_number }] } : {}),
       email: head.org_email ? String(head.org_email) : undefined,
       address: {
         countryCode: issuerCountry,
