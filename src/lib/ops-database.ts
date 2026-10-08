@@ -1,3 +1,14 @@
+// Qué se redacta en el explorador de Ops. Tres capas, de la más específica a
+// la más amplia, y la duda se resuelve OCULTANDO:
+//   1. nombres exactos conocidos;
+//   2. patrones de nombre (credenciales, hashes, cifrados, webhooks con token);
+//   3. el TIPO: un `jsonb` o `bytea` puede guardar cualquier cosa —evidencia
+//      legal, cuerpos de eventos, documentos—, así que se oculta salvo una
+//      lista corta de columnas cuyo contenido es configuración inofensiva.
+// La auditoría de oct 2026 encontró visibles las URLs de webhook de Slack y
+// Teams (credenciales en sí mismas), las llaves cifradas `*_enc` y todos los
+// `*_hash`: la lista vieja era de nombres sueltos y cada columna nueva nacía
+// visible. `test/ops-database.test.ts` fija las columnas reales del schema.
 const PROTECTED_COLUMNS = new Set([
   'password_hash', 'totp_secret', 'totp_secret_enc', 'totp_backup_codes', 'hash',
   'secret', 'secret_enc', 'secret_prev', 'secret_prev_enc',
@@ -5,17 +16,31 @@ const PROTECTED_COLUMNS = new Set([
   'public_key', 'token', 'verify_token', 'relay_state', 'idp_certs', 'facturapi_live_key',
   'banco_clabe', 'request_body', 'response_body', 'payload', 'captured', 'provider_data',
   'fiscal_metadata', 'stripe_requirements', 'integraciones',
+  'code', 'user_code', 'code_challenge', 'evidence', 'evidence_draft',
 ]);
+
+const SENSITIVE_NAME = new RegExp([
+  'password', 'secret', '(^|_)token($|_)', 'private', 'public_key', 'backup_codes',
+  'cert', 'clabe', 'captured', 'request_body', 'response_body', 'payload',
+  '_enc$', '(^|_)hash$', 'webhook_url', '(^|_)(access|refresh)(_|$)', 'nonce',
+].join('|'), 'i');
 
 const PROTECTED_IDS = new Set([
   'sessions', 'ops_sessions', 'ops_auth_challenges', 'ops_passkey_challenges', 'password_reset_tokens',
   'email_verification_tokens', 'two_factor_challenges', 'saml_auth_requests',
-  'saml_assertion_replay', 'sso_handoffs', 'mcp_idempotency',
+  'saml_assertion_replay', 'sso_handoffs', 'mcp_idempotency', 'billing_handoff_tokens',
+  'mcp_sessions', 'rate_limit_counters',
 ]);
 
-export function isProtectedDatabaseValue(table: string, column: string): boolean {
-  const sensitiveName = /(password|secret|(^|_)token($|_)|private|public_key|backup_codes|certs?|clabe|captured|request_body|response_body|payload|auth_token)/i.test(column);
-  return PROTECTED_COLUMNS.has(column) || sensitiveName || (column === 'id' && PROTECTED_IDS.has(table));
+/** jsonb que sí se muestra: configuración y metadatos sin credenciales ni datos de terceros. */
+const VISIBLE_STRUCTURED = new Set(['metadata', 'permissions', 'transports', 'features', 'notif_prefs', 'brand_profile', 'allowed_ips']);
+const OPAQUE_TYPES = new Set(['json', 'jsonb', 'bytea']);
+
+export function isProtectedDatabaseValue(table: string, column: string, dataType?: string): boolean {
+  if (PROTECTED_COLUMNS.has(column) || SENSITIVE_NAME.test(column)) return true;
+  if (column === 'id' && PROTECTED_IDS.has(table)) return true;
+  if (dataType && OPAQUE_TYPES.has(dataType) && !VISIBLE_STRUCTURED.has(column)) return true;
+  return false;
 }
 
 export function databaseCategory(table: string): string {
@@ -28,8 +53,8 @@ export function databaseCategory(table: string): string {
   return 'Operación interna';
 }
 
-export function formatDatabaseValue(table: string, column: string, value: unknown): { text: string; redacted: boolean } {
-  if (isProtectedDatabaseValue(table, column)) return { text: 'Protegido', redacted: true };
+export function formatDatabaseValue(table: string, column: string, value: unknown, dataType?: string): { text: string; redacted: boolean } {
+  if (isProtectedDatabaseValue(table, column, dataType)) return { text: 'Protegido', redacted: true };
   if (value === null || value === undefined) return { text: 'null', redacted: false };
   if (typeof value === 'boolean') return { text: value ? 'true' : 'false', redacted: false };
   if (value instanceof Date) return { text: value.toISOString(), redacted: false };
@@ -45,7 +70,7 @@ interface DatabaseColumn {
 const SEARCH_PRIORITY = ['id', 'email', 'nombre', 'empresa', 'folio', 'sku', 'status', 'provider', 'action', 'ruta', 'url'];
 
 export function databaseSearchColumns(table: string, columns: DatabaseColumn[]): DatabaseColumn[] {
-  const safe = columns.filter((column) => !isProtectedDatabaseValue(table, column.column_name));
+  const safe = columns.filter((column) => !isProtectedDatabaseValue(table, column.column_name, column.data_type));
   const ranked = [...safe].sort((a, b) => {
     const aRank = SEARCH_PRIORITY.indexOf(a.column_name);
     const bRank = SEARCH_PRIORITY.indexOf(b.column_name);

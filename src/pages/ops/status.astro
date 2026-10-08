@@ -60,6 +60,32 @@ const duration = (start: unknown, end: unknown) => {
 const shortDate = (value: unknown) => value
     ? new Intl.DateTimeFormat('es-MX', { dateStyle: 'medium', timeZone: 'America/Mexico_City' }).format(new Date(String(value)))
     : 'Sin datos';
+// Línea de disponibilidad: un cuadro por día y componente, en UTC como las
+// muestras. Un día sin muestras es gris, nunca verde (mismo contrato que la
+// página pública).
+const DAY_MS = 86_400_000;
+const todayUtc = Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate());
+const days = Array.from({ length: HEALTH_WINDOW_DAYS }, (_, i) => new Date(todayUtc - (HEALTH_WINDOW_DAYS - 1 - i) * DAY_MS).toISOString().slice(0, 10));
+const historyByKey = new Map(snapshot.history.map((h) => [`${h.service}:${h.day}`, h]));
+const dayLabel = (day: string) => new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(new Date(`${day}T00:00:00Z`));
+const uptime = HEALTH_SERVICES.map((id) => {
+    const cells = days.map((day) => {
+        const h = historyByKey.get(`${id}:${day}`);
+        if (!h || h.checks === 0) return { day, tone: '', title: `${dayLabel(day)}: sin muestras` };
+        const tone = h.successPct >= 99.5 ? 'ok' : h.successPct >= 95 ? 'warn' : 'bad';
+        return { day, tone, title: `${dayLabel(day)}: ${h.successPct.toFixed(2)}% de ${h.checks} muestras` };
+    });
+    const sampled = cells.filter((c) => c.tone);
+    const total = snapshot.history.filter((h) => h.service === id).reduce((acc, h) => ({ ok: acc.ok + h.successfulChecks, all: acc.all + h.checks }), { ok: 0, all: 0 });
+    return {
+        id,
+        name: serviceName[id][0],
+        cells,
+        pct: total.all ? (total.ok / total.all) * 100 : null,
+        bad: sampled.filter((c) => c.tone !== 'ok').length,
+        sampled: sampled.length,
+    };
+});
 const payload = (incident: any) => JSON.stringify({
     id: incident.id, status: incident.status, severity: incident.severity,
     titleEs: incident.title_es, titleEn: incident.title_en, summaryEs: incident.summary_es, summaryEn: incident.summary_en,
@@ -95,6 +121,25 @@ const payload = (incident: any) => JSON.stringify({
           </tr>;
         })}
       </tbody></table></div>
+    </section>
+
+    <section class="ops-section">
+      <header class="ops-section-header"><div><h2>Últimos {HEALTH_WINDOW_DAYS} días</h2><p>Verde: 99.5% o más de muestras correctas. Ámbar: entre 95% y 99.5%. Rojo: menos de 95%. Gris: sin muestras ese día.</p></div></header>
+      <div class="ops-card">
+        <div class="ops-uptime">
+          {uptime.map((row) => (
+            <div class="ops-uptime-row">
+              <span>{row.name}</span>
+              <div class="ops-uptime-strip" tabindex="0" role="img" data-ops-uptime={row.name} aria-describedby="ops-uptime-detail" aria-label={`${row.name}: ${row.sampled} días con muestras, ${row.bad} con fallas${row.pct !== null ? `, ${row.pct.toFixed(2)}% en la ventana` : ''}. Usa las flechas para ver cada día.`}>
+                {row.cells.map((cell) => <i class={cell.tone} data-title={cell.title} title={cell.title}></i>)}
+              </div>
+              <b>{row.pct !== null ? `${row.pct.toFixed(2)}%` : '—'}</b>
+            </div>
+          ))}
+          <div class="ops-uptime-axis" aria-hidden="true"><span>{dayLabel(days[0])}</span><span>Hoy</span></div>
+          <p class="ops-uptime-detail" id="ops-uptime-detail" aria-live="polite">Toca o recorre con las flechas cualquier día para ver su detalle.</p>
+        </div>
+      </div>
     </section>
 
     <section class="ops-section" id="incidente">
@@ -147,7 +192,7 @@ const payload = (incident: any) => JSON.stringify({
 
     <section class="ops-section">
       <header class="ops-section-header"><div><h2>Incidentes registrados</h2><p>Se corrigen o se resuelven; no se eliminan desde la interfaz.</p></div></header>
-      <div class="ops-card ops-table-wrap"><table class="ops-table"><thead><tr><th>Incidente</th><th>Severidad</th><th>Estado</th><th>Periodo</th><th>Página pública</th><th></th></tr></thead><tbody>
+      <div class="ops-card ops-table-wrap"><table class="ops-table"><thead><tr><th>Incidente</th><th>Severidad</th><th>Estado</th><th>Periodo</th><th>Página pública</th><th><span class="ops-sr-only">Acciones</span></th></tr></thead><tbody>
         {incidents.map((incident) => {
           const [state, tone] = incidentState[incident.status] ?? [incident.status, ''];
           const [sev, sevTone] = severityLabel[incident.severity] ?? [incident.severity, ''];
@@ -310,14 +355,43 @@ const payload = (incident: any) => JSON.stringify({
   });
 </script>
 
+<script>
+  // Regla 16: el detalle de cada día no depende de hover. Puntero, toque
+  // (con arrastre) y flechas lo escriben en una línea visible y anunciada.
+  const detail = document.getElementById('ops-uptime-detail');
+  document.querySelectorAll<HTMLElement>('[data-ops-uptime]').forEach((strip) => {
+    const cells = Array.from(strip.querySelectorAll<HTMLElement>('i'));
+    let active = -1;
+    const show = (index: number) => {
+      active = Math.max(0, Math.min(cells.length - 1, index));
+      document.querySelectorAll('.ops-uptime-strip > i.active').forEach((el) => el.classList.remove('active'));
+      cells[active].classList.add('active');
+      if (detail) detail.textContent = `${strip.dataset.opsUptime} · ${cells[active].dataset.title}`;
+    };
+    const at = (clientX: number) => {
+      const rect = strip.getBoundingClientRect();
+      return Math.floor(((clientX - rect.left) / rect.width) * cells.length);
+    };
+    strip.addEventListener('pointerdown', (event) => show(at(event.clientX)));
+    strip.addEventListener('pointermove', (event) => {
+      if (event.pointerType === 'mouse' || event.buttons) show(at(event.clientX));
+    });
+    strip.addEventListener('keydown', (event) => {
+      const step: Record<string, number> = { ArrowLeft: -1, ArrowRight: 1 };
+      if (event.key in step) { event.preventDefault(); show(active < 0 ? cells.length - 1 : active + step[event.key]); }
+      else if (event.key === 'Home') { event.preventDefault(); show(0); }
+      else if (event.key === 'End') { event.preventDefault(); show(cells.length - 1); }
+    });
+  });
+</script>
+
 <style>
   .ops-incident-form { display: grid; gap: 22px; }
   .ops-incident-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
   .ops-incident-grid.three { grid-template-columns: repeat(4, minmax(0, 1fr)); align-items: start; }
-  .ops-incident-lang { display: grid; gap: 14px; align-content: start; padding: 18px; border-radius: 16px; background: #fbfbfc; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.05); }
-  .ops-incident-lang .ops-input, .ops-incident-lang .ops-textarea { background: #fff; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.07); }
-  .ops-lang { font-size: 12px; font-weight: 650; color: var(--ops-navy); }
-  .ops-field em { float: right; font-style: normal; font-weight: 450; color: var(--ops-ghost); font-variant-numeric: tabular-nums; }
+  .ops-incident-lang { display: grid; gap: 14px; align-content: start; padding-top: 16px; border-top: 1px solid var(--ops-line); }
+  .ops-lang { font-size: 12px; font-weight: 650; color: var(--ops-ink); }
+  .ops-field em { float: right; font-style: normal; font-weight: 450; color: var(--ops-faint); font-variant-numeric: tabular-nums; }
   .ops-incident-actions { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
   .ops-incident-actions p { margin: 0 auto 0 0; color: var(--ops-faint); font-size: 12.5px; }
   .ops-incident-form .ops-inline-error { margin: 0; }

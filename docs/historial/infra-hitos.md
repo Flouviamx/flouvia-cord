@@ -7,6 +7,52 @@
 
 ---
 
+**Cord Ops: auditoría de seguridad y sistema visual nuevo (7 oct 2026)** — una
+auditoría de punta a punta encontró un hueco alto y varios medios; todos se
+cerraron en el mismo cambio, junto con el rediseño de la consola.
+- *Alto — una sesión de la app se convertía en acceso a Ops.* El login con
+  passkey de Ops aceptaba cualquier fila de `passkeys`, registradas con rpID
+  `cordhq.app` y una sesión normal como única prueba. Una `cord_session` robada (o
+  un XSS en el apex, cuya CSP aún admite `unsafe-inline`) bastaba para sumar una
+  llave propia y entrar a Ops. Ahora Ops usa `ops_passkeys` con rpID
+  `ops.cordhq.app`, registradas solo desde una sesión Ops de menos de 10 minutos y
+  con aviso por correo. En la app, registrar una passkey exige reautenticación
+  reciente (`requireFreshAuth`) y también avisa por correo.
+- *Bloqueo propio.* El login de Ops compartía `users.failed_login_count` con la
+  app (cualquiera bloqueaba a un operador desde el login público, y el 423
+  confirmaba que el correo era de operador) y reiniciaba el contador al acertar la
+  contraseña, antes del TOTP. Ahora hay dos contadores en `ops_operators`: el de
+  contraseña (10 → 15 min, respuesta 401 genérica) y el de TOTP (5 → 1 h, con
+  correo de alerta, porque llegar ahí exige la contraseña correcta). El paso TOTP
+  aceptado se guarda (`totp_last_step`): un código observado no se repite.
+- *Bitácora y políticas.* `ops_audit_log` pasa a solo agregar (trigger +
+  `revoke` a `cord_app`). Las políticas de `clientes`, `productos`, `api_keys`,
+  `webhooks` y `sso_connections` no tenían `WITH CHECK`, así que el carril `ops`
+  podía INSERTAR en cualquier organización; ahora Ops tiene políticas por comando
+  (SELECT para leer, UPDATE solo donde revoca). `payouts`, `connect_personas` y
+  `connect_kyc_evidencia` quedaron `for select`, como decían sus comentarios.
+- *Acciones.* Eliminar una organización desde Ops no cancelaba la suscripción de
+  Stripe; ahora usa `releaseOrgBilling()` y aborta si no puede cancelarla.
+  Suspender a un usuario revoca también sus permisos OAuth y las llaves de
+  `cord login`. Borrar usuarios u organizaciones exige sesión reciente; todas las
+  acciones de organización piden escribir su nombre.
+- *Explorador.* Redacción por nombre y por tipo (todo `jsonb`/`bytea` salvo una
+  lista corta); antes se veían las URLs de webhook de Slack y Teams, las llaves
+  `*_enc` y los `*_hash`. Solo admin, carril `withOpsTx` y vista auditada en la
+  misma transacción.
+- *Interfaz.* Tokens únicos con modo oscuro, barra superior con migas y tiempo de
+  sesión, cajón táctil bajo 880 px, iconos del registro, gráficas SVG con
+  comparación contra el periodo anterior y detalle por toque o teclado, selector
+  de periodo por URL, sparklines y la línea de 90 días de disponibilidad (el dato
+  ya se consultaba y nunca se dibujaba). Los logos remotos de integraciones nunca
+  se pintaban (la CSP de Ops fija `img-src 'self' data:`) y se sustituyeron por
+  monogramas.
+- *Candado.* `npm run security:ops` (en `test:payments`) verifica cada punto;
+  `test/ops-database.test.ts` lee las columnas reales del schema. Migración:
+  `scripts/migrate-ops-hardening.mjs` (dry-run por defecto). Antes de aplicarla,
+  cada operador debe poder entrar con contraseña + TOTP: las passkeys de la app
+  dejan de servir en Ops y la nueva se registra en `/ops/security`.
+
 **Higiene del repositorio y candados de CI (14 sep 2026)** — limpieza auditada
 archivo por archivo, sin cambios visibles para clientes.
 - *Basura retirada:* reportes sueltos en la raíz, `IDEAS-FEATURES.md`, componentes

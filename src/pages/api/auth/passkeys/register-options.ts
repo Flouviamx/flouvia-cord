@@ -3,6 +3,7 @@ import { generateRegistrationOptions } from '@simplewebauthn/server';
 import { sql } from '../../../../lib/db';
 import { validateSession, SESSION_COOKIE } from '../../../../lib/auth';
 import { log } from '../../../../lib/log';
+import { requireFreshAuth } from '../../../../lib/step-up';
 
 export const prerender = false;
 
@@ -19,6 +20,12 @@ export const POST: APIRoute = async ({ cookies }) => {
     if (!session) {
       return new Response(JSON.stringify({ error: 'No autenticado' }), { status: 401 });
     }
+
+    // Registrar una passkey es la forma más silenciosa de quedarse con una
+    // cuenta: con una sesión robada bastaba para sumar una llave propia. Exige
+    // haber confirmado identidad hace poco (login reciente o step-up).
+    const stale = await requireFreshAuth();
+    if (stale) return stale;
 
     const rows = await sql`select email from users where id = ${session.userId}`;
     if (rows.length === 0) {

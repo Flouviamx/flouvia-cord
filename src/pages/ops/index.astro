@@ -4,12 +4,17 @@ import OpsShell from '../../components/ops/OpsShell.astro';
 import OpsFeed from '../../components/ops/OpsFeed.astro';
 import OpsBars from '../../components/ops/OpsBars.astro';
 import OpsDist from '../../components/ops/OpsDist.astro';
+import OpsSpark from '../../components/ops/OpsSpark.astro';
+import OpsRange from '../../components/ops/OpsRange.astro';
+import { iconInner } from '../../lib/icons';
+import { parseOpsRange, splitPeriods } from '../../lib/ops-range';
 import { sql, withOpsTx } from '../../lib/db';
 import { getPublicStatusSnapshot } from '../../lib/platform-health';
 import { opsAgo, opsDate, opsEventLabel, opsMoney, opsNumber, opsPct, OPS_AUDIT_LABELS } from '../../lib/ops-format';
 import { opsCollectedByCurrency, opsDailySeries, opsEventFeed, opsOverviewStats, opsTopEventTypes, opsTopOrgs } from '../../lib/ops-insights';
 
 if (!Astro.locals.opsOperator) return Astro.redirect('/ops/login');
+const range = parseOpsRange(Astro.url.searchParams.get('range'));
 
 let s: any = {};
 let series: any[] = [];
@@ -25,7 +30,8 @@ let error = false;
 try {
   const r = await withOpsTx(
     opsOverviewStats(),
-    opsDailySeries(30),
+    // Doble ventana: el periodo elegido y el anterior, para comparar.
+    opsDailySeries(range.days * 2),
     opsEventFeed({ limit: 12 }),
     opsCollectedByCurrency(30),
     opsTopEventTypes(7),
@@ -64,29 +70,37 @@ const attention = [
   ...(s.locked > 0 ? [{ level: 'amber', title: 'Cuentas bloqueadas por intentos fallidos', text: 'Se desbloquean solas o desde su ficha.', href: '/ops/security', n: opsNumber(s.locked) }] : []),
 ];
 
-const pick = (key: string) => series.map((row) => ({ day: String(row.day), value: Number(row[key] || 0) }));
+const periods = splitPeriods(series, range.days);
+const pickFrom = (rows: any[], key: string) => rows.map((row) => ({ day: String(row.day), value: Number(row[key] || 0) }));
+const pick = (key: string) => pickFrom(periods.current, key);
+const pickPrev = (key: string) => pickFrom(periods.previous, key);
+const avg = (rows: { value: number }[]) => rows.length ? Math.round(rows.reduce((a, r) => a + r.value, 0) / rows.length) : 0;
+const spark = (key: string) => pickFrom(series.slice(-14), key).map((p) => p.value);
 const growth = Number(s.users_7d || 0) - Number(s.users_prev_7d || 0);
 const displayName = (u: any) => [u.first_name, u.last_name].filter(Boolean).join(' ') || u.email;
 ---
 <OpsLayout title="Resumen | Cord Ops"><OpsShell active="overview" title="Resumen" subtitle="Lo que pasa en Cord ahora: personas, negocio, dinero y sistemas.">
-  <button slot="actions" id="ops-overview-refresh" class="ops-button secondary">Actualizar</button>
+  <Fragment slot="actions">
+    <OpsRange current={range.id} url={Astro.url} />
+    <button id="ops-overview-refresh" class="ops-button secondary" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('refresh')} />Actualizar</button>
+  </Fragment>
   {error && <div class="ops-inline-error">No fue posible cargar todos los datos. Ninguna acción se ejecutó.</div>}
 
   <section class="ops-card ops-summary">
     <div class="ops-summary-main">
-      <span class:list={['ops-state-icon', platform.tone]}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="currentColor" fill-opacity=".13"/><circle cx="12" cy="12" r="8.5"/>{platform.tone === '' ? <path d="m8.5 12.2 2.4 2.3 4.6-5"/> : <path d="M12 8v4.5M12 15.8h.01"/>}</svg></span>
+      <span class:list={['ops-state-icon', platform.tone, platform.tone === 'red' && 'ops-pulse']}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner(platform.tone === '' ? 'check-circle' : 'alert-circle')} /></span>
       <div><h2>{platform.title}</h2><p>{platform.text}</p></div>
     </div>
     <a class="ops-button secondary sm" href="/ops/status">Ver disponibilidad</a>
   </section>
 
   <section class="ops-card ops-metrics cols-6">
-    <div class="ops-metric"><span>Usuarios</span><strong>{opsNumber(s.users)}</strong><small><b class:list={['ops-delta', growth < 0 && 'down']}>{growth >= 0 ? '+' : ''}{opsNumber(s.users_7d)}</b> en 7 días</small></div>
-    <div class="ops-metric"><span>Activos 7 días</span><strong>{opsNumber(s.active_users_7d)}</strong><small><b>{opsNumber(s.active_users_24h)}</b> en las últimas 24 h</small></div>
+    <div class="ops-metric"><span>Usuarios</span><strong>{opsNumber(s.users)}</strong><small><b class:list={['ops-delta', growth < 0 && 'down']}>{growth >= 0 ? '+' : ''}{opsNumber(s.users_7d)}</b> en 7 días</small><OpsSpark values={spark('signups')} /></div>
+    <div class="ops-metric"><span>Activos 7 días</span><strong>{opsNumber(s.active_users_7d)}</strong><small><b>{opsNumber(s.active_users_24h)}</b> en las últimas 24 h</small><OpsSpark values={spark('active_users')} /></div>
     <div class="ops-metric"><span>Organizaciones</span><strong>{opsNumber(s.orgs)}</strong><small><b>{opsNumber(s.active_orgs_7d)}</b> con actividad en 7 días</small></div>
     <div class="ops-metric"><span>De pago</span><strong>{opsNumber(s.paying_orgs)}</strong><small>{opsPct(s.paying_orgs, s.orgs)}% de las organizaciones</small></div>
-    <div class="ops-metric"><span>Cotizaciones 30 días</span><strong>{opsNumber(s.quotes_30d)}</strong><small><b>{opsNumber(s.approved_30d)}</b> aprobadas · {opsPct(s.approved_30d, s.sent_30d)}% de las enviadas</small></div>
-    <div class="ops-metric"><span>Eventos 24 h</span><strong>{opsNumber(s.events_24h)}</strong><small>{opsNumber(s.sessions)} sesiones vigentes</small></div>
+    <div class="ops-metric"><span>Cotizaciones 30 días</span><strong>{opsNumber(s.quotes_30d)}</strong><small><b>{opsNumber(s.approved_30d)}</b> aprobadas · {opsPct(s.approved_30d, s.sent_30d)}% de las enviadas</small><OpsSpark values={spark('quotes')} /></div>
+    <div class="ops-metric"><span>Eventos 24 h</span><strong>{opsNumber(s.events_24h)}</strong><small>{opsNumber(s.sessions)} sesiones vigentes</small><OpsSpark values={spark('events')} /></div>
   </section>
 
   <section class="ops-card ops-metrics cols-6">
@@ -99,9 +113,11 @@ const displayName = (u: any) => [u.first_name, u.last_name].filter(Boolean).join
   </section>
 
   <div class="ops-grid-3 ops-section">
-    <OpsBars title="Actividad" hint="Eventos de negocio por día · 30 días" series={pick('events')} />
-    <OpsBars title="Personas activas" hint="Usuarios con sesión usada por día" series={pick('active_users')} total={Number(s.active_users_7d || 0)} />
-    <OpsBars title="Altas" hint="Cuentas nuevas por día · 30 días" series={pick('signups')} />
+    <OpsBars title="Actividad" hint={`Eventos de negocio por día · ${range.label}`} series={pick('events')} previous={pickPrev('events')} />
+    {/* Sin comparación: `sessions` solo conserva el último día de uso de cada
+        sesión y borra las vencidas, así que el periodo anterior sale subcontado. */}
+    <OpsBars title="Personas activas" hint="Promedio diario de personas con sesión" series={pick('active_users')} total={avg(pick('active_users'))} />
+    <OpsBars title="Altas" hint={`Cuentas nuevas por día · ${range.label}`} series={pick('signups')} previous={pickPrev('signups')} />
   </div>
 
   <div class="ops-grid-2 ops-section">

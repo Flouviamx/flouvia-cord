@@ -2,30 +2,69 @@
 import OpsLayout from '../../../layouts/OpsLayout.astro';
 import OpsShell from '../../../components/ops/OpsShell.astro';
 import OpsPagination from '../../../components/ops/OpsPagination.astro';
-import { opsAgo, opsDate, opsMoney, opsNumber, opsSubscription } from '../../../lib/ops-format';
+import OpsFilters from '../../../components/ops/OpsFilters.astro';
+import { opsAgo, opsDate, opsMoney, opsNumber, opsPct, opsSubscription } from '../../../lib/ops-format';
 import { getOpsOrganizationsPage } from '../../../lib/ops-list-queries';
-import { normalizeOpsSearch, OPS_PAGE_SIZE, parseOpsPage } from '../../../lib/ops-pagination';
+import { OPS_PAGE_SIZE, parseOpsPage } from '../../../lib/ops-pagination';
+import { filtersQuery, hasActiveFilters, parseOrgFilters } from '../../../lib/ops-filters';
+import { PLAN_IDS } from '../../../lib/entitlements';
+import { SUPPORTED_COUNTRIES } from '../../../lib/countries';
 
-if (!Astro.locals.opsOperator) return Astro.redirect('/ops/login');
-const query=normalizeOpsSearch(Astro.url.searchParams.get('q'));
-const page=parseOpsPage(Astro.url.searchParams.get('page'));
-let organizations:any[]=[];
-let total=0;
-let error=false;
-try{
-  organizations=await getOpsOrganizationsPage(query,page);
-  total=Number(organizations[0]?.total_count||0);
-  if(page>1&&organizations.length===0)return Astro.redirect(`/ops/organizations${query?`?q=${encodeURIComponent(query)}`:''}`);
-}catch(cause){error=true;console.error('[ops/organizations]',cause)}
-import { iconInner } from '../../../lib/icons';
+const operator = Astro.locals.opsOperator;
+if (!operator) return Astro.redirect('/ops/login');
+const filters = parseOrgFilters(Astro.url.searchParams);
+const page = parseOpsPage(Astro.url.searchParams.get('page'));
+const query = filtersQuery({ ...filters }, { sort: 'recent' });
+let organizations: any[] = [];
+let stats: Record<string, number> = {};
+let error = false;
+try {
+  ({ rows: organizations, stats } = await getOpsOrganizationsPage(filters, page));
+  if (page > 1 && organizations.length === 0) return Astro.redirect(`/ops/organizations${query ? `?${query}` : ''}`);
+} catch (cause) { error = true; console.error('[ops/organizations]', cause); }
+const total = Number(stats.total || 0);
+const regions = new Intl.DisplayNames(['es'], { type: 'region' });
+const PLAN_LABEL: Record<string, string> = { free: 'Gratis', starter: 'Starter', pro: 'Pro', scale: 'Scale', developer: 'Developer' };
+const filtered = hasActiveFilters({ ...filters }, { sort: 'recent' }) || !!filters.q;
 ---
 <OpsLayout title="Organizaciones | Cord Ops"><OpsShell active="organizations" title="Organizaciones" subtitle="Workspaces, actividad comercial e infraestructura conectada.">
-  <form slot="actions" class="ops-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('search')}></svg><input name="q" value={query} placeholder="Buscar organización" /></form>
   <section class="ops-card ops-metrics cols-3">
-    <div class="ops-metric"><span>Organizaciones</span><strong>{opsNumber(total)}</strong><small>{query ? 'Coinciden con la búsqueda' : 'Workspaces en Cord'}</small></div>
-    <div class="ops-metric"><span>Activas en 7 días</span><strong>{opsNumber(organizations.filter((o) => o.events_7d > 0).length)}</strong><small>De las {opsNumber(organizations.length)} mostradas</small></div>
-    <div class="ops-metric"><span>Con cobros en línea</span><strong>{opsNumber(organizations.filter((o) => o.stripe_charges_enabled).length)}</strong><small>De las {opsNumber(organizations.length)} mostradas</small></div>
+    <div class="ops-metric"><span>Organizaciones</span><strong>{opsNumber(total)}</strong><small>{filtered ? 'Coinciden con los filtros' : 'Workspaces en Cord'}</small></div>
+    <div class="ops-metric"><span>Activas en 7 días</span><strong>{opsNumber(stats.active_7d)}</strong><small>{opsPct(stats.active_7d, total)}% {filtered ? 'del filtro' : 'del total'}</small></div>
+    <div class="ops-metric"><span>Con cobros en línea</span><strong>{opsNumber(stats.charges)}</strong><small>{opsPct(stats.charges, total)}% {filtered ? 'del filtro' : 'del total'}</small></div>
   </section>
-  <section class="ops-section"><div class="ops-card ops-table-wrap"><table class="ops-table"><thead><tr><th>Organización</th><th>Plan</th><th>Equipo</th><th>Datos</th><th class="num">Cierre acumulado</th><th>Actividad</th></tr></thead><tbody>{organizations.map((org)=><tr><td><div class="ops-identity"><span class="ops-avatar square">{org.nombre.charAt(0).toUpperCase()}</span><div><a href={`/ops/organizations/${org.id}`}>{org.nombre}</a><span class="ops-sub">{org.owner_email||'Sin propietario'} · {org.country_code} · alta {opsDate(org.created_at).split(',')[0]}</span></div></div></td><td><span class="ops-badge blue">{org.plan||'free'}</span><span class="ops-sub">{opsSubscription(org.subscription_status)}</span></td><td>{opsNumber(org.members)}<span class="ops-sub">miembros</span></td><td>{opsNumber(org.clients)} clientes<span class="ops-sub">{opsNumber(org.quotes)} cotizaciones · {opsNumber(org.quotes_30d)} en 30 días</span></td><td class="num">{opsMoney(org.closed_value,org.moneda)}</td><td><span title={opsDate(org.last_event)}>{opsAgo(org.last_event,'Sin actividad')}</span><span class="ops-sub">{opsNumber(org.events_7d)} eventos en 7 días</span></td></tr>)}{organizations.length===0&&<tr><td colspan="6" class="ops-empty">No se encontraron organizaciones.</td></tr>}</tbody></table></div>{!error&&<OpsPagination page={page} total={total} pageSize={OPS_PAGE_SIZE} path="/ops/organizations" search={query?`q=${encodeURIComponent(query)}`:''}/>}</section>
-  {error&&<div class="ops-inline-error">No se pudieron cargar las organizaciones.</div>}
+
+  <section class="ops-section">
+    <OpsFilters
+      action="/ops/organizations"
+      q={filters.q}
+      placeholder="Nombre o correo del dueño"
+      active={hasActiveFilters({ ...filters }, { sort: 'recent' })}
+      resultLabel={`${opsNumber(total)} resultados`}
+      exportHref={operator.role === 'admin' ? `/api/ops/export?type=organizations${query ? `&${query}` : ''}` : undefined}
+      fields={[
+        { name: 'plan', label: 'Plan', value: filters.plan, options: [{ value: '', label: 'Todos los planes' }, ...PLAN_IDS.map((p) => ({ value: p, label: PLAN_LABEL[p] || p }))] },
+        { name: 'country', label: 'País', value: filters.country, options: [{ value: '', label: 'Todos los países' }, ...SUPPORTED_COUNTRIES.map((c) => ({ value: c, label: regions.of(c) || c }))] },
+        { name: 'subscription', label: 'Suscripción', value: filters.subscription, options: [{ value: '', label: 'Cualquier suscripción' }, { value: 'active', label: 'Activa' }, { value: 'trialing', label: 'En prueba' }, { value: 'past_due', label: 'Pago atrasado' }, { value: 'canceled', label: 'Cancelada' }, { value: 'none', label: 'Sin suscripción' }] },
+        { name: 'charges', label: 'Cobros en línea', value: filters.charges, options: [{ value: '', label: 'Cobros: todos' }, { value: 'on', label: 'Con cobros en línea' }, { value: 'off', label: 'Sin cobros en línea' }] },
+        { name: 'sort', label: 'Orden', value: filters.sort === 'recent' ? '' : filters.sort, options: [{ value: '', label: 'Más recientes' }, { value: 'oldest', label: 'Más antiguas' }, { value: 'name', label: 'Nombre (A–Z)' }] },
+      ]}
+    />
+    {error && <div class="ops-inline-error">No se pudieron cargar las organizaciones.</div>}
+    <div class="ops-card ops-table-wrap"><table class="ops-table" data-ops-rows>
+      <thead><tr><th scope="col">Organización</th><th scope="col">Plan</th><th scope="col">Equipo</th><th scope="col">Datos</th><th scope="col" class="num">Cierre acumulado</th><th scope="col">Actividad</th></tr></thead>
+      <tbody>
+        {organizations.map((org) => <tr>
+          <td><div class="ops-identity"><span class="ops-avatar square">{org.nombre.charAt(0).toUpperCase()}</span><div><a href={`/ops/organizations/${org.id}`}>{org.nombre}</a><span class="ops-sub">{org.owner_email || 'Sin propietario'} · {org.country_code} · alta {opsDate(org.created_at).split(',')[0]}</span></div></div></td>
+          <td><span class="ops-badge blue">{PLAN_LABEL[org.plan || 'free'] || org.plan}</span><span class="ops-sub">{opsSubscription(org.subscription_status)}</span></td>
+          <td>{opsNumber(org.members)}<span class="ops-sub">miembros</span></td>
+          <td>{opsNumber(org.clients)} clientes<span class="ops-sub">{opsNumber(org.quotes)} cotizaciones · {opsNumber(org.quotes_30d)} en 30 días</span></td>
+          <td class="num">{opsMoney(org.closed_value, org.moneda)}</td>
+          <td><span title={opsDate(org.last_event)}>{opsAgo(org.last_event, 'Sin actividad')}</span><span class="ops-sub">{opsNumber(org.events_7d)} eventos en 7 días</span></td>
+        </tr>)}
+        {organizations.length === 0 && !error && <tr><td colspan="6" class="ops-empty">{filtered ? 'Ninguna organización coincide con estos filtros.' : 'Aún no hay organizaciones.'}</td></tr>}
+      </tbody>
+    </table></div>
+    {!error && <OpsPagination page={page} total={total} pageSize={OPS_PAGE_SIZE} path="/ops/organizations" search={query} />}
+  </section>
 </OpsShell></OpsLayout>

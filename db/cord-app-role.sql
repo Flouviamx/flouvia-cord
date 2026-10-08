@@ -11,6 +11,9 @@ grant select, insert, update, delete on all tables in schema public to cord_app;
 grant usage, select on all sequences in schema public to cord_app;
 alter default privileges in schema public grant select, insert, update, delete on tables to cord_app;
 alter default privileges in schema public grant usage, select on sequences to cord_app;
+-- La bitácora privilegiada de Ops es de solo agregar (además del trigger en
+-- db/schema.sql): el rol de aplicación inserta, nunca reescribe ni borra.
+revoke update, delete, truncate on ops_audit_log from cord_app;
 grant execute on function cord_resolve_org_for_connected_account(text) to cord_app;
 grant execute on function cord_demo_org_id() to cord_app;
 grant execute on function cord_resolve_public_quote(text) to cord_app;

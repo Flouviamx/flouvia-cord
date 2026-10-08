@@ -11,6 +11,7 @@
       <input id="ops-dialog-confirmation" autocomplete="off" />
     </label>
     <div id="ops-dialog-error" class="ops-inline-error" hidden></div>
+    <button id="ops-dialog-reauth" class="ops-button secondary" type="button" hidden>Volver a entrar</button>
     <footer><button class="ops-button secondary" value="cancel">Cancelar</button><button id="ops-dialog-submit" class="ops-button" type="button">Confirmar</button></footer>
   </form>
 </dialog>
@@ -28,6 +29,15 @@
   const errorBox = document.getElementById('ops-dialog-error') as HTMLElement;
   const submit = document.getElementById('ops-dialog-submit') as HTMLButtonElement;
   const toast = document.getElementById('ops-global-toast') as HTMLElement;
+  const reauth = document.getElementById('ops-dialog-reauth') as HTMLButtonElement;
+
+  // Una acción irreversible con una sesión vieja responde 428: se cierra la
+  // sesión y se vuelve al login con regreso a esta misma pantalla.
+  reauth.addEventListener('click', async () => {
+    reauth.disabled = true;
+    await fetch('/api/ops/auth', { method: 'DELETE' }).catch(() => null);
+    window.location.href = `/ops/login?next=${encodeURIComponent(window.location.pathname)}`;
+  });
   let pending: Record<string, string> | null = null;
 
   document.addEventListener('click', (event) => {
@@ -42,6 +52,7 @@
     confirmation.value = '';
     reason.value = '';
     errorBox.hidden = true;
+    reauth.hidden = true;
     submit.classList.toggle('danger', pending.danger === 'true');
     dialog.showModal();
     (pending.confirm ? confirmation : submit).focus();
@@ -64,6 +75,7 @@
         body: JSON.stringify({ action: pending.opsAction, targetId: pending.targetId || undefined, confirmation: confirmation.value || undefined, reason: reason.value || undefined }),
       });
       const data = await response.json().catch(() => ({}));
+      if (response.status === 428) reauth.hidden = false;
       if (!response.ok) throw new Error(data.error || 'No se pudo completar la acción');
       dialog.close();
       toast.textContent = data.affected === undefined ? 'Acción completada' : `Acción completada. ${data.affected} registros afectados.`;

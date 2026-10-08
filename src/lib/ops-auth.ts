@@ -8,6 +8,12 @@
 //  · Tokens crudos solo viven en cookies HttpOnly; PostgreSQL guarda sha256.
 //  · Una sola sesión Ops activa por operador, 30 min de inactividad y 8 h
 //    absolutas. La sesión queda ligada al User-Agent que la creó.
+//  · Las passkeys de Ops viven en `ops_passkeys`, con rpID propio
+//    (`ops.cordhq.app`). Una passkey de la app no abre Ops: se registró con
+//    otro rpID y una sesión normal como única prueba.
+//  · El bloqueo por intentos es propio de Ops. El login de la app no puede
+//    bloquear a un operador, y acertar la contraseña no reinicia nada: solo un
+//    acceso completo (TOTP o passkey) limpia los contadores.
 import { randomBytes } from 'node:crypto';
 import { sql } from './db';
 import { sha256Hex } from './auth';
@@ -25,6 +31,17 @@ const SLIDE_THROTTLE_MS = 5 * 60 * 1000;
 const CHALLENGE_TTL_MS = 5 * 60 * 1000;
 const SESSION_TOKEN_RE = /^[a-f0-9]{64}$/;
 const CHALLENGE_TOKEN_RE = /^[A-Za-z0-9_-]{43}$/;
+const PASSWORD_LOCK_THRESHOLD = 10;
+const PASSWORD_LOCK_MINUTES = 15;
+const TOTP_LOCK_THRESHOLD = 5;
+const TOTP_LOCK_MINUTES = 60;
+/** Antigüedad máxima de la autenticación fuerte para acciones irreversibles. */
+export const OPS_FRESH_AUTH_MS = 10 * 60 * 1000;
+
+/** rpID y origen exclusivos de Ops: una credencial de la app no verifica aquí. */
+export const OPS_RP_ID = import.meta.env.PROD ? 'ops.cordhq.app' : 'localhost';
+export const OPS_ORIGIN = import.meta.env.PROD ? 'https://ops.cordhq.app' : 'http://localhost:4321';
+export type OpsPasskeyPurpose = 'login' | 'register';
 
 export const OPS_SESSION_COOKIE = import.meta.env.PROD
     ? '__Host-cord_ops_session'
@@ -36,6 +53,12 @@ export const OPS_PASSKEY_CHALLENGE_COOKIE = import.meta.env.PROD
     ? '__Host-cord_ops_passkey_challenge'
     : 'cord_ops_passkey_challenge';
 
+export const OPS_PASSKEY_REGISTER_COOKIE = import.meta.env.PROD
+    ? '__Host-cord_ops_passkey_register'
+    : 'cord_ops_passkey_register';
+/** Tope de passkeys de Ops por operador. */
+export const OPS_PASSKEY_LIMIT = 10;
+
 export type OpsAuthMethod = 'passkey' | 'password_totp' | 'local_session_password';
 
 export interface OpsOperator {
@@ -44,6 +67,10 @@ export interface OpsOperator {
     role: 'admin' | 'read_only';
     authMethod: OpsAuthMethod;
     sessionId: string;
+    /** Momento de la autenticación fuerte que creó la sesión. */
+    authenticatedAt: Date;
+    /** Passkey de Ops con la que se abrió la sesión, si fue con passkey. */
+    credentialId: string | null;
 }
 
 export interface OpsAuditEvent {
@@ -84,6 +111,15 @@ export function opsChallengeCookieOptions() {
         sameSite: 'strict' as const,
         maxAge: Math.floor(CHALLENGE_TTL_MS / 1000),
     };
+}
+
+/**
+ * Opciones para BORRAR una cookie Ops. Un `__Host-` exige `secure` y `path=/`
+ * también al borrarse; sin ellas el navegador ignora el Set-Cookie y la cookie
+ * sobrevive al logout.
+ */
+export function opsCookieDeleteOptions() {
+    return { path: '/', secure: import.meta.env.PROD, httpOnly: true, sameSite: 'strict' as const };
 }
 
 function validChallengeToken(token: string | undefined | null): token is string {
@@ -142,31 +178,129 @@ export async function consumeOpsChallenge(token: string | undefined | null): Pro
 export async function createOpsPasskeyChallenge(
     challenge: string,
     operatorId: string | null,
+    purpose: OpsPasskeyPurpose = 'login',
 ): Promise<void> {
     if (!validChallengeToken(challenge)) throw new Error('Invalid Ops passkey challenge');
     const expiresAt = new Date(Date.now() + CHALLENGE_TTL_MS);
     await sql`delete from ops_passkey_challenges where expires_at < now()`;
     if (operatorId) {
-        await sql`delete from ops_passkey_challenges where operator_id = ${operatorId}`;
+        await sql`delete from ops_passkey_challenges where operator_id = ${operatorId} and purpose = ${purpose}`;
     }
     await sql`
-        insert into ops_passkey_challenges (id, operator_id, expires_at)
-        values (${sha256Hex(challenge)}, ${operatorId}, ${expiresAt})
+        insert into ops_passkey_challenges (id, operator_id, expires_at, purpose)
+        values (${sha256Hex(challenge)}, ${operatorId}, ${expiresAt}, ${purpose})
     `;
 }
 
-/** Consume el reto WebAuthn de forma atomica y devuelve la identidad a la que se ligo. */
+/**
+ * Consume el reto WebAuthn de forma atomica y devuelve la identidad a la que se
+ * ligo. Un reto emitido para login no sirve para registrar una llave, ni al revés.
+ */
 export async function consumeOpsPasskeyChallenge(
     challenge: string | undefined | null,
+    purpose: OpsPasskeyPurpose = 'login',
 ): Promise<string | null> {
     if (!validChallengeToken(challenge)) return null;
     await sql`delete from ops_passkey_challenges where expires_at < now()`;
     const rows = await sql`
         delete from ops_passkey_challenges
-        where id = ${sha256Hex(challenge)} and expires_at > now()
+        where id = ${sha256Hex(challenge)} and expires_at > now() and purpose = ${purpose}
         returning operator_id
     `;
     return rows.length && rows[0].operator_id ? rows[0].operator_id as string : null;
+}
+
+// ── Bloqueo propio de Ops ────────────────────────────────────────────────
+
+/** true si la ruta de contraseña de Ops está bloqueada para este operador. */
+export async function opsPasswordLocked(operatorId: string): Promise<boolean> {
+    const rows = await sql`
+        select password_locked_until > now() as locked
+        from ops_operators where user_id = ${operatorId}
+    `;
+    return Boolean(rows[0]?.locked);
+}
+
+/** true si el segundo factor de Ops está bloqueado (alguien acertó la contraseña y falló el TOTP). */
+export async function opsTotpLocked(operatorId: string): Promise<boolean> {
+    const rows = await sql`
+        select totp_locked_until > now() as locked
+        from ops_operators where user_id = ${operatorId}
+    `;
+    return Boolean(rows[0]?.locked);
+}
+
+export async function recordOpsPasswordFailure(operatorId: string): Promise<void> {
+    await sql`
+        update ops_operators
+        set failed_password_count = case when password_locked_until <= now() then 1 else failed_password_count + 1 end,
+            password_locked_until = case
+                when (case when password_locked_until <= now() then 1 else failed_password_count + 1 end) >= ${PASSWORD_LOCK_THRESHOLD}
+                then now() + make_interval(mins => ${PASSWORD_LOCK_MINUTES})
+                when password_locked_until <= now() then null
+                else password_locked_until
+            end
+        where user_id = ${operatorId}
+    `;
+}
+
+/**
+ * Registra un TOTP fallido. Devuelve true cuando este fallo activó el bloqueo:
+ * quien llega aquí ya demostró la contraseña, así que el operador debe enterarse.
+ */
+export async function recordOpsTotpFailure(operatorId: string): Promise<boolean> {
+    const rows = await sql`
+        update ops_operators
+        set failed_totp_count = case when totp_locked_until <= now() then 1 else failed_totp_count + 1 end,
+            totp_locked_until = case
+                when (case when totp_locked_until <= now() then 1 else failed_totp_count + 1 end) >= ${TOTP_LOCK_THRESHOLD}
+                then now() + make_interval(mins => ${TOTP_LOCK_MINUTES})
+                when totp_locked_until <= now() then null
+                else totp_locked_until
+            end
+        where user_id = ${operatorId}
+        returning failed_totp_count
+    `;
+    return Number(rows[0]?.failed_totp_count) === TOTP_LOCK_THRESHOLD;
+}
+
+/** Solo un acceso completo (TOTP o passkey verificados) limpia los contadores. */
+export async function resetOpsLockout(operatorId: string): Promise<void> {
+    await sql`
+        update ops_operators
+        set failed_password_count = 0, password_locked_until = null,
+            failed_totp_count = 0, totp_locked_until = null
+        where user_id = ${operatorId}
+    `;
+}
+
+/**
+ * Acepta el paso TOTP una sola vez. El UPDATE condicional es atómico: dos
+ * requests con el mismo código compiten por la misma fila y solo una gana.
+ */
+export async function claimOpsTotpStep(operatorId: string, step: number): Promise<boolean> {
+    const rows = await sql`
+        update ops_operators set totp_last_step = ${step}
+        where user_id = ${operatorId} and coalesce(totp_last_step, -1) < ${step}
+        returning user_id
+    `;
+    return rows.length > 0;
+}
+
+/**
+ * Las acciones irreversibles exigen una autenticación fuerte reciente. La
+ * sesión Ops dura hasta 8 h; una cookie robada a media tarde no debe poder
+ * borrar una organización. Volver a entrar renueva la prueba.
+ */
+export function requireFreshOpsAuth(operator: OpsOperator, maxAgeMs = OPS_FRESH_AUTH_MS): Response | null {
+    if (Date.now() - operator.authenticatedAt.getTime() <= maxAgeMs) return null;
+    return new Response(JSON.stringify({
+        error: 'Por seguridad, esta acción exige haber iniciado sesión hace menos de 10 minutos. Vuelve a entrar e inténtalo de nuevo.',
+        code: 'fresh_auth_required',
+    }), {
+        status: 428,
+        headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
+    });
 }
 
 export async function createOpsSession(
@@ -215,8 +349,8 @@ export async function validateOpsSession(
                    u.email as current_email, u.email_verified_at, u.password_changed_at,
                    u.suspended_at, u.totp_enabled, u.totp_confirmed_at,
                    exists(
-                       select 1 from passkeys p
-                       where p.id = s.credential_id and p.user_id = s.operator_id
+                       select 1 from ops_passkeys p
+                       where p.id = s.credential_id and p.operator_id = s.operator_id
                    ) as credential_active
             from ops_sessions s
             join ops_operators o on o.user_id = s.operator_id
@@ -289,6 +423,8 @@ export async function validateOpsSession(
             role: row.role as OpsOperator['role'],
             authMethod: row.auth_method as OpsAuthMethod,
             sessionId: tokenHash,
+            authenticatedAt: createdAt,
+            credentialId: row.credential_id ?? null,
         };
     } catch (error) {
         // Fail closed: caída o drift de schema jamás convierte Ops en público.

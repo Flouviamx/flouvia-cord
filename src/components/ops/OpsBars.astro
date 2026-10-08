@@ -1,31 +1,139 @@
 ---
+// Barras diarias en SVG propio (la CSP de Ops no admite librerías externas).
+//
+// Regla 16: ningún dato depende de hover. El detalle de cada día se abre con
+// el puntero, con un toque (y se queda hasta tocar fuera) o con el teclado
+// (flechas, Inicio, Fin, Esc), y se anuncia en una región viva.
 import { opsNumber } from '../../lib/ops-format';
 
+interface Point { day: string; value: number }
 interface Props {
   title: string;
   hint?: string;
-  series: { day: string; value: number }[];
+  series: Point[];
+  /** Mismo número de días, periodo inmediatamente anterior. Se dibuja punteado. */
+  previous?: Point[];
+  /** Total mostrado en la cabecera cuando no es la suma (p. ej. personas únicas). */
   total?: number;
+  /** Total del periodo anterior, para la variación. */
+  previousTotal?: number;
 }
 
-const { title, hint, series, total } = Astro.props;
-const max = Math.max(1, ...series.map((point) => point.value));
-const sum = total ?? series.reduce((acc, point) => acc + point.value, 0);
+const { title, hint, series, previous, total, previousTotal } = Astro.props;
+const n = Math.max(1, series.length);
+const prev = previous && previous.length === series.length ? previous : null;
+const max = Math.max(1, ...series.map((p) => p.value), ...(prev ? prev.map((p) => p.value) : []));
+const sum = total ?? series.reduce((acc, p) => acc + p.value, 0);
+const prevSum = previousTotal ?? (prev ? prev.reduce((acc, p) => acc + p.value, 0) : null);
+const delta = prevSum === null ? null : prevSum === 0 ? (sum > 0 ? null : 0) : Math.round(((sum - prevSum) / prevSum) * 100);
+
 const short = (day: string) => new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(new Date(`${day}T00:00:00Z`));
+const H = 100;
+const W = n * 10;
+const height = (v: number) => (v <= 0 ? 1.5 : Math.max(3, (v / max) * (H - 4)));
+const prevPath = prev
+  ? prev.map((p, i) => `${i === 0 ? 'M' : 'L'}${i * 10 + 1} ${H - height(p.value)} H${i * 10 + 9}`).join(' ')
+  : '';
+const points = series.map((p, i) => ({
+  l: short(p.day),
+  v: opsNumber(p.value),
+  p: prev ? opsNumber(prev[i].value) : null,
+}));
+const id = `plot-${Math.random().toString(36).slice(2, 9)}`;
+const label = `${title}: ${opsNumber(sum)} en ${series.length} días${delta !== null ? `, ${delta >= 0 ? '+' : ''}${delta}% contra el periodo anterior` : ''}. Usa las flechas para recorrer los días.`;
 ---
 <article class="ops-card ops-chart">
   <div class="ops-chart-head">
     <div><h3>{title}</h3>{hint && <p>{hint}</p>}</div>
-    <strong>{opsNumber(sum)}</strong>
+    <div class="ops-chart-total">
+      <strong>{opsNumber(sum)}</strong>
+      {delta !== null && <small class:list={['ops-delta', delta < 0 && 'down', delta === 0 && 'flat']}>{delta > 0 ? '+' : ''}{delta}% vs. anterior</small>}
+    </div>
   </div>
-  <div class="ops-bars" role="img" aria-label={`${title}: ${opsNumber(sum)} en ${series.length} días`}>
-    {series.map((point, index) => (
-      <span
-        class:list={[point.value === 0 && 'zero', index === series.length - 1 && 'today']}
-        style={`height:${point.value === 0 ? 2 : Math.max(4, Math.round((point.value / max) * 100))}%;animation-delay:${index * 12}ms`}
-        title={`${short(point.day)}: ${opsNumber(point.value)}`}
-      ></span>
-    ))}
+  <div class="ops-plot" tabindex="0" role="img" aria-label={label} aria-describedby={`${id}-live`} data-ops-plot data-points={JSON.stringify(points)}>
+    <span class="ops-plot-max" aria-hidden="true">{opsNumber(max)}</span>
+    <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" aria-hidden="true">
+      <line class="grid" x1="0" x2={W} y1="0.5" y2="0.5" />
+      <line class="grid" x1="0" x2={W} y1={H / 2} y2={H / 2} />
+      <line class="grid" x1="0" x2={W} y1={H - 0.5} y2={H - 0.5} />
+      {series.map((p, i) => {
+        const h = height(p.value);
+        return <rect class:list={['bar', p.value === 0 && 'zero', i === series.length - 1 && 'last']} data-i={i} x={i * 10 + 1.5} y={H - h} width="7" height={h} rx="1.2" style={`animation-delay:${i * 10}ms`} />;
+      })}
+      {prev && <path class="prev" d={prevPath} />}
+    </svg>
+    <div class="ops-tip" hidden></div>
   </div>
-  {series.length > 0 && <div class="ops-bars-axis"><span>{short(series[0].day)}</span><span>Hoy</span></div>}
+  {series.length > 0 && <div class="ops-plot-axis" aria-hidden="true"><span>{short(series[0].day)}</span>{series.length > 2 && <span>{short(series[Math.floor(series.length / 2)].day)}</span>}<span>Hoy</span></div>}
+  {prev && <div class="ops-plot-legend" aria-hidden="true"><span><i></i>Periodo actual</span><span><i class="prev"></i>Periodo anterior</span></div>}
+  <span class="ops-sr-only" id={`${id}-live`} aria-live="polite" data-ops-plot-live></span>
 </article>
+
+<script>
+  type PlotPoint = { l: string; v: string; p: string | null };
+
+  function initPlot(plot: HTMLElement) {
+    const points: PlotPoint[] = JSON.parse(plot.dataset.points || '[]');
+    if (!points.length) return;
+    const tip = plot.querySelector<HTMLElement>('.ops-tip')!;
+    const live = plot.parentElement?.querySelector<HTMLElement>('[data-ops-plot-live]');
+    const bars = Array.from(plot.querySelectorAll<SVGRectElement>('rect.bar'));
+    let active = -1;
+    let pinned = false;
+
+    function show(index: number, announce = false) {
+      active = Math.max(0, Math.min(points.length - 1, index));
+      const point = points[active];
+      bars.forEach((bar, i) => bar.classList.toggle('active', i === active));
+      tip.textContent = '';
+      const value = document.createElement('b');
+      value.textContent = point.v;
+      const day = document.createElement('span');
+      day.textContent = point.p !== null ? `${point.l} · antes ${point.p}` : point.l;
+      tip.append(value, day);
+      const pct = ((active + 0.5) / points.length) * 100;
+      tip.style.left = `${pct}%`;
+      tip.style.transform = pct < 18 ? 'translate(-12%, calc(-100% - 8px))' : pct > 82 ? 'translate(-88%, calc(-100% - 8px))' : '';
+      tip.hidden = false;
+      if (announce && live) live.textContent = `${point.l}: ${point.v}${point.p !== null ? `, periodo anterior ${point.p}` : ''}`;
+    }
+    function hide() {
+      active = -1;
+      pinned = false;
+      tip.hidden = true;
+      bars.forEach((bar) => bar.classList.remove('active'));
+    }
+    const indexAt = (clientX: number) => {
+      const rect = plot.getBoundingClientRect();
+      return Math.floor(((clientX - rect.left) / rect.width) * points.length);
+    };
+
+    plot.addEventListener('pointermove', (event) => {
+      if (event.pointerType === 'mouse' && !pinned) show(indexAt(event.clientX));
+      // En 90 días cada barra mide pocos píxeles: con el dedo se arrastra.
+      else if (event.pointerType !== 'mouse' && pinned) show(indexAt(event.clientX));
+    });
+    plot.addEventListener('pointerleave', (event) => {
+      if (event.pointerType === 'mouse' && !pinned) hide();
+    });
+    // Toque: el detalle se queda abierto; otro toque fuera lo cierra.
+    plot.addEventListener('pointerdown', (event) => {
+      if (event.pointerType === 'mouse') return;
+      pinned = true;
+      show(indexAt(event.clientX), true);
+    });
+    document.addEventListener('pointerdown', (event) => {
+      if (pinned && !plot.contains(event.target as Node)) hide();
+    });
+    plot.addEventListener('keydown', (event) => {
+      const keys: Record<string, number> = { ArrowLeft: -1, ArrowRight: 1 };
+      if (event.key in keys) { event.preventDefault(); pinned = true; show(active < 0 ? points.length - 1 : active + keys[event.key], true); }
+      else if (event.key === 'Home') { event.preventDefault(); pinned = true; show(0, true); }
+      else if (event.key === 'End') { event.preventDefault(); pinned = true; show(points.length - 1, true); }
+      else if (event.key === 'Escape') hide();
+    });
+    plot.addEventListener('blur', () => { if (pinned) hide(); });
+  }
+
+  document.querySelectorAll<HTMLElement>('[data-ops-plot]').forEach(initPlot);
+</script>

@@ -1,13 +1,15 @@
 ---
 import OpsLayout from '../../../layouts/OpsLayout.astro';
 import OpsShell from '../../../components/ops/OpsShell.astro';
-import { sql } from '../../../lib/db';
+import { sql, withOpsTx } from '../../../lib/db';
 import { databaseSearchColumns, decodeDatabaseCursor, encodeDatabaseCursor, formatDatabaseValue } from '../../../lib/ops-database';
-import { logOpsAudit } from '../../../lib/ops-auth';
+import { opsAuditQuery } from '../../../lib/ops-auth';
 import { trustedIp } from '../../../lib/ip';
 
 const operator = Astro.locals.opsOperator;
 if (!operator) return Astro.redirect('/ops/login');
+// Leer filas crudas de cualquier tabla es el privilegio más amplio de Ops.
+if (operator.role !== 'admin') return Astro.redirect('/ops/database');
 const table = String(Astro.params.table || '');
 const limit = 25;
 const query = (Astro.url.searchParams.get('q') || '').trim().slice(0, 120);
@@ -49,7 +51,12 @@ try {
   params.push(limit + 1);
   const where = clauses.length ? ` where ${clauses.join(' and ')}` : '';
   const ordering = tieColumn ? `"${orderColumn}" desc nulls last,"${tieColumn}" desc` : `"${orderColumn}" desc nulls last`;
-  const fetched = await sql.query(`select * from "${table}" t${where} order by ${ordering} limit $${params.length}`, params);
+  // La lectura y su auditoría viajan juntas en el carril de Ops: si la
+  // bitácora no se puede escribir, la tabla no se muestra.
+  const [fetched] = await withOpsTx(
+    sql.query(`select * from "${table}" t${where} order by ${ordering} limit $${params.length}`, params),
+    opsAuditQuery({ actorUserId: operator.userId, actorEmail: operator.email, action: 'ops.database_table_viewed', targetType: 'table', targetId: table, metadata: { cursor: Boolean(cursor), filtered: !!query }, ip: trustedIp(Astro.request), userAgent: Astro.request.headers.get('user-agent') }),
+  );
   hasMore = fetched.length > limit;
   rows = fetched.slice(0, limit);
   if (hasMore && rows.length) {
@@ -58,7 +65,6 @@ try {
   }
   const estimates = await sql.query(`select greatest(c.reltuples,0)::bigint estimated_total from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relname=$1`, [table]);
   estimatedTotal = Number(estimates[0]?.estimated_total || 0);
-  logOpsAudit({ actorUserId: operator.userId, actorEmail: operator.email, action: 'ops.database_table_viewed', targetType: 'table', targetId: table, metadata: { cursor: Boolean(cursor), filtered: !!query }, ip: trustedIp(Astro.request), userAgent: Astro.request.headers.get('user-agent') }).catch(() => null);
 } catch (cause) { error = 'No se pudo consultar esta tabla.'; console.error('[ops/database/table]', cause); }
 const nextUrl = `/ops/database/${table}?cursor=${encodeURIComponent(nextCursor)}${query ? `&q=${encodeURIComponent(query)}` : ''}`;
 const startUrl = `/ops/database/${table}${query ? `?q=${encodeURIComponent(query)}` : ''}`;
@@ -66,13 +72,13 @@ import { iconInner } from '../../../lib/icons';
 ---
 <OpsLayout title={`${table} | Cord Ops`}>
   <OpsShell active="database" eyebrow="Base de datos" title={table} subtitle={`${query ? 'Resultados filtrados' : `Aproximadamente ${estimatedTotal.toLocaleString('es-MX')} registros`} · ${columns.length} columnas`}>
-    <form slot="actions" class="ops-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('search')}></svg><input name="q" value={query} placeholder="Buscar por identificador" /></form>
+    <form slot="actions" class="ops-search" role="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('search')}></svg><input aria-label="Buscar por identificador" name="q" value={query} placeholder="Buscar por identificador" /></form>
     <a class="ops-back" href="/ops/database">Catálogo</a>
     {error && <div class="ops-inline-error">{error}</div>}
     {!error && <div class="ops-card ops-table-wrap">
       <table class="ops-table"><thead><tr>{columns.map((column) => <th title={column.data_type}>{column.column_name}</th>)}</tr></thead>
         <tbody>{rows.map((row) => <tr>{columns.map((column) => {
-          const value = formatDatabaseValue(table, column.column_name, row[column.column_name]);
+          const value = formatDatabaseValue(table, column.column_name, row[column.column_name], column.data_type);
           return <td><span class:list={['ops-data-value','ops-code',value.redacted && 'redacted']} title={value.redacted ? 'Campo sensible redactado' : value.text}>{value.text}</span></td>;
         })}</tr>)}{rows.length === 0 && <tr><td colspan={columns.length} class="ops-empty">No hay registros para mostrar.</td></tr>}</tbody>
       </table>

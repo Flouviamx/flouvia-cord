@@ -2,49 +2,67 @@
 import OpsLayout from '../../../layouts/OpsLayout.astro';
 import OpsShell from '../../../components/ops/OpsShell.astro';
 import OpsPagination from '../../../components/ops/OpsPagination.astro';
-import { opsAgo, opsDate, opsNumber } from '../../../lib/ops-format';
+import OpsFilters from '../../../components/ops/OpsFilters.astro';
+import { opsAgo, opsDate, opsNumber, opsPct } from '../../../lib/ops-format';
 import { getOpsUsersPage } from '../../../lib/ops-list-queries';
-import { normalizeOpsSearch, OPS_PAGE_SIZE, parseOpsPage } from '../../../lib/ops-pagination';
+import { OPS_PAGE_SIZE, parseOpsPage } from '../../../lib/ops-pagination';
+import { filtersQuery, hasActiveFilters, parseUserFilters } from '../../../lib/ops-filters';
 
-if (!Astro.locals.opsOperator) return Astro.redirect('/ops/login');
-const query = normalizeOpsSearch(Astro.url.searchParams.get('q'));
+const operator = Astro.locals.opsOperator;
+if (!operator) return Astro.redirect('/ops/login');
+const filters = parseUserFilters(Astro.url.searchParams);
 const page = parseOpsPage(Astro.url.searchParams.get('page'));
+const query = filtersQuery({ ...filters }, { sort: 'recent' });
 let users: any[] = [];
-let total = 0;
+let stats: Record<string, number> = {};
 let error = false;
 try {
-  users = await getOpsUsersPage(query, page);
-  total = Number(users[0]?.total_count || 0);
-  if (page > 1 && users.length === 0) return Astro.redirect(`/ops/users${query ? `?q=${encodeURIComponent(query)}` : ''}`);
+  ({ rows: users, stats } = await getOpsUsersPage(filters, page));
+  if (page > 1 && users.length === 0) return Astro.redirect(`/ops/users${query ? `?${query}` : ''}`);
 } catch (cause) { error = true; console.error('[ops/users]', cause); }
-import { iconInner } from '../../../lib/icons';
+const total = Number(stats.total || 0);
+const filtered = hasActiveFilters({ ...filters }, { sort: 'recent' }) || !!filters.q;
 ---
 <OpsLayout title="Usuarios | Cord Ops">
   <OpsShell active="users" title="Usuarios" subtitle="Identidades, acceso y ciclo de vida de cada cuenta.">
-    <form slot="actions" class="ops-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('search')}></svg><input name="q" value={query} placeholder="Buscar usuario" /></form>
-    <section class="ops-card ops-metrics cols-3">
-      <div class="ops-metric"><span>Cuentas</span><strong>{opsNumber(total)}</strong><small>{query ? 'Coinciden con la búsqueda' : 'Registradas en Cord'}</small></div>
-      <div class="ops-metric"><span>En esta página</span><strong>{opsNumber(users.filter((u) => u.passkeys > 0 || u.totp_enabled).length)} con MFA</strong><small>{opsNumber(users.filter((u) => !u.email_verified_at).length)} sin verificar el correo</small></div>
-      <div class="ops-metric"><span>Activas hoy</span><strong>{opsNumber(users.filter((u) => u.last_seen && Date.now() - new Date(u.last_seen).getTime() < 86_400_000).length)}</strong><small>De las {opsNumber(users.length)} mostradas</small></div>
+    <section class="ops-card ops-metrics">
+      <div class="ops-metric"><span>Cuentas</span><strong>{opsNumber(total)}</strong><small>{filtered ? 'Coinciden con los filtros' : 'Registradas en Cord'}</small></div>
+      <div class="ops-metric"><span>Con MFA</span><strong>{opsNumber(stats.with_mfa)}</strong><small>{opsPct(stats.with_mfa, total)}% tienen passkey o TOTP</small></div>
+      <div class="ops-metric"><span>Sin verificar</span><strong>{opsNumber(stats.unverified)}</strong><small>Correo pendiente de confirmar</small></div>
+      <div class="ops-metric"><span>Activas en 24 h</span><strong>{opsNumber(stats.active_24h)}</strong><small>Usaron una sesión hoy</small></div>
     </section>
     <section class="ops-section">
+      <OpsFilters
+        action="/ops/users"
+        q={filters.q}
+        placeholder="Correo o nombre"
+        active={hasActiveFilters({ ...filters }, { sort: 'recent' })}
+        resultLabel={`${opsNumber(total)} resultados`}
+        exportHref={operator.role === 'admin' ? `/api/ops/export?type=users${query ? `&${query}` : ''}` : undefined}
+        fields={[
+          { name: 'state', label: 'Estado', value: filters.state, options: [{ value: '', label: 'Cualquier estado' }, { value: 'active', label: 'Activas' }, { value: 'suspended', label: 'Suspendidas' }, { value: 'locked', label: 'Bloqueadas' }, { value: 'unverified', label: 'Correo sin verificar' }] },
+          { name: 'mfa', label: 'Segundo factor', value: filters.mfa, options: [{ value: '', label: 'MFA: todas' }, { value: 'with', label: 'Con MFA' }, { value: 'without', label: 'Sin MFA' }] },
+          { name: 'sort', label: 'Orden', value: filters.sort === 'recent' ? '' : filters.sort, options: [{ value: '', label: 'Más recientes' }, { value: 'oldest', label: 'Más antiguas' }, { value: 'email', label: 'Correo (A–Z)' }] },
+        ]}
+      />
+      {error && <div class="ops-inline-error">No se pudieron cargar los usuarios.</div>}
       <div class="ops-card ops-table-wrap">
-        <table class="ops-table"><thead><tr><th>Usuario</th><th>Estado</th><th>Seguridad</th><th>Organizaciones</th><th>Última actividad</th><th></th></tr></thead>
+        <table class="ops-table" data-ops-rows><thead><tr><th scope="col">Usuario</th><th scope="col">Estado</th><th scope="col">Seguridad</th><th scope="col">Organizaciones</th><th scope="col">Última actividad</th><th scope="col"><span class="ops-sr-only">Acciones</span></th></tr></thead>
           <tbody>{users.map((user) => {
-            const name = [user.first_name,user.last_name].filter(Boolean).join(' ') || 'Sin nombre';
+            const name = [user.first_name, user.last_name].filter(Boolean).join(' ') || 'Sin nombre';
             const locked = user.locked_until && new Date(user.locked_until) > new Date();
             return <tr>
               <td><div class="ops-identity"><span class="ops-avatar">{name === 'Sin nombre' ? user.email.charAt(0).toUpperCase() : name.charAt(0).toUpperCase()}</span><div><a href={`/ops/users/${user.id}`}>{name}</a><span class="ops-sub">{user.email}</span></div></div></td>
               <td>{user.suspended_at ? <span class="ops-badge red">Suspendida</span> : locked ? <span class="ops-badge amber">Bloqueada</span> : <span class="ops-badge green">Activa</span>}{user.is_operator && <span class="ops-sub">Operador Ops</span>}</td>
-              <td><span class:list={['ops-badge',user.passkeys>0||user.totp_enabled?'blue':'amber']}>{user.passkeys>0?'Passkey':user.totp_enabled?'TOTP':'Sin MFA'}</span><span class="ops-sub">{user.email_verified_at?'Correo verificado':'Correo pendiente'}</span></td>
-              <td>{opsNumber(user.organizations)}</td><td><span title={opsDate(user.last_seen)}>{opsAgo(user.last_seen)}</span><span class="ops-sub">{opsNumber(user.active_sessions)} sesiones activas</span></td>
+              <td><span class:list={['ops-badge', user.passkeys > 0 || user.totp_enabled ? 'blue' : 'amber']}>{user.passkeys > 0 ? 'Passkey' : user.totp_enabled ? 'TOTP' : 'Sin MFA'}</span><span class="ops-sub">{user.email_verified_at ? 'Correo verificado' : 'Correo pendiente'}</span></td>
+              <td>{opsNumber(user.organizations)}</td>
+              <td><span title={opsDate(user.last_seen)}>{opsAgo(user.last_seen)}</span><span class="ops-sub">{opsNumber(user.active_sessions)} sesiones activas</span></td>
               <td><a class="ops-row-link" href={`/ops/users/${user.id}`}>Ver ficha</a></td>
             </tr>;
-          })}{users.length===0&&<tr><td colspan="6" class="ops-empty">No se encontraron usuarios.</td></tr>}</tbody>
+          })}{users.length === 0 && !error && <tr><td colspan="6" class="ops-empty">{filtered ? 'Ninguna cuenta coincide con estos filtros.' : 'Aún no hay usuarios.'}</td></tr>}</tbody>
         </table>
       </div>
-      {!error && <OpsPagination page={page} total={total} pageSize={OPS_PAGE_SIZE} path="/ops/users" search={query ? `q=${encodeURIComponent(query)}` : ''} />}
+      {!error && <OpsPagination page={page} total={total} pageSize={OPS_PAGE_SIZE} path="/ops/users" search={query} />}
     </section>
-    {error && <div class="ops-inline-error">No se pudieron cargar los usuarios.</div>}
   </OpsShell>
 </OpsLayout>

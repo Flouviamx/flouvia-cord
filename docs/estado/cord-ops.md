@@ -10,14 +10,27 @@ debe coincidir tanto con la allowlist compilada como con una fila activa en
 
 ## Identidad y seguridad
 
-- Producción exige passkey o contraseña más TOTP. Localhost exige una sesión Cord
-  vigente del mismo usuario y contraseña. Una sesión normal nunca autoriza Ops.
+- Producción exige passkey de Ops o contraseña más TOTP. Localhost exige una sesión
+  Cord vigente del mismo usuario y contraseña. Una sesión normal nunca autoriza Ops.
+- Las passkeys de Ops viven en `ops_passkeys`, con rpID `ops.cordhq.app`. Las de la
+  app (`passkeys`, rpID `cordhq.app`) no abren Ops. Una passkey de Ops se registra
+  solo desde `/ops/security`, con una sesión Ops de menos de 10 minutos, y cada
+  alta avisa por correo.
+- El bloqueo por intentos es propio de Ops (`ops_operators`), separado del login de
+  la app: contraseña (10 fallos → 15 min, siempre 401 genérico) y TOTP (5 fallos →
+  1 h y correo de alerta). Acertar la contraseña no reinicia nada; solo un acceso
+  completo limpia los contadores. Cada paso TOTP se acepta una sola vez.
+- Eliminar usuarios u organizaciones y gestionar passkeys exige una autenticación
+  fuerte de menos de 10 minutos (`requireFreshOpsAuth`); si no, la API responde
+  428 y la interfaz ofrece volver a entrar.
 - Usa cookie y tablas de sesión separadas, token SHA-256, una sesión por operador,
   30 minutos de inactividad, máximo absoluto de 8 horas, enlace al User-Agent,
   CSRF de origen exacto, CSP propia, `no-store`, `noindex`, cero analytics y
   auditoría privilegiada.
 - Cambiar la contraseña, suspender la cuenta, desactivar TOTP o eliminar la passkey
-  exacta que creó la sesión revoca las sesiones afectadas.
+  de Ops exacta que creó la sesión revoca las sesiones afectadas.
+- `ops_audit_log` es de solo agregar: un trigger bloquea UPDATE, DELETE y TRUNCATE
+  (salvo el `set null` del operador) y `cord_app` no tiene esos permisos.
 - Login y API Ops fallan cerrados si no existe un rate limit durable. El orden es
   Upstash, si está configurado; después `rate_limit_counters` en Neon; finalmente
   cerrado. No vuelvas a convertir un solo proveedor en requisito duro de una
@@ -36,7 +49,20 @@ Rutas principales:
 Incluyen fichas de usuario, organización y tabla. Las acciones reales permiten
 suspender, restaurar o eliminar usuarios no protegidos; revocar sesiones o API
 keys; desactivar webhooks; cerrar sesiones de equipos; y eliminar organizaciones
-no protegidas.
+no protegidas. Solo el rol `admin` ve y ejecuta acciones; `read_only` no ve los
+botones y la API le responde 403.
+
+- Toda acción sobre una organización exige escribir su nombre.
+- Suspender revoca además los permisos OAuth de la persona (con su llave de acceso)
+  y las llaves que acuñó `cord login`. Las llaves de API de la organización no se
+  tocan: son del negocio.
+- Eliminar una organización cancela primero su suscripción (`releaseOrgBilling()`,
+  compartido con el borrado desde la app); si no se puede cancelar, no se borra
+  nada. Una cuenta Connect viva queda anotada en la bitácora para revisión manual.
+
+Las políticas del carril `ops` son por comando: SELECT donde Ops lee y UPDATE solo
+donde revoca (`api_keys`, `webhooks`, `oauth_grants`). Ops no puede insertar filas
+dentro de una organización.
 
 `/ops/status` muestra las sondas de disponibilidad y permite redactar en
 español e inglés un incidente público real. El formulario acepta el estado
@@ -85,8 +111,14 @@ exige rol `admin`, no permite borrarlo desde la interfaz y escribe
 Toda mutación sensible exige confirmación y escribe `ops_audit_log` en la misma
 transacción.
 
-El explorador de base redacta hashes, contraseñas, TOTP, tokens, llaves,
-certificados, CLABE y cuerpos sensibles. Esos campos tampoco pueden buscarse.
+El explorador de base es solo para `admin`, lee en `withOpsTx` y audita cada vista
+en la misma transacción. Redacta por nombre (hashes, `*_enc`, contraseñas, TOTP,
+tokens, llaves, certificados, CLABE, URLs de webhook, códigos OAuth y de CLI) y por
+tipo: todo `jsonb`/`bytea` se oculta salvo una lista corta de configuración. Esos
+campos tampoco pueden buscarse. `test/ops-database.test.ts` lee las columnas
+reales del schema para que una columna nueva no nazca visible.
+
+El contrato completo lo verifica `npm run security:ops`.
 
 ## Consumo y cuotas
 
@@ -107,8 +139,21 @@ planes con excedente cortan en un techo de seguridad de diez veces lo incluido.
 
 ## UI y escala
 
-La interfaz es Apple/Cord clara, con CSS vanilla y microinteracciones breves. Toda
+La interfaz es Apple/Cord, con CSS vanilla y microinteracciones breves. Toda
 animación respeta `prefers-reduced-motion`; los avatares usan centrado geométrico.
+
+- Todo color sale de un token `--ops-*` en `src/styles/ops.css`. Hay modo oscuro:
+  sigue al sistema o a la cookie `cord_ops_theme`, que el layout lee en servidor
+  (la CSP de Ops no admite un script inline en `<head>`). Un hex suelto en un
+  componente rompe el modo oscuro. `--ops-ghost` no es para texto: no pasa AA.
+- La barra superior muestra migas, el tiempo restante del tope de 8 h y el
+  selector de tema. Bajo 880 px la navegación es un cajón táctil (regla 16).
+- Los iconos salen del registro (`iconInner`). Ops no carga imágenes de terceros:
+  las integraciones usan monogramas (`opsProviderMark`).
+- Las gráficas son SVG propio (`OpsBars`, `OpsSpark`): comparan contra el periodo
+  anterior, y el detalle de cada día se abre con puntero, toque o teclado. El
+  periodo viaja en `?range=7d|30d|90d` (`src/lib/ops-range.ts`).
+- `/ops/status` dibuja 90 días por componente; un día sin muestras es gris.
 
 Objetivo: operar con más de 10,000 usuarios y organizaciones sin cargar colecciones
 completas.

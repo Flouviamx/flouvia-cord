@@ -3,6 +3,8 @@ import { verifyRegistrationResponse } from '@simplewebauthn/server';
 import { sql } from '../../../../lib/db';
 import { validateSession, SESSION_COOKIE } from '../../../../lib/auth';
 import { log } from '../../../../lib/log';
+import { requireFreshAuth } from '../../../../lib/step-up';
+import { sendPasskeyAddedEmail } from '../../../../lib/auth-email';
 
 export const prerender = false;
 
@@ -19,6 +21,9 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     if (!session) {
       return new Response(JSON.stringify({ error: 'No autenticado' }), { status: 401 });
     }
+
+    const stale = await requireFreshAuth();
+    if (stale) return stale;
 
     const body = await request.json();
     const expectedChallenge = cookies.get('passkey_challenge')?.value;
@@ -37,7 +42,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       });
     } catch (error: any) {
       log.error('Error verificando registro', { err: error.message });
-      return new Response(JSON.stringify({ error: error.message }), { status: 400 });
+      // El mensaje de la librería describe el mecanismo, no el estado (regla 14).
+      return new Response(JSON.stringify({ error: 'No se pudo verificar la clave de acceso' }), { status: 400 });
     } finally {
       // Challenge de un solo uso: se borra tanto en éxito como en fallo — un
       // intento fallido no debe dejar un reto reutilizable vivo por 5 min más.
@@ -64,6 +70,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
           ${credential.transports || body.response?.transports || []}
         )
       `;
+      const [owner] = await sql`select email from users where id = ${session.userId}`;
+      if (owner?.email) sendPasskeyAddedEmail(owner.email as string).catch(() => null);
 
       return new Response(JSON.stringify({ success: true }), { status: 200 });
     }

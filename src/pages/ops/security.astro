@@ -1,39 +1,245 @@
 ---
 import OpsLayout from '../../layouts/OpsLayout.astro';
 import OpsShell from '../../components/ops/OpsShell.astro';
-import OpsActionDialog from '../../components/ops/OpsActionDialog.astro';
 import OpsPagination from '../../components/ops/OpsPagination.astro';
 import { sql } from '../../lib/db';
-import { opsDate,opsNumber,OPS_AUDIT_LABELS } from '../../lib/ops-format';
+import { iconInner } from '../../lib/icons';
+import { opsAgo, opsDate, opsNumber, OPS_AUDIT_LABELS } from '../../lib/ops-format';
 import { OPS_PAGE_SIZE, opsPageOffset, parseOpsPage } from '../../lib/ops-pagination';
+import { OPS_FRESH_AUTH_MS, OPS_PASSKEY_LIMIT } from '../../lib/ops-auth';
 
-const operator=Astro.locals.opsOperator;
-if(!operator)return Astro.redirect('/ops/login');
-const auditPage=parseOpsPage(Astro.url.searchParams.get('auditPage'));
-const [counts,opsSessions,signals,audit]=await Promise.all([
-  sql`select (select count(*)::int from sessions where revoked_at is null and expires_at>now()) cord_sessions,(select count(*)::int from ops_sessions where revoked_at is null and expires_at>now()) ops_sessions,(select count(*)::int from users where locked_until>now()) locked_users,(select count(*)::int from users where suspended_at is not null) suspended_users,(select count(*)::int from passkeys) passkeys`,
-  sql`select s.id,s.operator_id,s.expires_at,s.absolute_expires_at,s.last_used_at,s.ip,s.user_agent,s.auth_method,s.created_at,o.email from ops_sessions s join ops_operators o on o.user_id=s.operator_id order by s.created_at desc`,
-  sql`with passkey_stats as (select user_id,count(*)::int passkeys from passkeys group by user_id)
-      select u.id,u.email,u.email_verified_at,u.totp_enabled,u.locked_until,u.suspended_at,
-             coalesce(p.passkeys,0) passkeys,count(*) over()::int total_count
-      from users u left join passkey_stats p on p.user_id=u.id
-      where u.email_verified_at is null or (u.totp_enabled=false and coalesce(p.passkeys,0)=0)
-        or u.locked_until>now() or u.suspended_at is not null
-      order by u.created_at desc,u.id desc limit 50`,
-  sql.query(`select id,actor_email,action,target_type,target_id,result,metadata,ip,user_agent,created_at,
-             count(*) over()::int total_count
-             from ops_audit_log order by created_at desc,id desc limit $1 offset $2`,[OPS_PAGE_SIZE,opsPageOffset(auditPage)]),
-]);
-const c:any=counts[0]||{};
-const signalsTotal=Number(signals[0]?.total_count||0);
-const auditTotal=Number(audit[0]?.total_count||0);
-if(auditPage>1&&audit.length===0)return Astro.redirect('/ops/security');
-const AUTH_METHODS:Record<string,string>={passkey:'Clave de acceso',password_totp:'Contraseña y TOTP',local_session_password:'Sesión local'};
+const operator = Astro.locals.opsOperator;
+if (!operator) return Astro.redirect('/ops/login');
+const isAdmin = operator.role === 'admin';
+const auditPage = parseOpsPage(Astro.url.searchParams.get('auditPage'));
+const RESULTS = ['success', 'failure', 'denied'] as const;
+const resultFilter = RESULTS.find((r) => r === Astro.url.searchParams.get('result')) ?? null;
+
+let counts: any[] = [];
+let opsSessions: any[] = [];
+let signals: any[] = [];
+let audit: any[] = [];
+let myPasskeys: any[] = [];
+let error = false;
+try {
+  // Las tablas de Ops y de identidad no son multi-tenant (sin org_id).
+  [counts, opsSessions, signals, audit, myPasskeys] = await Promise.all([
+    sql`select (select count(*)::int from sessions where revoked_at is null and expires_at > now()) cord_sessions,
+               (select count(*)::int from ops_sessions where revoked_at is null and expires_at > now()) ops_sessions,
+               (select count(*)::int from users where locked_until > now()) locked_users,
+               (select count(*)::int from users where suspended_at is not null) suspended_users,
+               (select count(*)::int from ops_passkeys) ops_passkeys,
+               (select count(*)::int from ops_audit_log where result <> 'success' and created_at >= now() - interval '24 hours') denied_24h`,
+    // Una sesión por operador: el tope es el número de operadores.
+    sql`select s.id, s.operator_id, s.expires_at, s.absolute_expires_at, s.last_used_at, s.ip, s.user_agent, s.auth_method, s.created_at, o.email
+        from ops_sessions s join ops_operators o on o.user_id = s.operator_id
+        order by s.created_at desc limit 20`,
+    sql`with passkey_stats as (select user_id, count(*)::int passkeys from passkeys group by user_id)
+        select u.id, u.email, u.email_verified_at, u.totp_enabled, u.locked_until, u.suspended_at,
+               coalesce(p.passkeys, 0) passkeys, count(*) over()::int total_count
+        from users u left join passkey_stats p on p.user_id = u.id
+        where u.email_verified_at is null or (u.totp_enabled = false and coalesce(p.passkeys, 0) = 0)
+          or u.locked_until > now() or u.suspended_at is not null
+        order by u.created_at desc, u.id desc limit 50`,
+    sql`select id, actor_email, action, target_type, target_id, result, ip, created_at, count(*) over()::int total_count
+        from ops_audit_log
+        where (${resultFilter}::text is null or result = ${resultFilter}::text)
+        order by created_at desc, id desc limit ${OPS_PAGE_SIZE} offset ${opsPageOffset(auditPage)}`,
+    sql`select id, nombre, device_type, backed_up, created_at, last_used_at
+        from ops_passkeys where operator_id = ${operator.userId} order by created_at desc`,
+  ]);
+} catch (cause) { error = true; console.error('[ops/security]', cause); }
+
+const c: any = counts[0] || {};
+const signalsTotal = Number(signals[0]?.total_count || 0);
+const auditTotal = Number(audit[0]?.total_count || 0);
+if (auditPage > 1 && audit.length === 0 && !error) return Astro.redirect('/ops/security');
+const AUTH_METHODS: Record<string, string> = { passkey: 'Passkey de Ops', password_totp: 'Contraseña y TOTP', local_session_password: 'Sesión local' };
+const freshForMs = Math.max(0, operator.authenticatedAt.getTime() + OPS_FRESH_AUTH_MS - Date.now());
+const fresh = freshForMs > 0;
+const auditHref = (result: string | null) => `/ops/security${result ? `?result=${result}` : ''}#auditoria`;
+const device = (ua: string | null) => !ua ? 'Dispositivo desconocido'
+  : /iPhone|iPad/.test(ua) ? 'iPhone o iPad' : /Android/.test(ua) ? 'Android'
+  : /Macintosh/.test(ua) ? 'Mac' : /Windows/.test(ua) ? 'Windows' : 'Navegador';
 ---
-<OpsLayout title="Seguridad | Cord Ops"><OpsShell active="security" title="Seguridad" subtitle="Sesiones privilegiadas, señales de riesgo y auditoría de plataforma.">
-  <button slot="actions" id="ops-security-refresh" class="ops-button secondary">Actualizar</button>
-  <section class="ops-card ops-metrics"><div class="ops-metric"><span>Sesiones Cord</span><strong>{opsNumber(c.cord_sessions)}</strong><small>Vigentes</small></div><div class="ops-metric"><span>Sesiones Ops</span><strong>{opsNumber(c.ops_sessions)}</strong><small>Privilegiadas</small></div><div class="ops-metric"><span>Passkeys</span><strong>{opsNumber(c.passkeys)}</strong><small>Credenciales fuertes</small></div><div class="ops-metric"><span>Alertas</span><strong>{opsNumber(Number(c.locked_users)+Number(c.suspended_users))}</strong><small>Bloqueadas o suspendidas</small></div></section>
-  <section class="ops-section"><header class="ops-section-header"><div><h2>Sesiones privilegiadas</h2><p>Cada operador solo puede conservar una sesión Ops.</p></div></header><div class="ops-card ops-table-wrap"><table class="ops-table"><thead><tr><th>Operador</th><th>Método</th><th>Dispositivo</th><th>IP</th><th>Último uso</th><th>Expira</th><th></th></tr></thead><tbody>{opsSessions.map((s:any)=><tr><td>{s.email}</td><td><span class="ops-badge blue">{AUTH_METHODS[s.auth_method]||s.auth_method}</span></td><td><span class="ops-data-value">{s.user_agent||'Desconocido'}</span></td><td class="ops-code">{s.ip||'—'}</td><td>{opsDate(s.last_used_at)}</td><td>{opsDate(s.expires_at)}</td><td><button class="ops-button danger-soft sm" data-ops-action="revoke_ops_session" data-target-id={s.id} data-endpoint="/api/ops/security" data-confirm={s.email} data-danger="true" data-title="Revocar sesión Ops" data-description="Cerrará inmediatamente esta sesión privilegiada.">Revocar</button></td></tr>)}{opsSessions.length===0&&<tr><td colspan="7" class="ops-empty">No hay sesiones privilegiadas.</td></tr>}</tbody></table></div></section>
-  <section class="ops-section"><header class="ops-section-header"><div><h2>Señales de identidad</h2><p>{opsNumber(signalsTotal)} cuentas requieren atención; se muestran las 50 más recientes.</p></div></header><div class="ops-card ops-table-wrap"><table class="ops-table"><thead><tr><th>Usuario</th><th>Correo</th><th>MFA</th><th>Cuenta</th><th></th></tr></thead><tbody>{signals.map((u:any)=><tr><td><a href={`/ops/users/${u.id}`}>{u.email}</a></td><td><span class:list={['ops-badge',u.email_verified_at?'green':'amber']}>{u.email_verified_at?'Verificado':'Pendiente'}</span></td><td><span class:list={['ops-badge',u.passkeys>0||u.totp_enabled?'green':'red']}>{u.passkeys>0?'Passkey':u.totp_enabled?'TOTP':'Sin MFA'}</span></td><td>{u.suspended_at?<span class="ops-badge red">Suspendida</span>:u.locked_until&&new Date(u.locked_until)>new Date()?<span class="ops-badge amber">Bloqueada</span>:<span class="ops-badge green">Activa</span>}</td><td><a class="ops-row-link" href={`/ops/users/${u.id}`}>Revisar</a></td></tr>)}{signals.length===0&&<tr><td colspan="5" class="ops-empty">No hay señales pendientes.</td></tr>}</tbody></table></div></section>
-  <section class="ops-section"><header class="ops-section-header"><div><h2>Auditoría de Ops</h2><p>{opsNumber(auditTotal)} eventos privilegiados registrados.</p></div></header><div class="ops-card">{audit.map((e:any)=><div class="ops-audit-row"><span class:list={['ops-audit-dot',e.result]}></span><div><strong>{OPS_AUDIT_LABELS[e.action]||e.action}</strong><span class="ops-sub">{e.actor_email||'Identidad no resuelta'} · {e.target_type||'plataforma'}</span></div><span>{e.ip||'IP no disponible'}</span><time>{opsDate(e.created_at)}</time></div>)}{audit.length===0&&<div class="ops-empty">Sin eventos.</div>}</div><OpsPagination page={auditPage} total={auditTotal} pageSize={OPS_PAGE_SIZE} path="/ops/security" pageParam="auditPage" /></section>
-</OpsShell><OpsActionDialog /><script>document.getElementById('ops-security-refresh')?.addEventListener('click',()=>window.location.reload());</script></OpsLayout>
+<OpsLayout title="Seguridad | Cord Ops"><OpsShell active="security" title="Seguridad" subtitle="Tus credenciales de Ops, sesiones privilegiadas, señales de riesgo y auditoría de plataforma.">
+  <button slot="actions" id="ops-security-refresh" class="ops-button secondary" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('refresh')} />Actualizar</button>
+  {error && <div class="ops-inline-error">No fue posible cargar todos los datos de seguridad.</div>}
+
+  <section class="ops-card ops-metrics cols-5">
+    <div class="ops-metric"><span>Sesiones Cord</span><strong>{opsNumber(c.cord_sessions)}</strong><small>Vigentes en la app</small></div>
+    <div class="ops-metric"><span>Sesiones Ops</span><strong>{opsNumber(c.ops_sessions)}</strong><small>Privilegiadas, una por operador</small></div>
+    <div class="ops-metric"><span>Passkeys de Ops</span><strong>{opsNumber(c.ops_passkeys)}</strong><small>Ligadas a ops.cordhq.app</small></div>
+    <a class="ops-metric ops-metric-link" href={auditHref('denied')}><span>Denegadas 24 h</span><strong>{opsNumber(c.denied_24h)}</strong><small>Intentos fallidos o rechazados</small></a>
+    <div class="ops-metric"><span>Cuentas en alerta</span><strong>{opsNumber(Number(c.locked_users || 0) + Number(c.suspended_users || 0))}</strong><small>Bloqueadas o suspendidas</small></div>
+  </section>
+
+  <section class="ops-section" id="passkeys">
+    <header class="ops-section-header">
+      <div><h2>Tus passkeys de Ops</h2><p>Ops no acepta las passkeys de la app: estas se registran aquí y solo funcionan en ops.cordhq.app.</p></div>
+      <button class="ops-button sm" type="button" id="ops-passkey-add" disabled={!fresh || myPasskeys.length >= OPS_PASSKEY_LIMIT}>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('plus')} />Registrar passkey
+      </button>
+    </header>
+    {!fresh && <div class="ops-inline-note">Registrar o eliminar una passkey exige haber entrado hace menos de 10 minutos. <button class="ops-button secondary sm" type="button" data-ops-reauth>Volver a entrar</button></div>}
+    {myPasskeys.length === 0 && fresh && <div class="ops-inline-warning">Aún no tienes una passkey de Ops. Regístrala para entrar sin contraseña y sin código.</div>}
+    <div class="ops-card">
+      {myPasskeys.map((p: any) => (
+        <div class="ops-passkey-row">
+          <span class="ops-state-icon gray"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('key')} /></span>
+          <div>
+            <strong>{p.nombre || 'Passkey sin nombre'} {p.id === operator.credentialId && <span class="ops-badge blue">Esta sesión</span>}</strong>
+            <span class="ops-sub">Registrada {opsDate(p.created_at)} · {p.last_used_at ? `último uso ${opsAgo(p.last_used_at).toLowerCase()}` : 'sin usar'} · {p.backed_up ? 'sincronizada' : 'en un solo dispositivo'}</span>
+          </div>
+          <button class="ops-button danger-soft sm" type="button" data-ops-passkey-delete={p.id} data-name={p.nombre || 'Passkey sin nombre'} disabled={!fresh}>Eliminar</button>
+        </div>
+      ))}
+      {myPasskeys.length === 0 && <div class="ops-empty">Sin passkeys de Ops registradas.</div>}
+    </div>
+  </section>
+
+  <section class="ops-section">
+    <header class="ops-section-header"><div><h2>Sesiones privilegiadas</h2><p>Cada operador conserva una sola sesión Ops; un inicio de sesión nuevo cierra la anterior.</p></div></header>
+    <div class="ops-card ops-table-wrap"><table class="ops-table">
+      <thead><tr><th scope="col">Operador</th><th scope="col">Método</th><th scope="col">Dispositivo</th><th scope="col">IP</th><th scope="col">Último uso</th><th scope="col">Expira</th>{isAdmin && <th scope="col"><span class="ops-sr-only">Acciones</span></th>}</tr></thead>
+      <tbody>
+        {opsSessions.map((s: any) => <tr>
+          <td>{s.email}{s.id === operator.sessionId && <span class="ops-sub">Tu sesión actual</span>}</td>
+          <td><span class="ops-badge blue">{AUTH_METHODS[s.auth_method] || s.auth_method}</span></td>
+          <td><span class="ops-data-value" title={s.user_agent || ''}>{device(s.user_agent)}</span></td>
+          <td class="ops-code">{s.ip || '—'}</td>
+          <td>{opsAgo(s.last_used_at)}</td>
+          <td>{opsDate(s.expires_at)}</td>
+          {isAdmin && <td><button class="ops-button danger-soft sm" data-ops-action="revoke_ops_session" data-target-id={s.id} data-endpoint="/api/ops/security" data-confirm={s.email} data-danger="true" data-title="Revocar sesión Ops" data-description="Cerrará inmediatamente esta sesión privilegiada.">Revocar</button></td>}
+        </tr>)}
+        {opsSessions.length === 0 && <tr><td colspan={isAdmin ? 7 : 6} class="ops-empty">No hay sesiones privilegiadas.</td></tr>}
+      </tbody>
+    </table></div>
+  </section>
+
+  <section class="ops-section">
+    <header class="ops-section-header"><div><h2>Señales de identidad</h2><p>{opsNumber(signalsTotal)} cuentas requieren atención; se muestran las 50 más recientes.</p></div></header>
+    <div class="ops-card ops-table-wrap"><table class="ops-table">
+      <thead><tr><th scope="col">Usuario</th><th scope="col">Correo</th><th scope="col">MFA</th><th scope="col">Cuenta</th><th scope="col"><span class="ops-sr-only">Acciones</span></th></tr></thead>
+      <tbody>
+        {signals.map((u: any) => <tr>
+          <td><a href={`/ops/users/${u.id}`}>{u.email}</a></td>
+          <td><span class:list={['ops-badge', u.email_verified_at ? 'green' : 'amber']}>{u.email_verified_at ? 'Verificado' : 'Pendiente'}</span></td>
+          <td><span class:list={['ops-badge', u.passkeys > 0 || u.totp_enabled ? 'green' : 'red']}>{u.passkeys > 0 ? 'Passkey' : u.totp_enabled ? 'TOTP' : 'Sin MFA'}</span></td>
+          <td>{u.suspended_at ? <span class="ops-badge red">Suspendida</span> : u.locked_until && new Date(u.locked_until) > new Date() ? <span class="ops-badge amber">Bloqueada</span> : <span class="ops-badge green">Activa</span>}</td>
+          <td><a class="ops-row-link" href={`/ops/users/${u.id}`}>Revisar</a></td>
+        </tr>)}
+        {signals.length === 0 && <tr><td colspan="5" class="ops-empty">No hay señales pendientes.</td></tr>}
+      </tbody>
+    </table></div>
+  </section>
+
+  <section class="ops-section" id="auditoria">
+    <header class="ops-section-header"><div><h2>Auditoría de Ops</h2><p>{opsNumber(auditTotal)} eventos{resultFilter ? ' con este resultado' : ' privilegiados registrados'}. La bitácora es de solo agregar: nadie puede editarla ni borrarla.</p></div></header>
+    <nav class="ops-chips" aria-label="Filtrar por resultado">
+      <a class="ops-chip" href={auditHref(null)} aria-current={!resultFilter ? 'true' : undefined}>Todos</a>
+      <a class="ops-chip" href={auditHref('success')} aria-current={resultFilter === 'success' ? 'true' : undefined}>Correctos</a>
+      <a class="ops-chip" href={auditHref('failure')} aria-current={resultFilter === 'failure' ? 'true' : undefined}>Fallidos</a>
+      <a class="ops-chip" href={auditHref('denied')} aria-current={resultFilter === 'denied' ? 'true' : undefined}>Denegados</a>
+    </nav>
+    <div class="ops-card">
+      {audit.map((e: any) => <div class="ops-audit-row"><span class:list={['ops-audit-dot', e.result]}></span><div><strong>{OPS_AUDIT_LABELS[e.action] || e.action}</strong><span class="ops-sub">{e.actor_email || 'Identidad no resuelta'} · {e.target_type || 'plataforma'}</span></div><span>{e.ip || 'IP no disponible'}</span><time title={opsDate(e.created_at)}>{opsAgo(e.created_at)}</time></div>)}
+      {audit.length === 0 && <div class="ops-empty">Sin eventos.</div>}
+    </div>
+    <OpsPagination page={auditPage} total={auditTotal} pageSize={OPS_PAGE_SIZE} path="/ops/security" search={resultFilter ? `result=${resultFilter}` : ''} pageParam="auditPage" />
+  </section>
+
+  <dialog id="ops-passkey-dialog" class="ops-dialog">
+    <form method="dialog">
+      <button class="ops-dialog-close" value="cancel" aria-label="Cerrar">×</button>
+      <span class="ops-kicker">Passkey de Ops</span>
+      <h2>Registrar una passkey</h2>
+      <p>Tu dispositivo pedirá Touch ID, Face ID, Windows Hello o tu llave física. La passkey queda ligada a ops.cordhq.app y te llegará un correo de aviso.</p>
+      <label>Nombre para reconocerla
+        <input id="ops-passkey-name" maxlength="80" autocomplete="off" placeholder="MacBook de trabajo" />
+      </label>
+      <div id="ops-passkey-error" class="ops-inline-error" role="alert" hidden></div>
+      <footer><button class="ops-button secondary" value="cancel">Cancelar</button><button id="ops-passkey-submit" class="ops-button" type="button">Continuar</button></footer>
+    </form>
+  </dialog>
+</OpsShell>
+<script>
+  import { startRegistration } from '@simplewebauthn/browser';
+
+  document.getElementById('ops-security-refresh')?.addEventListener('click', () => window.location.reload());
+
+  const toast = (text: string, isError = false) => {
+    const el = document.getElementById('ops-global-toast');
+    if (!el) return;
+    el.textContent = text;
+    el.classList.toggle('error', isError);
+    el.hidden = false;
+    window.setTimeout(() => { el.hidden = true; }, 4200);
+  };
+  const reauth = async () => {
+    await fetch('/api/ops/auth', { method: 'DELETE' }).catch(() => null);
+    window.location.href = `/ops/login?next=${encodeURIComponent('/ops/security')}`;
+  };
+  document.querySelectorAll('[data-ops-reauth]').forEach((el) => el.addEventListener('click', reauth));
+
+  const dialog = document.getElementById('ops-passkey-dialog') as HTMLDialogElement;
+  const nameInput = document.getElementById('ops-passkey-name') as HTMLInputElement;
+  const errorBox = document.getElementById('ops-passkey-error') as HTMLElement;
+  const submit = document.getElementById('ops-passkey-submit') as HTMLButtonElement;
+
+  document.getElementById('ops-passkey-add')?.addEventListener('click', () => {
+    errorBox.hidden = true;
+    nameInput.value = '';
+    dialog.showModal();
+    nameInput.focus();
+  });
+
+  submit.addEventListener('click', async () => {
+    submit.disabled = true;
+    submit.textContent = 'Esperando dispositivo';
+    errorBox.hidden = true;
+    try {
+      const optionsRes = await fetch('/api/ops/passkeys/register-options', { method: 'POST' });
+      const options = await optionsRes.json().catch(() => ({}));
+      if (optionsRes.status === 428) return reauth();
+      if (!optionsRes.ok) throw new Error(options.error || 'No se pudo iniciar el registro.');
+      const credential = await startRegistration({ optionsJSON: options });
+      const res = await fetch('/api/ops/passkeys/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ credential, nombre: nameInput.value.trim() }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.status === 428) return reauth();
+      if (!res.ok) throw new Error(data.error || 'No se pudo guardar la passkey.');
+      dialog.close();
+      toast('Passkey de Ops registrada.');
+      window.setTimeout(() => window.location.reload(), 700);
+    } catch (error: any) {
+      errorBox.textContent = error?.name === 'NotAllowedError'
+        ? 'Cancelaste el registro o el dispositivo no lo permitió.'
+        : error?.name === 'InvalidStateError'
+          ? 'Este dispositivo ya tiene una passkey de Ops registrada.'
+          : (error?.message || 'No se pudo registrar la passkey.');
+      errorBox.hidden = false;
+    } finally {
+      submit.disabled = false;
+      submit.textContent = 'Continuar';
+    }
+  });
+
+  document.querySelectorAll<HTMLButtonElement>('[data-ops-passkey-delete]').forEach((button) => {
+    button.addEventListener('click', async () => {
+      const name = button.dataset.name || 'esta passkey';
+      if (!window.confirm(`¿Eliminar "${name}"? Si entraste con ella, tu sesión se cerrará.`)) return;
+      button.disabled = true;
+      const res = await fetch(`/api/ops/passkeys/${encodeURIComponent(button.dataset.opsPasskeyDelete || '')}`, { method: 'DELETE' });
+      const data = await res.json().catch(() => ({}));
+      if (res.status === 428) return reauth();
+      if (!res.ok) { button.disabled = false; return toast(data.error || 'No se pudo eliminar la passkey.', true); }
+      if (data.signedOut) return window.location.replace('/ops/login');
+      toast('Passkey eliminada.');
+      window.setTimeout(() => window.location.reload(), 700);
+    });
+  });
+</script></OpsLayout>

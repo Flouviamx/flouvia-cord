@@ -9,7 +9,11 @@ export const OPS_AUDIT_LABELS: Record<string, string> = {
   'ops.logout': 'Cierre de sesión',
   'ops.login_password': 'Verificación de contraseña',
   'ops.login_totp': 'Verificación TOTP',
-  'ops.login_passkey': 'Verificación de clave de acceso',
+  'ops.login_passkey': 'Verificación de passkey',
+  'ops.login_totp_locked': 'Segundo factor bloqueado por intentos',
+  'ops.passkey_registered': 'Passkey de Ops registrada',
+  'ops.passkey_deleted': 'Passkey de Ops eliminada',
+  'ops.list_exported': 'Lista exportada a CSV',
   'ops.session_user_agent_mismatch': 'Sesión revocada por dispositivo',
   'ops.user_sessions_revoked': 'Sesiones de usuario revocadas',
   'ops.user_unlocked': 'Cuenta desbloqueada',
@@ -152,14 +156,15 @@ export const OPS_PROVIDER_LABELS: Record<string, string> = {
   mercadopago: 'Mercado Pago',
 };
 
-export const OPS_PROVIDER_DOMAINS: Record<string, string> = {
-  hubspot: 'hubspot.com', shopify: 'shopify.com', google_sheets: 'sheets.google.com', excel: 'microsoft.com',
-  quickbooks: 'quickbooks.intuit.com', xero: 'xero.com', gmail: 'mail.google.com', slack: 'slack.com',
-  teams: 'teams.microsoft.com', mercadopago: 'mercadopago.com',
-};
-
-export const opsFavicon = (domain: string) =>
-  `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://${domain}&size=64`;
+/**
+ * Monograma del proveedor (dos letras). Ops no carga imágenes de terceros: su
+ * CSP fija `img-src 'self' data:` y un favicon remoto nunca llegaba a pintarse.
+ */
+export function opsProviderMark(id: string): string {
+  const label = OPS_PROVIDER_LABELS[id] || id;
+  const words = label.split(/[\s_]+/).filter(Boolean);
+  return (words.length > 1 ? words[0][0] + words[1][0] : label.slice(0, 2)).toUpperCase();
+}
 
 export const OPS_LIFECYCLE_LABELS: Record<string, [string, string]> = {
   draft: ['Borrador', ''],
