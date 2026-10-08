@@ -39,9 +39,9 @@ published rate. If no exchange rate is available for a currency, those sales **a
 out of the sum** instead of being added with a made-up rate. When you sell in more than
 one currency, this note appears under the indicator:
 
-> Amounts in {currency}. Sales in {currencies} are converted with the exchange rate set on each quote or invoice, or with today's published rate when there is none.
+> Amounts in \{currency}. Sales in \{currencies} are converted with the exchange rate set on each quote or invoice, or with today's published rate when there is none.
 
-and, if one was left out: "No exchange rate is available for {currencies}, so those
+and, if one was left out: "No exchange rate is available for \{currencies}, so those
 sales are not included for now."
 
 Days are counted in your **business time zone**: "today", "yesterday", and the cut-off of
@@ -101,9 +101,9 @@ compared against the previous period, and carry a mini chart.
 
 | KPI | How it is calculated | Subtitle | Change | Mini chart |
 |---|---|---|---|---|
-| **Close rate** | Of the quotes that **went out** in the range (by creation date), what percentage has been won. It is a cohort: it doesn't mix what was created in one period with what closed in another. | "{g} of {n} sent in the range" or "No quotes sent in this range" | In **points** (38% → 43% = 5 pts), not percent. | Progress bar with the rate. |
-| **Average ticket** | What closed in the range divided by the number of sales that make it up (by approval date). | "across {n} closed quotes" or "No closed sales in this range" | In %. | Closed amount per day. |
-| **Collected** (optional) | Money that came in during the range, net of refunds. | "vs. {amount} the previous period" or "No previous period to compare" | In %. | Collected amount per day. |
+| **Close rate** | Of the quotes that **went out** in the range (by creation date), what percentage has been won. It is a cohort: it doesn't mix what was created in one period with what closed in another. | "\{g} of \{n} sent in the range" or "No quotes sent in this range" | In **points** (38% → 43% = 5 pts), not percent. | Progress bar with the rate. |
+| **Average ticket** | What closed in the range divided by the number of sales that make it up (by approval date). | "across \{n} closed quotes" or "No closed sales in this range" | In %. | Closed amount per day. |
+| **Collected** (optional) | Money that came in during the range, net of refunds. | "vs. \{amount} the previous period" or "No previous period to compare" | In %. | Collected amount per day. |
 
 Comparison rules:
 
@@ -122,7 +122,7 @@ In their default order:
 
 | Widget (name in the library) | What it shows | Scope | Requires |
 |---|---|---|---|
-| **In progress** | Sum of **Sent** and **Viewed** quotes, "{n} active quotes", and a bar that splits how much is only sent and how much the client has already opened. | Today | — |
+| **In progress** | Sum of **Sent** and **Viewed** quotes, "\{n} active quotes", and a bar that splits how much is only sent and how much the client has already opened. | Today | — |
 | **Close rate** | See [KPIs with change](#kpis-with-change). | Range | Reports |
 | **Average ticket** | See [KPIs with change](#kpis-with-change). | Range | Reports |
 | **Needs follow-up** (KPI) | How many quotes are **Viewed** without a reply from the client. Opens Quotes. | Today | — |
@@ -131,10 +131,10 @@ In their default order:
 | **Monthly trend** | Quoted (bars) against closed (line). Groups by day for ranges up to 16 days, by week up to 70 days, and by month for longer ranges. | Range | Reports |
 | **Receivables aging** | Outstanding balances from quotes and invoices, by age. | Today | Collections · Pro or higher |
 | **Expected cash flow** | "Expected cash flow · 5 weeks": expected collections per week. Link **Treasury →** to the Cash flow · 90 days report. | Today | Reports · Pro or higher |
-| **Pipeline health** | Four indicators: **Avg. days to collect (DSO)** (Healthy up to 30 days, Watch up to 60, "High — speed up collection" after that), **Risk concentration** (Well diversified, Moderate from 40%, "Top client dominates the pipeline" from 70%), **Margin given up** (discount off list price), and **Expected revenue (weighted)** "of {amount} in open pipeline". Link **View CFO →** to the Finance report. | Today | Reports · Pro or higher |
+| **Pipeline health** | Four indicators: **Avg. days to collect (DSO)** (Healthy up to 30 days, Watch up to 60, "High — speed up collection" after that), **Risk concentration** (Well diversified, Moderate from 40%, "Top client dominates the pipeline" from 70%), **Margin given up** (discount off list price), and **Expected revenue (weighted)** "of \{amount} in open pipeline". Link **View CFO →** to the Finance report. | Today | Reports · Pro or higher |
 | **Clients by approval rate** | The 5 clients with the best rate in the range. If at least three clients have two or more quotes, only those compete: a 1 out of 1 doesn't take first place. | Range | Reports |
 | **Products by revenue** | The 5 products with the highest amount in quotes that left draft in the range. | Range | Reports |
-| **Needs follow-up** (list) | Up to 5 open quotes with more than 7 days without activity, sorted by days of silence, with "{n}d no reply", the amount, and the total number of cases. | Today | Reports · Pro or higher |
+| **Needs follow-up** (list) | Up to 5 open quotes with more than 7 days without activity, sorted by days of silence, with "\{n}d no reply", the amount, and the total number of cases. | Today | Reports · Pro or higher |
 | **Recent quotes** | The last 5 quotes with their status ("Recent"). Link **View all →**. | — | — |
 | **Activity** | The most recent events: sends, views, approvals, and payments. | — | — |
 | **Tasks** | "Tasks and reminders": the 8 most urgent pending tasks, with a quick-add field and a **Mine**/**All** filter when there is more than one person. See [Tasks](/en/docs/gestion/tareas). | — | — |
@@ -150,7 +150,7 @@ a board you already customized.
 | **Expected pipeline** | Probability-weighted open pipeline today, with the unweighted open pipeline. | Today | Reports · Pro or higher |
 | **Collected** | KPI with change and mini chart: "Money that came in during the range and how it compares to the previous period". | Range | Reports |
 | **Days to close** | "Average days from creating a quote to winning it". | All time | Reports |
-| **Overdue invoices** | "{n} overdue · {amount}" and the overdue invoices that weigh the most, with "{n} d overdue" and their balance. Link **View all →** to Invoices. | Today | Collections |
+| **Overdue invoices** | "\{n} overdue · \{amount}" and the overdue invoices that weigh the most, with "\{n} d overdue" and their balance. Link **View all →** to Invoices. | Today | Collections |
 | **Sales leaderboard** | "Who on the team closes the most value": the 5 members with the highest closed amount. Link **View all →** to Performance. | All time | Reports |
 
 <Callout type="info" title="Plan and permission are not the same">
@@ -197,8 +197,8 @@ All of edit mode works with a keyboard:
 - <kbd>Escape</kbd> closes the library if it's open and returns focus to its button;
   otherwise it leaves edit mode and returns focus to **Customize**. During a drag, it
   cancels it and the widget goes back to its place.
-- Screen readers announce "{widget} moved", "{widget} added to the board", and
-  "{widget} hidden; find it in the library".
+- Screen readers announce "\{widget} moved", "\{widget} added to the board", and
+  "\{widget} hidden; find it in the library".
 
 ### Mobile
 
@@ -213,7 +213,7 @@ shown. The three top-bar buttons are also 44 px and have no tooltip.
 Click **Library** in edit mode. On desktop it opens as a **floating card** anchored to the
 button; on mobile, as a **bottom sheet** over a dimmed background.
 
-- **Header:** "Widget library" and the summary "{n} to add · {m} on screen". The X
+- **Header:** "Widget library" and the summary "\{n} to add · \{m} on screen". The X
   ("Close library") closes it.
 - **Search:** "Search widgets…" searches the name, the description, and the category.
   With no matches it says "No results".
@@ -224,7 +224,7 @@ button; on mobile, as a **bottom sheet** over a dimmed background.
 - **Cards:** each widget comes with a **thumbnail** drawn with the same data it has on
   your board today (your range, your numbers), its name, and its description. The ones
   you can add come first.
-- **Add:** the **+** button ("Add {widget}") puts it on the board, scrolls it into view,
+- **Add:** the **+** button ("Add \{widget}") puts it on the board, scrolls it into view,
   and highlights it for a moment. The ones already visible show a check mark and **On
   screen**, disabled.
 - **It isn't modal:** with the library open on desktop you can keep rearranging the board

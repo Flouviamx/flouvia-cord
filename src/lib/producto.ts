@@ -1031,7 +1031,7 @@ export const FEATURES: Feature[] = [
             {
                 eyebrow: 'CADA VENDEDOR, CON SUS NÚMEROS',
                 titulo: 'Sabes quién cotiza, quién cierra y quién cobra, sin pedir un reporte.',
-                copy: 'En Informes › Equipo, Cord ordena a cada vendedor por cotizaciones, tasa de cierre, monto cerrado y cobrado, ticket promedio y días a cierre. Cada cotización cuenta para quien la creó, y lo ve quien tenga el permiso de Informes.',
+                copy: 'En Desempeño, Cord ordena a cada vendedor por cotizaciones, tasa de cierre, monto cerrado y cobrado, ticket promedio y días a cierre, y en Informes › Ventas por vendedor lo ves para cualquier rango de fechas, contra el periodo anterior y exportable a CSV. Cada cotización cuenta para quien la creó, y lo ve quien tenga el permiso de Informes.',
             },
         ],
         faqs: [

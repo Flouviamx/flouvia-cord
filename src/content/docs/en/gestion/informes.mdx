@@ -99,7 +99,7 @@ You can look back up to one year.
   server.
 
 **As of today** reports have no picker (there would be nothing to ignore): they show the
-label "As of today · {date}". Inside a range report, widgets tagged **Today** also ignore
+label "As of today · \{date}". Inside a range report, widgets tagged **Today** also ignore
 the range; hover over the tag to see the explanation.
 
 ### Time zone
@@ -122,9 +122,9 @@ Settings. For each amount it uses the best real rate available:
 If no exchange rate is available for a currency, its amounts **are left out of the sum**;
 Cord never makes up a rate. Below the report you see the note:
 
-> Amounts in {currency}. Sales in {currencies} are converted with the exchange rate set on each quote or invoice, or with today's published rate when there is none.
+> Amounts in \{currency}. Sales in \{currencies} are converted with the exchange rate set on each quote or invoice, or with today's published rate when there is none.
 
-and, if a currency was left out: "No exchange rate is available for {currencies}, so
+and, if a currency was left out: "No exchange rate is available for \{currencies}, so
 those sales are not included for now." If you sell in a single currency, the note
 doesn't appear.
 
@@ -163,7 +163,7 @@ Custom report share the same structure, top to bottom:
 
 ### KPIs and the previous-period comparison
 
-Each KPI shows its value, an arrow with the change and, below, "vs. {value} the previous
+Each KPI shows its value, an arrow with the change and, below, "vs. \{value} the previous
 period".
 
 - **The previous period** has the same number of days as your range and ends the day
@@ -348,7 +348,7 @@ Cohort of quotes created in the range.
 
 | Widget | What it shows |
 |---|---|
-| **Close rate** | Won over sent: "{g} / {n} sent quotes". |
+| **Close rate** | Won over sent: "\{g} / \{n} sent quotes". |
 | **Closed value** | Total won from the cohort created in the range. |
 | **Pipeline velocity** | Closed value per day of the range. |
 | **Lost value** | Rejected plus expired, with their count. |
@@ -468,7 +468,7 @@ There are two places to look at the team, for different questions:
 
 | | **Sales by team member** (report) | **Performance** (page) |
 |---|---|---|
-| Where | Reports › Team | Side menu, **Insights** group (shortcut <kbd>G</kbd> then <kbd>E</kbd>) |
+| Where | Reports › Sales by team member (Team group) | Side menu, **Insights** group (shortcut <kbd>G</kbd> then <kbd>E</kbd>) |
 | Period | The range you choose, with comparison | Whole history |
 | Columns | Sent, Sales, Sold, Close rate, Average ticket, Days to close | Quotes, Close, Closed, Collected, Ticket, Days |
 | Exports CSV | Yes | No |

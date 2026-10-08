@@ -1,6 +1,6 @@
 ---
 title: "Informes y desempeño comercial"
-seoTitle: "Informes de Cord: 15 informes, comparativa, CSV y desempeño por vendedor"
+seoTitle: "Informes de Cord: 15 informes, comparativa, CSV y ventas por vendedor"
 description: "Los 15 informes de Cord uno por uno: qué responde cada uno, sus KPIs, columnas y gráfica, qué respeta el rango y qué es una foto de hoy, cómo se compara contra el periodo anterior, cómo se exporta a CSV, cómo se convierte la divisa y cómo se atribuye el desempeño por vendedor."
 lastUpdated: "2026-10-08"
 reviewedBy: "Producto y operaciones de Cord"
@@ -97,7 +97,7 @@ mes**, **Mes pasado**, **Este trimestre**, **Año a la fecha**, **Últimos 12 me
   arman completos en el servidor.
 
 Los informes **Al día de hoy** no tienen selector (no habría nada que ignorar): muestran
-la etiqueta "Al día de hoy · {fecha}". Dentro de un informe de rango, los widgets marcados
+la etiqueta "Al día de hoy · \{fecha}". Dentro de un informe de rango, los widgets marcados
 **Hoy** también ignoran el rango; pasa el cursor sobre la etiqueta para ver la
 explicación.
 
@@ -121,9 +121,9 @@ importe usa la mejor tasa real disponible:
 Si para una divisa no hay ningún tipo de cambio disponible, sus importes **quedan fuera
 de la suma**; Cord nunca inventa una tasa. Debajo del informe aparece la nota:
 
-> Importes en {divisa}. Las ventas en {divisas} se convierten con el tipo de cambio fijado en cada cotización o factura; si no tiene uno, con el publicado hoy.
+> Importes en \{divisa}. Las ventas en \{divisas} se convierten con el tipo de cambio fijado en cada cotización o factura; si no tiene uno, con el publicado hoy.
 
-y, si alguna divisa quedó fuera: "No hay tipo de cambio disponible para {divisas}: esas
+y, si alguna divisa quedó fuera: "No hay tipo de cambio disponible para \{divisas}: esas
 ventas no se suman por ahora." Si vendes en una sola divisa, la nota no aparece.
 
 ### Qué fecha usa cada medida
@@ -163,7 +163,7 @@ Informe personalizado comparten la misma estructura, de arriba abajo:
 
 ### KPIs y comparativa contra el periodo anterior
 
-Cada KPI muestra su valor, una flecha con la variación y, debajo, "vs. {valor} el periodo
+Cada KPI muestra su valor, una flecha con la variación y, debajo, "vs. \{valor} el periodo
 anterior".
 
 - **El periodo anterior** tiene el mismo número de días que tu rango y termina el día
@@ -350,7 +350,7 @@ Cohorte de cotizaciones creadas en el rango.
 
 | Widget | Qué muestra |
 |---|---|
-| **Tasa de cierre** | Ganadas entre enviadas: "{g} / {n} cotizaciones enviadas". |
+| **Tasa de cierre** | Ganadas entre enviadas: "\{g} / \{n} cotizaciones enviadas". |
 | **Valor cerrado** | Total ganado de la cohorte creada en el rango. |
 | **Velocidad del pipeline** | Valor cerrado por día del rango. |
 | **Valor perdido** | Rechazadas más vencidas, con su número. |
@@ -469,7 +469,7 @@ Hay dos lugares para ver al equipo, con preguntas distintas:
 
 | | **Ventas por vendedor** (informe) | **Desempeño** (página) |
 |---|---|---|
-| Dónde | Informes › Equipo | Menú lateral, grupo **Análisis** (atajo <kbd>G</kbd> y luego <kbd>E</kbd>) |
+| Dónde | Informes › Ventas por vendedor (grupo Equipo) | Menú lateral, grupo **Análisis** (atajo <kbd>G</kbd> y luego <kbd>E</kbd>) |
 | Periodo | El rango que elijas, con comparativa | Todo el historial |
 | Columnas | Enviadas, Ventas, Vendido, Tasa de cierre, Ticket promedio, Días a cierre | Cotiz., Cierre, Cerrado, Cobrado, Ticket, Días |
 | Exporta CSV | Sí | No |

@@ -987,7 +987,7 @@ export const FEATURES_EN: Feature[] = [
             {
                 eyebrow: 'EVERY REP, WITH THEIR NUMBERS',
                 titulo: 'You know who quotes, who closes and who collects, without asking for a report.',
-                copy: 'In Reports › Team, Cord ranks every rep by quotes, close rate, amount closed and collected, average ticket and days to close. Each quote counts for whoever created it, and anyone with the Reports permission can see it.',
+                copy: 'In Performance, Cord ranks every rep by quotes, close rate, amount closed and collected, average ticket and days to close, and in Reports › Sales by team member you see it for any date range, against the previous period and exportable to CSV. Each quote counts for whoever created it, and anyone with the Reports permission can see it.',
             },
         ],
         faqs: [

@@ -39,9 +39,9 @@ para una divisa no hay ningún tipo de cambio disponible, esas ventas **no se su
 lugar de sumarse con una tasa inventada. Cuando vendes en más de una divisa, bajo el
 indicador aparece la nota:
 
-> Importes en {divisa}. Las ventas en {divisas} se convierten con el tipo de cambio fijado en cada cotización o factura; si no tiene uno, con el publicado hoy.
+> Importes en \{divisa}. Las ventas en \{divisas} se convierten con el tipo de cambio fijado en cada cotización o factura; si no tiene uno, con el publicado hoy.
 
-y, si alguna quedó fuera: "No hay tipo de cambio disponible para {divisas}: esas ventas
+y, si alguna quedó fuera: "No hay tipo de cambio disponible para \{divisas}: esas ventas
 no se suman por ahora."
 
 Los días se cuentan en la **zona horaria de tu negocio**: "hoy", "ayer" y el corte de
@@ -101,9 +101,9 @@ comparan contra el periodo anterior y llevan una minigráfica.
 
 | KPI | Cómo se calcula | Subtítulo | Variación | Minigráfica |
 |---|---|---|---|---|
-| **Tasa de cierre** | De las cotizaciones que **salieron** en el rango (por fecha de creación), qué porcentaje ya se ganó. Es una cohorte: no mezcla lo que se creó en un periodo con lo que se cerró en otro. | "{g} de {n} enviadas en el rango" o "Sin cotizaciones enviadas en el rango" | En **puntos** (38 % → 43 % = 5 pts), no en porcentaje. | Barra de avance con la tasa. |
-| **Ticket promedio** | Lo cerrado en el rango entre el número de ventas que lo forman (por fecha de aprobación). | "sobre {n} cotizaciones cerradas" o "Sin ventas cerradas en el rango" | En %. | Lo cerrado por día. |
-| **Cobrado** (opcional) | El dinero que entró en el rango, neto de reembolsos. | "vs. {monto} el periodo anterior" o "Sin periodo anterior para comparar" | En %. | Lo cobrado por día. |
+| **Tasa de cierre** | De las cotizaciones que **salieron** en el rango (por fecha de creación), qué porcentaje ya se ganó. Es una cohorte: no mezcla lo que se creó en un periodo con lo que se cerró en otro. | "\{g} de \{n} enviadas en el rango" o "Sin cotizaciones enviadas en el rango" | En **puntos** (38 % → 43 % = 5 pts), no en porcentaje. | Barra de avance con la tasa. |
+| **Ticket promedio** | Lo cerrado en el rango entre el número de ventas que lo forman (por fecha de aprobación). | "sobre \{n} cotizaciones cerradas" o "Sin ventas cerradas en el rango" | En %. | Lo cerrado por día. |
+| **Cobrado** (opcional) | El dinero que entró en el rango, neto de reembolsos. | "vs. \{monto} el periodo anterior" o "Sin periodo anterior para comparar" | En %. | Lo cobrado por día. |
 
 Reglas de la comparación:
 
@@ -123,7 +123,7 @@ En el orden en que aparecen por defecto:
 
 | Widget (nombre en la biblioteca) | Qué muestra | Alcance | Requiere |
 |---|---|---|---|
-| **Por cerrar** | Suma de las cotizaciones **Enviada** y **Vista**, "{n} cotizaciones activas" y una barra que separa cuánto está solo enviado y cuánto ya lo abrió el cliente. | Hoy | — |
+| **Por cerrar** | Suma de las cotizaciones **Enviada** y **Vista**, "\{n} cotizaciones activas" y una barra que separa cuánto está solo enviado y cuánto ya lo abrió el cliente. | Hoy | — |
 | **Tasa de cierre** | Ver [KPIs con variación](#kpis-con-variación). | Rango | Informes |
 | **Ticket promedio** | Ver [KPIs con variación](#kpis-con-variación). | Rango | Informes |
 | **Por dar seguimiento** | Cuántas cotizaciones están en **Vista** sin respuesta del cliente. Lleva a Cotizaciones. | Hoy | — |
@@ -132,10 +132,10 @@ En el orden en que aparecen por defecto:
 | **Tendencia mensual** | Cotizado (barras) contra cerrado (línea). Agrupa por día en rangos de hasta 16 días, por semana hasta 70 días y por mes en rangos más largos. | Rango | Informes |
 | **Antigüedad de cartera** | Saldos por cobrar de cotizaciones y facturas, por antigüedad. | Hoy | Cobranza · Pro o superior |
 | **Flujo esperado** | "Flujo esperado · 5 semanas": cobros esperados por semana. Enlace **Tesorería →** al informe Flujo de caja · 90 días. | Hoy | Informes · Pro o superior |
-| **Salud del pipeline** | Cuatro indicadores: **Días promedio de cobro (DSO)** (Saludable hasta 30 días, Vigilar hasta 60, "Alto — acelerar cobro" después), **Concentración de riesgo** (Bien diversificado, Moderada desde 40 %, "Top cliente domina el pipeline" desde 70 %), **Margen cedido** (descuento sobre precio de lista) e **Ingreso esperado (ponderado)** "de {monto} en pipeline abierto". Enlace **Ver CFO →** al informe Finanzas. | Hoy | Informes · Pro o superior |
+| **Salud del pipeline** | Cuatro indicadores: **Días promedio de cobro (DSO)** (Saludable hasta 30 días, Vigilar hasta 60, "Alto — acelerar cobro" después), **Concentración de riesgo** (Bien diversificado, Moderada desde 40 %, "Top cliente domina el pipeline" desde 70 %), **Margen cedido** (descuento sobre precio de lista) e **Ingreso esperado (ponderado)** "de \{monto} en pipeline abierto". Enlace **Ver CFO →** al informe Finanzas. | Hoy | Informes · Pro o superior |
 | **Clientes por tasa de aprobación** | Los 5 clientes con mejor tasa en el rango. Si al menos tres clientes tienen dos o más cotizaciones, solo compiten esos: un 1 de 1 no gana el primer lugar. | Rango | Informes |
 | **Productos por ingreso** | Los 5 productos con más importe en cotizaciones que salieron del borrador en el rango. | Rango | Informes |
-| **Necesitan seguimiento** | Hasta 5 cotizaciones abiertas con más de 7 días sin actividad, ordenadas por días en silencio, con "{n}d sin respuesta", el monto y el total de casos. | Hoy | Informes · Pro o superior |
+| **Necesitan seguimiento** | Hasta 5 cotizaciones abiertas con más de 7 días sin actividad, ordenadas por días en silencio, con "\{n}d sin respuesta", el monto y el total de casos. | Hoy | Informes · Pro o superior |
 | **Cotizaciones recientes** | Las 5 últimas cotizaciones con su estado ("Recientes"). Enlace **Ver todas →**. | — | — |
 | **Actividad** | Los eventos más recientes: envíos, vistas, aprobaciones y pagos. | — | — |
 | **Tareas** | "Tareas y recordatorios": las 8 tareas pendientes más urgentes, con capturador y filtro **Mías**/**Todas** cuando hay más de una persona. Ver [Tareas](/docs/gestion/tareas). | — | — |
@@ -151,7 +151,7 @@ sorpresa en un tablero que ya personalizaste.
 | **Pipeline esperado** | Pipeline abierto ponderado por probabilidad, hoy, con el pipeline abierto sin ponderar. | Hoy | Informes · Pro o superior |
 | **Cobrado** | KPI con variación y minigráfica: "Dinero que entró en el rango y cómo va contra el periodo anterior". | Rango | Informes |
 | **Días a cierre** | "Promedio de días entre crear una cotización y ganarla". | Histórico | Informes |
-| **Facturas vencidas** | "{n} vencidas · {monto}" y las facturas vencidas que más pesan, con "{n} d vencida" y su saldo. Enlace **Ver todas →** a Facturas. | Hoy | Cobranza |
+| **Facturas vencidas** | "\{n} vencidas · \{monto}" y las facturas vencidas que más pesan, con "\{n} d vencida" y su saldo. Enlace **Ver todas →** a Facturas. | Hoy | Cobranza |
 | **Ranking de vendedores** | "Quién cierra más valor en el equipo": los 5 miembros con más monto cerrado. Enlace **Ver todas →** a Desempeño. | Histórico | Informes |
 
 <Callout type="info" title="Plan y permiso no son lo mismo">
@@ -198,8 +198,8 @@ Todo el modo edición funciona con teclado:
 - <kbd>Escape</kbd> cierra la biblioteca si está abierta y devuelve el foco a su botón; si
   no, sale del modo edición y devuelve el foco a **Personalizar**. Durante un arrastre,
   lo cancela y el widget regresa a su lugar.
-- Los lectores de pantalla anuncian "{widget} movido", "{widget} agregado al tablero" y
-  "{widget} oculto; lo encuentras en la biblioteca".
+- Los lectores de pantalla anuncian "\{widget} movido", "\{widget} agregado al tablero" y
+  "\{widget} oculto; lo encuentras en la biblioteca".
 
 ### Celular
 
@@ -215,7 +215,7 @@ selector de tamaño no se muestra. Los tres botones de la barra superior tambié
 Pulsa **Biblioteca** en modo edición. En escritorio se abre como una **tarjeta flotante**
 anclada al botón; en celular, como una **hoja inferior** sobre un fondo oscurecido.
 
-- **Encabezado:** "Biblioteca de widgets" y el resumen "{n} para agregar · {m} en
+- **Encabezado:** "Biblioteca de widgets" y el resumen "\{n} para agregar · \{m} en
   pantalla". La X ("Cerrar biblioteca") la cierra.
 - **Búsqueda:** "Buscar widgets…" busca en el nombre, la descripción y la categoría. Sin
   coincidencias, dice "Sin resultados".
@@ -226,7 +226,7 @@ anclada al botón; en celular, como una **hoja inferior** sobre un fondo oscurec
 - **Tarjetas:** cada widget trae una **miniatura** dibujada con los mismos datos que tiene
   hoy en tu tablero (tu rango, tus números), su nombre y su descripción. Los que puedes
   agregar van primero.
-- **Agregar:** el botón **+** ("Agregar {widget}") lo pone en el tablero, lo desplaza a la
+- **Agregar:** el botón **+** ("Agregar \{widget}") lo pone en el tablero, lo desplaza a la
   vista y lo resalta un momento. Los que ya están visibles muestran una palomita y
   **En pantalla**, deshabilitada.
 - **No es modal:** con la biblioteca abierta en escritorio puedes seguir ordenando el

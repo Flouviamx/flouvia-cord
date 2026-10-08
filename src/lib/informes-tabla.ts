@@ -618,7 +618,7 @@ export async function getVentasVendedor(r: Rango): Promise<TablaReport> {
             vendedorTotals(S, orgId, r.desde, r.hasta),
             rango.compare ? vendedorTotals(S, orgId, rango.compare.desde, rango.compare.hasta) : Promise.resolve(null),
         ]);
-        const exRow = ex && (num(ex.enviadas) > 0 || num(ex.ventas) > 0) ? [{ ...ex, nombre: t(currentLocale(), 'inf.x.ex_miembros') }] : [];
+        const exRow: typeof rows = ex && (num(ex.enviadas) > 0 || num(ex.ventas) > 0) ? [{ ...ex, nombre: t(currentLocale(), 'inf.x.ex_miembros') }] : [];
         const out: TablaRow[] = [...rows, ...exRow].map((row) => {
             const enviadas = num(row.enviadas), ventas = num(row.ventas), vendido = num(row.vendido);
             return {
