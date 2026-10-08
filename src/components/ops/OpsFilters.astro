@@ -126,6 +126,14 @@ const { action, q, placeholder, fields, active, exportHref, resultLabel } = Astr
     render();
   });
 
+  // Antes de enviar se deshabilitan los campos vacíos para no ensuciar la URL.
+  // Si el navegador restaura esta página desde su caché al volver atrás, los
+  // campos regresarían deshabilitados: se reactivan siempre al mostrarse.
+  window.addEventListener('pageshow', () => {
+    document.querySelectorAll<HTMLFormElement>('[data-ops-filters]').forEach((form) => {
+      form.querySelectorAll<HTMLInputElement | HTMLSelectElement>('input, select').forEach((el) => { el.disabled = false; });
+    });
+  });
   document.querySelectorAll<HTMLFormElement>('[data-ops-filters]').forEach((form) => {
     form.querySelector<HTMLElement>('[data-ops-filters-submit]')?.setAttribute('hidden', '');
     form.querySelectorAll('select').forEach((select) => select.addEventListener('change', () => {

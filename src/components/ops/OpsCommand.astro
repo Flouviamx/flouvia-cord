@@ -154,13 +154,16 @@ const svg = (name: IconName) => iconInner(name);
     controller = new AbortController();
     if (status) status.textContent = 'Buscando';
     try {
-      const res = await fetch(`/api/ops/search?q=${encodeURIComponent(q)}`, { signal: controller.signal });
+      const signal = controller.signal;
+      const res = await fetch(`/api/ops/search?q=${encodeURIComponent(q)}`, { signal });
       const data = await res.json().catch(() => ({}));
+      if (signal.aborted) return;
       if (!res.ok) throw new Error(data.error || 'No se pudo buscar.');
       renderRemote(data.results || []);
       if (status) status.textContent = data.results?.length ? `${data.results.length} resultados` : items().length ? '' : 'Sin resultados.';
     } catch (error: any) {
       if (error?.name === 'AbortError') return;
+      renderRemote([]);
       if (status) status.textContent = error?.message || 'No se pudo buscar.';
     }
     highlight(0);
@@ -183,6 +186,9 @@ const svg = (name: IconName) => iconInner(name);
     filterStatic(q);
     highlight(0);
     window.clearTimeout(timer);
+    // Los resultados del texto anterior ya no aplican: se quitan de inmediato
+    // para que un Enter rápido no abra una fila vieja.
+    renderRemote([]);
     timer = window.setTimeout(() => search(input.value.trim()), 180);
   });
   input?.addEventListener('keydown', (event) => {

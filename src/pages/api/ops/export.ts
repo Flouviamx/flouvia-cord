@@ -38,16 +38,21 @@ export const GET: APIRoute = async ({ url, request, locals }) => {
 
     try {
         let csv: string;
+        let truncated = false;
         if (type === 'organizations') {
             const filters = parseOrgFilters(url.searchParams);
-            const [rows] = await withOpsTx(opsOrganizationsExportSql(filters), audit({ ...filters }));
+            const [fetched] = await withOpsTx(opsOrganizationsExportSql(filters), audit({ ...filters }));
+            truncated = fetched.length > OPS_EXPORT_LIMIT;
+            const rows = fetched.slice(0, OPS_EXPORT_LIMIT);
             csv = toCsv(
                 ['id', 'nombre', 'propietario', 'pais', 'moneda', 'plan', 'suscripcion', 'cobros_en_linea', 'miembros', 'clientes', 'productos', 'cotizaciones', 'cotizaciones_30d', 'cierre_acumulado', 'divisa_cierre', 'eventos_7d', 'ultima_actividad', 'alta'],
                 rows.map((o: any) => [o.id, o.nombre, o.owner_email, o.country_code, o.moneda, o.plan || 'free', o.subscription_status, o.stripe_charges_enabled ? 'si' : 'no', o.members, o.clients, o.products, o.quotes, o.quotes_30d, o.closed_value, o.moneda, o.events_7d, o.last_event, o.created_at]),
             );
         } else {
             const filters = parseUserFilters(url.searchParams);
-            const [rows] = await withOpsTx(opsUsersExportSql(filters), audit({ ...filters }));
+            const [fetched] = await withOpsTx(opsUsersExportSql(filters), audit({ ...filters }));
+            truncated = fetched.length > OPS_EXPORT_LIMIT;
+            const rows = fetched.slice(0, OPS_EXPORT_LIMIT);
             csv = toCsv(
                 ['id', 'correo', 'nombre', 'estado', 'correo_verificado', 'mfa', 'organizaciones', 'sesiones_activas', 'ultima_actividad', 'alta'],
                 rows.map((u: any) => {
@@ -68,7 +73,10 @@ export const GET: APIRoute = async ({ url, request, locals }) => {
             status: 200,
             headers: {
                 'Content-Type': 'text/csv; charset=utf-8',
-                'Content-Disposition': `attachment; filename="cord-ops-${name}-${day}.csv"`,
+                // Una exportación recortada lo dice en el nombre del archivo, que es
+                // lo único que el operador ve sin abrirlo.
+                'Content-Disposition': `attachment; filename="cord-ops-${name}-${day}${truncated ? `-primeras-${OPS_EXPORT_LIMIT}` : ''}.csv"`,
+                'X-Ops-Export-Truncated': truncated ? 'true' : 'false',
                 'Cache-Control': 'no-store',
             },
         });

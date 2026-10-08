@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { csvCell, toCsv } from '../src/lib/ops-csv';
 import { filtersQuery, parseOrgFilters, parseUserFilters } from '../src/lib/ops-filters';
+import { escapeLike } from '../src/lib/ops-pagination';
 
 describe('CSV de Cord Ops', () => {
     it('neutraliza fórmulas: un nombre de organización lo escribe su dueño', () => {
@@ -41,5 +42,14 @@ describe('filtros de Ops', () => {
 
     it('la query de exportación lleva solo los filtros activos', () => {
         expect(filtersQuery({ q: '', plan: 'pro', sort: 'recent' }, { sort: 'recent' })).toBe('plan=pro');
+    });
+});
+
+describe('búsqueda literal', () => {
+    it('escapa los comodines de LIKE: `_` no debe devolver todas las filas', () => {
+        expect(escapeLike('john_doe')).toBe('john\\_doe');
+        expect(escapeLike('100%')).toBe('100\\%');
+        expect(escapeLike('a\\')).toBe('a\\\\');
+        expect(escapeLike('acero')).toBe('acero');
     });
 });
