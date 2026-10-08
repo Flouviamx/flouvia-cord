@@ -1428,7 +1428,7 @@ import { iconInner } from '../lib/icons';
         /* iOS hace zoom automático al enfocar un campo con font-size < 16px.
            Forzar 16px en TODOS los controles de la app lo evita (sin tocar desktop). */
         input, select, textarea,
-        .m-input, .task-input, .task-date {
+        .m-input, .tk-add-input {
             font-size: 16px !important;
         }
         /* Áreas táctiles cómodas en los controles tipo píldora/tab. */
@@ -2711,11 +2711,13 @@ import { iconInner } from '../lib/icons';
             const t = titulo.value.trim();
             if (!t) return;
             try {
-                const res = await fetch('/api/tareas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ titulo: t, due_date: due?.value || null }) });
+                // Sin elegir responsable, la tarea es de quien la escribe.
+                const res = await fetch('/api/tareas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ titulo: t, due_date: due?.value || null, asignar_a_creador: true }) });
                 if (!res.ok) throw new Error();
                 close();
-                if (location.pathname === '/app') location.reload();
-                else (window as any).cordToast?.((window as any).CORD_I18N?.taskCreatedOk || 'Tarea creada', 'ok');
+                // Un tablero de tareas abierto (Inicio o /app/tareas) se refresca solo.
+                document.dispatchEvent(new CustomEvent('cord:tasks-changed'));
+                (window as any).cordToast?.((window as any).CORD_I18N?.taskCreatedOk || 'Tarea creada', 'ok');
             } catch { (window as any).cordToast?.((window as any).CORD_I18N?.taskCreatedErr || 'No se pudo crear la tarea', 'error'); }
         });
     }

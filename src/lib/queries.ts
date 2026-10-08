@@ -29,6 +29,7 @@ import { onlinePaymentsSetup } from './payment-rail';
 import { fmtDate, fmtRelative, intlLocale, money } from './fmt-server';
 import { calculateDocumentTotals } from '../../packages/elements/src/engine';
 import { dueDateFor, venceDia } from './cobros';
+import { taskBadge } from './tasks-db';
 import type { PublicViewer } from './public-viewer';
 import {
     STATUS_ABIERTA, STATUS_GANADA, STATUS_PERDIDA, STATUS_SALIO,
@@ -3330,24 +3331,6 @@ async function getCFOUncached() {
     };
 }
 
-// ── TAREAS / RECORDATORIOS (CRM ligero) ───────────────────────────────────────
-export async function getTareas() {
-    const orgId = await getActiveOrgId();
-    const [rows] = await withOrgTx(orgId, sql`
-        select t.id, t.titulo, t.due_date, t.cotizacion_id, c.folio
-        from tareas t left join cotizaciones c on c.id = t.cotizacion_id and c.org_id = t.org_id
-        where t.org_id = ${orgId} and t.done = false
-        order by t.due_date asc nulls last, t.created_at asc
-        limit 12`);
-    const hoy = new Date(new Date().toDateString());
-    return rows.map((t) => ({
-        id: t.id as string, titulo: t.titulo as string,
-        folio: (t.folio as string) ?? '',
-        due: t.due_date ? fmtDate(t.due_date as string) : '',
-        vencida: t.due_date ? new Date(t.due_date as string) < hoy : false,
-    }));
-}
-
 // ── AUDIT LOG (lectura) ────────────────────────────────────────────────────────
 export async function getAuditLog() {
     const orgId = await getActiveOrgId();
@@ -4124,7 +4107,7 @@ export async function getSetupProgress() {
 // - `vencidas`: se lee de `cuentas_por_cobrar` (regla 25), la misma vista que la
 //   cobranza y el agente; contar solo `cotizaciones` dejaba fuera las facturas.
 export async function getSidebarBadges() {
-    const zero = { seguimiento: 0, vencidas: 0 };
+    const zero = { seguimiento: 0, vencidas: 0, tareas: 0, tareasVencidas: 0 };
     try {
         const orgId = await getActiveOrgId();
         const [[r]] = await withOrgTx(orgId,
@@ -4134,9 +4117,14 @@ export async function getSidebarBadges() {
                     (select count(*) from cuentas_por_cobrar
                       where org_id = ${orgId} and dias_vencido > 0)::int as vencidas`,
         );
+        // El de tareas va aparte y con su propio respaldo: si falla, el menú
+        // conserva los otros dos contadores.
+        const tareas = await taskBadge().catch(() => ({ n: 0, vencidas: 0 }));
         return {
             seguimiento: Number(r?.seguimiento ?? 0),
             vencidas: Number(r?.vencidas ?? 0),
+            tareas: tareas.n,
+            tareasVencidas: tareas.vencidas,
         };
     } catch { return zero; }
 }

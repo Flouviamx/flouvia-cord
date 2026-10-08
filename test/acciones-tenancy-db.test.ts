@@ -44,7 +44,8 @@ beforeAll(async () => {
         create table productos(id uuid primary key default gen_random_uuid(), org_id uuid not null, sku text, nombre text not null, unidad text,
             descripcion text, precio_lista numeric, costo numeric, activo boolean, precios_volumen jsonb);
         create table cotizaciones(id uuid primary key, org_id uuid not null, base_currency text default 'MXN');
-        create table tareas(id uuid primary key default gen_random_uuid(), org_id uuid not null, cotizacion_id uuid, titulo text, due_date date, done boolean default false);
+        create table tareas(id uuid primary key default gen_random_uuid(), org_id uuid not null, cotizacion_id uuid, titulo text, due_date date, done boolean default false,
+            prioridad text not null default 'normal', notas text, asignado_a uuid, creado_por uuid, completed_at timestamptz, completed_by uuid, recordada_el date);
         create table promesas_pago(id uuid primary key default gen_random_uuid(), org_id uuid not null, cotizacion_id uuid, fecha_promesa date, monto numeric, nota text, estado text default 'pendiente');`);
 });
 

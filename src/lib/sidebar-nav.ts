@@ -12,7 +12,7 @@
 import type { IconName } from './icons';
 import type { AppStringKey } from '../i18n/app';
 
-export type SidebarBadge = 'seguimiento' | 'vencidas';
+export type SidebarBadge = 'seguimiento' | 'vencidas' | 'tareas';
 
 export interface SidebarNavItem {
     /** id de página que cada ruta pasa a AppLayout (`page="..."`). */
@@ -43,6 +43,7 @@ export const SIDEBAR_NAV: SidebarNavGroup[] = [
             { id: 'cotizaciones', href: '/app/cotizaciones', label: 'sidebar.item.cotizaciones', icon: 'quote', key: 'c', badge: 'seguimiento' },
             { id: 'clientes', href: '/app/clientes', label: 'sidebar.item.clientes', icon: 'clients', key: 'l' },
             { id: 'productos', href: '/app/productos', label: 'sidebar.item.productos', icon: 'products', key: 'p' },
+            { id: 'tareas', href: '/app/tareas', label: 'sidebar.item.tareas', icon: 'checklist', key: 't', badge: 'tareas' },
         ],
     },
     {

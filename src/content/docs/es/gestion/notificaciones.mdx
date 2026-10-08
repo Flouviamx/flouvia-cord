@@ -20,7 +20,7 @@ En **Ajustes › Notificaciones › Notificaciones** hay una matriz de 7 eventos
 canales (Correo, Slack y Teams). Marcas las casillas que quieres y se aplican a partir
 de ese momento a toda la organización.
 
-{/* MOCKUP: Ajustes › Notificaciones con la matriz de 7 filas (Tu cliente vio la cotización, Cotización aprobada, Cotización rechazada, Pago recibido, Cotización por vencer, Pago vencido, Alguien se unió al equipo) y las columnas Correo, Slack y Teams; Aprobada, Rechazada y Pago recibido marcadas en Correo, y la celda de Slack y Teams de "Alguien se unió al equipo" con "No aplica a este evento". Debajo, las secciones Canal de Slack y Teams. */}
+{/* MOCKUP: Ajustes › Notificaciones con la matriz de 8 filas (Tu cliente vio la cotización, Cotización aprobada, Cotización rechazada, Pago recibido, Cotización por vencer, Pago vencido, Alguien se unió al equipo, Recordatorio de tareas) y las columnas Correo, Slack y Teams; Aprobada, Rechazada y Pago recibido marcadas en Correo, y la celda de Slack y Teams de "Alguien se unió al equipo" con "No aplica a este evento". Debajo, las secciones Canal de Slack y Teams. */}
 
 ## Requisitos
 
@@ -39,6 +39,7 @@ de ese momento a toda la organización.
 | **Cotización por vencer** | Exactamente 3 días antes de la fecha de vigencia, si sigue enviada o vista. | El proceso diario |
 | **Pago vencido** | El día después de que vence el pago de una cotización aprobada o facturada que sigue sin pagarse. | El proceso diario |
 | **Alguien se unió al equipo** | Un invitado acepta tu invitación. | Tu equipo |
+| **Recordatorio de tareas** | Cada mañana, desde las 8:00 de la zona de tu negocio, si alguien tiene tareas que vencen hoy o ya vencieron. | El proceso diario |
 
 ### Qué cuenta como "vista"
 
@@ -61,7 +62,7 @@ Más detalle en [Lo que ve tu cliente](/docs/interaccion/vista-del-cliente).
 ## Antes de guardar por primera vez
 
 Mientras no guardes la matriz, Cord te avisa **por correo** de tres eventos: cotización
-aprobada, rechazada y pago recibido. En cuanto guardas la pantalla una vez, manda tu
+aprobada, rechazada y pago recibido, y manda el **Recordatorio de tareas**. En cuanto guardas la pantalla una vez, manda tu
 selección: puedes apagar cualquiera de los tres o encender los demás.
 
 ## Canales
@@ -92,6 +93,12 @@ un canal aparte de Slack: puedes tener los dos y elegir en cuál llega cada avis
 
 </TabItem>
 </Tabs>
+
+<Callout type="info">
+**El recordatorio de tareas no va al dueño, va a cada responsable.** Cada persona recibe
+solo sus tareas (ver [Tareas](/docs/gestion/tareas#recordatorio-por-correo)). Al
+apagarlo aquí se apaga para toda la organización. Es solo por correo.
+</Callout>
 
 <Callout type="warning">
 **"Alguien se unió al equipo" solo llega por correo.** No está atado a una cotización

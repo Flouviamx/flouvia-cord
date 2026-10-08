@@ -1,5 +1,39 @@
 # Historial — App interna: features y UX
 
+## 2026-10-08 — Tareas con dueño, fecha del negocio y recordatorio real
+
+Audit previo: el widget se llamaba "Tareas y recordatorios" y Cord no mandaba un solo
+recordatorio (regla 15); "vencida" se decidía con la hora del servidor y la fecha se
+mostraba como medianoche UTC, así que en América una tarea de hoy salía vencida por la noche
+y su fecha un día antes; completar o borrar quitaba la fila aunque el servidor respondiera
+error (`fetch` no lanza con un 4xx); agregar recargaba la página; el widget topaba en 12 sin
+ningún lugar para ver el resto; nadie era responsable de nada.
+
+- `tareas` gana `notas`, `prioridad` (`normal` | `alta`), `asignado_a`, `creado_por`,
+  `completed_at`, `completed_by` y `recordada_el`. Migración aditiva en
+  `db/tareas-seguimiento.sql`, encadenada al build de Vercel (`scripts/migrate-tareas.mjs`,
+  mismo patrón que `brand-profile`) para que las columnas existan antes que el código.
+- `src/lib/tasks.ts`: reglas puras sobre el DÍA CIVIL del negocio (grupos vencidas / hoy /
+  mañana / esta semana / después / sin fecha y atajos Hoy, Mañana, Lunes). Las fechas `date`
+  se leen con `to_char`, nunca como `Date`.
+- Acciones (`src/lib/actions/tasks.ts`): el responsable se valida como miembro ACTIVO de la
+  organización; editar es parcial y reprogramar limpia `recordada_el`; completar guarda quién y
+  cuándo, reabrir lo limpia. El quick-add y la cuenta de una sola persona asignan a quien
+  escribe (`asignar_a_creador`); la API y el MCP no cambian su contrato.
+- UI: `TaskBoard.astro` (widget del Inicio y `/app/tareas`) con capturador de atajos de fecha,
+  prioridad y responsable; grupos por urgencia; completar con "Deshacer"; menú de posponer,
+  asignarme, editar y eliminar (con confirmación). Todo cambio pide el fragmento
+  `/app/tareas/lista`, que renderiza el mismo `TaskList.astro` que el SSR.
+- Sidebar: "Tareas" con `G T` y badge de lo tuyo o sin dueño que vence hoy o antes.
+- Recordatorio: `GET /api/cron/tareas`, cada hora desde `cord-crons.yml` (el plan de Vercel
+  solo admite crons diarios y una hora UTC fija no es "la mañana" en todos los países). Desde
+  las 8:00 de la zona del negocio, un correo por responsable (o por quien creó la tarea, o el
+  dueño) con lo de hoy y lo vencido. Dedup por `recordada_el`, reclamado antes de mandar y
+  liberado si el envío falla. Opt-out en Ajustes › Notificaciones (`task_due`, encendido si la
+  organización nunca lo guardó).
+- Lo prueban `test/tasks.test.ts` (reglas puras y correo) y `test/tareas-db.test.ts`
+  (migración real dos veces, acciones, lista, aislamiento y cron con su dedup).
+
 ## 2026-10-07 — Topbar: campana como bandeja, ⌘K más útil, tema en tres modos
 
 - `eventos.actor` (`vendedor` | `externo` | null histórico) lo decide un DEFAULT con el

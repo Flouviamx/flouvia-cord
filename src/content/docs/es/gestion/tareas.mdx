@@ -1,12 +1,12 @@
 ---
 title: "Tareas y seguimiento"
 seoTitle: "Tareas y recordatorios de seguimiento en Cord"
-description: "Crea pendientes con fecha límite desde la app, la API, el MCP o un workflow; cómo se ven, quién los ve, qué tareas crea Cord por ti y qué eventos emiten."
-lastUpdated: "2026-10-07"
+description: "Pendientes con responsable, fecha límite y prioridad; recordatorio diario por correo; cómo se crean desde la app, la API, el MCP o un workflow y qué eventos emiten."
+lastUpdated: "2026-10-08"
 reviewedBy: "Producto y operaciones de Cord"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
-prerequisites: ["Permiso Cotizaciones, Cobranza o Clientes para crear, completar o eliminar tareas"]
+prerequisites: ["Permiso Cotizaciones, Cobranza o Clientes para crear, editar, completar o eliminar tareas"]
 ---
 
 <header class="content-header">
@@ -16,49 +16,62 @@ prerequisites: ["Permiso Cotizaciones, Cobranza o Clientes para crear, completar
 
 ## Qué es
 
-Las tareas son una lista ligera de pendientes de tu organización. Se ven en el widget
-**Tareas y recordatorios** del [Inicio](/docs/gestion/dashboard), ordenadas por fecha
-límite. Una tarea puede estar ligada a una cotización; en ese caso muestra su folio.
+Las tareas son los pendientes de tu equipo: la siguiente llamada, el envío que falta, el
+seguimiento de una cotización. Cada una tiene responsable, fecha límite y prioridad, y Cord
+te avisa por correo cuando le toca.
 
-{/* MOCKUP: widget "Tareas y recordatorios" del Inicio con el campo "Ej. Llamar a GAMA para dar seguimiento…", el selector de fecha y el botón Agregar; debajo cuatro tareas: "Llamar a Luis por COT-0149" (COT-0149 · 9 oct), "Responder contracargo" con la etiqueta roja "vencida", "Transferir reembolso SPEI" (COT-0131) y "Enviar catálogo actualizado" sin fecha. */}
+Se ven en dos lugares:
+
+- El widget **Tareas y recordatorios** del [Inicio](/docs/gestion/dashboard), con lo más urgente.
+- La página **Tareas** del menú lateral (atajo <kbd>G</kbd> <kbd>T</kbd>), con todas las tareas y las ya completadas.
+
+{/* MOCKUP: página Tareas con los contadores "Vencidas 2", "Para hoy 3", "Mías pendientes 5", "Sin responsable 1"; debajo el capturador "Ej. Llamar a GAMA para dar seguimiento…" con los atajos Hoy, Mañana, Lunes, el selector de fecha, "Prioridad alta" y el responsable "Ana López (yo)"; y la lista agrupada: VENCIDAS — "Responder contracargo" con la etiqueta ALTA y "Venció hace 2 días"; HOY — "Llamar a Luis" con COT-0149 · Acme y el avatar AL; ESTA SEMANA — "Enviar catálogo actualizado" el jueves. */}
 
 ## Requisitos
 
-- **Permiso:** Cotizaciones, Cobranza o Clientes (cualquiera de los tres) para crear, completar o eliminar.
+- **Permiso:** Cotizaciones, Cobranza o Clientes (cualquiera de los tres) para crear, editar, completar o eliminar. Sin ninguno, ves las tareas pero no puedes cambiarlas.
 - **Plan:** todos.
-- **Quién las ve:** todos los miembros que ven el Inicio. Una tarea no se asigna a una persona.
+- **Quién las ve:** todos los miembros de la organización.
 
 ## Crea una tarea
 
 <Steps>
-1. **Desde cualquier pantalla:** pulsa **Crear** en la barra superior y elige **Tarea**. O, en el Inicio, usa el campo del widget **Tareas y recordatorios**.
-2. Escribe la descripción, por ejemplo "Llamar a Luis para preguntar si ya revisó la cotización". Admite hasta 200 caracteres.
-3. Opcional: elige la **Fecha límite**.
-4. Pulsa **Agregar** (o **Crear**, según dónde la abriste).
+1. **Desde cualquier pantalla:** pulsa **Crear** en la barra superior y elige **Tarea** (o la tecla <kbd>T</kbd>). O usa el capturador del Inicio o de la página **Tareas**.
+2. Escribe la tarea, por ejemplo "Llamar a Luis para preguntar si ya revisó la cotización". Admite hasta 200 caracteres.
+3. Opcional: elige la fecha con los atajos **Hoy**, **Mañana** o **Lunes**, o con el calendario.
+4. Opcional: marca **Prioridad alta** y elige el **responsable**.
+5. Pulsa **Agregar** (o <kbd>Enter</kbd>). La tarea aparece en la lista sin recargar la página.
 </Steps>
 
-Las tareas que creas desde la app no se ligan a una cotización. Las que crean un
-workflow, la API o el MCP sí pueden quedar ligadas.
+Si no eliges responsable, la tarea queda a cargo de quien la escribe. En el capturador puedes
+elegir **Sin responsable** a propósito.
 
-## Seguimiento
+## Organiza el día
 
-- El widget lista hasta 12 tareas pendientes, la de fecha más próxima primero; las que no tienen fecha van al final.
-- Cuando la fecha límite ya pasó, la tarea lleva la etiqueta **vencida** en rojo.
-- Marca la casilla para completarla: sale de la lista de pendientes.
-- El botón **×** la elimina por completo.
+- **Grupos por urgencia:** Vencidas, Hoy, Mañana, Esta semana, Más adelante y Sin fecha. "Hoy" es el día de la zona horaria de tu negocio, no la del servidor (se cambia en Ajustes › General).
+- **Filtros:** **Mías**, **Todas** y **Sin asignar**; en la página, también **Pendientes** y **Completadas**. Con una sola persona en la cuenta, el filtro por responsable no aparece.
+- **Completar:** marca el círculo. Durante unos segundos puedes pulsar **Deshacer**. En **Completadas** ves quién la completó y cuándo, y puedes **Reabrir**.
+- **Menú de la tarea (···):** **Editar** (título, notas, fecha, prioridad y responsable), **Posponer a** mañana, al lunes o una semana, **Asignármela** y **Eliminar**. Eliminar pide confirmación porque no se puede deshacer.
+- **Ligada a un documento:** si la tarea viene de una cotización o factura, su folio y el cliente aparecen como enlace al documento.
+- En el menú lateral, **Tareas** muestra cuántas tuyas o sin responsable vencen hoy o ya vencieron; el número va en rojo si hay vencidas.
 
-<Callout type="warning">
-**Cord no envía recordatorios de tareas.** Al llegar la fecha límite no recibes correo
-ni aviso: la tarea solo se marca como vencida en el widget. Revisa tu Inicio con
-frecuencia.
-</Callout>
+## Recordatorio por correo
+
+Cada mañana, a partir de las 8:00 de la zona horaria de tu negocio, cada responsable recibe un
+correo con sus tareas de hoy y las vencidas. Una tarea sin responsable le llega a quien la
+creó; si esa persona ya no está en el equipo, al dueño de la cuenta.
+
+- Llega un solo correo al día por persona.
+- Si pospones una tarea, vuelve a avisar en su nueva fecha.
+- Una tarea vencida y sin completar aparece en el correo de cada día hasta que la completes o la pospongas.
+- Para apagarlo para toda la organización, desmarca **Recordatorio de tareas** en [Ajustes › Notificaciones](/docs/gestion/notificaciones).
 
 ## Tareas que Cord crea por ti
 
-Cuando una operación de cobro necesita tu intervención, Cord agrega la tarea:
+Cuando una operación de cobro necesita tu intervención, Cord agrega la tarea con **prioridad alta**:
 
 - **Responder contracargo:** cuando un cliente disputa un cargo con tarjeta, con el monto y, como fecha límite, el plazo para enviar evidencia (ver [Disputas](/docs/pagos/disputas)).
-- **Transferir reembolso SPEI:** cuando solicitas el reembolso de un cobro por SPEI, que se transfiere por fuera, ligada a la cotización (ver [Reembolsos](/docs/pagos/reembolsos)).
+- **Transferir reembolso SPEI:** cuando solicitas el reembolso de un cobro por SPEI, que se transfiere por fuera, ligada a la cotización y a cargo de quien lo solicitó (ver [Reembolsos](/docs/pagos/reembolsos)).
 
 ## Otras formas de crear tareas
 
@@ -76,7 +89,7 @@ tarea para llamarle mañana".
 
 `POST /api/v1/tareas` crea una tarea con `titulo`, `due_date` opcional (AAAA-MM-DD) y
 `cotizacion_id` opcional. Requiere una llave con permiso de escritura. La API crea
-tareas; completarlas y eliminarlas se hace desde la app. Ver [API de
+tareas sin responsable; asignarlas, completarlas y eliminarlas se hace desde la app. Ver [API de
 tareas](/docs/desarrolladores/funciones/tareas).
 
 </TabItem>
@@ -99,7 +112,7 @@ y [webhooks](/docs/desarrolladores/herramientas/webhooks):
 | **Se crea una tarea** | Al crearla desde la app, un workflow, la API o el MCP. |
 | **Se completa una tarea** | Al marcarla como completada. |
 
-Eliminar una tarea no emite evento.
+Editar, posponer, reabrir o eliminar una tarea no emite evento.
 
 ## Límites por plan
 
@@ -107,11 +120,13 @@ Las tareas no tienen tope por plan.
 
 ## Problemas comunes
 
-**No veo el widget de tareas.** Lo ocultaste al personalizar el Inicio: recupéralo desde la **Biblioteca**.
+**No veo el widget de tareas.** Lo ocultaste al personalizar el Inicio: recupéralo desde la **Biblioteca**. La página **Tareas** del menú lateral siempre está disponible.
 
 **No puedo agregar una tarea.** Tu rol no tiene los permisos Cotizaciones, Cobranza ni Clientes.
 
-**Falta una tarea en la lista.** El widget muestra 12 pendientes; completa o elimina las que ya no aplican.
+**Falta una tarea en la lista.** Revisa el filtro: **Mías** solo muestra las tuyas. El widget del Inicio muestra las 8 más urgentes; el resto está en la página **Tareas**.
+
+**No me llegó el recordatorio.** Solo llega si tienes tareas que vencen hoy o vencidas, a partir de las 8:00 de la zona de tu negocio. Revisa que **Recordatorio de tareas** siga activo en Ajustes › Notificaciones y tu carpeta de spam.
 
 ## Relacionadas
 
