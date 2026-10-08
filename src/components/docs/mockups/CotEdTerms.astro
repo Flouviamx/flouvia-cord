@@ -1,0 +1,20 @@
+---
+// Chips de términos de pago del editor (calca de TermPicker.astro): los plazos
+// comunes de src/lib/payment-terms.ts y el chip "Otro plazo". Pieza interna
+// de los mockups del editor; no empieza con "Dm", así que no se registra en
+// el MDX.
+import './dm-cot-editor.css';
+import DmIcon from './DmIcon.astro';
+import { COMMON_TERM_CODES, termLabel, type TermCode } from '../../../lib/payment-terms';
+import { dmT, type DmLang } from './format';
+
+interface Props {
+    lang: DmLang;
+    value: TermCode;
+}
+const { lang, value } = Astro.props;
+---
+<span class="dm-ced-chips">
+    {COMMON_TERM_CODES.map((c) => <span class:list={['dm-ced-chip', { 'is-on': c === value }]}>{termLabel(c, lang)}</span>)}
+    <span class="dm-ced-chip is-more">{dmT(lang, 'terms.otro')}<DmIcon name="chevron-down" /></span>
+</span>

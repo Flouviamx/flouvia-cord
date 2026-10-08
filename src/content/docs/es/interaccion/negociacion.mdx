@@ -2,7 +2,7 @@
 title: "Negociación y contraofertas"
 seoTitle: "Contraofertas, aprobación parcial, rechazo y versiones"
 description: "Cómo negocia tu cliente desde el link (contraoferta, aprobación parcial, rechazo con motivo), cómo respondes con Modificar y reenviar, qué pasa si cambias la propuesta mientras la lee, y qué te notifica Cord."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-08"
 reviewedBy: "Producto y operaciones de Cord"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -37,7 +37,7 @@ llega al mismo link.
 3. La propuesta aparece en la conversación con un estilo distinto, por ejemplo "Propuesta: MXN 42,000.00 — Si lo dejan en este total cerramos esta semana".
 </Steps>
 
-{/* MOCKUP: sección CONVERSACIÓN del link con una burbuja normal del cliente, una burbuja ámbar de contraoferta "Propuesta: MXN 42,000.00 — Si lo dejan en este total cerramos esta semana" rotulada "Tú · ahora", y debajo el campo "Propuesta (opcional)" con el botón "Contraoferta". */}
+<DmQuoteThread lang="es" view="counter" />
 
 La contraoferta **no cambia el estado** de la cotización ni sus importes: es un
 mensaje con un monto. Para aceptarla, ajusta los precios y reenvía (ver abajo). Si no
@@ -79,9 +79,9 @@ Mientras la cotización está *Enviada*, *Vista* o *Vencida*, el detalle muestra
 **Modificar y reenviar (V2)**; el número es la versión que vas a crear.
 
 <Steps>
-1. Pulsa **Modificar y reenviar (V2)**. Se abre el editor con las partidas actuales.
-2. Cambia productos, cantidades, precios negociados, impuestos o **Precios ya incluyen IVA**. El cliente y los términos de pago no se cambian desde aquí ("El cliente no se puede cambiar al editar la cotización").
-3. Pulsa **Generar V2 y reenviar**.
+1. Pulsa **Modificar y reenviar (V2)**. Se abre el editor de cotizaciones como **Nueva versión de COT-0149**, con las partidas actuales y la etiqueta **Versión 2** en el resumen.
+2. Cambia productos, cantidades, precios, impuestos de cada línea o **Precios ya incluyen IVA**. El cliente, la divisa y las condiciones no se cambian aquí: "En una versión nueva cambian las líneas y los precios. El cliente, la divisa y las condiciones se quedan como se enviaron."
+3. Pulsa **Enviar nueva versión** (o **⌘ Enter**). Si tu organización usa [aprobaciones internas](/docs/cotizacion/aprobaciones-internas), la versión se revisa contra los topes antes de salir.
 </Steps>
 
 Al reenviar, Cord:
@@ -89,11 +89,13 @@ Al reenviar, Cord:
 - guarda la versión nueva y la agrega al **Historial de versiones** del detalle, con su fecha y su total;
 - conserva el **mismo link**;
 - vuelve a mandar el correo al cliente si tiene correo capturado;
-- regresa la cotización a *Enviada*;
+- regresa la cotización a *Enviada* y vuelve a correr su vigencia desde hoy;
 - emite el evento de cotización modificada con el total anterior, para que tus automatizaciones distingan un reenvío igual de uno con descuento.
 
-Reenviar una cotización *Vencida* no le da una vigencia nueva: el proceso diario vuelve
-a vencerla. Para proponerla otra vez con fecha nueva, usa **Duplicar cotización**.
+Cada versión nueva vuelve a correr la vigencia desde el día en que la envías, con la
+misma duración con que se envió la cotización (si era de 30 días, vence en 30 días).
+Así se revive una cotización *Vencida*: regresa a *Enviada* con fecha nueva. Para otra
+duración, otro cliente, otra divisa u otras condiciones, usa **Duplicar cotización**.
 
 ## Si cambias la propuesta mientras el cliente la lee
 

@@ -1,7 +1,7 @@
 ---
 title: "Crear, emitir y cobrar facturas"
 description: "Crea una factura, asígnale folio al emitir, envíala y sigue su saldo desde Cord."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-08"
 reviewedBy: "Producto y operaciones de Cord"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -15,18 +15,34 @@ prerequisites: ["Permiso Cobranza", "Cliente y datos del emisor", "Configuració
 
 ## Dónde encontrar tus facturas
 
-Abre **Mi dinero › Facturas**. La bandeja muestra el folio, cliente, fecha de creación, vencimiento, total, saldo y estado operativo.
+Abre **Ingresos › Facturas**. La bandeja muestra el folio, cliente, fecha de creación, vencimiento, total, saldo y estado operativo.
 
-Los borradores todavía no tienen folio oficial. Cord los identifica como **Sin folio** y les agrega una referencia temporal `BOR-...` para que puedas reconocerlos. El folio consecutivo se reserva únicamente al emitir.
+Los borradores todavía no tienen folio oficial. Cord los identifica como **Sin folio** y les agrega una referencia temporal `BOR-...` para que puedas reconocerlos. El folio consecutivo se reserva únicamente al emitir. Al abrir un borrador desde la bandeja, Cord te lleva directo al editor.
 
 ## Crear una factura
 
+**Nueva factura** abre el mismo editor que las cotizaciones (ver [Resumen de creación
+de cotización](/docs/cotizacion/resumen)), con textos de factura y un paso 3 propio.
+
 <Steps>
-1. **Selecciona al cliente.** Cord toma el correo, términos de pago y datos fiscales desde la ficha del cliente.
-2. **Agrega conceptos.** Usa productos del catálogo, kits, una línea libre o **Armar con IA**. Puedes definir cantidad, precio e impuesto por concepto.
-3. **Revisa total y vencimiento.** Confirma impuestos, retenciones, divisa, tipo de cambio cuando aplique y fecha de vencimiento.
-4. **Emite.** Elige **Emitir y enviar** para asignar el folio y mandar el correo en el mismo flujo, o **Emitir sin enviar** si quieres entregar la factura después.
+1. **Arma con IA (opcional).** El bloque **Arma la factura con IA** acepta el pedido en texto, foto o PDF y llena los conceptos con tu catálogo (ver [Cord AI](/docs/cotizacion/ia)).
+2. **¿A quién le facturas?** Busca al cliente por nombre, contacto, correo o identificador fiscal, o elige **+ Crear nuevo cliente…**. Cord toma su correo, sus términos de pago y sus datos fiscales de la ficha. Los términos se eligen con chips (Contado, Net 15, Net 30, Net 60 u **Otro plazo**: Net 7, Net 45 o Net 90) y recalculan el vencimiento.
+3. **¿Qué le estás cobrando?** Agrega productos del catálogo, kits o una línea libre. Cada concepto lleva su cantidad, su precio y su propia tasa de impuesto. Puedes duplicar, reordenar y quitar líneas con **Deshacer**, igual que en una cotización (ver [Productos y descuentos](/docs/cotizacion/productos)).
+4. **Condiciones.** Define el **Vencimiento** (una fecha; al cambiar los términos se recalcula, y puedes elegir otra a mano), el **Tipo de documento** y la **Divisa de la factura**. El tipo de documento ofrece **Proforma** en México y España o **Factura comercial** en los demás mercados, y **CFDI 4.0** (México) o **VERI\*FACTU** (España) cuando tu plan y tu configuración fiscal lo permiten (ver [Facturación fiscal por país](/docs/pagos/facturacion)). Si la divisa difiere de la de tu negocio, aparece el panel de tipo de cambio: "La tasa queda declarada en la factura."
+5. **Nota para el cliente** (opcional). Aparece en el PDF y en la página de la factura.
+6. **Revisa y emite.** El resumen muestra subtotal, impuestos por tasa, retenciones, el **Total** y, debajo, los términos y el vencimiento (por ejemplo "Net 30 · vence el 7 nov"). El bloque **Entrega** muestra el correo al que se enviará: "El correo incluye el PDF y la liga de pago." Pulsa **Vista previa** para ver la hoja aproximada que recibirá tu cliente.
+7. **Emite.** **Emitir y enviar** asigna el folio y manda el correo en el mismo flujo; **Emitir sin enviar** emite y deja la entrega para después; **Guardar y salir** guarda el borrador sin emitir. Antes de emitir, Cord abre una **Revisión final** ("¿Emitir esta factura?") con el cliente, el total, el vencimiento y la entrega; confirma con **Emitir y enviar** o **Emitir factura**, o vuelve con **Regresar**.
 </Steps>
+
+Cada concepto se redondea por separado y el total es la suma de las líneas ya
+redondeadas, así que el total de la factura coincide con la suma de sus renglones.
+
+### Guardado del borrador y atajos
+
+- **Un borrador ya guardado se guarda solo** unos segundos después de tu último cambio (el resumen dice "Guardado a las …"). Una factura nueva se crea como borrador la primera vez que pulsas **Guardar y salir** o emites; mientras tanto, tu navegador guarda una copia local que Cord te ofrece **Recuperar** si cierras sin guardar (vence a los 7 días).
+- En escritorio, **⌘ Enter** (Ctrl Enter) abre la revisión final para emitir y enviar, **⌘ S** (Ctrl S) guarda el borrador y sale, y **/** lleva al buscador del catálogo. En el celular, una barra fija abajo muestra el **Total** y **Emitir y enviar**.
+- **Emitir y enviar** necesita que el cliente tenga correo. Si no lo tiene, Cord te lo dice ("Este cliente no tiene correo. Agrégalo en su ficha o elige "Emitir sin enviar".").
+- Si una emisión falló con certeza, **Corregir y reintentar** en el detalle abre el mismo editor como **Corregir** con el folio reservado: corriges y vuelves a emitir conservando ese folio.
 
 <Callout type="warning">
 Emitir es irreversible: asigna el folio oficial y bloquea el documento fiscal. Si necesitas corregir una factura emitida, usa anulación o nota de crédito según su estado de pago.

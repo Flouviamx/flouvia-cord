@@ -39,7 +39,7 @@ n8n uses a Cord **API key**, not the one-click authorization of Zapier and Make:
 5. To act on Cord, use the **Cord** node.
 </Steps>
 
-{/* MOCKUP: n8n flow with three nodes: "Cord Trigger" (Events: "Quotes: Quote approved", "Payments: Partial payment received"; Verify Signature on), "IF" and "Cord" (Resource: Task, Operation: Create, Title: "Prepare order for {{ $json.data.folio }}"). Side panel of the "Cord API" credential with the masked API Key field. */}
+<DmExternalFlow lang="en" tool="n8n" />
 
 ## The trigger: Cord Trigger
 
@@ -97,7 +97,7 @@ If you change the events of a **Cord Trigger** that is already active, the node 
 
 | Resource | Operation | Fields |
 |---|---|---|
-| **Client** | Create | **Company** (required). Optional: Contact, Email, Phone, Tax ID, Country Code and Payment Terms (Upfront, Net 30 or Net 60). |
+| **Client** | Create | **Company** (required). Optional: Contact, Email, Phone, Tax ID, Country Code and Payment Terms (Upfront or Net 7, 15, 30, 45, 60 or 90). |
 | **Client** | Update | **Client ID** and the fields you want to change. |
 | **Client** | Get | **Client ID**. |
 | **Client** | Search | Text or email to look for. |

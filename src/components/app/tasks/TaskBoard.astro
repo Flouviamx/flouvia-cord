@@ -1,0 +1,705 @@
+---
+// TaskBoard — tablero de tareas: capturador, filtros, lista, menú y edición.
+//
+// Lo usan el widget del Inicio (`variant="widget"`) y /app/tareas
+// (`variant="page"`). Todo cambio (crear, completar, posponer, editar, borrar)
+// pide de vuelta el fragmento /app/tareas/lista y reemplaza la lista: nada de
+// `location.reload()` ni de filas que desaparecen aunque el servidor haya
+// dicho que no. Completar ofrece "Deshacer"; borrar pide confirmación porque
+// no tiene vuelta.
+//
+// El CSS es `is:global` (regla 11): el markup de las filas también llega por JS.
+import DatePicker from '../DatePicker.astro';
+import TaskList from './TaskList.astro';
+import { currentLocale, currentUserId } from '../../../lib/context';
+import { t } from '../../../i18n/app';
+import { iconInner } from '../../../lib/icons';
+import type { TaskListResult, TaskPerson } from '../../../lib/tasks-db';
+import type { TaskScope, TaskState } from '../../../lib/tasks';
+import '../../../styles/modal.css';
+
+interface Props {
+    variant: 'widget' | 'page';
+    result: TaskListResult;
+    estado: TaskState;
+    scope: TaskScope;
+    limit: number;
+    canEdit: boolean;
+    assignees: (TaskPerson & { esYo: boolean })[];
+    /** Encabezado propio (el widget). La página ya tiene el suyo. */
+    title?: string;
+}
+
+const { variant, result, estado, scope, limit, canEdit, assignees, title } = Astro.props;
+const L = currentLocale();
+const me = currentUserId() ?? '';
+const uid = `tk-${variant}`;
+const equipo = assignees.length > 1;
+const meIsMember = assignees.some((a) => a.esYo);
+const scopes: { id: TaskScope; label: string }[] = [
+    { id: 'mias', label: t(L, 'tareas.filtro.mias') },
+    { id: 'todas', label: t(L, 'tareas.filtro.todas') },
+    ...(variant === 'page' ? [{ id: 'sin_asignar' as TaskScope, label: t(L, 'tareas.filtro.sin_asignar') }] : []),
+];
+const estados: { id: TaskState; label: string }[] = [
+    { id: 'pendientes', label: t(L, 'tareas.filtro.pendientes') },
+    { id: 'completadas', label: t(L, 'tareas.filtro.completadas') },
+];
+const svg = (name: Parameters<typeof iconInner>[0]) =>
+    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${iconInner(name)}</svg>`;
+const i18n = {
+    completada: t(L, 'tareas.toast.completada'),
+    reabierta: t(L, 'tareas.toast.reabierta'),
+    deshacer: t(L, 'tareas.toast.deshacer'),
+    pospuesta: t(L, 'tareas.toast.pospuesta'),
+    guardada: t(L, 'tareas.toast.guardada'),
+    eliminada: t(L, 'tareas.toast.eliminada'),
+    asignada: t(L, 'tareas.toast.asignada'),
+    error: t(L, 'tareas.toast.error'),
+    confirmTitulo: t(L, 'tareas.confirmar.titulo'),
+    confirmCuerpo: t(L, 'tareas.confirmar.cuerpo'),
+    confirmOk: t(L, 'tareas.accion.eliminar'),
+};
+---
+
+<section class:list={['tk', `tk--${variant}`]} data-taskboard id={uid}
+         data-variant={variant} data-estado={estado} data-scope={scope} data-limit={limit}
+         data-today={result.today} data-me={meIsMember ? me : ''} data-i18n={JSON.stringify(i18n)}>
+
+    <header class="tk-head">
+        {title && (
+            <div class="tk-head-title">
+                <h2 class="sec-title">{title}</h2>
+                {variant === 'widget' && <a class="tk-link" href="/app/tareas">{t(L, 'tareas.ver_todas')}</a>}
+            </div>
+        )}
+        <div class="tk-filters">
+            {variant === 'page' && (
+                <div class="tk-seg" role="group" aria-label={t(L, 'tareas.filtro.estado')}>
+                    {estados.map((e) => (
+                        <button type="button" class="tk-seg-btn" data-set-estado={e.id} aria-pressed={String(e.id === estado)}>{e.label}</button>
+                    ))}
+                </div>
+            )}
+            {equipo && (
+                <div class="tk-seg" role="group" aria-label={t(L, 'tareas.filtro.responsable')}>
+                    {scopes.map((s) => (
+                        <button type="button" class="tk-seg-btn" data-set-scope={s.id} aria-pressed={String(s.id === scope)}>{s.label}</button>
+                    ))}
+                </div>
+            )}
+        </div>
+    </header>
+
+    {canEdit && (
+        <form class="tk-add" data-tk-add autocomplete="off">
+            <div class="tk-add-main">
+                <span class="tk-add-ico" set:html={svg('plus')}></span>
+                <input class="tk-add-input" name="titulo" maxlength="200" required
+                       placeholder={t(L, 'dash.tarea_ph')} aria-label={t(L, 'tareas.nueva')} />
+                <button type="submit" class="tk-add-btn">{t(L, 'dash.agregar')}</button>
+            </div>
+            <div class="tk-add-opts">
+                <div class="tk-chips" role="group" aria-label={t(L, 'dash.tarea_fecha_limite')}>
+                    <button type="button" class="tk-chip" data-due="hoy" aria-pressed="false">{t(L, 'tareas.due.hoy')}</button>
+                    <button type="button" class="tk-chip" data-due="manana" aria-pressed="false">{t(L, 'tareas.due.manana')}</button>
+                    <button type="button" class="tk-chip" data-due="lunes" aria-pressed="false">{t(L, 'tareas.atajo.lunes')}</button>
+                    <DatePicker id={`${uid}-due`} ariaLabel={t(L, 'dash.tarea_fecha_limite')} min={result.today} />
+                </div>
+                <button type="button" class="tk-chip tk-chip--prio" data-prio aria-pressed="false">
+                    <span set:html={svg('arrow-up')}></span>{t(L, 'tareas.prioridad.alta')}
+                </button>
+                {equipo && (
+                    <label class="tk-assign">
+                        <span class="tk-sr">{t(L, 'tareas.responsable')}</span>
+                        <span set:html={svg('user')}></span>
+                        <select name="asignado_a">
+                            <option value="">{t(L, 'tareas.sin_responsable')}</option>
+                            {assignees.map((a) => (
+                                <option value={a.id} selected={a.esYo}>{a.esYo ? t(L, 'tareas.yo').replace('{nombre}', a.nombre) : a.nombre}</option>
+                            ))}
+                        </select>
+                    </label>
+                )}
+            </div>
+        </form>
+    )}
+
+    <div class="tk-list" data-tk-list aria-live="polite" aria-busy="false">
+        <TaskList result={result} estado={estado} variant={variant} canEdit={canEdit} />
+    </div>
+
+    {canEdit && (
+        <div class="tk-menu" data-tk-menu role="menu" hidden>
+            <button type="button" role="menuitem" data-menu="edit" set:html={`${svg('edit')}<span>${t(L, 'tareas.accion.editar')}</span>`}></button>
+            <div class="tk-menu-sep" data-only="pend"></div>
+            <span class="tk-menu-label" data-only="pend">{t(L, 'tareas.accion.posponer')}</span>
+            <button type="button" role="menuitem" data-menu="manana" data-only="pend" set:html={`${svg('calendar')}<span>${t(L, 'tareas.due.manana')}</span>`}></button>
+            <button type="button" role="menuitem" data-menu="lunes" data-only="pend" set:html={`${svg('calendar')}<span>${t(L, 'tareas.atajo.lunes')}</span>`}></button>
+            <button type="button" role="menuitem" data-menu="semana" data-only="pend" set:html={`${svg('calendar-clock')}<span>${t(L, 'tareas.atajo.semana')}</span>`}></button>
+            {meIsMember && equipo && (
+                <button type="button" role="menuitem" data-menu="asignarme" data-only="pend" set:html={`${svg('user-check')}<span>${t(L, 'tareas.accion.asignarme')}</span>`}></button>
+            )}
+            <button type="button" role="menuitem" data-menu="reabrir" data-only="done" set:html={`${svg('undo')}<span>${t(L, 'tareas.accion.reabrir')}</span>`}></button>
+            <div class="tk-menu-sep"></div>
+            <button type="button" role="menuitem" class="is-danger" data-menu="delete" set:html={`${svg('trash')}<span>${t(L, 'tareas.accion.eliminar')}</span>`}></button>
+        </div>
+
+        <dialog class="modal tk-dialog" data-tk-dialog aria-labelledby={`${uid}-edit-title`}>
+            <form class="m-form" method="dialog" data-tk-edit>
+                <div class="m-head">
+                    <h2 id={`${uid}-edit-title`}>{t(L, 'tareas.editar.titulo')}</h2>
+                    <button type="button" class="m-close" data-close aria-label={t(L, 'layout.qtask.cerrar')} set:html={svg('x')}></button>
+                </div>
+                <div class="m-body">
+                    <div class="m-field">
+                        <label for={`${uid}-e-titulo`}>{t(L, 'tareas.editar.campo_titulo')}</label>
+                        <input class="m-input" id={`${uid}-e-titulo`} name="titulo" maxlength="200" required />
+                    </div>
+                    <div class="m-field">
+                        <label for={`${uid}-e-notas`}>{t(L, 'tareas.editar.notas')} <span class="m-optlbl">{t(L, 'tareas.editar.opcional')}</span></label>
+                        <textarea class="m-input tk-e-notas" id={`${uid}-e-notas`} name="notas" rows="3" maxlength="2000" placeholder={t(L, 'tareas.editar.notas_ph')}></textarea>
+                    </div>
+                    <div class="m-field">
+                        <label>{t(L, 'dash.tarea_fecha_limite')}</label>
+                        <div class="tk-chips tk-chips--edit">
+                            <button type="button" class="tk-chip" data-due="hoy" aria-pressed="false">{t(L, 'tareas.due.hoy')}</button>
+                            <button type="button" class="tk-chip" data-due="manana" aria-pressed="false">{t(L, 'tareas.due.manana')}</button>
+                            <button type="button" class="tk-chip" data-due="lunes" aria-pressed="false">{t(L, 'tareas.atajo.lunes')}</button>
+                            <button type="button" class="tk-chip tk-chip--clear" data-due="" hidden>{t(L, 'tareas.quitar_fecha')}</button>
+                            <DatePicker id={`${uid}-e-due`} ariaLabel={t(L, 'dash.tarea_fecha_limite')} />
+                        </div>
+                    </div>
+                    <div class="m-row">
+                        <div class="m-field">
+                            <label for={`${uid}-e-prio`}>{t(L, 'tareas.editar.prioridad')}</label>
+                            <select class="m-input" id={`${uid}-e-prio`} name="prioridad">
+                                <option value="normal">{t(L, 'tareas.prioridad.normal')}</option>
+                                <option value="alta">{t(L, 'tareas.prioridad.alta')}</option>
+                            </select>
+                        </div>
+                        {equipo && (
+                            <div class="m-field">
+                                <label for={`${uid}-e-asig`}>{t(L, 'tareas.responsable')}</label>
+                                <select class="m-input" id={`${uid}-e-asig`} name="asignado_a">
+                                    <option value="">{t(L, 'tareas.sin_responsable')}</option>
+                                    {assignees.map((a) => <option value={a.id}>{a.nombre}</option>)}
+                                </select>
+                            </div>
+                        )}
+                    </div>
+                </div>
+                <div class="m-foot">
+                    <p class="m-error" data-edit-error></p>
+                    <div class="m-actions">
+                        <button type="button" class="m-delete" data-edit-delete>{t(L, 'tareas.accion.eliminar')}</button>
+                        <span class="m-spacer"></span>
+                        <button type="button" class="m-cancel" data-close>{t(L, 'tareas.editar.cancelar')}</button>
+                        <button type="submit" class="m-save">{t(L, 'tareas.editar.guardar')}</button>
+                    </div>
+                </div>
+            </form>
+        </dialog>
+    )}
+</section>
+
+<script>
+    import { dueShortcut, type DueShortcut } from '../../../lib/tasks';
+
+    type Win = Window & {
+        cordToast?: (msg: string, type?: string, ms?: number) => HTMLElement | undefined;
+        cordConfirm?: (opts: unknown) => Promise<boolean>;
+    };
+    const W = window as Win;
+
+    class ApiError extends Error {}
+
+    async function api(method: 'POST' | 'PATCH' | 'DELETE', body: Record<string, unknown>) {
+        const res = await fetch('/api/tareas', { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        const data = await res.json().catch(() => ({}));
+        // `fetch` no lanza con un 4xx/5xx: sin esta línea la fila desaparecía
+        // aunque el servidor hubiera rechazado el cambio.
+        if (!res.ok) throw new ApiError(typeof data?.error === 'string' ? data.error : '');
+        return data;
+    }
+
+    function initBoard(root: HTMLElement) {
+        if (root.dataset.tkReady) return;
+        root.dataset.tkReady = '1';
+        const T = JSON.parse(root.dataset.i18n || '{}');
+        const today = root.dataset.today || '';
+        const me = root.dataset.me || '';
+        const list = root.querySelector<HTMLElement>('[data-tk-list]')!;
+        const menu = root.querySelector<HTMLElement>('[data-tk-menu]');
+        const dialog = root.querySelector<HTMLDialogElement>('[data-tk-dialog]');
+        const fail = (err: unknown) => W.cordToast?.(err instanceof ApiError && err.message ? err.message : T.error, 'error');
+
+        const STORE = `cord.tareas.${root.dataset.variant}.scope`;
+        if (root.dataset.variant === 'widget') {
+            try {
+                const saved = localStorage.getItem(STORE);
+                const btn = saved ? root.querySelector<HTMLButtonElement>(`[data-set-scope="${CSS.escape(saved)}"]`) : null;
+                if (btn && saved !== root.dataset.scope) { setPressed('[data-set-scope]', btn); root.dataset.scope = saved!; refresh(); }
+            } catch { /* sin almacenamiento: se queda el default */ }
+        }
+
+        async function refresh() {
+            const qs = new URLSearchParams({
+                estado: root.dataset.estado || 'pendientes',
+                scope: root.dataset.scope || 'todas',
+                limit: root.dataset.limit || '12',
+                variant: root.dataset.variant || 'widget',
+            });
+            list.setAttribute('aria-busy', 'true');
+            try {
+                const res = await fetch(`/app/tareas/lista?${qs}`, { headers: { Accept: 'text/html' } });
+                if (!res.ok) throw new Error();
+                list.innerHTML = await res.text();
+                // Los contadores de la página (y el badge) se enteran por aquí.
+                const sum = list.querySelector<HTMLElement>('[data-tk-summary]');
+                if (sum) document.dispatchEvent(new CustomEvent('cord:tasks-refreshed', { detail: { ...sum.dataset } }));
+            } catch (e) { fail(e); } finally { list.setAttribute('aria-busy', 'false'); }
+        }
+
+        function setPressed(selector: string, active: HTMLElement) {
+            root.querySelectorAll<HTMLElement>(selector).forEach((b) => b.setAttribute('aria-pressed', String(b === active)));
+        }
+
+        // ── Filtros ──
+        root.querySelectorAll<HTMLButtonElement>('[data-set-scope]').forEach((btn) => btn.addEventListener('click', () => {
+            if (root.dataset.scope === btn.dataset.setScope) return;
+            root.dataset.scope = btn.dataset.setScope!;
+            setPressed('[data-set-scope]', btn);
+            try { localStorage.setItem(STORE, root.dataset.scope); } catch { /* opcional */ }
+            syncUrl(); refresh();
+        }));
+        root.querySelectorAll<HTMLButtonElement>('[data-set-estado]').forEach((btn) => btn.addEventListener('click', () => {
+            if (root.dataset.estado === btn.dataset.setEstado) return;
+            root.dataset.estado = btn.dataset.setEstado!;
+            setPressed('[data-set-estado]', btn);
+            syncUrl(); refresh();
+        }));
+        function syncUrl() {
+            if (root.dataset.variant !== 'page') return;
+            const u = new URL(location.href);
+            u.searchParams.set('estado', root.dataset.estado || 'pendientes');
+            u.searchParams.set('scope', root.dataset.scope || 'todas');
+            history.replaceState(null, '', u);
+        }
+
+        // ── Atajos de fecha: escriben el input oculto del DatePicker ──
+        function wireDueChips(scope: HTMLElement, input: HTMLInputElement | null) {
+            if (!input) return () => {};
+            const chips = [...scope.querySelectorAll<HTMLButtonElement>('[data-due]')];
+            const paint = () => chips.forEach((c) => {
+                // "Quitar fecha" solo aparece cuando hay una que quitar.
+                if (c.dataset.due === '') { c.hidden = input.value === ''; return; }
+                c.setAttribute('aria-pressed', String(input.value === dueShortcut(c.dataset.due as DueShortcut, today)));
+            });
+            chips.forEach((c) => c.addEventListener('click', () => {
+                const v = c.dataset.due ? dueShortcut(c.dataset.due as DueShortcut, today) : '';
+                // Volver a pulsar el atajo activo lo quita.
+                input.value = c.getAttribute('aria-pressed') === 'true' && c.dataset.due ? '' : v;
+                input.dispatchEvent(new Event('change', { bubbles: true }));
+            }));
+            input.addEventListener('change', paint);
+            paint();
+            return paint;
+        }
+
+        // ── Capturador ──
+        const form = root.querySelector<HTMLFormElement>('[data-tk-add]');
+        if (form) {
+            const titulo = form.querySelector<HTMLInputElement>('input[name="titulo"]')!;
+            const due = form.querySelector<HTMLInputElement>('input[type="hidden"]');
+            const prio = form.querySelector<HTMLButtonElement>('[data-prio]')!;
+            const asig = form.querySelector<HTMLSelectElement>('select[name="asignado_a"]');
+            const submit = form.querySelector<HTMLButtonElement>('.tk-add-btn')!;
+            wireDueChips(form, due);
+            prio.addEventListener('click', () => prio.setAttribute('aria-pressed', String(prio.getAttribute('aria-pressed') !== 'true')));
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const texto = titulo.value.trim();
+                if (!texto || submit.disabled) return;
+                submit.disabled = true;
+                const body: Record<string, unknown> = {
+                    titulo: texto,
+                    due_date: due?.value || null,
+                    prioridad: prio.getAttribute('aria-pressed') === 'true' ? 'alta' : 'normal',
+                };
+                if (asig) body.asignado_a = asig.value || null;
+                else body.asignar_a_creador = true;
+                try {
+                    await api('POST', body);
+                    titulo.value = '';
+                    if (due) { due.value = ''; due.dispatchEvent(new Event('change', { bubbles: true })); }
+                    prio.setAttribute('aria-pressed', 'false');
+                    if (root.dataset.estado === 'completadas') root.querySelector<HTMLElement>('[data-set-estado="pendientes"]')?.click();
+                    else await refresh();
+                    titulo.focus();
+                } catch (err) { fail(err); } finally { submit.disabled = false; }
+            });
+        }
+
+        // ── Menú de una fila ──
+        let menuRow: HTMLElement | null = null;
+        const closeMenu = (focusBack = false) => {
+            if (!menu || menu.hidden) return;
+            menu.hidden = true;
+            const btn = menuRow?.querySelector<HTMLElement>('[data-act="menu"]');
+            btn?.setAttribute('aria-expanded', 'false');
+            if (focusBack) btn?.focus();
+            menuRow = null;
+        };
+        const openMenu = (row: HTMLElement, btn: HTMLElement) => {
+            if (!menu) return;
+            const task = JSON.parse(row.dataset.task || '{}');
+            menuRow = row;
+            menu.querySelectorAll<HTMLElement>('[data-only]').forEach((el) => {
+                el.hidden = (el.dataset.only === 'done') !== !!task.done;
+            });
+            const asignarme = menu.querySelector<HTMLElement>('[data-menu="asignarme"]');
+            if (asignarme && !task.done) asignarme.hidden = !me || task.asignado === me;
+            menu.hidden = false;
+            btn.setAttribute('aria-expanded', 'true');
+            const r = btn.getBoundingClientRect();
+            const host = root.getBoundingClientRect();
+            const w = menu.offsetWidth;
+            const h = menu.offsetHeight;
+            const below = r.bottom + h + 8 < window.innerHeight;
+            menu.style.top = `${(below ? r.bottom + 4 : r.top - h - 4) - host.top}px`;
+            menu.style.left = `${Math.max(8, r.right - w) - host.left}px`;
+            menu.querySelector<HTMLElement>('button:not([hidden])')?.focus();
+        };
+        document.addEventListener('click', (e) => {
+            if (menu && !menu.hidden && !menu.contains(e.target as Node) && !(e.target as HTMLElement).closest?.('[data-act="menu"]')) closeMenu();
+        });
+        menu?.addEventListener('keydown', (e) => {
+            const items = [...menu.querySelectorAll<HTMLElement>('button:not([hidden])')];
+            const i = items.indexOf(document.activeElement as HTMLElement);
+            if (e.key === 'Escape') { e.preventDefault(); closeMenu(true); }
+            else if (e.key === 'ArrowDown') { e.preventDefault(); items[(i + 1) % items.length]?.focus(); }
+            else if (e.key === 'ArrowUp') { e.preventDefault(); items[(i - 1 + items.length) % items.length]?.focus(); }
+            else if (e.key === 'Tab') closeMenu();
+        });
+
+        async function toggle(row: HTMLElement) {
+            const id = row.dataset.id!;
+            const task = JSON.parse(row.dataset.task || '{}');
+            const nuevo = !task.done;
+            row.classList.add('is-leaving');
+            try {
+                await api('PATCH', { id, done: nuevo });
+                const toast = W.cordToast?.(nuevo ? T.completada : T.reabierta, 'ok', 6000);
+                if (nuevo && toast) {
+                    const undo = document.createElement('button');
+                    undo.type = 'button';
+                    undo.className = 'tk-undo';
+                    undo.textContent = T.deshacer;
+                    undo.addEventListener('click', async () => {
+                        toast.querySelector<HTMLElement>('.toast-close')?.click();
+                        try { await api('PATCH', { id, done: false }); await refresh(); } catch (err) { fail(err); }
+                    });
+                    toast.querySelector('.toast-close')?.before(undo);
+                }
+                setTimeout(refresh, 180);
+            } catch (err) {
+                row.classList.remove('is-leaving');
+                fail(err);
+            }
+        }
+
+        async function patch(id: string, body: Record<string, unknown>, okMsg: string) {
+            try {
+                await api('PATCH', { id, ...body });
+                W.cordToast?.(okMsg, 'ok');
+                await refresh();
+            } catch (err) { fail(err); }
+        }
+
+        async function remove(id: string) {
+            const ok = W.cordConfirm
+                ? await W.cordConfirm({ title: T.confirmTitulo, body: T.confirmCuerpo, danger: true, confirmText: T.confirmOk })
+                : window.confirm(T.confirmTitulo);
+            if (!ok) return false;
+            try {
+                await api('DELETE', { id });
+                W.cordToast?.(T.eliminada, 'ok');
+                await refresh();
+                return true;
+            } catch (err) { fail(err); return false; }
+        }
+
+        list.addEventListener('click', (e) => {
+            const btn = (e.target as HTMLElement).closest<HTMLElement>('[data-act]');
+            const row = btn?.closest<HTMLElement>('.tk-row');
+            if (!btn || !row) return;
+            if (btn.dataset.act === 'toggle') toggle(row);
+            if (btn.dataset.act === 'menu') {
+                if (menuRow === row && menu && !menu.hidden) closeMenu();
+                else openMenu(row, btn);
+            }
+        });
+
+        menu?.addEventListener('click', async (e) => {
+            const item = (e.target as HTMLElement).closest<HTMLElement>('[data-menu]');
+            const row = menuRow;
+            if (!item || !row) return;
+            const id = row.dataset.id!;
+            const action = item.dataset.menu!;
+            closeMenu();
+            if (action === 'edit') return openEdit(row);
+            if (action === 'manana' || action === 'lunes' || action === 'semana') {
+                return patch(id, { due_date: dueShortcut(action as DueShortcut, today) }, T.pospuesta);
+            }
+            if (action === 'asignarme') return patch(id, { asignado_a: me }, T.asignada);
+            if (action === 'reabrir') return toggle(row);
+            if (action === 'delete') return remove(id);
+        });
+
+        // ── Edición ──
+        let editId = '';
+        let paintEditChips = () => {};
+        const editForm = dialog?.querySelector<HTMLFormElement>('[data-tk-edit]');
+        const editDue = dialog?.querySelector<HTMLInputElement>('input[type="hidden"]') ?? null;
+        if (dialog && editForm) {
+            paintEditChips = wireDueChips(dialog.querySelector<HTMLElement>('.tk-chips--edit')!, editDue);
+            dialog.querySelectorAll('[data-close]').forEach((b) => b.addEventListener('click', () => dialog.close()));
+            dialog.addEventListener('click', (e) => { if (e.target === dialog) dialog.close(); });
+            editForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const errEl = dialog.querySelector<HTMLElement>('[data-edit-error]')!;
+                const fd = new FormData(editForm);
+                const body: Record<string, unknown> = {
+                    titulo: String(fd.get('titulo') || '').trim(),
+                    notas: String(fd.get('notas') || ''),
+                    prioridad: String(fd.get('prioridad') || 'normal'),
+                    due_date: editDue?.value || null,
+                };
+                if (fd.has('asignado_a')) body.asignado_a = String(fd.get('asignado_a') || '') || null;
+                const save = editForm.querySelector<HTMLButtonElement>('.m-save')!;
+                save.disabled = true;
+                errEl.textContent = '';
+                try {
+                    await api('PATCH', { id: editId, ...body });
+                    dialog.close();
+                    W.cordToast?.(T.guardada, 'ok');
+                    await refresh();
+                } catch (err) {
+                    errEl.textContent = err instanceof ApiError && err.message ? err.message : T.error;
+                } finally { save.disabled = false; }
+            });
+            dialog.querySelector('[data-edit-delete]')?.addEventListener('click', async () => {
+                if (await remove(editId)) dialog.close();
+            });
+        }
+        function openEdit(row: HTMLElement) {
+            if (!dialog || !editForm) return;
+            const task = JSON.parse(row.dataset.task || '{}');
+            editId = row.dataset.id!;
+            (editForm.elements.namedItem('titulo') as HTMLInputElement).value = task.titulo || '';
+            (editForm.elements.namedItem('notas') as HTMLTextAreaElement).value = task.notas || '';
+            (editForm.elements.namedItem('prioridad') as HTMLSelectElement).value = task.prioridad || 'normal';
+            const asig = editForm.elements.namedItem('asignado_a') as HTMLSelectElement | null;
+            if (asig) asig.value = task.asignado || '';
+            if (editDue) { editDue.value = task.due || ''; editDue.dispatchEvent(new Event('change', { bubbles: true })); }
+            paintEditChips();
+            dialog.querySelector<HTMLElement>('[data-edit-error]')!.textContent = '';
+            dialog.showModal();
+            (editForm.elements.namedItem('titulo') as HTMLInputElement).focus();
+        }
+
+        // El quick-add global ("Crear › Tarea") avisa por este evento.
+        document.addEventListener('cord:tasks-changed', () => refresh());
+    }
+
+    // Los módulos de Astro son diferidos: al correr, el DOM ya está completo.
+    document.querySelectorAll<HTMLElement>('[data-taskboard]').forEach(initBoard);
+</script>
+
+<style is:global>
+    .tk { position: relative; display: flex; flex-direction: column; gap: 0.9rem; }
+    .tk-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+    .tk-head { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; }
+    .tk--widget .tk-head { padding-bottom: 0.85rem; border-bottom: 1px solid var(--color-border); }
+    .tk-head-title { display: flex; align-items: baseline; gap: 0.85rem; min-width: 0; }
+    .tk-head-title .sec-title { margin: 0; }
+    .tk-link { font-size: 0.78rem; font-weight: 600; color: var(--color-text-muted); text-decoration: none; }
+    .tk-link:hover { color: var(--color-text); }
+    .tk-filters { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    .tk-seg { display: inline-flex; background: var(--color-bg-soft); border-radius: 10px; padding: 3px; gap: 2px; }
+    .tk-seg-btn {
+        font-family: var(--font-sans); font-size: 0.76rem; font-weight: 600; color: var(--color-text-muted);
+        background: transparent; border: none; border-radius: 8px; padding: 6px 12px; cursor: pointer;
+        transition: background 0.15s var(--ease-ios), color 0.15s var(--ease-ios);
+    }
+    .tk-seg-btn:hover { color: var(--color-text); }
+    .tk-seg-btn[aria-pressed="true"] { background: var(--surface); color: var(--color-text); box-shadow: 0 1px 3px rgba(10,25,47,0.1); }
+    .tk-seg-btn:focus-visible { outline: 2px solid var(--color-blue-deep); outline-offset: 1px; }
+
+    /* Capturador */
+    .tk-add { display: flex; flex-direction: column; gap: 0.55rem; }
+    .tk-add-main {
+        display: flex; align-items: center; gap: 0.6rem; background: var(--color-bg-soft);
+        border: 1.5px solid transparent; border-radius: 12px; padding: 5px 5px 5px 12px;
+        transition: border-color 0.2s var(--ease-ios), background 0.2s, box-shadow 0.2s;
+    }
+    .tk-add-main:focus-within { border-color: var(--color-blue-deep); background: var(--surface); box-shadow: 0 0 0 3px rgba(10,25,47,0.08); }
+    .tk-add-ico { display: inline-flex; color: var(--color-text-muted); }
+    .tk-add-ico svg { width: 16px; height: 16px; }
+    .tk-add-input { flex: 1; min-width: 0; border: none; background: transparent; font-family: var(--font-sans); font-size: 0.88rem; color: var(--color-text); padding: 7px 0; }
+    .tk-add-input:focus { outline: none; }
+    .tk-add-btn {
+        font-family: var(--font-sans); font-size: 0.8rem; font-weight: 600; color: #fff; background: var(--color-blue-deep);
+        border: none; border-radius: 999px; padding: 8px 16px; cursor: pointer;
+        transition: transform 0.2s var(--ease-spring), opacity 0.2s;
+    }
+    .tk-add-btn:hover { transform: scale(1.03); }
+    .tk-add-btn:active { transform: scale(0.97); }
+    .tk-add-btn:disabled { opacity: 0.55; cursor: progress; }
+    .tk-add-opts { display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap; }
+    .tk-chips { display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap; }
+    .tk-chip {
+        display: inline-flex; align-items: center; gap: 5px;
+        font-family: var(--font-sans); font-size: 0.74rem; font-weight: 600; color: var(--color-text-muted);
+        background: transparent; border: 1px solid var(--color-border); border-radius: 999px;
+        padding: 5px 11px; cursor: pointer; transition: all 0.15s var(--ease-ios);
+    }
+    .tk-chip svg { width: 13px; height: 13px; }
+    .tk-chip:hover { color: var(--color-text); background: var(--color-bg-soft); }
+    .tk-chip[aria-pressed="true"] { background: var(--color-blue-deep); border-color: var(--color-blue-deep); color: #fff; }
+    .tk-chip--prio[aria-pressed="true"] { background: var(--color-danger); border-color: var(--color-danger); }
+    .tk-chip--clear { border-style: dashed; }
+    .tk-chip[hidden] { display: none; }
+    .tk-chip:focus-visible { outline: 2px solid var(--color-blue-deep); outline-offset: 1px; }
+    .tk .dpx-trigger {
+        font-family: var(--font-sans); font-size: 0.74rem; font-weight: 600; color: var(--color-text);
+        background: transparent; border: 1px solid var(--color-border); border-radius: 999px; padding: 5px 11px;
+    }
+    .tk .dpx-trigger.is-empty { color: var(--color-text-muted); }
+    .tk .dpx-trigger svg { width: 13px; height: 13px; }
+    .tk .dpx-panel { left: 0; right: auto; }
+    .tk-assign {
+        display: inline-flex; align-items: center; gap: 5px; color: var(--color-text-muted);
+        border: 1px solid var(--color-border); border-radius: 999px; padding: 0 4px 0 10px;
+    }
+    .tk-assign svg { width: 13px; height: 13px; }
+    .tk-assign select {
+        font-family: var(--font-sans); font-size: 0.74rem; font-weight: 600; color: var(--color-text);
+        border: none; background: transparent; padding: 5px 4px; max-width: 170px; cursor: pointer;
+    }
+    .tk-assign:focus-within { border-color: var(--color-blue-deep); }
+    .tk-assign select:focus { outline: none; }
+
+    /* Lista */
+    .tk-list { display: flex; flex-direction: column; gap: 0.35rem; transition: opacity 0.15s; }
+    .tk-list[aria-busy="true"] { opacity: 0.6; }
+    .tk-group { display: flex; flex-direction: column; }
+    .tk-group-title {
+        display: flex; align-items: center; gap: 0.45rem; margin: 0.55rem 0 0.15rem;
+        font-size: 0.66rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-text-muted);
+    }
+    .tk-group[data-bucket="vencidas"] .tk-group-title { color: var(--color-danger); }
+    .tk-group-n { font-weight: 700; letter-spacing: 0; opacity: 0.75; }
+    .tk-rows { list-style: none; margin: 0; padding: 0; }
+    .tk-row {
+        display: flex; align-items: flex-start; gap: 11px; padding: 0.62rem 0.35rem; margin: 0 -0.35rem;
+        border-radius: 10px;
+        transition: background 0.15s var(--ease-ios), opacity 0.2s var(--ease-ios), transform 0.2s var(--ease-ios);
+    }
+    .tk-row + .tk-row { box-shadow: inset 0 1px 0 var(--color-border); }
+    .tk-row + .tk-row:hover { box-shadow: none; }
+    .tk-row:hover { background: var(--row-hover, var(--color-bg-soft)); }
+    .tk-row.is-leaving { opacity: 0.35; transform: translateX(6px); }
+    .tk-check {
+        width: 20px; height: 20px; margin-top: 1px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center;
+        border: 1.6px solid var(--color-border); border-radius: 50%; background: var(--surface); color: transparent; cursor: pointer;
+        transition: border-color 0.15s, background 0.15s, color 0.15s;
+    }
+    .tk-check svg { width: 12px; height: 12px; }
+    .tk-check:hover:not(:disabled) { border-color: var(--color-ok); color: var(--color-ok); }
+    .tk-check:disabled { cursor: default; }
+    .tk-row.is-alta .tk-check { border-color: rgba(239,68,68,0.55); }
+    .tk-row.is-done .tk-check, .tk-row.is-leaving .tk-check { background: var(--color-ok); border-color: var(--color-ok); color: #fff; }
+    .tk-row.is-done .tk-title-text { color: var(--color-text-muted); text-decoration: line-through; text-decoration-color: rgba(10,25,47,0.25); }
+    .tk-check:focus-visible, .tk-more:focus-visible, .tk-ref:focus-visible { outline: 2px solid var(--color-blue-deep); outline-offset: 2px; }
+    .tk-body { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
+    .tk-title { display: flex; align-items: baseline; gap: 6px; font-size: 0.86rem; font-weight: 500; color: var(--color-text); line-height: 1.35; }
+    .tk-title-text { overflow-wrap: anywhere; }
+    .tk-flag {
+        flex-shrink: 0; font-size: 0.58rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase;
+        color: var(--color-danger); background: rgba(239,68,68,0.1); border-radius: 5px; padding: 1px 5px;
+    }
+    .tk-meta { display: flex; align-items: center; gap: 0.25rem 0.75rem; flex-wrap: wrap; font-size: 0.72rem; color: var(--color-text-muted); }
+    .tk-meta svg { width: 12px; height: 12px; flex-shrink: 0; }
+    .tk-due, .tk-ref, .tk-has-notes { display: inline-flex; align-items: center; gap: 4px; }
+    .tk-due--vencidas { color: var(--color-danger); font-weight: 600; }
+    .tk-due--hoy { color: var(--color-blue-deep); font-weight: 600; }
+    .tk-ref { color: inherit; text-decoration: none; font-weight: 600; border-radius: 4px; }
+    .tk-ref:hover { color: var(--color-text); text-decoration: underline; }
+    .tk-ref-cli { font-weight: 400; }
+    .tk-notes { margin: 3px 0 0; font-size: 0.76rem; color: var(--color-text-muted); white-space: pre-line; line-height: 1.45; }
+    .tk-done-by { font-style: normal; }
+    .tk-avatar {
+        width: 24px; height: 24px; flex-shrink: 0; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+        font-size: 0.6rem; font-weight: 700; color: var(--color-text); background: var(--color-bg-soft); border: 1px solid var(--color-border);
+    }
+    .tk-avatar.is-me { background: var(--color-blue-deep); border-color: var(--color-blue-deep); color: #fff; }
+    .tk-avatar--none { border-style: dashed; background: transparent; }
+    .tk-more {
+        width: 28px; height: 28px; margin-top: -2px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center;
+        border: none; background: transparent; border-radius: 8px; color: var(--color-text-muted); cursor: pointer;
+        transition: background 0.15s, color 0.15s;
+    }
+    .tk-more svg { width: 16px; height: 16px; }
+    .tk-more:hover, .tk-more[aria-expanded="true"] { background: var(--color-bg-soft); color: var(--color-text); }
+    .tk-rest { align-self: flex-start; font-size: 0.78rem; font-weight: 600; color: var(--color-blue-deep); text-decoration: none; margin-top: 0.35rem; }
+    .tk-rest:hover { text-decoration: underline; }
+
+    .tk-empty { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px; padding: 1.4rem 0.5rem; }
+    .tk-empty-ico { display: inline-flex; width: 38px; height: 38px; align-items: center; justify-content: center; border-radius: 12px; background: var(--color-bg-soft); color: var(--color-text-muted); margin-bottom: 4px; }
+    .tk-empty-ico svg { width: 20px; height: 20px; }
+    .tk-empty-title { font-size: 0.86rem; font-weight: 600; color: var(--color-text); }
+    .tk-empty-sub { font-size: 0.76rem; color: var(--color-text-muted); max-width: 34ch; }
+
+    /* Menú */
+    .tk-menu {
+        position: absolute; z-index: 60; min-width: 200px; padding: 5px; display: flex; flex-direction: column;
+        background: var(--surface); border-radius: 12px; border: 1px solid var(--color-border);
+        box-shadow: 0 4px 14px rgba(10,25,47,0.08), 0 22px 50px -16px rgba(10,25,47,0.3);
+    }
+    .tk-menu[hidden], .tk-menu [hidden] { display: none; }
+    .tk-menu button {
+        display: flex; align-items: center; gap: 9px; width: 100%; text-align: left;
+        font-family: var(--font-sans); font-size: 0.8rem; font-weight: 500; color: var(--color-text);
+        background: none; border: none; border-radius: 8px; padding: 8px 10px; cursor: pointer;
+    }
+    .tk-menu button svg { width: 15px; height: 15px; color: var(--color-text-muted); }
+    .tk-menu button:hover, .tk-menu button:focus-visible { background: var(--color-bg-soft); outline: none; }
+    .tk-menu button.is-danger, .tk-menu button.is-danger svg { color: var(--color-danger); }
+    .tk-menu-sep { height: 1px; background: var(--color-border); margin: 4px 6px; }
+    .tk-menu-label { font-size: 0.62rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-text-muted); padding: 6px 10px 2px; }
+
+    /* Edición: el calendario cuelga de su campo y no debe recortarse. */
+    .modal.tk-dialog { width: min(520px, calc(100vw - 2rem)); }
+    .modal.tk-dialog .m-body { overflow: visible; }
+    .modal.tk-dialog .tk-e-notas { resize: vertical; min-height: 72px; font-family: var(--font-sans); }
+    .modal.tk-dialog select.m-input { cursor: pointer; }
+
+    .toast .tk-undo {
+        font-family: var(--font-sans); font-size: 0.78rem; font-weight: 700; color: inherit;
+        background: rgba(255,255,255,0.14); border: none; border-radius: 7px; padding: 4px 10px; cursor: pointer; margin-left: 4px;
+    }
+    .toast .tk-undo:hover { background: rgba(255,255,255,0.24); }
+
+    /* Regla 16: en táctil nada depende del hover y todo se toca con el dedo. */
+    @media (max-width: 880px) {
+        .tk-check { width: 26px; height: 26px; }
+        .tk-more { width: 40px; height: 40px; margin-top: -8px; }
+        .tk-chip, .tk .dpx-trigger, .tk-assign select { min-height: 36px; }
+        .tk-seg-btn { min-height: 38px; }
+        .tk-add-btn { min-height: 40px; }
+        .tk-menu button { min-height: 44px; }
+    }
+</style>

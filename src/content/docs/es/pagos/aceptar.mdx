@@ -2,7 +2,7 @@
 title: "Aceptar un pago"
 seoTitle: "Aceptar un pago desde el link de la cotización o la factura"
 description: "Qué ve tu cliente al pagar desde el link: cuándo aparece el botón de pago, cómo elige método, cómo paga con tarjeta, SPEI o Mercado Pago, qué pasa con anticipos, cuotas, crédito y abonos parciales, y cómo se confirma el pago."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-08"
 reviewedBy: "Producto y operaciones de Cord"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -35,7 +35,7 @@ Sin riel de cobro en línea, el link muestra tus datos para transferencia manual
 | Situación | Qué ve tu cliente |
 |---|---|
 | Cotización de **contado** aprobada | El botón de pago, desde la aprobación. |
-| Cotización con **término de crédito** (Net 30 o Net 60) | "Pedido confirmado con crédito Net 30 — vence el [fecha]". El pago en línea se habilita en esa fecha. Ver [Términos de crédito](/docs/pagos/credito). |
+| Cotización con **término de crédito** (cualquier plazo Net, de Net 7 a Net 90) | "Pedido confirmado con crédito Net 30 — vence el [fecha]". El pago en línea se habilita en esa fecha. Ver [Términos de crédito](/docs/pagos/credito). |
 | Cotización con **anticipo** | Desde la aprobación, el monto del anticipo. El saldo se habilita según el término. Ver [Anticipo y saldo](/docs/pagos/anticipos). |
 | Cotización con **plan de cuotas** | La siguiente cuota que ya venció. Ver [Planes de pago en cuotas](/docs/pagos/cuotas). |
 | Cotización **recurrente** | La autorización de la tarjeta para la iguala mensual. Ver [Igualas recurrentes](/docs/pagos/igualas). |
@@ -51,7 +51,7 @@ Sin riel de cobro en línea, el link muestra tus datos para transferencia manual
 4. Al confirmarse, el link muestra el pago y el documento cambia de estado.
 </Steps>
 
-{/* MOCKUP: página de pago de una cotización en MXN: encabezado "Volver a la cotización", monto "Anticipo a pagar $5,000.00 MXN del total de $10,000.00 MXN", selector de método con "Tarjeta" y "Transferencia SPEI", formulario de tarjeta y botón "Pagar $5,000.00 MXN" con el color de la marca; abajo, separador y botón "Pagar con Mercado Pago". */}
+<DmQuotePayment lang="es" />
 
 ### Con tarjeta
 
@@ -77,7 +77,7 @@ Tu cliente va al checkout de Mercado Pago, paga con los métodos disponibles en 
 ## Después del pago
 
 - **Tu cliente** ve el pago reflejado en el link. Si regresa de un pago todavía en confirmación, el link espera unos segundos a que llegue el aviso y le permite actualizar.
-- **Tú** ves el cobro en [Mi dinero › Cobros](/docs/pagos/dashboard), en la línea de tiempo del documento y, si configuraste avisos, en tus [notificaciones](/docs/gestion/notificaciones).
+- **Tú** ves el cobro en [Ingresos › Cobros](/docs/pagos/dashboard), en la línea de tiempo del documento y, si configuraste avisos, en tus [notificaciones](/docs/gestion/notificaciones).
 - **Tus integraciones** reciben el evento de pago. Un pago parcial (anticipo, cuota o abono) no dispara el evento de cotización pagada: ese solo sale cuando ya no queda saldo.
 - **El dinero** entra al saldo de tu cuenta de cobros y llega a tu banco con tu [frecuencia de depósito](/docs/pagos/depositos).
 

@@ -2,7 +2,7 @@
 title: "Client data"
 seoTitle: "Client data in a quote"
 description: "Pick or create the client for a quote, apply their price tier and terms, and complete the tax information the invoice will need."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-08"
 reviewedBy: "Cord product and operations"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -16,25 +16,40 @@ prerequisites: ["Quotes permission to pick the client", "Clients permission to c
 
 ## What it is
 
-The **Who are you quoting?** step of the editor links the quote to a client in your
+Step 1 of the editor, **Who are you quoting?**, links the quote to a client in your
 directory. Three things come from their profile: their price tier discount, their
-payment terms, and the recipient data the invoice will use.
+payment terms, and the recipient data the invoice will use. The same step exists when
+you create an invoice, titled **Who are you invoicing?**.
 
-{/* MOCKUP: "Who are you quoting?" step with the client selector open ("— Select a client —", "+ Create new client…", "Constructora GAMA — Luis Pérez"), the Cash / Net 30 / Net 60 chips with Net 30 active, and the note that the client's tier discount of −10% was applied to list prices. */}
+<DmCotClientStep lang="en" />
 
 ## Requirements
 
 - **Permission:** Quotes to pick a client; **Clients** to create a new one.
 - **Plan:** Free allows up to 50 clients and Starter up to 500; from Pro there's no cap.
-- **To send:** the quote needs a client. A draft can be saved without one, but on send Cord asks you to "Choose a client in step 1 to be able to send".
+- **To send:** the quote needs a client. A draft can be saved without one, but on send Cord asks you to "Choose a client to be able to send."
 
 ## Pick or create the client
 
 <Steps>
-1. In **Who are you quoting?**, open the selector and pick a client from your directory.
-2. If they don't exist, choose **+ Create new client…**, fill in the form, and click **Create and select**. They're saved in your directory and selected on the quote.
-3. Check the preselected payment terms and change them if needed.
+1. In **Who are you quoting?**, click the client search ("Search a client by name, contact or email…") and type part of the company name, contact, email, or tax ID. The list shows up to eight matches, each with its email, its tax ID and, if it has a price tier, its discount (for example −10%).
+2. Pick the client with a click, or with the arrow keys and **Enter**. **Escape** closes the list and keeps the client that was already selected.
+3. If they don't exist, choose **+ Create new client…**, which always appears at the end of the list; fill in the form and click **Create and select**. They're saved in your directory and selected on the quote.
+4. Check the **Payment terms** preselected to the right of the search and change them if needed.
 </Steps>
+
+Below the search, Cord shows the selected client's email and tax ID and, if their tier
+has a discount, a note such as "Client tier: −10% applied to your catalog list prices."
+
+## Payment terms
+
+Terms are chosen with chips: **Due on receipt**, **Net 15**, **Net 30**, and **Net 60**.
+For another term, the **Other term** chip opens a list with **Net 7**, **Net 45**, and
+**Net 90**. "Net N" means the client pays N calendar days after the document date.
+
+When you pick a client, the terms from their profile are preselected; you can change them
+for this quote only without touching the profile. Credit terms change what happens on
+approval (see [Advanced options](/en/docs/cotizacion/opciones)).
 
 Other ways to fill your directory:
 
@@ -54,9 +69,9 @@ automatic discount field:
 | Gold | 10% |
 | Distributor | 15% |
 
-When you pick the client, Cord lowers the **Negotiated** price of each catalog product
-by that percentage: with 10%, a product listed at 1,000 comes in at 900. The list price
-doesn't change and you can adjust any line's negotiated price by hand.
+When you pick the client, Cord lowers the **Price** column of each catalog product by
+that percentage: with 10%, a product with a **List** price of MXN 1,000 comes in at
+MXN 900. The list price doesn't change and you can adjust any line's price by hand.
 
 ## Commercial and tax information
 
@@ -65,7 +80,7 @@ doesn't change and you can adjust any line's negotiated price by hand.
 - **Company** (required): the client's name. It's also the recipient name on their invoice; write it as it appears on their tax documents.
 - **Contact:** the person who decides.
 - **Email:** where the link is sent when you send the quote from Cord.
-- **Phone**, **Credit limit**, and **Payment terms** (Cash, Net 30, or Net 60) proposed when you quote them.
+- **Phone**, **Credit limit**, and **Payment terms** (Due on receipt, Net 15, Net 30, Net 60, or another term: Net 7, Net 45, or Net 90) proposed when you quote them.
 
 ### Tax
 
@@ -93,7 +108,11 @@ a **CFDI tax data (Mexico)** section appears with two CFDI 4.0 fields:
 
 ## Common problems
 
-**"+ Create new client…" is missing or fails to save.** Your role doesn't have the Clients permission, or you reached your plan's client cap.
+**"+ Create new client…" fails to save.** Your role doesn't have the Clients permission, or you reached your plan's client cap.
+
+**The search says "No client matches."** Search by another part of the name, by email, or by tax ID, or create the client with **+ Create new client…**.
+
+**I can't change the client or the terms.** You're on a new version of a quote that was already sent: there the client, currency, and terms stay as they were sent.
 
 **The tier discount wasn't applied.** It only lowers catalog products; free lines have no list price.
 

@@ -1,0 +1,14 @@
+---
+// Icono del registro Cord Glass (src/lib/icons.ts) dentro de un mockup.
+// <DmIcon name="quote" />  ·  <DmIcon name="check" stroke={2.4} class="mi-clase" />
+import { iconInner, type IconName } from '../../../lib/icons';
+
+interface Props {
+    name: IconName;
+    /** Grosor del trazo; el registro usa 1.5 (regla 9). */
+    stroke?: number;
+    class?: string;
+}
+const { name, stroke = 1.5, class: cls } = Astro.props;
+---
+<svg class:list={['dm-ico', cls]} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width={stroke} stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner(name)}></svg>

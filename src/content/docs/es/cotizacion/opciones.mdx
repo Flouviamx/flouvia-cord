@@ -2,7 +2,7 @@
 title: "Opciones avanzadas"
 seoTitle: "Opciones de cotización: vigencia, divisa, anticipo e impuestos"
 description: "Términos de pago, anticipo, iguala mensual, impuestos incluidos, retenciones, divisa de venta frente a contable, tasa congelada, vigencia, notas y los valores por default de Ajustes › Cotizaciones."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-08"
 reviewedBy: "Producto y operaciones de Cord"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -17,12 +17,14 @@ prerequisites: ["Permiso Cotizaciones para usar las opciones", "Permiso Ajustes 
 ## Qué es
 
 Además de cliente y partidas, cada cotización lleva sus condiciones comerciales y
-financieras. Los términos de pago se eligen junto al cliente, en **¿A quién le
-cotizas?**; el resto vive en el panel **Revisa y envía**, a la derecha del editor. Los
-valores con los que arranca una cotización nueva se configuran una sola vez en
-**Ajustes › Cotizaciones**.
+financieras. Los términos de pago se eligen junto al cliente, en el paso 1 (**¿A quién
+le cotizas?**). Vigencia, anticipo, divisa e iguala viven en el paso 3,
+**Condiciones** ("Cuánto tiempo vale, cómo se paga y en qué moneda."), debajo de las
+líneas. En el resumen **Revisa y envía**, a la derecha del editor, solo queda el
+interruptor de impuestos incluidos junto a los totales. Los valores con los que arranca
+una cotización nueva se configuran una sola vez en **Ajustes › Cotizaciones**.
 
-{/* MOCKUP: panel "Revisa y envía" del editor con Subtotal, "Le descontaste", desglose IVA 16%, Total, el interruptor "Precios ya incluyen IVA", Vigencia 30 días, "Cobro recurrente mensual (iguala)", Anticipo (%) = 50, "¿En qué moneda le cotizas?" = USD y el bloque de tasa protegida con los chips Poco +1%, Normal +2%, Cauto +5%. */}
+<DmCotReviewPanel lang="es" />
 
 ## Requisitos
 
@@ -32,15 +34,20 @@ valores con los que arranca una cotización nueva se configuran una sola vez en
 
 ## Términos de pago
 
-En **¿A quién le cotizas?** eliges **Contado**, **Net 30** o **Net 60**. Al elegir un
-cliente, Cord preselecciona sus términos de su ficha.
+En **¿A quién le cotizas?** eliges un chip: **Contado**, **Net 15**, **Net 30** o
+**Net 60**. El chip **Otro plazo** ofrece **Net 7**, **Net 45** y **Net 90**. Al elegir
+un cliente, Cord preselecciona los términos de su ficha. Bajo el total del resumen se
+lee el plazo junto con la vigencia, por ejemplo "Net 30 · válida 30 días".
 
 - **Contado:** el cobro está disponible en cuanto el cliente aprueba.
-- **Net 30 / Net 60:** el botón de pago no aparece al aprobar. El cliente ve "Pedido confirmado con crédito Net 30" y la fecha en que vence; el pago en línea se habilita al llegar esa fecha, contada desde la aprobación.
+- **Net N (crédito):** el botón de pago no aparece al aprobar. El cliente ve que el pedido quedó confirmado con crédito (por ejemplo, "Pedido confirmado con crédito Net 30") y la fecha en que vence; el pago en línea se habilita al llegar esa fecha, contada desde la aprobación.
 
 ## Anticipo
 
-En **Anticipo (%)** capturas un porcentaje entre 1 y 99. Al aprobar, Cord divide el
+En el paso **Condiciones**, el campo **Anticipo (%)** (opcional) acepta un porcentaje
+entre 1 y 99. Debajo, el editor te dice cuánto pagará el cliente al aprobar y cuánto
+después, por ejemplo "Al aprobar, tu cliente paga MXN 3,000.00 de anticipo y el resto
+(MXN 7,000.00) según los términos." Al aprobar, Cord divide el
 cobro en anticipo y saldo: el cliente paga el anticipo de inmediato (aunque los
 términos sean a crédito) y el saldo queda con su fecha de vencimiento. Desde antes de
 aprobar, el link muestra "Al aprobar pagas …". Detalle en [Anticipo y
@@ -48,9 +55,10 @@ saldo](/docs/pagos/anticipos).
 
 ## Iguala mensual
 
-Activa **Cobro recurrente mensual (iguala)** para cobrar el total cada mes con tarjeta.
+En el paso **Condiciones**, activa **Cobro recurrente mensual (iguala)** para cobrar el
+total cada mes con tarjeta.
 
-- Solo existe con términos de **Contado**: si eliges Net 30 o Net 60, el interruptor desaparece.
+- Solo existe con términos de **Contado**: si eliges cualquier plazo Net, el interruptor desaparece.
 - Es excluyente con el anticipo: al activarla, el campo de anticipo se oculta.
 - El cliente autoriza su tarjeta una sola vez desde el link al aprobar; paga el primer mes en ese momento y después se le cobra el mismo monto cada mes hasta que se cancele.
 
@@ -58,7 +66,7 @@ Detalle en [Igualas recurrentes](/docs/pagos/igualas).
 
 ## Impuestos incluidos y retenciones
 
-- **Precios ya incluyen IVA** (o **Precios con impuesto incluido** fuera de México): con el interruptor encendido, el precio que capturas ya trae el impuesto y Cord lo desglosa hacia adentro en vez de sumarlo. Para que arranque encendido en cada cotización nueva, actívalo en **Ajustes › Cotizaciones › Impuestos**, en **Comportamiento en cotizaciones**.
+- **Precios ya incluyen IVA** (con el nombre del impuesto de tu país: VAT, GST, Sales tax…): es el interruptor del resumen **Revisa y envía**, arriba del total. Encendido, el precio que capturas ya trae el impuesto y Cord lo desglosa hacia adentro en vez de sumarlo. Para que arranque encendido en cada cotización nueva, actívalo en **Ajustes › Cotizaciones › Impuestos**, en **Comportamiento en cotizaciones**.
 - **Impuesto por línea:** cada partida lleva su tasa, tomada de tu catálogo de impuestos. Ver [Productos y descuentos](/docs/cotizacion/productos).
 - **Retenciones:** si tu catálogo tiene retenciones activas marcadas como predeterminadas, Cord las aplica a cada cotización y las **resta** del total; aparecen como renglones en el resumen, en el link y en el PDF. No se activan por cotización: se administran en **Ajustes › Cotizaciones › Impuestos**. Donde tu país no tiene retenciones, no aparece ningún renglón.
 
@@ -66,7 +74,7 @@ Detalle en [Igualas recurrentes](/docs/pagos/igualas).
 
 Son dos datos distintos y Cord no los mezcla:
 
-- **Divisa de venta:** la que eliges en **¿En qué moneda le cotizas?**. Es la que el cliente ve en el link, en la que se le cobra y en la que se emite la factura. Puedes elegir entre MXN, USD, CAD, BRL, EUR, GBP, COP, ARS, CLP, PEN, JPY, CNY, CHF y AUD.
+- **Divisa de venta:** la que eliges en **¿En qué moneda le cotizas?**, dentro del paso **Condiciones**. Es la que el cliente ve en el link, en la que se le cobra y en la que se emite la factura. Puedes elegir entre MXN, USD, CAD, BRL, EUR, GBP, COP, ARS, CLP, PEN, JPY, CNY, CHF y AUD.
 - **Divisa contable:** la de tu negocio, configurada en **Ajustes › General**. Es en la que llevas tus libros.
 
 Cuando ambas son iguales no hay tipo de cambio. Cuando difieren, Cord obtiene una tasa
@@ -78,7 +86,13 @@ real y fechada de un proveedor externo y le suma un colchón de cobertura:
 | **Normal** (predeterminada) | +2% |
 | **Cauto** | +5% |
 
-El editor muestra **Tipo de cambio hoy** y **Tu tasa protegida**. La tasa se congela al
+Si cambias la divisa de un documento que ya tiene líneas, Cord te avisa que los precios
+no se convierten: las líneas conservan el mismo número, ahora en la divisa nueva, y
+debes revisar cada precio.
+
+Cuando la divisa de venta difiere de la de tu negocio, el paso **Condiciones** muestra
+un panel con **Tipo de cambio hoy**, **Tu tasa protegida** y la pregunta "¿Qué tan cauto
+quieres ser?" para elegir el colchón. La tasa se congela al
 guardar la cotización (o al cambiar el par de divisas en un borrador) y ya no se
 recalcula: la factura la declara como tipo de cambio aunque el mercado se mueva.
 
@@ -93,15 +107,16 @@ Más detalle en [Tesorería y FX Lock](/docs/pagos/tesoreria-fx).
 
 ## Vigencia
 
-En **Vigencia** eliges cuántos días es válida la propuesta: 15, 30, 60 o el valor por
-default de tu organización. Un proceso diario marca como *Vencida* toda cotización
+En el paso **Condiciones**, el campo **Vigencia** dice cuántos días es válida la
+propuesta: 15, 30, 60 o el valor por default de tu organización. Un proceso diario marca como *Vencida* toda cotización
 enviada o vista cuya fecha ya pasó, y tres días antes puede avisarte (ver
 [Notificaciones](/docs/gestion/notificaciones)). Una cotización vencida ya no acepta la
-aprobación del cliente.
+aprobación del cliente; para revivirla, envía una versión nueva con **Modificar y
+reenviar**: la vigencia vuelve a correr desde ese día con la misma duración.
 
 ## Notas y condiciones
 
-- **Notas para el cliente:** texto libre de la cotización (por ejemplo, "entrega en obra incluida"). Aparece en el link y en el PDF.
+- **Nota para el cliente** (opcional): el bloque al final del editor, con texto libre de la cotización (por ejemplo, "entrega en obra incluida"). Aparece en el link y en el PDF.
 - **Condiciones del PDF:** las políticas de tu negocio (cancelación, entrega, garantía) se configuran una vez en **Ajustes › Cotizaciones › Documento PDF**, una por línea, y se imprimen solo en el PDF.
 
 ## Valores por default (Ajustes › Cotizaciones)
@@ -115,7 +130,7 @@ En **Ajustes › Cotizaciones › Folio e IVA** defines con qué arranca cada co
 | **Tasa predeterminada (%)** | La que traen las líneas nuevas cuando tu catálogo no tiene un perfil marcado como predeterminado. |
 | **Retenciones aplicadas** | Solo lectura: lista las retenciones predeterminadas de tu catálogo, con el enlace **Administrar impuestos**. |
 | **Vigencia por default (días)** | Entre 1 y 365. El editor arranca con este valor. |
-| **Términos de pago por default** | Contado, Net 30 o Net 60. Se preseleccionan al crear; la ficha del cliente manda cuando eliges a uno. |
+| **Términos de pago por default** | Contado o un plazo Net (7, 15, 30, 45, 60 o 90 días). Se preseleccionan al crear; la ficha del cliente manda cuando eliges a uno. |
 | **Anticipo por default (%)** | Entre 1 y 99, o vacío para no pedir anticipo. Prellena el campo del editor. |
 | **Texto legal por default** | Se guarda en tu organización, pero hoy no se imprime en el link ni en el PDF. Para textos que sí se imprimen, usa **Documento PDF**. |
 
@@ -129,7 +144,9 @@ cobro](/docs/pagos/metodos)).
 
 ## Problemas comunes
 
-**No veo el interruptor de iguala.** Elegiste Net 30 o Net 60; la iguala solo existe con Contado.
+**No veo el interruptor de iguala.** Elegiste un plazo Net; la iguala solo existe con Contado.
+
+**No puedo cambiar vigencia, anticipo, divisa ni iguala.** Estás armando una versión nueva de una cotización ya enviada: el cliente, la divisa y las condiciones se quedan como se enviaron. Al enviarla, la vigencia vuelve a correr desde ese día con la misma duración. Si necesitas otra duración u otras condiciones, duplica la cotización.
 
 **No veo el campo de anticipo.** Tienes la iguala activada.
 

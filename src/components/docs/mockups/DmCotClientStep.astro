@@ -1,0 +1,107 @@
+---
+// Mockup: paso "¿A quién le cotizas?" con el buscador de clientes abierto.
+//
+// Calca de DocumentEditor.astro: el campo con icono de persona filtra por
+// empresa, contacto, correo e identificador fiscal; cada resultado muestra el
+// correo y el RFC, y a la derecha el descuento del nivel. La última fila es
+// siempre "+ Crear nuevo cliente…". A la derecha, los términos de pago
+// (TermPicker): Net 30 quedó activo porque es el plazo del cliente. Debajo,
+// el correo y RFC del elegido y la nota de su nivel de precio
+// (clientDiscountTpl), que ya bajó los precios del paso 2 un 10%.
+//
+// La lista abierta se dibuja en flujo, encima de la nota, para que el lector
+// vea las dos cosas a la vez: en el navegador el menú flotaría sobre ella.
+import DocsMockup from './DocsMockup.astro';
+import DmIcon from './DmIcon.astro';
+import CotEdLines, { type CotLine } from './CotEdLines.astro';
+import CotEdTerms from './CotEdTerms.astro';
+import './dm-cot-editor.css';
+import { getDocumentEditorI18n } from '../../../i18n/app';
+import { pick, tpl, type DmLang } from './format';
+
+interface Props {
+    lang: DmLang;
+    /** Pie de figura; por defecto describe el estado dibujado. */
+    caption?: string;
+}
+const { lang } = Astro.props;
+const T = getDocumentEditorI18n(lang);
+const RESULTS = [
+    { name: 'Constructora GAMA — Luis Pérez', meta: 'compras@gama.mx · CGA140312KP7', desc: 10 },
+    { name: 'Grupo Constructor del Golfo — Ana Treviño', meta: 'ana@gcgolfo.mx · GCG090811QJ2', desc: 5 },
+];
+
+const DATA: { es: { caption: string; typed: string; lines: CotLine[] }; en: { caption: string; typed: string; lines: CotLine[] } } = {
+    es: {
+        caption: 'Paso ¿A quién le cotizas? con el buscador de clientes abierto: escrito "gama", aparecen Constructora GAMA — Luis Pérez (con su correo, RFC y −10%) y Grupo Constructor del Golfo, y al final + Crear nuevo cliente…. A la derecha, los términos Contado, Net 15, Net 30 (activo), Net 60 y Otro plazo. Debajo, el correo y el RFC del cliente y la nota de que su nivel aplicó −10% a los precios de lista.',
+        typed: 'gama',
+        lines: [
+            { name: 'Cemento gris CPC 30R', unit: 'saco 50 kg', qty: 300, lista: 245, nego: 220.5, costo: 165 },
+            { name: 'Block hueco 15 × 20 × 40', unit: 'pieza', qty: 1500, lista: 14.5, nego: 13.05, costo: 9.8 },
+        ],
+    },
+    en: {
+        caption: '"Who are you quoting?" step with the client search open: after typing "gama", Constructora GAMA — Luis Pérez (with email, tax ID and −10%) and Grupo Constructor del Golfo appear, and + Create new client… at the end. On the right, the payment terms Due on receipt, Net 15, Net 30 (active), Net 60 and Other term. Below, the client\'s email and tax ID and the note that their tier applied −10% to list prices.',
+        typed: 'gama',
+        lines: [
+            { name: 'Gray cement CPC 30R', unit: '50 kg bag', qty: 300, lista: 245, nego: 220.5, costo: 165 },
+            { name: 'Hollow block 15 × 20 × 40', unit: 'piece', qty: 1500, lista: 14.5, nego: 13.05, costo: 9.8 },
+        ],
+    },
+};
+const d = pick(DATA, lang);
+const caption = Astro.props.caption ?? d.caption;
+---
+<DocsMockup lang={lang} variant="app" chrome="topbar" title={T.titleNewQuote} crumbs={[T.crumbQuotes]} height={720} caption={caption} class="dm-cot-cs-figure">
+    <div class="dm-ced dm-cot-cs">
+        <div class="dm-ced-step">
+            <span class="dm-ced-num">1</span>
+            <span class="dm-ced-step-text">
+                <span class="dm-ced-step-title">{T.step1Quote}</span>
+                <span class="dm-ced-step-hint">{T.step1HintQuote}</span>
+            </span>
+        </div>
+        <div class="dm-cot-cs-row">
+            <div class="dm-cot-cs-selwrap">
+                <span class="dm-ced-combo is-focus"><DmIcon name="user" /><span class="dm-ced-combo-t">{d.typed}</span><span class="dm-ced-caret"></span></span>
+                <div class="dm-ced-menu">
+                    {RESULTS.map((r, i) => (
+                        <span class:list={['dm-ced-opt-row', { 'is-active': i === 0 }]}>
+                            <span class="dm-ced-opt-name"><span class="dm-ellipsis">{r.name}</span><small>{r.meta}</small></span>
+                            <span class="dm-ced-opt-side">−{r.desc}%</span>
+                        </span>
+                    ))}
+                    <span class="dm-ced-opt-row is-create">{T.createClient}</span>
+                </div>
+            </div>
+            <CotEdTerms lang={lang} value="net30" />
+        </div>
+        <div class="dm-cot-cs-meta">
+            <span class="dm-ced-meta">{RESULTS[0].meta.replace(' · ', ' · RFC ')}</span>
+            <span class="dm-ced-ok">{tpl(T.clientDiscountTpl, { d: 10 })}</span>
+        </div>
+
+        <div class="dm-ced-step dm-cot-cs-step2">
+            <span class="dm-ced-num">2</span>
+            <span class="dm-ced-step-text">
+                <span class="dm-ced-step-title">{T.step2Quote}</span>
+                <span class="dm-ced-step-hint">{T.step2HintQuote}</span>
+            </span>
+        </div>
+        <CotEdLines lang={lang} lines={d.lines} showTax={false} marginMin={20} />
+    </div>
+</DocsMockup>
+
+<style is:global>
+    .dm-cot-cs-figure .dm-content, .dm-cot-cs-figure .dm-page-head { padding-right: calc(4px + var(--dm-bleed)); }
+    .dm-cot-cs { padding-top: 6px; }
+    .dm-cot-cs-row { display: flex; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+    .dm-cot-cs-selwrap { width: 320px; max-width: 100%; display: flex; flex-direction: column; gap: 6px; }
+    .dm-cot-cs-row > .dm-ced-chips { padding-top: 3px; }
+    .dm-cot-cs-meta { display: flex; flex-direction: column; gap: 5px; margin-top: 10px; }
+    .dm-cot-cs-step2 { margin-top: 26px; }
+    @container dm (max-width: 560px) {
+        .dm-cot-cs-figure .dm-stage { height: auto; }
+        .dm-cot-cs-selwrap { width: 100%; }
+    }
+</style>

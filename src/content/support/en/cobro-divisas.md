@@ -4,15 +4,15 @@ description: "How to quote and collect in a currency different from your account
 category: "Payments & Deposits"
 ---
 
-Cord keeps three currencies distinct and never mixes them: the **sale currency** (what you quote and charge the client in), the **accounting currency** (what your business keeps its books in), and the **platform currency** (what Cord charges you for your subscription in, always MXN or USD depending on your country). This article is about the first one.
+Cord keeps three currencies distinct and never mixes them: the **sale currency** (what you quote and charge the client in), the **accounting currency** (what your business keeps its books in), and the **platform currency** (what Cord charges you for your subscription in, MXN, EUR or USD depending on your country). This article is about the first one.
 
 The currency selector offers the currencies of the 12 countries where Cord operates (MXN, USD, CAD, BRL, EUR, GBP, COP, ARS, CLP, PEN) plus four international-trade currencies (JPY, CNY, CHF, AUD). It isn't an open catalog: a currency that no exchange-rate source publishes and no bank can settle isn't offered for capture, so you don't discover the problem only once it's time to collect.
 
 ### Create a quote in another currency
 
-When drafting the quote, in the **Global Settings** section (right panel), you will see a Currency selector.
+When drafting the quote, in step 3 of the editor, **Terms**, you will see the **Which currency are you quoting in?** selector.
 1. Change the sale currency to the one you need (for example, from MXN to USD).
-2. The prices of your entered line items are read under that new currency.
+2. The prices of your entered line items are read under that new currency: they aren't converted, so review each price.
 
 ### Online payment
 

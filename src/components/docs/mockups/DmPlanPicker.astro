@@ -1,0 +1,156 @@
+---
+// Mockup: Ajustes › Planes y suscripción de una cuenta en Starter que va a
+// cambiar de plan, con el ciclo Anual elegido. Calca de
+// src/pages/app/ajustes/plan.astro: "Suscripción actual" (plan, estado,
+// precio, renovación y "Gestionar suscripción"), "Cambiar de plan" con el
+// interruptor Mensual/Anual ("2 meses gratis") y las tarjetas de los planes de
+// pago — la del plan actual dice "Plan actual" y lleva la aurora navy; las
+// demás, "Elegir"; Developer, "Hablar con ventas".
+//
+// Planes, precios y beneficios salen de PLANES / PLANES_EN (src/lib/precios*)
+// y el formato de planMoney()/planCycleLabel() — el mismo que la app. Con
+// Anual, cada tarjeta muestra el mensual equivalente (precioAnualMensualizado).
+//
+// Honestidad: la app no dibuja un "resumen de prorrateo" en esta pantalla; el
+// cobro prorrateado se resuelve al confirmar el cambio. Por eso no aparece.
+import DocsMockup from './DocsMockup.astro';
+import DmIcon from './DmIcon.astro';
+import SetHead from './SetHead.astro';
+import { PLANES, precioAnualMensualizado } from '../../../lib/precios';
+import { PLANES_EN } from '../../../lib/precios.en';
+import { planMoney, planCycleLabel, planTaxNote } from '../../../lib/plan-money';
+import { dmT, pick, tpl, type DmLang } from './format';
+
+interface Props {
+    lang: DmLang;
+    caption?: string;
+}
+const { lang } = Astro.props;
+const CUR = 'MXN' as const;
+const CURRENT = 'starter';
+const planes = (lang === 'en' ? PLANES_EN : PLANES).filter((p) => p.id !== 'free');
+const current = planes.find((p) => p.id === CURRENT)!;
+const money = (n: number) => planMoney(n, CUR, lang);
+const pro = planes.find((p) => p.id === 'pro')!;
+
+const DATA = {
+    es: {
+        caption: `Ajustes › Planes y suscripción con el plan Starter activo y el ciclo Anual elegido: tarjetas de Starter (marcado como plan actual), Profesional, Scale y Developer, con precios mensuales equivalentes en MXN, por ejemplo ${money(precioAnualMensualizado(pro.precio[CUR] ?? 0))} MXN / mes para Profesional.`,
+        renueva: '14 nov 2026',
+    },
+    en: {
+        caption: `Settings › Plans & subscription with the Starter plan active and the Annual cycle selected: cards for Starter (marked as the current plan), Professional, Scale and Developer, with equivalent monthly prices in MXN, for example ${money(precioAnualMensualizado(pro.precio[CUR] ?? 0))} MXN / month for Professional.`,
+        renueva: 'Nov 14, 2026',
+    },
+};
+const d = pick(DATA, lang);
+const caption = Astro.props.caption ?? d.caption;
+---
+<DocsMockup lang={lang} variant="app" chrome="full" sidebar="rail" active="" caption={caption} height={900} class="dm-plan-figure">
+    <SetHead lang={lang} tab="plan" />
+    <span class="plp-intro">{dmT(lang, 'set.plan.intro')}</span>
+
+    <div class="dm-surface plp-block">
+        <span class="plp-sec"><DmIcon name="card" />{dmT(lang, 'set.plan.suscripcion_actual')}</span>
+        <div class="plp-row">
+            <span class="plp-meta">
+                <span class="plp-name">{dmT(lang, 'set.plan.plan_prefix')} {current.nombre}<span class="plp-badge">{dmT(lang, 'set.plan.status.active')}</span></span>
+                <span class="plp-price"><b>{money(current.precio[CUR] ?? 0)}</b> {planCycleLabel(CUR, 'mensual', lang)} · {planTaxNote(lang)}{tpl(dmT(lang, 'set.plan.renueva'), { fecha: d.renueva })}</span>
+            </span>
+            <span class="dm-btn dm-btn-primary dm-btn-rect">{dmT(lang, 'set.plan.gestionar')}</span>
+        </div>
+    </div>
+
+    <div class="dm-surface plp-block">
+        <span class="plp-sec"><DmIcon name="card" />{dmT(lang, 'set.plan.cambiar')}</span>
+        <span class="plp-cycle">
+            <span>{dmT(lang, 'set.plan.mensual')}</span>
+            <span class="is-on">{dmT(lang, 'set.plan.anual')} <i>{dmT(lang, 'set.plan.anual_ahorro')}</i></span>
+        </span>
+        <div class="plp-grid">
+            {planes.map((p) => {
+                const actual = p.id === CURRENT;
+                return (
+                    <div class:list={['plp-card', { 'is-current': actual, 'is-featured': p.destacado }]}>
+                        <div class="plp-visual">
+                            <span class="plp-cname">{p.nombre}</span>
+                            <span class="plp-bottom">
+                                {p.custom
+                                    ? <span class="plp-amount plp-amount-custom">{dmT(lang, 'set.plan.a_tu_medida')}</span>
+                                    : <span class="plp-pricing"><span class="plp-amount">{money(precioAnualMensualizado(p.precio[CUR] ?? 0))}</span><span class="plp-per">{planCycleLabel(CUR, 'mensual', lang)}</span></span>}
+                                <span class="plp-tag">{p.tagline}</span>
+                            </span>
+                        </div>
+                        <div class="plp-body">
+                            {actual
+                                ? <span class="plp-current">{dmT(lang, 'set.plan.actual')}</span>
+                                : <span class="plp-cta">{p.custom ? p.ctaLabel : dmT(lang, 'set.plan.elegir')}</span>}
+                            <span class="plp-feats">
+                                {p.feats.map((f) => <span class="plp-feat"><DmIcon name="check" stroke={2} /><span>{f}</span></span>)}
+                            </span>
+                        </div>
+                    </div>
+                );
+            })}
+        </div>
+        <span class="plp-foot">{dmT(lang, 'set.plan.pick_foot')}</span>
+    </div>
+</DocsMockup>
+
+<style is:global>
+    .dm-plan-figure .dm-content { padding-right: calc(20px + var(--dm-bleed)); }
+    .plp-intro { display: block; margin: -2px 0 14px; font-size: 11.5px; color: var(--dm-muted); }
+    .plp-block { display: flex; flex-direction: column; gap: 13px; padding: 16px; margin-bottom: 12px; border-radius: 16px; }
+    .plp-sec { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--dm-text); letter-spacing: -0.01em; }
+    .plp-sec .dm-ico { width: 15px; height: 15px; color: var(--dm-muted); }
+    .plp-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 12px 2px; border-top: 1px solid var(--dm-border); border-bottom: 1px solid var(--dm-border); }
+    .plp-meta { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+    .plp-name { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; color: var(--dm-text); }
+    .plp-badge { font-size: 8.5px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; padding: 3px 7px; border-radius: 100px; background: rgba(16, 185, 129, 0.14); color: #059669; }
+    .plp-price { font-size: 11px; color: var(--dm-muted); }
+    .plp-price b { font-size: 14px; font-weight: 600; letter-spacing: -0.03em; color: var(--dm-navy); font-variant-numeric: tabular-nums; }
+    .plp-cycle { display: inline-flex; align-self: flex-start; gap: 2px; padding: 3px; border-radius: 100px; background: var(--dm-soft); border: 1px solid var(--dm-border); }
+    .plp-cycle > span { display: inline-flex; align-items: center; gap: 6px; padding: 5px 13px; border-radius: 100px; font-size: 11px; font-weight: 600; color: var(--dm-muted); white-space: nowrap; }
+    .plp-cycle > span.is-on { background: var(--dm-navy); color: #fff; }
+    .plp-cycle i { font-style: normal; font-size: 8.5px; font-weight: 800; padding: 2px 6px; border-radius: 100px; background: rgba(255, 255, 255, 0.18); color: #6ee7b7; }
+    .plp-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 9px; align-items: stretch; }
+    .plp-card { display: flex; flex-direction: column; border-radius: 14px; overflow: hidden; border: 1px solid var(--dm-border); background: #fff; min-width: 0; }
+    .plp-card.is-featured { box-shadow: 0 8px 24px -8px rgba(10, 25, 47, 0.16); }
+    .plp-card.is-current { box-shadow: 0 0 0 1.5px var(--dm-navy); }
+    .plp-visual { position: relative; display: flex; flex-direction: column; justify-content: space-between; gap: 10px; min-height: 118px; padding: 12px; background: var(--dm-soft); overflow: hidden; }
+    /* Aurora del plan actual: navy con dos halos azules apagados (estado estático). */
+    .plp-card.is-current .plp-visual {
+        background:
+            radial-gradient(ellipse 80% 60% at 18% 30%, rgba(15, 99, 250, 0.42) 0%, transparent 60%),
+            radial-gradient(ellipse 60% 70% at 85% 75%, rgba(97, 183, 255, 0.24) 0%, transparent 60%),
+            #08152a;
+    }
+    .plp-cname { font-size: 13px; font-weight: 600; color: var(--dm-text); }
+    .plp-bottom { display: flex; flex-direction: column; gap: 4px; }
+    .plp-pricing { display: flex; align-items: baseline; gap: 4px; flex-wrap: wrap; }
+    .plp-amount { font-size: 20px; font-weight: 500; letter-spacing: -0.04em; line-height: 1; color: var(--dm-text); font-variant-numeric: tabular-nums; }
+    .plp-amount-custom { font-size: 16px; letter-spacing: -0.03em; }
+    .plp-per { font-size: 9.5px; font-weight: 500; color: var(--dm-muted); white-space: nowrap; }
+    .plp-tag { font-size: 10px; line-height: 1.35; color: var(--dm-muted); }
+    .plp-card.is-current .plp-cname, .plp-card.is-current .plp-amount { color: #fff; }
+    .plp-card.is-current .plp-per { color: rgba(255, 255, 255, 0.6); }
+    .plp-card.is-current .plp-tag { color: rgba(255, 255, 255, 0.55); }
+    .plp-body { display: flex; flex-direction: column; gap: 8px; padding: 11px 12px 12px; border-top: 1px solid var(--dm-border); flex: 1; }
+    .plp-cta { display: block; text-align: center; padding: 7px 10px; border-radius: 999px; background: var(--dm-navy); color: #fff; font-size: 11px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .plp-current { display: block; text-align: center; padding: 7px 0; font-size: 11px; font-weight: 600; color: var(--dm-ok); }
+    .plp-feats { display: flex; flex-direction: column; }
+    .plp-feat { display: flex; align-items: flex-start; gap: 6px; padding: 5px 0; border-bottom: 1px solid var(--dm-border); font-size: 10px; line-height: 1.4; color: var(--dm-muted); }
+    .plp-feat:last-child { border-bottom: 0; }
+    .plp-feat .dm-ico { width: 9px; height: 9px; margin-top: 3px; color: var(--dm-navy); }
+    .plp-foot { font-size: 10.5px; color: var(--dm-muted); }
+
+    @container dm (max-width: 640px) {
+        .plp-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @container dm (max-width: 520px) {
+        .dm-plan-figure .dm-content { padding-right: calc(14px + var(--dm-bleed)); }
+        .plp-row .dm-btn { width: 100%; }
+        .plp-cycle { align-self: stretch; }
+        .plp-cycle > span { flex: 1; justify-content: center; }
+    }
+</style>

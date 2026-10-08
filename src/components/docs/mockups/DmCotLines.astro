@@ -1,0 +1,89 @@
+---
+// Mockup: paso "¿Qué le vas a cotizar?" del editor con tres líneas negociadas.
+//
+// Calca de DocumentEditor.astro + rowHtml() de src/lib/editor/document-editor.ts:
+// encabezado del paso 2, columnas reales (la de impuesto aparece porque la
+// cuenta tiene más de una tasa), el precio sugerido por historial bajo el
+// nombre (suggestedWinTpl), el margen en rojo cuando una línea baja del mínimo
+// de Ajustes › Aprobaciones (aquí 20%), la fila bajo el puntero con su agarre
+// y sus acciones (duplicar, quitar), y el buscador del catálogo con "40 tubo"
+// escrito: el resultado ya muestra ×40.
+//
+// Se usan productos de Materiales del Valle (el negocio de demo) con las cifras
+// de la historia: precio de lista 29,000.00, sugerido 27,550.00 y margen 18%.
+import DocsMockup from './DocsMockup.astro';
+import DmIcon from './DmIcon.astro';
+import DmMoney from './DmMoney.astro';
+import CotEdLines, { type CotLine } from './CotEdLines.astro';
+import './dm-cot-editor.css';
+import { getDocumentEditorI18n } from '../../../i18n/app';
+import { dmMoney, pick, tpl, type DmLang } from './format';
+
+interface Props {
+    lang: DmLang;
+    /** Pie de figura; por defecto describe las líneas. */
+    caption?: string;
+}
+const { lang } = Astro.props;
+const T = getDocumentEditorI18n(lang);
+const CUR = 'MXN';
+const sugerido = tpl(T.suggestedWinTpl, { precio: dmMoney(27550, CUR, lang), pct: 68 });
+
+const DATA: { es: { caption: string; typed: string; result: string; unit: string; lines: CotLine[] }; en: { caption: string; typed: string; result: string; unit: string; lines: CotLine[] } } = {
+    es: {
+        caption: `Paso ¿Qué le vas a cotizar? con tres líneas: cemento gris × 400, revolvedora de concreto × 2 y renta de bomba para colado × 10. Bajo la revolvedora, el precio sugerido ${dmMoney(27550, CUR, 'es')} (68% cierra), y su margen de 18% en rojo por quedar bajo el mínimo de 20%. La fila de la bomba muestra su agarre para reordenar y los botones duplicar y quitar. En el buscador está escrito "40 tubo" y el resultado ofrece agregar 40 de una vez.`,
+        typed: '40 tubo',
+        result: 'Tubo PVC hidráulico 1/2"',
+        unit: 'tramo 6 m',
+        lines: [
+            { name: 'Cemento gris CPC 30R', unit: 'saco 50 kg', qty: 400, lista: 245, nego: 235, tax: 'IVA 16%', costo: 178.6 },
+            { name: 'Revolvedora de concreto 1 saco', unit: 'pieza', qty: 2, lista: 29000, nego: 25900, tax: 'IVA 16%', costo: 21238, hint: sugerido },
+            { name: 'Renta de bomba para colado', unit: 'hora', qty: 10, lista: 1850, tax: 'IVA 16%', costo: 990, hover: true },
+        ],
+    },
+    en: {
+        caption: `"What are you quoting them?" step with three lines: gray cement × 400, concrete mixer × 2 and concrete pump rental × 10. Under the mixer, the suggested price ${dmMoney(27550, CUR, 'en')} (68% close), and its 18% margin in red for falling below the 20% minimum. The pump row shows its handle to reorder and the duplicate and remove buttons. The search box reads "40 pipe" and the result offers to add 40 at once.`,
+        typed: '40 pipe',
+        result: 'PVC pipe 1/2"',
+        unit: '6 m length',
+        lines: [
+            { name: 'Gray cement CPC 30R', unit: '50 kg bag', qty: 400, lista: 245, nego: 235, tax: 'IVA 16%', costo: 178.6 },
+            { name: 'Concrete mixer, 1 bag', unit: 'piece', qty: 2, lista: 29000, nego: 25900, tax: 'IVA 16%', costo: 21238, hint: sugerido },
+            { name: 'Concrete pump rental', unit: 'hour', qty: 10, lista: 1850, tax: 'IVA 16%', costo: 990, hover: true },
+        ],
+    },
+};
+const d = pick(DATA, lang);
+const caption = Astro.props.caption ?? d.caption;
+---
+<DocsMockup lang={lang} variant="app" chrome="topbar" title={T.titleNewQuote} crumbs={[T.crumbQuotes]} caption={caption} class="dm-cot-ln-figure">
+    <div class="dm-ced dm-cot-ln">
+        <div class="dm-ced-step">
+            <span class="dm-ced-num">2</span>
+            <span class="dm-ced-step-text">
+                <span class="dm-ced-step-title">{T.step2Quote}</span>
+                <span class="dm-ced-step-hint">{T.step2HintQuote}</span>
+            </span>
+        </div>
+        <CotEdLines lang={lang} lines={d.lines} marginMin={20} />
+        <div class="dm-ced-add">
+            <div class="dm-ced-searchwrap">
+                <span class="dm-ced-search is-typed"><DmIcon name="search" /><span class="dm-ced-search-t">{d.typed}</span></span>
+                <div class="dm-ced-menu">
+                    <span class="dm-ced-opt-row is-active">
+                        <span class="dm-ced-opt-name">{d.result}<small>PVC-12</small></span>
+                        <span class="dm-ced-opt-side"><b>×40</b><DmMoney amount={86} currency={CUR} lang={lang} /> / {d.unit}</span>
+                    </span>
+                </div>
+            </div>
+            <span class="dm-ced-btn2">{T.freeLine}</span>
+            <span class="dm-ced-btn2 dm-hide-narrow">{T.insertKit}</span>
+        </div>
+    </div>
+</DocsMockup>
+
+<style is:global>
+    .dm-cot-ln-figure .dm-content, .dm-cot-ln-figure .dm-page-head { padding-right: calc(4px + var(--dm-bleed)); }
+    .dm-cot-ln { padding: 6px 0 4px; }
+    .dm-cot-ln .dm-ced-add { align-items: flex-start; }
+</style>

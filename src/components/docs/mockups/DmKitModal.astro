@@ -1,0 +1,154 @@
+---
+// Mockup: el modal "Nuevo kit" de Productos › Kits con tres renglones de
+// catálogo, una línea libre y el precio fijo de combo encendido. Calca del
+// <dialog id="kitDlg"> de src/pages/app/productos/kits.astro: Nombre,
+// Descripción, "Renglones del kit" (nombre + SKU, cantidad, unidad, quitar; la
+// línea libre es un campo de texto sin unidad), el buscador del catálogo con
+// "+ Línea libre", la casilla "Vender el kit a un precio fijo" y la pista de
+// ahorro de updateComboHint(): la suma de lista solo cuenta renglones de
+// catálogo y el % se redondea igual que allá. La app formatea el monto con la
+// divisa del negocio; aquí lleva además su código (regla 21).
+import DocsMockup from './DocsMockup.astro';
+import DmIcon from './DmIcon.astro';
+import { dmT, dmMoney, pick, tpl, type DmLang } from './format';
+
+interface Props {
+    lang: DmLang;
+    caption?: string;
+}
+const { lang } = Astro.props;
+const CUR = 'MXN';
+
+const DATA = {
+    es: {
+        nombre: 'Kit de obra negra — muro 20 m²',
+        desc: 'Cemento, varilla y block para 20 m² de muro, con mano de obra',
+        items: [
+            { desc: 'Cemento gris CPC 30R, bulto 50 kg', sku: 'CEM-CPC30-50', qty: 24, unidad: 'bulto', precio: 238 },
+            { desc: 'Varilla corrugada 3/8" × 12 m', sku: 'VAR-38-12', qty: 40, unidad: 'pza', precio: 186.5 },
+            { desc: 'Block hueco de concreto 15×20×40 cm', sku: 'BLK-152040', qty: 500, unidad: 'pza', precio: 14.2 },
+        ],
+        libre: 'Mano de obra — levantamiento de muro',
+    },
+    en: {
+        nombre: 'Rough-in kit — 20 m² wall',
+        desc: 'Cement, rebar and block for 20 m² of wall, with labor',
+        items: [
+            { desc: 'Gray cement CPC 30R, 50 kg bag', sku: 'CEM-CPC30-50', qty: 24, unidad: 'bag', precio: 238 },
+            { desc: 'Corrugated rebar 3/8" × 12 m', sku: 'VAR-38-12', qty: 40, unidad: 'pc', precio: 186.5 },
+            { desc: 'Hollow concrete block 15×20×40 cm', sku: 'BLK-152040', qty: 500, unidad: 'pc', precio: 14.2 },
+        ],
+        libre: 'Labor — wall construction',
+    },
+};
+const d = pick(DATA, lang);
+const suma = d.items.reduce((s, it) => s + it.precio * it.qty, 0);
+const COMBO = 18500;
+const ahorro = suma - COMBO;
+const pct = Math.round((Math.abs(ahorro) / suma) * 100);
+const nf = (n: number) => new Intl.NumberFormat(lang === 'en' ? 'en-US' : 'es-MX').format(n);
+const hint = tpl(dmT(lang, 'kit.combo_hint_ahorro'), { suma: dmMoney(suma, CUR, lang), ahorro: dmMoney(ahorro, CUR, lang), pct });
+const comboTxt = new Intl.NumberFormat(lang === 'en' ? 'en-US' : 'es-MX', { minimumFractionDigits: 2 }).format(COMBO);
+const caption = Astro.props.caption ?? (lang === 'en'
+    ? `New kit modal with three catalog lines (cement, rebar and block) plus one free-form labor line, and the fixed bundle price of ${dmMoney(COMBO, CUR, 'en')} enabled: the list total is ${dmMoney(suma, CUR, 'en')}, so the kit saves ${dmMoney(ahorro, CUR, 'en')} (${pct}%).`
+    : `Modal Nuevo kit con tres renglones de catálogo (cemento, varilla y block) y una línea libre de mano de obra, con el precio fijo de combo de ${dmMoney(COMBO, CUR, 'es')} activado: la suma de lista es ${dmMoney(suma, CUR, 'es')}, así que el kit ahorra ${dmMoney(ahorro, CUR, 'es')} (${pct}%).`);
+const label = (s: string) => s.replace(/\s*\*$/, '');
+---
+<DocsMockup lang={lang} variant="panel" panelWidth={560} caption={caption} class="dm-kit-figure">
+    <div class="kitm">
+        <div class="kitm-head">
+            <span class="kitm-title">{dmT(lang, 'kit.modal_nuevo_titulo')}</span>
+            <span class="kitm-close"><DmIcon name="x" stroke={2} /></span>
+        </div>
+        <div class="kitm-body">
+            <div class="kitm-field">
+                <span class="kitm-label">{label(dmT(lang, 'kit.nombre'))} *</span>
+                <span class="kitm-input">{d.nombre}</span>
+            </div>
+            <div class="kitm-field">
+                <span class="kitm-label">{dmT(lang, 'kit.descripcion')} <i>{dmT(lang, 'kit.opcional')}</i></span>
+                <span class="kitm-input">{d.desc}</span>
+            </div>
+            <div class="kitm-field">
+                <span class="kitm-label">{dmT(lang, 'kit.renglones')}</span>
+                <div class="kitm-items">
+                    {d.items.map((it) => (
+                        <div class="kitm-row">
+                            <span class="kitm-name">{it.desc}<small>{it.sku}</small></span>
+                            <span class="kitm-qty">{nf(it.qty)}</span>
+                            <span class="kitm-unit">{it.unidad}</span>
+                            <span class="kitm-del"><DmIcon name="x" stroke={2} /></span>
+                        </div>
+                    ))}
+                    <div class="kitm-row">
+                        <span class="kitm-free">{d.libre}</span>
+                        <span class="kitm-qty">1</span>
+                        <span class="kitm-unit"></span>
+                        <span class="kitm-del"><DmIcon name="x" stroke={2} /></span>
+                    </div>
+                </div>
+                <div class="kitm-add">
+                    <span class="kitm-search"><DmIcon name="search" /><span>{dmT(lang, 'kit.buscar_ph')}</span></span>
+                    <span class="kitm-freebtn">{dmT(lang, 'kit.linea_libre')}</span>
+                </div>
+            </div>
+            <div class="kitm-field">
+                <span class="kitm-check"><span class="dm-check is-on"><DmIcon name="check" stroke={3} /></span>{dmT(lang, 'kit.combo_toggle')} <i>{dmT(lang, 'kit.combo_toggle_hint')}</i></span>
+                <div class="kitm-combo">
+                    <span class="kitm-combo-row"><span class="kitm-pre">$</span><span class="kitm-combo-val">{comboTxt}</span><span class="kitm-cur">{CUR}</span></span>
+                    <span class="kitm-hint">{hint}</span>
+                </div>
+            </div>
+        </div>
+        <div class="kitm-foot">
+            <span class="kitm-cancel">{dmT(lang, 'kit.cancelar')}</span>
+            <span class="kitm-save">{dmT(lang, 'kit.guardar_kit')}</span>
+        </div>
+    </div>
+</DocsMockup>
+
+<style is:global>
+    .kitm { display: flex; flex-direction: column; }
+    .kitm-head { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px 10px; }
+    .kitm-title { font-size: 15px; font-weight: 700; letter-spacing: -0.02em; color: var(--dm-text); }
+    .kitm-close { width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; background: var(--dm-canvas); border: 1px solid var(--dm-border); color: var(--dm-muted); }
+    .kitm-close .dm-ico { width: 11px; height: 11px; }
+    .kitm-body { display: flex; flex-direction: column; gap: 13px; padding: 2px 20px 14px; }
+    .kitm-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+    .kitm-label, .kitm-check { font-size: 8.5px; font-weight: 800; letter-spacing: 0.13em; text-transform: uppercase; color: #99a2af; }
+    .kitm-label i, .kitm-check i { font-style: normal; font-size: 8.5px; font-weight: 700; letter-spacing: 0.05em; text-transform: none; color: #b3bcc9; }
+    .kitm-input { display: block; line-height: 32px; min-height: 34px; padding: 0 11px; border-radius: 9px; background: var(--dm-canvas); border: 1px solid var(--dm-border); font-size: 12px; font-weight: 500; color: var(--dm-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .kitm-items { display: flex; flex-direction: column; }
+    .kitm-row { display: grid; grid-template-columns: minmax(0, 1fr) 58px 44px 24px; gap: 8px; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--dm-border); }
+    .kitm-name { display: flex; flex-direction: column; min-width: 0; font-size: 11.5px; font-weight: 500; color: var(--dm-text); }
+    .kitm-name small { font-size: 9.5px; font-weight: 500; color: #99a2af; }
+    .kitm-free { display: block; line-height: 28px; min-height: 30px; padding: 0 9px; border-radius: 8px; background: var(--dm-canvas); border: 1px solid var(--dm-border); font-size: 11.5px; color: var(--dm-text); min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .kitm-qty { display: flex; align-items: center; justify-content: center; height: 30px; border-radius: 8px; background: var(--dm-canvas); border: 1px solid var(--dm-border); font-size: 11.5px; color: var(--dm-text); font-variant-numeric: tabular-nums; }
+    .kitm-unit { font-size: 10.5px; color: var(--dm-muted); white-space: nowrap; }
+    .kitm-del { display: grid; place-items: center; color: #99a2af; }
+    .kitm-del .dm-ico { width: 11px; height: 11px; }
+    .kitm-add { display: flex; gap: 8px; align-items: center; margin-top: 4px; flex-wrap: wrap; }
+    .kitm-search { flex: 1; min-width: 200px; display: flex; align-items: center; gap: 8px; height: 34px; padding: 0 11px; border-radius: 10px; background: var(--dm-canvas); font-size: 11.5px; color: #99a2af; white-space: nowrap; overflow: hidden; }
+    .kitm-search .dm-ico { width: 13px; height: 13px; flex-shrink: 0; }
+    .kitm-search span { overflow: hidden; text-overflow: ellipsis; }
+    .kitm-freebtn { font-size: 11px; font-weight: 600; color: var(--dm-muted); background: var(--dm-canvas); border: 1px solid var(--dm-border); border-radius: 10px; padding: 8px 12px; white-space: nowrap; }
+    .kitm-check { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+    .kitm-check .dm-check { width: 14px; height: 14px; }
+    .kitm-combo { display: flex; flex-direction: column; gap: 7px; padding: 12px; border-radius: 11px; background: var(--dm-canvas); }
+    .kitm-combo-row { display: flex; align-items: center; gap: 6px; height: 34px; padding: 0 11px; border-radius: 9px; background: #fff; border: 1px solid var(--dm-navy); box-shadow: 0 0 0 3px rgba(10, 25, 47, 0.06); }
+    .kitm-pre { font-size: 12.5px; font-weight: 600; color: var(--dm-muted); }
+    .kitm-combo-val { flex: 1; font-size: 12.5px; font-weight: 600; color: var(--dm-text); font-variant-numeric: tabular-nums; }
+    .kitm-cur { font-size: 10px; font-weight: 600; color: var(--dm-faint); }
+    .kitm-hint { font-size: 11px; line-height: 1.45; color: #059669; }
+    .kitm-foot { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 20px 18px; }
+    .kitm-cancel, .kitm-save { font-size: 11.5px; font-weight: 600; border-radius: 9px; padding: 8px 15px; white-space: nowrap; }
+    .kitm-cancel { color: var(--dm-text); background: var(--dm-canvas); border: 1px solid var(--dm-border); }
+    .kitm-save { color: #fff; background: var(--dm-navy); box-shadow: 0 6px 18px -8px rgba(10, 25, 47, 0.5); }
+    @container dm (max-width: 520px) {
+        .kitm-head { padding: 15px 14px 8px; }
+        .kitm-body { padding: 2px 14px 12px; }
+        .kitm-foot { padding: 10px 14px 14px; }
+        .kitm-row { grid-template-columns: minmax(0, 1fr) 48px 30px 20px; gap: 6px; }
+        .kitm-search { min-width: 0; flex-basis: 100%; }
+    }
+</style>

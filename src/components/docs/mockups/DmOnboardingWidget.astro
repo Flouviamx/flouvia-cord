@@ -1,0 +1,244 @@
+---
+// Mockup: widget "Configura Cord" abierto sobre Inicio, como lo ve una cuenta
+// nueva que ya cotizó pero aún no termina de preparar su negocio.
+//
+// Estructura y textos REALES: las 5 secciones y las 11 tareas son las de
+// getSetupProgress() (src/lib/queries.ts) y sus textos salen del diccionario de
+// la app (onb.*). Si se agrega o renombra una tarea en la app, actualiza GROUPS.
+// La sección abierta es la primera incompleta, igual que en la app.
+import DocsMockup from './DocsMockup.astro';
+import DmIcon from './DmIcon.astro';
+import DmMoney from './DmMoney.astro';
+import DmRing from './DmRing.astro';
+import DmStatus from './DmStatus.astro';
+import type { IconName } from '../../../lib/icons';
+import type { QuoteStatus } from '../../../lib/quote';
+import { dmT, pick, tpl, DEMO, type DmLang } from './format';
+
+interface Props {
+    lang: DmLang;
+    /** Pie de figura; por defecto describe el estado dibujado. */
+    caption?: string;
+}
+const { lang } = Astro.props;
+
+// Espejo de getSetupProgress(): grupo → tareas, en el mismo orden.
+const GROUPS: { id: 'negocio' | 'catalogo' | 'venta' | 'dinero' | 'equipo'; icon: IconName; tasks: { id: string; done: boolean }[] }[] = [
+    { id: 'negocio', icon: 'store', tasks: [{ id: 'marca', done: true }, { id: 'fiscal', done: true }, { id: 'documento', done: false }] },
+    { id: 'catalogo', icon: 'products', tasks: [{ id: 'productos', done: true }, { id: 'clientes', done: true }] },
+    { id: 'venta', icon: 'send', tasks: [{ id: 'cotizacion', done: true }, { id: 'enviar', done: true }] },
+    { id: 'dinero', icon: 'wallet', tasks: [{ id: 'online_cobros', done: false }, { id: 'cobro', done: false }] },
+    { id: 'equipo', icon: 'clients', tasks: [{ id: 'workflows', done: false }, { id: 'equipo', done: false }] },
+];
+const all = GROUPS.flatMap((g) => g.tasks);
+const doneN = all.filter((t) => t.done).length;
+const pct = Math.round((doneN / all.length) * 100);
+const firstOpen = GROUPS.find((g) => g.tasks.some((t) => !t.done))?.id;
+
+const DATA = {
+    es: {
+        caption: `Widget Configura Cord abierto sobre Inicio: ${doneN} de ${all.length} pasos listos (${pct}%), con la sección "Prepara tu negocio" desplegada y la tarea pendiente "Personaliza tu PDF y portal".`,
+        activa: '1 cotización activa',
+        recientes: [
+            { folio: DEMO.folio, cliente: DEMO.cliente, status: 'viewed' as QuoteStatus, total: DEMO.total },
+            { folio: 'COT-0149', cliente: 'Constructora Apex', status: 'draft' as QuoteStatus, total: 48720 },
+        ],
+        verTodas: 'Ver todas',
+        actividad: [
+            { icon: 'eye' as IconName, text: `${DEMO.cliente} abrió ${DEMO.folio}`, when: 'hace 12 min' },
+            { icon: 'send' as IconName, text: `Enviaste ${DEMO.folio} por correo a ${DEMO.contacto}`, when: 'hoy, 10:42' },
+            { icon: 'file-plus' as IconName, text: 'Creaste COT-0149 para Constructora Apex', when: 'ayer, 18:05' },
+        ],
+    },
+    en: {
+        caption: `Set up Cord widget open over Home: ${doneN} of ${all.length} steps done (${pct}%), with the "Set up your business" section expanded and the pending task "Customize your PDF and portal".`,
+        activa: '1 active quote',
+        recientes: [
+            { folio: DEMO.folio, cliente: DEMO.cliente, status: 'viewed' as QuoteStatus, total: DEMO.total },
+            { folio: 'COT-0149', cliente: 'Constructora Apex', status: 'draft' as QuoteStatus, total: 48720 },
+        ],
+        verTodas: 'View all',
+        actividad: [
+            { icon: 'eye' as IconName, text: `${DEMO.cliente} opened ${DEMO.folio}`, when: '12 min ago' },
+            { icon: 'send' as IconName, text: `You emailed ${DEMO.folio} to ${DEMO.contacto}`, when: 'today, 10:42 AM' },
+            { icon: 'file-plus' as IconName, text: 'You created COT-0149 for Constructora Apex', when: 'yesterday, 6:05 PM' },
+        ],
+    },
+};
+const d = pick(DATA, lang);
+const caption = Astro.props.caption ?? d.caption;
+---
+<DocsMockup lang={lang} variant="app" chrome="full" sidebar="rail" active="dashboard" title={dmT(lang, 'dash.heading')} badges={{ seguimiento: 1 }} caption={caption} class="dm-onb-figure">
+    <div class="dm-kpis">
+        <div class="dm-surface dm-kpi">
+            <span class="dm-kpi-label">{dmT(lang, 'dash.kpi_por_cerrar')}</span>
+            <span class="dm-kpi-num"><DmMoney amount={DEMO.total} lang={lang} /></span>
+            <span class="dm-kpi-sub">{d.activa}</span>
+        </div>
+        <div class="dm-surface dm-kpi dm-hide-narrow">
+            <span class="dm-kpi-label">{dmT(lang, 'dash.kpi_tasa_cierre')}</span>
+            <span class="dm-kpi-num dm-editorial">—</span>
+            <span class="dm-kpi-sub">{dmT(lang, 'dash.kpi_sin_ventas')}</span>
+        </div>
+        <div class="dm-surface dm-kpi dm-hide-narrow">
+            <span class="dm-kpi-label">{dmT(lang, 'dash.kpi_ticket_promedio')}</span>
+            <span class="dm-kpi-num dm-editorial">—</span>
+            <span class="dm-kpi-sub">{dmT(lang, 'dash.kpi_sin_ventas')}</span>
+        </div>
+        <div class="dm-surface dm-kpi">
+            <span class="dm-kpi-label">{dmT(lang, 'dash.kpi_por_seguimiento')}</span>
+            <span class="dm-kpi-num dm-editorial">1</span>
+            <span class="dm-kpi-sub">{dmT(lang, 'dash.kpi_vista_singular')}</span>
+        </div>
+    </div>
+
+    <div class="dm-surface dm-onb-recent dm-hide-narrow">
+        <div class="dm-sec-head">
+            <span class="dm-sec-title">{dmT(lang, 'dash.w_recientes')}</span>
+            <span class="dm-sec-link">{d.verTodas}</span>
+        </div>
+        <div class="dm-table">
+            {d.recientes.map((q) => (
+                <div class="dm-tr" style="--dm-cols: 74px minmax(0,1fr) auto auto">
+                    <span class="dm-folio">{q.folio}</span>
+                    <span class="dm-ellipsis">{q.cliente}</span>
+                    <DmStatus status={q.status} lang={lang} />
+                    <span class="dm-num"><DmMoney amount={q.total} lang={lang} /></span>
+                </div>
+            ))}
+        </div>
+    </div>
+
+    <div class="dm-surface dm-onb-recent dm-hide-narrow">
+        <div class="dm-sec-head">
+            <span class="dm-sec-title">{dmT(lang, 'dash.actividad_titulo')}</span>
+        </div>
+        {d.actividad.map((a) => (
+            <div class="dm-onb-act">
+                <span class="dm-onb-act-ico"><DmIcon name={a.icon} /></span>
+                <span class="dm-ellipsis">{a.text}</span>
+                <span class="dm-onb-act-when">{a.when}</span>
+            </div>
+        ))}
+    </div>
+
+    <div slot="overlay" class="dm-onb">
+        <div class="dm-onb-head">
+            <DmRing pct={pct} size={40} tone="dark" />
+            <div class="dm-onb-titles">
+                <span class="dm-onb-title">{dmT(lang, 'onb.titulo')}</span>
+                <span class="dm-onb-count">{tpl(dmT(lang, 'onb.pasos_listos_tpl'), { n: doneN, total: all.length })}</span>
+            </div>
+            <span class="dm-onb-min"><DmIcon name="minus" stroke={2.2} /></span>
+        </div>
+        <div class="dm-onb-groups">
+            {GROUPS.map((g) => {
+                const gDone = g.tasks.filter((t) => t.done).length;
+                const complete = gDone === g.tasks.length;
+                const open = g.id === firstOpen;
+                return (
+                    <div class:list={['dm-onb-group', { 'is-open': open, 'is-done': complete }]}>
+                        <div class="dm-onb-ghead">
+                            <span class="dm-onb-gicon">{complete ? <DmIcon name="check" stroke={3} /> : <DmIcon name={g.icon} />}</span>
+                            <span class="dm-onb-gtext">
+                                <span class="dm-onb-gtitle">{dmT(lang, `onb.g.${g.id}`)}</span>
+                                <span class="dm-onb-gsub">{tpl(dmT(lang, 'onb.completados_tpl'), { n: gDone, total: g.tasks.length })}</span>
+                            </span>
+                            {!open && <span class="dm-onb-dots">{g.tasks.map((t) => <i class:list={{ 'is-done': t.done }}></i>)}</span>}
+                            <DmIcon name="chevron-down" class="dm-onb-chev" />
+                        </div>
+                        {open && (
+                            <div class="dm-onb-steps">
+                                {g.tasks.map((t) => (
+                                    <div class:list={['dm-onb-step', { 'is-done': t.done }]}>
+                                        <span class="dm-onb-check">{t.done && <DmIcon name="check" stroke={3.2} />}</span>
+                                        <span class="dm-onb-step-main">
+                                            <span class="dm-onb-step-title">{dmT(lang, `onb.t.${t.id}` as any)}</span>
+                                            {!t.done && <span class="dm-onb-step-desc">{dmT(lang, `onb.t.${t.id}.desc` as any)}</span>}
+                                            {!t.done && <span class="dm-onb-cta">{dmT(lang, 'onb.configurar')}<DmIcon name="chevron-right" stroke={2.2} /></span>}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                );
+            })}
+        </div>
+    </div>
+</DocsMockup>
+
+<style is:global>
+    /* El widget flota abajo a la derecha, como en la app; la ventana deja sitio. */
+    .dm-onb-figure .dm-app { min-height: 650px; }
+    .dm-onb-recent { margin-top: 12px; padding: 12px 0 2px; }
+    .dm-onb-recent .dm-sec-head { padding: 0 14px 9px; margin-bottom: 0; }
+    .dm-onb-act { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; align-items: center; gap: 10px; min-height: 40px; padding: 0 14px; border-top: 1px solid var(--dm-border); font-size: 12px; }
+    .dm-onb-recent .dm-sec-head + .dm-onb-act { border-top: 0; }
+    .dm-onb-act-ico { width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; background: rgba(10, 25, 47, 0.05); color: var(--dm-navy); }
+    .dm-onb-act-ico .dm-ico { width: 14px; height: 14px; }
+    .dm-onb-act-when { font-size: 11px; color: var(--dm-faint); white-space: nowrap; }
+
+    .dm-onb {
+        position: absolute;
+        right: calc(var(--dm-bleed) + 18px);
+        bottom: 18px;
+        width: 316px;
+        border-radius: 18px;
+        background: #fff;
+        border: 1px solid var(--dm-border);
+        box-shadow: 0 30px 70px -28px rgba(10, 25, 47, 0.55), 0 4px 14px -8px rgba(10, 25, 47, 0.25);
+        overflow: hidden;
+        pointer-events: auto;
+    }
+    .dm-onb-head { display: flex; align-items: center; gap: 11px; padding: 13px 13px 12px; background: var(--dm-navy); color: #fff; }
+    .dm-ring-dark .dm-ring-bg { stroke: rgba(255, 255, 255, 0.16); stroke-width: 3; }
+    .dm-ring-dark .dm-ring-fg { stroke-width: 3; }
+    .dm-ring-dark b { font-size: 9.5px; font-weight: 700; color: #fff; }
+    .dm-onb-titles { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+    .dm-onb-title { font-size: 14px; font-weight: 700; letter-spacing: -0.01em; }
+    .dm-onb-count { font-size: 11px; color: rgba(255, 255, 255, 0.62); }
+    .dm-onb-min { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; background: rgba(255, 255, 255, 0.08); color: rgba(255, 255, 255, 0.72); flex-shrink: 0; }
+    .dm-onb-min .dm-ico { width: 14px; height: 14px; }
+
+    .dm-onb-groups { padding: 7px; }
+    .dm-onb-group { border-radius: 12px; }
+    .dm-onb-group + .dm-onb-group { margin-top: 1px; }
+    .dm-onb-group.is-open { background: #f7f8fa; }
+    .dm-onb-ghead { display: flex; align-items: center; gap: 10px; padding: 9px 9px; }
+    .dm-onb-gicon { width: 30px; height: 30px; border-radius: 9px; flex-shrink: 0; display: grid; place-items: center; background: rgba(10, 25, 47, 0.05); color: var(--dm-navy); }
+    .dm-onb-gicon .dm-ico { width: 17px; height: 17px; }
+    .dm-onb-group.is-done .dm-onb-gicon { background: var(--dm-ok); color: #fff; }
+    .dm-onb-group.is-done .dm-onb-gicon .dm-ico { width: 14px; height: 14px; }
+    .dm-onb-gtext { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+    .dm-onb-gtitle { font-size: 12.5px; font-weight: 650; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dm-onb-group.is-done .dm-onb-gtitle { color: var(--dm-muted); }
+    .dm-onb-gsub { font-size: 10.5px; font-weight: 500; color: var(--dm-muted); }
+    .dm-onb-group.is-done .dm-onb-gsub { color: #059669; }
+    .dm-onb-dots { display: flex; gap: 3px; flex-shrink: 0; }
+    .dm-onb-dots i { width: 5px; height: 5px; border-radius: 50%; background: rgba(10, 25, 47, 0.12); }
+    .dm-onb-dots i.is-done { background: var(--dm-ok); }
+    .dm-onb-chev { width: 13px; height: 13px; color: #b3bac4; }
+    .dm-onb-group.is-open .dm-onb-chev { transform: rotate(180deg); }
+
+    .dm-onb-steps { padding: 0 5px 5px; }
+    .dm-onb-step { display: flex; align-items: flex-start; gap: 9px; padding: 8px 8px 8px 5px; }
+    .dm-onb-step + .dm-onb-step { border-top: 1px solid var(--dm-border); }
+    .dm-onb-check { width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0; margin-top: 0; display: grid; place-items: center; background: #fff; border: 1.5px solid rgba(10, 25, 47, 0.14); color: #fff; }
+    .dm-onb-check .dm-ico { width: 10px; height: 10px; }
+    .dm-onb-step.is-done .dm-onb-check { background: var(--dm-ok); border-color: var(--dm-ok); }
+    .dm-onb-step-main { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; }
+    .dm-onb-step-title { font-size: 12px; font-weight: 600; line-height: 18px; }
+    .dm-onb-step.is-done .dm-onb-step-title { color: var(--dm-muted); text-decoration: line-through; text-decoration-color: rgba(91, 100, 114, 0.4); }
+    .dm-onb-step-desc { font-size: 11px; line-height: 1.5; color: var(--dm-muted); margin-top: 2px; }
+    .dm-onb-cta { display: inline-flex; align-items: center; gap: 4px; margin-top: 8px; padding: 5px 10px; border-radius: 8px; background: var(--dm-navy); color: #fff; font-size: 11px; font-weight: 600; }
+    .dm-onb-cta .dm-ico { width: 11px; height: 11px; }
+
+    /* Angosto: como en la app móvil, el widget ocupa el ancho; aquí va en flujo
+       debajo de los indicadores para que nada quede tapado ni recortado. */
+    @container dm (max-width: 640px) {
+        .dm-onb-figure .dm-app { min-height: 0; }
+        .dm-onb-figure .dm-overlay { position: static; }
+        .dm-onb { position: relative; right: auto; bottom: auto; width: auto; margin: 0 calc(var(--dm-bleed) + 12px) 16px 12px; }
+    }
+</style>

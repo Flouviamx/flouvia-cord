@@ -9,7 +9,7 @@ A dispute or chargeback occurs when a cardholder does not recognize a charge pro
 
 ### Where are disputes managed?
 
-Cord centralizes tracking and evidence preparation under **Payments › Disputes**. When a chargeback opens, the platform creates a task, notifies the owner, and displays the deadline reported by the payment network.
+Cord centralizes tracking and evidence preparation under **Payments › Disputes**. When a chargeback opens, the platform creates a high-priority task in **Tasks** (with the evidence deadline as its due date, so it shows up in the [morning reminder](/en/support/tareas-y-recordatorios)), notifies the owner, and displays the deadline reported by the payment network.
 
 1. Open the dispute from **Payments** and review its reason, amount, and deadline.
 2. Prepare the product or service description, customer communication, and delivery details.

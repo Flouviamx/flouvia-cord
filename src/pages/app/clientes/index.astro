@@ -155,7 +155,6 @@ import { iconInner } from '../../../lib/icons';
         data-i18n-a-importar={t(L, 'cli.clientes_a_importar')} data-i18n-filas-omitidas={t(L, 'cli.filas_omitidas')}
         data-i18n-th-email={t(L, 'cli.th_email')} data-i18n-th-contacto={t(L, 'cli.th_contacto')} data-i18n-th-rfc={t(L, 'cli.th_rfc')}
         data-i18n-th-terminos={t(L, 'cli.th_terminos')} data-i18n-th-limite={t(L, 'cli.th_limite')} data-i18n-th-empresa={t(L, 'cli.field_empresa')}
-        data-i18n-term-contado={t(L, 'cli.term_contado')} data-i18n-term-net30={t(L, 'cli.term_net30')} data-i18n-term-net60={t(L, 'cli.term_net60')}
         data-i18n-continuar={t(L, 'cli.continuar')} data-i18n-importar-n={t(L, 'cli.importar_n')} data-i18n-importando={t(L, 'cli.importando')}
         data-i18n-no-pudo-importar={t(L, 'cli.no_pudo_importar')} data-i18n-archivo-vacio={t(L, 'cli.archivo_vacio')}>
         <div class="m-form">
@@ -474,6 +473,7 @@ import { iconInner } from '../../../lib/icons';
 
 <script>
     import { createMoney0 } from '../../../lib/money-client';
+    import { parseTermText, termLabel } from '../../../lib/payment-terms';
     // Importador CSV de clientes: archivo → mapeo → preview → carga masiva.
     document.addEventListener('DOMContentLoaded', () => {
         const modal = document.getElementById('importModal') as HTMLDialogElement | null;
@@ -506,14 +506,9 @@ import { iconInner } from '../../../lib/icons';
 
         const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
         const parseNum = (v: string) => Number(String(v ?? '').replace(/[^0-9.\-]/g, '')) || 0;
-        const TERM_LABEL: Record<string, string> = { contado: I.i18nTermContado || 'Contado', net30: I.i18nTermNet30 || 'Net 30', net60: I.i18nTermNet60 || 'Net 60' };
-        const normTerm = (v: string) => {
-            const s = norm(v);
-            if (s.includes('60')) return 'net60';
-            if (s.includes('30')) return 'net30';
-            if (s.includes('net') || s.includes('credito')) return 'net30';
-            return 'contado';
-        };
+        const lang: 'es' | 'en' = document.documentElement.lang === 'en' ? 'en' : 'es';
+        // Un CSV lo escribe una persona: "Net 45", "45 días", "crédito" valen.
+        const normTerm = (v: string) => parseTermText(norm(v));
         const money = createMoney0();
         const esc = (s: string) => String(s ?? '').replace(/</g, '&lt;');
 
@@ -606,7 +601,7 @@ import { iconInner } from '../../../lib/icons';
             $('impPrevHead').innerHTML = `<tr><th>${I.i18nThEmpresa || 'Empresa'}</th><th>${I.i18nThContacto || 'Contacto'}</th><th>${I.i18nThEmail || 'Email'}</th><th>${I.i18nThRfc || 'RFC'}</th><th>${I.i18nThTerminos || 'Términos'}</th><th class="n">${I.i18nThLimite || 'Límite'}</th></tr>`;
             $('impPrevBody').innerHTML = prepared.slice(0, 8).map(p => {
                 const bad = !p.empresa;
-                return `<tr class="${bad ? 'bad' : ''}"><td>${esc(p.empresa || '—')}</td><td>${esc(p.contacto || '—')}</td><td>${esc(p.email || '—')}</td><td>${esc(p.rfc || '—')}</td><td>${TERM_LABEL[p.terminos]}</td><td class="n">${p.limite === '' ? '—' : money(p.limite)}</td></tr>`;
+                return `<tr class="${bad ? 'bad' : ''}"><td>${esc(p.empresa || '—')}</td><td>${esc(p.contacto || '—')}</td><td>${esc(p.email || '—')}</td><td>${esc(p.rfc || '—')}</td><td>${esc(termLabel(p.terminos, lang))}</td><td class="n">${p.limite === '' ? '—' : money(p.limite)}</td></tr>`;
             }).join('');
 
             btnNext.textContent = importarNTpl.replace('{n}', String(valid.length)).replace('{s}', valid.length === 1 ? '' : 's');

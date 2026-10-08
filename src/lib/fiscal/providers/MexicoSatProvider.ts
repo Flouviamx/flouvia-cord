@@ -1,5 +1,12 @@
 import type { FiscalProvider, FiscalCancelRequest, FiscalCancelResponse, FiscalDocumentRequest, FiscalDocumentResponse } from '../index';
 import { mexicoItems } from './mexico-items';
+import { toAlpha3 } from '../../countries';
+
+// Un rechazo de Cord ANTES de llamar al PAC: la petición nunca salió, así que
+// se sabe con certeza que no existe un CFDI. Antes devolvía el id del documento
+// como si fuera del proveedor y anular/editar lo trataban como "entrega
+// incierta": la factura quedaba atorada para siempre con el folio asignado.
+const LOCAL_REJECTION = { delivery_uncertain: false, local_validation: true } as const;
 
 // Proveedor fiscal de México: timbra CFDI 4.0 vía Facturapi (facturapi.io).
 //
@@ -50,34 +57,68 @@ export class MexicoSatProvider implements FiscalProvider {
     }
 
     const c = request.recipient;
-    const rfc = String(c.taxId || '').toUpperCase().trim();
+    // ── Receptor extranjero ────────────────────────────────────────────────
+    // Un cliente con país distinto de México no tiene RFC: el CFDI lleva el RFC
+    // genérico de extranjeros (XEXX010101000), su residencia fiscal y, si lo
+    // tiene, su número de identificación tributaria (NumRegIdTrib). Facturapi
+    // arma todo eso cuando `address.country` NO es "MEX" (ISO alfa-3) y
+    // `tax_id` trae el número extranjero; `tax_system` solo es obligatorio para
+    // nacionales y no se manda. Antes el RFC genérico de PÚBLICO EN GENERAL
+    // (XAXX) se usaba también aquí y el CFDI declaraba nacional a un cliente de
+    // Madrid o de Austin.
+    const recipientCountry = String(c.address?.countryCode || 'MX').toUpperCase();
+    const extranjero = recipientCountry !== 'MX';
+    const foreignCountry = extranjero ? toAlpha3(recipientCountry) : null;
+    if (extranjero && !foreignCountry) {
+      return { success: false, provider: 'facturapi', documentId: request.documentId,
+        error: 'El país del cliente no es válido para el CFDI. Revísalo en su ficha.' };
+    }
+    const rfc = extranjero ? '' : String(c.taxId || '').toUpperCase().trim();
     // RFC genérico = "público en general" (sin RFC real del cliente).
-    const generico = !rfc || rfc === 'XAXX010101000';
+    const generico = !extranjero && (!rfc || rfc === 'XAXX010101000');
+    // NumRegIdTrib: el identificador fiscal del país del cliente, sin espacios
+    // (el SAT lo valida contra el formato de ese país); hasta 40 caracteres.
+    const foreignTaxId = extranjero ? String(c.taxId || '').replace(/\s/g, '').toUpperCase().slice(0, 40) : '';
 
-    const customer = {
-      legal_name: String(c.legalName || 'PÚBLICO EN GENERAL').toUpperCase().slice(0, 254),
-      tax_id: generico ? 'XAXX010101000' : rfc,
-      // 616 = Sin obligaciones fiscales (genérico); 601 = Persona Moral (default con RFC).
-      tax_system: c.taxSystem || (generico ? '616' : '601'),
-      address: { zip: String(c.address?.postalCode || '00000') },
-      ...(c.email ? { email: String(c.email) } : {}),
-    };
+    const customer = extranjero
+      ? {
+          legal_name: String(c.legalName || 'CLIENTE EXTRANJERO').toUpperCase().slice(0, 254),
+          ...(foreignTaxId ? { tax_id: foreignTaxId } : {}),
+          address: {
+            country: foreignCountry,
+            ...(c.address?.postalCode ? { zip: String(c.address.postalCode).slice(0, 20) } : {}),
+            ...(c.address?.city ? { city: String(c.address.city).slice(0, 100) } : {}),
+          },
+          ...(c.email ? { email: String(c.email) } : {}),
+        }
+      : {
+          legal_name: String(c.legalName || 'PÚBLICO EN GENERAL').toUpperCase().slice(0, 254),
+          tax_id: generico ? 'XAXX010101000' : rfc,
+          // 616 = Sin obligaciones fiscales (genérico); 601 = Persona Moral (default con RFC).
+          tax_system: c.taxSystem || (generico ? '616' : '601'),
+          address: { zip: String(c.address?.postalCode || '00000') },
+          ...(c.email ? { email: String(c.email) } : {}),
+        };
 
     const isCreditNote = ['cfdi_egreso', 'credit_note'].includes(request.documentType || '');
     if (isCreditNote && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(request.relatedFiscalId || '')) {
-      return { success: false, provider: 'facturapi', documentId: request.documentId,
-        error: 'La nota de crédito necesita el folio fiscal de la factura original.' };
+      return { success: false, provider: 'facturapi', documentId: 'err_local_' + request.documentId,
+        error: 'La nota de crédito necesita el folio fiscal de la factura original.',
+        rawProviderData: LOCAL_REJECTION };
     }
     let items;
     try { items = mexicoItems(request); }
     catch (error) {
-      return { success: false, provider: 'facturapi', documentId: request.documentId,
-        error: error instanceof Error ? error.message : 'El desglose fiscal no es válido.' };
+      return { success: false, provider: 'facturapi', documentId: 'err_local_' + request.documentId,
+        error: error instanceof Error ? error.message : 'El desglose fiscal no es válido.',
+        rawProviderData: LOCAL_REJECTION };
     }
 
-    // Uso del CFDI: "público en general" (RFC genérico) EXIGE S01 (sin efectos
-    // fiscales); con RFC real se usa el uso configurado o G03 por defecto.
-    const cfdiUse = generico ? 'S01' : (request.cfdi?.use || 'G03');
+    // Uso del CFDI: con RFC genérico —público en general o extranjero— el SAT
+    // EXIGE S01 (sin efectos fiscales): ese receptor no deduce en México. Con
+    // RFC real se usa el uso configurado o G03 por defecto.
+    const sinEfectos = generico || extranjero;
+    const cfdiUse = sinEfectos ? 'S01' : (request.cfdi?.use || 'G03');
     // Divisa y tipo de cambio del comprobante. Facturapi asume MXN cuando no se
     // manda `currency`: un CFDI de una venta en USD se timbraba con los importes
     // en dólares pero etiquetados como pesos. El SAT exige `exchange` (TipoCambio)
@@ -103,7 +144,7 @@ export class MexicoSatProvider implements FiscalProvider {
       ...(currency !== 'MXN' && Number.isFinite(exchange) && exchange > 0
         ? { exchange }
         : {}),
-      use: isCreditNote && !generico ? 'G02' : cfdiUse,
+      use: isCreditNote && !sinEfectos ? 'G02' : cfdiUse,
       payment_form: request.cfdi?.paymentForm || '03', // 03 = Transferencia electrónica
       payment_method: request.cfdi?.paymentMethod || 'PUE',
       // Facturapi documenta esta llave como la protección oficial contra
@@ -128,7 +169,14 @@ export class MexicoSatProvider implements FiscalProvider {
           success: false,
           provider: 'facturapi',
           documentId: 'err_mx_' + request.quoteId,
-          error: data?.message || `Facturapi ${res.status}`,
+          // El mensaje del PAC sí es accionable ("el RFC del receptor no es
+          // válido"); sin él, un texto neutro en vez de "Facturapi 502"
+          // (regla 14: la UI describe estados, no proveedores).
+          error: typeof data?.message === 'string' && data.message.trim()
+            ? data.message
+            : res.status >= 500
+              ? 'El servicio de timbrado no respondió. Reintenta en unos minutos.'
+              : 'No se pudo timbrar el documento. Revisa los datos fiscales del cliente y reintenta.',
           rawProviderData: {
             ...providerPayload,
             // Un 5xx puede ocurrir después de que el PAC aceptó el documento.
@@ -159,6 +207,8 @@ export class MexicoSatProvider implements FiscalProvider {
           livemode: data.livemode,
           idempotency_key: request.idempotencyKey,
           credential_scope: request.providerApiKey ? 'organization' : 'platform',
+          // Auditoría: con qué residencia fiscal se timbró a un extranjero.
+          ...(extranjero ? { receptor_extranjero: foreignCountry } : {}),
         },
       };
     } catch (err: any) {
@@ -166,7 +216,9 @@ export class MexicoSatProvider implements FiscalProvider {
         success: false,
         provider: 'facturapi',
         documentId: 'err_mx_' + request.quoteId,
-        error: err?.message || 'fallo de red con Facturapi',
+        error: err?.name === 'TimeoutError'
+          ? 'El servicio de timbrado tardó demasiado en responder. Reintenta: no se duplicará la factura.'
+          : 'No hubo conexión con el servicio de timbrado. Reintenta: no se duplicará la factura.',
         // La petición pudo haber llegado al PAC aunque Cord no recibiera la
         // respuesta. El siguiente intento conserva la misma llave oficial de
         // idempotencia, por lo que no crea otro CFDI.

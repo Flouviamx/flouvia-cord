@@ -9,33 +9,26 @@
 //   (el flip atómico vive en el webhook de Stripe).
 import { sql, withOrgTx } from './db';
 import { currencyDecimals, normalizeCurrency } from './currency';
-
-export const TERM_DAYS: Record<string, number> = { contado: 0, net30: 30, net60: 60 };
+import { dateOnly } from './date-only';
+import { termDueDate } from './payment-terms';
 
 // Fecha de vencimiento canónica de una cotización según sus términos —
 // el MISMO cálculo que getCobranza()/cron de intereses/recordatorios:
 // coalesce(approved_at, created_at) + días del término.
 export function dueDateFor(baseDate: string | Date, terminos: string | null): Date {
-    const base = new Date(baseDate);
-    const due = new Date(base);
-    due.setDate(due.getDate() + (TERM_DAYS[terminos ?? 'contado'] ?? 0));
-    return due;
+    return termDueDate(new Date(baseDate), terminos);
 }
 
 export const isoDay = (d: Date) => d.toISOString().slice(0, 10);
 
-// Normaliza una columna `date` leída de Neon a 'YYYY-MM-DD'. ⚠️ El driver
+// Normaliza una columna `date` leída de Neon a 'YYYY-MM-DD' (alias histórico de
+// dateOnly(), en src/lib/date-only.ts). ⚠️ El driver
 // devuelve DATE como objeto Date (medianoche LOCAL) — `String(v).slice(0,10)`
 // da "Sun Jul 12", que comparado lexicográficamente contra un ISO SIEMPRE es
 // mayor → bloqueaba todos los pagos (bug jul 2026). Usar SIEMPRE este helper
 // para comparar/mostrar fechas de vencimiento leídas de la BD.
 export function venceDia(v: unknown): string {
-    if (!v) return '';
-    if (v instanceof Date) {
-        const p = (n: number) => String(n).padStart(2, '0');
-        return `${v.getFullYear()}-${p(v.getMonth() + 1)}-${p(v.getDate())}`;
-    }
-    return String(v).slice(0, 10);
+    return v ? dateOnly(v) : '';
 }
 
 // Reparte total en anticipo + saldo sin perder unidades mínimas.

@@ -14,6 +14,7 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { getActiveOrgId } from '../../../lib/db';
+import { requirePerm } from '../../../lib/queries';
 import { tooMany } from '../../../lib/ratelimit';
 import { armarLineasConIa, IA_DISPONIBLE } from '../../../lib/ai-quote-draft';
 
@@ -26,6 +27,10 @@ const DOC_TYPES = new Set(['application/pdf']);
 const MAX_B64_CHARS = 6_000_000;
 
 export const POST: APIRoute = async ({ request }) => {
+    // Gasta cuota de IA facturable y lee el catálogo con precios: es trabajo
+    // de quien cotiza, no de un miembro de solo lectura.
+    const denied = await requirePerm('cotizar');
+    if (denied) return denied;
     if (!IA_DISPONIBLE) {
         return json({ error: 'Armar cotizaciones con IA todavía no está disponible en tu cuenta. Escríbenos a soporte@flouvia.com y lo activamos.' }, 503);
     }

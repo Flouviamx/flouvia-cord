@@ -2,7 +2,7 @@
 title: "Invoicing by country"
 seoTitle: "Invoicing by country in Cord: CFDI, Spain, and commercial invoices"
 description: "Which document Cord issues by country and plan: CFDI 4.0 in Mexico, proformas in Spain while tax registration is enabled, commercial invoices in other markets, monthly quotas per plan, and the tax receipt for Cord's fee in Mexico."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-08"
 reviewedBy: "Cord product and operations"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -17,6 +17,8 @@ prerequisites: ["Complete business tax identity in Settings › Tax details (Tax
 ## What it is
 
 Cord doesn't treat an invoice as a generic PDF with a number. The **document type** issued depends on your business country, your plan, and the tax setup you have ready. Once issued, a document keeps its type even if you later change plan or setup: a proforma doesn't become a CFDI or vice versa.
+
+The type is chosen when you create the invoice, in step 3 of the editor (**Terms**), in the **Document type** field: **Pro forma** in Mexico and Spain or **Commercial invoice** in the other markets, plus **CFDI 4.0** or **VERI\*FACTU** when your plan and tax setup allow it. An option your account can't use yet appears disabled. Below it, the editor reminds you: "Commercial documents are included in Free. Integrated tax issuance requires Starter and an enabled tax setup. A pro forma does not replace a tax invoice."
 
 For the full life of an invoice (draft, issue, delivery, payment, credit notes, and voiding), see [Create, issue, and collect invoices](/en/docs/pagos/facturas-emitidas).
 
@@ -74,6 +76,14 @@ Cord takes the recipient's tax details from the customer record:
 
 The defaults may not match your customer's tax certificate (constancia de situación fiscal). Cord doesn't invent them from other data: complete them in the record before issuing so the CFDI is useful to whoever receives it.
 
+### Customers abroad
+
+If the customer's country in their record isn't Mexico, the CFDI is issued to a **foreign resident**: with the SAT generic foreign RFC (XEXX010101000), their **tax residence** (the country in the record), use **S01** and, if you entered their tax ID (EIN, NIF, VAT…), that number as the **foreign tax registration number**. The tax regime and CFDI use in the record don't apply to a foreign customer and aren't sent. The VAT rate on each item is your call with your accountant; for example, exported services usually go at 0%.
+
+### SAT keys for each item
+
+Each product can carry its **product or service key** (c_ClaveProdServ, 8 digits) and its **unit key** (c_ClaveUnidad) under **Products › E-invoicing (SAT)**. You search the product key by description in the SAT catalog; if you leave the unit key empty, it's derived from the product's unit ("hour" → HUR, "month" → MON, "kg" → KGM). Items without a product, or from an unclassified product, are stamped with the SAT generic keys: 01010101 and H87. Keys are read when stamping and saved in the document.
+
 ### Taxes and issuing
 
 Cord sends each item's taxes as you entered them: 16% IVA, 8% IVA, or exempt, plus IVA and ISR withholdings. It doesn't collapse them into a single rate. If the quote is in a currency different from your accounting currency, the CFDI declares the exchange rate locked at quoting time.
@@ -86,6 +96,7 @@ Credit notes for a Mexican invoice are an expense CFDI (egreso) related to the o
 
 - **Payment receipt complement (REP).** Cord stamps with the PUE payment method (single payment) and doesn't issue payment complements. If you invoice on credit with PPD and need the REP for each payment, you must do it outside Cord today.
 - **Cancellation with replacement (reason 01).** Not available.
+- **Foreign trade complement (Comercio Exterior).** Definitive export of goods (key A1) requires it; Cord stamps the operation as "not applicable" for export and doesn't issue that complement.
 
 ## Spain: Verifactu
 
@@ -143,7 +154,7 @@ If your RFC, tax regime, or postal code aren't complete in **Settings › Tax de
 
 ## Common problems
 
-**My invoice came out as a proforma and I expected a CFDI.** Check your plan (Starter or higher), that your CSD is uploaded and valid, and that you didn't choose the commercial option when issuing.
+**My invoice came out as a proforma and I expected a CFDI.** Check your plan (Starter or higher), that your CSD is uploaded and valid, and that **CFDI 4.0**, not **Pro forma**, is selected in **Document type** (step 3, **Terms**).
 
 **My customer says their CFDI is unusable.** Check their tax regime, postal code, and CFDI use in their record; if they were missing, Cord used defaults.
 

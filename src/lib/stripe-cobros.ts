@@ -29,6 +29,7 @@ import { fromMinorUnits } from './currency';
 import { sql, withOrgTx } from './db';
 
 import { log } from './log';
+import { dateOnly } from './date-only';
 /**
  * Unidad mínima de Stripe → unidad mostrable. Único punto de conversión de
  * todo el módulo — pero el módulo SÍ conoce la divisa de cada cifra (Stripe
@@ -202,7 +203,7 @@ export async function listPayoutsFromDb(orgId: string, limit = 12): Promise<Payo
             // Mismo criterio que `isoDay`: NO `toISOString()`, que normaliza a
             // UTC y puede correr la fecha un día completo. `arrival_date` es una
             // columna `date` y ya viene sin hora.
-            arrivalISO: r.arrival_date ? String(r.arrival_date).slice(0, 10) : '',
+            arrivalISO: r.arrival_date ? dateOnly(r.arrival_date) : '',
             createdISO: r.created_at ? isoDay(new Date(r.created_at as string).getTime() / 1000) : '',
         };
     });

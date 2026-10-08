@@ -1,0 +1,138 @@
+---
+// DocsMockup — el marco de TODO mockup de docs.cordhq.app.
+//
+// Dibuja un escenario tintado con la pantalla recortada como un screenshot
+// (la ventana sangra por la derecha y por abajo), y debajo el pie de figura.
+// El interior es ilustración: aria-hidden + inert, fuera del orden de
+// tabulación, del lector de pantalla y del "Copiar para IA". Lo que se lee es
+// `caption`, por eso es obligatorio y debe describir lo que se ve.
+//
+// API completa y ejemplos: ./README.md
+import '../../../styles/docs-mockups.css';
+import DmIcon from './DmIcon.astro';
+import DmSidebar from './DmSidebar.astro';
+import DmTopbar from './DmTopbar.astro';
+import type { DmLang } from './format';
+
+interface Props {
+    lang: DmLang;
+    /** app = ventana de Cord · browser = página pública con barra de URL · phone = vista móvil · panel = tarjeta suelta (modal, correo, panel). */
+    variant?: 'app' | 'browser' | 'phone' | 'panel';
+    /** Solo variant="app": full = sidebar + topbar · topbar = solo topbar · none = solo el lienzo. */
+    chrome?: 'full' | 'topbar' | 'none';
+    /** Pie de figura visible. Describe qué muestra: es lo que lee un lector de pantalla. */
+    caption: string;
+    /** Solo variant="browser": URL sin protocolo, p.ej. "cordhq.app/q/k7Xm2pQ/pay". */
+    url?: string;
+    /** Alto del escenario en px. Lo que no cabe se recorta (sangrado inferior). */
+    height?: number;
+    /** variant="app" + chrome="full": id de SIDEBAR_NAV activo. */
+    active?: string;
+    /** variant="app": título de la página (h1 de la app). Sin título no hay encabezado. */
+    title?: string;
+    /** variant="app": migas sobre el título. */
+    crumbs?: string[];
+    /** variant="app": píldora "Guía de configuración" en la topbar con este %. */
+    setupPct?: number;
+    /** variant="app" + chrome="full": sidebar ancha (por defecto) o rail colapsado de solo iconos. */
+    sidebar?: 'full' | 'rail';
+    /** variant="app" + chrome="full": contadores de la sidebar. */
+    badges?: { seguimiento?: number; vencidas?: number };
+    /** Nombre del espacio de trabajo en la sidebar. */
+    org?: string;
+    /** variant="panel": ancho máximo de la tarjeta en px (480 por defecto). */
+    panelWidth?: number;
+    /** Color de marca del negocio (link público, PDF, correo). Navy por defecto. */
+    brand?: string;
+    class?: string;
+}
+
+const {
+    variant = 'app',
+    chrome = 'full',
+    caption,
+    url = 'cordhq.app',
+    height,
+    active = 'dashboard',
+    title,
+    crumbs = [],
+    setupPct,
+    badges,
+    sidebar = 'full',
+    org,
+    panelWidth,
+    brand,
+    class: cls,
+} = Astro.props;
+// `lang` se pasa siempre desde el MDX; si falta, se deduce de la ruta (/en/docs).
+const lang: DmLang = Astro.props.lang ?? (Astro.url.pathname.startsWith('/en/') ? 'en' : 'es');
+
+const stageVars = [
+    height ? `--dm-h:${height}px` : '',
+    panelWidth ? `--dm-panel-w:${panelWidth}px` : '',
+    brand ? `--dm-brand:${brand}` : '',
+].filter(Boolean).join(';');
+
+const [urlHost, ...urlRest] = url.split('/');
+const urlPath = urlRest.length ? `/${urlRest.join('/')}` : '';
+const showSidebar = variant === 'app' && chrome === 'full';
+const showTopbar = variant === 'app' && chrome !== 'none';
+const hasActions = Astro.slots.has('actions');
+const hasOverlay = Astro.slots.has('overlay');
+---
+<figure class:list={['dm-figure', `dm-figure-${variant}`, cls]} data-dm-variant={variant}>
+    <div class:list={['dm-stage', `dm-v-${variant}`]} style={stageVars || undefined} aria-hidden="true" inert>
+        {variant === 'app' && (
+            <div class="dm-window">
+                <div class:list={['dm-app', { 'dm-no-sidebar': !showSidebar, 'dm-has-rail': showSidebar && sidebar === 'rail' }]}>
+                    {showSidebar && <DmSidebar lang={lang} active={active} org={org} badges={badges} rail={sidebar === 'rail'} />}
+                    <div class="dm-main">
+                        {showTopbar && <DmTopbar lang={lang} setupPct={setupPct} />}
+                        {(title || hasActions) && (
+                            <div class="dm-page-head">
+                                <div>
+                                    {crumbs.length > 0 && <div class="dm-crumbs">{crumbs.map((c) => <span>{c}</span>)}<span>{title}</span></div>}
+                                    {title && <div class="dm-h1">{title}</div>}
+                                </div>
+                                {hasActions && <div class="dm-ph-actions"><slot name="actions" /></div>}
+                            </div>
+                        )}
+                        <div class="dm-content"><slot /></div>
+                    </div>
+                </div>
+                {hasOverlay && <div class="dm-overlay"><slot name="overlay" /></div>}
+            </div>
+        )}
+
+        {variant === 'browser' && (
+            <div class="dm-window">
+                <div class="dm-browser-bar">
+                    <span class="dm-browser-nav"><DmIcon name="chevron-left" /><DmIcon name="chevron-right" /><DmIcon name="refresh" /></span>
+                    <span class="dm-url"><DmIcon name="lock" /><span class="dm-url-text"><span class="dm-url-host">{urlHost}</span>{urlPath}</span></span>
+                    <span class="dm-browser-nav dm-hide-narrow"><DmIcon name="share" /></span>
+                </div>
+                <div class="dm-browser-page"><slot /></div>
+                {hasOverlay && <div class="dm-overlay"><slot name="overlay" /></div>}
+            </div>
+        )}
+
+        {variant === 'phone' && (
+            <div class="dm-phone">
+                <div class="dm-phone-screen">
+                    <div class="dm-phone-status">
+                        <span>9:41</span>
+                        <span class="dm-phone-island"></span>
+                        <span class="dm-phone-sys"><span class="dm-phone-bars"><i></i><i></i><i></i><i></i></span><span class="dm-phone-batt"></span></span>
+                    </div>
+                    <div class="dm-phone-body"><slot /></div>
+                    {hasOverlay && <div class="dm-overlay"><slot name="overlay" /></div>}
+                </div>
+            </div>
+        )}
+
+        {variant === 'panel' && (
+            <div class="dm-panel"><slot /></div>
+        )}
+    </div>
+    <figcaption class="dm-caption">{caption}</figcaption>
+</figure>

@@ -240,7 +240,9 @@ CordBuilder.Config = function CordBuilderConfig({ className, style }: SlotProps)
     const label = resolveElement('formFieldLabel', el);
     const select = resolveElement('formFieldSelect', el);
     const input = resolveElement('formFieldInput', el);
-    const termLabel: Record<string, string> = { contado: t.cash, net30: t.net30, net60: t.net60 };
+    const termLabel: Record<string, string> = {
+        contado: t.cash, net7: t.net7, net15: t.net15, net30: t.net30, net45: t.net45, net60: t.net60, net90: t.net90,
+    };
 
     return (
         <div className={field.className} style={field.style}>

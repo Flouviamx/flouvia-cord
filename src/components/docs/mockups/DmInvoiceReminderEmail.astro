@@ -1,0 +1,150 @@
+---
+// Mockup: el correo de recordatorio de una factura vencida, abierto en el
+// cliente de correo del cliente.
+//
+// Calca de notifyInvoiceReminder() + invoiceEmailHtml() (src/lib/email.ts) sobre
+// brandEmailShell() (src/lib/brand-email.ts) con el perfil de marca por defecto:
+// encabezado "classic" (logo + nombre + filete de 2 px del color de marca),
+// esquinas "round" (tarjeta de 28 px, botón de 24 px) y fondo #f5f5f7.
+// Asunto: "Factura vencida {numero} — {org}". Saludo: el nombre del cliente
+// (r.empresa). Remitente: el nombre del negocio sobre el dominio de Cord.
+import DocsMockup from './DocsMockup.astro';
+import DmIcon from './DmIcon.astro';
+import { dmT, dmMoney, pick, tpl, DEMO, type DmLang } from './format';
+
+interface Props {
+    lang: DmLang;
+    /** Pie de figura; por defecto describe el estado dibujado. */
+    caption?: string;
+}
+const { lang } = Astro.props;
+
+const NUMERO = 'F-0042';
+const SALDO = 12400;
+const CUR = 'MXN';
+
+const DATA = {
+    es: {
+        caption: `Correo de recordatorio de la factura vencida ${NUMERO} de ${DEMO.org}, con su marca: saludo a ${DEMO.cliente}, el aviso de que la factura está vencida, la tabla con Factura, Vence (24 sep 2026) y ${dmT('es', 'fact.e_saldo')} ${dmMoney(SALDO, CUR, 'es')}, y el botón ${dmT('es', 'fact.e_cta_pagar')}.`,
+        para: 'Para',
+        responder: 'Responder a',
+        fecha: '8 oct 2026, 9:00',
+        vence: '24 sep 2026',
+        enlace: 'cordhq.app/i/9fK2xQ7mWd4t',
+    },
+    en: {
+        caption: `Reminder email for ${DEMO.org}'s overdue invoice ${NUMERO}, with its branding: greeting to ${DEMO.cliente}, the notice that the invoice is past due, the table with Invoice, ${dmT('en', 'fact.e_vence')} (Sep 24, 2026) and ${dmT('en', 'fact.e_saldo')} ${dmMoney(SALDO, CUR, 'en')}, and the ${dmT('en', 'fact.e_cta_pagar')} button.`,
+        para: 'To',
+        responder: 'Reply to',
+        fecha: 'Oct 8, 2026, 9:00 AM',
+        vence: 'Sep 24, 2026',
+        enlace: 'cordhq.app/i/9fK2xQ7mWd4t',
+    },
+};
+const d = pick(DATA, lang);
+const caption = Astro.props.caption ?? d.caption;
+
+const asunto = `${tpl(dmT(lang, 'fact.e_asunto_vencida'), { numero: NUMERO })} — ${DEMO.org}`;
+// El cuerpo real lleva <strong> en el número: se parte en tres para no usar set:html.
+const [cuerpoPre, cuerpoPost] = dmT(lang, 'fact.e_vencida_cuerpo')
+    .replace('{org}', DEMO.org)
+    .split('<strong>{numero}</strong>');
+const powered = `${DEMO.org}${dmT(lang, 'email.enviado_con_cord')}`;
+---
+<DocsMockup lang={lang} variant="panel" panelWidth={620} brand={DEMO.brand} caption={caption} class="dm-irm-figure">
+    <div class="dm-irm">
+        <div class="dm-irm-client">
+            <div class="dm-irm-tools">
+                <span><DmIcon name="arrow-left" /></span>
+                <span><DmIcon name="archive" /></span>
+                <span><DmIcon name="trash" /></span>
+                <span><DmIcon name="mail" /></span>
+                <span class="dm-irm-tools-end"><DmIcon name="more" /></span>
+            </div>
+            <div class="dm-irm-subject">{asunto}</div>
+            <div class="dm-irm-from">
+                <span class="dm-av dm-irm-av">{DEMO.orgInitial}</span>
+                <span class="dm-irm-from-main">
+                    <span class="dm-irm-from-line"><span class="dm-strong">{DEMO.org}</span><span class="dm-irm-addr dm-hide-narrow">&lt;cotizaciones@cordhq.app&gt;</span></span>
+                    <span class="dm-irm-meta">{d.para}: cuentas@elzarco.mx</span>
+                </span>
+                <span class="dm-irm-date">{d.fecha}</span>
+            </div>
+        </div>
+
+        <div class="dm-irm-canvas">
+            <div class="dm-irm-card">
+                <div class="dm-irm-head">
+                    <span class="dm-irm-logo"><span>{DEMO.orgInitial}</span></span>
+                    <span class="dm-irm-org">{DEMO.org}</span>
+                </div>
+
+                <div class="dm-irm-hello">{DEMO.cliente}</div>
+                <div class="dm-irm-body">{cuerpoPre}<b>{NUMERO}</b>{cuerpoPost}</div>
+
+                <div class="dm-irm-table">
+                    <div class="dm-irm-tr"><span>{dmT(lang, 'fact.e_factura')}</span><span>{NUMERO}</span></div>
+                    <div class="dm-irm-tr"><span>{dmT(lang, 'fact.e_vence')}</span><span>{d.vence}</span></div>
+                    <div class="dm-irm-tr is-total"><span>{dmT(lang, 'fact.e_saldo')}</span><span class="dm-money">{dmMoney(SALDO, CUR, lang)}</span></div>
+                </div>
+
+                <span class="dm-irm-cta">{dmT(lang, 'fact.e_cta_pagar')}</span>
+
+                <div class="dm-irm-copy">
+                    {dmT(lang, 'email.copie_enlace')}
+                    <span class="dm-irm-link">https://{d.enlace}</span>
+                </div>
+
+                <div class="dm-irm-foot">{powered}</div>
+            </div>
+        </div>
+    </div>
+</DocsMockup>
+
+<style is:global>
+    .dm-irm-figure .dm-v-panel { padding-bottom: 0; justify-content: flex-start; }
+    .dm-irm-figure .dm-panel { border-radius: 16px 16px 0 0; border-bottom: 0; }
+    .dm-irm { display: flex; flex-direction: column; font-size: 12.5px; }
+
+    /* Cliente de correo: barra de acciones, asunto y remitente. */
+    .dm-irm-client { padding: 10px 20px 14px; border-bottom: 1px solid var(--dm-border); background: #fff; }
+    .dm-irm-tools { display: flex; align-items: center; gap: 4px; color: var(--dm-faint); margin: 0 -6px 10px; }
+    .dm-irm-tools > span { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 7px; }
+    .dm-irm-tools .dm-ico { width: 15px; height: 15px; }
+    .dm-irm-tools-end { margin-left: auto; }
+    .dm-irm-subject { font-size: 16px; font-weight: 650; letter-spacing: -0.02em; color: var(--dm-text); line-height: 1.3; margin-bottom: 12px; }
+    .dm-irm-from { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .dm-irm-av { width: 32px; height: 32px; font-size: 12px; background: var(--dm-brand); }
+    .dm-irm-from-main { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; }
+    .dm-irm-from-line { display: flex; align-items: baseline; gap: 6px; min-width: 0; white-space: nowrap; overflow: hidden; font-size: 12.5px; }
+    .dm-irm-addr { font-size: 11px; color: var(--dm-faint); overflow: hidden; text-overflow: ellipsis; }
+    .dm-irm-meta { font-size: 11px; color: var(--dm-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dm-irm-date { align-self: flex-start; font-size: 10.5px; color: var(--dm-faint); white-space: nowrap; flex-shrink: 0; }
+
+    /* El HTML del correo: lienzo #f5f5f7 y tarjeta blanca de 28 px (perfil "round"). */
+    .dm-irm-canvas { background: #f5f5f7; padding: 20px 18px 26px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    .dm-irm-card { max-width: 480px; margin: 0 auto; background: #fff; border-radius: 28px; padding: 30px 30px 24px; color: #111827; }
+    .dm-irm-head { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding-bottom: 16px; margin-bottom: 24px; border-bottom: 2px solid var(--dm-brand); }
+    .dm-irm-logo { display: inline-flex; align-items: center; gap: 7px; height: 30px; padding: 0 10px 0 0; }
+    .dm-irm-logo span { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; background: var(--dm-brand); color: #fff; font-size: 13px; font-weight: 700; }
+    .dm-irm-org { font-size: 17px; font-weight: 700; line-height: 1.3; color: #111827; }
+    .dm-irm-hello { font-size: 13.5px; font-weight: 500; color: #111827; margin-bottom: 10px; }
+    .dm-irm-body { font-size: 13px; line-height: 1.6; color: #374151; margin-bottom: 22px; }
+    .dm-irm-body b { font-weight: 700; color: #111827; }
+    .dm-irm-table { border-top: 1px solid #f3f4f6; border-bottom: 1px solid #f3f4f6; padding: 6px 0; margin-bottom: 26px; }
+    .dm-irm-tr { display: flex; justify-content: space-between; gap: 12px; padding: 5px 0; font-size: 12px; color: #111827; }
+    .dm-irm-tr > :first-child { color: #6b7280; }
+    .dm-irm-tr.is-total { font-size: 13px; font-weight: 600; }
+    .dm-irm-tr.is-total > :first-child { color: #111827; }
+    .dm-irm-cta { display: inline-flex; align-items: center; height: 42px; padding: 0 22px; border-radius: 24px; background: var(--dm-brand); color: #fff; font-size: 13px; font-weight: 600; margin-bottom: 24px; }
+    .dm-irm-copy { display: flex; flex-direction: column; gap: 2px; font-size: 11.5px; line-height: 1.5; color: #6b7280; }
+    .dm-irm-link { color: #2563eb; word-break: break-all; }
+    .dm-irm-foot { margin-top: 24px; padding-top: 16px; border-top: 1px solid #e5e7eb; font-size: 10.5px; color: #6b7280; }
+
+    @container dm (max-width: 520px) {
+        .dm-irm-client { padding: 8px 14px 12px; }
+        .dm-irm-subject { font-size: 14.5px; }
+        .dm-irm-canvas { padding: 12px 8px 16px; }
+        .dm-irm-card { padding: 22px 18px 18px; border-radius: 22px; }
+    }
+</style>

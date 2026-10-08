@@ -324,7 +324,7 @@ import { iconInner } from '../../../lib/icons';
                     <button class="act-danger act-do" data-action="reject">{t(L, 'id.marcar_rechazada')}</button>
                 )}
                 {(q.status === 'sent' || q.status === 'viewed' || q.status === 'expired') && canCotizar && (
-                    <a href={`/app/cotizaciones/${q.id}/editar`} class="act-secondary act-link" style="text-align: center; text-decoration: none; display: block;">{tf('id.modificar_reenviar', { n: String(q.version + 1) })}</a>
+                    <a href={`/app/cotizaciones/nueva?version=${q.id}`} class="act-secondary act-link" style="text-align: center; text-decoration: none; display: block;">{tf('id.modificar_reenviar', { n: String(q.version + 1) })}</a>
                 )}
                 {q.status === 'approved' && canAprobar && !q.esRecurrente && (
                     <button class="act-ok act-do" data-action="paid">{t(L, 'id.registrar_pago')}</button>

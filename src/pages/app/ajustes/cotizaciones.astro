@@ -5,16 +5,13 @@ import SettingsShell from '../../../components/app/SettingsShell.astro';
 import { getOrg, getImpuestos } from '../../../lib/queries';
 import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
+import { TERM_CODES, termOptionLabel } from '../../../lib/payment-terms';
 const [ORG, IMPUESTOS] = await Promise.all([getOrg(), getImpuestos()]);
 // Solo las predeterminadas: son las que el motor aplica al documento.
 const RETENCIONES = IMPUESTOS.filter((i) => i.kind === 'retencion' && i.activo && i.esDefault && i.tasa > 0);
 const L = currentLocale();
 const isMx = ORG.countryCode === 'MX';
-const TERMS = [
-    { v: 'contado', l: t(L, 'set.cot.term.contado') },
-    { v: 'net30', l: t(L, 'set.cot.term.net30') },
-    { v: 'net60', l: t(L, 'set.cot.term.net60') },
-];
+const TERMS = TERM_CODES.map((v) => ({ v, l: termOptionLabel(v, L) }));
 ---
 
 <SettingsShell title="Cotizaciones e impuestos — Ajustes" tab="cotizaciones" perm="ajustes"

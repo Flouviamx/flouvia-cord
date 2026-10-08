@@ -2,7 +2,7 @@
 title: "Gestión de cotizaciones"
 seoTitle: "Gestión de cotizaciones: filtros, acciones, duplicar y versiones"
 description: "Encuentra cualquier cotización, qué acciones tienes en cada estado y con qué permiso, cómo eliminar borradores, duplicar (y qué no se copia) y llevar versiones con Modificar y reenviar."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-08"
 reviewedBy: "Producto y operaciones de Cord"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -20,7 +20,7 @@ prerequisites: ["Permiso Cotizaciones para crear, editar, enviar y eliminar borr
 organización, de la más reciente a la más antigua. Desde ahí abres el detalle de cada
 una, donde viven sus acciones, su actividad, su conversación y sus versiones.
 
-{/* MOCKUP: lista de Cotizaciones con el resumen superior (MXN 412,300 en 9 abiertas · MXN 188,000 aprobado · 2 esperan tu aprobación), las píldoras Todas 34 / Abiertas 9 / Por aprobar 2 / Aprobadas 5 / Pagadas 14 / Cerradas 4, el interruptor Lista | Tablero y seis filas con folio, cliente, términos, vigencia, total y estado. */}
+<DmQuotesIndex lang="es" view="list" />
 
 ## Requisitos
 
@@ -67,12 +67,12 @@ lista con el filtro correspondiente ya aplicado.
 Una cotización con iguala mensual no muestra **Registrar pago**: su cobro es la
 suscripción, que puedes cancelar con **Cancelar iguala**.
 
-{/* MOCKUP: detalle de una cotización Vista: el stepper Borrador › Enviada › Vista › Aprobada › Pagada con Vista activo, la insignia V2, el panel Acciones con Marcar aprobada, Marcar rechazada, Modificar y reenviar (V3), la cuadrícula Abrir link / Copiar link / PDF / WhatsApp, y debajo Duplicar cotización; a la derecha, Actividad y Conversación. */}
+<DmQuoteDetail lang="es" view="acciones" />
 
 ## Borradores
 
-- **Guardar borrador** en el editor guarda cliente, términos, partidas, precios negociados y opciones. Un borrador puede guardarse sin cliente; para enviarlo necesitas uno.
-- Para retomarlo, ábrelo y pulsa **Continuar editando**. Al terminar, **Guardar y enviar** lo envía.
+- **Guardar borrador** en el editor guarda cliente, términos, partidas, precios y condiciones. Un borrador puede guardarse sin cliente; para enviarlo necesitas uno.
+- Para retomarlo, ábrelo y pulsa **Continuar editando**: se abre el mismo editor (**Editar borrador**). Desde ahí, cada cambio se guarda solo unos segundos después y **Guardar y enviar** lo envía. Ver [Vista previa y envío](/docs/cotizacion/envio).
 - **Eliminar borrador** pide confirmación ("Esta acción no se puede deshacer. ¿Eliminar este borrador?") y lo borra por completo. Solo se pueden eliminar borradores: una cotización que ya salió no se borra, se rechaza o se deja vencer.
 
 ## Duplicar una cotización
@@ -84,7 +84,7 @@ suscripción, que puedes cancelar con **Cancelar iguala**.
 </Steps>
 
 **Lo que copia:** cliente, términos de pago, notas y partidas (descripción, cantidad,
-precio de lista y precio negociado).
+precio de lista y precio).
 
 <Callout type="warning">
 **Lo que el duplicado no copia:** la divisa de venta (el duplicado queda en MXN), el
@@ -99,10 +99,13 @@ El duplicado cuenta como cotización activa: si llegaste al tope de tu plan, no 
 ## Versiones
 
 Mientras una cotización está *Enviada*, *Vista* o *Vencida*, **Modificar y reenviar
-(V2)** crea una versión nueva sobre el mismo link:
+(V2)** abre el mismo editor de cotizaciones como **Nueva versión de COT-0149** y, al
+pulsar **Enviar nueva versión**, crea una versión nueva sobre el mismo link (la ruta
+anterior `/app/cotizaciones/[id]/editar` solo redirige a ese editor):
 
-- puedes cambiar productos, cantidades, precios negociados, impuestos y **Precios ya incluyen IVA**; el cliente y los términos de pago no;
-- la cotización vuelve a *Enviada* y el cliente recibe otra vez el correo si tiene correo capturado;
+- puedes cambiar productos, cantidades, precios, impuestos de cada línea y **Precios ya incluyen IVA**; el cliente, la divisa y las condiciones (términos, duración de la vigencia, anticipo, iguala y nota) se quedan como se enviaron;
+- si tu organización usa [aprobaciones internas](/docs/cotizacion/aprobaciones-internas), la versión se revisa contra los topes antes de enviarse;
+- la cotización vuelve a *Enviada*, su vigencia vuelve a correr desde ese día con la misma duración con que se envió (si era de 30 días, vence en 30 días) y el cliente recibe otra vez el correo si tiene correo capturado. Así se revive una cotización *Vencida*;
 - la insignia junto al nombre del cliente muestra la versión vigente (V1, V2, V3…);
 - **Historial de versiones** en el detalle lista cada versión con su fecha y su total.
 
@@ -111,7 +114,7 @@ aprobar (ver [Negociación y contraofertas](/docs/interaccion/negociacion)).
 
 ### Cuando la versión no basta
 
-Para cambiar algo que **Modificar y reenviar** no permite (cliente, divisa o términos),
+Para cambiar algo que **Modificar y reenviar** no permite (cliente, divisa, términos u otra duración de vigencia),
 duplica la cotización, ajústala y envía el nuevo link. Después, en la original
 (mientras siga *Enviada* o *Vista*), usa **Marcar rechazada** para sacarla del pipeline.
 Cord no tiene un estado "Cancelada": *Rechazada* indica que ese link ya no sigue.

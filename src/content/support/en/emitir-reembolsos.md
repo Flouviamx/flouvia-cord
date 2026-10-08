@@ -13,7 +13,7 @@ Cord lets you initiate a full or partial refund from the payment history without
 1. Go to **Payments** and locate the successful payment.
 2. Select **Refund**, enter the amount, and confirm the operation.
 3. For card payments, Cord requests the return to the issuing bank and updates the net amount when it receives the result.
-4. For SPEI transfers (Mexican peso payments only), Cord creates a manual task with the amount and reference. You must complete the transfer from your bank; Cord never simulates an outgoing transfer.
+4. For SPEI transfers (Mexican peso payments only), Cord creates a high-priority task in **Tasks** with the amount and reference, assigned to whoever requested the refund. You must complete the transfer from your bank; Cord never simulates an outgoing transfer.
 
 Only the owner or a member with refund permission can confirm the operation. For security, Cord may request a recent password or second-factor verification.
 
@@ -24,10 +24,10 @@ The processing fee shown before confirmation is not returned by default. A refun
 Issuing a refund does not by itself cancel the original tax document.
 
 **In Mexico**, it does not cancel the invoice with the SAT:
-1. Go to Cord in **Accounting > Invoices** and locate the original invoice.
-2. In the options menu (three dots), select **Generate Credit Note** (Expense).
+1. Go to Cord in **Invoices** and locate the original invoice.
+2. Under **More actions**, select **Credit note** (Expense).
 3. Cord will automatically link the parent invoice's UUID using the `01` relationship type.
-4. Click on **Stamp Expense**. This will deduct the income for accounting purposes and provide your client with their XML proof.
+4. On the note's detail page, click **Issue credit note**. This will deduct the income for accounting purposes and provide your client with their XML proof.
 
 **In every other country**, the correction is issued as a commercial credit note linked to the original invoice. **In Spain**, if your account issues under Verifactu, the correction never edits the already-signed chained record: it generates a NEW cancellation record, which is added to the chain instead of rewriting the previous one. See [Issuing credit notes](/en/support/nota-de-credito).
 

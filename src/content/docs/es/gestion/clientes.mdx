@@ -1,7 +1,7 @@
 ---
 title: "Clientes, condiciones y estado de cuenta"
 description: "Cómo crear e importar clientes, configurar descuentos, crédito, términos y datos fiscales, y leer su historial comercial y saldo."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-08"
 reviewedBy: "Producto y operaciones de Cord"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -17,7 +17,7 @@ Un cliente en Cord no es solo un contacto. Su ficha guarda la identidad comercia
 y fiscal que se reutiliza al cotizar, además de las condiciones que controlan el
 descuento sugerido, el vencimiento y la exposición de crédito.
 
-{/* MOCKUP: directorio de Clientes con el buscador "Buscar clientes…", los filtros Todos / Con cotizaciones / Sin cotizar / Con nivel / Con crédito / Sin datos fiscales, el orden "Mayor cerrado" y filas con cliente, contacto, RFC, términos, límite de crédito y número de cotizaciones; a la derecha la ficha de "Constructora GAMA" con cerrado, pipeline, tasa de cierre, uso del límite de crédito y el estado de cuenta por antigüedad. */}
+<DmClients lang="es" />
 
 ## Crear un cliente
 
@@ -30,7 +30,7 @@ cobrarse o facturarse.
 | Contacto | persona, correo y teléfono | Destinatario de cotizaciones, facturas y seguimiento. |
 | Identidad fiscal | RFC o identificador local, régimen, uso de CFDI y código postal | Datos del receptor usados al preparar el documento fiscal. |
 | Dirección | país, líneas de dirección, ciudad y región | Dirección del receptor y contexto fiscal por país. |
-| Condiciones | contado, Net 30 o Net 60 | Vencimiento predeterminado al crear operaciones para el cliente. |
+| Condiciones | chips Contado, Net 15, Net 30 y Net 60, u **Otro plazo** (Net 7, Net 45 o Net 90) | Vencimiento predeterminado al crear operaciones para el cliente. |
 | Crédito | límite mayor o igual a cero | Referencia para mostrar exposición y alertar cuando el saldo lo supera. |
 | Nivel de precio | Estándar, Plata, Oro o Distribuidor | Clasificación comercial y descuento sugerido. |
 
@@ -62,8 +62,10 @@ En **Clientes > Importar CSV** el flujo tiene tres pasos:
 2. indica si la primera fila contiene encabezados y relaciona columnas;
 3. revisa la vista previa y decide si se actualizan coincidencias existentes.
 
-Una importación acepta hasta **2,000 filas**. Las filas sin empresa se omiten. Los
-términos válidos son `contado`, `net30` y `net60`; cualquier otro valor cae a contado.
+Una importación acepta hasta **2,000 filas**. Las filas sin empresa se omiten. La
+columna de términos acepta códigos (`contado`, `net7` a `net90`) o texto como "Net 45"
+o "45 días": Cord toma el plazo ofrecido que no excede lo escrito. "Crédito" sin
+número se lee como `net30`, y cualquier otro texto cae a contado.
 
 Con **Actualizar existentes** activo, Cord busca primero una coincidencia exacta por
 RFC o identificador fiscal y después por nombre de empresa sin distinguir mayúsculas.

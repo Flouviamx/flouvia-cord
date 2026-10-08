@@ -23,7 +23,8 @@ import { sql, withOrgTx } from '../db';
 import { decryptSecret } from '../crypto-secret';
 import { getCountryProfile } from '../countries';
 import { logInvoiceEvent } from './timeline';
-import { normalizeCurrency } from '../currency';
+import { currencyDecimals, listOfferedCurrencies, normalizeCurrency } from '../currency';
+import { roundDocumentTotals, roundTo } from '../document-rounding';
 import { dueDateFor, isoDay } from '../cobros';
 import { FXService, FXUnavailableError } from '../fx/FXService';
 import { calculateDocumentTotals, type TaxBreakdown } from '../../../packages/elements/src/engine';
@@ -32,8 +33,10 @@ import { partiesFrom } from './parties';
 import { creditNoteBreakdown } from './credit-note';
 import { invoiceBalanceLock, invoiceBalanceQuery, reconcileInvoice } from './reconciliation';
 import { taxCatalogFor, TaxCatalogUnavailableError } from '../impuestos-db';
+import { unknownTaxRate, unknownTaxRateMessage, withStoredRates } from '../impuestos';
 import {
   cleanPrefix,
+  documentDecimals,
   documentTypeFor,
   isBillableCfdi,
   metadata,
@@ -49,6 +52,7 @@ import type {
   FiscalParty,
   FiscalRetencion,
 } from './index';
+import { resolveLineSatKeys } from './sat-claves';
 
 export interface DraftLineInput {
   descripcion: string;
@@ -56,6 +60,7 @@ export interface DraftLineInput {
   precioUnitario: number;
   /** Producto del catálogo, si la línea vino de ahí. */
   productoId?: string | null;
+  unidad?: string | null;
   /** Precio pactado; si viene, manda sobre `precioUnitario` (el de lista). */
   precioNegociado?: number | null;
   costoUnitario?: number | null;
@@ -103,7 +108,8 @@ export function parseInvoiceItems(raw: unknown): DraftLineInput[] {
     descripcion: String(i?.descripcion ?? '').trim().slice(0, 500),
     cantidad: Number(i?.cantidad) || 0,
     precioUnitario: Number(i?.precio_unitario ?? i?.precioUnitario) || 0,
-    productoId: i?.producto_id ? String(i.producto_id) : null,
+    productoId: i?.producto_id && /^[0-9a-f-]{36}$/i.test(String(i.producto_id)) ? String(i.producto_id) : null,
+    unidad: i?.unidad ? String(i.unidad).trim().slice(0, 40) : null,
     precioNegociado: numOrNull(i?.precio_negociado),
     costoUnitario: numOrNull(i?.costo_unitario),
     // `?? null` y no `|| null`: una línea exenta manda 0, y con `||` ese 0
@@ -120,6 +126,25 @@ export interface DraftResult {
 }
 
 /**
+ * Agrega a cada concepto las claves SAT de su producto del catálogo. Las líneas
+ * de `buildLines` conservan el orden de `items`. Se leen en servidor y acotadas
+ * a la organización: el navegador no decide con qué clave se timbra.
+ */
+async function withSatKeys(orgId: string, items: DraftLineInput[], lines: FiscalLineItem[]): Promise<FiscalLineItem[]> {
+  const ids = Array.from(new Set(items.map((i) => i.productoId).filter((id): id is string => !!id && UUID_RE.test(id))));
+  if (!ids.length) return lines;
+  const [rows] = await withOrgTx(orgId, sql`
+    select id, clave_sat, clave_unidad_sat, unidad from productos
+     where org_id = ${orgId} and id = any(${ids}::uuid[])`);
+  const byId = new Map(rows.map((r: any) => [String(r.id), r]));
+  return lines.map((line, i) => {
+    const p: any = items[i]?.productoId ? byId.get(String(items[i].productoId)) : null;
+    return p ? { ...line, ...resolveLineSatKeys({ claveSat: p.clave_sat, claveUnidadSat: p.clave_unidad_sat, unidad: p.unidad }) } : line;
+  });
+}
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
  * Convierte las líneas capturadas en el contrato fiscal, con sus totales.
  *
  * La aritmética la hace `calculateInvoiceTotals` del motor compartido, el MISMO
@@ -133,6 +158,7 @@ function buildLines(
   defaultTaxRate: number,
   ivaIncluido: boolean,
   retenciones: { nombre: string; tasa: number; tipo?: string }[] = [],
+  decimals = 2,
 ): {
   lines: FiscalLineItem[]; subtotal: number; taxes: number; total: number; byRate: TaxBreakdown[];
   retenciones: FiscalRetencion[]; retencionTotal: number;
@@ -156,28 +182,27 @@ function buildLines(
     { ivaIncluido, retenciones },
   );
 
-  const lines: FiscalLineItem[] = totals.lineas.map((l) => ({
-    description: String(l.descripcion || 'Concepto').slice(0, 500),
-    quantity: l.cantidad,
-    // Con impuesto incluido, el documento fiscal declara el precio SIN impuesto:
-    // es lo que el rail espera como valor unitario, y `taxAmount` lo acompaña.
-    unitPrice: money(l.cantidad ? l.base / l.cantidad : l.base),
-    taxRate: l.tax_rate,
-    subtotal: money(l.base),
-    taxAmount: money(l.impuesto),
-    total: money(l.total),
-  }));
-
+  // El documento es la SUMA de sus líneas ya redondeadas (document-rounding.ts).
+  // Redondear el total crudo aparte dejaba facturas de varias líneas que no
+  // cuadraban por centavos y que el validador del CFDI rechazaba.
+  // Con impuesto incluido, el documento fiscal declara el precio SIN impuesto:
+  // es lo que el rail espera como valor unitario, y `taxAmount` lo acompaña.
+  const rounded = roundDocumentTotals(totals, decimals);
   return {
-    lines,
-    subtotal: money(totals.subtotal),
-    taxes: money(totals.impuestos),
-    total: money(totals.total),
-    retenciones: totals.retenciones.map((r) => ({ ...r, base: money(r.base), monto: money(r.monto) })),
-    retencionTotal: money(totals.retencionTotal),
-    byRate: totals.porTasa,
+    ...rounded,
+    lines: rounded.lines.map((line, i) => ({
+      ...line,
+      editor: {
+        productId: items[i]?.productoId ?? null,
+        unit: items[i]?.unidad || 'pieza',
+        listPrice: items[i]?.precioUnitario ?? line.unitPrice,
+        negotiatedPrice: items[i]?.precioNegociado ?? null,
+        pricesIncludeTax: ivaIncluido,
+      },
+    })),
   };
 }
+
 
 // partiesFrom() vive en ./parties — compartida con emit.ts para que el país y
 // la dirección del RECEPTOR (no del emisor) se resuelvan una sola vez.
@@ -229,6 +254,26 @@ async function resolveFxRate(
   return { rate };
 }
 
+/** ¿`YYYY-MM-DD` es una fecha que existe en el calendario? `2026-02-31` no. */
+export function isCalendarDay(value: string): boolean {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!m) return false;
+  const d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
+  return d.getUTCFullYear() === Number(m[1]) && d.getUTCMonth() === Number(m[2]) - 1 && d.getUTCDate() === Number(m[3]);
+}
+
+/**
+ * Validación de forma, antes de tocar la base: un `cliente_id` que no es UUID
+ * o una fecha imposible reventaban el cast de Postgres con un 500 en vez de
+ * decirle al usuario qué corregir.
+ */
+function invalidDraftInput(input: CreateDraftInput): string | null {
+  if (!input.clienteId) return 'La factura necesita un cliente.';
+  if (!UUID_RE.test(input.clienteId)) return 'Cliente no encontrado.';
+  if (input.dueDate && !isCalendarDay(input.dueDate)) return 'La fecha de vencimiento no es válida.';
+  return null;
+}
+
 /**
  * Crea una factura en borrador, sin cotización de por medio y sin tocar al
  * proveedor fiscal. Un borrador NO consume el medidor `timbrado`: no se timbró
@@ -238,7 +283,8 @@ async function resolveFxRate(
 export async function createInvoiceDraft(orgId: string, input: CreateDraftInput): Promise<DraftResult> {
   const items = (input.items || []).filter((i) => i && String(i.descripcion || '').trim());
   if (!items.length) return { ok: false, error: 'La factura necesita al menos un concepto.' };
-  if (!input.clienteId) return { ok: false, error: 'La factura necesita un cliente.' };
+  const invalid = invalidDraftInput(input);
+  if (invalid) return { ok: false, error: invalid };
 
   const [headRows] = await withOrgTx(orgId, sql`
     select o.nombre as org_nombre, o.razon_social as org_razon_social, o.rfc as org_tax_id,
@@ -278,23 +324,32 @@ export async function createInvoiceDraft(orgId: string, input: CreateDraftInput)
     if (error instanceof TaxCatalogUnavailableError) return { ok: false, error: error.message };
     throw error;
   }
+  const tasaDesconocida = unknownTaxRate(catalogo, items.map((it) => it.taxRate));
+  if (tasaDesconocida !== null) return { ok: false, error: unknownTaxRateMessage(tasaDesconocida) };
   const itemsConTasaValidada = items.map((it) => ({
     ...it,
     taxRate: catalogo.resolve(it.taxRate, catalogo.defaultRate),
   }));
+  const ledgerCurrency = normalizeCurrency((head.org_moneda as string) || profile.currency);
+  const currency = normalizeCurrency(input.currency || ledgerCurrency, ledgerCurrency);
+  // Regla 28: solo las divisas que Cord ofrece. Antes una divisa no ofrecida
+  // se guardaba y fallaba después, al intentar cobrarla.
+  if (!listOfferedCurrencies(ledgerCurrency).includes(currency)) {
+    return { ok: false, error: 'Esa divisa no está disponible para facturar.' };
+  }
   let built;
   try {
-    built = buildLines(itemsConTasaValidada, catalogo.defaultRate, input.ivaIncluido === true, catalogo.retenciones);
+    built = buildLines(itemsConTasaValidada, catalogo.defaultRate, input.ivaIncluido === true, catalogo.retenciones, documentDecimals(docType, currency));
   } catch (error: unknown) {
     // RangeError del motor = tasa fuera de [0,1]. Se traduce a un error de
     // captura en vez de dejar que reviente como 500 sin explicación.
     if (error instanceof RangeError) return { ok: false, error: 'Alguna línea tiene una tasa de impuesto inválida.' };
     throw error;
   }
-  const { lines, subtotal, taxes, total, retenciones, retencionTotal } = built;
+  const { subtotal, taxes, total, retenciones, retencionTotal } = built;
+  // México: cada concepto lleva las claves SAT de su producto (sat-claves.ts).
+  const lines = country === 'MX' ? await withSatKeys(orgId, itemsConTasaValidada, built.lines) : built.lines;
 
-  const ledgerCurrency = normalizeCurrency((head.org_moneda as string) || profile.currency);
-  const currency = normalizeCurrency(input.currency || ledgerCurrency, ledgerCurrency);
 
   const fx = await resolveFxRate(currency, ledgerCurrency, total, input.bufferPct, country, isFiscalDocument(docType, country));
   if ('error' in fx) return { ok: false, error: fx.error };
@@ -316,7 +371,7 @@ export async function createInvoiceDraft(orgId: string, input: CreateDraftInput)
     ) values (
       ${orgId}, null, ${String(head.cliente_id)}, ${country}, ${docType}, 'pending',
       ${docType === 'cfdi_40' ? 'facturapi' : 'cord'},
-      ${currency}, ${ledgerCurrency}, ${fxRate}, ${money(total * fxRate)},
+      ${currency}, ${ledgerCurrency}, ${fxRate}, ${roundTo(total * fxRate, currencyDecimals(ledgerCurrency))},
       ${subtotal}, ${taxes}, ${total}, ${retencionTotal}, ${JSON.stringify(retenciones)}::jsonb,
       'draft', ${dueDate}::date, 0, ${total}, ${publicToken},
       ${input.notes || null}, ${input.createdBy || null},
@@ -341,6 +396,9 @@ export async function createInvoiceDraft(orgId: string, input: CreateDraftInput)
  *
  * El `public_token` NO se regenera: puede estar ya en manos del cliente.
  */
+export { isRetryableIssuanceError } from './retry';
+import { isRetryableIssuanceError } from './retry';
+
 export async function updateInvoiceDraft(
   orgId: string,
   documentId: string,
@@ -348,18 +406,31 @@ export async function updateInvoiceDraft(
 ): Promise<DraftResult> {
   const items = (input.items || []).filter((i) => i && String(i.descripcion || '').trim());
   if (!items.length) return { ok: false, error: 'La factura necesita al menos un concepto.' };
-  if (!input.clienteId) return { ok: false, error: 'La factura necesita un cliente.' };
+  const invalid = invalidDraftInput(input);
+  if (invalid) return { ok: false, error: invalid };
 
   const [docRows] = await withOrgTx(orgId, sql`
-    select id, lifecycle, invoice_number, public_token, amount_paid, credit_note_of, document_type, country_code, provider_data
+    select id, lifecycle, status, invoice_number, public_token, amount_paid, credit_note_of, cotizacion_id,
+           document_type, country_code, provider_data, provider_document_id, currency, line_items_snapshot
       from documentos_fiscales
      where id = ${documentId} and org_id = ${orgId}
      limit 1`);
   const doc = docRows[0];
   if (!doc) return { ok: false, error: 'Factura no encontrada.' };
   if (doc.credit_note_of) return { ok: false, error: 'La nota de crédito conserva el desglose de la factura original; descártala y crea otra para cambiar el importe.' };
-  if (doc.lifecycle !== 'draft' || doc.invoice_number || doc.provider_data?.cord_issuance) {
-    return { ok: false, error: 'Esta factura ya fue emitida y no se puede editar. Anúlala o emite una nota de crédito.' };
+  // Un intento de emisión que falló con certeza (rechazo local o del PAC, nunca
+  // una entrega incierta) no creó ningún comprobante: el folio quedó reservado
+  // pero nadie lo recibió, así que el borrador se puede corregir y reintentar
+  // con el MISMO folio. Antes cualquier folio asignado bloqueaba la edición y
+  // el documento quedaba atorado sin poder editarse, anularse ni borrarse.
+  const retryable = isRetryableIssuanceError(doc);
+  if (doc.lifecycle !== 'draft' || doc.provider_data?.cord_issuance || (doc.invoice_number && !retryable)) {
+    return {
+      ok: false,
+      error: doc.lifecycle === 'draft' && doc.status === 'error'
+        ? 'El proveedor fiscal todavía no confirma el resultado del último intento. Reintenta la emisión desde el detalle de la factura antes de cambiarla.'
+        : 'Esta factura ya fue emitida y no se puede editar. Anúlala o emite una nota de crédito.',
+    };
   }
 
   const [headRows] = await withOrgTx(orgId, sql`
@@ -388,28 +459,43 @@ export async function updateInvoiceDraft(
     try { docType = await documentTypeForOrg(orgId, country, input.documentMode); }
     catch (error) { return { ok: false, error: error instanceof Error ? error.message : 'Tipo de documento no disponible.' }; }
   } else if (country !== doc.country_code) return { ok: false, error: 'El país del emisor cambió. Crea un borrador nuevo.' };
+  // El folio reservado pertenece a la serie de su tipo de documento y país:
+  // cambiar cualquiera de los dos dejaría un número de otra serie.
+  if (doc.invoice_number && (docType !== String(doc.document_type) || country !== doc.country_code)) {
+    return { ok: false, error: 'Este documento ya tiene folio reservado; no puede cambiar de tipo. Anúlalo y crea otro.' };
+  }
   let catalogo;
   try {
-    catalogo = await taxCatalogFor(orgId);
+    catalogo = withStoredRates(await taxCatalogFor(orgId),
+      ((doc.line_items_snapshot as FiscalLineItem[]) || []).map((l) => l?.taxRate));
   } catch (error) {
     if (error instanceof TaxCatalogUnavailableError) return { ok: false, error: error.message };
     throw error;
   }
+  const tasaDesconocida = unknownTaxRate(catalogo, items.map((it) => it.taxRate));
+  if (tasaDesconocida !== null) return { ok: false, error: unknownTaxRateMessage(tasaDesconocida) };
   const itemsConTasaValidada = items.map((it) => ({
     ...it,
     taxRate: catalogo.resolve(it.taxRate, catalogo.defaultRate),
   }));
+  const ledgerCurrency = normalizeCurrency((head.org_moneda as string) || profile.currency);
+  const currency = normalizeCurrency(input.currency || ledgerCurrency, ledgerCurrency);
+  // Regla 28: solo las divisas ofrecidas, conservando la que el borrador ya
+  // tenía aunque haya salido del set (un set recortado no reescribe un dato vivo).
+  if (!listOfferedCurrencies(String(doc.currency || ledgerCurrency)).includes(currency) && currency !== ledgerCurrency) {
+    return { ok: false, error: 'Esa divisa no está disponible para facturar.' };
+  }
   let built;
   try {
-    built = buildLines(itemsConTasaValidada, catalogo.defaultRate, input.ivaIncluido === true, catalogo.retenciones);
+    built = buildLines(itemsConTasaValidada, catalogo.defaultRate, input.ivaIncluido === true, catalogo.retenciones, documentDecimals(docType, currency));
   } catch (error: unknown) {
     if (error instanceof RangeError) return { ok: false, error: 'Alguna línea tiene una tasa de impuesto inválida.' };
     throw error;
   }
-  const { lines, subtotal, taxes, total, retenciones, retencionTotal } = built;
+  const { subtotal, taxes, total, retenciones, retencionTotal } = built;
+  // México: cada concepto lleva las claves SAT de su producto (sat-claves.ts).
+  const lines = country === 'MX' ? await withSatKeys(orgId, itemsConTasaValidada, built.lines) : built.lines;
 
-  const ledgerCurrency = normalizeCurrency((head.org_moneda as string) || profile.currency);
-  const currency = normalizeCurrency(input.currency || ledgerCurrency, ledgerCurrency);
   const fx = await resolveFxRate(currency, ledgerCurrency, total, input.bufferPct, country, isFiscalDocument(docType, country));
   if ('error' in fx) return { ok: false, error: fx.error };
 
@@ -425,7 +511,7 @@ export async function updateInvoiceDraft(
       currency = ${currency},
       ledger_currency = ${ledgerCurrency},
       fx_rate = ${fx.rate},
-      ledger_total = ${money(total * fx.rate)},
+      ledger_total = ${roundTo(total * fx.rate, currencyDecimals(ledgerCurrency))},
       subtotal = ${subtotal},
       tax_total = ${taxes},
       total = ${total},
@@ -437,10 +523,21 @@ export async function updateInvoiceDraft(
       issuer_snapshot = ${JSON.stringify(issuer)},
       recipient_snapshot = ${JSON.stringify(recipient)},
       line_items_snapshot = ${JSON.stringify(lines)},
+      -- Tras un rechazo cierto se estrena llave de idempotencia: la anterior
+      -- puede tener guardada la respuesta de error del proveedor para el
+      -- contenido viejo.
+      idempotency_key = case when invoice_number is null then idempotency_key
+        else ${`invoice:${documentId}:retry:${Date.now()}`} end,
+      status = case when invoice_number is null then status else 'pending' end,
       updated_at = now()
     where id = ${documentId} and org_id = ${orgId}
-      and lifecycle = 'draft' and invoice_number is null and credit_note_of is null
+      and lifecycle = 'draft' and credit_note_of is null
       and provider_data->'cord_issuance' is null
+      and (invoice_number is null or (
+        status = 'error' and cotizacion_id is null
+        and coalesce(provider_data->>'delivery_uncertain', 'false') <> 'true'
+        and (provider_document_id is null or left(provider_document_id, 4) = 'err_')
+      ))
     returning id, public_token`);
   const row = rows[0];
   if (!row) return { ok: false, error: 'No se pudo actualizar el borrador.' };

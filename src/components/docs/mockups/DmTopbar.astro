@@ -1,0 +1,38 @@
+---
+// Topbar de la app: buscador ⌘K, guía de configuración (opcional), Crear e iconos.
+import DmIcon from './DmIcon.astro';
+import DmRing from './DmRing.astro';
+import { dmT, type DmLang } from './format';
+
+interface Props {
+    lang: DmLang;
+    /** Muestra la píldora "Guía de configuración" con este porcentaje. */
+    setupPct?: number;
+}
+const { lang, setupPct } = Astro.props;
+---
+<div class="dm-topbar">
+    <span class="dm-tb-burger"><DmIcon name="menu" /></span>
+    <span class="dm-tb-search">
+        <DmIcon name="search" />
+        <span class="dm-tb-search-label">{dmT(lang, 'topbar.buscar')}</span>
+        <span class="dm-kbd">⌘K</span>
+    </span>
+    <span class="dm-tb-right">
+        {typeof setupPct === 'number' && (
+            <span class="dm-onb-pill">
+                <DmRing pct={setupPct} size={22} />
+                <span class="dm-hide-narrow">{dmT(lang, 'layout.aria.guia_config')}</span>
+            </span>
+        )}
+        <span class="dm-tb-create">
+            <DmIcon name="plus" stroke={2.4} />
+            <span>{dmT(lang, 'layout.crear')}</span>
+            <DmIcon name="chevron-down" stroke={2.4} />
+        </span>
+        <span class="dm-tb-icon"><DmIcon name="bell" /></span>
+        <span class="dm-tb-icon dm-tb-optional"><DmIcon name="chat-help" /></span>
+        <span class="dm-tb-icon dm-tb-optional"><DmIcon name="sun" /></span>
+        <span class="dm-tb-icon"><DmIcon name="gear" /></span>
+    </span>
+</div>

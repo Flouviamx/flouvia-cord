@@ -1,0 +1,149 @@
+---
+// Mockup: Ajustes › Marca y apariencia › Dominio propio con un subdominio ya
+// guardado y en "Esperando DNS". Calca de src/pages/app/ajustes/dominio.astro:
+// los tres pasos numerados 01/02/03 en dos columnas, el dominio guardado con
+// su punto de estado, los registros como filas Tipo/Nombre/Valor con
+// "Copiar nombre" / "Copiar valor" (renderRecords) y "Verificar conexión".
+//
+// Los textos están COPIADOS del objeto `copy` de esa página (no vive en el
+// diccionario de la app, así que dmT no lo alcanza): si cambian allá, cámbialos
+// aquí. El TXT de propiedad sigue ownershipRecord() de customer-domains.ts
+// (`_cord.` + subdominio, `cord-verification=` + 64 hex); el CNAME es el valor
+// recomendado por el proveedor para ese subdominio.
+import DocsMockup from './DocsMockup.astro';
+import SetHead from './SetHead.astro';
+import { pick, type DmLang } from './format';
+
+interface Props {
+    lang: DmLang;
+    caption?: string;
+}
+const { lang } = Astro.props;
+const HOST = 'cotizaciones.materialesdelvalle.mx';
+const RECORDS = [
+    { type: 'TXT', name: `_cord.${HOST}`, value: 'cord-verification=a3ec00231417299163350703461f555be6a9081288736fa2f9fb36bc2defd1ae' },
+    { type: 'CNAME', name: HOST, value: 'eb7e06236fb53508.vercel-dns-017.com.' },
+];
+const DATA = {
+    es: {
+        caption: `Pestaña Dominio propio con ${HOST} guardado en estado "Esperando DNS": los pasos 01 Elige tu dominio, 02 Configura el DNS con los registros TXT y CNAME y sus botones para copiar, y 03 Verifica la conexión.`,
+        title: 'Dominio propio',
+        intro: 'Dale a tus cotizaciones una dirección de tu marca. Conecta un subdominio y conserva tu sitio web donde está.',
+        steps: ['Elige tu dominio', 'Configura el DNS', 'Verifica la conexión'],
+        recommendation: 'Recomendamos un subdominio dedicado, como', example: 'cotizaciones.tuempresa.com',
+        preserve: 'Si ya tienes un dominio, no necesitas comprar otro. Usa una dirección libre dentro de él y conserva tu web principal donde está.',
+        savedDomain: 'Dominio guardado', changeHint: 'Para usar otro dominio, desconecta primero el actual.',
+        status: 'Esperando DNS',
+        detail: 'Los registros DNS aún no se han confirmado. Revisa los nombres y valores y vuelve a verificar más tarde.',
+        dnsIntro: 'En el panel donde administras el DNS de tu dominio, añade estos registros exactamente como aparecen.',
+        dnsHint: 'Primero verifica el TXT de propiedad; después aparecerá el CNAME para conectar la dirección. Conserva el TXT para las revisiones posteriores. Modifica solo este subdominio, sin cambiar los registros de tu web ni correo. Si tu panel añade el dominio al nombre automáticamente, evita duplicarlo.',
+        type: 'Tipo', name: 'Nombre', value: 'Valor', copyName: 'Copiar nombre', copyValue: 'Copiar valor',
+        verifyIntro: 'Cuando hayas guardado los registros, verifica la conexión. Los cambios DNS pueden tardar en propagarse; el certificado HTTPS también puede necesitar tiempo.',
+        lastChecked: 'Última verificación', when: '8 oct 2026, 10:14',
+        verify: 'Verificar conexión',
+    },
+    en: {
+        caption: `Custom domain tab with ${HOST} saved and "Waiting for DNS": steps 01 Choose your domain, 02 Configure DNS with the TXT and CNAME records and their copy buttons, and 03 Verify the connection.`,
+        title: 'Custom domain',
+        intro: 'Give your quotes an address that carries your brand. Connect a subdomain and keep your website where it is.',
+        steps: ['Choose your domain', 'Configure DNS', 'Verify the connection'],
+        recommendation: 'We recommend a dedicated subdomain, such as', example: 'quotes.yourcompany.com',
+        preserve: 'If you already own a domain, you do not need to buy another one. Use an unused address within it and keep your main website where it is.',
+        savedDomain: 'Saved domain', changeHint: 'To use a different domain, disconnect the current one first.',
+        status: 'Waiting for DNS',
+        detail: 'DNS records have not been confirmed yet. Check the names and values, then verify again later.',
+        dnsIntro: 'In the panel where you manage your domain’s DNS, add these records exactly as shown.',
+        dnsHint: 'First verify the ownership TXT; then the CNAME for your address will appear. Keep the TXT for future checks. Only change this subdomain, not your website or email records. If your panel automatically appends the domain to the name, avoid adding it twice.',
+        type: 'Type', name: 'Name', value: 'Value', copyName: 'Copy name', copyValue: 'Copy value',
+        verifyIntro: 'After saving the records, verify the connection. DNS changes can take time to propagate, and the HTTPS certificate may also need time.',
+        lastChecked: 'Last verified', when: 'Oct 8, 2026, 10:14 AM',
+        verify: 'Verify connection',
+    },
+};
+const d = pick(DATA, lang);
+const caption = Astro.props.caption ?? d.caption;
+---
+<DocsMockup lang={lang} variant="app" chrome="full" sidebar="rail" active="" caption={caption} height={1090} class="dm-dom-figure">
+    <SetHead lang={lang} tab="dominio" />
+    <div class="dom">
+        <div class="dom-header">
+            <span class="dom-h1">{d.title}</span>
+            <span class="dom-p">{d.intro}</span>
+        </div>
+
+        <div class="dom-step">
+            <div class="dom-step-h"><span class="dom-num">01</span><span class="dom-h2">{d.steps[0]}</span></div>
+            <div class="dom-body">
+                <span class="dom-p">{d.recommendation} <span class="dom-ex">{d.example}</span>. {d.preserve}</span>
+                <div>
+                    <span class="dom-label">{d.savedDomain}</span>
+                    <div class="dom-summary"><span class="dom-host">{HOST}</span><span class="dom-status">{d.status}</span></div>
+                    <span class="dom-p">{d.detail}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="dom-step">
+            <div class="dom-step-h"><span class="dom-num">02</span><span class="dom-h2">{d.steps[1]}</span></div>
+            <div class="dom-body">
+                <span class="dom-p">{d.dnsIntro}</span>
+                <div class="dom-records">
+                    {RECORDS.map((r) => (
+                        <div class="dom-record">
+                            <span class="dom-dt">{d.type}</span><span class="dom-dd"><span class="dom-code dom-type">{r.type}</span></span>
+                            <span class="dom-dt">{d.name}</span><span class="dom-dd"><span class="dom-code">{r.name}</span><span class="dom-btn dom-copy">{d.copyName}</span></span>
+                            <span class="dom-dt">{d.value}</span><span class="dom-dd"><span class="dom-code">{r.value}</span><span class="dom-btn dom-copy">{d.copyValue}</span></span>
+                        </div>
+                    ))}
+                </div>
+                <span class="dom-hint">{d.dnsHint}</span>
+            </div>
+        </div>
+
+        <div class="dom-step">
+            <div class="dom-step-h"><span class="dom-num">03</span><span class="dom-h2">{d.steps[2]}</span></div>
+            <div class="dom-body">
+                <span class="dom-p">{d.verifyIntro}</span>
+                <span class="dom-hint">{d.lastChecked}: {d.when}</span>
+                <span class="dom-btn dom-primary">{d.verify}</span>
+            </div>
+        </div>
+    </div>
+</DocsMockup>
+
+<style is:global>
+    .dom { min-width: 0; padding-right: var(--dm-bleed); }
+    .dom-header { display: flex; flex-direction: column; gap: 6px; max-width: 60ch; padding: 6px 0 16px; }
+    .dom-h1 { font-size: 22px; font-weight: 650; letter-spacing: -0.04em; line-height: 1.15; color: var(--dm-text); }
+    .dom-p { font-size: 11.5px; line-height: 1.6; color: var(--dm-muted); overflow-wrap: anywhere; }
+    .dom-ex { color: var(--dm-text); font-weight: 550; }
+    .dom-step { display: grid; grid-template-columns: minmax(130px, 0.8fr) minmax(0, 2fr); gap: 22px; padding: 18px 0; border-top: 1px solid var(--dm-border); }
+    .dom-step-h { display: flex; gap: 9px; align-items: baseline; }
+    .dom-num { font-size: 10.5px; font-variant-numeric: tabular-nums; color: var(--dm-muted); }
+    .dom-h2 { font-size: 13px; font-weight: 600; letter-spacing: -0.015em; color: var(--dm-text); }
+    .dom-body { display: flex; flex-direction: column; gap: 11px; min-width: 0; align-items: flex-start; }
+    .dom-body > * { max-width: 100%; }
+    .dom-label { display: block; margin-bottom: 6px; font-size: 11px; font-weight: 550; color: var(--dm-muted); }
+    .dom-summary { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 6px; }
+    .dom-host { font-size: 14.5px; font-weight: 600; color: var(--dm-text); overflow-wrap: anywhere; min-width: 0; }
+    .dom-status { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: var(--dm-text); }
+    .dom-status::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--dm-warn); }
+    .dom-records { width: 100%; }
+    .dom-record { display: grid; grid-template-columns: 54px minmax(0, 1fr); gap: 7px 12px; align-items: baseline; padding: 12px 0; border-bottom: 1px solid var(--dm-border); }
+    .dom-record:first-child { border-top: 1px solid var(--dm-border); }
+    .dom-dt { font-size: 10.5px; color: var(--dm-muted); }
+    .dom-dd { display: flex; align-items: flex-start; gap: 10px; min-width: 0; }
+    .dom-code { flex: 1; min-width: 0; font-size: 11.5px; line-height: 1.6; color: var(--dm-text); overflow-wrap: anywhere; word-break: break-all; }
+    .dom-type { font-weight: 600; }
+    .dom-btn { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; min-height: 30px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--dm-border-strong); background: #fff; font-size: 11px; font-weight: 600; color: var(--dm-text); white-space: nowrap; }
+    .dom-copy { min-height: 26px; padding: 0 9px; font-size: 10px; }
+    .dom-primary { background: var(--dm-text); color: #fff; border-color: transparent; min-height: 34px; padding: 0 15px; }
+    .dom-hint { font-size: 10.5px; line-height: 1.55; color: var(--dm-muted); }
+
+    @container dm (max-width: 640px) {
+        .dom-step { grid-template-columns: minmax(0, 1fr); gap: 12px; padding: 16px 0; }
+        .dom-record { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+        .dom-dd { margin-bottom: 6px; }
+        .dom-dd:last-child { margin-bottom: 0; }
+    }
+</style>

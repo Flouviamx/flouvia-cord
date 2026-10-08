@@ -2,7 +2,7 @@
 title: "Cord AI: cotizaciones automáticas"
 seoTitle: "Cord AI: arma una cotización desde texto, PDF o foto"
 description: "Arma las partidas de una cotización pegando un texto, una foto o un PDF: Cord AI las cruza con tu catálogo y tú revisas antes de enviar."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-08"
 reviewedBy: "Producto y operaciones de Cord"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -16,11 +16,12 @@ prerequisites: ["Permiso Cotizaciones para abrir el editor", "Un catálogo de pr
 
 ## Qué es
 
-Cord AI es el motor de inteligencia artificial del editor de cotizaciones. Lee un
-pedido en texto, PDF o imagen, extrae productos y cantidades y los cruza con **tu
-catálogo real**. No guarda ni envía nada por su cuenta: llena el editor y tú decides.
+Cord AI es el motor de inteligencia artificial del editor de cotizaciones y facturas.
+Lee un pedido en texto, PDF o imagen, extrae productos y cantidades y los cruza con
+**tu catálogo real**. No guarda ni envía nada por su cuenta: llena las líneas del
+editor y tú decides.
 
-{/* MOCKUP: bloque "Arma la cotización con IA" arriba del editor, con el texto de ejemplo "Hola, necesito 200 sacos de cemento gris, 50 varillas de 3/8 y 2 m³ de arena. ¿Me pasas precio?", el clip para adjuntar y el botón "Armar cotización con IA"; debajo, tres partidas recién agregadas. */}
+<DmCotAiBlock lang="es" />
 
 ## Requisitos
 
@@ -31,11 +32,25 @@ catálogo real**. No guarda ni envía nada por su cuenta: llena el editor y tú 
 ## Cómo usarlo
 
 <Steps>
-1. Abre **Cotizaciones › Nueva cotización**. El primer bloque es **Arma la cotización con IA**. También llegas desde la paleta de comandos con **Armar con IA**.
-2. Pega el pedido en el cuadro de texto, adjunta un archivo con el clip, o ambas cosas.
-3. Pulsa **Armar cotización con IA**.
-4. Revisa las partidas que se agregaron, elige al cliente, ajusta precios y vigencia, y guarda o envía.
+1. Abre **Cotizaciones › Nueva cotización**. El primer bloque, arriba de los tres pasos del editor, es **Arma la cotización con IA**. También llegas desde la paleta de comandos con **Armar con IA**.
+2. Pega el pedido en el cuadro de texto, adjunta un archivo con el clip (**Adjuntar foto o PDF**), o ambas cosas.
+3. Pulsa **Armar cotización con IA**. Al terminar, Cord te dice cuántas líneas armó, por ejemplo "3 líneas listas. Revisa cantidades y precios."
+4. Revisa las partidas que se agregaron, elige al cliente, ajusta precios y condiciones, y guarda o envía.
 </Steps>
+
+Si prefieres capturar a mano, no necesitas el bloque de IA: ve directo al paso 1 y
+agrega las líneas desde el buscador del catálogo (ver [Productos y
+descuentos](/docs/cotizacion/productos)).
+
+## Cuándo aparece y cuándo se pliega
+
+- **Cotización o factura nueva sin líneas:** el bloque aparece abierto.
+- **Documento que ya tiene líneas** (por ejemplo, un borrador que reabres): el bloque arranca plegado como una barra de una línea con el botón **Abrir**. Ábrelo para volver a usarlo.
+- **Versión nueva de una cotización enviada:** el bloque no aparece; en una versión se ajustan las líneas a mano.
+- **Factura:** el mismo bloque aparece como **Arma la factura con IA**, con el botón **Armar factura con IA**, y consume la misma cuota mensual.
+
+Si el documento ya tiene líneas cuando armas con IA, Cord pregunta "¿Reemplazar las
+líneas actuales?" y te deja elegir **Reemplazar** o **Agregar al final**.
 
 ## Qué puede leer
 
@@ -46,7 +61,7 @@ catálogo real**. No guarda ni envía nada por su cuenta: llena el editor y tú 
 | **Imagen** (JPG, PNG o WEBP) | Cord la comprime antes de subirla | Lee la foto y arma las partidas. |
 
 Lo que no encuentra en tu catálogo entra como **línea libre** para que decidas qué
-hacer con ello. El precio de lista y los datos del producto siempre salen de tu
+hacer con ello; si el pedido no traía precio, la línea te pide uno antes de guardar. El precio de lista y los datos del producto siempre salen de tu
 catálogo, no del texto.
 
 ## Revisión humana
@@ -55,7 +70,7 @@ Cord AI es un copiloto. Tú:
 
 - confirmas que los productos sean los correctos;
 - ajustas cantidades si hubo un error de interpretación;
-- eliges el cliente, los precios negociados y la vigencia antes de guardar o enviar.
+- eliges el cliente, los precios y las condiciones antes de guardar o enviar.
 
 ## Límites por plan
 
@@ -71,11 +86,13 @@ Ve tu consumo en **Ajustes › Planes y suscripción › Suscripción**.
 
 ## Problemas comunes
 
-**"Pega el pedido del cliente o adjunta una foto/PDF".** Pulsaste el botón sin texto ni archivo.
+**"Escribe el pedido, pégalo o adjunta una foto o PDF."** Pulsaste el botón sin texto ni archivo.
 
-**"El PDF pesa más de 3MB".** Escanéalo en menor resolución o sube una foto.
+**"El PDF pesa más de 3 MB."** Escanéalo en menor resolución o sube una foto.
 
-**"Formato no soportado. Sube una foto (JPG/PNG/WEBP) o un PDF."** Las hojas de cálculo no se procesan con este asistente; para cargar muchos productos usa la [importación por CSV](/docs/cuenta/catalogo).
+**"Sube una foto (JPG, PNG o WEBP) o un PDF."** Adjuntaste otro formato. Las hojas de cálculo no se procesan con este asistente; para cargar muchos productos usa la [importación por CSV](/docs/cuenta/catalogo).
+
+**No veo el cuadro de texto de la IA.** El bloque está plegado porque el documento ya tiene líneas: pulsa **Abrir**. En una versión nueva de una cotización enviada no hay bloque de IA.
 
 **Emparejó mal un producto.** Nombres claros y SKUs definidos en tu catálogo mejoran el emparejamiento. Corrige la línea antes de enviar.
 

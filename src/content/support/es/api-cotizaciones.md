@@ -39,7 +39,7 @@ Respuesta:
 - `items` (obligatorio): arreglo de partidas. Cada una con `descripcion`, `cantidad`, `precio_unitario` y, opcionalmente, `producto_id`, `precio_negociado`, `costo_unitario` y `tax_rate` (fracción 0–1, ej. `0.16`; si se omite, se usa la tasa por defecto de tu organización — el impuesto es un dato de la línea, no del documento).
 - `cliente_id` (opcional): id de un cliente existente (créalo con [API: Gestionar clientes](/soporte/api-clientes)).
 - `cliente` (opcional, alternativa a `cliente_id`): objeto `{ empresa, email?, contacto?, telefono?, rfc? }` para un cliente que todavía no existe — Cord lo busca por empresa/email dentro de tu organización y, si no lo encuentra, lo crea.
-- `terminos`: `contado`, `net30` o `net60`.
+- `terminos`: `contado` o `net<N>` para N días de crédito: `net7`, `net15`, `net30`, `net45`, `net60`, `net90`.
 - `vigencia_dias`: días que la cotización permanece válida.
 - `notas`: texto libre que aparece al final de la cotización.
 - `send`: si es `true`, Cord envía el link público al correo del cliente al crearla.

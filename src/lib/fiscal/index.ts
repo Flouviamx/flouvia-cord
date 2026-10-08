@@ -28,6 +28,20 @@ export interface FiscalLineItem {
   unitKey?: string;
   /** Causa legal de exención/no sujeción. ES: 'E1'..'E6' o inversión del sujeto pasivo. */
   exemptionReason?: string;
+  /**
+   * Lo que se capturó en el editor, para reabrir un borrador sin perder nada:
+   * de qué producto vino, su unidad, lista y precio pactado, y si los precios
+   * incluían impuesto. No viaja a ningún proveedor fiscal (cada uno mapea sus
+   * campos a mano); antes el borrador reabierto convertía las líneas de
+   * catálogo en libres y apagaba "precios con impuesto incluido".
+   */
+  editor?: {
+    productId?: string | null;
+    unit?: string;
+    listPrice?: number;
+    negotiatedPrice?: number | null;
+    pricesIncludeTax?: boolean;
+  };
 }
 
 export interface FiscalRetencion {

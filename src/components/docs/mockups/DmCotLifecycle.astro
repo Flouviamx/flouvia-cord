@@ -1,0 +1,208 @@
+---
+// Mockup: diagrama del ciclo de vida de una cotización (los 8 estados reales).
+//
+// Fuente de verdad: STATUS_META (color y fondo de cada estado) y las
+// transiciones de src/lib/actions/quotes.ts:
+//   draft → sent (vendedor) · sent → viewed (cliente) · sent|viewed → approved
+//   (cliente) · approved → paid (cliente) · paid → invoiced (vendedor) ·
+//   sent|viewed → rejected (cliente) · sent|viewed → expired (proceso diario).
+// La pista principal dibuja el camino feliz; approved → invoiced e
+// invoiced → paid también son válidas y se dicen en el pie del diagrama, no se
+// dibujan, para que el diagrama siga siendo legible.
+//
+// Las flechas son SVG en línea; las líneas, bordes CSS (no se deforman al
+// cambiar el ancho). En angosto la pista pasa a vertical.
+import DocsMockup from './DocsMockup.astro';
+import DmIcon from './DmIcon.astro';
+import { STATUS_META, type QuoteStatus } from '../../../lib/quote';
+import type { IconName } from '../../../lib/icons';
+import { dmT, pick, type DmLang } from './format';
+
+interface Props {
+    lang: DmLang;
+    /** Pie de figura; por defecto describe el diagrama. */
+    caption?: string;
+}
+const { lang } = Astro.props;
+
+type Actor = 'seller' | 'client' | 'process';
+
+const DATA = {
+    es: {
+        caption: 'Ciclo de vida de una cotización: Borrador pasa a Enviada por el vendedor; Vista, Aprobada y Pagada las provoca el cliente; Facturada la emite el vendedor. Desde Enviada o Vista, el cliente puede rechazarla y el proceso diario la vence cuando pasa su vigencia.',
+        eyebrow: 'Ciclo de vida',
+        title: 'Los 8 estados de una cotización',
+        quien: 'Quién la mueve',
+        actors: { seller: 'Vendedor', client: 'Cliente', process: 'Proceso diario' } as Record<Actor, string>,
+        desde: 'Desde Enviada o Vista',
+        pie: 'Solo una cotización Enviada o Vista se aprueba, se rechaza o vence. Pagada y Facturada pueden ocurrir en cualquier orden.',
+    },
+    en: {
+        caption: 'Life cycle of a quote: the seller moves a Draft to Sent; the client causes Viewed, Approved and Paid; the seller issues Invoiced. From Sent or Viewed, the client can reject it and the daily process expires it once its validity passes.',
+        eyebrow: 'Life cycle',
+        title: 'The 8 statuses of a quote',
+        quien: 'Who moves it',
+        actors: { seller: 'Seller', client: 'Client', process: 'Daily process' } as Record<Actor, string>,
+        desde: 'From Sent or Viewed',
+        pie: 'Only a Sent or Viewed quote can be approved, rejected or expire. Paid and Invoiced can happen in either order.',
+    },
+};
+const d = pick(DATA, lang);
+const caption = Astro.props.caption ?? d.caption;
+
+const ACTOR_ICON: Record<Actor, IconName> = { seller: 'user', client: 'building', process: 'calendar-clock' };
+
+// Pista principal: estado, y quién dispara la flecha que SALE de él.
+const TRACK: { status: QuoteStatus; next?: Actor }[] = [
+    { status: 'draft', next: 'seller' },
+    { status: 'sent', next: 'client' },
+    { status: 'viewed', next: 'client' },
+    { status: 'approved', next: 'client' },
+    { status: 'paid', next: 'seller' },
+    { status: 'invoiced' },
+];
+// Salidas laterales desde Enviada (columna 3) y Vista (columna 5).
+const EXITS: { status: QuoteStatus; actor: Actor; col: number; side: 'l' | 'r' }[] = [
+    { status: 'rejected', actor: 'client', col: 3, side: 'l' },
+    { status: 'expired', actor: 'process', col: 5, side: 'r' },
+];
+
+const st = (s: QuoteStatus) => `--dm-st:${STATUS_META[s].color};--dm-st-bg:${STATUS_META[s].bg}`;
+const label = (s: QuoteStatus) => dmT(lang, `cmdk.st.${s}`);
+const actorOrder: Actor[] = ['seller', 'client', 'process'];
+---
+<DocsMockup lang={lang} variant="panel" panelWidth={820} caption={caption} class="dm-cot-lc-figure">
+    <div class="dm-cot-lc">
+        <div class="dm-cot-lc-head">
+            <div class="dm-cot-lc-titles">
+                <span class="dm-eyebrow">{d.eyebrow}</span>
+                <span class="dm-cot-lc-title">{d.title}</span>
+            </div>
+            <div class="dm-cot-lc-legend">
+                <span class="dm-cot-lc-legend-label">{d.quien}</span>
+                {actorOrder.map((a) => (
+                    <span class:list={['dm-cot-lc-actor', `is-${a}`]}><DmIcon name={ACTOR_ICON[a]} />{d.actors[a]}</span>
+                ))}
+            </div>
+        </div>
+
+        <div class="dm-cot-lc-grid">
+            {TRACK.map((n, i) => (
+                <>
+                    <div class="dm-cot-lc-cell" style={`grid-column:${i * 2 + 1};grid-row:1`}>
+                        <span class="dm-cot-lc-node" style={st(n.status)}>{label(n.status)}</span>
+                    </div>
+                    {n.next && (
+                        <div class:list={['dm-cot-lc-conn', `is-${n.next}`]} style={`grid-column:${i * 2 + 2};grid-row:1`}>
+                            <span class:list={['dm-cot-lc-actor', `is-${n.next}`]}><DmIcon name={ACTOR_ICON[n.next]} />{d.actors[n.next]}</span>
+                            <span class="dm-cot-lc-line"><svg class="dm-cot-lc-head-ar" viewBox="0 0 8 10" aria-hidden="true"><path d="M0 0.6 L7.6 5 L0 9.4 Z" /></svg></span>
+                        </div>
+                    )}
+                </>
+            ))}
+
+            <span class="dm-cot-lc-forkhead">{d.desde}</span>
+            {EXITS.map((x) => (
+                <div class:list={['dm-cot-lc-exit', `is-${x.actor}`, `is-${x.side}`]} style={`grid-column:${x.col};grid-row:2`}>
+                    <span class="dm-cot-lc-stem">
+                        <span class:list={['dm-cot-lc-actor', `is-${x.actor}`]}><DmIcon name={ACTOR_ICON[x.actor]} />{d.actors[x.actor]}</span>
+                        <svg class="dm-cot-lc-head-ar" viewBox="0 0 8 10" aria-hidden="true"><path d="M0 0.6 L7.6 5 L0 9.4 Z" /></svg>
+                    </span>
+                    <span class="dm-cot-lc-node" style={st(x.status)}>{label(x.status)}</span>
+                </div>
+            ))}
+            <span class="dm-cot-lc-bar" style="grid-column:4;grid-row:2"></span>
+        </div>
+
+        <div class="dm-cot-lc-foot"><DmIcon name="info" />{d.pie}</div>
+    </div>
+</DocsMockup>
+
+<style is:global>
+    .dm-cot-lc-figure .dm-v-panel { padding: 30px 22px; }
+    .dm-cot-lc { padding: 18px 22px 16px; --lc-seller: var(--dm-navy); --lc-client: #64748b; --lc-process: #94a3b8; }
+
+    .dm-cot-lc-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 14px; flex-wrap: wrap; padding-bottom: 14px; border-bottom: 1px solid var(--dm-border); }
+    .dm-cot-lc-titles { display: flex; flex-direction: column; gap: 4px; }
+    .dm-cot-lc-title { font-size: 15px; font-weight: 650; letter-spacing: -0.02em; color: var(--dm-text); }
+    .dm-cot-lc-legend { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .dm-cot-lc-legend-label { font-size: 10.5px; font-weight: 600; color: var(--dm-faint); margin-right: 2px; }
+
+    /* Etiqueta de actor: navy sólido (vendedor), contorno (cliente), punteado (proceso). */
+    .dm-cot-lc-actor {
+        display: inline-flex; align-items: center; gap: 4px;
+        height: 20px; padding: 0 7px 0 5px; border-radius: 999px;
+        font-size: 10px; font-weight: 650; letter-spacing: -0.005em; white-space: nowrap;
+    }
+    .dm-cot-lc-actor .dm-ico { width: 11px; height: 11px; }
+    .dm-cot-lc-actor.is-seller { background: var(--lc-seller); color: #fff; }
+    .dm-cot-lc-actor.is-client { background: #fff; color: #334155; box-shadow: inset 0 0 0 1px rgba(100, 116, 139, 0.45); }
+    .dm-cot-lc-actor.is-process { background: #f4f5f7; color: #5b6472; border: 1px dashed #a3acb9; }
+
+    /* Rejilla: nodo · conector · nodo … (11 columnas), salidas en la fila 2. */
+    .dm-cot-lc-grid {
+        display: grid;
+        grid-template-columns: auto minmax(30px, 1fr) auto minmax(30px, 1fr) auto minmax(30px, 1fr) auto minmax(30px, 1fr) auto minmax(30px, 1fr) auto;
+        grid-template-rows: auto auto;
+        align-items: start;
+        padding: 26px 0 6px;
+    }
+    .dm-cot-lc-cell { display: flex; justify-content: center; padding-top: 26px; }
+    .dm-cot-lc-node {
+        display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+        height: 28px; padding: 0 12px; border-radius: 999px;
+        font-size: 12px; font-weight: 700; letter-spacing: 0.005em; white-space: nowrap;
+        color: var(--dm-st); background: var(--dm-st-bg);
+        box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--dm-st) 16%, transparent);
+    }
+    .dm-cot-lc-node::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+    /* Conector horizontal: etiqueta arriba, línea a media altura del nodo. */
+    .dm-cot-lc-conn { position: relative; height: 54px; --lc-c: var(--lc-client); }
+    .dm-cot-lc-conn.is-seller { --lc-c: var(--lc-seller); }
+    .dm-cot-lc-conn > .dm-cot-lc-actor { position: absolute; top: 0; left: 50%; transform: translateX(-50%); z-index: 1; }
+    .dm-cot-lc-line { position: absolute; left: 5px; right: 5px; top: 40px; height: 0; border-top: 1.5px solid var(--lc-c); }
+    .dm-cot-lc-conn.is-process .dm-cot-lc-line { border-top-style: dashed; }
+    .dm-cot-lc-head-ar { position: absolute; width: 7px; height: 9px; fill: var(--lc-c); }
+    .dm-cot-lc-line .dm-cot-lc-head-ar { right: -2px; top: -5.25px; }
+
+    /* Salidas: tallo vertical desde el nodo de arriba, barra que une Enviada y Vista. */
+    .dm-cot-lc-forkhead { display: none; }
+    .dm-cot-lc-exit { position: relative; display: flex; flex-direction: column; align-items: center; padding-top: 74px; --lc-c: var(--lc-client); }
+    .dm-cot-lc-exit.is-process { --lc-c: var(--lc-process); }
+    .dm-cot-lc-stem { position: absolute; top: 0; left: 50%; height: 70px; width: 0; border-left: 1.5px solid var(--lc-client); }
+    .dm-cot-lc-exit.is-process .dm-cot-lc-stem { border-left: 1.5px dashed var(--lc-process); }
+    .dm-cot-lc-stem > .dm-cot-lc-actor { position: absolute; top: 30px; left: 0; transform: translate(-50%, -50%); }
+    .dm-cot-lc-stem .dm-cot-lc-head-ar { bottom: -3px; left: -5.25px; transform: rotate(90deg); }
+    .dm-cot-lc-exit.is-process .dm-cot-lc-head-ar { fill: var(--lc-process); }
+    /* Media barra desde el centro hacia la columna del conector. */
+    .dm-cot-lc-exit::before { content: ''; position: absolute; top: 12px; height: 0; border-top: 1.5px solid #c3cad4; }
+    .dm-cot-lc-exit.is-l::before { left: 50%; right: 0; }
+    .dm-cot-lc-exit.is-r::before { left: 0; right: 50%; }
+    .dm-cot-lc-bar { align-self: start; margin-top: 12px; height: 0; border-top: 1.5px solid #c3cad4; }
+
+    .dm-cot-lc-foot { display: flex; align-items: flex-start; gap: 7px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--dm-border); font-size: 11.5px; line-height: 1.5; color: var(--dm-muted); }
+    .dm-cot-lc-foot .dm-ico { width: 14px; height: 14px; margin-top: 1px; color: var(--dm-faint); }
+
+    /* ── Angosto: la pista pasa a vertical ─────────────────────────────── */
+    @container dm (max-width: 700px) {
+        .dm-cot-lc-figure .dm-v-panel { padding: 20px 14px; }
+        .dm-cot-lc { padding: 16px 16px 14px; }
+        .dm-cot-lc-grid { display: flex; flex-direction: column; align-items: flex-start; padding: 18px 0 4px; }
+        .dm-cot-lc-cell { padding-top: 0; }
+        .dm-cot-lc-conn { height: 36px; width: 100%; }
+        .dm-cot-lc-conn > .dm-cot-lc-actor { top: 50%; left: 34px; transform: translateY(-50%); }
+        .dm-cot-lc-line { left: 18px; right: auto; top: 3px; bottom: 3px; height: auto; border-top: 0; border-left: 1.5px solid var(--lc-c); }
+        .dm-cot-lc-conn.is-process .dm-cot-lc-line { border-left-style: dashed; }
+        .dm-cot-lc-line .dm-cot-lc-head-ar { right: auto; top: auto; bottom: -3px; left: -5.25px; transform: rotate(90deg); }
+
+        .dm-cot-lc-bar { display: none; }
+        .dm-cot-lc-forkhead { display: block; order: 0; margin: 16px 0 8px; padding-top: 14px; width: 100%; border-top: 1px dashed var(--dm-border-strong); font-size: 10.5px; font-weight: 650; color: var(--dm-faint); }
+        .dm-cot-lc-exit { flex-direction: row; align-items: center; gap: 10px; padding: 0; margin-bottom: 8px; }
+        .dm-cot-lc-exit::before { display: none; }
+        .dm-cot-lc-stem { position: relative; top: auto; left: auto; height: 0; width: 120px; border-left: 0; border-top: 1.5px solid var(--lc-client); }
+        .dm-cot-lc-exit.is-process .dm-cot-lc-stem { border-left: 0; border-top: 1.5px dashed var(--lc-process); }
+        .dm-cot-lc-stem > .dm-cot-lc-actor { top: 0; left: 50%; transform: translate(-50%, -50%); }
+        .dm-cot-lc-stem .dm-cot-lc-head-ar { bottom: auto; left: auto; right: -2px; top: -5.25px; transform: none; }
+    }
+</style>

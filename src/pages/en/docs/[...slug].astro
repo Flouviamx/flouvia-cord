@@ -34,6 +34,7 @@ import Callout from "../../../components/docs/mdx/Callout.astro";
 import Tabs from "../../../components/docs/mdx/Tabs.astro";
 import TabItem from "../../../components/docs/mdx/TabItem.astro";
 import Steps from "../../../components/docs/mdx/Steps.astro";
+import { docsMockups } from "../../../components/docs/mockups";
 
 const { Content, headings } = await render(doc);
 const description = doc.data.description || undefined;
@@ -46,5 +47,5 @@ const seoTitle = doc.data.seoTitle || undefined;
 ---
 
 <DocsLayout title={doc.data.title} slug={entrySlug} lang={lang} description={description} headings={headings} lastUpdated={lastUpdated} reviewedBy={reviewedBy} appliesToMarkets={appliesToMarkets} availablePlans={availablePlans} prerequisites={prerequisites} seoTitle={seoTitle} alternates={alternates}>
-  <Content components={{ Callout, Tabs, TabItem, Steps }} />
+  <Content components={{ Callout, Tabs, TabItem, Steps, ...docsMockups }} />
 </DocsLayout>

@@ -2,7 +2,7 @@
 title: "Facturación fiscal por país"
 seoTitle: "Facturación por país en Cord: CFDI, España y factura comercial"
 description: "Qué documento emite Cord según el país y el plan: CFDI 4.0 en México, proforma en España mientras se habilita el registro fiscal, factura comercial en los demás mercados, cuotas mensuales por plan y el comprobante fiscal de la comisión de Cord en México."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-08"
 reviewedBy: "Producto y operaciones de Cord"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -17,6 +17,8 @@ prerequisites: ["Identidad fiscal del negocio completa en Ajustes › Datos fisc
 ## Qué es
 
 Cord no trata la factura como un PDF genérico con folio. El **tipo de documento** que se emite depende del país de tu negocio, de tu plan y de la configuración fiscal que tengas lista. Una vez emitido, el documento conserva su tipo aunque después cambies de plan o de configuración: una proforma no se convierte en CFDI ni al revés.
+
+El tipo se elige al crear la factura, en el paso 3 del editor (**Condiciones**), en el campo **Tipo de documento**: **Proforma** en México y España o **Factura comercial** en los demás mercados, y **CFDI 4.0** o **VERI\*FACTU** cuando tu plan y tu configuración fiscal lo permiten. Una opción que tu cuenta todavía no puede usar aparece deshabilitada. Debajo, el editor lo recuerda: "Los documentos comerciales están incluidos en Gratis. La emisión fiscal integrada requiere Starter y configuración fiscal habilitada. Una proforma no sustituye una factura fiscal."
 
 Para el ciclo completo de una factura (borrador, emisión, envío, cobro, notas de crédito y anulación), ver [Crear, emitir y cobrar facturas](/docs/pagos/facturas-emitidas).
 
@@ -74,6 +76,14 @@ Cord toma los datos fiscales del receptor de la ficha del cliente:
 
 Los valores predeterminados pueden no coincidir con la constancia de situación fiscal de tu cliente. Cord no los inventa a partir de otros datos: complétalos en la ficha antes de emitir para que el CFDI le sirva a quien lo recibe.
 
+### Clientes en el extranjero
+
+Si el país del cliente en su ficha no es México, el CFDI se emite como a un **residente en el extranjero**: con el RFC genérico de extranjeros (XEXX010101000), su **residencia fiscal** (el país de la ficha), uso **S01** y, si capturaste su identificador fiscal (EIN, NIF, VAT…), ese número como **número de registro tributario**. El régimen fiscal y el uso de la ficha no aplican a un extranjero y no se envían. La tasa de IVA de cada concepto la decides tú con tu contador; por ejemplo, la exportación de servicios suele ir al 0 %.
+
+### Claves del SAT de cada concepto
+
+Cada producto puede llevar su **clave de producto o servicio** (c_ClaveProdServ, 8 dígitos) y su **clave de unidad** (c_ClaveUnidad) en **Productos › Facturación electrónica (SAT)**. La clave de producto se busca por descripción en el catálogo del SAT; la de unidad, si la dejas vacía, se deduce de la unidad del producto ("hora" → HUR, "mes" → MON, "kg" → KGM). Los conceptos sin producto, o de un producto sin clasificar, se timbran con las claves genéricas del SAT: 01010101 y H87. Las claves se toman al timbrar y quedan guardadas en el documento.
+
 ### Impuestos y emisión
 
 Cord envía los impuestos de cada concepto tal como los capturaste: IVA 16%, IVA 8% o exento, y las retenciones de IVA e ISR. No los convierte en una tasa única. Si la cotización está en una divisa distinta de la contable, el CFDI declara el tipo de cambio congelado al cotizar.
@@ -86,6 +96,7 @@ Las notas de crédito de una factura mexicana son un CFDI de egreso relacionado 
 
 - **Complemento de Recepción de Pagos (REP).** Cord timbra con método de pago PUE (una sola exhibición) y no emite complementos de pago. Si facturas a crédito con PPD y necesitas el REP de cada abono, hoy debes hacerlo fuera de Cord.
 - **Cancelación con sustitución (motivo 01).** No está disponible.
+- **Complemento de Comercio Exterior.** La exportación definitiva de mercancías (clave A1) lo exige; Cord timbra la operación como "No aplica" en exportación y no emite ese complemento.
 
 ## España: Verifactu
 
@@ -143,7 +154,7 @@ Si tu RFC, régimen fiscal o código postal no están completos en **Ajustes ›
 
 ## Problemas comunes
 
-**Mi factura salió como proforma y esperaba un CFDI.** Revisa tu plan (Starter o superior), que tu CSD esté cargado y vigente, y que no hayas elegido la opción comercial al emitir.
+**Mi factura salió como proforma y esperaba un CFDI.** Revisa tu plan (Starter o superior), que tu CSD esté cargado y vigente, y que en **Tipo de documento** (paso 3, **Condiciones**) esté elegido **CFDI 4.0** y no **Proforma**.
 
 **Mi cliente dice que su CFDI no le sirve.** Revisa su régimen fiscal, código postal y uso de CFDI en su ficha; si faltaban, Cord usó valores predeterminados.
 

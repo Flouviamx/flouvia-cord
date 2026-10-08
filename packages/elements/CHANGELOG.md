@@ -2,7 +2,12 @@
 
 Todos los cambios notables de `@flouviahq/elements` se documentan aquí.
 
-## [2.0.2] — sin publicar
+## [2.1.0] — sin publicar
+
+### Added
+
+- **Más términos de pago**: `Terminos` y `CordTerminos` aceptan `net7`, `net15`, `net45` y `net90` además de `contado`, `net30` y `net60`. La regla es `net<N>` = N días naturales de crédito desde la fecha del documento. El selector de `<CordQuoteBuilder>` los rotula en español e inglés (`net7`…`net90` en los mensajes de `CordProvider`) y solo ofrece los que el servidor declara en `config.terminos`.
+- `CORD_TERMINOS` en el contrato de configuración: la lista ordenada de plazos que acepta Cord.
 
 ### Docs
 

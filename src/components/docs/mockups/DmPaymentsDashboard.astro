@@ -1,0 +1,293 @@
+---
+// Mockup: Mi dinero › Cobros (/app/cobros) con una cuenta de cobros activa, en
+// el rango "Últimos 30 días".
+//
+// Calca de src/pages/app/cobros.astro: tres zonas (.cbr-zone) — "Tu dinero hoy"
+// (saldo disponible, próximo depósito y estado de la cuenta en una sola
+// superficie con divisores), "Indicadores clave" (cobrado, neto depositado,
+// igualas activas y disputas abiertas) y "Movimiento y conciliación" (evolución
+// del cobro contra el tramo anterior y a dónde va cada peso). Textos del
+// diccionario real (cbr.*).
+//
+// El widget de depósitos de la app enseña UNA fila: el próximo depósito (en
+// camino o pendiente) o, si no hay, el último. El mockup dibuja eso.
+import DocsMockup from './DocsMockup.astro';
+import DmIcon from './DmIcon.astro';
+import DmMoney from './DmMoney.astro';
+import { dmT, dmMoney, pick, tpl, DEMO, type DmLang } from './format';
+
+interface Props {
+    lang: DmLang;
+    /** Pie de figura; por defecto describe el estado dibujado. */
+    caption?: string;
+}
+const { lang } = Astro.props;
+
+const CUR = 'MXN';
+const DISPONIBLE = 48210;
+const EN_CAMINO = 12640;
+const COBRADO = 286450;
+const FEE = 9537.6;
+const NETO = COBRADO - FEE;
+const IGUALAS = 42000;
+
+// Serie diaria (30 días) y la del tramo anterior; la actual suma COBRADO.
+const RAW = [4, 9, 2, 11, 7, 0, 0, 13, 6, 9, 15, 8, 0, 3, 10, 12, 7, 18, 9, 0, 1, 14, 11, 8, 21, 12, 0, 2, 16, 13];
+const PREV = [6, 5, 3, 9, 8, 0, 1, 7, 10, 6, 9, 11, 0, 0, 8, 7, 12, 9, 6, 1, 0, 9, 8, 13, 10, 7, 0, 3, 9, 8];
+const k = COBRADO / RAW.reduce((s, v) => s + v, 0);
+const cur = RAW.map((v) => v * k);
+const prev = PREV.map((v) => v * k * 0.89);
+const maxY = 30000;
+const W = 560, H = 190, PADL = 44, PADR = 8, PADT = 10, PADB = 24;
+const x = (i: number) => PADL + (i / (RAW.length - 1)) * (W - PADL - PADR);
+const y = (v: number) => PADT + (1 - v / maxY) * (H - PADT - PADB);
+// Curva suave (cardinal) con los controles acotados al eje: nunca baja de 0.
+const path = (vals: number[]) => {
+    const pts = vals.map((v, i) => [x(i), y(v)]);
+    const base = y(0), t = 0.18;
+    let dd = `M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)}`;
+    for (let i = 0; i < pts.length - 1; i++) {
+        const p0 = pts[i - 1] ?? pts[i], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2] ?? p2;
+        const c1 = [p1[0] + (p2[0] - p0[0]) * t, Math.min(base, p1[1] + (p2[1] - p0[1]) * t)];
+        const c2 = [p2[0] - (p3[0] - p1[0]) * t, Math.min(base, p2[1] - (p3[1] - p1[1]) * t)];
+        dd += ` C${c1[0].toFixed(1)},${c1[1].toFixed(1)} ${c2[0].toFixed(1)},${c2[1].toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
+    }
+    return dd;
+};
+const area = `${path(cur)} L${x(cur.length - 1).toFixed(1)},${y(0)} L${x(0)},${y(0)} Z`;
+const spark = (() => {
+    const sw = 200, sh = 32, mx = Math.max(...cur);
+    return cur.map((v, i) => `${i ? 'L' : 'M'}${((i / (cur.length - 1)) * sw).toFixed(1)},${(sh - 2 - (v / mx) * (sh - 4)).toFixed(1)}`).join(' ');
+})();
+const netPct = Math.round((NETO / COBRADO) * 1000) / 10;
+const feePct = Math.round((FEE / COBRADO) * 1000) / 10;
+
+const DATA = {
+    es: {
+        caption: `Mi dinero › Cobros de ${DEMO.org} en los últimos 30 días: saldo disponible de ${dmMoney(DISPONIBLE, CUR, 'es')} con ${dmMoney(EN_CAMINO, CUR, 'es')} en camino a su banco, la cuenta con cobros, depósitos y verificación en verde, los indicadores Cobrado, Neto depositado, Igualas activas y Disputas abiertas, y la gráfica Evolución del cobro.`,
+        llegada: '9 oct 2026',
+        ticks: ['9 sep', '16 sep', '23 sep', '30 sep', '7 oct'],
+        actual: 'Este periodo',
+        anterior: 'Periodo anterior',
+    },
+    en: {
+        caption: `${DEMO.org}'s My money › Collections over the last 30 days: an available balance of ${dmMoney(DISPONIBLE, CUR, 'en')} with ${dmMoney(EN_CAMINO, CUR, 'en')} on its way to the bank, the account with payments, payouts, and verification in green, the Collected, Net deposited, Active retainers, and Open disputes indicators, and the Collection over time chart.`,
+        llegada: 'Oct 9, 2026',
+        ticks: ['Sep 9', 'Sep 16', 'Sep 23', 'Sep 30', 'Oct 7'],
+        actual: 'This period',
+        anterior: 'Previous period',
+    },
+};
+const d = pick(DATA, lang);
+const caption = Astro.props.caption ?? d.caption;
+const yTicks = [0, 10000, 20000, 30000];
+const yLabel = (v: number) => (v === 0 ? '0' : `${v / 1000}k`);
+---
+<DocsMockup lang={lang} variant="app" chrome="full" sidebar="rail" active="cobros" title={dmT(lang, 'cbr.heading')} height={1195} caption={caption} class="dm-pdb-figure">
+    <Fragment slot="actions">
+        <span class="dm-pdb-range"><DmIcon name="calendar" />{dmT(lang, 'dash.dp_ultimos30')}<DmIcon name="chevron-down" stroke={2} /></span>
+        <span class="dm-pdb-iconbtn dm-hide-narrow"><DmIcon name="sliders" /></span>
+    </Fragment>
+
+    <section class="dm-pdb-zone">
+        <div class="dm-pdb-zhead">
+            <span class="dm-pdb-ztitles"><span class="dm-pdb-eyebrow">{dmT(lang, 'cbr.zone_balance_eyebrow')}</span><span class="dm-pdb-h2">{dmT(lang, 'cbr.zone_balance')}</span></span>
+            <span class="dm-pdb-zsub dm-hide-narrow">{dmT(lang, 'cbr.zone_balance_sub')}</span>
+        </div>
+        <div class="dm-pdb-balance">
+            <div class="dm-pdb-cell dm-pdb-primary">
+                <span class="dm-pdb-label">{dmT(lang, 'cbr.saldo_disponible')}<span class="dm-pdb-live">{dmT(lang, 'cbr.en_vivo')}</span></span>
+                <DmMoney amount={DISPONIBLE} currency={CUR} lang={lang} class="dm-pdb-big" />
+                <span class="dm-pdb-small">{tpl(dmT(lang, 'cbr.disponible_sub'), { monto: dmMoney(EN_CAMINO, CUR, lang) })}</span>
+            </div>
+            <div class="dm-pdb-cell">
+                <span class="dm-pdb-sechead">
+                    <span class="dm-pdb-sectitle">{dmT(lang, 'cbr.next_deposit')}<span class="dm-pdb-live">{dmT(lang, 'cbr.en_vivo')}</span></span>
+                    <span class="dm-pdb-secsub">{dmT(lang, 'cbr.depositos_sub')}</span>
+                </span>
+                <div class="dm-pdb-payout">
+                    <i class="dm-pdb-dot is-transit"></i>
+                    <span class="dm-pdb-payout-main"><span class="dm-strong">{dmT(lang, 'cbr.camino')}</span><span class="dm-pdb-small">{tpl(dmT(lang, 'cbr.llegada'), { fecha: d.llegada })}</span></span>
+                    <span class="dm-money dm-pdb-payout-amt">{dmMoney(EN_CAMINO, CUR, lang)}</span>
+                </div>
+            </div>
+            <div class="dm-pdb-cell">
+                <span class="dm-pdb-sechead dm-pdb-sechead-row">
+                    <span><span class="dm-pdb-sectitle">{dmT(lang, 'cbr.salud')}</span></span>
+                    <span class="dm-pdb-manage">{dmT(lang, 'cbr.salud_administrar')} →</span>
+                </span>
+                <div class="dm-pdb-chips">
+                    <span class="dm-pdb-chip"><i class="dm-pdb-dot is-ok"></i><b>{dmT(lang, 'cbr.salud_cobros')}</b><small>{dmT(lang, 'cbr.salud_activos')}</small></span>
+                    <span class="dm-pdb-chip"><i class="dm-pdb-dot is-ok"></i><b>{dmT(lang, 'cbr.salud_depositos')}</b><small>{dmT(lang, 'cbr.salud_activos')}</small></span>
+                    <span class="dm-pdb-chip"><i class="dm-pdb-dot is-ok"></i><b>{dmT(lang, 'cbr.salud_verificacion')}</b><small>{dmT(lang, 'cbr.salud_completa')}</small></span>
+                </div>
+                <span class="dm-pdb-small">{tpl(dmT(lang, 'cbr.salud_banco'), { banco: 'BBVA', last4: '4821' })}</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="dm-pdb-zone">
+        <div class="dm-pdb-zhead is-compact">
+            <span class="dm-pdb-ztitles"><span class="dm-pdb-eyebrow">{dmT(lang, 'cbr.zone_kpi_eyebrow')}</span><span class="dm-pdb-h2">{dmT(lang, 'cbr.zone_kpi')}</span></span>
+        </div>
+        <div class="dm-pdb-kpis">
+            <div class="dm-pdb-cell dm-pdb-kpi">
+                <span class="dm-pdb-label">{dmT(lang, 'cbr.cobrado_rango')}</span>
+                <DmMoney amount={COBRADO} currency={CUR} lang={lang} class="dm-pdb-mid" />
+                <span class="dm-pdb-small">{tpl(dmT(lang, 'cbr.cobrado_sub'), { n: 38, op: dmT(lang, 'cbr.op_plural') })}</span>
+                <span class="dm-delta dm-delta-up dm-pdb-delta">{tpl(dmT(lang, 'cbr.vs_anterior'), { signo: '+', pct: '12.4' })}</span>
+                <svg class="dm-pdb-spark" viewBox="0 0 200 32" preserveAspectRatio="none" aria-hidden="true"><path d={spark} fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" vector-effect="non-scaling-stroke"></path></svg>
+            </div>
+            <div class="dm-pdb-cell dm-pdb-kpi">
+                <span class="dm-pdb-label">{dmT(lang, 'cbr.neto')}</span>
+                <DmMoney amount={NETO} currency={CUR} lang={lang} class="dm-pdb-mid" />
+                <span class="dm-pdb-small">{tpl(dmT(lang, 'cbr.neto_sub'), { fee: dmMoney(FEE, CUR, lang), pct: String(feePct) })}</span>
+            </div>
+            <div class="dm-pdb-cell dm-pdb-kpi">
+                <span class="dm-pdb-label">{dmT(lang, 'cbr.mrr')}<span class="dm-pdb-live">{dmT(lang, 'cbr.en_vivo')}</span></span>
+                <DmMoney amount={IGUALAS} currency={CUR} lang={lang} class="dm-pdb-mid" />
+                <span class="dm-pdb-small">{tpl(dmT(lang, 'cbr.mrr_sub'), { n: 6 })}</span>
+            </div>
+            <div class="dm-pdb-cell dm-pdb-kpi">
+                <span class="dm-pdb-label">{dmT(lang, 'cbr.disputas')}</span>
+                <span class="dm-pdb-mid dm-editorial">0</span>
+                <span class="dm-pdb-small">{dmT(lang, 'cbr.disputas_ninguna')}</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="dm-pdb-zone">
+        <div class="dm-pdb-zhead">
+            <span class="dm-pdb-ztitles"><span class="dm-pdb-eyebrow">{dmT(lang, 'cbr.zone_detail_eyebrow')}</span><span class="dm-pdb-h2">{dmT(lang, 'cbr.zone_detail')}</span></span>
+            <span class="dm-pdb-zsub dm-hide-narrow">{dmT(lang, 'cbr.zone_detail_sub')}</span>
+        </div>
+        <div class="dm-pdb-detail">
+            <div class="dm-pdb-cell dm-pdb-chartcell">
+                <span class="dm-pdb-sechead dm-pdb-sechead-row">
+                    <span><span class="dm-pdb-sectitle">{dmT(lang, 'cbr.evolucion')}</span><span class="dm-pdb-secsub">{dmT(lang, 'cbr.evolucion_sub')}</span></span>
+                    <span class="dm-pdb-legend dm-hide-narrow"><span><i class="is-cur"></i>{d.actual}</span><span><i class="is-prev"></i>{d.anterior}</span></span>
+                </span>
+                <svg class="dm-pdb-chart" viewBox={`0 0 ${W} ${H}`} aria-hidden="true">
+                    <defs>
+                        <linearGradient id={`dm-pdb-fill-${lang}`} x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0" stop-color="#0a192f" stop-opacity="0.12"></stop>
+                            <stop offset="1" stop-color="#0a192f" stop-opacity="0"></stop>
+                        </linearGradient>
+                    </defs>
+                    {yTicks.map((v) => (
+                        <g>
+                            <line x1={PADL} x2={W - PADR} y1={y(v)} y2={y(v)} stroke="rgba(10,25,47,0.07)" stroke-dasharray={v === 0 ? undefined : '3 4'}></line>
+                            <text x={PADL - 8} y={y(v) + 3.5} text-anchor="end" class="dm-pdb-axis">{yLabel(v)}</text>
+                        </g>
+                    ))}
+                    {d.ticks.map((tk, i) => (
+                        <text x={x(i * 7)} y={H - 6} text-anchor={i === 0 ? 'start' : 'middle'} class="dm-pdb-axis">{tk}</text>
+                    ))}
+                    <path d={path(prev)} fill="none" stroke="#b5bcc7" stroke-width="1.4" stroke-dasharray="4 4" stroke-linejoin="round"></path>
+                    <path d={area} fill={`url(#dm-pdb-fill-${lang})`}></path>
+                    <path d={path(cur)} fill="none" stroke="#0a192f" stroke-width="1.8" stroke-linejoin="round"></path>
+                    <circle cx={x(24)} cy={y(cur[24])} r="3.5" fill="#fff" stroke="#0a192f" stroke-width="1.8"></circle>
+                </svg>
+            </div>
+            <div class="dm-pdb-cell dm-hide-narrow">
+                <span class="dm-pdb-sechead">
+                    <span class="dm-pdb-sectitle">{dmT(lang, 'cbr.destino')}</span>
+                    <span class="dm-pdb-secsub">{dmT(lang, 'cbr.destino_sub')}</span>
+                </span>
+                <div class="dm-pdb-segbar"><i style={`flex:0 0 ${netPct}%;background:#059669`}></i><i style={`flex:0 0 ${feePct}%;background:#f59e0b`}></i></div>
+                <div class="dm-pdb-rows">
+                    <div><span><b>{dmT(lang, 'cbr.destino_neto')}</b><small>{netPct}%</small></span><span class="dm-money is-ok">{dmMoney(NETO, CUR, lang)}</span></div>
+                    <div><span><b>{dmT(lang, 'cbr.destino_fee')}</b><small>{feePct}%</small></span><span class="dm-money is-warn">−{dmMoney(FEE, CUR, lang)}</span></div>
+                </div>
+            </div>
+        </div>
+    </section>
+</DocsMockup>
+
+<style is:global>
+    .dm-pdb-range { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border-radius: 9px; background: #fff; box-shadow: inset 0 0 0 1px var(--dm-border), 0 1px 2px rgba(10, 25, 47, 0.04); font-size: 11.5px; font-weight: 600; color: var(--dm-text); white-space: nowrap; }
+    .dm-pdb-range .dm-ico { width: 13px; height: 13px; color: var(--dm-muted); }
+    .dm-pdb-iconbtn { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; background: #fff; box-shadow: inset 0 0 0 1px var(--dm-border); color: var(--dm-muted); }
+    .dm-pdb-iconbtn .dm-ico { width: 14px; height: 14px; }
+
+    /* = .cbr-zone: una superficie por zona, celdas separadas por hairlines. */
+    .dm-pdb-zone { background: #fff; border-radius: 22px; box-shadow: var(--dm-shadow-card); overflow: hidden; margin-bottom: 12px; }
+    .dm-pdb-zhead { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; padding: 15px 18px 12px; border-bottom: 1px solid var(--dm-border); }
+    .dm-pdb-zhead.is-compact { padding-bottom: 10px; }
+    .dm-pdb-ztitles { display: flex; flex-direction: column; gap: 3px; }
+    .dm-pdb-eyebrow { font-size: 8.5px; font-weight: 800; letter-spacing: 0.14em; color: var(--dm-muted); }
+    .dm-pdb-h2 { font-size: 15px; font-weight: 680; letter-spacing: -0.035em; color: var(--dm-text); }
+    .dm-pdb-zsub { max-width: 40ch; font-size: 10.5px; line-height: 1.45; color: var(--dm-muted); text-align: right; }
+
+    .dm-pdb-balance { display: grid; grid-template-columns: 2fr 1fr 1fr; }
+    .dm-pdb-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .dm-pdb-detail { display: grid; grid-template-columns: 1.55fr 1fr; }
+    .dm-pdb-cell { display: flex; flex-direction: column; gap: 6px; padding: 16px 18px; min-width: 0; }
+    .dm-pdb-cell + .dm-pdb-cell { border-left: 1px solid var(--dm-border); }
+    .dm-pdb-primary { justify-content: center; min-height: 128px; }
+    .dm-pdb-label { display: flex; align-items: center; gap: 6px; font-size: 8.5px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dm-muted); white-space: nowrap; }
+    .dm-pdb-live { font-size: 8px; font-weight: 700; letter-spacing: 0.02em; text-transform: none; padding: 1px 6px; border-radius: 999px; background: rgba(16, 185, 129, 0.12); color: var(--dm-ok-ink); }
+    .dm-pdb-big { font-size: 40px; line-height: 1.05; letter-spacing: -0.055em; color: var(--dm-navy); }
+    .dm-pdb-big .dm-cur { font-size: 13px; }
+    .dm-pdb-mid { font-size: 20px; line-height: 1.1; color: var(--dm-navy); white-space: nowrap; }
+    .dm-pdb-small { font-size: 10.5px; line-height: 1.45; color: var(--dm-muted); }
+    .dm-pdb-delta { align-self: flex-start; }
+    .dm-pdb-spark { width: 100%; height: 26px; margin-top: auto; color: var(--dm-navy); opacity: 0.6; }
+
+    .dm-pdb-sechead { display: flex; flex-direction: column; gap: 2px; padding-bottom: 8px; margin-bottom: 2px; border-bottom: 1px solid var(--dm-border); }
+    .dm-pdb-sechead-row { flex-direction: row; align-items: flex-start; justify-content: space-between; gap: 10px; }
+    .dm-pdb-sechead-row > span:first-child { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .dm-pdb-sectitle { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; letter-spacing: -0.01em; color: var(--dm-text); }
+    .dm-pdb-secsub { font-size: 10px; line-height: 1.4; color: var(--dm-muted); }
+    .dm-pdb-manage { font-size: 10.5px; font-weight: 650; color: var(--dm-navy); white-space: nowrap; }
+
+    .dm-pdb-payout { display: flex; align-items: center; gap: 8px; padding-top: 6px; }
+    .dm-pdb-payout-main { flex: 1; display: flex; flex-direction: column; gap: 1px; min-width: 0; font-size: 11.5px; }
+    .dm-pdb-payout-amt { font-size: 12px; }
+    .dm-pdb-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    .dm-pdb-dot.is-ok { background: var(--dm-ok); }
+    .dm-pdb-dot.is-transit { background: #3b82f6; }
+    .dm-pdb-chips { display: grid; gap: 5px; margin: 2px 0 4px; }
+    .dm-pdb-chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 9px; border-radius: 999px; background: var(--dm-canvas); font-size: 10.5px; }
+    .dm-pdb-chip b { font-weight: 600; color: var(--dm-text); }
+    .dm-pdb-chip small { color: var(--dm-muted); font-size: 10.5px; }
+
+    .dm-pdb-legend { display: flex; gap: 12px; font-size: 10px; color: var(--dm-muted); white-space: nowrap; }
+    .dm-pdb-legend span { display: inline-flex; align-items: center; gap: 5px; }
+    .dm-pdb-legend i { width: 12px; height: 0; border-top: 2px solid #0a192f; }
+    .dm-pdb-legend i.is-prev { border-top: 2px dashed #b5bcc7; }
+    .dm-pdb-chart { width: 100%; height: auto; display: block; margin-top: 4px; }
+    .dm-pdb-axis { font-family: var(--dm-font); font-size: 9.5px; fill: #99a2af; }
+    .dm-pdb-segbar { display: flex; gap: 2px; height: 12px; border-radius: 999px; overflow: hidden; background: rgba(10, 25, 47, 0.06); margin: 8px 0 6px; }
+    .dm-pdb-rows > div { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 0; border-top: 1px solid var(--dm-border); }
+    .dm-pdb-rows > div:first-child { border-top: 0; }
+    .dm-pdb-rows span:first-child { display: flex; flex-direction: column; gap: 1px; }
+    .dm-pdb-rows b { font-size: 11.5px; font-weight: 600; }
+    .dm-pdb-rows small { font-size: 10px; color: var(--dm-muted); }
+    .dm-pdb-rows .dm-money { font-size: 12px; }
+    .dm-pdb-rows .is-ok { color: #059669; }
+    .dm-pdb-rows .is-warn { color: #d97706; }
+
+    @container dm (max-width: 900px) {
+        .dm-pdb-balance { grid-template-columns: 1fr 1fr; }
+        .dm-pdb-primary { grid-column: 1 / -1; }
+        .dm-pdb-balance .dm-pdb-cell:nth-child(2) { border-left: 0; border-top: 1px solid var(--dm-border); }
+        .dm-pdb-balance .dm-pdb-cell:nth-child(3) { border-top: 1px solid var(--dm-border); }
+        .dm-pdb-kpis { grid-template-columns: 1fr 1fr; }
+        .dm-pdb-kpis .dm-pdb-cell:nth-child(3) { border-left: 0; }
+        .dm-pdb-kpis .dm-pdb-cell:nth-child(n + 3) { border-top: 1px solid var(--dm-border); }
+        .dm-pdb-detail { grid-template-columns: 1fr; }
+        .dm-pdb-detail .dm-pdb-cell + .dm-pdb-cell { border-left: 0; border-top: 1px solid var(--dm-border); }
+    }
+    @container dm (max-width: 520px) {
+        .dm-pdb-figure .dm-stage { height: auto; }
+        .dm-pdb-zone { border-radius: 18px; }
+        .dm-pdb-balance, .dm-pdb-kpis { grid-template-columns: minmax(0, 1fr); }
+        .dm-pdb-balance .dm-pdb-cell, .dm-pdb-kpis .dm-pdb-cell { border-left: 0 !important; }
+        .dm-pdb-kpis .dm-pdb-cell + .dm-pdb-cell, .dm-pdb-balance .dm-pdb-cell + .dm-pdb-cell { border-top: 1px solid var(--dm-border); }
+        .dm-pdb-primary { min-height: 0; }
+        .dm-pdb-big { font-size: 32px; }
+        .dm-pdb-axis { font-size: 17px; }
+        .dm-pdb-spark { height: 22px; margin-top: 4px; }
+    }
+</style>

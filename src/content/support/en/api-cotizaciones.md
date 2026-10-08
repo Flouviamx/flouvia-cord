@@ -39,7 +39,7 @@ Response:
 - `items` (required): array of line items. Each with `descripcion`, `cantidad`, `precio_unitario` and, optionally, `producto_id`, `precio_negociado`, `costo_unitario`, and `tax_rate` (fraction 0–1, e.g. `0.16`; if omitted, your organization's default rate is used — tax is a line-level fact, not a document-level one).
 - `cliente_id` (optional): id of an existing customer (create one with [API: Manage Customers](/en/support/api-clientes)).
 - `cliente` (optional, alternative to `cliente_id`): an object `{ empresa, email?, contacto?, telefono?, rfc? }` for a customer that doesn't exist yet — Cord looks it up by company/email within your organization and creates it if not found.
-- `terminos`: `contado` (cash), `net30`, or `net60`.
+- `terminos`: `contado` (due on receipt) or `net<N>` for N days of credit: `net7`, `net15`, `net30`, `net45`, `net60`, `net90`.
 - `vigencia_dias`: days the quote stays valid.
 - `notas`: free text shown at the bottom of the quote.
 - `send`: if `true`, Cord emails the public link to the customer on creation.

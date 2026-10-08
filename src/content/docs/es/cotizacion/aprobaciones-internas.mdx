@@ -2,7 +2,7 @@
 title: "Aprobaciones internas"
 seoTitle: "Aprobaciones internas de cotizaciones por descuento, monto o margen"
 description: "Cómo configurar topes de descuento, monto y margen que detienen una cotización hasta que un responsable la aprueba, y cómo se decide desde Cord, Slack o Teams."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-08"
 reviewedBy: "Producto y operaciones de Cord"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Scale, Developer]
@@ -18,8 +18,9 @@ prerequisites: ["Plan Scale o Developer", "Permiso Ajustes para configurar los t
 
 Las aprobaciones internas son una regla de tu organización. Defines hasta dónde puede
 llegar un vendedor sin pedir permiso (descuento máximo, monto máximo y margen mínimo).
-Cuando una cotización nueva rebasa alguno de esos topes al usar **Crear y enviar**,
-Cord no la envía: la deja como borrador marcada **Pendiente de aprobación** y avisa a
+Cuando una cotización rebasa alguno de esos topes al enviarla (con **Crear y enviar**,
+**Guardar y enviar**, **Enviar al cliente**, desde el tablero o por la API), Cord no la
+envía: la deja como borrador marcada **Pendiente de aprobación** y avisa a
 quien puede decidir.
 
 No tiene que ver con la aprobación del cliente. Esa es la [firma en el
@@ -38,36 +39,51 @@ link](/docs/interaccion/firma); esta es un control interno de tu equipo.
 <Steps>
 1. Ve a **Ajustes › Cotizaciones › Aprobaciones**.
 2. En **Umbrales de aprobación**, captura los topes que quieras usar. Cada uno es independiente; un valor de **0** significa "sin tope".
-3. Guarda los cambios. Aplican a las cotizaciones que se creen a partir de ese momento.
+3. Guarda los cambios. Aplican a todo envío a partir de ese momento, incluidos borradores y versiones nuevas.
 </Steps>
 
-{/* MOCKUP: Ajustes › Cotizaciones › Aprobaciones con la sección "Umbrales de aprobación": Descuento máx. sin aprobación (%) = 15, Monto máx. sin aprobación = 250,000, Margen bruto mínimo sin aprobación (%) = 20, y debajo la sección Tesorería con el interés moratorio deshabilitado. */}
+<DmCotApprovalRules lang="es" />
 
 | Tope | Qué compara Cord | Cuándo pide aprobación |
 |---|---|---|
-| **Descuento máx. sin aprobación (%)** | El mayor descuento de cualquier línea: la diferencia entre su precio de lista y su precio negociado. | Si alguna línea tiene un descuento mayor al tope. |
+| **Descuento máx. sin aprobación (%)** | El mayor descuento de cualquier línea: la diferencia entre su precio de **Lista** y su **Precio**. | Si alguna línea tiene un descuento mayor al tope. |
 | **Monto máx. sin aprobación** | El total de la cotización. | Si el total es mayor al tope. |
-| **Margen bruto mínimo sin aprobación (%)** | El margen de cada línea con costo capturado: (precio negociado − costo) ÷ precio negociado. | Si alguna línea con costo queda por debajo del mínimo. Las líneas sin costo no cuentan. |
+| **Margen bruto mínimo sin aprobación (%)** | El margen de cada línea con costo capturado: (precio − costo) ÷ precio. | Si alguna línea con costo queda por debajo del mínimo. Las líneas sin costo no cuentan. |
 
-<Callout type="warning">
-**El monto se compara sin convertir divisas.** Cord compara el número del tope contra
-el total de la cotización en la divisa en que la cotizas. Si tu tope es 250,000 y
-cotizas en USD, la regla salta a partir de USD 250,000, no de su equivalente en tu
-divisa contable. Si cotizas en varias divisas, ajusta el tope pensando en la de mayor
-valor unitario.
+<Callout type="info">
+**El monto se compara en la divisa de tu negocio.** El tope de monto se captura en la
+divisa de tu negocio. Si cotizas en otra divisa, Cord convierte el total con el tipo de
+cambio congelado de la propia cotización o, si la cotización no lo trae, con el de ese
+día. Si no hay un tipo de cambio que lo demuestre, Cord no adivina: pide aprobación y
+el motivo dice que el total no se puede comparar con el tope porque está en otra divisa.
 </Callout>
 
 ## Qué pasa al enviar
 
-Cuando el vendedor pulsa **Crear y enviar** y la cotización rebasa al menos un tope:
+Cuando el vendedor envía la cotización (**Crear y enviar** o **Guardar y enviar** en el
+editor, **Enviar al cliente** en el detalle, o arrastrándola a *Enviada* en el tablero) y
+rebasa al menos un tope:
 
-1. La cotización se guarda como **Borrador** con el estado interno **Pendiente de aprobación**. El cliente no recibe correo y el link no se activa.
+1. La cotización se guarda como **Borrador** con el estado interno **Pendiente de aprobación**. El cliente no recibe correo y el link no se activa. En el editor, el vendedor ve "Aprobación solicitada para COT-0149. Espera el visto bueno de quien aprueba."
 2. Cord escribe el motivo, por ejemplo: "descuento 22% supera el 15% permitido y total USD 310,000 supera el tope de USD 250,000". El motivo aparece en el detalle y en la actividad.
 3. La cotización aparece en **Cotizaciones** con el filtro **Por aprobar**, y arriba de la lista ves cuántas **esperan tu aprobación**.
 4. Cord emite el evento de solicitud de aprobación, que alimenta Slack, Teams, webhooks y [workflows](/docs/automatizacion/workflows/disparadores).
 
-Con **Guardar borrador**, Cord no evalúa los topes: la regla se revisa al crear la
-cotización con **Crear y enviar**.
+Con **Guardar borrador** (o el guardado automático), Cord no evalúa los topes: la
+regla se revisa cada vez que se intenta enviar. Un borrador que ya espera aprobación no
+se puede enviar desde el detalle: Cord responde "Esta cotización espera aprobación.
+Quien aprueba la enviará al decidir." Si lo reabres en el editor y bajas el descuento
+hasta quedar dentro de los topes, **Guardar y enviar** lo envía y la solicitud deja de
+aplicar.
+
+### En una versión nueva
+
+Una versión nueva (**Modificar y reenviar**) también se evalúa al pulsar **Enviar nueva
+versión**. Si la cotización ya había sido aprobada por gerencia y la versión no empeora
+nada de lo aprobado (mismo descuento o menor, mismo total o menor, mismo margen o
+mejor), se envía. Si rebasa un tope que antes no rebasaba, o lo rebasa por más, Cord no
+la envía y responde "Esta versión necesita aprobación: … Ajústala o pide a quien
+aprueba que la revise."
 
 ## Quién aprueba y cómo
 
@@ -77,7 +93,7 @@ cotización con **Crear y enviar**.
 En el detalle de la cotización aparece el aviso **Pendiente de aprobación** con el
 motivo. Quien tiene el permiso Aprobaciones ve dos botones:
 
-- **Aprobar y enviar:** la cotización pasa a *Enviada*, el link queda activo y la actividad registra "Aprobada por gerencia y enviada al cliente".
+- **Aprobar y enviar:** la cotización pasa a *Enviada*, el link queda activo, el cliente recibe el correo con el link (si su ficha tiene correo) y la actividad registra "Aprobada por gerencia y enviada al cliente". Cuenta como un envío del mes.
 - **Rechazar:** Cord pide confirmar ("¿Rechazar esta solicitud de aprobación?"). La cotización sigue como borrador y el detalle muestra **Solicitud de aprobación rechazada por gerencia**.
 
 </TabItem>
@@ -108,15 +124,15 @@ que aprueba sin condiciones anula el propósito del tope.
 </TabItem>
 </Tabs>
 
-{/* MOCKUP: detalle de una cotización con el aviso ámbar "Pendiente de aprobación", el motivo "descuento 22% supera el 15% permitido" y los botones "Aprobar y enviar" y "Rechazar"; al lado, el mensaje de Slack con los botones Aprobar y Rechazar. */}
+<DmCotApprovalPending lang="es" />
 
 ## Comportamiento y casos límite
 
-- **Aprobar y enviar no manda el correo al cliente.** Activa el link y marca la cotización como enviada, pero el correo con el link no sale en este paso. Compártelo desde el detalle con **Copiar link**, **WhatsApp** o tu correo.
-- **Un borrador enviado después no se reevalúa.** Si la cotización se guardó como borrador y luego se envía con **Enviar al cliente**, desde el tablero o por la API de acciones, Cord no vuelve a revisar los topes. Si necesitas que todo pase por la regla, pide a tu equipo que use **Crear y enviar**.
+- **Aprobar y enviar sí manda el correo al cliente** cuando su ficha tiene correo, igual que un envío normal. Si no tiene, comparte el link desde el detalle con **Copiar link**, **WhatsApp** o tu correo.
+- **Todo envío pasa por la regla.** Da igual si la cotización se envía al crearla, desde un borrador, desde el tablero o por la API: Cord revisa los topes cada vez.
 - **Una solicitud se decide una sola vez.** Si dos responsables deciden a la vez, el segundo recibe "No hay una solicitud de aprobación pendiente".
 - **El vendedor ve el margen antes de enviar.** En el editor, la columna **Margen** se pinta en rojo cuando una línea queda por debajo de tu margen mínimo.
-- **Si tu plan baja de Scale,** Cord deja de evaluar los topes en cotizaciones nuevas, y las solicitudes que quedaron pendientes solo se pueden decidir al recuperar el plan.
+- **Si tu plan baja de Scale,** Cord deja de evaluar los topes y las solicitudes que quedaron pendientes ya no se pueden decidir desde **Aprobar y enviar**; el vendedor puede enviar ese borrador directamente y la solicitud deja de aplicar.
 
 ## Límites por plan
 
@@ -130,7 +146,9 @@ que aprueba sin condiciones anula el propósito del tope.
 
 **El tope de margen no se dispara.** Las líneas no tienen costo. Captura el costo en la ficha de cada producto; las líneas libres no tienen costo.
 
-**Aprobé y el cliente no recibió nada.** Es lo esperado: comparte el link desde el detalle.
+**Aprobé y el cliente no recibió nada.** Su ficha no tiene correo, o el correo no llegó. Busca "Correo enviado al cliente" en la actividad y, si no aparece, comparte el link desde el detalle.
+
+**"Esta versión necesita aprobación".** La versión nueva rebasa un tope más que la versión aprobada. Ajusta descuento o margen, o pide a quien aprueba que la revise.
 
 **El botón de Slack dice que no tengo permiso.** El correo de tu Slack no coincide con tu usuario de Cord o tu rol no tiene Aprobaciones.
 

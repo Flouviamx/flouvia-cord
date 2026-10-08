@@ -9,8 +9,10 @@ Many B2B businesses collect a percentage up front to kick off an order and the r
 
 ### How to request a deposit
 
-1. When creating a quote, in the right sidebar enter the **deposit %** (for example, 50%).
+1. When creating a quote, in step 3 of the editor, **Terms**, enter the **Deposit (%)** (for example, 50%).
 2. The editor shows you live how much your client will pay on approval and how much will be left as balance.
+
+A deposit can't be combined with a **Monthly recurring charge (retainer)**: a retainer charges the total every month.
 3. Save and send the quote as usual.
 
 > [!NOTE]
@@ -21,7 +23,7 @@ Many B2B businesses collect a percentage up front to kick off an order and the r
 On the public link, your client sees the full breakdown from the start: the total, how much they pay today as a deposit, and how much is left as balance with its due date. On approval:
 
 - The **deposit** is payable immediately (card, or SPEI for businesses billing in Mexican pesos), straight to your bank.
-- The **balance** stays pending. If the quote is cash, it's also payable right away; if it's on credit (Net 30/60), the balance can be paid once the due date arrives.
+- The **balance** stays pending. If the quote is cash, it's also payable right away; if it's on credit (for example, Net 30), the balance can be paid once the due date arrives.
 
 Each part is an independent charge with its own payment link. The quote is marked as **paid** only once no charge remains pending.
 

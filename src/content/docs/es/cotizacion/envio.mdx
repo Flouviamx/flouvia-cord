@@ -1,8 +1,8 @@
 ---
 title: "Vista previa y envío"
 seoTitle: "Vista previa y envío de una cotización en Cord"
-description: "Revisa la cotización como la verá tu cliente, envíala por correo o compártela por WhatsApp, y qué pasa con el link, los límites de envío y el cobro."
-lastUpdated: "2026-10-07"
+description: "El resumen Revisa y envía, la vista previa, el guardado automático y los atajos del editor; cómo enviar la cotización por correo o WhatsApp y qué pasa con el link, los límites de envío y el cobro."
+lastUpdated: "2026-10-08"
 reviewedBy: "Producto y operaciones de Cord"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -27,15 +27,43 @@ tu equipo sigue viendo en Cord, y cualquier versión nueva llega al mismo link.
 - **Correo del cliente:** opcional. Sin correo, la cotización se marca como enviada igual y tú compartes el link.
 - **Cobro en línea:** opcional. Para que el cliente pague desde el link necesitas un riel de cobro activo (ver [Métodos de cobro](/docs/pagos/metodos)).
 
+## El resumen "Revisa y envía"
+
+A la derecha del editor (al final, en el celular) el resumen te dice cuánto es y qué
+sigue:
+
+- **Etiqueta del documento:** **Borrador** o, en una versión nueva, **Versión N**.
+- **Estado del guardado:** en un borrador ya guardado, "Guardando…" y después "Guardado a las …" (ver "Guardado automático y copia local", más abajo).
+- **Conteo:** líneas y unidades, por ejemplo "3 líneas · 46 unidades".
+- **Subtotal**, **Le descontaste** (si bajaste precios), un renglón por cada tasa de impuesto y las retenciones, si tu catálogo las tiene.
+- El interruptor **Precios ya incluyen IVA** (con el nombre del impuesto de tu país).
+- **Total**, y debajo las condiciones en una línea, por ejemplo "Net 30 · válida 30 días".
+- El botón principal (**Crear y enviar**, **Guardar y enviar** o **Enviar nueva versión**), **Guardar borrador** o **Guardar cambios**, y **Vista previa**.
+
 ## Revisa antes de enviar
 
+### Vista previa en el editor
+
+Pulsa **Vista previa** en el resumen. Se abre **Así lo verá tu cliente**: una hoja con
+tu logo (o tu inicial), el nombre e identificador fiscal de tu negocio, el tipo de
+documento y su folio (o "Borrador"), la fecha, el cliente y su correo, la vigencia, la
+tabla de conceptos con el precio de lista tachado donde hay descuento, subtotal,
+impuestos, retenciones, el total con su divisa y tu nota.
+
+Es una vista aproximada y no guarda nada: "Vista aproximada. El PDF final usa tu
+plantilla, tu marca y tus datos fiscales."
+
+### Vista previa del link
+
+Para ver el link real tal como lo abrirá tu cliente:
+
 <Steps>
-1. Abre el borrador desde **Cotizaciones** y, en el panel de acciones, pulsa **Vista previa**.
+1. Guarda el borrador, ábrelo desde **Cotizaciones** y, en el panel de acciones, pulsa **Vista previa**.
 2. Se abre el link en una pestaña nueva con el aviso "Vista previa — así lo ve tu cliente. Tu visita no cuenta como vista." Mientras tengas la sesión iniciada en la organización dueña de la cotización, tu visita no marca la cotización como *Vista* ni genera avisos.
 3. Revisa el total, las partidas, los precios tachados donde negociaste, el plan de pago si pediste anticipo y las notas. Lo que ve el cliente se explica en [Lo que ve tu cliente](/docs/interaccion/vista-del-cliente).
 </Steps>
 
-{/* MOCKUP: link público en modo vista previa con el aviso superior "Vista previa — así lo ve tu cliente. Tu visita no cuenta como vista.", folio COT-0149, total MXN 48,720.00 y tres partidas, una con precio de lista tachado. */}
+<DmCotPreview lang="es" />
 
 ## Envía la cotización
 
@@ -45,19 +73,61 @@ link y, si el cliente tiene correo, le mandan un correo con el link y registran
 
 | Desde | Botón |
 |---|---|
-| El editor de una cotización nueva | **Crear y enviar** |
+| El editor de una cotización nueva | **Crear y enviar** (al enviar se genera la V1 y se crea el link público) |
 | El editor de un borrador | **Guardar y enviar** |
 | El detalle de un borrador | **Enviar al cliente** |
+
+Antes de enviar, el editor revisa que haya cliente ("Elige un cliente para poder
+enviar.") y que cada línea tenga descripción, cantidad mayor que cero y precio; si
+falta algo, te lleva a la línea marcada en rojo.
 
 También puedes arrastrar la tarjeta de *Borrador* a *Enviada* en el tablero (ver
 [Inicio y vistas](/docs/gestion/dashboard)); hace exactamente el mismo envío.
 
 <Callout type="info">
 **Aprobación interna.** Si tu organización usa [aprobaciones
-internas](/docs/cotizacion/aprobaciones-internas) y una cotización nueva rebasa tus
-topes al usar **Crear y enviar**, se queda como borrador **Pendiente de aprobación**
-hasta que un responsable la apruebe.
+internas](/docs/cotizacion/aprobaciones-internas) y la cotización rebasa tus topes al
+usar **Crear y enviar** o **Guardar y enviar**, se queda como borrador **Pendiente de
+aprobación** hasta que un responsable la apruebe. El editor te avisa: "Aprobación
+solicitada para COT-0149. Espera el visto bueno de quien aprueba."
 </Callout>
+
+## Guardado automático y copia local
+
+- **Un borrador ya guardado se guarda solo** unos segundos después de tu último cambio, siempre que todas sus líneas estén completas. El resumen lo indica con "Guardando…" y "Guardado a las …"; si falla, dice "Sin guardar: revisa tu conexión."
+- **Una cotización nueva no se crea sola**, porque cada cotización cuenta contra el límite de tu plan. Mientras la armas, tu navegador guarda una copia local de cliente, términos, líneas y nota. Si cierras la pestaña sin guardar, la próxima vez que abras **Nueva cotización** Cord te pregunta "Tienes cambios sin guardar de la última vez" y te deja **Recuperar** o **Descartar**. La copia vive solo en ese navegador y vence a los 7 días.
+- **Salir con cambios sin guardar** pide confirmación al navegador antes de cerrar la página.
+
+## Atajos de teclado
+
+En escritorio:
+
+| Atajo | Qué hace |
+|---|---|
+| **⌘ Enter** (Ctrl Enter en Windows) | La acción principal: crear y enviar, guardar y enviar o enviar la versión. |
+| **⌘ S** (Ctrl S) | Guarda el borrador. No aplica en una versión nueva. |
+| **/** | Lleva al buscador del catálogo cuando no estás escribiendo en un campo. **⌘ K** sigue abriendo la búsqueda general de la app. |
+| **Alt + flecha arriba / abajo** | Mueve la línea donde estás. |
+
+## En el celular
+
+El editor se acomoda en una columna: IA, cliente, líneas, condiciones, nota y el
+resumen al final. Una barra fija abajo muestra el **Total** y el botón principal; se
+retira cuando el resumen ya está a la vista. En el celular no hay atajos de teclado ni
+arrastre para reordenar líneas.
+
+## Versión nueva
+
+Desde el detalle de una cotización *Enviada*, *Vista* o *Vencida*, **Modificar y
+reenviar** (con el número de la versión siguiente, por ejemplo "Modificar y reenviar
+(V2)") abre el mismo editor en modo versión nueva (la ruta anterior
+`/app/cotizaciones/[id]/editar` solo redirige ahí). En una versión nueva cambian las
+líneas y los precios; el cliente, la divisa y las condiciones se quedan como se
+enviaron, y no aparece el bloque de IA. Al enviarla, la vigencia vuelve a correr desde
+ese día con la misma duración con que se envió la cotización (si era de 30 días, vence
+en 30 días), así que una cotización *Vencida* regresa a *Enviada* con fecha nueva. El resumen se etiqueta **Versión N** y el botón
+principal es **Enviar nueva versión**: tu cliente verá la nueva versión en el mismo link
+y la anterior queda en el historial.
 
 ## Comparte el link
 
@@ -111,7 +181,11 @@ plan (5 este mes). Sube de plan para seguir usando esta función."
 
 **El cliente no recibió el correo.** Revisa que su ficha tenga correo y busca "Correo enviado al cliente" en la actividad. Si no aparece, comparte el link a mano.
 
-**No veo el botón de pago en el link.** El cobro aparece después de aprobar y solo si tienes un riel activo. Con términos Net 30 o Net 60 se habilita al vencer (ver [Opciones avanzadas](/docs/cotizacion/opciones)).
+**No veo el botón de pago en el link.** El cobro aparece después de aprobar y solo si tienes un riel activo. Con un plazo Net se habilita al vencer (ver [Opciones avanzadas](/docs/cotizacion/opciones)).
+
+**No se guardó solo mi cotización nueva.** El guardado automático es para borradores que ya existen. Pulsa **Guardar borrador** (o ⌘ S) la primera vez; mientras tanto, la copia local te permite recuperarla en ese navegador.
+
+**El resumen dice "Sin guardar: revisa tu conexión."** El guardado automático no llegó al servidor. Revisa tu red y pulsa **Guardar cambios**.
 
 **Mi propia visita marcó la cotización como vista.** No debería: abre el link con tu sesión iniciada en la misma organización. Desde otro navegador sin sesión, Cord no puede distinguirte del cliente.
 

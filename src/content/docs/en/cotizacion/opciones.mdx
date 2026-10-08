@@ -2,7 +2,7 @@
 title: "Advanced options"
 seoTitle: "Quote options: validity, currency, deposit, retainer, and taxes"
 description: "Payment terms, deposit, monthly retainer, tax-inclusive prices, withholding, sales versus accounting currency, locked rate, validity, notes, and the defaults in Settings › Quotes."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-08"
 reviewedBy: "Cord product and operations"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -17,11 +17,13 @@ prerequisites: ["Quotes permission to use the options", "Settings permission to 
 ## What it is
 
 Beyond client and lines, each quote carries its commercial and financial conditions.
-Payment terms are chosen with the client, in **Who are you quoting?**; the rest lives
-in the **Review and send** panel on the right of the editor. The values a new quote
-starts with are set once in **Settings › Quotes**.
+Payment terms are chosen with the client, in step 1 (**Who are you quoting?**).
+Validity, deposit, currency, and retainer live in step 3, **Terms** ("How long it's
+valid, how it's paid and in which currency."), below the lines. In the **Review and
+send** summary on the right of the editor, only the tax-inclusive switch remains, next
+to the totals. The values a new quote starts with are set once in **Settings › Quotes**.
 
-{/* MOCKUP: "Review and send" panel of the editor with Subtotal, "You discounted them", tax 16% breakdown, Total, the "Prices already include tax" switch, Valid for 30 days, "Monthly recurring charge", Deposit (%) = 50, "What currency are you quoting in?" = USD, and the locked-rate block with the Slightly +1%, Normal +2%, Cautious +5% chips. */}
+<DmCotReviewPanel lang="en" />
 
 ## Requirements
 
@@ -31,15 +33,21 @@ starts with are set once in **Settings › Quotes**.
 
 ## Payment terms
 
-In **Who are you quoting?** you choose **Cash**, **Net 30**, or
-**Net 60**. When you pick a client, Cord preselects the terms from their profile.
+In **Who are you quoting?** you choose a chip: **Due on receipt**, **Net 15**,
+**Net 30**, or **Net 60**. The **Other term** chip offers **Net 7**, **Net 45**, and
+**Net 90**. When you pick a client, Cord preselects the terms from their profile. Below
+the summary total you read the term together with the validity, for example "Net 30 ·
+valid for 30 days".
 
-- **Cash:** payment is available as soon as the client approves.
-- **Net 30 / Net 60:** the pay button doesn't appear on approval. The client sees that the order is confirmed on credit and the date it's due; online payment is enabled on that date, counted from approval.
+- **Due on receipt:** payment is available as soon as the client approves.
+- **Net N (credit):** the pay button doesn't appear on approval. The client sees that the order is confirmed on credit and the date it's due; online payment is enabled on that date, counted from approval.
 
 ## Deposit
 
-In **Deposit (%)** you enter a percentage between 1 and 99. On approval, Cord splits the
+In the **Terms** step, the **Deposit (%)** field (optional) takes a percentage between 1
+and 99. Below it, the editor tells you how much the client pays on approval and how
+much later, for example "Upon approval, your client pays MXN 3,000.00 as a deposit and
+the rest (MXN 7,000.00) per the terms." On approval, Cord splits the
 charge into deposit and balance: the client pays the deposit immediately (even if the
 terms are on credit) and the balance keeps its due date. Even before approval, the
 link shows what they'll pay once approved. Details in [Upfront and
@@ -47,9 +55,10 @@ balance](/en/docs/pagos/anticipos).
 
 ## Monthly retainer
 
-Turn on **Monthly recurring charge** to charge the total every month by card.
+In the **Terms** step, turn on **Monthly recurring charge (retainer)** to charge the
+total every month by card.
 
-- It only exists with **cash** terms: if you choose Net 30 or Net 60, the switch disappears.
+- It only exists with **Due on receipt** terms: if you choose any Net term, the switch disappears.
 - It excludes a deposit: when on, the deposit field is hidden.
 - The client authorizes their card once from the link on approval; they pay the first month then, and the same amount is charged every month until it's canceled.
 
@@ -57,7 +66,7 @@ Details in [Monthly retainers](/en/docs/pagos/igualas).
 
 ## Tax-inclusive prices and withholding
 
-- **Prices already include tax**: with the switch on, the price you enter already includes tax and Cord breaks it out instead of adding it on top. To have it on for every new quote, turn it on in **Settings › Quotes › Taxes**, under **Behavior in quotes**.
+- **Prices include VAT** (with your country's tax name: IVA, GST, Sales tax…): it's the switch in the **Review and send** summary, above the total. With it on, the price you enter already includes tax and Cord breaks it out instead of adding it on top. To have it on for every new quote, turn it on in **Settings › Quotes › Taxes**, under **Behavior in quotes**.
 - **Tax per line:** each line carries its rate, taken from your tax catalog. See [Products and discounts](/en/docs/cotizacion/productos).
 - **Withholding:** if your catalog has active withholding entries marked as default, Cord applies them to every quote and **subtracts** them from the total; they show as rows in the summary, on the link, and in the PDF. They aren't toggled per quote: they're managed in **Settings › Quotes › Taxes**. Where your country has no withholding, no row appears.
 
@@ -65,7 +74,7 @@ Details in [Monthly retainers](/en/docs/pagos/igualas).
 
 These are two different pieces of data and Cord doesn't mix them:
 
-- **Sales currency:** the one you choose in **What currency are you quoting in?**. It's what the client sees on the link, what they're charged in, and what the invoice is issued in. You can choose MXN, USD, CAD, BRL, EUR, GBP, COP, ARS, CLP, PEN, JPY, CNY, CHF, or AUD.
+- **Sales currency:** the one you choose in **Which currency are you quoting in?**, inside the **Terms** step. It's what the client sees on the link, what they're charged in, and what the invoice is issued in. You can choose MXN, USD, CAD, BRL, EUR, GBP, COP, ARS, CLP, PEN, JPY, CNY, CHF, or AUD.
 - **Accounting currency:** your business's currency, set in **Settings › General**. It's the one you keep your books in.
 
 When both are the same there's no exchange rate. When they differ, Cord gets a real,
@@ -73,11 +82,17 @@ dated rate from an external provider and adds a coverage cushion:
 
 | Option | Cushion |
 |---|---|
-| **Slightly** | +1% |
+| **Light** | +1% |
 | **Normal** (default) | +2% |
 | **Cautious** | +5% |
 
-The editor shows **Today's exchange rate** and **Your locked-in rate**. The rate is
+If you change the currency of a document that already has lines, Cord warns you that
+prices are not converted: the lines keep the same numbers, now in the new currency, and
+you need to review each price.
+
+When the sales currency differs from your business's, the **Terms** step shows a panel
+with **Rate today**, **Your protected rate**, and the question "How cautious do you want
+to be?" to choose the cushion. The rate is
 locked when you save the quote (or when you change the currency pair on a draft) and
 isn't recalculated: the invoice declares it as the exchange rate even if the market moves.
 
@@ -92,15 +107,16 @@ More in [Treasury and FX Lock](/en/docs/pagos/tesoreria-fx).
 
 ## Validity
 
-In **Valid for** you choose how many days the proposal is valid: 15, 30, 60, or your
-organization's default. A daily process marks as *Expired* every sent or viewed quote
+In the **Terms** step, the **Valid for** field sets how many days the proposal is valid:
+15, 30, 60, or your organization's default. A daily process marks as *Expired* every sent or viewed quote
 whose date has passed, and three days earlier it can alert you (see
 [Notifications](/en/docs/gestion/notificaciones)). An expired quote no longer accepts the
-client's approval.
+client's approval; to bring it back, send a new version with **Modify and resend**: the
+validity restarts from that day with the same length.
 
 ## Notes and conditions
 
-- **Notes for the client:** free text for the quote (for example, "on-site delivery included"). It appears on the link and in the PDF.
+- **Note for your client** (optional): the block at the end of the editor, with free text for the quote (for example, "on-site delivery included"). It appears on the link and in the PDF.
 - **PDF conditions:** your business policies (cancellation, delivery, warranty) are set once in **Settings › Quotes › PDF document**, one per line, and are printed only in the PDF.
 
 ## Defaults (Settings › Quotes)
@@ -114,7 +130,7 @@ In **Settings › Quotes › Numbering & tax** you define what every quote start
 | **Default rate (%)** | The rate new lines get when your catalog has no profile marked as default. |
 | **Withholding applied** | Read only: lists your catalog's default withholding, with the **Manage taxes** link. |
 | **Default validity (days)** | Between 1 and 365. The editor starts with this value. |
-| **Default payment terms** | Cash, Net 30, or Net 60. Preselected on creation; the client's profile wins when you pick one. |
+| **Default payment terms** | Due on receipt or a Net term (7, 15, 30, 45, 60, or 90 days). Preselected on creation; the client's profile wins when you pick one. |
 | **Default deposit (%)** | Between 1 and 99, or empty for no deposit. Prefills the editor field. |
 | **Default legal text** | Saved on your organization, but today it isn't printed on the link or in the PDF. For text that is printed, use **PDF document**. |
 
@@ -128,7 +144,9 @@ methods](/en/docs/pagos/metodos)).
 
 ## Common problems
 
-**I don't see the retainer switch.** You chose Net 30 or Net 60; retainers only exist with cash terms.
+**I don't see the retainer switch.** You chose a Net term; retainers only exist with Due on receipt terms.
+
+**I can't change validity, deposit, currency, or retainer.** You're building a new version of a quote that was already sent: the client, currency, and terms stay as they were sent. When you send it, the validity restarts from that day with the same length. If you need a different length or different terms, duplicate the quote.
 
 **I don't see the deposit field.** You have the retainer turned on.
 

@@ -110,8 +110,10 @@ export const POST: APIRoute = async ({ request, params }) => {
                   (id, org_id, cobro_id, amount_cents, status, reason, manual, requested_by)
                 values (${nonce.id}, ${orgId}, ${cobroId}, ${parsed.data.amountCents}, 'pending_manual',
                         ${parsed.data.reason || null}, true, ${currentUserId()})`,
-            sql`insert into tareas (org_id, cotizacion_id, titulo)
-                values (${orgId}, ${cobro.cotizacion_id}, ${`Transferir reembolso SPEI por ${fromMinorUnits(parsed.data.amountCents, refundCurrency)} ${refundCurrency}`})`,
+            // Dinero que el negocio debe: prioridad alta y a cargo de quien lo pidió.
+            sql`insert into tareas (org_id, cotizacion_id, titulo, prioridad, asignado_a, creado_por)
+                values (${orgId}, ${cobro.cotizacion_id}, ${`Transferir reembolso SPEI por ${fromMinorUnits(parsed.data.amountCents, refundCurrency)} ${refundCurrency}`},
+                        'alta', ${currentUserId()}, ${currentUserId()})`,
         );
         await logAudit(orgId, { accion: 'cord_pagos.reembolso_manual_solicitado', entidad: 'cobro', entidad_id: cobroId, detalle: auditDetail, ip: reqIp(request) });
         return json({ ok: true, status: 'pending_manual' }, 202);

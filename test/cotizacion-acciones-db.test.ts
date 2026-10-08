@@ -25,13 +25,14 @@ vi.mock('../src/lib/queries', () => ({ invalidateMoneyCaches: vi.fn() }));
 vi.mock('../src/lib/webhooks', () => ({ dispatchQuoteEvent: vi.fn(), dispatchQuoteEventFrom: vi.fn() }));
 vi.mock('../src/lib/after', () => ({ after: vi.fn() }));
 vi.mock('../src/lib/billing', () => ({ reserveUsage: m.reserve, cancelUsage: m.cancel }));
-vi.mock('../src/lib/org-entitlements', () => ({ requireEntitlement: async () => null }));
+vi.mock('../src/lib/org-entitlements', () => ({ requireEntitlement: async () => null, checkEntitlement: async () => ({ ok: true }) }));
 vi.mock('../src/lib/fiscal/emit', () => ({ emitFiscalDocument: vi.fn() }));
 vi.mock('../src/lib/cotizaciones', () => ({
     MAX_ITEMS: 200,
     QuoteError: class extends Error { status = 400; },
     assertClienteDeOrg: async () => {},
     productosDeOrg: async () => new Set<string>(),
+    vigenciaDias: (v: unknown) => Number(v) || 30,
 }));
 vi.mock('../src/lib/cobros', () => ({ materializeAnticipoCobros: vi.fn() }));
 vi.mock('../src/lib/impuestos-db', () => ({
@@ -52,12 +53,14 @@ const one = async (q: string) => (await m.db.query(q)).rows[0];
 beforeAll(async () => {
     m.db = new PGlite();
     await m.db.exec(`
-        create table orgs(id uuid primary key, sandbox_of uuid, is_demo boolean default false, country_code text);
+        create table orgs(id uuid primary key, sandbox_of uuid, is_demo boolean default false, country_code text,
+            moneda text default 'MXN', aprob_descuento_max numeric default 0, aprob_monto_max numeric default 0, aprob_margen_min numeric default 0);
         create table cotizaciones(id uuid primary key, org_id uuid, folio text, status text, version int default 1,
             base_currency text, fiscal_currency text, moneda text, fx_rate numeric, fx_rate_source text, fx_locked_until timestamptz,
-            sent_at timestamptz, approved_at timestamptz, paid_at timestamptz, payment_method text, aprob_estado text,
+            sent_at timestamptz, approved_at timestamptz, paid_at timestamptz, payment_method text, aprob_estado text, aprob_motivo text,
             cliente_id uuid, terminos text, vigencia date, notas text, subtotal numeric, iva numeric, total numeric,
-            retencion_total numeric, retenciones_snapshot jsonb, iva_incluido boolean, anticipo_pct numeric, es_recurrente boolean);
+            retencion_total numeric, retenciones_snapshot jsonb, iva_incluido boolean, anticipo_pct numeric, es_recurrente boolean,
+            created_at timestamptz default now());
         create table eventos(org_id uuid, cotizacion_id uuid, tipo text, detalle text);
         create table cotizacion_items(cotizacion_id uuid, producto_id uuid, descripcion text, cantidad numeric, precio_unitario numeric,
             precio_negociado numeric, costo_unitario numeric, orden int, tax_rate numeric);
@@ -152,6 +155,80 @@ describe('edición de líneas contra Postgres', () => {
         })).rejects.toThrow('falla simulada');
         expect((await m.db.query('select descripcion from cotizacion_items')).rows).toEqual([{ descripcion: 'original' }]);
         expect((await one('select notas, total from cotizaciones'))).toMatchObject({ notas: null });
+        expect(Number((await one('select total from cotizaciones')).total)).toBe(100);
+    });
+});
+
+describe('topes de aprobación al enviar y reenviar', () => {
+    const conDescuento = (pct: number) => [{ descripcion: 'x', cantidad: 1, precio_unitario: 100, precio_negociado: 100 - pct }];
+    beforeEach(async () => { await m.db.exec('update orgs set aprob_descuento_max = 10'); });
+    afterAll(async () => { await m.db.exec('update orgs set aprob_descuento_max = 0'); });
+
+    it('un borrador pendiente no se envía sin aprobación', async () => {
+        await m.db.exec("update cotizaciones set status = 'draft', aprob_estado = 'pendiente'");
+        const r = await runQuoteAction(ctx, QUOTE, { action: 'send' });
+        expect(r.status).toBe(409);
+        expect(r.body.code).toBe('approval_pending');
+        expect((await one('select status from cotizaciones')).status).toBe('draft');
+        expect(m.reserve).not.toHaveBeenCalled();
+    });
+
+    it('enviar un borrador que rebasa el tope lo guarda y pide aprobación', async () => {
+        await m.db.exec("update cotizaciones set status = 'draft'");
+        const r = await runQuoteAction(ctx, QUOTE, { action: 'send', items: conDescuento(30) });
+        expect(r.status).toBe(200);
+        expect(r.body.needsApproval).toBe(true);
+        expect(await one('select status, aprob_estado from cotizaciones')).toMatchObject({ status: 'draft', aprob_estado: 'pendiente' });
+        expect(Number((await one('select precio_negociado from cotizacion_items')).precio_negociado)).toBe(70);
+        expect(m.reserve).not.toHaveBeenCalled();
+    });
+
+    it('enviar sin rebasar el tope limpia la solicitud anterior y envía', async () => {
+        await m.db.exec("update cotizaciones set status = 'draft', aprob_estado = 'pendiente'");
+        const r = await runQuoteAction(ctx, QUOTE, { action: 'send', items: conDescuento(5) });
+        expect(r.status).toBe(200);
+        expect(await one('select status, aprob_estado from cotizaciones')).toMatchObject({ status: 'sent', aprob_estado: null });
+    });
+
+    it('una V2 que rebasa el tope sin aprobación previa no se reenvía', async () => {
+        const r = await runQuoteAction(ctx, QUOTE, { action: 'resend', items: conDescuento(30) });
+        expect(r.status).toBe(409);
+        expect(r.body.code).toBe('approval_required');
+        expect((await m.db.query('select descripcion from cotizacion_items')).rows).toEqual([{ descripcion: 'original' }]);
+    });
+
+    it('una V2 aprobada que no empeora el descuento sí se reenvía', async () => {
+        await m.db.exec(`update cotizaciones set aprob_estado = 'aprobada';
+            update cotizacion_items set precio_negociado = 70;`);
+        expect((await runQuoteAction(ctx, QUOTE, { action: 'resend', items: conDescuento(30) })).status).toBe(200);
+        expect((await runQuoteAction(ctx, QUOTE, { action: 'resend', items: conDescuento(40) })).status).toBe(409);
+    });
+
+    it('aprobar la solicitud consume el envío', async () => {
+        await m.db.exec("update cotizaciones set status = 'draft', aprob_estado = 'pendiente'");
+        expect((await runQuoteAction(ctx, QUOTE, { action: 'approve_request' })).status).toBe(200);
+        expect(m.reserve).toHaveBeenCalledWith(ORG, 'envios', 1);
+    });
+});
+
+describe('versión nueva', () => {
+    it('una cotización vencida reenviada vuelve a correr su vigencia con la misma duración', async () => {
+        await m.db.exec(`update cotizaciones set status = 'expired',
+            created_at = now() - interval '40 days', vigencia = (current_date - 10)`);
+        const r = await runQuoteAction(ctx, QUOTE, { action: 'resend', items: [{ descripcion: 'v2', cantidad: 1, precio_unitario: 100 }] });
+        expect(r.status).toBe(200);
+        const row = await one(`select status, version, (vigencia - current_date) as dias from cotizaciones`);
+        expect(row).toMatchObject({ status: 'sent', version: 2, dias: 30 });
+    });
+});
+
+describe('estado revalidado dentro de la transacción', () => {
+    it('si el cliente aprueba mientras el vendedor edita, no se pisan las líneas', async () => {
+        await m.db.exec("update cotizaciones set status = 'sent'");
+        m.concurrent = "update cotizaciones set status = 'approved'";
+        const r = await runQuoteAction(ctx, QUOTE, { action: 'resend', items: [{ descripcion: 'pisada', cantidad: 1, precio_unitario: 1 }] });
+        expect(r.status).toBe(409);
+        expect((await m.db.query('select descripcion from cotizacion_items')).rows).toEqual([{ descripcion: 'original' }]);
         expect(Number((await one('select total from cotizaciones')).total)).toBe(100);
     });
 });

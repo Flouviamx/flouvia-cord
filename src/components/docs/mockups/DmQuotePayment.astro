@@ -1,0 +1,173 @@
+---
+// Mockup: la página de pago del link de una cotización (/q/[token]/pay) en MXN
+// con anticipo, como la ve el cliente. Calca de src/pages/q/[token]/pay.astro +
+// PaymentIsland (selector Tarjeta/SPEI de checkout_v2 y el Payment Element con
+// el Appearance de Cord) + el botón de Mercado Pago como alternativa cuando la
+// cuenta tiene los dos rieles. La página real no lista conceptos: muestra
+// negocio, folio y el cobro de hoy; el mockup no inventa más.
+import DocsMockup from './DocsMockup.astro';
+import DmIcon from './DmIcon.astro';
+import DmMoney from './DmMoney.astro';
+import { dmT, dmMoney, favicon, pick, DEMO, type DmLang } from './format';
+
+interface Props {
+    lang: DmLang;
+    /** Pie de figura; por defecto describe el estado dibujado. */
+    caption?: string;
+}
+const { lang } = Astro.props;
+
+const TOTAL = 10000;
+const ANTICIPO = 5000;
+const CUR = 'MXN';
+const FOLIO = 'COT-0152';
+
+const DATA = {
+    es: {
+        caption: `Página de pago de la cotización ${FOLIO} de ${DEMO.org}: anticipo de ${dmMoney(ANTICIPO, CUR, 'es')} sobre un total de ${dmMoney(TOTAL, CUR, 'es')}, con tarjeta o transferencia SPEI y Mercado Pago como alternativa.`,
+        volver: 'Volver a la cotización',
+        cotizacion: 'Cotización',
+        aPagar: 'Anticipo a pagar',
+        delTotal: 'del total de',
+        metodos: 'Tarjeta · Transferencia SPEI',
+        numero: 'Número de tarjeta',
+        vence: 'Fecha de vencimiento',
+        cvc: 'Código de seguridad',
+        pais: 'País',
+        paisV: 'México',
+        mmaa: 'MM / AA',
+        pie: `Pago cifrado y procesado por Cord Payments. ${DEMO.org} nunca ve los datos de tu tarjeta.`,
+    },
+    en: {
+        caption: `Payment page for ${DEMO.org}'s quote ${FOLIO}: a ${dmMoney(ANTICIPO, CUR, 'en')} deposit on a ${dmMoney(TOTAL, CUR, 'en')} total, by card or SPEI transfer, with Mercado Pago as an alternative.`,
+        volver: 'Back to the quote',
+        cotizacion: 'Quote',
+        aPagar: 'Deposit due',
+        delTotal: 'of a total of',
+        metodos: 'Card · SPEI transfer',
+        numero: 'Card number',
+        vence: 'Expiration date',
+        cvc: 'Security code',
+        pais: 'Country',
+        paisV: 'Mexico',
+        mmaa: 'MM / YY',
+        pie: `Encrypted and processed by Cord Payments. ${DEMO.org} never sees your card details.`,
+    },
+};
+const d = pick(DATA, lang);
+const caption = Astro.props.caption ?? d.caption;
+const pagar = dmT(lang, 'pay.pagar_monto').replace('{monto}', dmMoney(ANTICIPO, CUR, lang));
+const CARDS = [
+    { domain: 'visa.com', name: 'Visa' },
+    { domain: 'mastercard.com', name: 'Mastercard' },
+    { domain: 'americanexpress.com', name: 'American Express' },
+];
+---
+<DocsMockup lang={lang} variant="browser" url="cordhq.app/q/7hQx2mKp/pay" brand={DEMO.brand} caption={caption} class="dm-pay-figure">
+    <div class="dm-pay">
+        <span class="dm-pay-back"><DmIcon name="arrow-left" stroke={2.25} />{d.volver}</span>
+        <div class="dm-pay-card">
+            <div class="dm-pay-brand">
+                <span class="dm-av dm-av-sq dm-av-lg dm-pay-avatar">{DEMO.orgInitial}</span>
+                <span class="dm-pay-brand-text">
+                    <span class="dm-pay-org">{DEMO.org}</span>
+                    <span class="dm-pay-folio">{d.cotizacion} {FOLIO}</span>
+                </span>
+            </div>
+
+            <div class="dm-pay-amount">
+                <span class="dm-pay-amount-label">{d.aPagar}</span>
+                <DmMoney amount={ANTICIPO} currency={CUR} lang={lang} class="dm-pay-amount-num" />
+                <span class="dm-pay-note">{d.delTotal} {dmMoney(TOTAL, CUR, lang)}</span>
+                <span class="dm-pay-note">{d.metodos}</span>
+            </div>
+
+            <div class="dm-pay-legend">{dmT(lang, 'pay.metodo_pago')}</div>
+            <div class="dm-seg dm-pay-methods">
+                <span class="is-on"><DmIcon name="card" />{dmT(lang, 'pay.tarjeta')}</span>
+                <span><DmIcon name="bank" />SPEI</span>
+            </div>
+
+            <div class="dm-pay-form">
+                <div class="dm-field">
+                    <span class="dm-label">{d.numero}</span>
+                    <span class="dm-input is-focus">
+                        <span class="dm-input-grow dm-pay-typed">4152 3138 2205 9016</span>
+                        <span class="dm-pay-cards">
+                            {CARDS.map((c) => <img class="dm-logo" src={favicon(c.domain)} alt="" width="18" height="18" loading="lazy" decoding="async" />)}
+                        </span>
+                    </span>
+                </div>
+                <div class="dm-row">
+                    <div class="dm-field">
+                        <span class="dm-label">{d.vence}</span>
+                        <span class="dm-input is-placeholder">{d.mmaa}</span>
+                    </div>
+                    <div class="dm-field">
+                        <span class="dm-label">{d.cvc}</span>
+                        <span class="dm-input is-placeholder">CVC</span>
+                    </div>
+                </div>
+                <div class="dm-field">
+                    <span class="dm-label">{d.pais}</span>
+                    <span class="dm-input dm-select">{d.paisV}</span>
+                </div>
+                <span class="dm-btn dm-btn-brand dm-btn-lg dm-btn-block"><DmIcon name="lock" />{pagar}</span>
+            </div>
+
+            <div class="dm-or dm-pay-or">{dmT(lang, 'pay.mp_o')}</div>
+            <span class="dm-btn dm-btn-secondary dm-btn-lg dm-btn-block dm-pay-mp">
+                <img class="dm-logo" src={favicon('mercadopago.com.mx')} alt="" width="20" height="20" loading="lazy" decoding="async" />
+                {dmT(lang, 'pay.mp_pagar')}
+                <DmIcon name="arrow-up-right" />
+            </span>
+        </div>
+        <span class="dm-pay-foot"><DmIcon name="lock" />{d.pie}</span>
+    </div>
+</DocsMockup>
+
+<style is:global>
+    .dm-pay { width: 100%; max-width: 400px; margin: 0 auto; padding: 22px 16px 26px; display: flex; flex-direction: column; }
+    .dm-pay-back { display: inline-flex; align-items: center; gap: 6px; margin-bottom: 14px; font-size: 12px; font-weight: 500; color: #6b7686; }
+    .dm-pay-back .dm-ico { width: 13px; height: 13px; }
+    .dm-pay-card {
+        background: #fff;
+        border-radius: 22px;
+        padding: 22px 20px 20px;
+        border: 1px solid rgba(10, 25, 47, 0.05);
+        box-shadow: 0 2px 4px rgba(10, 25, 47, 0.04), 0 28px 56px -14px rgba(10, 25, 47, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    }
+    .dm-pay-brand { display: flex; align-items: center; gap: 11px; margin-bottom: 16px; }
+    .dm-pay-avatar { background: var(--dm-brand); border-radius: 10px; font-size: 14px; }
+    .dm-pay-brand-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+    .dm-pay-org { font-size: 13.5px; font-weight: 600; color: #050505; letter-spacing: -0.01em; }
+    .dm-pay-folio { font-size: 11.5px; color: #6b7686; }
+    .dm-pay-amount { display: flex; flex-direction: column; gap: 3px; padding: 14px 15px; margin-bottom: 16px; background: #f5f5f7; border-radius: 14px; }
+    .dm-pay-amount-label { font-size: 9.5px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #8a93a2; }
+    .dm-pay-amount-num { font-size: 27px; line-height: 1.15; color: #050505; }
+    .dm-pay-amount-num .dm-cur { font-size: 12.5px; }
+    .dm-pay-note { font-size: 11px; color: #8a93a2; }
+    .dm-pay-legend { font-size: 11.5px; font-weight: 600; color: #4a5567; margin-bottom: 7px; }
+    .dm-pay-methods { margin-bottom: 16px; }
+    .dm-pay-methods .dm-ico { width: 15px; height: 15px; color: var(--dm-muted); }
+    .dm-pay-methods .is-on .dm-ico { color: var(--dm-brand); }
+    .dm-pay-form { display: flex; flex-direction: column; gap: 12px; }
+    .dm-pay-form .dm-input.is-focus { border-color: var(--dm-brand); }
+    .dm-pay-typed { letter-spacing: 0.04em; font-variant-numeric: tabular-nums; }
+    .dm-pay-cards { display: inline-flex; gap: 4px; flex-shrink: 0; }
+    .dm-pay-cards .dm-logo { width: 22px; height: 15px; border-radius: 3px; padding: 1px 2px; box-shadow: inset 0 0 0 1px rgba(10, 25, 47, 0.1); }
+    .dm-pay-form .dm-btn-brand { margin-top: 4px; }
+    .dm-pay-or { margin: 16px 0 12px; }
+    .dm-pay-mp { font-weight: 600; color: #0a192f; }
+    .dm-pay-mp .dm-logo { width: 20px; height: 20px; border-radius: 50%; }
+    .dm-pay-mp .dm-ico { color: var(--dm-faint); }
+    .dm-pay-foot { display: block; margin: 14px 8px 0; font-size: 10.5px; line-height: 1.5; color: #9aa2af; text-align: center; text-wrap: balance; }
+    .dm-pay-foot .dm-ico { display: inline-block; width: 11px; height: 11px; margin: 0 5px -1px 0; opacity: 0.7; }
+
+    @container dm (max-width: 520px) {
+        .dm-pay { padding: 14px 10px 18px; max-width: none; }
+        .dm-pay-card { padding: 18px 14px 16px; border-radius: 18px; }
+        .dm-pay-amount-num { font-size: 24px; }
+        .dm-pay-cards .dm-logo:nth-child(n+2) { display: none; }
+    }
+</style>

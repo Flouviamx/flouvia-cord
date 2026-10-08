@@ -8,9 +8,13 @@ Cord soporta la emisión de propuestas comerciales en 14 divisas: las de los 12 
 
 ### ¿Cómo crear una cotización en otra moneda?
 
-Al momento de redactar la cotización, en el panel de totales verás un selector de **Moneda**.
+Al redactar la cotización, en el paso 3 del editor, **Condiciones**, verás el selector **¿En qué moneda le cotizas?** (en una factura se llama **Divisa de la factura**).
 1. Cambia de la divisa por defecto de tu cuenta (la que configuraste en **Ajustes > General**) a cualquiera de las divisas ofrecidas.
 2. Todos los precios de las partidas de esa cotización se capturan y se muestran en la divisa elegida — es la divisa de venta, y es la que ve tu cliente en el link público.
+
+Cambiar la divisa **no convierte los precios**: tus líneas conservan el mismo número, ahora en la divisa nueva, y el editor te avisa para que revises cada precio.
+
+Si la divisa de venta es distinta de la de tu contabilidad, el editor muestra el **tipo de cambio hoy** y **tu tasa protegida**: eliges qué tan cauto quieres ser (Poco +1%, Normal +2% o Cauto +5%) y ves cuánto paga tu cliente y su equivalente aproximado en tus libros. En una cotización la tasa queda congelada 30 días; en una factura queda declarada en el documento.
 
 ### Impacto en la Facturación y Pagos
 

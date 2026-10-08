@@ -1,5 +1,5 @@
 ---
-title: "Añadir términos de crédito (Net 30/60)"
+title: "Añadir términos de crédito (Net 7 a Net 90)"
 description: "Guía para vender a crédito comercial y cómo se cobra al vencer el plazo."
 category: "Cotizaciones"
 order: 3
@@ -9,12 +9,15 @@ No todas las transacciones se pagan de contado. En el entorno B2B corporativo, d
 
 ### Configurar términos de pago
 
-Al crear una cotización, en la barra lateral derecha verás los **términos de pago**. Elige entre:
+Al crear una cotización o una factura, en el paso 1 del editor, junto al cliente, verás los **Términos de pago**. Elige entre:
 
 - **Contado:** el pago se puede realizar de inmediato en cuanto el cliente aprueba.
-- **Net 30 / Net 60:** el cliente tiene 30 o 60 días naturales, contados desde la aprobación, para pagar.
+- **Net 15 / Net 30 / Net 60:** el cliente tiene 15, 30 o 60 días naturales para pagar, contados desde la aprobación de la cotización (en una factura, desde su fecha).
+- **Otro plazo:** abre la lista con **Net 7**, **Net 45** y **Net 90**.
 
-También puedes fijar los términos por defecto de cada cliente en su ficha, para que se preseleccionen solos.
+También puedes fijar los términos por defecto de cada cliente en su ficha: al elegirlo en el editor, sus términos se preseleccionan solos. En una factura, cambiar los términos recalcula la fecha de **Vencimiento**.
+
+El **Cobro recurrente mensual (iguala)** siempre es de contado: no se combina con un plazo de crédito.
 
 ### Qué pasa con una venta a crédito
 

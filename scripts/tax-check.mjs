@@ -128,13 +128,20 @@ for (const code of ['US', 'BR']) {
     assert.ok(quote.includes('calculateDocumentTotals'),
         'lib/quote.ts debe calcular los totales con el motor compartido');
 }
-// El editor de cotizaciones no puede volver a leer una tasa plana del DOM.
+// El editor de documentos (cotización y factura) no puede volver a leer una
+// tasa plana del DOM ni tener su propia aritmética: calcula en
+// src/lib/editor/core.ts con el motor compartido.
 {
-    const editor = readFileSync(new URL('../src/pages/app/cotizaciones/nueva.astro', import.meta.url), 'utf8');
-    assert.ok(!editor.includes('cfgIva'),
-        'el editor volvió a leer una tasa plana (#cfgIva) en vez del catálogo');
-    assert.ok(editor.includes('calculateDocumentTotals'),
-        'el editor debe calcular con el motor compartido, no con su propia copia');
+    const core = readFileSync(new URL('../src/lib/editor/core.ts', import.meta.url), 'utf8');
+    const editor = readFileSync(new URL('../src/lib/editor/document-editor.ts', import.meta.url), 'utf8');
+    const page = readFileSync(new URL('../src/pages/app/cotizaciones/nueva.astro', import.meta.url), 'utf8');
+    for (const src of [core, editor, page]) {
+        assert.ok(!src.includes('cfgIva'), 'el editor volvió a leer una tasa plana (#cfgIva) en vez del catálogo');
+    }
+    assert.ok(core.includes('calculateDocumentTotals'),
+        'el núcleo del editor debe calcular con el motor compartido, no con su propia copia');
+    assert.ok(editor.includes('summarize(') && !/\bcalculate(Document|Invoice)?Totals\(/.test(editor),
+        'el editor debe pedir los totales a core.ts, no recalcularlos por su cuenta');
 }
 
 

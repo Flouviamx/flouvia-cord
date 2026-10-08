@@ -28,9 +28,11 @@ Para cobrar con tarjeta (y, en México, transferencia SPEI automática) desde el
 4. Si tu cuenta es de México y vas a facturar de forma nominativa, agrega también el régimen fiscal, código postal y uso de CFDI del cliente en su sección de datos fiscales — este dato es exclusivo del CFDI mexicano.
 
 ## Paso 4: Envía tu primera cotización
-1. Ve a **Cotizaciones > Nueva**.
-2. Elige el cliente, agrega líneas (de tu catálogo o líneas libres) y revisa el total. Cada línea puede llevar su propia tasa de impuesto.
-3. Al enviarla, Cord genera un **link público** y, si configuraste correo, lo manda al cliente. El cliente lo abre, revisa, aprueba y, si activaste Cord Payments, paga en línea.
+1. Ve a **Cotizaciones > Nueva cotización** (o usa **Crear** en la barra superior).
+2. Busca al cliente (o créalo desde el mismo buscador) y elige sus términos de pago, agrega líneas (de tu catálogo o líneas libres), ajusta vigencia, anticipo y divisa en **Condiciones**, y revisa el total. Cada línea puede llevar su propia tasa de impuesto.
+3. Al pulsar **Crear y enviar**, Cord genera un **link público** y, si configuraste correo, lo manda al cliente. El cliente lo abre, revisa, aprueba y, si activaste Cord Payments, paga en línea.
+
+El recorrido completo del editor está en [Crear una cotización o una factura paso a paso](/soporte/crear-cotizacion-o-factura).
 
 ## Paso 5: (Para devs) Conecta la API
 Si vas a usar Cord programáticamente:

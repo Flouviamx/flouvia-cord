@@ -2,7 +2,7 @@
 title: "Negotiation and counteroffers"
 seoTitle: "Counteroffers, partial approval, rejection, and quote versions"
 description: "How your client negotiates from the link (counteroffer, partial approval, rejection with a reason), how you reply with Modify and resend, what happens if you change the proposal while they read it, and what Cord notifies you about."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-08"
 reviewedBy: "Cord product and operations"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -36,7 +36,7 @@ is another version of the same quote, which arrives at the same link.
 3. The proposal appears in the conversation with a distinct style, showing the proposed amount followed by the message.
 </Steps>
 
-{/* MOCKUP: link CONVERSATION section with a regular client bubble, an amber counteroffer bubble showing the proposed amount MXN 42,000.00 and the message "If you can do this total we'll close this week", labeled "You · now", and below it the proposal field with the "Counteroffer" button. */}
+<DmQuoteThread lang="en" view="counter" />
 
 A counteroffer **doesn't change the quote's status** or amounts: it's a message with an
 amount. To accept it, adjust the prices and resend (see below). If you don't accept it,
@@ -77,9 +77,9 @@ While the quote is *Sent*, *Viewed*, or *Expired*, the detail shows **Modify and
 (V2)**; the number is the version you're about to create.
 
 <Steps>
-1. Click **Modify and resend (V2)**. The editor opens with the current lines.
-2. Change products, quantities, negotiated prices, taxes, or **Prices already include tax**. The client and payment terms can't be changed here ("The client can't be changed while editing the quote").
-3. Click **Generate V2 and resend**.
+1. Click **Modify and resend (V2)**. The quote editor opens as **New version of COT-0149**, with the current lines and the **Version 2** tag in the summary.
+2. Change products, quantities, prices, each line's tax, or **Prices include VAT**. The client, currency, and terms can't be changed here: "A new version changes lines and prices. Client, currency and terms stay as they were sent."
+3. Click **Send new version** (or **⌘ Enter**). If your organization uses [internal approvals](/en/docs/cotizacion/aprobaciones-internas), the version is checked against the caps before it goes out.
 </Steps>
 
 When you resend, Cord:
@@ -87,11 +87,13 @@ When you resend, Cord:
 - saves the new version and adds it to the detail's **Version history**, with its date and total;
 - keeps the **same link**;
 - emails the client again if they have an email on file;
-- moves the quote back to *Sent*;
+- moves the quote back to *Sent* and restarts its validity from today;
 - emits the quote-modified event with the previous total, so your automations can tell an unchanged resend from one with a discount.
 
-Resending an *Expired* quote doesn't give it a new validity date: the daily process
-expires it again. To propose it again with a new date, use **Duplicate quote**.
+Every new version restarts the validity from the day you send it, with the same length
+the quote was sent with (if it was 30 days, it expires in 30 days). That's how an
+*Expired* quote comes back: it returns to *Sent* with a new date. For a different
+length, client, currency, or terms, use **Duplicate quote**.
 
 ## If you change the proposal while the client reads it
 

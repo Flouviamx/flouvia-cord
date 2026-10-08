@@ -25,10 +25,14 @@ import { decryptSecret } from './crypto-secret';
 import { publicDocumentUrl } from './public-links';
 import { normalizeCurrency } from './currency';
 import { getCountryProfile, supportsMercadoPago, taxKindLabel } from './countries';
+import { normalizeTerm, termDays, termLabel as termLabelFor } from './payment-terms';
 import { onlinePaymentsSetup } from './payment-rail';
 import { fmtDate, fmtRelative, intlLocale, money } from './fmt-server';
 import { calculateDocumentTotals } from '../../packages/elements/src/engine';
+import { isRetryableIssuanceError } from './fiscal/retry';
+import { dateOnly } from './date-only';
 import { dueDateFor, venceDia } from './cobros';
+import { taskBadge } from './tasks-db';
 import type { PublicViewer } from './public-viewer';
 import {
     STATUS_ABIERTA, STATUS_GANADA, STATUS_PERDIDA, STATUS_SALIO,
@@ -47,10 +51,9 @@ const num = (v: unknown) => Number(v ?? 0);
 const initials = (nombre: string) =>
     nombre.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase() || '—';
 
-const TERM_LABEL: Record<string, Quote['terminos']> = {
-    contado: 'Contado', net30: 'Net 30', net60: 'Net 60',
-};
-const termLabel = (t: string | null) => TERM_LABEL[t ?? 'contado'] ?? 'Contado';
+// Etiqueta en el idioma de la cuenta; el CÓDIGO (`terminosCode`) es el que
+// usan los editores y la API. Ver src/lib/payment-terms.ts.
+const termLabel = (t: string | null) => termLabelFor(t, currentLocale());
 
 // El formato de fecha vive en lib/fmt-server.ts: lee el locale Y la zona
 // horaria del request. Aquí estaban clavados en 'es-MX' y sin zona, así que un
@@ -100,7 +103,7 @@ export async function getOrg() {
         interesMoratorioPct: num(o.interes_moratorio_pct),
         plan_raw: effectivePlan,
         vigenciaDefaultDias: num(o.vigencia_default_dias) || 30,
-        terminosDefault: (o.terminos_default as string) || 'contado',
+        terminosDefault: normalizeTerm(o.terminos_default),
         anticipoDefaultPct: num(o.anticipo_default_pct),
         retencionIsrPct: num(o.retencion_isr_pct),
         retencionIvaPct: num(o.retencion_iva_pct),
@@ -825,6 +828,11 @@ function mapProducto(p: DbRow) {
         preciosVolumen: normVolumen(p.precios_volumen),
         // null = no controla inventario (producto propio o sin seguimiento en la tienda).
         existencias: p.existencias === null || p.existencias === undefined ? null : num(p.existencias),
+        // Impuesto sugerido al agregarlo a una línea (fracción); null = el default de la org.
+        taxRate: p.tax_rate === null || p.tax_rate === undefined ? null : num(p.tax_rate),
+        // Claves SAT del CFDI (México); null = sin clasificar.
+        claveSat: (p.clave_sat as string) ?? null,
+        claveUnidadSat: (p.clave_unidad_sat as string) ?? null,
     };
 }
 
@@ -929,6 +937,9 @@ export async function getProducto(id: string) {
         activo: p.activo as boolean,
         createdAt: p.created_at ? new Date(p.created_at as string).toISOString() : null,
         preciosVolumen: normVolumen(p.precios_volumen),
+        taxRate: p.tax_rate === null || p.tax_rate === undefined ? null : num(p.tax_rate),
+        claveSat: (p.clave_sat as string) ?? null,
+        claveUnidadSat: (p.clave_unidad_sat as string) ?? null,
         metricas: {
             cotizaciones, cerradas,
             tasaCierre: cotizaciones ? Math.round((cerradas / cotizaciones) * 100) : 0,
@@ -1208,7 +1219,7 @@ function mapCliente(c: DbRow) {
         telefono: (c.telefono as string) ?? '',
         rfc: (c.rfc as string) ?? '',
         terminos: termLabel(c.terminos_default as string),
-        terminosCode: (c.terminos_default as string) || 'contado',
+        terminosCode: normalizeTerm(c.terminos_default),
         limite: num(c.limite_credito),
         inicial: initials(c.empresa),
         nivel: (c.nivel as string) || 'estandar',
@@ -1321,7 +1332,7 @@ export async function getCliente(id: string) {
         telefono: (c.telefono as string) ?? '',
         rfc: (c.rfc as string) ?? '',
         terminos: termLabel(c.terminos_default as string),
-        terminosCode: (c.terminos_default as string) || 'contado',
+        terminosCode: normalizeTerm(c.terminos_default),
         limite,
         inicial: initials(c.empresa),
         nivel: (c.nivel as string) || 'estandar',
@@ -1376,6 +1387,7 @@ function rowToQuote(c: any, items: any[], eventos: any[], versiones: any[] = [],
         clienteInicial: initials(c.empresa ?? '—'),
         status: c.status as QuoteStatus,
         terminos: termLabel(c.terminos),
+        terminosCode: normalizeTerm(c.terminos),
         vigencia: fmtDate(c.vigencia),
         vigenciaDias: c.vigencia ? Math.max(1, Math.ceil((new Date(c.vigencia).getTime() - Date.now()) / 86400000)) : null,
         creada: fmtDate(c.created_at),
@@ -1406,6 +1418,7 @@ function rowToQuote(c: any, items: any[], eventos: any[], versiones: any[] = [],
             unidad: it.unidad ?? 'pieza',
             precioLista: num(it.precio_unitario),
             precioNegociado: it.precio_negociado === null ? null : num(it.precio_negociado),
+            costo: it.costo_unitario != null ? num(it.costo_unitario) : undefined,
             taxRate: it.tax_rate != null ? num(it.tax_rate) : undefined,
             aprobado: it.aprobado !== false,   // default true (sin columna o no decidido = incluida)
             comentarios: it.comentarios ?? [],
@@ -1586,7 +1599,7 @@ function rowToFactura(r: any) {
         estado: (r.lifecycle as string) || 'open',
         estadoFiscal: r.status as string,
         vence: r.due_date ? fmtDate(r.due_date as string) : null,
-        venceISO: r.due_date ? String(r.due_date).slice(0, 10) : null,
+        venceISO: r.due_date ? dateOnly(r.due_date) || null : null,
         vencida: !!r.vencida,
         diasVencida: r.dias_vencida !== null && r.dias_vencida !== undefined ? Number(r.dias_vencida) : null,
         pais: r.country_code as string,
@@ -1860,6 +1873,9 @@ export async function getFacturaDetalle(id: string) {
         // volver a resolverla.
         orgId,
         clienteEmail: (r.cliente_email as string) || null,
+        // La emisión falló con certeza de que no existe comprobante: el
+        // borrador conserva su folio y se puede corregir en el editor.
+        corregible: isRetryableIssuanceError(r),
         notas: (r.notes as string) || null,
         ledgerCurrency: (r.ledger_currency as string) || null,
         fxRate: r.fx_rate !== null && r.fx_rate !== undefined ? num(r.fx_rate) : null,
@@ -1875,7 +1891,18 @@ export async function getFacturaDetalle(id: string) {
             subtotal: num(l.subtotal),
             impuesto: num(l.taxAmount),
             total: num(l.total),
+            // La tasa EXACTA con la que se capturó. Derivarla como
+            // impuesto/subtotal de importes redondeados daba 0.0801 en vez de
+            // 0.08, que ya no coincide con ninguna tasa del catálogo.
+            taxRate: l.taxRate === null || l.taxRate === undefined ? null : num(l.taxRate),
+            // Lo capturado en el editor (borradores desde oct 2026); los
+            // documentos anteriores no lo traen y se reabren como líneas libres.
+            productoId: (l.editor?.productId as string) || null,
+            unidad: (l.editor?.unit as string) || null,
+            precioLista: l.editor?.listPrice === undefined ? null : num(l.editor.listPrice),
+            precioNegociado: l.editor?.negotiatedPrice === null || l.editor?.negotiatedPrice === undefined ? null : num(l.editor.negotiatedPrice),
         })),
+        preciosConImpuesto: ((r.line_items_snapshot as any[]) || []).some((l: any) => l?.editor?.pricesIncludeTax === true),
         anuladaEn: r.voided_at ? fmtDate(r.voided_at as string) : null,
         motivoAnulacion: (r.void_reason as string) || null,
         acreditado: num(r.amount_credited), reembolsado: num(r.amount_refunded), porDevolver: num(r.refund_due),
@@ -2011,13 +2038,11 @@ export async function getCotizacionByToken(token: string) {
     }
 
     // Disponibilidad del pago en línea según los términos de crédito (contado =
-    // pagable desde la aprobación; net30/net60 = pagable hasta que llega la fecha
+    // pagable desde la aprobación; net<N> = pagable hasta que llega la fecha
     // de vencimiento). Mismo cálculo canónico que getCobranza()/cron de intereses:
     // vence = coalesce(approved_at, created_at) + días del término.
     {
-        const DAYS: Record<string, number> = { contado: 0, net30: 30, net60: 60 };
-        const termRaw = (rows[0].terminos as string) || 'contado';
-        const termDias = DAYS[termRaw] ?? 0;
+        const termDias = termDays(rows[0].terminos);
         const base = new Date((rows[0].approved_at as string) || (rows[0].created_at as string) || Date.now());
         const due = new Date(base); due.setDate(due.getDate() + termDias); due.setHours(0, 0, 0, 0);
         const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
@@ -2583,7 +2608,7 @@ async function getAnalyticsDiagnosisUncached(orgId: string, desde: string, hasta
         series: seriesRows.map((r: any) => ({ fecha: r.fecha as string, cotizado: num(r.cotizado), cerrado: num(r.cerrado), cobrado: num(r.cobrado) })),
         funnel: { sent, views, approved, paid },
         pipeline: ['sent', 'viewed', 'approved', 'paid', 'invoiced'].map((key) => ({ key, ...(stages.get(key) ?? { n: 0, monto: 0 }) })),
-        stalled: stalledRows.map((r: any) => ({ id: r.id as string, folio: r.folio as string, empresa: r.empresa as string, total: num(r.total), status: r.status as string, vigencia: r.vigencia ? String(r.vigencia).slice(0, 10) : null, dias: num(r.dias_sin_movimiento) })),
+        stalled: stalledRows.map((r: any) => ({ id: r.id as string, folio: r.folio as string, empresa: r.empresa as string, total: num(r.total), status: r.status as string, vigencia: r.vigencia ? dateOnly(r.vigencia) || null : null, dias: num(r.dias_sin_movimiento) })),
         losses: { rejected: losses.get('rejected') ?? { n: 0, monto: 0 }, expired: losses.get('expired') ?? { n: 0, monto: 0 } },
         discounts: (advanced ? discountRows : []).map((r: any) => {
             const lista = num(r.lista), negociado = num(r.negociado);
@@ -2824,8 +2849,7 @@ async function getPayBehaviorUncached() {
                coalesce(avg(extract(epoch from (
                    e.paid_at - (
                        coalesce(c.approved_at, c.created_at)
-                       + make_interval(days => case coalesce(c.terminos, cl.terminos_default)
-                           when 'net30' then 30 when 'net60' then 60 else 0 end)
+                       + make_interval(days => cord_term_days(coalesce(c.terminos, cl.terminos_default)))
                    )
                )) / 86400), 0) as avg_retraso
         from cotizaciones c
@@ -2842,8 +2866,7 @@ async function getPayBehaviorUncached() {
         sql`select extract(epoch from (
                    e.paid_at - (
                        coalesce(c.approved_at, c.created_at)
-                       + make_interval(days => case coalesce(c.terminos, cl.terminos_default)
-                           when 'net30' then 30 when 'net60' then 60 else 0 end)
+                       + make_interval(days => cord_term_days(coalesce(c.terminos, cl.terminos_default)))
                    )
                )) / 86400 as dias
             from cotizaciones c
@@ -2962,7 +2985,7 @@ async function getCobranzaUncached() {
         const expected = new Date(due); expected.setDate(expected.getDate() + clientDelay);
         const expDias = Math.round((expected.getTime() - today.getTime()) / MS);
         const prom = origen === 'cotizacion' ? promMap.get(r.id as string) : undefined;
-        const fechaProm = prom ? String(prom.fecha_promesa).slice(0, 10) : '';
+        const fechaProm = prom ? dateOnly(prom.fecha_promesa) : '';
         return {
             id: r.id as string, folio: (r.folio as string) || '—',
             origen,
@@ -3328,24 +3351,6 @@ async function getCFOUncached() {
         semanas, fueraDeHorizonte, dias, mrr, maxSemana, rankClientes, flujo30Clientes, silenciadas,
         invariante: { forecastTotal, sourceTotal, delta: forecastTotal - sourceTotal },
     };
-}
-
-// ── TAREAS / RECORDATORIOS (CRM ligero) ───────────────────────────────────────
-export async function getTareas() {
-    const orgId = await getActiveOrgId();
-    const [rows] = await withOrgTx(orgId, sql`
-        select t.id, t.titulo, t.due_date, t.cotizacion_id, c.folio
-        from tareas t left join cotizaciones c on c.id = t.cotizacion_id and c.org_id = t.org_id
-        where t.org_id = ${orgId} and t.done = false
-        order by t.due_date asc nulls last, t.created_at asc
-        limit 12`);
-    const hoy = new Date(new Date().toDateString());
-    return rows.map((t) => ({
-        id: t.id as string, titulo: t.titulo as string,
-        folio: (t.folio as string) ?? '',
-        due: t.due_date ? fmtDate(t.due_date as string) : '',
-        vencida: t.due_date ? new Date(t.due_date as string) < hoy : false,
-    }));
 }
 
 // ── AUDIT LOG (lectura) ────────────────────────────────────────────────────────
@@ -4124,7 +4129,7 @@ export async function getSetupProgress() {
 // - `vencidas`: se lee de `cuentas_por_cobrar` (regla 25), la misma vista que la
 //   cobranza y el agente; contar solo `cotizaciones` dejaba fuera las facturas.
 export async function getSidebarBadges() {
-    const zero = { seguimiento: 0, vencidas: 0 };
+    const zero = { seguimiento: 0, vencidas: 0, tareas: 0, tareasVencidas: 0 };
     try {
         const orgId = await getActiveOrgId();
         const [[r]] = await withOrgTx(orgId,
@@ -4134,9 +4139,14 @@ export async function getSidebarBadges() {
                     (select count(*) from cuentas_por_cobrar
                       where org_id = ${orgId} and dias_vencido > 0)::int as vencidas`,
         );
+        // El de tareas va aparte y con su propio respaldo: si falla, el menú
+        // conserva los otros dos contadores.
+        const tareas = await taskBadge().catch(() => ({ n: 0, vencidas: 0 }));
         return {
             seguimiento: Number(r?.seguimiento ?? 0),
             vencidas: Number(r?.vencidas ?? 0),
+            tareas: tareas.n,
+            tareasVencidas: tareas.vencidas,
         };
     } catch { return zero; }
 }
@@ -4183,8 +4193,7 @@ async function getCobranzaIAUncached() {
                              where cotizacion_id = c.id and status = 'pagado'), 0) as pagado,
                    floor(date_part('day', now() - (
                      coalesce(c.approved_at, c.created_at)
-                     + make_interval(days => case coalesce(c.terminos, cl.terminos_default, 'contado')
-                         when 'net30' then 30 when 'net60' then 60 else 0 end)
+                     + make_interval(days => cord_term_days(coalesce(c.terminos, cl.terminos_default)))
                    )))::int as dias_vencido,
                    exists(select 1 from cobranza_exclusiones x where x.org_id = cc.org_id
                           and (x.cotizacion_id = c.id or x.cliente_id = c.cliente_id)) as excluida

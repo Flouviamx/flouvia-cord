@@ -2,7 +2,7 @@
 title: "Datos del cliente"
 seoTitle: "Datos del cliente en una cotización"
 description: "Elige o crea al cliente de una cotización, aplica su nivel de precio y sus términos, y completa la información fiscal que necesitará la factura."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-08"
 reviewedBy: "Producto y operaciones de Cord"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -16,25 +16,41 @@ prerequisites: ["Permiso Cotizaciones para elegir al cliente", "Permiso Clientes
 
 ## Qué es
 
-El paso **¿A quién le cotizas?** del editor une la cotización con un cliente de tu
+El paso 1 del editor, **¿A quién le cotizas?**, une la cotización con un cliente de tu
 directorio. De su ficha salen tres cosas: el descuento de su nivel de precio, sus
-términos de pago y los datos del receptor que usará la factura.
+términos de pago y los datos del receptor que usará la factura. El mismo paso existe al
+crear una factura, con el título **¿A quién le facturas?**.
 
-{/* MOCKUP: paso "¿A quién le cotizas?" con el selector de cliente abierto ("— Selecciona un cliente —", "+ Crear nuevo cliente…", "Constructora GAMA — Luis Pérez"), los chips Contado / Net 30 / Net 60 con Net 30 activo y la nota "Nivel del cliente: −10% aplicado automáticamente a los precios de lista". */}
+<DmCotClientStep lang="es" />
 
 ## Requisitos
 
 - **Permiso:** Cotizaciones para elegir a un cliente; **Clientes** para crear uno nuevo.
 - **Plan:** Gratis admite hasta 50 clientes y Starter hasta 500; desde Pro no hay tope.
-- **Para enviar:** la cotización necesita cliente. Un borrador se puede guardar sin él, pero al enviar Cord te pide "Elige un cliente en el paso 1 para poder enviar".
+- **Para enviar:** la cotización necesita cliente. Un borrador se puede guardar sin él, pero al enviar Cord te pide "Elige un cliente para poder enviar."
 
 ## Elige o crea al cliente
 
 <Steps>
-1. En **¿A quién le cotizas?**, abre el selector y elige un cliente de tu directorio.
-2. Si no existe, elige **+ Crear nuevo cliente…**, llena el formulario y pulsa **Crear y seleccionar**. Queda guardado en tu directorio y seleccionado en la cotización.
-3. Revisa los términos de pago que se preseleccionaron y cámbialos si hace falta.
+1. En **¿A quién le cotizas?**, haz clic en el buscador de clientes ("Busca un cliente por nombre, contacto o correo…") y escribe parte del nombre de la empresa, del contacto, del correo o del identificador fiscal. La lista muestra hasta ocho coincidencias, cada una con su correo, su identificador fiscal y, si tiene nivel de precio, su descuento (por ejemplo −10%).
+2. Elige al cliente con un clic, o con las flechas y **Enter**. **Escape** cierra la lista y deja el cliente que ya estaba elegido.
+3. Si no existe, elige **+ Crear nuevo cliente…**, que siempre aparece al final de la lista; llena el formulario y pulsa **Crear y seleccionar**. Queda guardado en tu directorio y seleccionado en la cotización.
+4. Revisa los **Términos de pago** que se preseleccionaron a la derecha del buscador y cámbialos si hace falta.
 </Steps>
+
+Debajo del buscador, Cord muestra el correo y el identificador fiscal del cliente elegido
+y, si su nivel tiene descuento, una nota como "Nivel del cliente: −10% aplicado a los
+precios de lista de tu catálogo."
+
+## Términos de pago
+
+Los términos se eligen con chips: **Contado**, **Net 15**, **Net 30** y **Net 60**. Para
+otro plazo, el chip **Otro plazo** abre una lista con **Net 7**, **Net 45** y **Net 90**.
+"Net N" significa que el cliente paga N días naturales después de la fecha del documento.
+
+Al elegir un cliente se preseleccionan los términos de su ficha; puedes cambiarlos solo
+para esta cotización sin tocar la ficha. Los términos de crédito cambian lo que pasa al
+aprobar (ver [Opciones avanzadas](/docs/cotizacion/opciones)).
 
 Otras formas de llenar tu directorio:
 
@@ -54,9 +70,9 @@ cambiar en **Descuento automático en sus precios**:
 | Oro | 10% |
 | Distribuidor | 15% |
 
-Al elegir al cliente, Cord baja el precio **Negociado** de cada producto de catálogo en
-ese porcentaje: con 10%, un producto de 1,000 de lista entra en 900. El precio de lista
-no cambia y puedes ajustar el negociado de cualquier línea a mano.
+Al elegir al cliente, Cord baja la columna **Precio** de cada producto de catálogo en
+ese porcentaje: con 10%, un producto de MXN 1,000 de **Lista** entra en MXN 900. El precio
+de lista no cambia y puedes ajustar el precio de cualquier línea a mano.
 
 ## Información comercial y fiscal
 
@@ -65,7 +81,7 @@ no cambia y puedes ajustar el negociado de cualquier línea a mano.
 - **Empresa** (obligatorio): el nombre del cliente. También es el nombre del receptor en su factura; escríbelo como aparece en sus documentos fiscales.
 - **Contacto:** la persona que decide.
 - **Correo:** a dónde se envía el link al mandar la cotización desde Cord.
-- **Teléfono**, **Límite de crédito** y **Términos de pago** (Contado, Net 30 o Net 60) que se proponen al cotizarle.
+- **Teléfono**, **Límite de crédito** y **Términos de pago** (Contado, Net 15, Net 30, Net 60 u otro plazo: Net 7, Net 45 o Net 90) que se proponen al cotizarle.
 
 ### Fiscal
 
@@ -93,7 +109,11 @@ Si el cliente es mexicano (o no le asignas país y tu negocio está en México),
 
 ## Problemas comunes
 
-**No aparece "+ Crear nuevo cliente…" o falla al guardarlo.** Tu rol no tiene el permiso Clientes, o llegaste al tope de clientes de tu plan.
+**Falla "+ Crear nuevo cliente…" al guardar.** Tu rol no tiene el permiso Clientes, o llegaste al tope de clientes de tu plan.
+
+**El buscador dice "Ningún cliente coincide."** Busca por otra parte del nombre, por el correo o por el identificador fiscal, o crea el cliente con **+ Crear nuevo cliente…**.
+
+**No puedo cambiar el cliente ni los términos.** Estás en una versión nueva de una cotización ya enviada: ahí el cliente, la divisa y las condiciones se quedan como se enviaron.
 
 **El descuento del nivel no se aplicó.** Solo baja productos de catálogo; las líneas libres no tienen precio de lista.
 

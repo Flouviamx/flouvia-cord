@@ -1614,3 +1614,154 @@ medido). Intereses moratorios (`late_interest`) se queda en Scale y sigue
 suspendido; la viñeta de Scale pasa a "Aprobaciones de descuento y margen".
 Se actualizaron precios, comparativa, FAQ, página de producto, caso de uso de
 agencias, blog y la documentación pública ES/EN.
+
+## 2026-10-08 — Fase 1 del audit de los editores de cotización y factura
+
+Auditoría de "crear cotización" y "crear factura" (backend, editor y diseño).
+Esta fase cierra lo que tocaba dinero, ley o datos; el rediseño del editor queda
+para las fases siguientes.
+
+- **CFDI descuadrado por centavos.** El total del documento salía de redondear
+  la suma cruda y cada línea se redondeaba aparte: 10 conceptos de $10.01 al 16%
+  daban IVA 16.02 en el total y 16.00 en las líneas, y `mexico-items.ts`
+  (tolerancia de 1 centavo) rechazaba el timbrado. Ahora el documento es la suma
+  de sus líneas ya redondeadas (`src/lib/document-rounding.ts`), en factura
+  independiente, factura desde cotización y el resumen del editor. Los decimales
+  salen de la divisa (JPY/CLP sin decimales); el CFDI sigue a centavos.
+- **Factura atorada tras un error.** Un rechazo local devolvía el id del
+  documento como si fuera del proveedor y el folio ya asignado bloqueaba editar,
+  anular y borrar. Un error con certeza de no haber creado comprobante
+  (`isRetryableIssuanceError`) ahora se corrige y reintenta con el mismo folio y
+  una llave de idempotencia nueva; la entrega incierta sigue reintentándose tal cual.
+- **Aprobaciones que se saltaban.** Los topes solo se evaluaban al crear. Enviar
+  un borrador pendiente, enviar con líneas nuevas o reenviar una V2 con más
+  descuento ya no lo esquivan (`src/lib/quote-approval.ts`). Una V2 que no
+  empeora lo ya aprobado no vuelve a pedir permiso. El tope de monto se compara en
+  la divisa del negocio, convertido con la tasa congelada de la cotización.
+  Aprobar la solicitud ahora sí manda el correo y consume el envío.
+- **Medidor de envíos.** Crear con "Enviar" no reservaba `envios` (regla 17).
+- **Alta de cotización atómica.** Encabezado, líneas, versión y eventos en una
+  transacción; el folio se calcula dentro de ella bajo un advisory lock por
+  organización y con los dígitos finales tras el guion (un prefijo "Q2026"
+  producía "Q2026-20260002").
+- **Duplicar cotización** pasa por `createCotizacion`: antes perdía divisa,
+  `iva_incluido`, tasa por línea, costo, anticipo y retenciones, y no revisaba
+  permiso ni límite de plan.
+- **Validación de servidor.** Tasa de impuesto fuera del catálogo → 400 (antes
+  se sustituía en silencio por la default); términos en lista cerrada y vigencia
+  acotada en PATCH; estado revalidado dentro de la transacción que reescribe
+  líneas (TOCTOU con el cliente aprobando); UUID de cliente, fecha de calendario y
+  divisa ofrecida en facturas; `ai-draft` exige permiso de cotizar y conserva
+  cantidades decimales; el vencimiento de la factura que nace de una cotización
+  corre desde la aprobación.
+- **Editor.** Escapado de nombres de catálogo y de líneas de la IA (XSS),
+  guardado de un solo vuelo (doble clic creaba dos folios), avisos que de verdad
+  se ocultan, y un borrador ya no se abre en la pantalla de versiones (que borraba
+  cliente, notas y términos).
+
+## 2026-10-08 — Fase 2: un solo editor de documentos
+
+Cotización nueva, borrador, versión nueva y factura usan ahora el mismo editor:
+`src/components/app/DocumentEditor.astro` (markup), `src/lib/editor/document-editor.ts`
+(navegador) y `src/lib/editor/core.ts` (precios, líneas, kits y totales, sin
+DOM, con `test/editor-core.test.ts`). Las tres copias anteriores divergían:
+
+- **Precio automático único**: el descuento por nivel del cliente se aplica al
+  precio pactado sobre la lista vigente (con volumen), con los decimales de la
+  divisa; la lista B2B manda. Cambiar de cliente ya no borra precios escritos a
+  mano, combos de kit ni precios de la IA, y cruzar un tramo de volumen ya no
+  pierde el descuento ni se queda en el tramo alto al bajar la cantidad.
+- **Cantidades decimales** (1.5 kg, 2.5 h) y números escritos con coma; una
+  cantidad 0 o un precio vacío se señalan en la línea en vez de guardarse.
+- **Borradores sin pérdida**: la cotización reabre sus términos (el DTO trae
+  `terminosCode`); la factura guarda en cada línea del snapshot un bloque
+  `editor` (producto, unidad, lista, precio pactado, IVA incluido) y reabre con
+  su cliente. El vencimiento de la factura llegaba como "Sat Nov 07" porque el
+  driver convierte `date` en `Date`; `src/lib/date-only.ts` lo corrige también en
+  la exportación CSV y en las anclas de tiempo.
+- **Versión nueva** en el editor principal (`?version=<id>`); la pantalla de
+  versiones vieja ponía costo 0 en cada línea y, abierta sobre un borrador,
+  borraba cliente y condiciones.
+- **IA**: pregunta antes de reemplazar líneas existentes, comprime fotos y topa
+  PDFs también en factura, y respeta la tasa que propone si está en el catálogo.
+- **Divisa**: cambiarla avisa que los precios no se convierten.
+- **Guardado**: un solo vuelo, aviso al salir con cambios sin guardar, la URL de
+  la factura pasa a `?draft=` desde el primer guardado y los avisos usan el
+  toast global de la app.
+
+Al probarlo contra Postgres real apareció un bug de producción: desde el 5 de
+octubre `meterInvoiceEmission` reserva la dimensión `documento`, que el CHECK de
+`usage_reservations` no aceptaba, así que toda emisión de un documento comercial
+fallaba con "No pudimos verificar ni registrar tu consumo". El CHECK ya la
+incluye; hay que correr `npm run db:migrate` para que aplique en Neon.
+
+## 2026-10-08 — Fase 3: jerarquía y flujo del editor de documentos
+
+- **Tres pasos y un resumen que solo resume.** Vigencia, anticipo,
+  recurrencia, vencimiento, tipo de documento y divisa pasaron a un paso 3
+  "Condiciones". El resumen lateral queda con totales, términos ("Net 30 ·
+  vence el 7 nov") y la acción principal; antes el botón de enviar quedaba
+  bajo la configuración y salía de la pantalla en una laptop.
+- **Buscador de clientes** por empresa, contacto, correo y RFC en lugar del
+  `<select>` nativo; el `<select>` oculto sigue siendo la fuente de datos.
+- **Líneas**: reordenar arrastrando (escritorio) o con Alt+flechas, duplicar,
+  deshacer al quitar (6 s), y "40 tubo" / "tubo x40" agrega 40 desde el
+  buscador. Si lo escrito ya nombra un producto ("Foco 100 W"), el número es
+  parte del nombre. La fila se adapta al ANCHO DE LA COLUMNA (container query):
+  completa, con la lista bajo el nombre, o apilada con etiquetas.
+- **Vista previa** del documento con la marca del negocio, armada desde el
+  estado actual sin guardar.
+- **Autoguardado**: un borrador existente se guarda solo 2.5 s después del
+  último cambio, con indicador. Un documento nuevo NO se crea solo (cuenta
+  contra el plan): se guarda una copia local y al volver se ofrece recuperarla.
+- **Atajos**: ⌘Enter envía o emite, ⌘S guarda y `/` va al catálogo (dentro del
+  editor manda sobre la paleta global; ⌘K la sigue abriendo).
+- **Móvil**: barra fija con el total y la acción principal, que se retira
+  cuando el resumen está a la vista. Vive en `<body>`: la animación de entrada
+  de la página deja un `transform` en un ancestro y eso anclaba el
+  `position: fixed` al contenido.
+- **Campos blancos** en tema claro: sobre el fondo gris de la app, un campo
+  `#f5f5f7` no se distinguía de la página.
+
+Correcciones de la revisión de la fase 2:
+
+- `parseAmount("0,125")` daba 125 y `"1,234,567"` daba 1234.567: una cantidad
+  en kilos se guardaba mil veces mayor sin error.
+- El costo guardado no viajaba al reabrir: un reenvío lo reemplazaba con el del
+  catálogo de hoy o con 0, y con costo 0 la aprobación por margen mínimo no se
+  evaluaba.
+- Un precio que coincide con el automático del cliente vuelve a ser automático
+  al reabrir; un producto ya inactivo conserva su vínculo en vez de volverse
+  línea libre; el precio vacío en una línea de catálogo se marca.
+- El JSON de arranque se escapa (`</script>` en un nombre rompía el editor).
+- `dateOnly()` en las fechas que faltaban (evento `quote.expiring`,
+  cotizaciones estancadas, promesas de pago); `venceDia()` delega en él.
+- El vencimiento por defecto de la factura se calcula en la zona del negocio.
+- Una tasa guardada que ya no está en el catálogo se muestra tal cual.
+- Escape cierra el menú de kits; ⌘Enter no envía con el confirm abierto.
+- Una versión nueva (`resend`) vuelve a correr la vigencia con la misma
+  duración con que se envió (`vigencia − created_at`). Antes una cotización
+  vencida reenviada quedaba "enviada" con la fecha vieja y el cron la volvía a
+  vencer esa noche.
+- `id.confirm_invoiced_test` ya no nombra al proveedor fiscal (regla 14).
+
+## 2026-10-08 — Términos de pago net<N>, claves SAT por producto y CFDI a extranjeros
+
+- **Términos:** la lista `contado | net30 | net60` vivía escrita a mano en ~20 sitios
+  (API, MCP, Elements, PDF, cron de recordatorios, vista de cartera, tres consultas SQL,
+  importación CSV, workflows, n8n/Make/Zapier). Ahora `src/lib/payment-terms.ts` y
+  `cord_term_days()` son la fuente; se agregan Net 7, 15, 45 y 90. Hallazgos de paso: el
+  editor de cotizaciones guardaba la ETIQUETA ("Net 30") en `data-term` de cada cliente y
+  comparaba contra el CÓDIGO, así que elegir un cliente nunca aplicaba sus términos y un
+  borrador se reabría en contado; y el PDF de la factura decía "Contado" en inglés.
+- **Claves SAT:** todo CFDI salía con 01010101 / H87, incluso servicios. Producto con
+  clave de producto/servicio y de unidad (deducida de la unidad si no se captura),
+  buscador del catálogo vía Facturapi y validación de forma antes del PAC.
+- **Extranjeros:** un cliente con país distinto de México se timbraba con el RFC de
+  público en general (XAXX) y régimen 601/616, declarándolo nacional. Ahora va como
+  residente en el extranjero según la guía de clientes de Facturapi (`address.country`
+  alfa-3, `tax_id` extranjero opcional, sin `tax_system`, uso S01).
+- **Despliegue:** primera migración de columnas acoplada al `buildCommand`
+  (`migrate-catalogo-fiscal.mjs`), igual que `migrate-brand-profile.mjs`.
+- Pendiente fuera del repo: publicar `@flouviahq/elements` 2.1.0, `n8n-nodes-cord` 1.2.0
+  y las apps de Zapier y Make con las nuevas opciones de plazo.

@@ -16,6 +16,7 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
+import { dateOnly } from '../../../lib/date-only';
 import { assertCronAuth } from '../../../lib/cron-auth';
 import { sql, withOrgTx, withSystemTx } from '../../../lib/db';
 import { reqContext } from '../../../lib/context';
@@ -111,7 +112,7 @@ async function emitQuoteExpiring(orgId: string): Promise<number> {
             moneda: (r.base_currency as string) || null,
             status: r.status,
             dias_para_vencer: Number(r.dias),
-            vence: String(r.vigencia).slice(0, 10),
+            vence: dateOnly(r.vigencia),
         }, 'system');
         if (id) n++;
     }
@@ -153,7 +154,7 @@ async function emitInvoice(orgId: string, type: 'invoice.due_soon' | 'invoice.pa
             moneda: (r.currency as string) || null,
             pais: r.country_code ?? null,
             estado: r.lifecycle,
-            vence: String(r.due_date).slice(0, 10),
+            vence: dateOnly(r.due_date),
             ...(soon ? { dias_para_vencer: dias } : { dias_vencida: -dias }),
         }, 'system');
         if (id) n++;

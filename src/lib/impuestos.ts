@@ -104,3 +104,55 @@ export function defaultCountryTaxPct(countryCode: string): number {
     const preset = taxPresetsFor(countryCode).find((p) => p.esDefault);
     return preset ? preset.tasa : 0;
 }
+
+/**
+ * Primera tasa propuesta que NO está en el catálogo del negocio, o `null` si
+ * todas lo están (o vienen vacías y caen al default a propósito).
+ *
+ * `catalogo.resolve()` sustituye en silencio una tasa desconocida por la
+ * predeterminada: correcto como red de seguridad, pero el usuario no se
+ * enteraba — capturaba una línea al 8% y el documento salía al 16%. Los
+ * endpoints que guardan una cotización o factura responden 400 con esta tasa
+ * en vez de cambiarla.
+ */
+export function unknownTaxRate(
+    catalogo: { resolve(proposed: unknown, fallback: number): number },
+    proposed: unknown[],
+): number | null {
+    for (const p of proposed) {
+        if (p === null || p === undefined || p === '') continue;
+        if (Number.isNaN(catalogo.resolve(p, Number.NaN))) return Number(p);
+    }
+    return null;
+}
+
+/** Mensaje para el dueño del negocio cuando una tasa no está en su catálogo. */
+export function unknownTaxRateMessage(rate: number): string {
+    const pct = Number.isFinite(rate) ? `${Math.round(rate * 10000) / 100}%` : String(rate);
+    return `La tasa de impuesto ${pct} no está en tu catálogo. Elige una de las tasas configuradas en Ajustes.`;
+}
+
+/**
+ * El catálogo, más las tasas que ESTE documento ya tiene guardadas.
+ *
+ * Editar o reenviar un documento viejo no puede fallar porque el negocio
+ * desactivó después una tasa con la que se capturó: esa tasa es un snapshot
+ * del documento (regla 23), no una propuesta nueva. Lo que se rechaza es una
+ * tasa que ni el catálogo ni el propio documento conocen.
+ */
+export function withStoredRates<C extends { resolve(proposed: unknown, fallback: number): number }>(
+    catalogo: C,
+    stored: unknown[],
+): C {
+    const known = stored.map(Number).filter((n) => Number.isFinite(n) && n >= 0 && n <= 1);
+    return {
+        ...catalogo,
+        resolve(proposed: unknown, fallback: number): number {
+            if (proposed !== null && proposed !== undefined && proposed !== '') {
+                const n = Number(proposed);
+                if (known.some((k) => Math.abs(k - n) < 1e-9)) return n;
+            }
+            return catalogo.resolve(proposed, fallback);
+        },
+    };
+}

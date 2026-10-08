@@ -1,0 +1,145 @@
+---
+// Mockup: Ajustes › Cotizaciones › Aprobaciones con los tres topes capturados.
+//
+// Calca de src/pages/app/ajustes/aprobaciones.astro dentro de SettingsShell:
+// miga "Configuración / Aprobaciones", encabezado de la categoría (icono,
+// nombre y descripción de SETTINGS_CATEGORIES), barra de pestañas, bajada y dos
+// bloques (Umbrales de aprobación y Tesorería). Todos los textos salen del
+// diccionario de la app (set.aprob.*) y de localizedCategoryOfTab(): si la
+// pantalla cambia, el mockup cambia con ella.
+//
+// Los campos son <input type="number">: el monto se ve como 250000, sin
+// separadores, igual que en la app. La divisa la declara la etiqueta del
+// campo ("Monto máx. sin aprobación (MXN)").
+import DocsMockup from './DocsMockup.astro';
+import DmIcon from './DmIcon.astro';
+import { localizedCategoryOfTab } from '../../../lib/settings';
+import { dmT, pick, type DmLang } from './format';
+
+interface Props {
+    lang: DmLang;
+    /** Pie de figura; por defecto describe los valores capturados. */
+    caption?: string;
+}
+const { lang } = Astro.props;
+
+const DESC_MAX = 15;
+const MONTO_MAX = 250000;
+const MARGEN_MIN = 20;
+
+const DATA = {
+    es: {
+        caption: `Ajustes › Cotizaciones › Aprobaciones con los umbrales de aprobación: descuento máximo ${DESC_MAX}%, monto máximo 250,000 MXN y margen bruto mínimo ${MARGEN_MIN}%. Debajo, Tesorería con el interés moratorio deshabilitado.`,
+    },
+    en: {
+        caption: `Settings › Quotes › Approvals with the approval thresholds: ${DESC_MAX}% maximum discount, 250,000 MXN maximum amount and ${MARGEN_MIN}% minimum gross margin. Below, Treasury with late-payment interest disabled.`,
+    },
+};
+const d = pick(DATA, lang);
+const caption = Astro.props.caption ?? d.caption;
+
+const category = localizedCategoryOfTab('aprobaciones', lang, 'MX')!;
+const activeTab = category.tabs.find((tb) => tb.id === 'aprobaciones')!;
+---
+<DocsMockup lang={lang} variant="app" chrome="full" sidebar="rail" active="" height={790} caption={caption} class="dm-cot-ar-figure">
+    <div class="dm-cot-ar">
+        <div class="dm-cot-ar-crumbs">
+            <span class="dm-cot-ar-crumb"><DmIcon name="chevron-left" />{dmT(lang, 'settings.configuracion')}</span>
+            <span class="dm-cot-ar-sep">/</span>
+            <span class="dm-cot-ar-here">{activeTab.label}</span>
+        </div>
+        <div class="dm-cot-ar-heading">
+            <span class="dm-cot-ar-cat"><svg class="dm-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={category.icon}></svg></span>
+            <span class="dm-cot-ar-titles">
+                <span class="dm-cot-ar-title">{category.label}</span>
+                <span class="dm-cot-ar-desc">{category.desc}</span>
+            </span>
+        </div>
+        <div class="dm-cot-ar-tabs-row">
+            <div class="dm-cot-ar-tabs">
+                {category.tabs.map((tb) => <span class:list={['dm-cot-ar-tab', { 'is-on': tb.id === 'aprobaciones' }]}>{tb.label}</span>)}
+            </div>
+        </div>
+
+        <div class="dm-cot-ar-intro">{dmT(lang, 'set.aprob.intro')}</div>
+
+        <div class="dm-cot-ar-block">
+            <div class="dm-cot-ar-btitle"><DmIcon name="shield" />{dmT(lang, 'set.aprob.umbrales')}</div>
+            <div class="dm-cot-ar-row">
+                <div class="dm-cot-ar-field">
+                    <span class="dm-cot-ar-label">{dmT(lang, 'set.aprob.desc_max')}</span>
+                    <span class="dm-cot-ar-input is-focus">{DESC_MAX}<span class="dm-cot-ar-caret"></span></span>
+                    <span class="dm-cot-ar-hint">{dmT(lang, 'set.aprob.desc_max_hint')}</span>
+                </div>
+                <div class="dm-cot-ar-field">
+                    <span class="dm-cot-ar-label">{dmT(lang, 'set.aprob.monto_max')}</span>
+                    <span class="dm-cot-ar-input">{MONTO_MAX}</span>
+                    <span class="dm-cot-ar-hint">{dmT(lang, 'set.aprob.monto_max_hint')}</span>
+                </div>
+            </div>
+            <div class="dm-cot-ar-row">
+                <div class="dm-cot-ar-field">
+                    <span class="dm-cot-ar-label">{dmT(lang, 'set.aprob.margen_min')}</span>
+                    <span class="dm-cot-ar-input">{MARGEN_MIN}</span>
+                    <span class="dm-cot-ar-hint">{dmT(lang, 'set.aprob.margen_min_hint')}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="dm-cot-ar-block">
+            <div class="dm-cot-ar-btitle"><DmIcon name="clock" />{dmT(lang, 'set.aprob.tesoreria')}</div>
+            <div class="dm-cot-ar-field">
+                <span class="dm-cot-ar-label">{dmT(lang, 'set.aprob.interes')}</span>
+                <span class="dm-cot-ar-input is-disabled">0</span>
+                <span class="dm-cot-ar-hint">{dmT(lang, 'set.aprob.interes_hint')}</span>
+            </div>
+        </div>
+
+        <div class="dm-cot-ar-save"><span class="dm-cot-ar-save-btn">{dmT(lang, 'settings.guardar_cambios')}</span></div>
+    </div>
+</DocsMockup>
+
+<style is:global>
+    .dm-cot-ar { padding: 4px 4px 0; max-width: 640px; margin-right: calc(var(--dm-bleed) - 6px); }
+    .dm-cot-ar-crumbs { display: flex; align-items: center; gap: 5px; margin-bottom: 9px; font-size: 11px; font-weight: 600; }
+    .dm-cot-ar-crumb { display: inline-flex; align-items: center; gap: 3px; color: var(--dm-muted); }
+    .dm-cot-ar-crumb .dm-ico { width: 12px; height: 12px; }
+    .dm-cot-ar-sep { color: #c4cad3; }
+    .dm-cot-ar-here { color: var(--dm-text); }
+
+    .dm-cot-ar-heading { display: flex; align-items: center; gap: 12px; }
+    .dm-cot-ar-cat { width: 40px; height: 40px; flex-shrink: 0; border-radius: 12px; display: grid; place-items: center; background: #fff; color: var(--dm-muted); box-shadow: 0 2px 5px rgba(10, 25, 47, 0.03), 0 14px 32px -22px rgba(10, 25, 47, 0.35); }
+    .dm-cot-ar-cat .dm-ico { width: 20px; height: 20px; }
+    .dm-cot-ar-titles { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .dm-cot-ar-title { font-size: 19px; font-weight: 700; letter-spacing: -0.03em; color: var(--dm-text); }
+    .dm-cot-ar-desc { font-size: 11.5px; color: var(--dm-muted); }
+
+    .dm-cot-ar-tabs-row { margin-top: 14px; overflow: hidden; }
+    .dm-cot-ar-tabs { display: inline-flex; gap: 2px; padding: 3px; border-radius: 11px; background: rgba(10, 25, 47, 0.065); box-shadow: inset 0 1px 1px rgba(10, 25, 47, 0.06); }
+    .dm-cot-ar-tab { display: inline-flex; align-items: center; height: 26px; padding: 0 10px; border-radius: 8px; font-size: 11px; font-weight: 600; color: var(--dm-muted); white-space: nowrap; }
+    .dm-cot-ar-tab.is-on { color: var(--dm-text); font-weight: 650; background: #fff; box-shadow: 0 1px 2px rgba(10, 25, 47, 0.13), 0 1px 5px rgba(10, 25, 47, 0.05); }
+
+    .dm-cot-ar-intro { margin: 16px 0 12px; font-size: 11.5px; line-height: 1.5; color: var(--dm-muted); }
+
+    .dm-cot-ar-block { display: flex; flex-direction: column; gap: 16px; padding: 18px 18px 20px; margin-bottom: 12px; background: #fff; border: 1px solid rgba(10, 25, 47, 0.05); border-radius: 18px; box-shadow: 0 2px 5px rgba(10, 25, 47, 0.012), 0 14px 32px -26px rgba(10, 25, 47, 0.2); }
+    .dm-cot-ar-btitle { display: flex; align-items: center; gap: 9px; font-size: 13px; font-weight: 600; letter-spacing: -0.015em; color: var(--dm-text); }
+    .dm-cot-ar-btitle .dm-ico { width: 17px; height: 17px; color: var(--dm-muted); }
+    .dm-cot-ar-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    .dm-cot-ar-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+    .dm-cot-ar-label { font-size: 9.5px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dm-muted); line-height: 1.35; }
+    .dm-cot-ar-input { display: flex; align-items: center; height: 36px; padding: 0 12px; border-radius: 9px; background: #f8f9fb; border: 1px solid var(--dm-border-strong); font-size: 12.5px; font-weight: 500; font-variant-numeric: tabular-nums; color: var(--dm-text); }
+    .dm-cot-ar-input.is-focus { border-color: var(--dm-muted); box-shadow: 0 0 0 2px rgba(91, 100, 114, 0.18); background: #fff; }
+    .dm-cot-ar-caret { width: 1px; height: 15px; margin-left: 1px; background: var(--dm-text); }
+    .dm-cot-ar-input.is-disabled { opacity: 0.6; }
+    .dm-cot-ar-hint { font-size: 10.5px; line-height: 1.5; color: var(--dm-muted); }
+
+    .dm-cot-ar-save { display: flex; justify-content: flex-end; padding-top: 4px; }
+    .dm-cot-ar-save-btn { display: inline-flex; align-items: center; justify-content: center; min-width: 140px; height: 38px; padding: 0 20px; border-radius: 12px; background: var(--dm-navy); color: #fff; font-size: 12px; font-weight: 600; box-shadow: 0 8px 22px -12px rgba(10, 25, 47, 0.55); }
+
+    @container dm (max-width: 560px) {
+        .dm-cot-ar-figure .dm-stage { height: auto; }
+        .dm-cot-ar-row { grid-template-columns: minmax(0, 1fr); }
+        .dm-cot-ar-block { padding: 16px 14px 18px; }
+        .dm-cot-ar-desc { display: none; }
+    }
+</style>

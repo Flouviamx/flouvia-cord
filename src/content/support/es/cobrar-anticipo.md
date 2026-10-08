@@ -9,8 +9,10 @@ Muchos negocios B2B cobran un porcentaje por adelantado para arrancar un pedido 
 
 ### Cómo pedir un anticipo
 
-1. Al crear una cotización, en la barra lateral derecha escribe el **% de anticipo** (por ejemplo, 50%).
+1. Al crear una cotización, en el paso 3 del editor, **Condiciones**, escribe el **Anticipo (%)** (por ejemplo, 50%).
 2. El editor te muestra en vivo cuánto pagará tu cliente al aprobar y cuánto quedará de saldo.
+
+El anticipo no se combina con el **Cobro recurrente mensual (iguala)**: una iguala cobra el total cada mes.
 3. Guarda y envía la cotización como siempre.
 
 > [!NOTE]
@@ -21,7 +23,7 @@ Muchos negocios B2B cobran un porcentaje por adelantado para arrancar un pedido 
 En el link público, tu cliente ve el desglose completo desde el inicio: el total, cuánto paga hoy de anticipo y cuánto queda de saldo con su fecha de vencimiento. Al aprobar:
 
 - El **anticipo** es pagable de inmediato (tarjeta, o SPEI si tu negocio cobra en pesos mexicanos), directo a tu banco.
-- El **saldo** queda pendiente. Si la cotización es de contado, también es pagable al momento; si es a crédito (Net 30/60), el saldo se puede pagar hasta que llegue la fecha de vencimiento.
+- El **saldo** queda pendiente. Si la cotización es de contado, también es pagable al momento; si es a crédito (por ejemplo, Net 30), el saldo se puede pagar hasta que llegue la fecha de vencimiento.
 
 Cada parte es un cobro independiente con su propio link de pago. La cotización se marca como **pagada** solo cuando ya no queda ningún cobro pendiente.
 

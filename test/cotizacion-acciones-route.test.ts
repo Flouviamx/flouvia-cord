@@ -40,13 +40,14 @@ vi.mock('../src/lib/ratelimit', () => ({
 vi.mock('../src/lib/webhooks', () => ({ dispatchQuoteEvent: m.dispatch, dispatchQuoteEventFrom: m.dispatchFrom }));
 vi.mock('../src/lib/after', () => ({ after: vi.fn() }));
 vi.mock('../src/lib/billing', () => ({ reserveUsage: m.reserve, cancelUsage: m.cancel, flushUsageReservation: vi.fn() }));
-vi.mock('../src/lib/org-entitlements', () => ({ requireEntitlement: m.entitlement }));
+vi.mock('../src/lib/org-entitlements', () => ({ requireEntitlement: m.entitlement, checkEntitlement: async () => ({ ok: false }) }));
 vi.mock('../src/lib/fiscal/emit', () => ({ emitFiscalDocument: m.emit }));
 vi.mock('../src/lib/cotizaciones', () => ({
     MAX_ITEMS: 200,
     QuoteError: class extends Error { status = 400; },
     assertClienteDeOrg: async () => {},
     productosDeOrg: async () => new Set<string>(),
+    vigenciaDias: (v: unknown) => Number(v) || 30,
 }));
 vi.mock('../src/lib/cobros', () => ({ materializeAnticipoCobros: m.anticipo }));
 vi.mock('../src/lib/impuestos-db', () => ({
@@ -137,6 +138,9 @@ describe('carreras', () => {
         expect(res.status).toBe(200);
         const batch = m.batches.find((b) => b.length > 1) ?? [];
         expect(batch).toEqual([
+            // El estado se revalida dentro de la misma transacción (TOCTOU).
+            expect.stringMatching(/^select id from cotizaciones where id = \? and org_id = \? for update/),
+            expect.stringMatching(/^select 1 \/ \(select count\(\*\)::int from cotizaciones/),
             expect.stringMatching(/^update cotizaciones set\s+cliente_id/),
             expect.stringMatching(/^delete from cotizacion_items/),
             expect.stringMatching(/^insert into cotizacion_items/),

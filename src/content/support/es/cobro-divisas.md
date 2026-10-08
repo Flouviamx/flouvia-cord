@@ -4,15 +4,15 @@ description: "Cómo cotizar y cobrar en una divisa distinta a la de tu contabili
 category: "Pagos y Depósitos"
 ---
 
-Cord distingue tres divisas que nunca se mezclan: la **de venta** (en la que cotizas y le cobras al cliente), la **contable** (en la que tu negocio lleva sus libros) y la **de la plataforma** (en la que Cord te cobra tu suscripción, siempre MXN o USD según tu país). Este artículo es sobre la primera.
+Cord distingue tres divisas que nunca se mezclan: la **de venta** (en la que cotizas y le cobras al cliente), la **contable** (en la que tu negocio lleva sus libros) y la **de la plataforma** (en la que Cord te cobra tu suscripción, MXN, EUR o USD según tu país). Este artículo es sobre la primera.
 
 El selector de moneda ofrece hoy las divisas de los 12 países donde Cord opera (MXN, USD, CAD, BRL, EUR, GBP, COP, ARS, CLP, PEN) más cuatro de comercio internacional (JPY, CNY, CHF, AUD). No es un catálogo abierto: una divisa que ninguna fuente de tipo de cambio publica y que ningún banco puede liquidar no se ofrece para capturar, para que no descubras el problema hasta el momento de cobrar.
 
 ### Crear una cotización en otra divisa
 
-Al redactar la cotización, en la sección de **Configuración Global** (panel derecho) verás el selector de Moneda.
+Al redactar la cotización, en el paso 3 del editor, **Condiciones**, verás el selector **¿En qué moneda le cotizas?**.
 1. Cambia la divisa de venta a la que corresponda (por ejemplo, de MXN a USD).
-2. Los precios de tus conceptos se leen bajo esa nueva divisa.
+2. Los precios de tus conceptos se leen bajo esa nueva divisa: no se convierten, así que revisa cada precio.
 
 ### Cobro en línea
 

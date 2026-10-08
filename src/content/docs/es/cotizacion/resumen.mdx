@@ -2,7 +2,7 @@
 title: "Resumen de creación de cotización"
 seoTitle: "Cotizar y cerrar en Cord: ciclo de vida de una cotización"
 description: "El ciclo completo de una cotización en Cord: estados reales, quién dispara cada paso, todas las guías de la sección y los límites por plan."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-08"
 reviewedBy: "Producto y operaciones de Cord"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -21,7 +21,7 @@ Estados Unidos, Canadá, Brasil, España, Reino Unido, Alemania, Francia, Colomb
 Argentina, Chile y Perú); lo que cambia entre países es el documento fiscal con el que
 se cierra el ciclo (ver [Aprobación y facturación](/docs/cotizacion/timbrado)).
 
-{/* MOCKUP: diagrama horizontal del ciclo de vida con los 8 estados (Borrador, Enviada, Vista, Aprobada, Pagada, Facturada, más Rechazada y Vencida como salidas laterales), cada flecha rotulada con quién la dispara: Vendedor, Cliente o Proceso diario. */}
+<DmCotLifecycle lang="es" />
 
 ## Requisitos
 
@@ -55,19 +55,21 @@ nuevo."
 
 <Callout type="info">
 **Vencida no es definitiva.** Una cotización *Vencida* todavía admite **Modificar y
-reenviar**, pero reenviar no cambia su fecha de vigencia, así que el proceso diario
-vuelve a vencerla. Para proponerla otra vez con fecha nueva, usa **Duplicar
-cotización** (ver [Gestión de cotizaciones](/docs/gestion/cotizaciones)).
+reenviar**. Al pulsar **Enviar nueva versión**, la vigencia vuelve a correr desde ese
+día con la misma duración con que se envió (si era de 30 días, vence en 30 días) y la
+cotización regresa a *Enviada*. Si necesitas otra duración, otro cliente, otra divisa u
+otras condiciones, usa **Duplicar cotización** (ver [Gestión de
+cotizaciones](/docs/gestion/cotizaciones)).
 </Callout>
 
 ## El flujo de trabajo, paso a paso
 
 <Steps>
 1. **[Arma con IA (opcional)](/docs/cotizacion/ia).** Pega el pedido del cliente o sube una foto o PDF y Cord llena las partidas con tu catálogo.
-2. **[Elige al cliente](/docs/cotizacion/cliente).** En **¿A quién le cotizas?** seleccionas o creas el cliente y sus términos de pago.
-3. **[Agrega productos y negocia](/docs/cotizacion/productos).** En **¿Qué le vas a cotizar?** agregas productos, kits o líneas libres y ajustas el precio **Negociado**.
-4. **[Define las opciones](/docs/cotizacion/opciones).** En **Revisa y envía** eliges vigencia, divisa, anticipo, iguala mensual e impuestos incluidos.
-5. **[Revisa y envía](/docs/cotizacion/envio).** Abre la vista previa y envía el link por correo, WhatsApp o donde conversas con tu cliente.
+2. **[Elige al cliente](/docs/cotizacion/cliente).** En el paso 1, **¿A quién le cotizas?**, buscas o creas el cliente y eliges sus términos de pago.
+3. **[Agrega productos y negocia](/docs/cotizacion/productos).** En el paso 2, **¿Qué le vas a cotizar?**, agregas productos, kits o líneas libres y ajustas el **Precio** de cada línea sin tocar tu lista.
+4. **[Define las condiciones](/docs/cotizacion/opciones).** En el paso 3, **Condiciones**, eliges vigencia, anticipo, divisa e iguala mensual.
+5. **[Revisa y envía](/docs/cotizacion/envio).** En el resumen **Revisa y envía** confirmas el total, abres la **Vista previa** y envías el link por correo, WhatsApp o donde conversas con tu cliente.
 6. **[Negocia en el link](/docs/interaccion/negociacion).** El cliente pregunta, comenta partidas o propone una contraoferta; tú respondes con una versión nueva.
 7. **[El cliente firma](/docs/interaccion/firma).** Cord guarda la evidencia técnica de la aprobación.
 8. **[Cobra y factura](/docs/cotizacion/timbrado).** El cobro se habilita en el link y emites el documento que corresponde a tu país.
@@ -80,8 +82,8 @@ cotización** (ver [Gestión de cotizaciones](/docs/gestion/cotizaciones)).
 - [Generar con IA](/docs/cotizacion/ia): texto, PDF o foto convertidos en partidas.
 - [Datos del cliente](/docs/cotizacion/cliente): crear o elegir cliente, nivel de precio y datos fiscales.
 - [Productos y descuentos](/docs/cotizacion/productos): catálogo, kits, volumen, precio sugerido y margen.
-- [Opciones avanzadas](/docs/cotizacion/opciones): vigencia, divisa, anticipo, iguala, impuestos y valores por default.
-- [Vista previa y envío](/docs/cotizacion/envio): enviar, compartir y qué recibe el cliente.
+- [Opciones avanzadas](/docs/cotizacion/opciones): el paso Condiciones (vigencia, anticipo, divisa e iguala), impuestos incluidos y valores por default.
+- [Vista previa y envío](/docs/cotizacion/envio): resumen, vista previa, guardado automático, atajos, enviar y qué recibe el cliente.
 - [Aprobaciones internas](/docs/cotizacion/aprobaciones-internas): topes de descuento, monto y margen que piden visto bueno.
 - [Aprobación y facturación](/docs/cotizacion/timbrado): del sí del cliente al documento fiscal.
 

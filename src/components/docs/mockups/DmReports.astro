@@ -1,0 +1,201 @@
+---
+// Mockup: Informes › Resumen (/app/informes?r=resumen) con el selector de informes
+// abierto. Calca de src/pages/app/informes.astro + ReportPicker.astro +
+// informes/ResumenReport.astro.
+// En la app la lista de informes NO es una columna fija: es el panel del selector
+// (arriba, junto al rango de fechas), agrupado por categoría en el orden de
+// REPORT_GROUPS. El catálogo sale de REPORTS (src/lib/informes.ts), así que un
+// informe nuevo aparece aquí solo. La madurez de la cohorte es una barra segmentada
+// (Ganado / Perdido / Aún abierto), como el widget real.
+import DocsMockup from './DocsMockup.astro';
+import DmIcon from './DmIcon.astro';
+import type { IconName } from '../../../lib/icons';
+import { REPORTS, REPORT_GROUPS, reportLabel } from '../../../lib/informes';
+import { dmT, dmMoney, pick, type DmLang } from './format';
+import { money0Parts } from './dm-gestion';
+
+interface Props {
+    lang: DmLang;
+    caption?: string;
+}
+const { lang } = Astro.props;
+
+const ICON: Record<string, IconName> = {
+    overview: 'overview', pulse: 'pulse', sales: 'chart-line', clients: 'clients', products: 'products',
+    payments: 'card', tax: 'percent', finance: 'chart', flow: 'trending-up', collection: 'wallet',
+    cohort: 'grid', team: 'user-check', explore: 'search-insight',
+};
+const groups = REPORT_GROUPS.map((g) => ({ g, items: REPORTS.filter((r) => r.group === g) })).filter((x) => x.items.length);
+
+const CERRADO = 1284500;
+const PERDIDO = 96300;
+const MAT = { won: 38, lost: 13, open: 49 };
+// Serie del movimiento comercial (cerrado por fecha de origen), determinista.
+const serie = Array.from({ length: 30 }, (_, i) => 0.6 + Math.sin(i / 3.1) * 0.35 + Math.sin(i / 1.7 + 2) * 0.2 + i * 0.012);
+const mx = Math.max(...serie) * 1.15;
+const W = 300, H = 90;
+const path = serie.map((v, i) => `${i ? 'L' : 'M'}${((i / 29) * W).toFixed(1)},${(H - (v / mx) * H).toFixed(1)}`).join(' ');
+
+const DATA = {
+    es: {
+        caption: `Informes › Resumen (con los widgets en el orden que eligió el usuario) y el selector de informes abierto, agrupado por categoría (Resumen, Ventas, Clientes y, al desplazarse, Productos, Finanzas, Equipo y Personalizados); el rango "Últimos 30 días" arriba y los widgets Tasa de cierre (38 %), Valor cerrado (${dmMoney(CERRADO, 'MXN', 'es')}) y la madurez de la cohorte: Ganado, Perdido y Aún abierto.`,
+        sub: 'Una sola casa para entender el desempeño y decidir qué mover.',
+        rango: 'Últimos 30 días',
+        buscar: 'Buscar informes',
+        porRango: 'Por rango de fechas',
+        hoy: 'Al día de hoy',
+        w: {
+            tasa: 'TASA DE CIERRE', tasaSub: '12 / 32 cotizaciones enviadas',
+            cerrado: 'VALOR CERRADO', cerradoSub: 'Cohorte creada en el rango',
+            vel: 'VELOCIDAD DEL PIPELINE', velSub: 'cerrado por día del rango',
+            perdido: 'VALOR PERDIDO', perdidoSub: '4 cotizaciones',
+            mov: 'Movimiento comercial', movDesc: 'Valor cerrado por fecha de origen de la cotización.',
+            mad: 'Madurez de la cohorte', madDesc: 'Qué pasó con lo cotizado dentro del rango.',
+            won: 'Ganado', lost: 'Perdido', open: 'Aún abierto',
+            explain: 'Un rango reciente puede tener poco cierre porque la cohorte todavía no madura; no necesariamente porque esté rindiendo mal.',
+        },
+    },
+    en: {
+        caption: `Reports › Overview (widgets in the order the user chose) with the report picker open, grouped by category (Overview, Sales, Clients and, further down, Products, Finance, Team and Custom); the "Last 30 days" range at the top and the Close rate (38%), Closed value (${dmMoney(CERRADO, 'MXN', 'en')}) and cohort maturity widgets: Won, Lost and Still open.`,
+        sub: 'One place to understand performance and decide what to move.',
+        rango: 'Last 30 days',
+        buscar: 'Search reports',
+        porRango: 'Date range',
+        hoy: 'As of today',
+        w: {
+            tasa: 'CLOSE RATE', tasaSub: '12 / 32 sent quotes',
+            cerrado: 'CLOSED VALUE', cerradoSub: 'Cohort created in range',
+            vel: 'PIPELINE VELOCITY', velSub: 'closed per range day',
+            perdido: 'LOST VALUE', perdidoSub: '4 quotes',
+            mov: 'Commercial movement', movDesc: 'Closed value by quote creation date.',
+            mad: 'Cohort maturity', madDesc: 'What happened to quotes created in range.',
+            won: 'Won', lost: 'Lost', open: 'Still open',
+            explain: 'A recent range may show little closing because its cohort has not matured yet, not because it is underperforming.',
+        },
+    },
+};
+const d = pick(DATA, lang);
+const caption = Astro.props.caption ?? d.caption;
+const M = (n: number) => money0Parts(n, 'MXN', lang);
+const resumen = REPORTS.find((r) => r.id === 'resumen')!;
+---
+<DocsMockup lang={lang} variant="app" chrome="full" sidebar="rail" active="informes" title={reportLabel(resumen, lang)} height={545} caption={caption} class="dm-rp-figure">
+    <Fragment slot="actions">
+        <span class="dm-rp-trigger is-open"><DmIcon name="overview" />{reportLabel(resumen, lang)}<DmIcon name="chevron-down" stroke={2.2} /></span>
+        <span class="dm-rp-trigger"><DmIcon name="calendar" />{d.rango}<DmIcon name="chevron-down" stroke={2.2} /></span>
+    </Fragment>
+
+    <div class="dm-rp-sub">{d.sub}</div>
+    <div class="dm-rp-kpis">
+        <div class="dm-surface dm-rp-kpi"><span class="dm-kpi-label">{d.w.tasa}</span><b class="dm-editorial">38%</b><small>{d.w.tasaSub}</small></div>
+        <div class="dm-surface dm-rp-kpi"><span class="dm-kpi-label">{d.w.cerrado}</span><b class="dm-money">{M(CERRADO).value}<span class="dm-cur">MXN</span></b><small>{d.w.cerradoSub}</small></div>
+        <div class="dm-surface dm-rp-kpi"><span class="dm-kpi-label">{d.w.vel}</span><b class="dm-money">{M(CERRADO / 30).value}<span class="dm-cur">MXN</span></b><small>{d.w.velSub}</small></div>
+        <div class="dm-surface dm-rp-kpi"><span class="dm-kpi-label">{d.w.perdido}</span><b class="dm-money is-danger">{M(PERDIDO).value}<span class="dm-cur">MXN</span></b><small>{d.w.perdidoSub}</small></div>
+    </div>
+    <div class="dm-rp-row">
+        <div class="dm-surface dm-rp-card">
+            <span class="dm-rp-title">{d.w.mad}</span>
+            <span class="dm-rp-desc">{d.w.madDesc}</span>
+            <span class="dm-rp-seg"><i style={`flex-grow:${MAT.won};background:#059669`}></i><i style={`flex-grow:${MAT.lost};background:#ef4444`}></i><i style={`flex-grow:${MAT.open};background:#8b95a5`}></i></span>
+            <span class="dm-rp-legend">
+                <span><i style="background:#059669"></i>{d.w.won}<b>{MAT.won}%</b></span>
+                <span><i style="background:#ef4444"></i>{d.w.lost}<b>{MAT.lost}%</b></span>
+                <span><i style="background:#8b95a5"></i>{d.w.open}<b>{MAT.open}%</b></span>
+            </span>
+            <span class="dm-rp-explain">{d.w.explain}</span>
+        </div>
+        <div class="dm-surface dm-rp-card">
+            <span class="dm-rp-title">{d.w.mov}</span>
+            <span class="dm-rp-desc">{d.w.movDesc}</span>
+            <svg class="dm-rp-line" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" aria-hidden="true">
+                <line x1="0" x2={W} y1={H / 3} y2={H / 3}></line><line x1="0" x2={W} y1={(H * 2) / 3} y2={(H * 2) / 3}></line>
+                <path d={path} vector-effect="non-scaling-stroke"></path>
+            </svg>
+        </div>
+    </div>
+
+    <div slot="overlay" class="dm-rp-panel">
+        <span class="dm-rp-search"><DmIcon name="search" />{d.buscar}</span>
+        <div class="dm-rp-list">
+            {groups.map(({ g, items }) => (
+                <div class="dm-rp-group">
+                    <span class="dm-rp-glabel">{dmT(lang, `inf.grupo.${g}`)}</span>
+                    {items.map((r) => (
+                        <span class:list={['dm-rp-opt', { 'is-on': r.id === 'resumen' }]}>
+                            <DmIcon name={ICON[r.icon] ?? 'chart'} />
+                            <span class="dm-rp-copy"><b>{reportLabel(r, lang)}</b><small>{r.scope === 'snapshot' ? d.hoy : d.porRango}</small></span>
+                            {r.id === 'resumen' && <DmIcon name="check" stroke={2.2} class="dm-rp-check" />}
+                        </span>
+                    ))}
+                </div>
+            ))}
+        </div>
+    </div>
+</DocsMockup>
+
+<style is:global>
+    .dm-rp-figure .dm-page-head, .dm-rp-figure .dm-content { padding-right: calc(18px + var(--dm-bleed)); }
+    .dm-rp-trigger { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border-radius: 9px; background: #fff; box-shadow: inset 0 0 0 1px var(--dm-border-strong), 0 1px 2px rgba(10, 25, 47, 0.05); font-size: 11.5px; font-weight: 600; white-space: nowrap; }
+    .dm-rp-trigger .dm-ico { width: 13px; height: 13px; color: var(--dm-muted); }
+    .dm-rp-trigger .dm-ico:last-child { width: 10px; height: 10px; }
+    .dm-rp-trigger.is-open { box-shadow: inset 0 0 0 1.5px var(--dm-navy), 0 0 0 3px rgba(10, 25, 47, 0.08); }
+    .dm-rp-sub { margin: -6px 0 12px; font-size: 11px; color: var(--dm-muted); }
+    .dm-rp-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 10px; }
+    .dm-rp-kpi { display: flex; flex-direction: column; gap: 5px; padding: 12px 13px; min-width: 0; }
+    .dm-rp-kpi .dm-kpi-label { font-size: 8.5px; }
+    .dm-rp-kpi b { font-size: 19px; line-height: 1.05; color: var(--dm-navy); letter-spacing: -0.035em; }
+    .dm-rp-kpi b .dm-cur { font-size: 9px; }
+    .dm-rp-kpi b.is-danger { color: var(--dm-danger-ink); }
+    .dm-rp-kpi small { font-size: 10px; color: var(--dm-muted); line-height: 1.35; }
+    .dm-rp-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .dm-rp-card { display: flex; flex-direction: column; gap: 4px; padding: 13px 15px 15px; min-width: 0; }
+    .dm-rp-title { font-size: 12.5px; font-weight: 600; }
+    .dm-rp-desc { font-size: 10px; color: var(--dm-muted); margin-bottom: 8px; }
+    .dm-rp-line { display: block; width: 100%; height: 96px; }
+    .dm-rp-line line { stroke: rgba(10, 25, 47, 0.06); vector-effect: non-scaling-stroke; }
+    .dm-rp-line path { fill: none; stroke: var(--dm-navy); stroke-width: 1.8; stroke-linejoin: round; }
+    .dm-rp-seg { display: flex; gap: 2px; height: 12px; border-radius: 99px; overflow: hidden; }
+    .dm-rp-seg i { flex-basis: 0; }
+    .dm-rp-legend { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+    .dm-rp-legend span { display: flex; align-items: center; gap: 7px; font-size: 10.5px; color: var(--dm-muted); }
+    .dm-rp-legend i { width: 7px; height: 7px; border-radius: 50%; }
+    .dm-rp-legend b { margin-left: auto; color: var(--dm-text); font-weight: 650; font-variant-numeric: tabular-nums; }
+    .dm-rp-explain { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--dm-border); font-size: 9.5px; line-height: 1.5; color: var(--dm-muted); }
+
+    /* Panel del selector, abierto bajo su botón. */
+    .dm-rp-panel {
+        position: absolute;
+        right: calc(var(--dm-bleed) + 18px + 146px - 120px);
+        top: 120px;
+        width: 254px;
+        max-height: 360px;
+        overflow: hidden;
+        padding: 8px;
+        border-radius: 14px;
+        background: #fff;
+        border: 1px solid var(--dm-border);
+        box-shadow: var(--dm-shadow-float);
+    }
+    .dm-rp-panel::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 36px; background: linear-gradient(rgba(255, 255, 255, 0), #fff); border-radius: 0 0 14px 14px; }
+    .dm-rp-search { display: flex; align-items: center; gap: 7px; height: 30px; padding: 0 9px; margin-bottom: 6px; border-radius: 8px; background: var(--dm-soft); box-shadow: inset 0 0 0 1px var(--dm-border); font-size: 11px; color: var(--dm-faint); }
+    .dm-rp-search .dm-ico { width: 12px; height: 12px; }
+    .dm-rp-group { padding: 4px 0; }
+    .dm-rp-group + .dm-rp-group { border-top: 1px solid var(--dm-border); }
+    .dm-rp-glabel { display: block; padding: 4px 8px 3px; font-size: 9px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--dm-faint); }
+    .dm-rp-opt { display: flex; align-items: center; gap: 9px; padding: 5px 8px; border-radius: 8px; }
+    .dm-rp-opt.is-on { background: var(--dm-active); }
+    .dm-rp-opt > .dm-ico { width: 15px; height: 15px; color: var(--dm-muted); }
+    .dm-rp-opt.is-on > .dm-ico { color: var(--dm-navy); }
+    .dm-rp-copy { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+    .dm-rp-copy b { font-size: 11px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dm-rp-copy small { font-size: 9px; color: var(--dm-faint); }
+    .dm-rp-opt .dm-rp-check { width: 13px; height: 13px; color: var(--dm-navy); }
+
+    @container dm (max-width: 640px) {
+        .dm-rp-figure .dm-stage { height: auto; max-height: 1300px; }
+        .dm-rp-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .dm-rp-row { grid-template-columns: minmax(0, 1fr); }
+        .dm-rp-figure .dm-overlay { position: static; }
+        .dm-rp-panel { position: relative; right: auto; top: auto; width: auto; margin: 0 calc(var(--dm-bleed) + 12px) 16px 12px; }
+    }
+</style>

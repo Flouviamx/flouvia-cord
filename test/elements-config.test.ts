@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { TERM_CODES } from '../src/lib/payment-terms';
 
 const m = vi.hoisted(() => ({ fail: false, org: {} as Record<string, unknown>, impuestos: [] as Record<string, unknown>[] }));
 
@@ -48,7 +49,14 @@ describe('buildElementsConfig', () => {
     });
 
     it('nunca inventa un término que el servidor no acepta', async () => {
-        m.org.terminos_default = 'net90';
+        m.org.terminos_default = 'net120';
         expect((await buildElementsConfig('org-a')).terminos_default).toBe('contado');
+    });
+
+    it('ofrece todos los plazos de payment-terms.ts y respeta el default de la org', async () => {
+        m.org.terminos_default = 'net90';
+        const config = await buildElementsConfig('org-a');
+        expect(config.terminos_default).toBe('net90');
+        expect(config.terminos).toEqual([...TERM_CODES]);
     });
 });

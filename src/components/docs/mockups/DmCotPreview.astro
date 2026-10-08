@@ -1,0 +1,159 @@
+---
+// Mockup: el link público de COT-0149 abierto por el vendedor en vista previa.
+//
+// Calca de src/pages/q/[token].astro con esVistaPrevia: la tarjeta blanca con
+// el ojo y "Vista previa — así lo ve tu cliente. Tu visita no cuenta como
+// vista." (q.vista_previa) arriba de la QuoteCard. Sin la franja de presencia
+// ni el aviso de actividad: quien mira es del equipo y no genera señal
+// (regla 19). La tarjeta es la misma de src/components/q/QuoteCard.astro:
+// marca + folio, PARA / VÁLIDA HASTA / TÉRMINOS, total protagonista con la nota
+// del anticipo, partidas con el precio de lista tachado donde se negoció y
+// subtotales. Los datos son los de COT-0149 en dm-gestion.ts, los mismos que
+// usa el link del cliente en "Lo que ve tu cliente".
+import DocsMockup from './DocsMockup.astro';
+import DmIcon from './DmIcon.astro';
+import DmMoney from './DmMoney.astro';
+import { dmT, dmMoney, pick, tpl, DEMO, type DmLang } from './format';
+import { Q149, dmDate, dmNum, lineAmount, q149Subtotal, q149Total } from './dm-gestion';
+
+interface Props {
+    lang: DmLang;
+    /** Pie de figura; por defecto describe la vista previa. */
+    caption?: string;
+}
+const { lang } = Astro.props;
+const CUR = 'MXN';
+const subtotal = q149Subtotal();
+const total = q149Total();
+const iva = total - subtotal;
+const anticipo = Math.round(total * Q149.anticipoPct) / 100;
+const saldo = total - anticipo;
+
+const DATA = {
+    es: {
+        caption: `Link público de ${Q149.folio} en vista previa, con el aviso "Vista previa — así lo ve tu cliente. Tu visita no cuenta como vista.", total de ${dmMoney(total, CUR, 'es')} y tres partidas, el cemento con su precio de lista ${dmMoney(250, CUR, 'es')} tachado.`,
+        terminos: 'Contado',
+    },
+    en: {
+        caption: `Public link for ${Q149.folio} in preview mode, with the notice "Preview — this is what your client sees. Your visit is not counted as a view.", a ${dmMoney(total, CUR, 'en')} total and three lines, the cement with its ${dmMoney(250, CUR, 'en')} list price struck through.`,
+        terminos: 'Due on receipt',
+    },
+};
+const d = pick(DATA, lang);
+const caption = Astro.props.caption ?? d.caption;
+const splitNote = `${dmT(lang, 'q.split_al_aprobar')} ${dmMoney(anticipo, CUR, lang)}${tpl(dmT(lang, 'q.split_de_anticipo'), { pct: Q149.anticipoPct, saldo: dmMoney(saldo, CUR, lang) })}`;
+---
+<DocsMockup lang={lang} variant="browser" url={`cordhq.app/q/${Q149.token}`} brand={DEMO.brand} height={900} caption={caption} class="dm-cot-pv-figure">
+    <div class="dm-cot-pv">
+        <div class="dm-cot-pv-notice"><DmIcon name="eye" />{dmT(lang, 'q.vista_previa')}</div>
+        <div class="dm-cot-pv-card">
+            <div class="dm-cot-pv-head">
+                <div class="dm-cot-pv-brand">
+                    <span class="dm-cot-pv-logo">{DEMO.orgInitial}</span>
+                    <span class="dm-cot-pv-btext"><span class="dm-cot-pv-org">{DEMO.org}</span><span class="dm-cot-pv-rfc">RFC MVA0812153K9</span></span>
+                </div>
+                <div class="dm-cot-pv-folio"><span class="dm-cot-pv-eyebrow">{dmT(lang, 'q.folio_eyebrow')}</span><span class="dm-cot-pv-fnum">{Q149.folio}</span></div>
+            </div>
+            <div class="dm-cot-pv-rule"></div>
+            <div class="dm-cot-pv-meta">
+                <span class="dm-cot-pv-mcol"><span class="dm-cot-pv-eyebrow">{dmT(lang, 'q.meta_para')}</span><span class="dm-cot-pv-mval">{Q149.cliente}</span></span>
+                <span class="dm-cot-pv-mcol">
+                    <span class="dm-cot-pv-eyebrow">{dmT(lang, 'q.meta_vigencia')}</span>
+                    <span class="dm-cot-pv-mval">{dmDate(Q149.vigencia, lang)}</span>
+                    <span class="dm-cot-pv-chip">{tpl(dmT(lang, 'q.vig_en_dias'), { n: 6, s: 's' })}</span>
+                </span>
+                <span class="dm-cot-pv-mcol"><span class="dm-cot-pv-eyebrow">{dmT(lang, 'q.meta_terminos')}</span><span class="dm-cot-pv-mval">{d.terminos}</span></span>
+            </div>
+            <div class="dm-cot-pv-hero">
+                <span class="dm-cot-pv-eyebrow">{dmT(lang, 'q.total_eyebrow')}</span>
+                <DmMoney amount={total} currency={CUR} lang={lang} class="dm-cot-pv-total" />
+                <span class="dm-cot-pv-tnote">{CUR} · {dmT(lang, 'q.total_note')}</span>
+                <span class="dm-cot-pv-split">{splitNote}</span>
+            </div>
+            <div class="dm-cot-pv-items">
+                <div class="dm-cot-pv-row dm-cot-pv-th">
+                    <span>{dmT(lang, 'q.th_concepto')}</span><span class="is-c">{dmT(lang, 'q.th_cant')}</span><span class="is-r">{dmT(lang, 'q.th_unit')}</span><span class="is-r">{dmT(lang, 'q.th_importe')}</span>
+                </div>
+                {Q149.lines.map((l) => (
+                    <div class="dm-cot-pv-row">
+                        <span class="dm-cot-pv-name"><span class="dm-cot-pv-pick"><DmIcon name="check" stroke={3} /></span>{lang === 'en' ? l.en : l.es}</span>
+                        <span class="is-c dm-cot-pv-qty">{dmNum(l.qty, lang)} {l.unit[lang]}</span>
+                        <span class="is-r dm-cot-pv-price">
+                            {l.price < l.list && <s>{dmMoney(l.list, CUR, lang)}</s>}
+                            <DmMoney amount={l.price} currency={CUR} lang={lang} />
+                        </span>
+                        <span class="is-r"><DmMoney amount={lineAmount(l)} currency={CUR} lang={lang} class="dm-cot-pv-amt" /></span>
+                    </div>
+                ))}
+                <div class="dm-cot-pv-subs">
+                    <span class="dm-cot-pv-qt"><span>{dmT(lang, 'q.subtotal')}</span><DmMoney amount={subtotal} currency={CUR} lang={lang} /></span>
+                    <span class="dm-cot-pv-qt"><span>IVA 16%</span><DmMoney amount={iva} currency={CUR} lang={lang} /></span>
+                    <span class="dm-cot-pv-qt is-grand"><span>{dmT(lang, 'q.total')}</span><DmMoney amount={total} currency={CUR} lang={lang} /></span>
+                </div>
+            </div>
+            <span class="dm-cot-pv-cta"><DmIcon name="check" stroke={2.5} />{dmT(lang, 'q.aprobar_cotizacion')}</span>
+        </div>
+    </div>
+</DocsMockup>
+
+<style is:global>
+    .dm-cot-pv-figure .dm-browser-page { background: #f3f2ef; }
+    .dm-cot-pv { width: 100%; max-width: 560px; margin: 0 auto; padding: 24px 16px 0; display: flex; flex-direction: column; gap: 16px; }
+    .dm-cot-pv-notice { display: flex; align-items: flex-start; gap: 9px; padding: 11px 14px; border-radius: 14px; background: #fff; border: 1px solid rgba(10, 25, 47, 0.1); font-size: 11.5px; line-height: 1.5; color: #555556; box-shadow: 0 2px 4px rgba(10, 25, 47, 0.04), 0 18px 40px -14px rgba(10, 25, 47, 0.12); }
+    .dm-cot-pv-notice .dm-ico { width: 14px; height: 14px; margin-top: 2px; color: var(--dm-navy); }
+    .dm-cot-pv-card { display: flex; flex-direction: column; gap: 22px; padding: 28px 28px 26px; border-radius: 24px; background: #fff; box-shadow: 0 0 0 1px rgba(10, 25, 47, 0.06), 0 4px 6px rgba(10, 25, 47, 0.03), 0 20px 60px -20px rgba(10, 25, 47, 0.12); }
+    .dm-cot-pv-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .dm-cot-pv-brand { display: flex; align-items: center; gap: 11px; min-width: 0; }
+    .dm-cot-pv-logo { width: 38px; height: 38px; flex-shrink: 0; border-radius: 11px; display: grid; place-items: center; background: var(--dm-brand); color: #fff; font-size: 14px; font-weight: 800; }
+    .dm-cot-pv-btext { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .dm-cot-pv-org { font-size: 13.5px; font-weight: 700; letter-spacing: -0.02em; color: #111; }
+    .dm-cot-pv-rfc { font-size: 9.5px; font-weight: 500; color: #6b7280; }
+    .dm-cot-pv-folio { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex-shrink: 0; }
+    .dm-cot-pv-eyebrow { font-size: 7.5px; font-weight: 800; letter-spacing: 0.2em; color: #6b7280; }
+    .dm-cot-pv-fnum { font-size: 12.5px; font-weight: 800; color: #111; letter-spacing: -0.02em; }
+    .dm-cot-pv-rule { height: 1px; margin: -6px 0; background: linear-gradient(to right, transparent, rgba(10, 25, 47, 0.07) 15%, rgba(10, 25, 47, 0.07) 85%, transparent); }
+    .dm-cot-pv-meta { display: flex; gap: 28px; flex-wrap: wrap; }
+    .dm-cot-pv-mcol { display: flex; flex-direction: column; gap: 4px; }
+    .dm-cot-pv-mval { font-size: 12px; font-weight: 600; color: #111; }
+    .dm-cot-pv-chip { align-self: flex-start; padding: 2px 8px; border-radius: 999px; font-size: 9px; font-weight: 700; color: #b45309; background: rgba(245, 158, 11, 0.13); }
+    .dm-cot-pv-hero { display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 24px 16px; border-radius: 18px; background: #fafafa; border: 1px solid rgba(10, 25, 47, 0.055); text-align: center; }
+    .dm-cot-pv-total { font-size: 38px; line-height: 1.05; letter-spacing: -0.04em; color: var(--dm-brand); }
+    .dm-cot-pv-total .dm-cur { font-size: 13px; }
+    .dm-cot-pv-tnote { font-size: 10px; font-weight: 500; color: #6b7280; }
+    .dm-cot-pv-split { margin-top: 6px; padding: 5px 12px; border-radius: 999px; background: rgba(10, 25, 47, 0.05); font-size: 10.5px; font-weight: 600; color: var(--dm-navy); }
+    .dm-cot-pv-items { display: flex; flex-direction: column; }
+    .dm-cot-pv-row { display: grid; grid-template-columns: minmax(0, 1.9fr) minmax(0, 0.8fr) minmax(0, 0.95fr) minmax(0, 1fr); gap: 12px; align-items: center; padding: 11px 0; border-bottom: 1px solid rgba(10, 25, 47, 0.045); font-size: 12px; }
+    .dm-cot-pv-th { padding: 0 0 8px; border-bottom-color: rgba(10, 25, 47, 0.07); font-size: 7.5px; font-weight: 800; letter-spacing: 0.15em; text-transform: uppercase; color: #6b7280; }
+    .dm-cot-pv-row .is-c { text-align: center; }
+    .dm-cot-pv-row .is-r { text-align: right; justify-self: end; }
+    .dm-cot-pv-name { display: flex; align-items: center; gap: 8px; font-weight: 600; color: #111; min-width: 0; line-height: 1.35; }
+    .dm-cot-pv-pick { width: 16px; height: 16px; flex-shrink: 0; border-radius: 5px; display: grid; place-items: center; background: #0a192f; color: #fff; }
+    .dm-cot-pv-pick .dm-ico { width: 10px; height: 10px; }
+    .dm-cot-pv-qty { font-size: 11px; color: #6b7280; }
+    .dm-cot-pv-price { display: flex; flex-direction: column; align-items: flex-end; font-size: 11.5px; color: #6b7280; }
+    .dm-cot-pv-price s { font-size: 10px; line-height: 1.2; color: #6b7280; text-decoration-color: rgba(0, 0, 0, 0.3); white-space: nowrap; }
+    .dm-cot-pv-price .dm-money { font-weight: 500; }
+    .dm-cot-pv-amt { color: #111; }
+    .dm-cot-pv-subs { display: flex; flex-direction: column; align-items: flex-end; gap: 7px; padding-top: 14px; }
+    .dm-cot-pv-qt { display: flex; justify-content: space-between; gap: 40px; min-width: 220px; font-size: 11.5px; color: #6b7280; }
+    .dm-cot-pv-qt .dm-money { font-weight: 500; color: #6b7280; }
+    .dm-cot-pv-qt.is-grand { padding-top: 8px; border-top: 1px solid rgba(10, 25, 47, 0.07); font-weight: 700; color: #111; }
+    .dm-cot-pv-qt.is-grand .dm-money { font-size: 16px; font-weight: 600; color: #111; }
+    .dm-cot-pv-cta { display: flex; align-items: center; justify-content: center; gap: 8px; height: 46px; border-radius: 14px; background: var(--dm-brand); color: #fff; font-size: 13px; font-weight: 600; box-shadow: 0 10px 24px -12px rgba(10, 25, 47, 0.45); }
+    .dm-cot-pv-cta .dm-ico { width: 15px; height: 15px; }
+    @container dm (max-width: 560px) {
+        .dm-cot-pv-figure .dm-stage { height: auto; }
+        .dm-cot-pv { padding: 14px 8px 18px; }
+        .dm-cot-pv-card { padding: 20px 16px; border-radius: 20px; }
+        .dm-cot-pv-total { font-size: 30px; }
+        .dm-cot-pv-meta { gap: 16px; }
+        .dm-cot-pv-th { display: none; }
+        .dm-cot-pv-row { grid-template-columns: minmax(0, 1fr) auto; row-gap: 3px; }
+        .dm-cot-pv-name { grid-column: 1 / -1; }
+        .dm-cot-pv-qty { text-align: left !important; }
+        .dm-cot-pv-qty { grid-column: 1; grid-row: 2; align-self: end; }
+        .dm-cot-pv-price { grid-column: 2; grid-row: 2; }
+        .dm-cot-pv-row > .is-r:last-child { grid-column: 2; grid-row: 3; }
+        .dm-cot-pv-qt { min-width: 0; width: 100%; }
+    }
+</style>

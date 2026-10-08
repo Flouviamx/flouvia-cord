@@ -177,6 +177,18 @@ existe pero es ajeno ya es filtrar entre negocios.
                    cierre, monto cerrado, cobrado, ticket promedio, días a cierre) vía
                    getDesempeno() en queries.ts. Atribución por cotizaciones.creado_por
                    (`users.id`); gateado por el permiso `analitica`.
+/app/tareas      → TAREAS (oct 2026): todas las tareas, no solo las del widget del Inicio.
+                   Filtros Pendientes/Completadas y Mías/Todas/Sin asignar en la URL
+                   (?estado=&scope=), contadores arriba, edición en modal. La interacción
+                   vive en components/app/tasks/TaskBoard.astro (la comparte el widget) y
+                   las filas en TaskList.astro, el ÚNICO constructor de filas: lo renderizan
+                   el SSR y el fragmento /app/tareas/lista (`partial = true`), que el
+                   navegador pide después de cada cambio en vez de recargar la página.
+                   Leer: todos los miembros. Escribir: Cotizaciones, Cobranza o Clientes
+                   (TASK_PERMISSIONS). Sidebar: G T, badge con lo tuyo o sin dueño que
+                   vence hoy o antes (rojo solo si hay vencidas). Read-model en
+                   src/lib/tasks-db.ts; reglas de fecha (día civil del negocio) en
+                   src/lib/tasks.ts.
 /app/workflows   → CORD WORKFLOWS (sep 2026): lista, plantillas y cupo de workflows activos
                    del plan. Permiso `ajustes`.
 /app/workflows/[id] → editor visual (lienzo con disparador, acciones, condiciones con dos
@@ -281,10 +293,21 @@ APIs de cobros (ago 2026)
                                              Connect EXIGE event.account.
 
 /app/cotizaciones        → tabla con filtros por estado (client-side)
-/app/cotizaciones/nueva  → EL EDITOR — POST /api/cotizaciones (real). Comparte
-                           con Facturas el contrato semántico de tema para panel,
-                           campos, hero de IA, estados vacíos, dropdowns y foco
-                           (`--editor-*` en `AppLayout`); ningún panel fija blanco.
+/app/cotizaciones/nueva  → EL EDITOR (oct 2026: un solo editor de documentos,
+                           `DocumentEditor.astro` + `src/lib/editor/`, el mismo de
+                           Facturas). Nueva → POST /api/cotizaciones; `?draft=<id>`
+                           → PATCH update_draft/send; `?version=<id>` (cotización
+                           enviada, vista o vencida) → PATCH resend con líneas y
+                           precios: cliente, divisa y condiciones quedan fijos.
+                           `/app/cotizaciones/[id]/editar` solo redirige a
+                           `?version=`. La aritmética vive en `src/lib/editor/core.ts`
+                           (probada en test/editor-core.test.ts); el CSS, todo en
+                           `src/styles/editor.css` llaveado por `[data-editor]`
+                           (y `[data-editor-bar]` para las barras fijas, que el
+                           script mueve a <body>). Pasos: cliente, líneas,
+                           condiciones; vista previa, autoguardado de borradores
+                           (PATCH update_draft) y copia local de lo nuevo
+                           (`cord.editor.<kind>.new`, 7 días).
 /app/cotizaciones/[id]   → detalle + timeline + ACCIONES REALES (enviar, aprobar,
                            rechazar, pago, facturar, copiar link, eliminar borrador,
                            DUPLICAR → POST /api/cotizaciones/[id]/duplicate,
@@ -389,16 +412,24 @@ APIs de cobros (ago 2026)
                    para que no compitan tres badges dentro de una columna estrecha.
                    Exporta la vista filtrada a CSV y enlaza a
                    /app/facturas/recurrentes.
-/app/facturas/nueva      → EL EDITOR de facturas — impuesto por línea desde el
+/app/facturas/nueva      → EL EDITOR de facturas (el mismo `DocumentEditor` de
+                   cotizaciones) — impuesto por línea desde el
                    catálogo de la org (`buildTaxOptions`), retenciones que se
                    restan del total, vocabulario fiscal del país del emisor
-                   (`getCountryProfile().taxLabel`/`taxIdLabel`). Módulo
-                   bundleado (no `is:inline`): importa `calculateDocumentTotals`
-                   de `packages/elements/src/engine.ts`, el MISMO motor que
-                   calcula el servidor. La acción primaria es "Emitir y enviar":
+                   (`getCountryProfile().taxLabel`/`taxIdLabel`). El resumen
+                   redondea línea por línea igual que el servidor
+                   (`src/lib/document-rounding.ts`). `?draft=<id>` reabre el
+                   borrador con cliente, producto, unidad, lista, precio pactado
+                   e IVA incluido (snapshot `editor` de cada línea); también el
+                   borrador con folio reservado tras un rechazo cierto
+                   ("Corregir y reintentar"). La acción primaria es "Emitir y enviar":
                    primero muestra una revisión final, guarda el borrador y llama
                    `finalize_and_send`. El folio solo nace al emitir. También
-                   permite emitir sin enviar o guardar y salir.
+                   permite emitir sin enviar o guardar y salir. El plazo
+                   (`<TermPicker>`, `net<N>`) recalcula el vencimiento con
+                   `termDueDate()`; el vencimiento por defecto se calcula en el
+                   día civil del NEGOCIO (`civilDay`), no en UTC. El borrador se
+                   autoguarda y la vista previa usa la marca de la org.
                    Su hoja `src/styles/editor.css` consume los tokens
                    `--editor-*` de `AppLayout`: resumen, campos y menús mantienen
                    contraste en dark; el hero de IA usa un navy propio y no el
