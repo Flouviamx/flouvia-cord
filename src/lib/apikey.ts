@@ -12,7 +12,7 @@
 
 import { createHash } from 'node:crypto';
 import type { APIRoute } from 'astro';
-import { sql, resolveSandboxOrgId, logAudit } from './db';
+import { sql, resolveSandboxOrgId, logAudit, withOrgTx } from './db';
 import { trustedIp } from './ip';
 import { restrictedKeyAllows, ipAllowed, type KeyPermissions } from './api-key-policy';
 import { reqContext } from './context';
@@ -343,8 +343,11 @@ export async function logApiRequest(auth: ApiAuth, request: Request, status: num
         const url = new URL(request.url);
         const ruta = routeOverride || (url.pathname.replace(/^\/api/, '') || '/');
         const ip = trustedIp(request);
-        await sql`
+        // En el carril de la organización (regla 30): `api_requests` tiene RLS
+        // forzada, y con el rol `cord_app` un insert sin app.org_id lo rechaza
+        // la política — en silencio, porque este registro se traga el error.
+        await withOrgTx(auth.orgId, sql`
             insert into api_requests (org_id, key_id, metodo, ruta, status, duracion_ms, mode, ip)
-            values (${auth.orgId}, ${auth.keyId}, ${request.method}, ${ruta}, ${status}, ${ms}, ${auth.mode}, ${ip})`;
+            values (${auth.orgId}, ${auth.keyId}, ${request.method}, ${ruta}, ${status}, ${ms}, ${auth.mode}, ${ip})`);
     } catch { /* no-op */ }
 }

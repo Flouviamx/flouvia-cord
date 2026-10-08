@@ -20,6 +20,9 @@ end $$;
 --    para mandar un correo al entrar y otro al resolverse, no uno por corrida.
 --    Sin org_id y sin RLS, igual que ops_operators y ops_audit_log: son tablas
 --    de la plataforma, no de un negocio, y ninguna ruta fuera de Ops las lee.
+--    `firing` es el valor de la última evaluación; `notified_firing` es lo
+--    último que de verdad se AVISÓ. La transición se calcula contra el
+--    segundo: un aviso que no salió se reintenta en la corrida siguiente.
 create table if not exists ops_alert_rules (
   metric      text        primary key check (metric ~ '^[a-z0-9_]{3,40}$'),
   enabled     boolean     not null default true,
@@ -30,18 +33,22 @@ create table if not exists ops_alert_rules (
 create table if not exists ops_alert_state (
   metric       text        primary key check (metric ~ '^[a-z0-9_]{3,40}$'),
   firing       boolean     not null default false,
+  notified_firing boolean  not null default false,
   value        numeric,
   since        timestamptz,
   notified_at  timestamptz,
   checked_at   timestamptz not null default now()
 );
+alter table ops_alert_state add column if not exists notified_firing boolean not null default false;
 
 -- 3. Métricas de las alertas, en UN solo lugar que leen la pantalla de Ops y
 --    el cron que avisa. `security definer` y solo AGREGADOS (un número por
 --    métrica, ninguna fila de ningún negocio): así el cron no necesita el
 --    carril de Ops ni políticas nuevas en tablas de negocio (regla 30). Las
 --    métricas de crons se calculan aparte, en código, porque dependen del
---    horario declarado en vercel.json.
+--    horario declarado en vercel.json. Las ventanas cubren el intervalo real
+--    entre evaluaciones (el reloj de GitHub corre unas cuatro veces al día):
+--    una ventana de una hora dejaba fuera casi todo lo que pasaba entre dos.
 create or replace function cord_ops_alert_metrics()
 returns table (metric text, value numeric)
 language sql stable security definer
@@ -52,14 +59,17 @@ as $$
            then round(100.0 * count(*) filter (where not ok) / count(*), 1) else 0 end
     from webhook_deliveries where created_at >= now() - interval '24 hours' and not es_prueba
   union all
+  -- Solo la última semana: filas anteriores a la columna processed_at no
+  -- tienen ese dato y contarían como atoradas para siempre.
   select 'stripe_events_stuck', count(*)::numeric from stripe_events
    where processed_at is null and received_at < now() - interval '15 minutes'
+     and received_at >= now() - interval '7 days'
   union all
   select 'workflow_failed_24h', count(*)::numeric from workflow_runs
    where status = 'failed' and coalesce(finished_at, updated_at) >= now() - interval '24 hours'
   union all
-  select 'api_5xx_1h', count(*)::numeric from api_requests
-   where status >= 500 and created_at >= now() - interval '1 hour'
+  select 'api_5xx_6h', count(*)::numeric from api_requests
+   where status >= 500 and created_at >= now() - interval '6 hours'
   union all
   select 'disputes_needs_response', count(*)::numeric from cobro_disputas
    where status in ('needs_response', 'warning_needs_response')
@@ -69,10 +79,10 @@ as $$
   union all
   select 'integrations_error', count(*)::numeric from integracion_conexiones where estado = 'error'
   union all
-  -- Componentes cuya ÚLTIMA muestra de las últimas 2 h falló.
+  -- Componentes cuya ÚLTIMA muestra de las últimas 6 h falló.
   select 'health_failing', count(*)::numeric from (
     select distinct on (service) ok from health_checks
-     where checked_at >= now() - interval '2 hours'
+     where checked_at >= now() - interval '6 hours'
      order by service, checked_at desc
   ) latest where not ok
 $$;

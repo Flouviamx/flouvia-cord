@@ -16,16 +16,22 @@ describe('alertas de Ops', () => {
 
     it('avisa solo al cambiar de estado, y conserva desde cuándo está disparada', () => {
         const since = '2026-10-08T09:00:00Z';
-        const still = evaluateOpsAlerts(new Map([['stripe_events_stuck', 3]]), [], [{ metric: 'stripe_events_stuck', firing: true, since }], NOW);
+        const still = evaluateOpsAlerts(new Map([['stripe_events_stuck', 3]]), [], [{ metric: 'stripe_events_stuck', firing: true, notified_firing: true, since }], NOW);
         expect(get(still, 'stripe_events_stuck')).toMatchObject({ firing: true, transition: null });
         expect(get(still, 'stripe_events_stuck').since).toEqual(new Date(since));
-        const resolved = evaluateOpsAlerts(new Map([['stripe_events_stuck', 0]]), [], [{ metric: 'stripe_events_stuck', firing: true, since }], NOW);
+        const resolved = evaluateOpsAlerts(new Map([['stripe_events_stuck', 0]]), [], [{ metric: 'stripe_events_stuck', firing: true, notified_firing: true, since }], NOW);
         expect(get(resolved, 'stripe_events_stuck')).toMatchObject({ firing: false, transition: 'resolved', since: null });
     });
 
+    it('un aviso que no salió sigue pendiente: la transición se reintenta', () => {
+        // Se evaluó disparada, pero el correo y Slack fallaron: notified_firing sigue en false.
+        const rows = evaluateOpsAlerts(new Map([['stripe_events_stuck', 2]]), [], [{ metric: 'stripe_events_stuck', firing: true, notified_firing: false, since: NOW }], NOW);
+        expect(get(rows, 'stripe_events_stuck').transition).toBe('fired');
+    });
+
     it('una regla apagada no dispara, y apagarla resuelve la alerta abierta', () => {
-        const rows = evaluateOpsAlerts(new Map([['api_5xx_1h', 500]]), [{ metric: 'api_5xx_1h', enabled: false, threshold: 20 }], [{ metric: 'api_5xx_1h', firing: true, since: NOW }], NOW);
-        expect(get(rows, 'api_5xx_1h')).toMatchObject({ firing: false, transition: 'resolved' });
+        const rows = evaluateOpsAlerts(new Map([['api_5xx_6h', 500]]), [{ metric: 'api_5xx_6h', enabled: false, threshold: 20 }], [{ metric: 'api_5xx_6h', firing: true, notified_firing: true, since: NOW }], NOW);
+        expect(get(rows, 'api_5xx_6h')).toMatchObject({ firing: false, transition: 'resolved' });
     });
 
     it('respeta el umbral guardado (que llega como texto desde numeric)', () => {

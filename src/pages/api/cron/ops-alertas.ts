@@ -32,7 +32,7 @@ async function run(): Promise<Response> {
         const [metricRows, rules, states, runs, operators] = await withSystemTx(
             opsAlertMetricValues(),
             sql`select metric, enabled, threshold, updated_by from ops_alert_rules`,
-            sql`select metric, firing, since from ops_alert_state`,
+            sql`select metric, firing, notified_firing, since from ops_alert_state`,
             opsCronRuns(),
             sql`select email from ops_operators where active`,
         );
@@ -43,16 +43,18 @@ async function run(): Promise<Response> {
         const rows = evaluateOpsAlerts(values, rules as any[], states as any[], now);
         const changed = rows.filter((r) => r.transition);
 
-        // El estado se guarda ANTES de avisar: si el aviso falla, la siguiente
-        // corrida no repite un correo que quizá sí salió.
+        // La evaluación se guarda siempre; lo AVISADO (notified_firing) solo
+        // avanza después de que el aviso salió por al menos un canal. Si
+        // Resend o Slack fallan, la transición queda pendiente y la corrida
+        // siguiente la reintenta en vez de perderla.
         await withSystemTx(...rows.map((r) => sql`
-            insert into ops_alert_state (metric, firing, value, since, notified_at, checked_at)
-            values (${r.metric.id}, ${r.firing}, ${r.value}, ${r.since}, ${r.transition ? now : null}, now())
+            insert into ops_alert_state (metric, firing, value, since, checked_at)
+            values (${r.metric.id}, ${r.firing}, ${r.value}, ${r.since}, now())
             on conflict (metric) do update set
-              firing = excluded.firing, value = excluded.value, since = excluded.since, checked_at = now(),
-              notified_at = coalesce(excluded.notified_at, ops_alert_state.notified_at)`));
+              firing = excluded.firing, value = excluded.value, since = excluded.since, checked_at = now()`));
 
         let notified = 0;
+        let slack = false;
         if (changed.length) {
             const fired = changed.filter((r) => r.transition === 'fired');
             const resolved = changed.filter((r) => r.transition === 'resolved');
@@ -64,7 +66,7 @@ async function run(): Promise<Response> {
                 ...fired.map((r) => `Disparada · ${line(r)}`),
                 ...resolved.map((r) => `Resuelta · ${r.metric.label}`),
             ].join('\n');
-            await sendOpsAlert(subject.replace(/^Cord Ops: /, ''), text);
+            slack = await sendOpsAlert(subject.replace(/^Cord Ops: /, ''), text);
             const html = `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;max-width:540px;margin:0 auto;padding:32px 20px;color:#111827;">
                 <p style="font-size:16px;font-weight:600;margin:0 0 16px;">${esc(subject)}</p>
                 ${fired.map((r) => `<p style="font-size:14px;line-height:1.55;margin:0 0 10px;"><strong>${esc(r.metric.label)}</strong>: ${esc(opsAlertValue(r.metric, r.value))} (umbral ${esc(opsAlertValue(r.metric, r.threshold))}).<br><span style="color:#6B7280;">${esc(r.metric.description)}</span><br><a href="https://ops.cordhq.app${r.metric.href}" style="color:#2563EB;">Abrir en Cord Ops</a></p>`).join('')}
@@ -80,10 +82,18 @@ async function run(): Promise<Response> {
                 });
                 if (sent.sent) notified++;
             }
+            if (notified > 0 || slack) {
+                await withSystemTx(...changed.map((r) => sql`
+                    update ops_alert_state set notified_firing = ${r.firing}, notified_at = now()
+                     where metric = ${r.metric.id}`));
+            } else {
+                log.warn('ninguna alerta de Ops se pudo avisar; se reintenta en la corrida siguiente', { route: 'cron/ops-alertas', cambios: changed.length });
+            }
         }
         return new Response(JSON.stringify({
             ok: true, evaluadas: rows.length, disparadas: rows.filter((r) => r.firing).length,
-            cambios: changed.length, avisos: notified,
+            cambios: changed.length, avisos: notified, slack,
+            pendientes: changed.length && !(notified > 0 || slack) ? changed.length : 0,
         }), { status: 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
     });
 }

@@ -20,7 +20,7 @@ export const OPS_ALERT_METRICS: OpsAlertMetric[] = [
   { id: 'health_failing', label: 'Componentes caídos', description: 'Componentes cuya última sonda de disponibilidad falló.', unit: 'count', defaultThreshold: 1, href: '/ops/status' },
   { id: 'stripe_events_stuck', label: 'Eventos del procesador atorados', description: 'Avisos de Stripe sin procesar después de 15 minutos.', unit: 'count', defaultThreshold: 1, href: '/ops/webhooks' },
   { id: 'webhook_fail_pct_24h', label: 'Webhooks rechazados', description: 'Porcentaje de entregas a endpoints de negocios que fallaron en 24 h (desde 20 entregas).', unit: 'pct', defaultThreshold: 20, href: '/ops/webhooks' },
-  { id: 'api_5xx_1h', label: 'Errores de la API', description: 'Respuestas 5xx de la API pública y MCP en la última hora.', unit: 'count', defaultThreshold: 20, href: '/ops/developers' },
+  { id: 'api_5xx_6h', label: 'Errores de la API', description: 'Respuestas 5xx de la API pública y MCP en las últimas 6 h.', unit: 'count', defaultThreshold: 50, href: '/ops/developers' },
   { id: 'workflow_failed_24h', label: 'Workflows fallidos', description: 'Ejecuciones de workflows que fallaron en 24 h.', unit: 'count', defaultThreshold: 10, href: '/ops/workflows' },
   { id: 'disputes_needs_response', label: 'Disputas sin responder', description: 'Contracargos que esperan evidencia del negocio.', unit: 'count', defaultThreshold: 1, href: '/ops/organizations' },
   { id: 'payouts_failed_7d', label: 'Depósitos fallidos', description: 'Depósitos a cuentas de negocios que fallaron en 7 días.', unit: 'count', defaultThreshold: 1, href: '/ops/organizations' },
@@ -30,7 +30,7 @@ export const OPS_ALERT_IDS = new Set(OPS_ALERT_METRICS.map((m) => m.id));
 
 export const opsAlertMetricValues = () => sql`select metric, value from cord_ops_alert_metrics()`;
 export const opsAlertRules = () => sql`select metric, enabled, threshold, updated_by, updated_at from ops_alert_rules`;
-export const opsAlertStates = () => sql`select metric, firing, value, since, notified_at, checked_at from ops_alert_state`;
+export const opsAlertStates = () => sql`select metric, firing, notified_firing, value, since, notified_at, checked_at from ops_alert_state`;
 
 export interface OpsAlertRow {
   metric: OpsAlertMetric;
@@ -39,7 +39,10 @@ export interface OpsAlertRow {
   threshold: number;
   firing: boolean;
   since: Date | null;
-  /** Qué cambió respecto al estado guardado: avisar solo en las transiciones. */
+  /**
+   * Qué cambió respecto a lo último AVISADO (no a la última evaluación): si
+   * un aviso no salió, la transición sigue pendiente y se reintenta.
+   */
   transition: 'fired' | 'resolved' | null;
   updatedBy: string | null;
 }
@@ -52,7 +55,7 @@ export interface OpsAlertRow {
 export function evaluateOpsAlerts(
   values: Map<string, number>,
   rules: { metric: string; enabled: boolean; threshold: number | string; updated_by?: string | null }[],
-  states: { metric: string; firing: boolean; since: string | Date | null }[],
+  states: { metric: string; firing: boolean; notified_firing?: boolean; since: string | Date | null }[],
   now = new Date(),
 ): OpsAlertRow[] {
   return OPS_ALERT_METRICS.map((metric) => {
@@ -63,10 +66,11 @@ export function evaluateOpsAlerts(
     const value = values.has(metric.id) ? Number(values.get(metric.id)) : null;
     const firing = enabled && value !== null && value >= threshold;
     const was = !!state?.firing;
+    const notified = !!state?.notified_firing;
     return {
       metric, value, enabled, threshold, firing,
       since: firing ? (was && state?.since ? new Date(state.since) : now) : null,
-      transition: firing && !was ? 'fired' : !firing && was ? 'resolved' : null,
+      transition: firing && !notified ? 'fired' : !firing && notified ? 'resolved' : null,
       updatedBy: rule?.updated_by ?? null,
     };
   });

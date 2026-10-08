@@ -18,7 +18,7 @@ const now = new Date();
 const since = opsCronRecordingSince(runs);
 const statuses = opsCronDefs().map((def) => opsCronStatus(def, runs, now, since));
 // Primero lo que necesita atención, luego lo pendiente, luego lo sano.
-const ORDER = ['error', 'stuck', 'missed', 'unscheduled', 'pending', 'ok', 'untracked'];
+const ORDER = ['error', 'stuck', 'missed', 'unscheduled', 'pending', 'ok', 'untracked', 'manual'];
 statuses.sort((a, b) => ORDER.indexOf(a.health) - ORDER.indexOf(b.health) || a.endpoint.localeCompare(b.endpoint));
 const problems = statuses.filter(opsCronIsProblem);
 const tracked = statuses.filter((s) => s.last);
@@ -53,7 +53,7 @@ const stripLabel: Record<string, string> = { ok: 'correcto', error: 'falló', ru
             <td><span class:list={['ops-badge', tone]}>{label}</span>{s.last && s.last.intentos > 1 && <span class="ops-sub">{opsNumber(s.last.intentos)} intentos</span>}</td>
             <td>{s.history.length
               ? <span class="ops-cron-strip" role="img" aria-label={s.history.map((h) => `${h.periodo}: ${stripLabel[h.estado]}`).join(', ')}>{s.history.map((h) => <i class={h.estado}></i>)}</span>
-              : <span class="ops-muted">{s.health === 'unscheduled' ? 'Nunca corre' : s.cadence.kind === 'external' ? 'Ver Disponibilidad' : 'No registra corridas'}</span>}</td>
+              : <span class="ops-muted">{s.health === 'unscheduled' ? 'Nunca corre' : s.health === 'manual' ? 'Solo a mano' : s.cadence.kind === 'external' ? 'Ver Disponibilidad' : 'No registra corridas'}</span>}</td>
             <td>{s.last ? <span title={opsDate(s.last.started_at)}>{opsAgo(s.last.started_at)}</span> : <span class="ops-muted">—</span>}{s.last && <span class="ops-sub ops-code">{s.last.periodo}</span>}</td>
             <td class="num">{s.last ? seconds(duration(s.last)) : '—'}</td>
             <td><span class="ops-wrap">{s.last ? opsCronResult(s.last.resultado) : (s.note || '—')}</span></td>

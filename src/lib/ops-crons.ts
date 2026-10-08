@@ -15,12 +15,16 @@ const CRON_SOURCES = import.meta.glob('../pages/api/cron/*.ts', { query: '?raw',
 const endpointOf = (file: string) => `/api/cron/${file.split('/').pop()!.replace(/\.ts$/, '')}`;
 const CRON_FILES = Object.keys(CRON_SOURCES).map(endpointOf);
 const CRON_TRACKED = new Set(Object.entries(CRON_SOURCES).filter(([, src]) => /runCronOnce\(/.test(src)).map(([file]) => endpointOf(file)));
+// Sin GET no lo puede llamar ningún reloj (los dos usan GET): se corre a mano
+// a propósito (p.ej. comisiones-emitir), no es un cron olvidado.
+const CRON_MANUAL = new Set(Object.entries(CRON_SOURCES).filter(([, src]) => !/export const GET\b/.test(src)).map(([file]) => endpointOf(file)));
 
 export type OpsCronCadence =
   | { kind: 'daily'; hour: number; minute: number }
   | { kind: 'monthly'; day: number; hour: number; minute: number }
   | { kind: 'each_run' }
   | { kind: 'external'; reason: string }
+  | { kind: 'manual' }
   | { kind: 'unscheduled' };
 
 export interface OpsCronDef {
@@ -36,6 +40,7 @@ export function opsCronDefs(
   crons: { path: string; schedule: string }[] = (vercelConfig as { crons?: { path: string; schedule: string }[] }).crons ?? [],
   files: string[] = CRON_FILES,
   tracked: Set<string> = CRON_TRACKED,
+  manual: Set<string> = CRON_MANUAL,
 ): OpsCronDef[] {
   const defs = new Map<string, OpsCronDef>();
   for (const c of crons) {
@@ -45,7 +50,7 @@ export function opsCronDefs(
     defs.set(c.path, { endpoint: c.path, cadence: s.day === '*' ? { kind: 'daily', hour: s.hour, minute: s.minute } : { kind: 'monthly', day: s.day, hour: s.hour, minute: s.minute } });
   }
   for (const [path, note] of EN_CADA_CORRIDA) defs.set(path, { endpoint: path, cadence: { kind: 'each_run' }, note });
-  for (const path of files) if (!defs.has(path)) defs.set(path, { endpoint: path, cadence: { kind: 'unscheduled' } });
+  for (const path of files) if (!defs.has(path)) defs.set(path, { endpoint: path, cadence: manual.has(path) ? { kind: 'manual' } : { kind: 'unscheduled' } });
   for (const def of defs.values()) def.tracked = tracked.has(def.endpoint);
   return [...defs.values()].sort((a, b) => a.endpoint.localeCompare(b.endpoint));
 }
@@ -56,6 +61,7 @@ export function opsCadenceLabel(c: OpsCronCadence): string {
   if (c.kind === 'monthly') return `Día ${c.day} de cada mes, ${pad(c.hour)}:${pad(c.minute)} UTC`;
   if (c.kind === 'each_run') return 'En cada corrida del reloj';
   if (c.kind === 'external') return 'Lo muestrea otro reloj';
+  if (c.kind === 'manual') return 'Se corre a mano';
   return 'Sin horario';
 }
 
@@ -70,7 +76,7 @@ export interface OpsCronRun {
   started_at: string | Date; finished_at: string | Date | null; resultado: unknown;
 }
 
-export type OpsCronHealth = 'ok' | 'error' | 'stuck' | 'missed' | 'pending' | 'untracked' | 'unscheduled';
+export type OpsCronHealth = 'ok' | 'error' | 'stuck' | 'missed' | 'pending' | 'untracked' | 'unscheduled' | 'manual';
 
 export interface OpsCronStatus extends OpsCronDef {
   health: OpsCronHealth;
@@ -88,6 +94,8 @@ const month = (d: Date) => d.toISOString().slice(0, 7);
  * que unas horas de retraso son normales y no son una falla.
  */
 export const OPS_CRON_GRACE_HOURS = 6;
+/** Horas sin corrida tras las que un cron "de cada corrida" cuenta como caído. */
+export const OPS_CRON_EACH_RUN_MAX_HOURS = 24;
 
 /** Desde cuándo hay bitácora: la corrida más vieja registrada de cualquier cron. */
 export const opsCronRecordingSince = (runs: OpsCronRun[]) => runs.reduce<Date | null>((acc, r) => {
@@ -102,6 +110,7 @@ export function opsCronStatus(def: OpsCronDef, runs: OpsCronRun[], now = new Dat
   const byPeriod = new Map(mine.map((r) => [r.periodo, r] as const));
   const base = { ...def, last };
   if (def.cadence.kind === 'unscheduled') return { ...base, health: 'unscheduled', history: [] };
+  if (def.cadence.kind === 'manual') return { ...base, health: 'manual', history: [] };
   if (def.cadence.kind === 'external' || (!def.tracked && !mine.length)) {
     return { ...base, health: 'untracked', history: [] };
   }
@@ -137,8 +146,11 @@ export function opsCronStatus(def: OpsCronDef, runs: OpsCronRun[], now = new Dat
       });
 
   if (!mine.length) {
-    const lastDue = [...history].reverse().find((h) => h.estado !== 'none');
-    return { ...base, health: lastDue?.estado === 'missing' ? 'missed' : 'pending', history };
+    // Nunca apareció: se acusa hasta tener DOS periodos vencidos, no uno. Un
+    // cron recién desplegado cuyo primer periodo cae antes del despliegue no
+    // es una falla; dos seguidos sí lo son.
+    const missing = history.filter((h) => h.estado === 'missing').length;
+    return { ...base, health: missing >= 2 ? 'missed' : 'pending', history };
   }
   if (last!.estado === 'error') return { ...base, health: 'error', history };
   if (last!.estado === 'running' && now.getTime() - new Date(last!.started_at).getTime() > STALE_MINUTES * 60_000) {
@@ -148,6 +160,11 @@ export function opsCronStatus(def: OpsCronDef, runs: OpsCronRun[], now = new Dat
   // tira lo sigue mostrando; el estado dice si HOY hay algo que atender.
   const lastDue = [...history].reverse().find((h) => h.estado !== 'none');
   if (lastDue?.estado === 'missing') return { ...base, health: 'missed', history };
+  // "De cada corrida": no tiene periodos fijos, pero el reloj pasa varias
+  // veces al día. Un día entero sin corrida es que el reloj o el cron murió.
+  if (def.cadence.kind === 'each_run' && now.getTime() - new Date(last!.started_at).getTime() > OPS_CRON_EACH_RUN_MAX_HOURS * 3_600_000) {
+    return { ...base, health: 'missed', history };
+  }
   const current = periods[periods.length - 1];
   if (current && current.due < now && !byPeriod.has(current.periodo)) return { ...base, health: 'pending', history };
   return { ...base, health: 'ok', history };
@@ -166,7 +183,7 @@ export const opsCronProblemCount = (runs: OpsCronRun[], now = new Date()) => ops
 
 export const OPS_CRON_HEALTH: Record<OpsCronHealth, [string, string]> = {
   ok: ['Al día', 'green'], error: ['Falló', 'red'], stuck: ['Colgado', 'red'], missed: ['No corrió', 'red'],
-  pending: ['Pendiente', 'amber'], untracked: ['Sin bitácora', ''], unscheduled: ['Sin horario', 'amber'],
+  pending: ['Pendiente', 'amber'], untracked: ['Sin bitácora', ''], unscheduled: ['Sin horario', 'amber'], manual: ['Manual', ''],
 };
 
 /** Resumen corto del resultado guardado: código y, si lo trae, el motivo. */
