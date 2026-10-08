@@ -1,4 +1,5 @@
 import { sql, withOrgTx, type DbQuery } from '../db';
+import { normalizeTerm } from '../payment-terms';
 import { notifyQuoteSent } from '../email';
 import { invalidateMoneyCaches } from '../queries';
 import { dispatchQuoteEvent, dispatchQuoteEventFrom, type WebhookEvent } from '../webhooks';
@@ -176,7 +177,7 @@ export async function runQuoteAction(ctx: ActionContext, id: string, input: Reco
             }
             const vigDias = Number(input.vigencia_dias) || 30;
             const esRecurrente = !!input.es_recurrente;
-            const terminos = esRecurrente ? 'contado' : (input.terminos || 'contado');
+            const terminos = esRecurrente ? 'contado' : normalizeTerm(input.terminos);
             const antRaw = Number(input.anticipo_pct);
             const anticipoPct = esRecurrente ? null
                 : (Number.isFinite(antRaw) && antRaw >= 1 && antRaw <= 99 ? Math.round(antRaw * 100) / 100 : null);

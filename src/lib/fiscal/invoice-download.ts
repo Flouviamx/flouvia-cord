@@ -8,6 +8,7 @@ import { sql, withOrgTx } from '../db';
 import { decryptSecret } from '../crypto-secret';
 import { createInvoicePdf } from './invoice-pdf';
 import { publicDocumentUrl } from '../public-links';
+import { isTermCode, termDays } from '../payment-terms';
 
 const FACTURAPI_KEY = process.env.FACTURAPI_API_KEY || process.env.FACTURAPI_KEY || '';
 const FACTURAPI_BASE = (process.env.FACTURAPI_URL || 'https://www.facturapi.io/v2').replace(/\/$/, '');
@@ -85,19 +86,15 @@ export async function downloadInvoiceDocument(orgId: string, id: string, format:
 
 /** Vencimiento del pago según los términos de crédito de la cotización. */
 function dueDateFrom(terminos: unknown, baseDate: unknown): Date | null {
-  const days: Record<string, number> = { contado: 0, net30: 30, net60: 60 };
+  // Un código que no es contado ni net<N> no tiene vencimiento demostrable.
   const term = String(terminos || 'contado');
-  const offset = days[term];
-  if (offset === undefined || !baseDate) return null;
+  if (term !== 'contado' && !termDays(term)) return null;
+  if (!baseDate) return null;
   const due = new Date(baseDate as string);
   if (!Number.isFinite(due.getTime())) return null;
-  due.setDate(due.getDate() + offset);
+  due.setDate(due.getDate() + termDays(term));
   return due;
 }
-
-const TERM_LABEL: Record<string, string> = {
-  contado: 'Contado', net30: 'Net 30', net60: 'Net 60',
-};
 
 async function invoicePdf(orgId: string, doc: any, simulated: boolean): Promise<Response> {
   const term = String(doc.terminos || '');
@@ -131,7 +128,7 @@ async function invoicePdf(orgId: string, doc: any, simulated: boolean): Promise<
     dueDate: doc.invoice_due
       ? new Date(doc.invoice_due as string)
       : dueDateFrom(doc.terminos, doc.base_date),
-    paymentTerms: TERM_LABEL[term] || null,
+    paymentTermsCode: isTermCode(term) ? term : null,
     creditNoteOfNumber: (doc.credit_note_of_number as string) || null,
     verifactu: doc.provider_data?.verifactu || null,
     // El "cómo pagar" es la página de LA FACTURA: ahí está el saldo real de

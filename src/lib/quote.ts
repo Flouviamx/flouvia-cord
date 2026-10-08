@@ -35,7 +35,10 @@ export interface Quote {
     cliente_id?: string;
     clienteInicial: string;
     status: QuoteStatus;
-    terminos: 'Contado' | 'Net 30' | 'Net 60';
+    /** Etiqueta legible en el idioma de la cuenta ("Contado", "Net 45"). */
+    terminos: string;
+    /** Código estable del plazo (src/lib/payment-terms.ts). */
+    terminosCode?: string;
     vigencia: string;
     creada: string;
     token: string;

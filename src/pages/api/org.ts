@@ -25,6 +25,7 @@ import { getCountryProfile, isCountryCode, isSupportedCountry } from '../../lib/
 import { listOfferedCurrencies } from '../../lib/currency';
 import { isValidTimeZone } from '../../lib/timezones';
 import { validateLateInterestRate } from '../../lib/late-interest-policy';
+import { normalizeTerm } from '../../lib/payment-terms';
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
 const TEMPLATES = new Set(['clasico', 'minimal', 'detallado']);
@@ -156,7 +157,6 @@ export const PATCH: APIRoute = async ({ request }) => {
 
     // ── Superpoderes de configuración (jun 2026) ──
     const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n));
-    const TERMS = new Set(['contado', 'net30', 'net60']);
     const str = (v: unknown, max = 200) => { const s = String(v ?? '').trim(); return s ? s.slice(0, max) : null; };
 
     // Perfil fiscal internacional. El JSON solo contiene este allowlist; no se
@@ -186,7 +186,7 @@ export const PATCH: APIRoute = async ({ request }) => {
         : null);
 
     const vigDias = body.vigencia_default_dias !== undefined ? clamp(Math.round(Number(body.vigencia_default_dias) || 0), 1, 365) : actual.vigencia_default_dias;
-    const termDef = body.terminos_default !== undefined ? (TERMS.has(String(body.terminos_default)) ? String(body.terminos_default) : 'contado') : actual.terminos_default;
+    const termDef = body.terminos_default !== undefined ? normalizeTerm(body.terminos_default) : actual.terminos_default;
     // % de anticipo por defecto (pre-llena el editor): 0/vacío = sin anticipo.
     const anticipoDef = body.anticipo_default_pct !== undefined
         ? (Number(body.anticipo_default_pct) >= 1 ? clamp(Math.round(Number(body.anticipo_default_pct)), 1, 99) : null)

@@ -111,7 +111,8 @@ export interface CordController {
 
 // ==== API Types ====
 export type QuoteStatus = 'draft' | 'sent' | 'approved' | 'paid' | 'rejected';
-export type Terminos = 'contado' | 'net30' | 'net60';
+/** `contado` o `net<N>`: N días naturales de crédito desde la fecha del documento. */
+export type Terminos = 'contado' | 'net7' | 'net15' | 'net30' | 'net45' | 'net60' | 'net90';
 export type NivelCliente = 'estandar' | 'plata' | 'oro' | 'distribuidor';
 
 export interface QuoteItemInput {

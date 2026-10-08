@@ -50,11 +50,15 @@ export function schemaFor(tables: string[]): string[] {
     return out;
 }
 
-/** Vista `cuentas_por_cobrar` tal cual está en el esquema. */
+/**
+ * Vista `cuentas_por_cobrar` tal cual está en el esquema, precedida de
+ * `cord_term_days()`, que la vista usa para el vencimiento.
+ */
 export function cuentasPorCobrarView(): string {
+    const fn = /create or replace function cord_term_days[\s\S]*?\$\$;/.exec(SCHEMA)?.[0] ?? '';
     const start = SCHEMA.indexOf('create or replace view cuentas_por_cobrar as');
     const end = SCHEMA.indexOf(';', SCHEMA.indexOf('where d2.cotizacion_id = c.id', start)) + 1;
-    return SCHEMA.slice(start, end);
+    return `${fn}\n${SCHEMA.slice(start, end)}`;
 }
 
 /** PGlite con pgcrypto y las tablas pedidas; falla en voz alta si una sentencia no aplica. */

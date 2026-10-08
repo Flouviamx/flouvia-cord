@@ -177,6 +177,18 @@ existe pero es ajeno ya es filtrar entre negocios.
                    cierre, monto cerrado, cobrado, ticket promedio, días a cierre) vía
                    getDesempeno() en queries.ts. Atribución por cotizaciones.creado_por
                    (`users.id`); gateado por el permiso `analitica`.
+/app/tareas      → TAREAS (oct 2026): todas las tareas, no solo las del widget del Inicio.
+                   Filtros Pendientes/Completadas y Mías/Todas/Sin asignar en la URL
+                   (?estado=&scope=), contadores arriba, edición en modal. La interacción
+                   vive en components/app/tasks/TaskBoard.astro (la comparte el widget) y
+                   las filas en TaskList.astro, el ÚNICO constructor de filas: lo renderizan
+                   el SSR y el fragmento /app/tareas/lista (`partial = true`), que el
+                   navegador pide después de cada cambio en vez de recargar la página.
+                   Leer: todos los miembros. Escribir: Cotizaciones, Cobranza o Clientes
+                   (TASK_PERMISSIONS). Sidebar: G T, badge con lo tuyo o sin dueño que
+                   vence hoy o antes (rojo solo si hay vencidas). Read-model en
+                   src/lib/tasks-db.ts; reglas de fecha (día civil del negocio) en
+                   src/lib/tasks.ts.
 /app/workflows   → CORD WORKFLOWS (sep 2026): lista, plantillas y cupo de workflows activos
                    del plan. Permiso `ajustes`.
 /app/workflows/[id] → editor visual (lienzo con disparador, acciones, condiciones con dos

@@ -2,7 +2,7 @@
 title: "Notifications"
 seoTitle: "Cord notifications by email, Slack, and Microsoft Teams"
 description: "Which events alert you, when each one fires (including what counts as a view), which channel they arrive on, and what doesn't trigger an alert."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-08"
 reviewedBy: "Cord product and operations"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -20,7 +20,7 @@ In **Settings › Notifications › Notifications** there's a matrix of 7 events
 channels (Email, Slack, and Teams). You check the boxes you want and they apply from
 then on to the whole organization.
 
-<DmNotifMatrix lang="en" />
+{/* MOCKUP: Settings › Notifications with the 8-row matrix (Your client viewed the quote, Quote approved, Quote rejected, Payment received, Quote about to expire, Overdue payment, Someone joined the team, Task reminder) and the Email, Slack, and Teams columns; Approved, Rejected, and Payment received checked under Email, and the Slack and Teams cells for "Someone joined the team" showing "Not available for this event". Below, the Slack channel and Teams sections. */}
 
 ## Requirements
 
@@ -39,6 +39,7 @@ then on to the whole organization.
 | **Quote about to expire** | Exactly 3 days before the validity date, if it's still sent or viewed. | The daily process |
 | **Overdue payment** | The day after the payment of an approved or invoiced quote comes due without being paid. | The daily process |
 | **Someone joined the team** | An invitee accepts your invitation. | Your team |
+| **Task reminder** | Every morning, from 8:00 in your business's time zone, if someone has tasks due today or overdue. | The daily process |
 
 ### What counts as a "view"
 
@@ -61,7 +62,7 @@ More in [What your client sees](/en/docs/interaccion/vista-del-cliente).
 ## Before you save for the first time
 
 Until you save the matrix, Cord alerts you **by email** about three events: quote
-approved, rejected, and payment received. Once you save the screen, your selection
+approved, rejected, and payment received, and it sends the **Task reminder**. Once you save the screen, your selection
 rules: you can turn off any of the three or turn on the others.
 
 ## Channels
@@ -92,6 +93,12 @@ separate channel from Slack: you can have both and choose where each alert goes.
 
 </TabItem>
 </Tabs>
+
+<Callout type="info">
+**The task reminder doesn't go to the owner; it goes to each assignee.** Each person gets
+only their own tasks (see [Tasks](/en/docs/gestion/tareas#email-reminder)). Turning it off
+here turns it off for the whole organization. Email only.
+</Callout>
 
 <Callout type="warning">
 **"Someone joined the team" only arrives by email.** It isn't tied to a quote (no

@@ -15,18 +15,16 @@ import { brandImagePng } from '../brand-image';
 import { sql, withOrgTx } from '../db';
 import { createInvoicePdf } from './invoice-pdf';
 import { publicDocumentUrl } from '../public-links';
-
-const TERM_LABEL: Record<string, string> = {
-    contado: 'Contado', net30: 'Net 30', net60: 'Net 60',
-};
+import { isTermCode, termDays } from '../payment-terms';
 
 function dueDateFrom(terminos: unknown, baseDate: unknown): Date | null {
-    const days: Record<string, number> = { contado: 0, net30: 30, net60: 60 };
-    const offset = days[String(terminos || 'contado')];
-    if (offset === undefined || !baseDate) return null;
+    // Un código que no es contado ni net<N> no tiene vencimiento demostrable.
+    const code = String(terminos || 'contado');
+    if (code !== 'contado' && !termDays(code)) return null;
+    if (!baseDate) return null;
     const due = new Date(baseDate as string);
     if (!Number.isFinite(due.getTime())) return null;
-    due.setDate(due.getDate() + offset);
+    due.setDate(due.getDate() + termDays(code));
     return due;
 }
 
@@ -99,7 +97,7 @@ export async function buildInvoicePdfAttachment(orgId: string, documentoId: stri
             logo: logoBytes ? `data:image/png;base64,${logoBytes.toString('base64')}` : null,
             brandColor: (doc.color_marca as string) || null,
             dueDate: doc.invoice_due ? new Date(doc.invoice_due as string) : dueDateFrom(doc.terminos, doc.base_date),
-            paymentTerms: TERM_LABEL[term] || null,
+            paymentTermsCode: isTermCode(term) ? term : null,
             creditNoteOfNumber: (doc.credit_note_of_number as string) || null,
             verifactu: doc.provider_data?.verifactu || null,
             paymentInstructions: doc.invoice_token

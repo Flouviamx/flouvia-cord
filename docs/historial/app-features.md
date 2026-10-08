@@ -1,5 +1,39 @@
 # Historial — App interna: features y UX
 
+## 2026-10-08 — Tareas con dueño, fecha del negocio y recordatorio real
+
+Audit previo: el widget se llamaba "Tareas y recordatorios" y Cord no mandaba un solo
+recordatorio (regla 15); "vencida" se decidía con la hora del servidor y la fecha se
+mostraba como medianoche UTC, así que en América una tarea de hoy salía vencida por la noche
+y su fecha un día antes; completar o borrar quitaba la fila aunque el servidor respondiera
+error (`fetch` no lanza con un 4xx); agregar recargaba la página; el widget topaba en 12 sin
+ningún lugar para ver el resto; nadie era responsable de nada.
+
+- `tareas` gana `notas`, `prioridad` (`normal` | `alta`), `asignado_a`, `creado_por`,
+  `completed_at`, `completed_by` y `recordada_el`. Migración aditiva en
+  `db/tareas-seguimiento.sql`, encadenada al build de Vercel (`scripts/migrate-tareas.mjs`,
+  mismo patrón que `brand-profile`) para que las columnas existan antes que el código.
+- `src/lib/tasks.ts`: reglas puras sobre el DÍA CIVIL del negocio (grupos vencidas / hoy /
+  mañana / esta semana / después / sin fecha y atajos Hoy, Mañana, Lunes). Las fechas `date`
+  se leen con `to_char`, nunca como `Date`.
+- Acciones (`src/lib/actions/tasks.ts`): el responsable se valida como miembro ACTIVO de la
+  organización; editar es parcial y reprogramar limpia `recordada_el`; completar guarda quién y
+  cuándo, reabrir lo limpia. El quick-add y la cuenta de una sola persona asignan a quien
+  escribe (`asignar_a_creador`); la API y el MCP no cambian su contrato.
+- UI: `TaskBoard.astro` (widget del Inicio y `/app/tareas`) con capturador de atajos de fecha,
+  prioridad y responsable; grupos por urgencia; completar con "Deshacer"; menú de posponer,
+  asignarme, editar y eliminar (con confirmación). Todo cambio pide el fragmento
+  `/app/tareas/lista`, que renderiza el mismo `TaskList.astro` que el SSR.
+- Sidebar: "Tareas" con `G T` y badge de lo tuyo o sin dueño que vence hoy o antes.
+- Recordatorio: `GET /api/cron/tareas`, cada hora desde `cord-crons.yml` (el plan de Vercel
+  solo admite crons diarios y una hora UTC fija no es "la mañana" en todos los países). Desde
+  las 8:00 de la zona del negocio, un correo por responsable (o por quien creó la tarea, o el
+  dueño) con lo de hoy y lo vencido. Dedup por `recordada_el`, reclamado antes de mandar y
+  liberado si el envío falla. Opt-out en Ajustes › Notificaciones (`task_due`, encendido si la
+  organización nunca lo guardó).
+- Lo prueban `test/tasks.test.ts` (reglas puras y correo) y `test/tareas-db.test.ts`
+  (migración real dos veces, acciones, lista, aislamiento y cron con su dedup).
+
 ## 2026-10-07 — Topbar: campana como bandeja, ⌘K más útil, tema en tres modos
 
 - `eventos.actor` (`vendedor` | `externo` | null histórico) lo decide un DEFAULT con el
@@ -2408,3 +2442,42 @@ Estado y archivos del contrato: [personalización de marca](../estado/personaliz
 - Integrados los cambios remotos de marketing antes del despliegue para
   conservar el trabajo ya publicado. Eliminada la traducción huérfana del botón
   SSO sustituido por el pie de guardado compartido.
+
+## 2026-10-07 — Alta de cliente y de producto para cualquier país y giro
+
+Auditoría de `ClientModal.astro` y `ProductModal.astro`, y lo que se corrigió:
+
+- **Textos traducidos que nunca se leían.** Ambos modales leían `dataset.nuevo`
+  para un atributo `data-i18n-nuevo` (cuyo nombre en `dataset` es `i18nNuevo`),
+  así que una cuenta en inglés veía títulos, errores y estados en español.
+- **Dinero con divisa fija** (regla 21): "(MXN)" en precio, costo y límite de
+  crédito; "$1,000" y `es-MX` en la vista previa del descuento; "$" fijo en los
+  niveles de volumen. Ahora sale de `orgs.moneda` y de `money-client.ts`.
+- **Teléfono sin lada.** El placeholder sugería "55 1234 5678" y WhatsApp exige
+  E.164 (`toE164()` no inventa la lada), así que esos clientes no recibían
+  avisos. Selector de lada por país y guardado `+52 55 1234 5678`
+  (`src/lib/party-format.ts`).
+- **País del cliente al frente.** Define el nombre y un ejemplo del
+  identificador fiscal, una verificación blanda de su formato (aconseja, nunca
+  bloquea: RFC, EIN, BN, CPF/CNPJ, NIF/NIE/CIF, VAT, SIREN, NIT, CUIT, RUT,
+  RUC), el nombre del código postal y de la subdivisión, y un selector de
+  estado/provincia donde hay catálogo (MX, US, CA, BR, ES). Un valor guardado
+  fuera del catálogo se conserva (regla 28).
+- **CFDI solo cuando aplica.** El bloque de régimen/uso aparece si el EMISOR es
+  mexicano y el cliente también, y filtra las claves por tipo de RFC (12 moral,
+  13 física) sin borrar la ya elegida.
+- **`step="1000"` en el límite de crédito** hacía que el navegador rechazara
+  "1500" al guardar; y el botón de guardar quedaba deshabilitado en "Creando…"
+  al reabrir el modal en el editor de cotizaciones.
+- **Producto:** tipo de venta (bien, servicio, suscripción) que propone
+  unidades —no se guarda; se deduce de la unidad—, descripción multilínea,
+  SKU de hasta 64 caracteres y **impuesto sugerido por producto**
+  (`productos.tax_rate`, `null` = el default de la org). Se valida contra el
+  catálogo de la organización al guardar y lo consumen los editores de
+  cotización y factura al agregar el producto o un kit; la línea sigue tomando
+  su propio snapshot (regla 23). Expuesto como `taxRate` en `/api/v1/productos`.
+
+Pendiente fuera de este cambio: términos de pago más allá de contado/net30/net60
+(el contrato vive en ~20 sitios, incluida la API pública y Elements), claves
+SAT de producto y unidad para el CFDI (hoy siempre `01010101`/`H87`) y el CFDI
+a un receptor extranjero (`XEXX010101000` + residencia fiscal).

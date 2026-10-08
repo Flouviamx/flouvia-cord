@@ -13,7 +13,7 @@ Cord permite iniciar un reembolso total o parcial desde el mismo historial del c
 1. Ve a **Cobros** y localiza el pago exitoso.
 2. Selecciona **Reembolsar**, indica el monto y confirma la operación.
 3. En pagos con tarjeta, Cord solicita la devolución al banco emisor y actualiza el importe neto cuando recibe el resultado.
-4. En transferencias SPEI (solo cobros en pesos mexicanos), Cord crea una tarea manual con el monto y la referencia. La devolución debe completarse desde tu banco; Cord no simula una transferencia saliente.
+4. En transferencias SPEI (solo cobros en pesos mexicanos), Cord crea en **Tareas** una tarea con prioridad alta, el monto y la referencia, a cargo de quien solicitó el reembolso. La devolución debe completarse desde tu banco; Cord no simula una transferencia saliente.
 
 Solo el propietario o un miembro con permiso de reembolsos puede confirmar la operación. Por seguridad, Cord puede solicitar una verificación reciente de contraseña o segundo factor.
 

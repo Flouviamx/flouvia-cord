@@ -17,6 +17,7 @@ import type {
   FiscalDocumentResponse,
   FiscalLineItem,
 } from './index';
+import { resolveLineSatKeys } from './sat-claves';
 
 export interface EmitResult {
   emitted: boolean;
@@ -326,9 +327,13 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string, do
         left join clientes cl on cl.id = c.cliente_id
         where c.id = ${cotizacionId} and c.org_id = ${orgId}
         limit 1`,
-    sql`select ci.descripcion, ci.cantidad, ci.precio_unitario, ci.precio_negociado, ci.aprobado, ci.tax_rate
+    // Las claves SAT son clasificación, no aritmética: se leen del producto al
+    // timbrar y quedan congeladas en `line_items_snapshot` del documento.
+    sql`select ci.descripcion, ci.cantidad, ci.precio_unitario, ci.precio_negociado, ci.aprobado, ci.tax_rate,
+               p.clave_sat, p.clave_unidad_sat, p.unidad as producto_unidad
         from cotizacion_items ci
         join cotizaciones c on c.id = ci.cotizacion_id
+        left join productos p on p.id = ci.producto_id and p.org_id = c.org_id
         where ci.cotizacion_id = ${cotizacionId} and c.org_id = ${orgId}
         order by ci.orden asc`,
   );
@@ -383,7 +388,8 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string, do
     throw error;
   }
 
-  const lines: FiscalLineItem[] = totals.lineas.map((l) => ({
+  // `totals.lineas` conserva el orden y la longitud de `approvedItems`.
+  const lines: FiscalLineItem[] = totals.lineas.map((l, i) => ({
     description: String(l.descripcion || 'Concepto').slice(0, 500),
     quantity: l.cantidad,
     unitPrice: money(l.cantidad ? l.base / l.cantidad : l.base),
@@ -391,6 +397,11 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string, do
     subtotal: money(l.base),
     taxAmount: money(l.impuesto),
     total: money(l.total),
+    ...(country === 'MX' ? resolveLineSatKeys({
+      claveSat: approvedItems[i]?.clave_sat,
+      claveUnidadSat: approvedItems[i]?.clave_unidad_sat,
+      unidad: approvedItems[i]?.producto_unidad,
+    }) : {}),
   }));
   const subtotal = money(totals.subtotal);
   const taxes = money(totals.impuestos);

@@ -13,7 +13,7 @@ import { t } from '../../../i18n/app';
 import { disconnectTeamsGraph } from '../../../lib/integraciones/teams-graph';
 
 // Eventos y canales válidos (whitelist — evita basura en el jsonb).
-const EVENTOS = new Set(['quote_viewed', 'quote_approved', 'quote_rejected', 'quote_paid', 'quote_expiring', 'payment_overdue', 'team_join']);
+const EVENTOS = new Set(['quote_viewed', 'quote_approved', 'quote_rejected', 'quote_paid', 'quote_expiring', 'payment_overdue', 'team_join', 'task_due']);
 const CANALES = new Set(['email', 'slack', 'teams']);
 
 function sanitizeNotif(input: unknown): Record<string, Record<string, boolean>> {

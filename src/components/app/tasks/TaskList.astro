@@ -1,0 +1,111 @@
+---
+// TaskList — el ÚNICO constructor de filas de tareas.
+//
+// Lo renderizan el widget del Inicio, la página /app/tareas y el fragmento
+// /app/tareas/lista, que es lo que el navegador pide después de crear,
+// completar, posponer o editar. Una sola plantilla para el render de servidor
+// y para la actualización en vivo: con dos, tarde o temprano una fila nueva
+// sale sin su responsable o con la fecha en otro formato.
+//
+// Sin <style> propio: el CSS vive en TaskBoard.astro como `is:global`, porque
+// este markup también llega inyectado por JS (regla 11).
+import { currentLocale } from '../../../lib/context';
+import { t } from '../../../i18n/app';
+import { iconInner } from '../../../lib/icons';
+import { groupTasks } from '../../../lib/tasks';
+import { bucketLabel, type TaskListResult } from '../../../lib/tasks-db';
+
+interface Props {
+    result: TaskListResult;
+    estado: 'pendientes' | 'completadas';
+    variant: 'widget' | 'page';
+    canEdit: boolean;
+}
+
+const { result, estado, variant, canEdit } = Astro.props;
+const L = currentLocale();
+const completadas = estado === 'completadas';
+const groups = completadas ? [{ bucket: null, items: result.items }] : groupTasks(result.items);
+const restantes = Math.max(0, result.total - result.items.length);
+const { vencidas, hoy } = result.counts;
+---
+
+<div class="tk-summary" data-tk-summary hidden data-total={result.total} data-vencidas={vencidas} data-hoy={hoy}
+     data-pendientes={result.counts.pendientes} data-mias={result.counts.mias} data-sin-asignar={result.counts.sinAsignar}></div>
+
+{result.items.length === 0 && (
+    <div class="tk-empty">
+        <span class="tk-empty-ico" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('checklist')}></svg>
+        </span>
+        <span class="tk-empty-title">{t(L, completadas ? 'tareas.vacio.completadas' : 'tareas.vacio.titulo')}</span>
+        {!completadas && <span class="tk-empty-sub">{t(L, canEdit ? 'tareas.vacio.sub' : 'tareas.vacio.sub_lectura')}</span>}
+    </div>
+)}
+
+{groups.map((g) => (
+    <section class="tk-group" data-bucket={g.bucket ?? 'completadas'}>
+        {g.bucket && (
+            <h3 class="tk-group-title">
+                <span>{bucketLabel(g.bucket)}</span>
+                <span class="tk-group-n">{g.items.length}</span>
+            </h3>
+        )}
+        <ul class="tk-rows" role="list">
+            {g.items.map((task) => (
+                <li class:list={['tk-row', { 'is-done': task.done, 'is-alta': task.prioridad === 'alta' }]}
+                    data-id={task.id}
+                    data-task={JSON.stringify({
+                        titulo: task.titulo, notas: task.notas, prioridad: task.prioridad,
+                        due: task.due, asignado: task.asignado?.id ?? null, done: task.done,
+                    })}>
+                    <button type="button" class="tk-check" data-act="toggle" disabled={!canEdit}
+                            aria-label={t(L, task.done ? 'tareas.accion.reabrir' : 'tareas.accion.completar')}
+                            title={t(L, task.done ? 'tareas.accion.reabrir' : 'tareas.accion.completar')}>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('check')}></svg>
+                    </button>
+                    <div class="tk-body">
+                        <span class="tk-title">
+                            {task.prioridad === 'alta' && <span class="tk-flag" title={t(L, 'tareas.prioridad.alta')}>{t(L, 'tareas.prioridad.alta_corta')}</span>}
+                            <span class="tk-title-text">{task.titulo}</span>
+                        </span>
+                        <span class="tk-meta">
+                            {!completadas && task.due && (
+                                <span class={`tk-due tk-due--${task.bucket}`}>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner(task.bucket === 'vencidas' ? 'calendar-clock' : 'calendar')}></svg>
+                                    {task.dueLabel}
+                                </span>
+                            )}
+                            {completadas && task.completedLabel && <span class="tk-done-by">{task.completedLabel}</span>}
+                            {task.ref && (
+                                <a class="tk-ref" href={task.ref.href}>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner(task.ref.tipo === 'factura' ? 'invoice' : 'quote')}></svg>
+                                    <span>{task.ref.label}{task.ref.cliente && <span class="tk-ref-cli"> · {task.ref.cliente}</span>}</span>
+                                </a>
+                            )}
+                            {task.notas && (
+                                <span class="tk-has-notes" title={task.notas}>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('list')}></svg>
+                                    <span class="tk-sr">{t(L, 'tareas.tiene_notas')}</span>
+                                </span>
+                            )}
+                        </span>
+                        {variant === 'page' && task.notas && <p class="tk-notes">{task.notas}</p>}
+                    </div>
+                    {task.asignado
+                        ? <span class:list={['tk-avatar', { 'is-me': task.esMia }]} title={`${t(L, 'tareas.responsable')}: ${task.asignado.nombre}`}>{task.asignado.inicial}</span>
+                        : <span class="tk-avatar tk-avatar--none" title={t(L, 'tareas.sin_responsable')} aria-hidden="true"></span>}
+                    {canEdit && (
+                        <button type="button" class="tk-more" data-act="menu" aria-haspopup="menu" aria-label={t(L, 'tareas.accion.mas')} title={t(L, 'tareas.accion.mas')}>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('more')}></svg>
+                        </button>
+                    )}
+                </li>
+            ))}
+        </ul>
+    </section>
+))}
+
+{variant === 'widget' && restantes > 0 && (
+    <a class="tk-rest" href="/app/tareas">{t(L, 'tareas.ver_restantes').replace('{n}', String(restantes))}</a>
+)}
