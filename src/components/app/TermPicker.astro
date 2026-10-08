@@ -31,7 +31,7 @@ const otro = t(L, 'terms.otro');
 
 <div class:list={['term-chips', 'tp', className]} id={id} role="group" aria-label={ariaLabel ?? t(L, 'terms.label')} data-term-picker data-value={current}>
     {COMMON_TERM_CODES.map((code) => (
-        <button type="button" class:list={['chip', { active: code === current }]} data-term={code} aria-pressed={String(code === current)} disabled={disabled}>{termLabel(code, L)}</button>
+        <button type="button" class:list={['chip', { active: code === current }]} data-term={code} aria-pressed={code === current ? 'true' : 'false'} disabled={disabled}>{termLabel(code, L)}</button>
     ))}
     <span class:list={['chip', 'tp-more', { active: inMore }]}>
         <span class="tp-more-label" data-more-label data-default={otro}>{inMore ? termLabel(current, L) : otro}</span>

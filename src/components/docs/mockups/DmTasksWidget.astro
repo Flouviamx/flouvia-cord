@@ -55,7 +55,7 @@ const caption = Astro.props.caption ?? d.caption;
                 <div class="dm-tk-row">
                     <span class="dm-tk-check"></span>
                     <span class="dm-tk-body"><span class="dm-tk-title">{x.t}</span>{x.m && <span class="dm-tk-meta">{x.m}</span>}</span>
-                    {x.late && <span class="dm-tk-late">{dmT(lang, 'dash.vencida')}</span>}
+                    {x.late && <span class="dm-tk-late">{dmT(lang, 'tareas.due.ayer')}</span>}
                     <span class="dm-tk-del"><DmIcon name="x" /></span>
                 </div>
             ))}
@@ -75,7 +75,7 @@ const caption = Astro.props.caption ?? d.caption;
                     <div class="dm-tk-row">
                         <span class="dm-tk-check"></span>
                         <span class="dm-tk-body"><span class="dm-tk-title">{x.t}</span>{x.m && <span class="dm-tk-meta">{x.m}</span>}</span>
-                        {x.late && <span class="dm-tk-late">{dmT(lang, 'dash.vencida')}</span>}
+                        {x.late && <span class="dm-tk-late">{dmT(lang, 'tareas.due.ayer')}</span>}
                         <span class="dm-tk-del"><DmIcon name="x" /></span>
                     </div>
                 ))}
