@@ -18,3 +18,7 @@ alter table tareas drop constraint if exists tareas_prioridad_check;
 alter table tareas add constraint tareas_prioridad_check check (prioridad in ('normal', 'alta'));
 create index if not exists idx_tareas_asignado on tareas(org_id, asignado_a, due_date) where done = false;
 create index if not exists idx_tareas_completadas on tareas(org_id, completed_at desc) where done = true;
+-- Día civil del último correo de recordatorio a ESTA persona en esta
+-- organización: a lo sumo uno al día. Una tarea que entra a "hoy" después del
+-- correo de la mañana espera al de mañana en vez de mandar un segundo correo.
+alter table org_members add column if not exists tareas_avisadas_el date;

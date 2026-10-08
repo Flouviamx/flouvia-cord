@@ -6138,4 +6138,6 @@ alter table tareas drop constraint if exists tareas_prioridad_check;
 alter table tareas add constraint tareas_prioridad_check check (prioridad in ('normal', 'alta'));
 create index if not exists idx_tareas_asignado on tareas(org_id, asignado_a, due_date) where done = false;
 create index if not exists idx_tareas_completadas on tareas(org_id, completed_at desc) where done = true;
+-- Un recordatorio por persona y día (ver src/pages/api/cron/tareas.ts).
+alter table org_members add column if not exists tareas_avisadas_el date;
 -- END tareas-seguimiento

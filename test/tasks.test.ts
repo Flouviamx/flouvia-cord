@@ -1,6 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { addDays, dayDiff, dueShortcut, groupTasks, isIsoDay, nextMonday, taskBucket } from '../src/lib/tasks';
-import { isReminderTime, localClock, renderTaskDigest } from '../src/lib/task-reminders';
+import { readFileSync } from 'node:fs';
+import {
+    TASK_LIST_MAX, TASK_PAGE_STEP, addDays, clampTaskLimit, dayDiff, dueShortcut, groupTasks, isIsoDay, nextMonday, nextTaskLimit, taskBucket,
+} from '../src/lib/tasks';
+import { digestLocale, footerText, isReminderTime, localClock, renderTaskDigest } from '../src/lib/task-reminders';
+import { memberCanWriteTasks } from '../src/lib/permissions';
 
 // Reglas puras de fecha de las tareas: todo en DÍA CIVIL ISO, nunca `new Date(iso)`.
 
@@ -76,7 +80,7 @@ describe('hora del recordatorio', () => {
 });
 
 describe('correo de recordatorio', () => {
-    const base = { en: false, locale: 'es-MX', nombre: 'Ana López', orgNombre: 'Gama', today: '2026-10-08', link: 'https://cordhq.app/app/tareas' };
+    const base = { en: false, locale: 'es-MX', nombre: 'Ana López', orgNombre: 'Gama', today: '2026-10-08', link: 'https://cordhq.app/app/tareas', puedeApagar: true };
 
     it('el asunto dice cuántas vencen hoy y cuántas ya vencieron', () => {
         const { subject } = renderTaskDigest({ ...base, tasks: [
@@ -101,5 +105,62 @@ describe('correo de recordatorio', () => {
         expect(html).toContain('Vence hoy · COT-0149');
         expect(html).toContain('Buenos días, Ana.');
         expect(html).not.toMatch(/RESEND|Vercel|CRON/i);
+    });
+});
+
+describe('formato y pie del recordatorio', () => {
+    it('el locale sale del idioma de la org y la región de su país, no de es-MX/en-US fijo', () => {
+        expect(digestLocale('es', 'es-ES')).toBe('es-ES');
+        expect(digestLocale('en', 'en-GB')).toBe('en-GB');
+        // Alemania en inglés: formato inglés con región alemana, no "9. Okt." dentro de un texto en inglés.
+        expect(digestLocale('en', 'de-DE')).toBe('en-DE');
+        expect(digestLocale('es', 'en-US')).toBe('es-US');
+        expect(digestLocale('en', '')).toBe('en-US');
+        expect(digestLocale('es', null)).toBe('es-MX');
+    });
+
+    it('sólo invita a apagarlo a quien puede, y aclara que es para todo el equipo', () => {
+        expect(footerText(false, true)).toContain('Puedes apagarlo para todo el equipo');
+        expect(footerText(false, false)).toContain('pide a quien administra la cuenta');
+        expect(footerText(false, false)).not.toContain('Puedes apagarlo');
+        expect(footerText(true, false)).toContain('ask whoever manages the account');
+        expect(footerText(true, true)).toContain('for the whole team');
+        const { html } = renderTaskDigest({
+            en: false, locale: 'es-MX', nombre: 'Beto', orgNombre: 'Gama', today: '2026-10-08', link: 'x', puedeApagar: false,
+            tasks: [{ titulo: 'x', due: '2026-10-08', prioridad: 'normal' }],
+        });
+        expect(html).toContain('pide a quien administra la cuenta');
+    });
+});
+
+describe('paginación de /app/tareas', () => {
+    it('crece de 200 en 200 hasta el tope y acota basura', () => {
+        expect(clampTaskLimit(null, TASK_PAGE_STEP)).toBe(200);
+        expect(clampTaskLimit('400', TASK_PAGE_STEP)).toBe(400);
+        expect(clampTaskLimit('99999', TASK_PAGE_STEP)).toBe(TASK_LIST_MAX);
+        expect(clampTaskLimit('-3', 12)).toBe(12);
+        expect(nextTaskLimit(200)).toBe(400);
+        expect(nextTaskLimit(TASK_LIST_MAX - 50)).toBe(TASK_LIST_MAX);
+        expect(nextTaskLimit(TASK_LIST_MAX)).toBeNull();
+    });
+});
+
+describe('quién escribe tareas', () => {
+    const m = (permisos: Record<string, boolean>) => ({ rol: 'miembro', permisos, esOwner: false });
+    it('el menú Crear › Tarea sigue el mismo permiso que el POST', () => {
+        expect(memberCanWriteTasks(m({ productos: true }))).toBe(false);
+        expect(memberCanWriteTasks(m({ cobranza: true }))).toBe(true);
+        expect(memberCanWriteTasks(m({ cotizar: true }))).toBe(true);
+        expect(memberCanWriteTasks(m({ clientes: true }))).toBe(true);
+        expect(memberCanWriteTasks({ rol: 'owner', permisos: {}, esOwner: true })).toBe(true);
+        expect(memberCanWriteTasks(null)).toBe(false);
+    });
+
+    it('AppLayout dibuja la opción y su atajo con ese permiso, no con "cualquier crear"', () => {
+        const src = readFileSync('src/layouts/AppLayout.astro', 'utf8');
+        expect(src).toMatch(/const canTarea = memberCanWriteTasks\(ME\)/);
+        expect(src).toMatch(/\{canTarea && \(\s*<button[^>]*id="tbCreateTarea"/);
+        expect(src).toMatch(/\{canTarea && <div class="kbd-row"><span>\{t\(L, 'layout\.kbd\.crear_tarea'\)/);
+        expect(src).toMatch(/const canCreateAny = [^;]*canTarea/);
     });
 });
