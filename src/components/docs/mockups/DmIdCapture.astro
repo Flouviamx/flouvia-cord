@@ -1,0 +1,210 @@
+---
+// Mockup: la captura de identidad en el teléfono (/verificar-identidad/[token]),
+// en dos pantallas consecutivas del mismo flujo:
+//
+//   1. Paso "frente": selector de documento con "Credencial para votar (INE)"
+//      elegida, "Tomar foto del frente" y "Elegir foto de la galería".
+//      Calca de IdentityCaptureMobile.tsx (IC_STRINGS, COPY.front, .idcap-*).
+//   2. Revisión de la foto recién tomada: la compuerta de calidad detectó un
+//      reflejo y ACONSEJA sin bloquear (consejo('reflejo') de
+//      src/lib/capture-quality.ts), con "Tomar otra" y "Usar foto".
+//      Calca de LiveCapture.tsx. El marco guía horizontal (ID-1, 1.586:1) se
+//      ve en vivo; al revisar, la foto ya trae la credencial alineada a él.
+//
+// Son dos pantallas y no una porque en la app no coexisten: el selector vive
+// en la tarjeta y el consejo aparece sobre la foto, a pantalla completa. Por
+// eso el marco es `panel` con dos teléfonos y no `phone`.
+//
+// Nota: en LiveCapture.tsx "Usar foto" está fijo en español; en inglés el
+// mockup dibuja "Use photo", que es lo que la app debería decir.
+import DocsMockup from './DocsMockup.astro';
+import DmIcon from './DmIcon.astro';
+import { consejo } from '../../../lib/capture-quality';
+import { pick, DEMO, type DmLang } from './format';
+
+interface Props {
+    lang: DmLang;
+    /** Pie de figura; por defecto describe el estado dibujado. */
+    caption?: string;
+}
+const { lang } = Astro.props;
+
+const DATA = {
+    es: {
+        caption: 'Captura de identidad desde el teléfono en dos pantallas: primero, el paso del frente con "Credencial para votar (INE)" elegida y los botones "Tomar foto del frente" y "Elegir foto de la galería"; después, la foto recién tomada con el consejo "Hay un reflejo sobre el documento. Inclínalo un poco para quitarlo." y los botones "Tomar otra" y "Usar foto".',
+        titulo: 'Frente de tu identificación',
+        cuerpo: 'INE o pasaporte vigente. Busca buena luz y que se lean todos los datos.',
+        pregunta: '¿Qué documento vas a usar?',
+        docs: ['Credencial para votar (INE)', 'Pasaporte', 'Licencia de conducir'],
+        cta: 'Tomar foto del frente',
+        galeria: 'Elegir foto de la galería',
+        verificado: 'Verificado con Cord',
+        cancelar: 'Cancelar',
+        lado: 'Frente',
+        otra: 'Tomar otra',
+        usar: 'Usar foto',
+        ine: ['INSTITUTO NACIONAL ELECTORAL', 'MÉXICO', 'CREDENCIAL PARA VOTAR'],
+    },
+    en: {
+        caption: 'Identity capture on the phone, in two screens: first, the front step with "Voter ID (INE)" selected and the "Take photo of the front" and "Choose a photo instead" buttons; then, the photo just taken with the hint "There\'s a glare on the document. Tilt it slightly to remove it." and the "Retake" and "Use photo" buttons.',
+        titulo: 'Front of your ID',
+        cuerpo: 'A valid government ID or passport. Find good light and make sure every detail is readable.',
+        pregunta: 'Which document will you use?',
+        docs: ['Voter ID (INE)', 'Passport', 'Driving licence'],
+        cta: 'Take photo of the front',
+        galeria: 'Choose a photo instead',
+        verificado: 'Verified with Cord',
+        cancelar: 'Cancel',
+        lado: 'Front of ID',
+        otra: 'Retake',
+        usar: 'Use photo',
+        ine: ['INSTITUTO NACIONAL ELECTORAL', 'MÉXICO', 'CREDENCIAL PARA VOTAR'],
+    },
+};
+const d = pick(DATA, lang);
+const caption = Astro.props.caption ?? d.caption;
+const aviso = consejo('reflejo', lang);
+---
+<DocsMockup lang={lang} variant="panel" height={600} caption={caption} class="dm-idc-figure">
+    <div class="dm-idc">
+        <!-- 1 · Paso del frente: elegir documento -->
+        <div class="dm-phone dm-idc-phone">
+            <div class="dm-phone-screen dm-idc-screen">
+                <div class="dm-phone-status">
+                    <span>9:41</span>
+                    <span class="dm-phone-island"></span>
+                    <span class="dm-phone-sys"><span class="dm-phone-bars"><i></i><i></i><i></i><i></i></span><span class="dm-phone-batt"></span></span>
+                </div>
+                <div class="dm-idc-shell">
+                    <div class="dm-idc-org"><span class="dm-idc-org-av">{DEMO.orgInitial}</span><span>{DEMO.org}</span></div>
+                    <div class="dm-idc-dots"><i class="is-active"></i><i></i><i></i></div>
+                    <div class="dm-idc-card">
+                        <span class="dm-idc-icon"><DmIcon name="id" /></span>
+                        <span class="dm-idc-h">{d.titulo}</span>
+                        <span class="dm-idc-p">{d.cuerpo}</span>
+                        <div class="dm-idc-docs">
+                            <span class="dm-idc-docs-label">{d.pregunta}</span>
+                            {d.docs.map((doc, i) => <span class:list={['dm-idc-doc', { 'is-sel': i === 0 }]}>{doc}</span>)}
+                        </div>
+                        <span class="dm-idc-cta">{d.cta}</span>
+                        <span class="dm-idc-skip">{d.galeria}</span>
+                    </div>
+                    <span class="dm-idc-foot">{d.verificado}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2 · Revisión de la foto: consejo de reflejo, no bloquea -->
+        <div class="dm-phone dm-idc-phone">
+            <div class="dm-phone-screen dm-idc-cam">
+                <div class="dm-phone-status is-dark">
+                    <span>9:41</span>
+                    <span class="dm-phone-island"></span>
+                    <span class="dm-phone-sys"><span class="dm-phone-bars"><i></i><i></i><i></i><i></i></span><span class="dm-phone-batt"></span></span>
+                </div>
+                <div class="dm-idc-cam-top"><span>{d.cancelar}</span><span class="dm-idc-cam-title">{d.lado}</span><span class="dm-idc-cam-spacer"></span></div>
+                <div class="dm-idc-photo">
+                    <div class="dm-idc-ine">
+                        <div class="dm-idc-ine-head"><span>{d.ine[1]}</span><span>{d.ine[0]}</span></div>
+                        <div class="dm-idc-ine-sub">{d.ine[2]}</div>
+                        <div class="dm-idc-ine-body">
+                            <span class="dm-idc-ine-face"><i></i></span>
+                            <span class="dm-idc-ine-lines"><i style="width:72%"></i><i style="width:58%"></i><i style="width:84%"></i><i style="width:46%"></i><i style="width:66%"></i></span>
+                        </div>
+                        <span class="dm-idc-glare"></span>
+                    </div>
+                    <div class="dm-idc-aviso">{aviso}</div>
+                </div>
+                <div class="dm-idc-cam-bar">
+                    <span class="dm-idc-retake">{d.otra}</span>
+                    <span class="dm-idc-use">{d.usar}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</DocsMockup>
+
+<style is:global>
+    /* Dos teléfonos lado a lado que sangran por abajo; la tarjeta del panel es
+       transparente porque aquí no hay modal: el escenario ES la escena. */
+    .dm-idc-figure .dm-v-panel { padding: 30px 20px 0; justify-content: flex-start; }
+    .dm-idc-figure .dm-panel { max-width: none; background: transparent; border: 0; border-radius: 0; box-shadow: none; overflow: visible; flex: 1 0 auto; display: flex; }
+    .dm-idc { flex: 1; display: flex; justify-content: center; align-items: stretch; gap: 30px; }
+    .dm-idc-phone { flex: 0 0 272px; width: 272px; }
+    .dm-idc-phone .dm-phone-screen { min-height: 100%; }
+
+    /* 1 · Selector (= .idcap-shell / .idcap-card) */
+    .dm-idc-screen { background: #f5f5f7; }
+    .dm-idc-shell { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 8px 12px 14px; }
+    .dm-idc-org { display: flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 600; color: #0a192f; }
+    .dm-idc-org-av { width: 24px; height: 24px; border-radius: 7px; display: grid; place-items: center; background: #2f5d50; color: #fff; font-size: 11px; font-weight: 700; }
+    .dm-idc-dots { display: flex; gap: 5px; }
+    .dm-idc-dots i { width: 18px; height: 3px; border-radius: 999px; background: rgba(10, 25, 47, 0.12); }
+    .dm-idc-dots i.is-active { background: #0a192f; }
+    .dm-idc-card { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 7px; padding: 18px 13px 10px; background: #fff; border-radius: 20px; text-align: center; box-shadow: 0 2px 4px rgba(10, 25, 47, 0.04), 0 22px 44px -14px rgba(10, 25, 47, 0.14); }
+    .dm-idc-icon { width: 50px; height: 50px; border-radius: 15px; display: grid; place-items: center; background: rgba(10, 25, 47, 0.05); color: #0a192f; margin-bottom: 2px; }
+    .dm-idc-icon .dm-ico { width: 28px; height: 28px; }
+    .dm-idc-h { font-size: 15px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.2; color: #050505; }
+    .dm-idc-p { font-size: 11px; line-height: 1.45; color: #555556; }
+    .dm-idc-docs { width: 100%; display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
+    .dm-idc-docs-label { font-size: 11px; font-weight: 600; color: #050505; text-align: left; }
+    .dm-idc-doc { display: flex; align-items: center; min-height: 38px; padding: 0 12px; border-radius: 11px; border: 1.5px solid rgba(10, 25, 47, 0.14); font-size: 11.5px; font-weight: 500; color: #050505; text-align: left; }
+    .dm-idc-doc.is-sel { border-color: #0a192f; background: rgba(10, 25, 47, 0.05); font-weight: 600; }
+    .dm-idc-cta { width: 100%; display: flex; align-items: center; justify-content: center; height: 40px; margin-top: 6px; border-radius: 999px; background: #0a192f; color: #fff; font-size: 12px; font-weight: 600; }
+    .dm-idc-skip { padding: 6px; font-size: 11px; font-weight: 500; color: #555556; text-decoration: underline; text-underline-offset: 2px; }
+    .dm-idc-foot { font-size: 9.5px; font-weight: 500; letter-spacing: 0.02em; color: #b4bcc7; }
+
+    /* 2 · Revisión (= LiveCapture con capturedImage + aviso) */
+    .dm-idc-cam { background: #000; color: #fff; }
+    .dm-phone-status.is-dark { color: #fff; }
+    .dm-phone-status.is-dark .dm-phone-bars i { background: #fff; }
+    .dm-phone-status.is-dark .dm-phone-batt { border-color: rgba(255, 255, 255, 0.5); }
+    .dm-phone-status.is-dark .dm-phone-batt::before { background: #fff; }
+    .dm-phone-status.is-dark .dm-phone-batt::after { background: rgba(255, 255, 255, 0.5); }
+    .dm-phone-status.is-dark .dm-phone-island { background: #1c1f26; }
+    .dm-idc-cam-top { display: flex; align-items: center; justify-content: space-between; padding: 6px 14px 10px; font-size: 12px; }
+    .dm-idc-cam-title { font-weight: 600; }
+    .dm-idc-cam-spacer { width: 46px; }
+    .dm-idc-photo {
+        position: relative; flex: 1; min-height: 330px; overflow: hidden;
+        display: flex; align-items: center; justify-content: center;
+        background:
+            radial-gradient(120% 70% at 30% 20%, rgba(255, 255, 255, 0.08), transparent 60%),
+            linear-gradient(170deg, #4a4540 0%, #34302c 55%, #292623 100%);
+    }
+    /* La credencial (ID-1, 1.586:1) tal como quedó alineada al marco guía. */
+    .dm-idc-ine {
+        position: relative; width: 84%; aspect-ratio: 1.586; margin-top: -40px;
+        display: flex; flex-direction: column; gap: 4px; padding: 9px 10px;
+        border-radius: 9px; overflow: hidden; transform: rotate(-1.5deg);
+        background: linear-gradient(135deg, #efe5e8 0%, #e7dde4 45%, #ece6dc 100%);
+        box-shadow: 0 14px 30px -10px rgba(0, 0, 0, 0.6);
+        color: #6b5560;
+    }
+    .dm-idc-ine-head { display: flex; justify-content: space-between; gap: 6px; font-size: 5.5px; font-weight: 800; letter-spacing: 0.04em; }
+    .dm-idc-ine-sub { font-size: 5px; font-weight: 700; letter-spacing: 0.06em; color: #8a7480; }
+    .dm-idc-ine-body { flex: 1; display: flex; gap: 8px; align-items: flex-start; padding-top: 3px; }
+    .dm-idc-ine-face { position: relative; width: 30%; aspect-ratio: 0.8; border-radius: 4px; background: #cfc4cb; overflow: hidden; }
+    .dm-idc-ine-face i { position: absolute; left: 22%; right: 22%; bottom: -12%; height: 62%; border-radius: 50% 50% 0 0; background: #b6a8b1; }
+    .dm-idc-ine-face::before { content: ''; position: absolute; left: 33%; top: 16%; width: 34%; aspect-ratio: 1; border-radius: 50%; background: #b6a8b1; }
+    .dm-idc-ine-lines { flex: 1; display: flex; flex-direction: column; gap: 6px; padding-top: 3px; }
+    .dm-idc-ine-lines i { display: block; height: 4px; border-radius: 2px; background: rgba(107, 85, 96, 0.32); }
+    /* El reflejo: una mancha quemada sobre los datos. */
+    .dm-idc-glare { position: absolute; left: 44%; top: 18%; width: 46%; height: 62%; border-radius: 50%; background: radial-gradient(closest-side, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.85) 38%, rgba(255, 255, 255, 0.25) 72%, transparent 100%); transform: rotate(-18deg); }
+    .dm-idc-aviso { position: absolute; left: 12px; right: 12px; bottom: 12px; padding: 10px 12px; border-radius: 11px; background: rgba(0, 0, 0, 0.78); color: #fff; font-size: 11px; line-height: 1.45; text-align: center; }
+    .dm-idc-cam-bar { display: flex; justify-content: center; gap: 10px; padding: 16px 12px 18px; background: #000; }
+    .dm-idc-retake, .dm-idc-use { display: inline-flex; align-items: center; height: 38px; padding: 0 18px; border-radius: 30px; font-size: 12px; }
+    .dm-idc-retake { background: #333; color: #fff; }
+    .dm-idc-use { background: #fff; color: #000; font-weight: 600; }
+
+    /* Angosto: los dos teléfonos se apilan; cada uno se recorta a lo esencial. */
+    @container dm (max-width: 600px) {
+        .dm-idc-figure .dm-stage { height: auto; }
+        .dm-idc-figure .dm-v-panel { padding: 20px 12px 0; }
+        .dm-idc { flex-direction: column; align-items: center; gap: 18px; }
+        .dm-idc-phone { flex: 0 0 auto; width: min(272px, 100%); }
+        .dm-idc-phone + .dm-idc-phone { height: 470px; }
+        .dm-idc-phone:first-child { border-radius: 40px; padding-bottom: 9px; }
+        .dm-idc-phone:first-child .dm-phone-screen { border-radius: 32px; }
+    }
+</style>
