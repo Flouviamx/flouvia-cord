@@ -27,6 +27,8 @@ La API de tareas tiene un solo método: `POST /api/v1/tareas`, para crear una ta
 | `due_date` | No | Fecha límite en formato `YYYY-MM-DD`. |
 | `cotizacion_id` | No | UUID de una cotización de tu organización para ligar la tarea. |
 
+Cualquier otro campo del cuerpo (por ejemplo `asignado_a`, `prioridad` o `notas`) se ignora sin error: por API no se asignan responsable, prioridad ni notas.
+
 ```bash
 curl -X POST "https://cordhq.app/api/v1/tareas" \
      -H "Authorization: Bearer sk_live_tU..." \
@@ -44,6 +46,8 @@ curl -X POST "https://cordhq.app/api/v1/tareas" \
 ```
 
 La tarea nace **sin responsable** y con prioridad normal. En la app se le asigna responsable, prioridad y notas desde **Tareas**; mientras no tenga responsable, el [recordatorio por correo](/docs/gestion/tareas#recordatorio-por-correo) de la mañana le llega al dueño de la cuenta.
+
+Con una llave de prueba (`sk_test_`) la tarea se crea en el entorno de prueba, que no manda recordatorios.
 
 Cada tarea nueva emite el evento `task.created`. Cuando alguien la marca como hecha en la app se emite `task.completed`.
 

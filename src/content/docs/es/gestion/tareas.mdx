@@ -36,42 +36,54 @@ Se ven en dos lugares:
 ## Crea una tarea
 
 <Steps>
-1. **Desde cualquier pantalla:** pulsa **Crear** en la barra superior y elige **Tarea** (o la tecla <kbd>T</kbd>). O usa el capturador del Inicio o de la página **Tareas**.
+1. Ve al capturador del widget **Tareas y recordatorios** del Inicio o de la página **Tareas**.
 2. Escribe la tarea, por ejemplo "Llamar a Luis para preguntar si ya revisó la cotización". Admite hasta 200 caracteres.
-3. Opcional: elige la fecha con los atajos **Hoy**, **Mañana** o **Lunes**, o con el calendario.
-4. Opcional: marca **Prioridad alta** y elige el **responsable**.
+3. Opcional: elige la fecha con los atajos **Hoy**, **Mañana** o **Lunes** (el próximo lunes), o con el calendario.
+4. Opcional: marca **Prioridad alta** y, si hay más de una persona en la cuenta, elige el **responsable**.
 5. Pulsa **Agregar** (o <kbd>Enter</kbd>). La tarea aparece en la lista sin recargar la página.
 </Steps>
 
-Si no eliges responsable, la tarea queda a cargo de quien la escribe. En el capturador puedes
-elegir **Sin responsable** a propósito.
+**Desde cualquier pantalla:** pulsa **Crear** en la barra superior y elige **Tarea** (o la
+tecla <kbd>T</kbd>). Se abre **Nueva tarea**, con el título y la fecha límite; pulsa
+**Agregar tarea**. La tarea queda a tu cargo y con prioridad normal; la prioridad, las notas y
+el responsable se cambian después con **Editar**.
+
+**Responsable:** con una sola persona en la cuenta, cada tarea que capturas es tuya. Con
+equipo, el selector empieza en ti ("Tu nombre (yo)"); puedes elegir a otro miembro activo o
+**Sin responsable**. Solo un miembro activo del equipo puede ser responsable.
+
+Las **notas** no se capturan al crear: se agregan con **Editar** (hasta 2,000 caracteres).
 
 ## Organiza el día
 
 - **Grupos por urgencia:** Vencidas, Hoy, Mañana, Esta semana, Más adelante y Sin fecha. "Hoy" es el día de la zona horaria de tu negocio, no la del servidor (se cambia en Ajustes › General).
-- **Filtros:** **Mías**, **Todas** y **Sin asignar**; en la página, también **Pendientes** y **Completadas**. Con una sola persona en la cuenta, el filtro por responsable no aparece.
+- **Filtros:** en la página, **Pendientes** y **Completadas**, y por responsable **Mías**, **Todas** y **Sin asignar**; el widget del Inicio solo tiene **Mías** y **Todas**. Con equipo, las dos vistas abren en **Mías**. Con una sola persona en la cuenta, el filtro por responsable no aparece.
 - **Completar:** marca el círculo. Durante unos segundos puedes pulsar **Deshacer**. En **Completadas** ves quién la completó y cuándo, y puedes **Reabrir**.
 - **Menú de la tarea (···):** **Editar** (título, notas, fecha, prioridad y responsable), **Posponer a** mañana, al lunes o una semana, **Asignármela** y **Eliminar**. Eliminar pide confirmación porque no se puede deshacer.
-- **Ligada a un documento:** si la tarea viene de una cotización o factura, su folio y el cliente aparecen como enlace al documento.
+- **Ligada a una cotización:** si la tarea está ligada a una cotización (por ejemplo, la creó un workflow, la API o un reembolso SPEI), su folio y el cliente aparecen como enlace a la cotización.
+- **Notas:** en la página se ven debajo del título; en el widget, un icono indica que la tarea tiene notas.
 - En el menú lateral, **Tareas** muestra cuántas tuyas o sin responsable vencen hoy o ya vencieron; el número va en rojo si hay vencidas.
 
 ## Recordatorio por correo
 
 Cada mañana, a partir de las 8:00 de la zona horaria de tu negocio, cada responsable recibe un
 correo con sus tareas de hoy y las vencidas. Una tarea sin responsable le llega a quien la
-creó. Si nadie del equipo la creó (la agregó un workflow, la API o un contracargo) o esa
-persona ya no está en el equipo, le llega al dueño de la cuenta.
+creó. Si nadie del equipo la creó (la agregó un workflow, la API, el MCP o un contracargo) o
+esa persona ya no está en el equipo, le llega al dueño de la cuenta.
 
-- Llega un solo correo al día por persona.
+- Cada tarea aparece como máximo en un correo al día. Si agregas una tarea para hoy, o mueves una a hoy, después de que salió el correo de la mañana, llega en un correo aparte en la siguiente revisión, que corre cada hora.
 - Si pospones una tarea, vuelve a avisar en su nueva fecha.
 - Una tarea vencida y sin completar aparece en el correo de cada día hasta que la completes o la pospongas.
+- Las tareas sin fecha límite no generan recordatorio.
+- El botón **Abrir mis tareas** del correo abre la página **Tareas** con el filtro **Mías**.
+- El **Entorno de prueba** no manda recordatorios.
 - Para apagarlo para toda la organización, desmarca **Recordatorio de tareas** en [Ajustes › Notificaciones](/docs/gestion/notificaciones).
 
 ## Tareas que Cord crea por ti
 
 Cuando una operación de cobro necesita tu intervención, Cord agrega la tarea con **prioridad alta**:
 
-- **Responder contracargo:** cuando un cliente disputa un cargo con tarjeta, con el monto y, como fecha límite, el plazo para enviar evidencia (ver [Disputas](/docs/pagos/disputas)).
+- **Responder contracargo:** cuando un cliente disputa un cargo con tarjeta, con el monto y, como fecha límite, el plazo para enviar evidencia. Nace sin responsable (ver [Disputas](/docs/pagos/disputas)).
 - **Transferir reembolso SPEI:** cuando solicitas el reembolso de un cobro por SPEI, que se transfiere por fuera, ligada a la cotización y a cargo de quien lo solicitó (ver [Reembolsos](/docs/pagos/reembolsos)).
 
 ## Otras formas de crear tareas
@@ -113,7 +125,8 @@ y [webhooks](/docs/desarrolladores/herramientas/webhooks):
 | **Se crea una tarea** | Al crearla desde la app, un workflow, la API o el MCP. |
 | **Se completa una tarea** | Al marcarla como completada. |
 
-Editar, posponer, reabrir o eliminar una tarea no emite evento.
+Editar, posponer, reabrir o eliminar una tarea no emite evento. Las tareas que Cord crea por
+ti (contracargo y reembolso SPEI) tampoco emiten **Se crea una tarea**.
 
 ## Límites por plan
 
@@ -125,9 +138,9 @@ Las tareas no tienen tope por plan.
 
 **No puedo agregar una tarea.** Tu rol no tiene los permisos Cotizaciones, Cobranza ni Clientes.
 
-**Falta una tarea en la lista.** Revisa el filtro: **Mías** solo muestra las tuyas. El widget del Inicio muestra las 8 más urgentes; el resto está en la página **Tareas**.
+**Falta una tarea en la lista.** Revisa el filtro: **Mías** solo muestra las tuyas. El widget del Inicio muestra las 8 más urgentes; el resto está en la página **Tareas**, que muestra hasta 200 por vista.
 
-**No me llegó el recordatorio.** Solo llega si tienes tareas que vencen hoy o vencidas, a partir de las 8:00 de la zona de tu negocio. Revisa que **Recordatorio de tareas** siga activo en Ajustes › Notificaciones y tu carpeta de spam.
+**No me llegó el recordatorio.** Solo llega si tienes tareas con fecha límite de hoy o vencidas, a partir de las 8:00 de la zona de tu negocio. Una tarea de otra persona le llega a ella, no a ti. Revisa que **Recordatorio de tareas** siga activo en Ajustes › Notificaciones y tu carpeta de spam.
 
 ## Relacionadas
 

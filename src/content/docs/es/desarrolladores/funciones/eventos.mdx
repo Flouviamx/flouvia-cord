@@ -2,7 +2,7 @@
 title: "API de Eventos"
 seoTitle: "API de eventos de Cord: catálogo, historial y /me"
 description: "Los 41 tipos de evento de Cord con su objeto y cuándo se emiten, la forma de data por objeto, los valores de actor, el historial GET /api/v1/events y la verificación de llave con /me."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-08"
 reviewedBy: "Ingeniería de Cord"
 availablePlans: [Free, Starter, Pro, Scale, Developer]
 prerequisites: ["Una llave de API con permiso de lectura (recurso eventos en una llave restringida)"]
@@ -50,7 +50,7 @@ Hay 41 tipos. La columna **Objeto** es el valor de `object` en el historial y de
 | `product.created` | `product` | Se crea un producto. |
 | `product.updated` | `product` | Se edita un producto. |
 | `product.deleted` | `product` | Se elimina un producto. |
-| `task.created` | `task` | Se crea una tarea. |
+| `task.created` | `task` | Se crea una tarea desde la app, la API, el MCP o un workflow. Las que Cord crea sola (contracargo, reembolso SPEI) no lo emiten. |
 | `task.completed` | `task` | Se marca una tarea como hecha. |
 | `promise.created` | `promise` | Se registra una promesa de pago. |
 | `promise.kept` | `promise` | La promesa se cumple. |
@@ -79,7 +79,7 @@ Todo importe viaja con su divisa en `moneda`. Los nombres de campo son los del s
 | `invoice` | `id`, `object`, `numero`, `folio_fiscal`, `estado`, `estado_fiscal`, `pais`, `tipo`, `moneda`, `total`, `pagado`, `saldo`, `vence`, `cliente`, `cotizacion_id`, `link_publico` |
 | `client` | `id`, `object`, `empresa`, `contacto`, `email`, `telefono`, `rfc`, `terminos`, `country_code` |
 | `product` | `id`, `object`, `sku`, `nombre`, `unidad`, `precio_lista`, `activo` (nunca el costo ni el margen) |
-| `task` | `id`, `object`, `titulo`, `due_date`, `done`, `cotizacion_id` |
+| `task` | `id`, `object`, `titulo`, `due_date`, `done`, `cotizacion_id` (no incluye responsable, prioridad ni notas) |
 | `promise` | `id`, `object`, `cotizacion_id`, `fecha_promesa`, `monto`, `moneda`, `estado` |
 | `dispute` | `id`, `object`, `monto`, `moneda`, `motivo`, `estado`, `fecha_limite`, `referencia`, `cotizacion_id`, `folio`, `cliente` |
 | `refund` | `object`, `monto`, `moneda`, `motivo`, `motivo_falla`, `referencia`, `cotizacion_id`, `folio`, `cliente` |

@@ -1,7 +1,7 @@
 ---
 title: "Ejecuciones y errores"
 description: "Cómo leer la pestaña Ejecuciones de un workflow: estados, resultado de cada paso, reintentos automáticos y cuándo ocurren, reintentar a mano con la versión original, cancelar, y qué hacer con cada mensaje de error."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-08"
 reviewedBy: "Producto y operaciones de Cord"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -95,7 +95,7 @@ En una ejecución **En cola** o **En espera**, pulsa **Cancelar**. Queda **Cance
 | Mensaje | Causa | Qué hacer |
 |---|---|---|
 | El título de la tarea quedó vacío. | El título solo tenía datos del evento y llegaron vacíos. | Agrega texto fijo al título. |
-| No se pudo crear la tarea. | Cord no pudo guardar la tarea. | Pulsa **Reintentar**. Si persiste, escríbenos. |
+| No se pudo crear la tarea. | Cord rechazó la tarea; por ejemplo, la cotización a la que se iba a ligar ya no existe. | Si la cotización se eliminó, reintentar no sirve. Si no, pulsa **Reintentar** y, si persiste, escríbenos. |
 | Se alcanzó el máximo de tareas por hora de los workflows. | Tus workflows crearon 120 tareas en una hora. | Revisa si un workflow se dispara más de lo esperado; reintenta después. |
 
 ### Correo al equipo

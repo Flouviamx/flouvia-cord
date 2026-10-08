@@ -44,9 +44,9 @@ Agrega una tarea para tu equipo en **Tareas**, igual que si la hubieras creado a
 **A qué queda ligada:**
 
 - Si el disparador es de una cotización (enviada, aprobada, pagada, pago parcial, facturada, etc.), la tarea queda ligada a esa cotización: en **Tareas** muestra su folio y el cliente como enlace a la cotización.
-- Si el disparador es un contracargo o un reembolso de una cotización, también queda ligada a esa cotización.
+- Si el evento trae una cotización relacionada, también queda ligada a ella: un contracargo o un reembolso de una cotización, una factura que salió de una cotización, una promesa de pago o una tarea ligada a una cotización.
 - En **Se elimina un borrador** no se liga, porque la cotización ya no existe.
-- En los demás disparadores (facturas, clientes, productos, depósitos, tareas, promesas) la tarea queda suelta.
+- En los demás casos (clientes, productos, depósitos, disparadores programados, facturas sin cotización, tareas sueltas) la tarea queda suelta. Nunca se liga a la factura misma.
 
 **Responsable:** la tarea nace sin responsable y con prioridad normal; asígnala o súbele la prioridad desde **Tareas**. Mientras no tenga responsable, el [recordatorio por correo](/docs/gestion/tareas#recordatorio-por-correo) le llega al dueño de la cuenta.
 
@@ -54,6 +54,7 @@ Agrega una tarea para tu equipo en **Tareas**, igual que si la hubieras creado a
 
 - "El título de la tarea quedó vacío.": el título solo tenía datos del evento y todos llegaron vacíos. Agrega texto fijo, por ejemplo "Seguimiento: `{{cliente}}`".
 - "Se alcanzó el máximo de tareas por hora de los workflows.": tus workflows crearon 120 tareas en la última hora. Ver [Límites](/docs/automatizacion/workflows/limites).
+- "No se pudo crear la tarea.": Cord rechazó la tarea, por ejemplo porque la cotización a la que se iba a ligar ya no existe.
 
 <Callout type="info">
 Crear una tarea también es un evento. Si tienes un workflow con el disparador **Se crea una tarea**, reaccionará a las tareas que crean tus otros workflows. Usa la condición "Quién lo originó no es Otro workflow" si no quieres que eso pase.

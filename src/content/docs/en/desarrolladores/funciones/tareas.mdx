@@ -27,6 +27,8 @@ The Tasks API has a single method: `POST /api/v1/tareas`, to create a task. Ther
 | `due_date` | No | Due date formatted as `YYYY-MM-DD`. |
 | `cotizacion_id` | No | UUID of a quote from your organization to link the task to. |
 
+Any other field in the body (for example `asignado_a`, `prioridad`, or `notas`) is ignored without an error: assignee, priority, and notes can't be set through the API.
+
 ```bash
 curl -X POST "https://cordhq.app/api/v1/tareas" \
      -H "Authorization: Bearer sk_live_tU..." \
@@ -44,6 +46,8 @@ curl -X POST "https://cordhq.app/api/v1/tareas" \
 ```
 
 The task is created **unassigned** with normal priority. In the app, its assignee, priority, and notes are set from **Tasks**; while it has no assignee, the morning [email reminder](/en/docs/gestion/tareas#email-reminder) goes to the account owner.
+
+With a test key (`sk_test_`) the task is created in test mode, which doesn't send reminders.
 
 Every new task emits the `task.created` event. When someone marks it done in the app, `task.completed` is emitted.
 

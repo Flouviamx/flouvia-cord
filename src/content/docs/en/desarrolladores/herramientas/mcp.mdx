@@ -1,7 +1,7 @@
 ---
 title: "Cord MCP Server"
 description: "Connect AI clients like Claude and Cursor to your company's financial system — 26 tools, real pagination, safe-to-retry calls, and activity metered like the rest of the API."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-08"
 reviewedBy: "Cord engineering"
 availablePlans: [Free, Starter, Pro, Scale, Developer]
 prerequisites: ["A Secret Key (restricted keys don't work with MCP)", "An MCP-compatible client"]
@@ -79,7 +79,7 @@ key must belong to the same organization that opened the session.
 | `registrar_pago_cotizacion` | Records that an approved quote was paid outside Cord and cancels its pending online payments. Accepts `metodo_pago`. | **write** |
 | `crear_cliente` | Creates a client (company, contact, email, phone, tax ID, terms, country). | **write** |
 | `actualizar_cliente` | Changes a client's contact details. Only updates what you send; never touches credit, tier, or discount. | **write** |
-| `crear_tarea` | Creates a follow-up task, optionally linked to a quote and with a due date. | **write** |
+| `crear_tarea` | Creates a follow-up task: `titulo` (required), optional `fecha` due date `YYYY-MM-DD` and `cotizacion_id`. It's created unassigned with normal priority; those are changed in the app. | **write** |
 | `registrar_promesa_pago` | Records the date a client promised to pay a quote. It doesn't charge anything. | **write** |
 | `listar_eventos` | Business history (quotes, invoices, clients, tasks, promises), filterable by type or object. Paginated. | read |
 | `contexto_cuenta` | Business, country, currency, language, time zone, plan and whether the key is test or live. Call it first. | read |

@@ -2,7 +2,7 @@
 title: "Disputes and chargebacks"
 seoTitle: "Disputes and chargebacks in Cord Payments: evidence and deadlines"
 description: "What to do when a customer disputes a card charge: where the dispute appears, who can respond, what evidence Cord builds from your data, how to submit it before the deadline, and what happens to the money and the fee."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-08"
 reviewedBy: "Cord product and operations"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -35,6 +35,8 @@ It applies to **card** payments processed by Cord Payments. SPEI or a manual tra
 2. In [Revenue › Payments](/en/docs/pagos/dashboard), the **Open disputes** widget shows the total at stake and, for each dispute, "respond before [date]".
 3. Opening a dispute takes you to its evidence page, **Build a clear response**, with the amount, the status, and the **due date** at the top.
 </Steps>
+
+Cord also adds to [Tasks](/en/docs/gestion/tareas) a high-priority task titled "Responder contracargo" with the amount, unassigned, with the evidence deadline as its due date. Because it's unassigned, the email reminder for that task goes to the account owner.
 
 If you use the API or Workflows, Cord emits **A dispute is opened** (`dispute.created`) and **A dispute is closed** (`dispute.closed`, with the outcome). See [Workflow triggers](/en/docs/automatizacion/workflows/disparadores).
 

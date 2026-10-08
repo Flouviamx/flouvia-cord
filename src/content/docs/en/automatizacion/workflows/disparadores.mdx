@@ -2,7 +2,7 @@
 title: "Triggers"
 seoTitle: "Cord Workflows triggers: the 44 events"
 description: "Cord's 44 events and the scheduled trigger that can start a workflow in Cord, grouped by category, with when they happen and the data each one carries."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-08"
 reviewedBy: "Cord product and operations"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -135,7 +135,7 @@ Dispute, refund, payout and payments account events come from Cord Payments, so 
 
 | Trigger | When it happens | Data |
 |---|---|---|
-| **A task is created** | A task is added, by hand or by another workflow. | **Title** and Who caused it |
+| **A task is created** | A task is added by hand, by another workflow, the API, or MCP. Tasks Cord creates on its own (chargeback, SPEI refund) don't trigger it. | **Title** and Who caused it |
 | **A task is completed** | A task is marked complete. | Title and Who caused it |
 | **A payment promise is recorded** | You record that a client promised to pay. | **Promised amount**, **Promised date** and Who caused it |
 | **A payment promise is kept** | The promise is marked kept. | Promised amount and Who caused it |

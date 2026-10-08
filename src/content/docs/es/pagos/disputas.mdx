@@ -2,7 +2,7 @@
 title: "Disputas y contracargos"
 seoTitle: "Disputas y contracargos en Cord Payments: evidencia y plazos"
 description: "Qué hacer cuando un cliente desconoce un cargo con tarjeta: dónde aparece la disputa, quién puede responder, qué evidencia arma Cord con tus datos, cómo se envía antes de la fecha límite y qué pasa con el dinero y la comisión."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-08"
 reviewedBy: "Producto y operaciones de Cord"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -35,6 +35,8 @@ Aplica a cobros con **tarjeta** procesados por Cord Payments. Un SPEI o una tran
 2. En [Ingresos › Cobros](/docs/pagos/dashboard), el widget **Disputas abiertas** muestra el total en juego y, por cada disputa, "responde antes del [fecha]".
 3. Al abrir una disputa llegas a su página de evidencia, **Prepara una defensa clara**, con el monto, el estado y la **fecha límite** arriba.
 </Steps>
+
+Cord también agrega a [Tareas](/docs/gestion/tareas) la tarea "Responder contracargo" con el monto, de prioridad alta, sin responsable y con la fecha límite de evidencia como vencimiento. Sin responsable, el recordatorio por correo de esa tarea le llega al dueño de la cuenta.
 
 Si usas la API o Workflows, Cord emite **Abren un contracargo** (`dispute.created`) y **Se cierra un contracargo** (`dispute.closed`, con el resultado). Ver [disparadores de Workflows](/docs/automatizacion/workflows/disparadores).
 

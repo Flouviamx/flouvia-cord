@@ -1,7 +1,7 @@
 ---
 title: "Cord Webhooks"
 description: "Construye integraciones en tiempo real reaccionando a eventos que ocurren en Cord — entrega durable con reintentos, identidad de evento y rotación de secreto sin downtime."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-08"
 reviewedBy: "Ingeniería de Cord"
 availablePlans: [Free, Starter, Pro, Scale, Developer]
 prerequisites: ["Un endpoint HTTPS público que responda en menos de 5 segundos", "Modo desarrollador activo para administrar endpoints desde el Workbench"]
@@ -263,7 +263,7 @@ La firma legacy `X-Cord-Signature` solo admite un valor, así que durante la ven
 | `quote.comment_added` | El cliente o el vendedor escribe en la conversación de la cotización. Trae `autor` (`cliente` \| `vendedor`), `mensaje` y, si es sobre una línea, `item_id`; una contraoferta trae `tipo: "contraoferta"` y `propuesta`. |
 | `client.created` / `client.updated` / `client.deleted` | Se crea, edita o elimina un cliente del directorio. |
 | `product.created` / `product.updated` / `product.deleted` | Se crea, edita o elimina un producto del catálogo. |
-| `task.created` / `task.completed` | Se crea una tarea o se marca como hecha. |
+| `task.created` / `task.completed` | Se crea una tarea (desde la app, la API, el MCP o un workflow) o se marca como hecha. |
 | `promise.created` / `promise.kept` / `promise.broken` | Se registra una promesa de pago, o se marca como cumplida o incumplida. |
 | `dispute.created` / `dispute.closed` | Un cliente abre un contracargo sobre un cobro de Cord Payments, o se cierra con su resultado en `estado` (`won` \| `lost` \| `warning_closed`). Trae `monto`, `moneda`, `motivo` y `fecha_limite` para responder. |
 | `refund.succeeded` / `refund.failed` | Un reembolso se completa o falla. Trae `monto`, `moneda`, `motivo` y, si falla, `motivo_falla`. |
@@ -332,7 +332,7 @@ Cada objeto trae `object` para distinguirlo. El evento de producto **nunca** inc
 |---|---|
 | `client` | `id`, `empresa`, `contacto`, `email`, `telefono`, `rfc`, `terminos`, `country_code` (en `client.deleted`: solo `id` y `empresa`) |
 | `product` | `id`, `sku`, `nombre`, `unidad`, `precio_lista`, `activo` (en `product.deleted`: solo `id` y `nombre`) |
-| `task` | `id`, `titulo`, `due_date`, `done`, `cotizacion_id` |
+| `task` | `id`, `titulo`, `due_date`, `done`, `cotizacion_id` (no incluye responsable, prioridad ni notas) |
 | `promise` | `id`, `cotizacion_id`, `fecha_promesa`, `monto`, `moneda`, `estado` |
 
 ## Administrar endpoints por API

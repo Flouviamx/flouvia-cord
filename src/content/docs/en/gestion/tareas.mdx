@@ -36,42 +36,55 @@ They show in two places:
 ## Create a task
 
 <Steps>
-1. **From any screen:** click **Create** in the top bar and choose **Task** (or press <kbd>T</kbd>). Or use the composer on Home or on the **Tasks** page.
+1. Go to the composer in the **Tasks and reminders** widget on Home or on the **Tasks** page.
 2. Type the task, for example "Call Luis to ask whether he reviewed the quote". Up to 200 characters.
-3. Optional: pick the date with the **Today**, **Tomorrow**, or **Monday** shortcuts, or with the calendar.
-4. Optional: turn on **High priority** and choose the **assignee**.
+3. Optional: pick the date with the **Today**, **Tomorrow**, or **Monday** (next Monday) shortcuts, or with the calendar.
+4. Optional: turn on **High priority** and, if there's more than one person on the account, choose the **assignee**.
 5. Click **Add** (or press <kbd>Enter</kbd>). The task shows up in the list without reloading the page.
 </Steps>
 
-If you don't choose an assignee, the task belongs to whoever typed it. In the composer you
-can pick **Unassigned** on purpose.
+**From any screen:** click **Create** in the top bar and choose **Task** (or press
+<kbd>T</kbd>). **New task** opens, with the title and the due date; click **Add task**. The
+task is assigned to you with normal priority; priority, notes, and assignee are changed
+later with **Edit**.
+
+**Assignee:** with a single person on the account, every task you add is yours. With a
+team, the selector starts on you ("Your name (me)"); you can pick another active member or
+**Unassigned**. Only an active team member can be the assignee.
+
+**Notes** aren't entered when you create a task: you add them with **Edit** (up to 2,000
+characters).
 
 ## Organize your day
 
 - **Groups by urgency:** Overdue, Today, Tomorrow, This week, Later, and No date. "Today" is the day in your business's time zone, not the server's (change it in Settings › General).
-- **Filters:** **Mine**, **All**, and **Unassigned**; on the page, also **Open** and **Completed**. With a single person on the account, the assignee filter doesn't show.
+- **Filters:** on the page, **Open** and **Completed**, and by assignee **Mine**, **All**, and **Unassigned**; the Home widget only has **Mine** and **All**. With a team, both views open on **Mine**. With a single person on the account, the assignee filter doesn't show.
 - **Complete:** click the circle. For a few seconds you can click **Undo**. Under **Completed** you see who completed it and when, and you can **Reopen** it.
 - **Task menu (···):** **Edit** (title, notes, date, priority, and assignee), **Snooze until** tomorrow, Monday, or in a week, **Assign to me**, and **Delete**. Delete asks for confirmation because it can't be undone.
-- **Linked to a document:** if the task comes from a quote or invoice, its number and the client show as a link to the document.
+- **Linked to a quote:** if the task is linked to a quote (for example, a workflow, the API, or a SPEI refund created it), the quote number and the client show as a link to the quote.
+- **Notes:** on the page they show below the title; in the widget, an icon tells you the task has notes.
 - In the sidebar, **Tasks** shows how many of yours or unassigned ones are due today or overdue; the number is red when some are overdue.
 
 ## Email reminder
 
 Every morning, from 8:00 in your business's time zone, each assignee gets an email with
 their tasks due today and overdue. An unassigned task goes to whoever created it. If no one on the team
-created it (a workflow, the API, or a chargeback added it) or that person is no longer on
+created it (a workflow, the API, MCP, or a chargeback added it) or that person is no longer on
 the team, it goes to the account owner.
 
-- One email a day per person, at most.
+- Each task shows up in at most one email a day. If you add a task for today, or move one to today, after the morning email went out, it arrives in a separate email at the next check, which runs every hour.
 - If you snooze a task, it reminds again on its new date.
 - An overdue task that isn't completed shows up in each day's email until you complete or snooze it.
+- Tasks without a due date don't trigger a reminder.
+- The **Open my tasks** button in the email opens the **Tasks** page with the **Mine** filter.
+- **Test mode** doesn't send reminders.
 - To turn it off for the whole organization, uncheck **Task reminder** in [Settings › Notifications](/en/docs/gestion/notificaciones).
 
 ## Tasks Cord creates for you
 
 When a payment operation needs your attention, Cord adds the task with **high priority**:
 
-- **Chargeback response** (titled "Responder contracargo" with the amount): when a client disputes a card charge, with the deadline to submit evidence as the due date (see [Disputes](/en/docs/pagos/disputas)).
+- **Chargeback response** (titled "Responder contracargo" with the amount): when a client disputes a card charge, with the deadline to submit evidence as the due date. It's created unassigned (see [Disputes](/en/docs/pagos/disputas)).
 - **SPEI refund transfer** (titled "Transferir reembolso SPEI" with the amount): when you request a refund of a SPEI payment, which is transferred outside Cord, linked to the quote and assigned to whoever requested it (see [Refunds](/en/docs/pagos/reembolsos)).
 
 ## Other ways to create tasks
@@ -112,7 +125,8 @@ and [webhooks](/en/docs/desarrolladores/herramientas/webhooks):
 | **A task is created** | When it's created from the app, a workflow, the API, or MCP. |
 | **A task is completed** | When it's marked complete. |
 
-Editing, snoozing, reopening, or deleting a task emits no event.
+Editing, snoozing, reopening, or deleting a task emits no event. The tasks Cord creates for
+you (chargeback and SPEI refund) don't emit **A task is created** either.
 
 ## Limits by plan
 
@@ -124,9 +138,9 @@ Tasks have no cap by plan.
 
 **I can't add a task.** Your role doesn't have the Quotes, Collections, or Clients permission.
 
-**A task is missing from the list.** Check the filter: **Mine** only shows yours. The Home widget shows the 8 most urgent; the rest are on the **Tasks** page.
+**A task is missing from the list.** Check the filter: **Mine** only shows yours. The Home widget shows the 8 most urgent; the rest are on the **Tasks** page, which shows up to 200 per view.
 
-**I didn't get the reminder.** It only arrives if you have tasks due today or overdue, from 8:00 in your business's time zone. Check that **Task reminder** is still on in Settings › Notifications, and your spam folder.
+**I didn't get the reminder.** It only arrives if you have tasks with a due date of today or overdue, from 8:00 in your business's time zone. Someone else's task goes to them, not to you. Check that **Task reminder** is still on in Settings › Notifications, and your spam folder.
 
 ## Related
 

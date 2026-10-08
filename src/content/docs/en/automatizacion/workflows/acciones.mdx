@@ -46,16 +46,17 @@ Adds a task for your team in **Tasks**, just as if you had created it by hand.
 **What it is linked to:**
 
 - If the trigger is about a quote (sent, approved, paid, partial payment, invoiced, etc.), the task is linked to that quote: in **Tasks** it shows the quote number and client as a link to the quote.
-- If the trigger is a dispute or refund on a quote, it is also linked to that quote.
+- If the event carries a related quote, the task is also linked to it: a dispute or refund on a quote, an invoice created from a quote, a payment promise, or a task linked to a quote.
 - On **A draft is deleted** it is not linked, because the quote no longer exists.
-- On other triggers (invoices, clients, products, payouts, tasks, promises) the task is standalone.
+- In every other case (clients, products, payouts, scheduled triggers, invoices without a quote, standalone tasks) the task is standalone. It is never linked to the invoice itself.
 
 **Assignee:** the task is created unassigned with normal priority; assign it or raise its priority from **Tasks**. While it has no assignee, the [email reminder](/en/docs/gestion/tareas#email-reminder) goes to the account owner.
 
 **When it fails:**
 
-- "The task title ended up empty": the title only had event data and all of it arrived empty. Add fixed text, for example "Follow-up: `{{cliente}}`".
-- "Hourly task limit for workflows reached": your workflows created 120 tasks in the last hour. See [Limits](/en/docs/automatizacion/workflows/limites).
+- "The task title came out empty.": the title only had event data and all of it arrived empty. Add fixed text, for example "Follow-up: `{{cliente}}`".
+- "Workflows reached their hourly limit of tasks.": your workflows created 120 tasks in the last hour. See [Limits](/en/docs/automatizacion/workflows/limites).
+- "The task could not be created.": Cord rejected the task, for example because the quote it was going to be linked to no longer exists.
 
 <Callout type="info">
 Creating a task is also an event. If you have a workflow with the **A task is created** trigger, it will react to tasks created by your other workflows. Use the condition "Who caused it is not Another workflow" if you do not want that.

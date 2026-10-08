@@ -1,7 +1,7 @@
 ---
 title: "Runs and errors"
 description: "How to read a workflow's Runs tab: statuses, the result of each step, automatic retries and when they happen, retrying by hand with the original version, canceling, and what to do with each error message."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-08"
 reviewedBy: "Cord product and operations"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -97,7 +97,7 @@ Messages appear in your account's language.
 | Message | Cause | What to do |
 |---|---|---|
 | The task title came out empty. | The title only had event data and it arrived empty. | Add fixed text to the title. |
-| The task could not be created. | Cord could not save the task. | Click **Retry**. If it persists, write to us. |
+| The task could not be created. | Cord rejected the task; for example, the quote it was going to be linked to no longer exists. | If the quote was deleted, retrying won't help. Otherwise, click **Retry** and, if it persists, write to us. |
 | Workflows reached their hourly limit of tasks. | Your workflows created 120 tasks in one hour. | Check whether a workflow triggers more than expected; retry later. |
 
 ### Team email

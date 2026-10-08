@@ -2,7 +2,7 @@
 title: "Reembolsos"
 seoTitle: "Reembolsos de pagos en Cord"
 description: "Cómo devolverle dinero a un cliente desde Mis cobros: reembolsos totales o parciales, la diferencia entre tarjeta y SPEI, y qué pasa con la comisión."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-08"
 reviewedBy: "Producto y operaciones de Cord"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -46,8 +46,8 @@ El reembolso se procesa **automáticamente** en cuanto lo confirmas — no requi
 En Cord, el flujo de reembolso SPEI requiere una transferencia manual del negocio. Solicitarlo en el panel no devuelve el dinero por sí solo:
 
 1. Se registra en Cord como "reembolso pendiente, manual".
-2. Cord crea automáticamente una tarea en tu lista de pendientes recordándote transferir el monto de vuelta al cliente.
-3. Tú haces la transferencia por tu cuenta bancaria normal, y marcas el pendiente como resuelto.
+2. Cord crea automáticamente en [Tareas](/docs/gestion/tareas) la tarea "Transferir reembolso SPEI" con el monto: prioridad alta, ligada a la cotización y a cargo de quien solicitó el reembolso.
+3. Tú haces la transferencia por tu cuenta bancaria normal, y marcas la tarea como completada.
 
 ## Qué pasa con tu dinero
 
