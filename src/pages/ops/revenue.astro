@@ -4,7 +4,7 @@ import OpsShell from '../../components/ops/OpsShell.astro';
 import OpsDist from '../../components/ops/OpsDist.astro';
 import { withOpsTx } from '../../lib/db';
 import { opsAgo, opsDate, opsMoney, opsNumber, opsPct, opsSubscription } from '../../lib/ops-format';
-import { opsRevenueAtRisk, opsRevenueCanceling, opsRevenueOrgs, summarizeRevenue, type OpsRevenueOrg } from '../../lib/ops-billing';
+import { opsRevenueAtRisk, opsRevenueCanceling, opsRevenueOrgs, opsStoredPlan, summarizeRevenue, type OpsRevenueOrg } from '../../lib/ops-billing';
 import { PLANES } from '../../lib/precios';
 
 if (!Astro.locals.opsOperator) return Astro.redirect('/ops/login');
@@ -21,7 +21,7 @@ const canceling = opsRevenueCanceling(rows);
 const atRisk = opsRevenueAtRisk(rows);
 const paying = byCurrency.reduce((a, c) => a + c.paying, 0);
 const annual = byCurrency.reduce((a, c) => a + c.annual, 0);
-const planName = (id: string) => PLANES.find((p) => p.id === id)?.nombre ?? id;
+const planName = (id: unknown) => { const plan = opsStoredPlan(id); return PLANES.find((p) => p.id === plan)?.nombre ?? plan; };
 // Altas de pago de los últimos 30 días vs. organizaciones nuevas del mismo periodo
 // no se calculan aquí: Cord no guarda cuándo empezó cada suscripción. Se dice.
 ---
@@ -43,7 +43,7 @@ const planName = (id: string) => PLANES.find((p) => p.id === id)?.nombre ?? id;
         <strong class="ops-revenue-mrr">{opsMoney(c.mrr, c.currency)}<small>MRR</small></strong>
         <span class="ops-sub">{opsMoney(c.arr, c.currency)} ARR · {opsNumber(c.annual)} anuales</span>
         {c.unpriced > 0 && <span class="ops-inline-warning">{opsNumber(c.unpriced)} sin precio de lista en {c.currency}: no suman al MRR.</span>}
-        <OpsDist rows={c.byPlan.map((p) => ({ label: `${planName(p.plan)} · ${opsNumber(p.paying)}`, value: p.mrr || p.paying, display: opsMoney(p.mrr, c.currency) }))} />
+        <OpsDist rows={c.byPlan.map((p) => ({ label: `${planName(p.plan)} · ${opsNumber(p.paying)}`, value: p.mrr, display: p.mrr > 0 ? opsMoney(p.mrr, c.currency) : 'Sin precio de lista' }))} />
       </article>)}
       {byCurrency.length === 0 && <div class="ops-card ops-empty">Ninguna organización paga todavía.</div>}
     </div>

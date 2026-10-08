@@ -217,7 +217,11 @@ paga, si puede cobrar, qué falló y qué se le prometió.
   cliente. Ops no tiene su propia versión de ninguna: llama a la función de la
   app (`retryWorkflowRun`, `redeliver`, `notifyInvoiceIssued`) en el carril de la
   organización, así que valen sus mismas reglas. Reenviar una factura se confirma
-  escribiendo su número y sale en el idioma, formato y divisa del negocio. Cada
+  escribiendo su número, sale en el idioma, formato y divisa del negocio, avisa
+  a sus integraciones (`invoice.sent`) y se rechaza si salió hace menos de dos
+  minutos. Solo se re-entregan entregas fallidas. La acción y su estado
+  (`sent_at`, timeline) se escriben antes de la bitácora, y una bitácora que
+  falla no convierte un éxito en 500: un 500 invitaría a repetir el correo. Cada
   intento escribe `ops_audit_log` con su resultado; en el historial del negocio
   aparece "Soporte de Cord", nunca el correo del operador. "Re-entregar" solo se
   ofrece si el evento original sigue retenido.
@@ -228,7 +232,11 @@ paga, si puede cobrar, qué falló y qué se le prometió.
   lo que Cord anota de él (`test/ops-fase3-schema.test.ts`).
 
 `/ops/revenue` agrupa el MRR y el ARR a precio de lista por divisa de la
-plataforma (`summarizeRevenue()`), sin sumar divisas entre sí, y lista quién
+plataforma (`summarizeRevenue()`), sin sumar divisas entre sí. "Paga" usa la
+misma evidencia que autoriza las capacidades (`hasPaidBillingEvidence`), no
+`cord_effective_plan`: una promoción da acceso pero no es ingreso. El ARR es lo
+que se cobra en un año (12 mensualidades o 10 del anual), sin redondear por
+organización, y lista quién
 cancela al cierre del periodo y quién tiene un plan de pago sin cobro que lo
 respalde. No hay curva de altas ni bajas: Cord no guarda cuándo empezó o terminó
 cada suscripción.
@@ -241,7 +249,10 @@ error (`stripe_events`). Nunca lee cuerpos, payloads ni secretos.
 Las políticas de lectura de `cobro_reembolsos`, `cobro_disputas`,
 `webhook_events` y `suscripcion_facturas`, y las tablas de notas, viven en
 `db/migrations/2026-10-08-ops-fase3.sql`, que corre en cada build
-(`scripts/migrate-ops-fase3.mjs` en el `buildCommand`).
+(`scripts/migrate-ops-fase3.mjs` en el `buildCommand`). Cada política se crea
+solo si falta: `create/drop policy` toma ACCESS EXCLUSIVE aunque no cambie nada,
+y en cada build eso frenaría las escrituras de `webhook_events` y de cobros. Un
+bloqueo ocupado se reintenta antes de fallar el despliegue.
 
 Pendiente de fases siguientes: monitor de crons (no existe tabla de ejecuciones),
 alertas configurables, inspectores de rate limit, logs de API, OAuth/MCP/CLI,

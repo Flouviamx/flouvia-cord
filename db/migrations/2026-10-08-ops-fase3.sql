@@ -4,6 +4,11 @@
 -- encadenado en el buildCommand de vercel.json) porque el código de esta fase
 -- lee estas tablas en producción.
 --
+-- Cada sentencia se salta si ya está aplicada: `create/drop policy` y
+-- `alter table ... row level security` toman ACCESS EXCLUSIVE aunque no
+-- cambien nada, y en cada build eso bloquearía las escrituras de
+-- webhook_events y de cobros (o el build abortaría por lock_timeout).
+--
 -- 1. Lectura de Ops sobre el dinero y la entrega de webhooks de una
 --    organización. Mismo contrato que `ops_payouts`: política PERMISIVA aparte,
 --    solo `for select` y solo con `app.scope='ops'`. Ops reintenta entregas y
@@ -14,7 +19,7 @@ declare t text;
 begin
   foreach t in array array['cobro_reembolsos', 'cobro_disputas', 'webhook_events', 'suscripcion_facturas'] loop
     continue when to_regclass(t) is null;
-    execute format('drop policy if exists %I on %I', 'ops_' || t, t);
+    continue when exists (select 1 from pg_policies where schemaname = 'public' and tablename = t and policyname = 'ops_' || t);
     execute format(
       'create policy %I on %I for select using (current_setting(''app.scope'', true) = ''ops'')',
       'ops_' || t, t);
@@ -46,6 +51,8 @@ create table if not exists ops_org_tags (
 );
 create index if not exists idx_ops_org_tags_tag on ops_org_tags(tag);
 
+-- Estos `alter` sí corren en cada build: son tablas propias de Ops que nadie
+-- más escribe, así que su bloqueo es instantáneo.
 alter table ops_org_notes enable row level security;
 alter table ops_org_notes force row level security;
 alter table ops_org_tags enable row level security;
@@ -54,12 +61,15 @@ do $$
 declare t text;
 begin
   foreach t in array array['ops_org_notes', 'ops_org_tags'] loop
-    execute format('drop policy if exists %I on %I', t || '_select', t);
-    execute format('create policy %I on %I for select using (current_setting(''app.scope'', true) = ''ops'')', t || '_select', t);
-    execute format('drop policy if exists %I on %I', t || '_insert', t);
-    execute format('create policy %I on %I for insert with check (current_setting(''app.scope'', true) = ''ops'')', t || '_insert', t);
-    execute format('drop policy if exists %I on %I', t || '_delete', t);
-    execute format('create policy %I on %I for delete using (current_setting(''app.scope'', true) = ''ops'')', t || '_delete', t);
+    if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = t and policyname = t || '_select') then
+      execute format('create policy %I on %I for select using (current_setting(''app.scope'', true) = ''ops'')', t || '_select', t);
+    end if;
+    if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = t and policyname = t || '_insert') then
+      execute format('create policy %I on %I for insert with check (current_setting(''app.scope'', true) = ''ops'')', t || '_insert', t);
+    end if;
+    if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = t and policyname = t || '_delete') then
+      execute format('create policy %I on %I for delete using (current_setting(''app.scope'', true) = ''ops'')', t || '_delete', t);
+    end if;
   end loop;
 end $$;
 -- END ops-fase3

@@ -147,7 +147,7 @@ if (block < 0 || blockEnd < 0) {
     const f3 = schema.indexOf('-- BEGIN ops-fase3');
     const f3End = schema.indexOf('-- END ops-fase3');
     const ownWrite = f3 >= 0 && f3End > f3 ? schema.slice(f3, f3End) : '';
-    const ownTables = /foreach t in array array\[('ops_[a-z_]+'(?:,\s*'ops_[a-z_]+')*)\] loop\s+execute format\('drop policy if exists %I on %I', t \|\| '_select'/.exec(ownWrite);
+    const ownTables = /foreach t in array array\[('ops_[a-z_]+'(?:,\s*'ops_[a-z_]+')*)\] loop\s+if not exists \(select 1 from pg_policies[^)]*policyname = t \|\| '_select'\)/.exec(ownWrite);
     for (const stmt of schema.slice(blockEnd).match(/create policy[^;]*;/gi) || []) {
         if (!/'ops'/.test(stmt) || /\bfor (select|update)\b/i.test(stmt)) continue;
         const inOwnBlock = ownTables && /\bfor (insert|delete)\b/i.test(stmt) && ownWrite.includes(stmt);

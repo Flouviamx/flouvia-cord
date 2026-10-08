@@ -33,14 +33,25 @@ function split(src) {
     return out;
 }
 
-try {
-    const sql = neon(connection);
-    await sql.transaction([
-        sql`select set_config('lock_timeout','5s',true), set_config('statement_timeout','30s',true)`,
-        ...split(source).map((s) => sql.query(s, [])),
-    ]);
-    console.log('ops-fase3 migration applied');
-} catch {
-    console.error('ops-fase3 migration failed; database credentials and query details omitted.');
-    process.exitCode = 1;
+const sql = neon(connection);
+const statements = split(source);
+// Un bloqueo ocupado (55P03) no es un error del cambio: se reintenta antes de
+// tumbar el despliegue. Cualquier otro código falla al primer intento.
+for (let attempt = 1; ; attempt++) {
+    try {
+        await sql.transaction([
+            sql`select set_config('lock_timeout','5s',true), set_config('statement_timeout','30s',true)`,
+            ...statements.map((s) => sql.query(s, [])),
+        ]);
+        console.log('ops-fase3 migration applied');
+        break;
+    } catch (error) {
+        if (error?.code === '55P03' && attempt < 4) {
+            await new Promise((r) => setTimeout(r, attempt * 3000));
+            continue;
+        }
+        console.error(`ops-fase3 migration failed (${/^[0-9A-Z]{5}$/.test(error?.code || '') ? error.code : 'sin código'}); database credentials and query details omitted.`);
+        process.exitCode = 1;
+        break;
+    }
 }

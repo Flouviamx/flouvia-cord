@@ -4,7 +4,8 @@
 import { sql } from './db';
 import { fromMinorUnits } from './currency';
 import { platformCurrencyFor, type PlatformCurrency } from './plan-currency';
-import { PLANES, precioAnualMensualizado } from './precios';
+import { hasPaidBillingEvidence, normalizePlan } from './entitlements';
+import { MESES_POR_ANIO, PLANES } from './precios';
 
 /** Suscripción y cuenta de cobros. `effective_plan` es el plan PAGADO (regla 17). */
 export function opsOrgBilling(orgId: string) {
@@ -90,7 +91,8 @@ export function opsConnectRequirements(raw: unknown): OpsConnectRequirements {
 export const opsRevenueOrgs = () => sql`
   select o.id, o.nombre, o.country_code, coalesce(o.plan, 'free') plan, cord_effective_plan(o.id) effective_plan,
          o.billing_cycle, o.billing_currency, o.subscription_status, o.cancel_at_period_end,
-         o.current_period_end, o.billing_paid_through, o.billing_last_paid_at, o.created_at
+         o.current_period_end, o.billing_paid_through, o.billing_paid_plan, o.billing_last_paid_at,
+         o.stripe_subscription_id, o.stripe_customer_id, o.created_at
   from orgs o
   where o.sandbox_of is null and not coalesce(o.is_demo, false)
     and (o.stripe_subscription_id is not null or o.subscription_status is not null or coalesce(o.plan, 'free') <> 'free')
@@ -101,6 +103,8 @@ export interface OpsRevenueOrg {
   id: string; nombre: string; country_code: string | null; plan: string; effective_plan: string;
   billing_cycle: string | null; billing_currency: string | null; subscription_status: string | null;
   cancel_at_period_end: boolean | null; current_period_end: string | Date | null;
+  billing_paid_through?: string | Date | null; billing_paid_plan?: string | null;
+  stripe_subscription_id?: string | null; stripe_customer_id?: string | null;
 }
 
 export interface OpsCurrencyRevenue {
@@ -114,30 +118,36 @@ export interface OpsCurrencyRevenue {
   byPlan: { plan: string; paying: number; mrr: number }[];
 }
 
-// Mismo mapeo que cord_effective_plan(): los nombres heredados son Pro.
-const storedPlan = (plan: unknown) => {
-  const p = String(plan || 'free').toLowerCase();
-  return p === 'business' || p === 'negocio' ? 'pro' : p;
-};
+/** Nombre del plan guardado, con los nombres heredados ya mapeados (business → pro). */
+export const opsStoredPlan = (plan: unknown) => normalizePlan(plan);
 
 /**
- * ¿Paga de verdad? Suscripción activa y `cord_effective_plan` distinto de
- * Gratis (regla 17: `orgs.plan` solo no es evidencia). Una promoción sin
- * suscripción (The Cord Build) da acceso, pero no es ingreso.
+ * ¿Paga de verdad? La MISMA evidencia que autoriza las capacidades pagadas
+ * (`hasPaidBillingEvidence`, regla 17): suscripción activa, periodo vigente y
+ * pagado, ids reales y plan pagado al menos igual al guardado. No usa
+ * `cord_effective_plan`, que también concede acceso por promoción: una
+ * promoción da acceso, pero no es ingreso.
  */
-export const opsIsPaying = (row: OpsRevenueOrg) =>
-  row.subscription_status === 'active' && row.effective_plan !== 'free' && storedPlan(row.plan) !== 'free';
+export const opsIsPaying = (row: OpsRevenueOrg, now = new Date()) => hasPaidBillingEvidence({
+  plan: row.plan,
+  subscriptionStatus: row.subscription_status,
+  currentPeriodEnd: row.current_period_end,
+  billingPaidThrough: row.billing_paid_through,
+  billingPaidPlan: row.billing_paid_plan,
+  stripeSubscriptionId: row.stripe_subscription_id,
+  stripeCustomerId: row.stripe_customer_id,
+}, now);
 
 /**
  * MRR a precio de LISTA, por divisa de la plataforma. No resta descuentos ni
  * suma excedentes medidos: es la base recurrente contratada. Las divisas nunca
  * se suman entre sí (regla 21).
  */
-export function summarizeRevenue(rows: OpsRevenueOrg[]): OpsCurrencyRevenue[] {
+export function summarizeRevenue(rows: OpsRevenueOrg[], now = new Date()): OpsCurrencyRevenue[] {
   const out = new Map<PlatformCurrency, OpsCurrencyRevenue & { plans: Map<string, { paying: number; mrr: number }> }>();
   for (const row of rows) {
-    if (!opsIsPaying(row)) continue;
-    const plan = storedPlan(row.plan);
+    if (!opsIsPaying(row, now)) continue;
+    const plan = opsStoredPlan(row.plan);
     const currency = platformCurrencyFor(row.country_code, row.billing_currency);
     const bucket = out.get(currency) ?? { currency, mrr: 0, arr: 0, paying: 0, annual: 0, unpriced: 0, byPlan: [], plans: new Map() };
     out.set(currency, bucket);
@@ -149,14 +159,17 @@ export function summarizeRevenue(rows: OpsRevenueOrg[]): OpsCurrencyRevenue[] {
     bucket.plans.set(plan, planBucket);
     planBucket.paying++;
     if (typeof monthly !== 'number') { bucket.unpriced++; continue; }
-    const mrr = annual ? precioAnualMensualizado(monthly) : monthly;
-    bucket.mrr += mrr;
-    planBucket.mrr += mrr;
+    // Sin redondear por organización: el anual se factura `monthly × 10` y su
+    // MRR es ese total / 12. Redondear aquí y luego multiplicar por 12 hacía
+    // que el ARR no cuadrara con lo que de verdad se cobra.
+    const yearly = annual ? monthly * MESES_POR_ANIO : monthly * 12;
+    bucket.mrr += yearly / 12;
+    bucket.arr += yearly;
+    planBucket.mrr += yearly / 12;
   }
   return [...out.values()]
     .map(({ plans, ...bucket }) => ({
       ...bucket,
-      arr: bucket.mrr * 12,
       byPlan: [...plans.entries()].map(([plan, v]) => ({ plan, ...v })).sort((a, b) => b.mrr - a.mrr),
     }))
     .sort((a, b) => b.paying - a.paying);
@@ -169,4 +182,4 @@ export const opsRevenueCanceling = (rows: OpsRevenueOrg[]) => rows
 
 /** Tienen un plan de pago guardado, pero el cobro no lo respalda (vencido, impago, inconsistente). */
 export const opsRevenueAtRisk = (rows: OpsRevenueOrg[]) => rows
-  .filter((r) => storedPlan(r.plan) !== 'free' && !opsIsPaying(r) && r.subscription_status !== 'canceled');
+  .filter((r) => opsStoredPlan(r.plan) !== 'free' && !opsIsPaying(r) && r.subscription_status !== 'canceled');

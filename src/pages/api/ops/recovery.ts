@@ -5,8 +5,13 @@
 // que usa la app, en el carril de la organización (withOrgTx con el org_id que
 // Ops resolvió de la fila). Así no se amplía ninguna política para Ops y la
 // operación respeta las mismas reglas que si la hiciera el negocio — solo
-// fallidas se reintentan, solo facturas emitidas se reenvían. Solo admin, y
-// cada intento queda en la bitácora de Ops con su resultado.
+// ejecuciones y entregas fallidas se reintentan, solo facturas emitidas se
+// reenvían. Solo admin, y cada intento queda en la bitácora de Ops con su
+// resultado.
+//
+// Orden: primero la acción y el estado que la acompaña (sent_at, timeline);
+// la bitácora va al final y su falla se registra sin convertir un éxito en 500.
+// Un 500 invita a reintentar, y reintentar aquí manda otro correo o entrega.
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
@@ -15,6 +20,8 @@ import { setRequestCurrency, setRequestFormatLocale, setRequestLocale, setReques
 import { getCountryProfile } from '../../../lib/countries';
 import { notifyInvoiceIssued } from '../../../lib/email';
 import { logInvoiceEvent } from '../../../lib/fiscal/timeline';
+import { after } from '../../../lib/after';
+import { dispatchInvoiceEvent } from '../../../lib/webhooks';
 import { trustedIp } from '../../../lib/ip';
 import { log } from '../../../lib/log';
 import { opsAuditQuery } from '../../../lib/ops-auth';
@@ -54,14 +61,15 @@ export const PATCH: APIRoute = async ({ request, locals, url }) => {
         metadata: { record: targetId, ...metadata },
         ip,
         userAgent: request.headers.get('user-agent') || 'desconocido',
-    }));
+    })).then(() => undefined, (err) => log.error('auditoría de recuperación no escrita', { route: 'ops/recovery', action, err }));
 
     try {
         if (action === 'redeliver_webhook') {
             const [rows] = await withOpsTx(sql`
-                select d.org_id, d.evento, d.es_prueba from webhook_deliveries d where d.id = ${targetId} limit 1`);
+                select d.org_id, d.evento, d.ok from webhook_deliveries d where d.id = ${targetId} limit 1`);
             const target = rows[0] as any;
             if (!target) return json({ error: 'Entrega no encontrada' }, 404);
+            if (target.ok) return json({ error: 'Esa entrega ya fue aceptada por el endpoint.' }, 409);
             const outcome = await redeliver(target.org_id, targetId);
             await audit(target.org_id, outcome.ok ? 'success' : 'failure', { event: target.evento, status: outcome.status, error: outcome.error });
             // status 0 = no llegó a salir (payload vencido, endpoint borrado, red):
@@ -92,6 +100,7 @@ export const PATCH: APIRoute = async ({ request, locals, url }) => {
         // escribiendo el número de la factura, igual que en el resto de Ops.
         const [rows] = await withOpsTx(sql`
             select d.org_id, d.invoice_number, d.lifecycle, d.currency, o.idioma, o.country_code, o.zona_horaria,
+                   (d.sent_at > now() - interval '2 minutes') recently_sent,
                    coalesce(cl.email, cq.email) cliente_email
             from documentos_fiscales d join orgs o on o.id = d.org_id
             left join clientes cl on cl.id = d.cliente_id and cl.org_id = d.org_id
@@ -107,20 +116,30 @@ export const PATCH: APIRoute = async ({ request, locals, url }) => {
             return json({ error: 'Solo se reenvía una factura emitida y vigente.' }, 409);
         }
         if (!target.cliente_email) return json({ error: 'El cliente de esta factura no tiene correo registrado.' }, 409);
+        // Dos admins o un doble clic tras recargar no mandan dos correos seguidos.
+        if (target.recently_sent) return json({ error: 'Esta factura se envió hace menos de dos minutos. Espera antes de reenviarla.' }, 409);
         // El correo sale en el idioma, formato y divisa del NEGOCIO, no en los de Ops.
         setRequestLocale(target.idioma);
         setRequestFormatLocale(getCountryProfile(String(target.country_code || 'MX')).locale);
         setRequestTimeZone(target.zona_horaria);
         setRequestCurrency(target.currency);
         const sent = await notifyInvoiceIssued(target.org_id, targetId);
-        await audit(target.org_id, sent ? 'success' : 'failure', { invoice: target.invoice_number });
-        if (!sent) return json({ error: 'No se pudo enviar el correo. Inténtalo de nuevo en unos minutos.' }, 502);
-        await withOrgTx(target.org_id, sql`
-            update documentos_fiscales set sent_at = now(), updated_at = now()
-             where id = ${targetId} and org_id = ${target.org_id}`);
+        if (!sent) {
+            await audit(target.org_id, 'failure', { invoice: target.invoice_number });
+            return json({ error: 'No se pudo enviar el correo. Inténtalo de nuevo en unos minutos.' }, 502);
+        }
+        // El correo ya salió: de aquí en adelante nada puede responder 500.
         const actor = supportActor(target.idioma);
-        await logInvoiceEvent(target.org_id, targetId, 'sent', actor);
+        try {
+            await withOrgTx(target.org_id, sql`
+                update documentos_fiscales set sent_at = now(), updated_at = now()
+                 where id = ${targetId} and org_id = ${target.org_id}`);
+        } catch (err) { log.error('sent_at no actualizado tras reenvío', { route: 'ops/recovery', err }); }
+        await logInvoiceEvent(target.org_id, targetId, 'sent', `Reenviada por ${actor} a ${target.cliente_email}`);
         await logAudit(target.org_id, { accion: 'factura.enviada', entidad: 'factura', entidad_id: targetId, detalle: target.cliente_email, ip, actor });
+        // Igual que el envío desde la app: las integraciones del negocio se enteran.
+        after(dispatchInvoiceEvent(target.org_id, targetId, 'invoice.sent'));
+        await audit(target.org_id, 'success', { invoice: target.invoice_number });
         return json({ success: true, message: `Factura ${target.invoice_number} reenviada a ${target.cliente_email}.` });
     } catch (error) {
         log.error('error no controlado', { route: 'ops/recovery', action, err: error });

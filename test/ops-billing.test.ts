@@ -4,14 +4,17 @@ vi.mock('../src/lib/db', () => ({ sql: () => ({}) }));
 
 const { opsConnectRequirements, opsIsPaying, opsMinor, opsRevenueAtRisk, opsRevenueCanceling, stripeDashboardUrl, summarizeRevenue } = await import('../src/lib/ops-billing');
 const { mergeOpsLog, normalizeOpsTag } = await import('../src/lib/ops-notes');
-const { PLANES, precioAnualMensualizado } = await import('../src/lib/precios');
+const { PLANES, MESES_POR_ANIO } = await import('../src/lib/precios');
 
+const FUTURE = '2099-11-01T00:00:00Z';
 const price = (plan: string, cur: 'MXN' | 'USD' | 'EUR') => PLANES.find((p) => p.id === plan)!.precio[cur] as number;
 const org = (over: Record<string, unknown>) => ({
     id: crypto.randomUUID(), nombre: 'Org', country_code: 'MX', plan: 'pro', effective_plan: 'pro',
     billing_cycle: 'mensual', billing_currency: null, subscription_status: 'active',
-    cancel_at_period_end: false, current_period_end: '2026-11-01T00:00:00Z', ...over,
+    cancel_at_period_end: false, current_period_end: FUTURE, billing_paid_through: FUTURE,
+    billing_paid_plan: over.plan ?? 'pro', stripe_subscription_id: 'sub_1', stripe_customer_id: 'cus_1', ...over,
 }) as any;
+const NOW = new Date('2026-10-08T12:00:00Z');
 
 describe('MRR de Ops', () => {
     it('cuenta solo el plan pagado verificado, por divisa y sin mezclarlas', () => {
@@ -23,38 +26,41 @@ describe('MRR de Ops', () => {
             org({ country_code: 'MX', effective_plan: 'free', subscription_status: 'past_due' }),
             // Promoción sin suscripción: tiene acceso, no es ingreso.
             org({ country_code: 'MX', plan: 'free', effective_plan: 'scale', subscription_status: null }),
+            // Promoción encima de un Starter con la factura sin pagar: acceso Scale, ingreso cero.
+            org({ country_code: 'MX', plan: 'starter', effective_plan: 'scale', billing_paid_through: '2026-09-01T00:00:00Z' }),
         ];
-        const [mxn, usd] = summarizeRevenue(rows);
+        const [mxn, usd] = summarizeRevenue(rows, NOW);
         expect(mxn.currency).toBe('MXN');
         expect(mxn.paying).toBe(2);
-        expect(mxn.mrr).toBe(price('pro', 'MXN') + precioAnualMensualizado(price('starter', 'MXN')));
-        expect(mxn.arr).toBe(mxn.mrr * 12);
+        // ARR = lo que de verdad se cobra en un año: 12 meses del mensual + 10 del anual.
+        expect(mxn.arr).toBe(price('pro', 'MXN') * 12 + price('starter', 'MXN') * MESES_POR_ANIO);
+        expect(mxn.mrr).toBeCloseTo(mxn.arr / 12, 6);
         expect(mxn.annual).toBe(1);
         expect(usd).toMatchObject({ currency: 'USD', paying: 1, mrr: price('pro', 'USD') });
     });
 
     it('la divisa de una factura real gana sobre el país (regla 21)', () => {
-        const [only] = summarizeRevenue([org({ country_code: 'ES', billing_currency: 'usd' })]);
+        const [only] = summarizeRevenue([org({ country_code: 'ES', billing_currency: 'usd' })], NOW);
         expect(only.currency).toBe('USD');
     });
 
     it('un plan sin precio de lista en esa divisa no inventa MRR', () => {
-        const [eur] = summarizeRevenue([org({ country_code: 'ES', plan: 'developer', effective_plan: 'developer' })]);
+        const [eur] = summarizeRevenue([org({ country_code: 'ES', plan: 'developer', effective_plan: 'developer' })], NOW);
         expect(eur).toMatchObject({ currency: 'EUR', paying: 1, unpriced: 1, mrr: 0 });
     });
 
     it('los nombres heredados del plan se leen como Pro', () => {
-        expect(opsIsPaying(org({ plan: 'business', effective_plan: 'pro' }))).toBe(true);
-        const [mxn] = summarizeRevenue([org({ plan: 'negocio', effective_plan: 'pro' })]);
+        expect(opsIsPaying(org({ plan: 'business', billing_paid_plan: 'pro' }), NOW)).toBe(true);
+        const [mxn] = summarizeRevenue([org({ plan: 'negocio', billing_paid_plan: 'pro' })], NOW);
         expect(mxn.mrr).toBe(price('pro', 'MXN'));
     });
 
     it('separa a quien cancela al cierre de quien está en riesgo', () => {
         const rows = [
-            org({ nombre: 'Tarde', cancel_at_period_end: true, current_period_end: '2026-12-01' }),
-            org({ nombre: 'Pronto', cancel_at_period_end: true, current_period_end: '2026-10-20' }),
-            org({ nombre: 'Atrasada', effective_plan: 'free', subscription_status: 'past_due' }),
-            org({ nombre: 'Cancelada', effective_plan: 'free', subscription_status: 'canceled' }),
+            org({ nombre: 'Tarde', cancel_at_period_end: true, current_period_end: '2099-10-30' }),
+            org({ nombre: 'Pronto', cancel_at_period_end: true, current_period_end: '2099-10-20' }),
+            org({ nombre: 'Atrasada', subscription_status: 'past_due' }),
+            org({ nombre: 'Cancelada', subscription_status: 'canceled' }),
         ];
         expect(opsRevenueCanceling(rows).map((r: any) => r.nombre)).toEqual(['Pronto', 'Tarde']);
         expect(opsRevenueAtRisk(rows).map((r: any) => r.nombre)).toEqual(['Atrasada']);

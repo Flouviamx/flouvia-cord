@@ -93,7 +93,7 @@ const resendable = (d: any) => d.invoice_number && d.lifecycle !== 'draft' && d.
       <div class="ops-detail-identity"><span class="ops-avatar square">{org.nombre.charAt(0).toUpperCase()}</span><div><h2>{org.nombre}</h2><p>Plan {plan} · {opsSubscription(org.subscription_status).toLowerCase()} · {org.sandbox_of ? 'Sandbox' : org.is_demo ? 'Demo' : 'Producción'} · última actividad {opsAgo(org.last_event, 'nunca').toLowerCase()}</p>
         <div class="ops-tags" aria-label="Etiquetas internas">
           {tags.map((t: any) => <span class="ops-tag">{t.tag}<button type="button" class="ops-tag-remove" data-ops-tag-remove={t.tag} aria-label={`Quitar etiqueta ${t.tag}`}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('x')}></svg></button></span>)}
-          <form class="ops-tag-form" data-ops-tag-form><label class="ops-sr-only" for="ops-tag-input">Nueva etiqueta</label><input id="ops-tag-input" name="tag" maxlength="24" autocomplete="off" placeholder="Etiqueta" pattern="[a-zA-Z0-9][a-zA-Z0-9 -]{0,23}" /><button type="submit" class="ops-button ghost sm">Agregar</button></form>
+          <form class="ops-tag-form" data-ops-tag-form><label class="ops-sr-only" for="ops-tag-input">Nueva etiqueta</label><input id="ops-tag-input" name="tag" maxlength="24" autocomplete="off" placeholder="Etiqueta" pattern="[a-zA-Z0-9][a-zA-Z0-9 \-]{0,23}" /><button type="submit" class="ops-button ghost sm">Agregar</button></form>
         </div>
       </div></div>
       {isAdmin && <div class="ops-detail-actions">
