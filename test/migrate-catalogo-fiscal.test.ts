@@ -18,6 +18,7 @@ describe('migración de despliegue del catálogo fiscal', () => {
             'node scripts/migrate-brand-profile.mjs',
             'node scripts/migrate-catalogo-fiscal.mjs',
             'node scripts/migrate-tareas.mjs',
+            'node scripts/migrate-cron-runs.mjs',
             'npm run build',
         ]);
     });
