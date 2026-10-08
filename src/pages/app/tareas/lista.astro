@@ -2,25 +2,24 @@
 // /app/tareas/lista — fragmento HTML (sin layout) que TaskBoard pide después
 // de cada cambio. Renderiza el MISMO TaskList que el SSR del widget y de la
 // página, así que una fila nueva no puede salir distinta de una existente.
-//   GET ?estado=pendientes|completadas&scope=mias|todas|sin_asignar&limit=1..200&variant=widget|page
+//   GET ?estado=pendientes|completadas&scope=mias|todas|sin_asignar&limit=1..TASK_LIST_MAX&variant=widget|page
 export const partial = true;
 export const prerender = false;
 
 import TaskList from '../../../components/app/tasks/TaskList.astro';
 import { getMyMembership } from '../../../lib/queries';
-import { memberCan } from '../../../lib/permissions';
-import { TASK_PERMISSIONS } from '../../../lib/actions/tasks';
+import { memberCanWriteTasks } from '../../../lib/permissions';
 import { listTasks } from '../../../lib/tasks-db';
-import { isTaskScope, isTaskState } from '../../../lib/tasks';
+import { clampTaskLimit, isTaskScope, isTaskState } from '../../../lib/tasks';
 
 const q = Astro.url.searchParams;
 const estado = isTaskState(q.get('estado')) ? q.get('estado') as 'pendientes' | 'completadas' : 'pendientes';
 const scope = isTaskScope(q.get('scope')) ? q.get('scope') as 'mias' | 'todas' | 'sin_asignar' : 'todas';
 const variant = q.get('variant') === 'page' ? 'page' : 'widget';
-const limit = Math.max(1, Math.min(200, Number(q.get('limit')) || 12));
+const limit = clampTaskLimit(q.get('limit'), 12);
 
 const ME = await getMyMembership();
-const canEdit = TASK_PERMISSIONS.some((k) => memberCan(ME, k));
+const canEdit = memberCanWriteTasks(ME);
 const result = await listTasks({ estado, scope, limit });
 Astro.response.headers.set('Cache-Control', 'no-store');
 ---

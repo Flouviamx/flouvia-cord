@@ -12,7 +12,7 @@
 import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
 import { iconInner } from '../../../lib/icons';
-import { groupTasks } from '../../../lib/tasks';
+import { groupTasks, nextTaskLimit } from '../../../lib/tasks';
 import { bucketLabel, type TaskListResult } from '../../../lib/tasks-db';
 
 interface Props {
@@ -27,6 +27,8 @@ const L = currentLocale();
 const completadas = estado === 'completadas';
 const groups = completadas ? [{ bucket: null, items: result.items }] : groupTasks(result.items);
 const restantes = Math.max(0, result.total - result.items.length);
+// En la página, lo que no cupo se dice y se puede abrir; en el widget, se manda a la página.
+const siguiente = restantes > 0 ? nextTaskLimit(result.limit) : null;
 const { vencidas, hoy } = result.counts;
 ---
 
@@ -105,6 +107,15 @@ const { vencidas, hoy } = result.counts;
         </ul>
     </section>
 ))}
+
+{variant === 'page' && restantes > 0 && (
+    <div class="tk-page-more">
+        <span>{t(L, 'tareas.mostrando').replace('{n}', String(result.items.length)).replace('{total}', String(result.total))}</span>
+        {siguiente
+            ? <button type="button" class="tk-page-more-btn" data-tk-more={siguiente}>{t(L, 'tareas.mostrar_mas').replace('{n}', String(Math.min(restantes, siguiente - result.limit)))}</button>
+            : <span class="tk-page-more-hint">{t(L, 'tareas.tope')}</span>}
+    </div>
+)}
 
 {variant === 'widget' && restantes > 0 && (
     <a class="tk-rest" href="/app/tareas">{t(L, 'tareas.ver_restantes').replace('{n}', String(restantes))}</a>
