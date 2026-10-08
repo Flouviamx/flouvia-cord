@@ -18,6 +18,8 @@ prerequisites: ["Complete business tax identity in Settings › Tax details (Tax
 
 Cord doesn't treat an invoice as a generic PDF with a number. The **document type** issued depends on your business country, your plan, and the tax setup you have ready. Once issued, a document keeps its type even if you later change plan or setup: a proforma doesn't become a CFDI or vice versa.
 
+The type is chosen when you create the invoice, in step 3 of the editor (**Terms**), in the **Document type** field: **Pro forma** in Mexico and Spain or **Commercial invoice** in the other markets, plus **CFDI 4.0** or **VERI\*FACTU** when your plan and tax setup allow it. An option your account can't use yet appears disabled. Below it, the editor reminds you: "Commercial documents are included in Free. Integrated tax issuance requires Starter and an enabled tax setup. A pro forma does not replace a tax invoice."
+
 For the full life of an invoice (draft, issue, delivery, payment, credit notes, and voiding), see [Create, issue, and collect invoices](/en/docs/pagos/facturas-emitidas).
 
 ## Which document is issued
@@ -152,7 +154,7 @@ If your RFC, tax regime, or postal code aren't complete in **Settings › Tax de
 
 ## Common problems
 
-**My invoice came out as a proforma and I expected a CFDI.** Check your plan (Starter or higher), that your CSD is uploaded and valid, and that you didn't choose the commercial option when issuing.
+**My invoice came out as a proforma and I expected a CFDI.** Check your plan (Starter or higher), that your CSD is uploaded and valid, and that **CFDI 4.0**, not **Pro forma**, is selected in **Document type** (step 3, **Terms**).
 
 **My customer says their CFDI is unusable.** Check their tax regime, postal code, and CFDI use in their record; if they were missing, Cord used defaults.
 

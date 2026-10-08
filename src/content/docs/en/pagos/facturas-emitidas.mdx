@@ -1,7 +1,7 @@
 ---
 title: "Create, issue, and collect invoices"
 description: "Create an invoice, assign its number when issuing, deliver it, and track its balance in Cord."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-08"
 reviewedBy: "Cord product and operations"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -17,16 +17,32 @@ prerequisites: ["Collections permission", "Client and issuer data", "Country-app
 
 Open **Revenue › Invoices**. The inbox shows the invoice number, client, creation date, due date, total, balance, and operational status.
 
-Drafts do not have an official number yet. Cord labels them **No number** and adds a temporary `BOR-...` reference so you can recognize them. The sequential number is reserved only when you issue the invoice.
+Drafts do not have an official number yet. Cord labels them **No number** and adds a temporary `BOR-...` reference so you can recognize them. The sequential number is reserved only when you issue the invoice. Opening a draft from the inbox takes you straight to the editor.
 
 ## Create an invoice
 
+**New invoice** opens the same editor as quotes (see [Quote creation
+overview](/en/docs/cotizacion/resumen)), with invoice wording and its own step 3.
+
 <Steps>
-1. **Select the client.** Cord reads the email, payment terms, and tax details from the client record.
-2. **Add line items.** Use catalog products, kits, a free-form line, or **Build with AI**. You can set quantity, price, and tax per item.
-3. **Review total and due date.** Confirm taxes, withholdings, currency, exchange rate when applicable, and the payment due date.
-4. **Issue.** Choose **Issue and send** to assign the number and email the invoice in the same flow, or **Issue without sending** if you want to deliver it later.
+1. **Build with AI (optional).** The **Build the invoice with AI** block takes the order as text, a photo, or a PDF and fills the line items from your catalog (see [Cord AI](/en/docs/cotizacion/ia)).
+2. **Who are you invoicing?** Search the client by name, contact, email, or tax ID, or choose **+ Create new client…**. Cord reads their email, payment terms, and tax details from their record. Terms are chosen with chips (Due on receipt, Net 15, Net 30, Net 60, or **Other term**: Net 7, Net 45, or Net 90) and recalculate the due date.
+3. **What are you charging for?** Add catalog products, kits, or a free line. Each item carries its quantity, its price, and its own tax rate. You can duplicate, reorder, and remove lines with **Undo**, just like in a quote (see [Products and discounts](/en/docs/cotizacion/productos)).
+4. **Terms.** Set the **Due date** (a date; changing the payment terms recalculates it, and you can pick another by hand), the **Document type**, and the **Invoice currency**. The document type offers **Pro forma** in Mexico and Spain or **Commercial invoice** in the other markets, plus **CFDI 4.0** (Mexico) or **VERI\*FACTU** (Spain) when your plan and tax setup allow it (see [Fiscal invoicing by country](/en/docs/pagos/facturacion)). If the currency differs from your business's, the exchange-rate panel appears: "The rate is stated on the invoice."
+5. **Note for your client** (optional). It's shown on the PDF and on the invoice page.
+6. **Review and issue.** The summary shows subtotal, taxes per rate, withholdings, the **Total** and, below it, the terms and due date (for example "Net 30 · due Nov 7"). The **Delivery** block shows the email it will go to: "The email includes the PDF and the payment link." Click **Preview** to see the approximate sheet your client will receive.
+7. **Issue.** **Issue and send** assigns the number and emails the invoice in the same flow; **Issue without sending** issues it and leaves delivery for later; **Save and exit** saves the draft without issuing. Before issuing, Cord opens a **Final review** ("Issue this invoice?") with the client, total, due date, and delivery; confirm with **Issue and send** or **Issue invoice**, or go back with **Go back**.
 </Steps>
+
+Each line item is rounded on its own and the total is the sum of the already-rounded
+lines, so the invoice total matches the sum of its rows.
+
+### Draft saving and shortcuts
+
+- **A draft that's already saved saves itself** a few seconds after your last change (the summary says "Saved at …"). A new invoice is created as a draft the first time you click **Save and exit** or issue; until then, your browser keeps a local copy that Cord offers to **Restore** if you close without saving (it expires after 7 days).
+- On desktop, **⌘ Enter** (Ctrl Enter) opens the final review to issue and send, **⌘ S** (Ctrl S) saves the draft and exits, and **/** jumps to the catalog search. On a phone, a bar pinned to the bottom shows the **Total** and **Issue and send**.
+- **Issue and send** needs the client to have an email. If they don't, Cord tells you ("This client has no email. Add one to their record or choose "Issue without sending".").
+- If an issuance failed with certainty, **Fix and retry** on the detail opens the same editor as **Fix** with the reserved number: you correct it and issue again keeping that number.
 
 <Callout type="warning">
 Issuing is irreversible: it assigns the official number and locks the fiscal document. To correct an issued invoice, use a void or credit note according to its payment state.

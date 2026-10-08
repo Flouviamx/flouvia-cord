@@ -2,7 +2,7 @@
 title: "Quote management"
 seoTitle: "Quote management: filters, actions, duplicating, and versions"
 description: "Find any quote, the actions available in each status and the permission they need, how to delete drafts, duplicate (and what isn't copied), and keep versions with Modify and resend."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-08"
 reviewedBy: "Cord product and operations"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -71,8 +71,8 @@ subscription, which you can cancel with **Cancel retainer**.
 
 ## Drafts
 
-- **Save draft** in the editor saves the client, terms, lines, negotiated prices, and options. A draft can be saved without a client; to send it you need one.
-- To pick it up again, open it and click **Continue editing**. When you're done, **Save and send** sends it.
+- **Save draft** in the editor saves the client, terms, lines, prices, and conditions. A draft can be saved without a client; to send it you need one.
+- To pick it up again, open it and click **Continue editing**: the same editor opens (**Edit draft**). From there, every change saves itself a few seconds later and **Save and send** sends it. See [Preview and sending](/en/docs/cotizacion/envio).
 - **Delete draft** asks for confirmation ("This action cannot be undone. Delete this draft?") and removes it completely. Only drafts can be deleted: a quote that already went out isn't deleted, it's rejected or left to expire.
 
 ## Duplicate a quote
@@ -84,11 +84,11 @@ subscription, which you can cancel with **Cancel retainer**.
 </Steps>
 
 **What it copies:** client, payment terms, notes, and lines (description, quantity,
-list price, and negotiated price).
+list price, and price).
 
 <Callout type="warning">
 **What the duplicate doesn't copy:** the sales currency (the duplicate is in MXN), the
-exchange rate, the deposit, the monthly retainer, **Prices already include tax**, each
+exchange rate, the deposit, the monthly retainer, **Prices include VAT**, each
 line's tax rate (it goes back to your catalog's default), each line's cost, the
 conversation, the signature, and the versions. Open the duplicate with **Continue
 editing** and check those fields before sending it.
@@ -98,10 +98,13 @@ The duplicate counts as an active quote: if you've hit your plan's cap, it isn't
 
 ## Versions
 
-While a quote is *Sent*, *Viewed*, or *Expired*, **Modify and resend (V2)** creates a
-new version on the same link:
+While a quote is *Sent*, *Viewed*, or *Expired*, **Modify and resend (V2)** opens the
+same quote editor as **New version of COT-0149** and, when you click **Send new
+version**, creates a new version on the same link (the old
+`/app/cotizaciones/[id]/editar` route only redirects to that editor):
 
-- you can change products, quantities, negotiated prices, taxes, and **Prices already include tax**; not the client or the payment terms;
+- you can change products, quantities, prices, each line's tax, and **Prices include VAT**; the client, currency, and terms (payment terms, validity, deposit, retainer, and note) stay as they were sent;
+- if your organization uses [internal approvals](/en/docs/cotizacion/aprobaciones-internas), the version is checked against the caps before it's sent;
 - the quote goes back to *Sent* and the client gets the email again if they have an email on file;
 - the badge next to the client's name shows the current version (V1, V2, V3…);
 - **Version history** on the detail lists each version with its date and total.

@@ -2,7 +2,7 @@
 title: "Internal approvals"
 seoTitle: "Internal quote approvals by discount, amount, or margin"
 description: "How to set discount, amount, and margin caps that hold a quote until a manager approves it, and how the decision is made from Cord, Slack, or Teams."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-08"
 reviewedBy: "Cord product and operations"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Scale, Developer]
@@ -17,8 +17,9 @@ prerequisites: ["Scale or Developer plan", "Settings permission to configure the
 ## What it is
 
 Internal approvals are a rule for your organization. You define how far a seller can
-go without asking (maximum discount, maximum amount, and minimum margin). When a new
-quote exceeds any of those caps on **Create and send**, Cord doesn't send it: it keeps
+go without asking (maximum discount, maximum amount, and minimum margin). When a quote
+exceeds any of those caps when it's sent (with **Create and send**, **Save and send**,
+**Send to client**, from the board, or through the API), Cord doesn't send it: it keeps
 it as a draft marked **Pending approval** and notifies whoever can decide.
 
 This is not the client's approval. That's the [signature on the
@@ -36,36 +37,52 @@ link](/en/docs/interaccion/firma); this is an internal control for your team.
 <Steps>
 1. Go to **Settings › Quotes › Approvals**.
 2. Under **Approval thresholds**, enter the caps you want to use. Each one is independent; a value of **0** means "no cap".
-3. Save your changes. They apply to quotes created from then on.
+3. Save your changes. They apply to every send from then on, including drafts and new versions.
 </Steps>
 
 <DmCotApprovalRules lang="en" />
 
 | Cap | What Cord compares | When it asks for approval |
 |---|---|---|
-| **Max discount without approval (%)** | The largest discount on any line: the difference between its list price and its negotiated price. | If any line has a discount above the cap. |
+| **Max discount without approval (%)** | The largest discount on any line: the difference between its **List** price and its **Price**. | If any line has a discount above the cap. |
 | **Max amount without approval** | The quote total. | If the total is above the cap. |
-| **Minimum gross margin without approval (%)** | The margin of each line with a captured cost: (negotiated price − cost) ÷ negotiated price. | If any line with a cost falls below the minimum. Lines without a cost don't count. |
+| **Minimum gross margin without approval (%)** | The margin of each line with a captured cost: (price − cost) ÷ price. | If any line with a cost falls below the minimum. Lines without a cost don't count. |
 
-<Callout type="warning">
-**The amount is compared without converting currencies.** Cord compares the cap number
-against the quote total in the currency you're quoting in. If your cap is 250,000 and
-you quote in USD, the rule triggers from USD 250,000, not its equivalent in your
-accounting currency. If you quote in several currencies, set the cap with the
-highest-value currency in mind.
+<Callout type="info">
+**The amount is compared in your business currency.** The amount cap is entered in your
+business currency. If you quote in another currency, Cord converts the total with the
+quote's own locked exchange rate or, if the quote doesn't carry one, with that day's
+rate. If there's no exchange rate to prove it, Cord doesn't guess: it asks for approval
+and the reason says the total can't be compared with the cap because it's in another
+currency.
 </Callout>
 
 ## What happens on send
 
-When the seller clicks **Create and send** and the quote exceeds at least one cap:
+When the seller sends the quote (**Create and send** or **Save and send** in the editor,
+**Send to client** on the detail, or by dragging it to *Sent* on the board) and it
+exceeds at least one cap:
 
-1. The quote is saved as a **Draft** with the internal status **Pending approval**. The client gets no email and the link isn't activated.
+1. The quote is saved as a **Draft** with the internal status **Pending approval**. The client gets no email and the link isn't activated. In the editor, the seller sees "Approval requested for COT-0149. Waiting for an approver's sign-off."
 2. Cord writes the reason: which cap was exceeded and by how much (for example, a 22% discount against an allowed 15%, or a USD 310,000 total against a USD 250,000 cap). The reason shows on the quote detail and in its activity.
 3. The quote appears under **Quotes** with the **Needs approval** filter, and above the list you see how many are **awaiting your approval**.
 4. Cord emits the approval-request event, which feeds Slack, Teams, webhooks, and [workflows](/en/docs/automatizacion/workflows/disparadores).
 
-With **Save draft**, Cord doesn't evaluate the caps: the rule is checked when the quote
-is created with **Create and send**.
+With **Save draft** (or autosave), Cord doesn't evaluate the caps: the rule is checked
+every time someone tries to send. A draft that's already waiting for approval can't be
+sent from the detail: Cord replies that the quote is waiting for approval and that the
+approver will send it when they decide. If you reopen it in the editor and lower the
+discount until it's within the caps, **Save and send** sends it and the request no
+longer applies.
+
+### On a new version
+
+A new version (**Modify and resend**) is also evaluated when you click **Send new
+version**. If the quote had already been approved by a manager and the version doesn't
+make anything worse than what was approved (same or lower discount, same or lower total,
+same or better margin), it's sent. If it exceeds a cap it didn't exceed before, or
+exceeds it by more, Cord doesn't send it and replies that the version needs approval,
+with the reason, and asks you to adjust it or have an approver review it.
 
 ## Who approves and how
 
@@ -75,7 +92,7 @@ is created with **Create and send**.
 The quote detail shows the **Pending approval** notice with the reason. Anyone with
 the Approvals permission sees two buttons:
 
-- **Approve and send:** the quote moves to *Sent*, the link becomes active, and the activity logs that management approved it and sent it to the client.
+- **Approve and send:** the quote moves to *Sent*, the link becomes active, the client gets the email with the link (if their profile has an email), and the activity logs that management approved it and sent it to the client. It counts as one of the month's sends.
 - **Reject:** Cord asks you to confirm ("Reject this approval request?"). The quote stays a draft and the detail shows **Approval request rejected by management**.
 
 </TabItem>
@@ -111,11 +128,11 @@ the purpose of the cap.
 
 ## Behavior and edge cases
 
-- **Approve and send doesn't email the client.** It activates the link and marks the quote as sent, but the email with the link doesn't go out at this step. Share it from the detail with **Copy link**, **WhatsApp**, or your own email.
-- **A draft sent later isn't re-evaluated.** If the quote was saved as a draft and later sent with **Send to client**, from the board, or through the actions API, Cord doesn't check the caps again. If you need everything to go through the rule, ask your team to use **Create and send**.
+- **Approve and send does email the client** when their profile has an email, just like a normal send. If it doesn't, share the link from the detail with **Copy link**, **WhatsApp**, or your own email.
+- **Every send goes through the rule.** Whether the quote is sent on creation, from a draft, from the board, or through the API, Cord checks the caps every time.
 - **A request is decided only once.** If two managers decide at the same time, the second is told there's no pending approval request.
 - **The seller sees the margin before sending.** In the editor, the **Margin** column turns red when a line falls below your minimum margin.
-- **If your plan drops below Scale,** Cord stops evaluating the caps on new quotes, and requests left pending can only be decided once the plan is restored.
+- **If your plan drops below Scale,** Cord stops evaluating the caps and requests left pending can no longer be decided with **Approve and send**; the seller can send that draft directly and the request no longer applies.
 
 ## Limits by plan
 
@@ -129,7 +146,9 @@ the purpose of the cap.
 
 **The margin cap doesn't trigger.** The lines have no cost. Capture the cost on each product's profile; free lines have no cost.
 
-**I approved and the client got nothing.** That's expected: share the link from the detail.
+**I approved and the client got nothing.** Their profile has no email, or the email didn't arrive. Look for the email entry in the activity and, if it isn't there, share the link from the detail.
+
+**The version needs approval.** The new version exceeds a cap by more than the approved version did. Adjust the discount or margin, or ask an approver to review it.
 
 **The Slack button says I don't have permission.** Your Slack email doesn't match your Cord user, or your role doesn't have Approvals.
 

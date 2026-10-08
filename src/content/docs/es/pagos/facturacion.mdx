@@ -18,6 +18,8 @@ prerequisites: ["Identidad fiscal del negocio completa en Ajustes › Datos fisc
 
 Cord no trata la factura como un PDF genérico con folio. El **tipo de documento** que se emite depende del país de tu negocio, de tu plan y de la configuración fiscal que tengas lista. Una vez emitido, el documento conserva su tipo aunque después cambies de plan o de configuración: una proforma no se convierte en CFDI ni al revés.
 
+El tipo se elige al crear la factura, en el paso 3 del editor (**Condiciones**), en el campo **Tipo de documento**: **Proforma** en México y España o **Factura comercial** en los demás mercados, y **CFDI 4.0** o **VERI\*FACTU** cuando tu plan y tu configuración fiscal lo permiten. Una opción que tu cuenta todavía no puede usar aparece deshabilitada. Debajo, el editor lo recuerda: "Los documentos comerciales están incluidos en Gratis. La emisión fiscal integrada requiere Starter y configuración fiscal habilitada. Una proforma no sustituye una factura fiscal."
+
 Para el ciclo completo de una factura (borrador, emisión, envío, cobro, notas de crédito y anulación), ver [Crear, emitir y cobrar facturas](/docs/pagos/facturas-emitidas).
 
 ## Qué documento se emite
@@ -152,7 +154,7 @@ Si tu RFC, régimen fiscal o código postal no están completos en **Ajustes ›
 
 ## Problemas comunes
 
-**Mi factura salió como proforma y esperaba un CFDI.** Revisa tu plan (Starter o superior), que tu CSD esté cargado y vigente, y que no hayas elegido la opción comercial al emitir.
+**Mi factura salió como proforma y esperaba un CFDI.** Revisa tu plan (Starter o superior), que tu CSD esté cargado y vigente, y que en **Tipo de documento** (paso 3, **Condiciones**) esté elegido **CFDI 4.0** y no **Proforma**.
 
 **Mi cliente dice que su CFDI no le sirve.** Revisa su régimen fiscal, código postal y uso de CFDI en su ficha; si faltaban, Cord usó valores predeterminados.
 
