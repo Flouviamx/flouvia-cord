@@ -7,6 +7,7 @@ import { REGIMENES_FISCALES, USOS_CFDI } from '../../../lib/sat';
 import { caProvinceCode, getCountryProfile, US_STATES, CA_PROVINCES } from '../../../lib/countries';
 import { verifactuEnvioConfig } from '../../../lib/fiscal/verifactu/sif';
 import { declaracionResponsableONull, DECLARACION_RUTA } from '../../../lib/fiscal/verifactu/declaracion';
+import { incidenciasVerifactu } from '../../../lib/fiscal/verifactu/incidencias';
 import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
 const ORG = await getOrg();
@@ -20,6 +21,10 @@ const verifactuOn = ORG.verifactuModo === 'verifactu';
 // apagado no se encadena nada, y la pantalla no puede decir "activo".
 const verifactuRegistrando = verifactuOn && verifactuEnvioConfig().habilitado;
 const DECLARACION_DISPONIBLE = isEs && declaracionResponsableONull() !== null;
+const INCIDENCIAS_VF = isEs ? await incidenciasVerifactu(ORG.id).catch(() => []) : [];
+const VF_INC_ESTADO: Record<string, string> = L === 'en'
+    ? { rechazado: 'Rejected by the AEAT', bloqueado: 'Could not be sent', aceptado_con_errores: 'Registered with errors' }
+    : { rechazado: 'Rechazada por la AEAT', bloqueado: 'No se pudo enviar', aceptado_con_errores: 'Registrada con errores' };
 const PROFILE = getCountryProfile(ORG.countryCode, L);
 const FM = ORG.fiscalMetadata || {};
 // Selector cerrado donde el código de la subdivisión decide algo: el sales tax
@@ -277,6 +282,22 @@ import { iconInner } from '../../../lib/icons';
                     {L === 'en' ? 'Responsible declaration of the invoicing system (Spanish)' : 'Declaración responsable del sistema de facturación'}
                 </a>
             )}
+            {/* Registros que la AEAT rechazó o que no se pudieron enviar: cada
+                uno se corrige desde su factura (subsanación, regla 29). */}
+            {INCIDENCIAS_VF.length > 0 && (
+                <div class="vf-incidencias">
+                    <span class="vf-inc-title">{L === 'en' ? 'Invoices to correct' : 'Facturas por corregir'}</span>
+                    {INCIDENCIAS_VF.map((inc) => (
+                        <a class="vf-inc" href={`/app/facturas/${inc.documentoId}`}>
+                            <span class={`vf-inc-dot is-${inc.estado}`} aria-hidden="true"></span>
+                            <span class="vf-inc-copy">
+                                <strong>{inc.numero}{inc.tipo === 'anulacion' ? (L === 'en' ? ' · cancellation' : ' · anulación') : ''}</strong>
+                                <small>{inc.motivo || VF_INC_ESTADO[inc.estado] || inc.estado}</small>
+                            </span>
+                        </a>
+                    ))}
+                </div>
+            )}
         </SettingsSection>
     )}
 </SettingsShell>
@@ -317,6 +338,15 @@ import { iconInner } from '../../../lib/icons';
     .csd-drop-t { font-size: 0.85rem; font-weight: 600; color: var(--color-text); }
     .csd-drop-s { font-size: 0.72rem; color: #99a2af; }
 
+    .vf-incidencias { display: flex; flex-direction: column; margin-top: 1.4rem; border-top: 1px solid var(--color-border); padding-top: 1rem; }
+    .vf-inc-title { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--color-text-muted); margin-bottom: 0.4rem; }
+    .vf-inc { display: grid; grid-template-columns: 8px minmax(0, 1fr); gap: 0.7rem; align-items: start; padding: 0.7rem 0.2rem; border-bottom: 1px solid var(--color-border); color: var(--color-text); text-decoration: none; min-height: 44px; }
+    .vf-inc:hover strong { color: var(--color-blue-deep); }
+    .vf-inc-dot { width: 7px; height: 7px; margin-top: 0.35rem; border-radius: 50%; background: var(--color-danger); }
+    .vf-inc-dot.is-aceptado_con_errores { background: #d97706; }
+    .vf-inc-copy { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; }
+    .vf-inc-copy strong { font-size: 0.84rem; font-weight: 600; }
+    .vf-inc-copy small { font-size: 0.74rem; color: var(--color-text-muted); line-height: 1.45; overflow-wrap: anywhere; }
     .fact-link { display: inline-block; margin-top: 1.1rem; font-size: 0.82rem; font-weight: 600; color: var(--color-blue-deep); text-decoration: none; }
     .fact-link:hover { text-decoration: underline; }
     html[data-theme="dark"] .fact-link { color: #7fb0ff; }

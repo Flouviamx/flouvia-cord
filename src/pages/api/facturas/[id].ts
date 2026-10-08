@@ -85,6 +85,20 @@ export const PATCH: APIRoute = async ({ params, request }) => {
             });
             return json({ ok: true, ...result });
         }
+        case 'verifactu_correct': {
+            // España: corrige con una subsanación el registro que la AEAT
+            // rechazó (o que no se pudo enviar) y lo reenvía. Opcionalmente fija
+            // la causa de exención de conceptos al 0 % (índice → código).
+            const { corregirRegistroVerifactu } = await import('../../../lib/fiscal/verifactu/incidencias');
+            const causas = body.causas && typeof body.causas === 'object' && !Array.isArray(body.causas) ? body.causas : {};
+            const result = await corregirRegistroVerifactu(orgId, id, causas);
+            if (!result.ok) return json({ error: result.error }, 409);
+            await logAudit(orgId, {
+                accion: 'factura.verifactu_corregido', entidad: 'factura', entidad_id: id,
+                detalle: `registro ${result.registroId}`, ip: reqIp(request),
+            });
+            return json({ ok: true });
+        }
         default: return json({ error: 'Acción no reconocida' }, 400);
     }
 };

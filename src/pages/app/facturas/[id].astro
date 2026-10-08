@@ -18,6 +18,8 @@ import { publicDocumentUrl } from '../../../lib/public-links';
 import { getCountryProfile } from '../../../lib/countries';
 import { currencyDecimals } from '../../../lib/currency';
 import { fmtTaxPct, splitTaxBucket } from '../../../lib/tax-components';
+import { estadoVerifactuFactura } from '../../../lib/fiscal/verifactu/incidencias';
+import { EXEMPTION_INFO, EXEMPTION_REASONS } from '../../../lib/fiscal/exemption';
 import { currentLocale } from '../../../lib/context';
 import { getInvoiceTimeline } from '../../../lib/fiscal/timeline';
 import { invoiceEventDetail } from '../../../lib/fiscal/timeline-detail';
@@ -70,12 +72,27 @@ const deliveryFailed = Astro.url.searchParams.get('delivery') === 'failed';
 // apuntaba a cotizaciones, así que una factura independiente era un documento
 // sin pasado y el vendedor no sabía si el cliente ya la había abierto.
 const TIMELINE = f ? await getInvoiceTimeline(f.orgId ?? '', f.id) : [];
+// España: qué pasó con el registro de Verifactu de esta factura y, si la AEAT
+// lo rechazó o no se pudo enviar, la corrección (subsanación) desde aquí.
+const VF = f && String(f.pais || '').toUpperCase() === 'ES' ? await estadoVerifactuFactura(f.orgId ?? '', f.id) : null;
+const PUEDE_CORREGIR_VF = !!VF?.corregible && memberCan(ME, 'cotizar');
+const VF_ESTADO: Record<string, { es: string; en: string }> = {
+    pendiente: { es: 'Pendiente de envío a la AEAT', en: 'Waiting to be sent to the AEAT' },
+    aceptado: { es: 'Registrada ante la AEAT', en: 'Registered with the AEAT' },
+    aceptado_con_errores: { es: 'Registrada con errores', en: 'Registered with errors' },
+    rechazado: { es: 'Rechazada por la AEAT', en: 'Rejected by the AEAT' },
+    bloqueado: { es: 'No se pudo enviar a la AEAT', en: 'Could not be sent to the AEAT' },
+};
+const vfEstado = VF ? (L === 'en' ? VF_ESTADO[VF.estado]?.en : VF_ESTADO[VF.estado]?.es) ?? VF.estado : '';
+const vfTitulo = VF?.tipo === 'anulacion' ? `${L === 'en' ? 'Cancellation' : 'Anulación'}: ${vfEstado.charAt(0).toLowerCase()}${vfEstado.slice(1)}` : vfEstado;
+const VF_CAUSAS = EXEMPTION_REASONS.map((code) => ({ code, label: `${code} · ${L === 'en' ? EXEMPTION_INFO[code].en : EXEMPTION_INFO[code].es}` }));
 const EV_LABEL: Record<string, string> = {
     created: t(L, 'fact.ev.created'), issued: t(L, 'fact.ev.issued'),
     sent: t(L, 'fact.ev.sent'), viewed: t(L, 'fact.ev.viewed'),
     payment: t(L, 'fact.ev.payment'), paid: t(L, 'fact.ev.paid'),
     reminder: t(L, 'fact.ev.reminder'), void: t(L, 'fact.ev.void'),
     credit_note: t(L, 'fact.ev.credit_note'), uncollectible: t(L, 'fact.ev.uncollectible'),
+    verifactu: t(L, 'fact.ev.verifactu'),
 };
 const waLink = f && linkPublico
     ? `https://wa.me/?text=${encodeURIComponent(`${f.invoiceNumber ?? ''} · ${linkPublico}`.trim())}`
@@ -422,6 +439,25 @@ import { iconInner } from '../../../lib/icons';
                             </div>
                         </section>
 
+                        {VF && (
+                            <section class="fd-meta-section fd-vf">
+                                <div class="fd-section-head"><h2>Verifactu</h2></div>
+                                <div class={`fd-vf-state is-${VF.estado}`}>
+                                    <span class="fd-vf-dot" aria-hidden="true"></span>
+                                    <span class="fd-vf-copy">
+                                        <strong>{vfTitulo}</strong>
+                                        {VF.motivo && VF.estado !== 'aceptado' && <small>{VF.codigo ? `${VF.codigo} · ` : ''}{VF.motivo}</small>}
+                                        {VF.esCorreccion && VF.estado === 'aceptado' && <small>{L === 'en' ? 'Through a corrected record.' : 'Mediante un registro de subsanación.'}</small>}
+                                    </span>
+                                </div>
+                                {PUEDE_CORREGIR_VF && (
+                                    <button type="button" class="fd-btn fd-btn-secondary" id="fdVfCorregir">
+                                        {L === 'en' ? 'Correct and resend' : 'Corregir y reenviar'}
+                                    </button>
+                                )}
+                            </section>
+                        )}
+
                     </aside>
                 </div>
 
@@ -455,6 +491,41 @@ import { iconInner } from '../../../lib/icons';
                         </div>
                     </form>
                 </dialog>
+
+                {PUEDE_CORREGIR_VF && VF && (
+                    <dialog class="modal" id="fdVfModal">
+                        <form method="dialog">
+                            <div class="m-head">
+                                <h2>{L === 'en' ? 'Correct the Verifactu record' : 'Corregir el registro de Verifactu'}</h2>
+                                <button type="button" class="m-close" data-close aria-label="×">&times;</button>
+                            </div>
+                            <div class="m-body">
+                                <p class="fd-vf-note">{L === 'en'
+                                    ? 'Cord chains a correction record with the current invoice data and sends it to the AEAT. Amounts do not change: if the invoice itself is wrong, issue a credit note instead.'
+                                    : 'Cord encadena un registro de subsanación con los datos actuales de la factura y lo envía a la AEAT. Los importes no cambian: si lo que está mal es la factura, emite una nota de crédito.'}</p>
+                                {VF.motivo && <p class="fd-vf-motivo">{VF.codigo ? `${VF.codigo} · ` : ''}{VF.motivo}</p>}
+                                {VF.lineasExentas.length > 0 && (
+                                    <div class="fd-vf-lineas">
+                                        <span class="fd-vf-lbl">{L === 'en' ? 'Exemption reason of each zero-rated item' : 'Causa de exención de cada concepto sin IVA'}</span>
+                                        {VF.lineasExentas.map((linea) => (
+                                            <label class="fd-field">
+                                                <span>{linea.descripcion || (L === 'en' ? 'Item' : 'Concepto')}</span>
+                                                <select data-vf-linea={String(linea.indice)}>
+                                                    <option value="" selected={!linea.causa}>{L === 'en' ? 'Automatic (from the client)' : 'Automática (según el cliente)'}</option>
+                                                    {VF_CAUSAS.map((c) => <option value={c.code} selected={linea.causa === c.code}>{c.label}</option>)}
+                                                </select>
+                                            </label>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                            <div class="m-foot">
+                                <button type="button" class="fd-btn" data-close>{t(L, 'fact.d_cancelar')}</button>
+                                <button type="button" class="fd-btn fd-btn-primary" id="fdVfOk">{L === 'en' ? 'Correct and resend' : 'Corregir y reenviar'}</button>
+                            </div>
+                        </form>
+                    </dialog>
+                )}
             </div>
         </Fragment>
     )}
@@ -547,6 +618,21 @@ import { iconInner } from '../../../lib/icons';
 
         pagoModal?.querySelectorAll('[data-close]').forEach((el) => {
             el.addEventListener('click', () => pagoModal.close());
+        });
+
+        // Verifactu: corregir y reenviar el registro rechazado. Cada concepto al
+        // 0 % manda su causa (vacía = la deriva el registro).
+        const vfModal = document.getElementById('fdVfModal') as HTMLDialogElement | null;
+        document.getElementById('fdVfCorregir')?.addEventListener('click', () => vfModal?.showModal());
+        vfModal?.querySelectorAll('[data-close]').forEach((el) => el.addEventListener('click', () => vfModal.close()));
+        document.getElementById('fdVfOk')?.addEventListener('click', (ev) => {
+            const causas: Record<string, string | null> = {};
+            vfModal?.querySelectorAll<HTMLSelectElement>('[data-vf-linea]').forEach((sel) => {
+                causas[sel.dataset.vfLinea ?? ''] = sel.value || null;
+            });
+            vfModal?.close();
+            const boton = document.getElementById('fdVfCorregir') as HTMLButtonElement | null;
+            llamar({ action: 'verifactu_correct', causas }, boton ?? undefined);
         });
 
         document.getElementById('fdPagoOk')?.addEventListener('click', (ev) => {
@@ -711,6 +797,21 @@ import { iconInner } from '../../../lib/icons';
     .fd-btn-ok { border-color: #07996c; background: #18b889; color: #fff; box-shadow: 0 8px 22px -10px rgba(16, 185, 129, 0.55); }
     .fd-btn-secondary { background: var(--surface); }
 
+    .fd-vf-state {
+        display: grid; grid-template-columns: 8px minmax(0, 1fr); gap: 0.65rem; align-items: start;
+        padding: 0.5rem 0.2rem 0.8rem; color: var(--color-text);
+    }
+    .fd-vf-dot { width: 7px; height: 7px; margin-top: 0.35rem; border-radius: 50%; background: var(--color-text-muted); }
+    .fd-vf-state.is-aceptado .fd-vf-dot { background: var(--color-ok); box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1); }
+    .fd-vf-state.is-aceptado_con_errores .fd-vf-dot, .fd-vf-state.is-pendiente .fd-vf-dot { background: #d97706; box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.12); }
+    .fd-vf-state.is-rechazado .fd-vf-dot, .fd-vf-state.is-bloqueado .fd-vf-dot { background: var(--color-danger); box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1); }
+    .fd-vf-copy { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
+    .fd-vf-copy strong { font-size: 0.8rem; font-weight: 700; }
+    .fd-vf-copy small { color: var(--color-text-muted); font-size: 0.72rem; line-height: 1.45; overflow-wrap: anywhere; }
+    .fd-vf-note { margin: 0 0 0.9rem; color: var(--color-text-muted); font-size: 0.82rem; line-height: 1.5; }
+    .fd-vf-motivo { margin: 0 0 1rem; padding: 10px 14px; border-radius: 12px; background: rgba(239, 68, 68, 0.08); color: var(--color-danger); font-size: 0.8rem; line-height: 1.45; overflow-wrap: anywhere; }
+    .fd-vf-lineas { display: flex; flex-direction: column; gap: 0.2rem; }
+    .fd-vf-lbl { font-size: 0.72rem; font-weight: 600; color: var(--color-text-muted); margin-bottom: 0.3rem; }
     .fd-delivery {
         display: grid; grid-template-columns: 8px minmax(0, 1fr) auto; gap: 0.65rem; align-items: center;
         padding: 0.65rem 0.2rem; color: var(--color-text);

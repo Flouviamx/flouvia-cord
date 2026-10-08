@@ -165,8 +165,14 @@ BOE.
   `subsana_de`, `subsanacion`, `rechazo_previo`, `sin_registro_previo`; la
   unicidad por factura es un índice parcial sobre los registros originales y cada
   registro admite una corrección directa. `crearSubsanacionVerifactu()`
-  (`correcciones.ts`) elige la subsanación correcta según el anexo de la AEAT; aún
-  no tiene UI. La serialización de `seq` es `on conflict do nothing` + reintento,
+  (`correcciones.ts`) elige la subsanación correcta según el anexo de la AEAT.
+  La pantalla vive en el detalle de la factura (`incidencias.ts`): estado del
+  último registro con el código y el motivo de la AEAT, y "Corregir y reenviar"
+  (acción `verifactu_correct` de `/api/facturas/[id]`, permiso `cotizar`), que
+  admite fijar la causa de exención de los conceptos al 0 % — el snapshot se
+  actualiza solo DESPUÉS de que la subsanación se encadena, y los importes nunca
+  cambian. Ajustes › Datos fiscales lista las facturas por corregir (último
+  registro rechazado, aparcado o aceptado con errores). La serialización de `seq` es `on conflict do nothing` + reintento,
   no un advisory lock (el driver HTTP de Neon no lo sostendría).
 - **Qué se registra.** `ImporteTotal` = bases + cuotas del desglose (sin restar
   IRPF; el QR usa el mismo valor). Nota de crédito: R1 por diferencias (`I`), con

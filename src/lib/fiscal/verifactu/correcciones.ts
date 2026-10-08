@@ -155,8 +155,8 @@ function ultimoDeTipo(historial: RegistroHistorial[], tipo: 'alta' | 'anulacion'
 
 /**
  * Crea el registro de SUBSANACIÓN de un registro ya encadenado — la única
- * forma legal de corregirlo (regla 29). Sin UI todavía: lo invoca soporte (o
- * una futura acción en Ajustes › Fiscal) con el id del registro que la AEAT
+ * forma legal de corregirlo (regla 29). Lo invoca `corregirRegistroVerifactu`
+ * (incidencias.ts, desde el detalle de la factura) con el id del registro que la AEAT
  * rechazó o aceptó con errores, DESPUÉS de corregir el dato de origen (NIF del
  * cliente, razón social, conceptos del documento…).
  *
@@ -186,7 +186,16 @@ function ultimoDeTipo(historial: RegistroHistorial[], tipo: 'alta' | 'anulacion'
 export async function crearSubsanacionVerifactu(
     orgId: string,
     registroId: string,
-    opciones: { reactivar?: boolean } = {},
+    opciones: {
+        reactivar?: boolean;
+        /**
+         * Conceptos con los que se reconstruye el alta, en lugar de los del
+         * documento — p. ej. con la causa de exención corregida. El llamador
+         * persiste el snapshot DESPUÉS de que la subsanación se encadene: un
+         * dato que la validación rechaza no debe quedar guardado.
+         */
+        lineas?: FiscalLineItem[];
+    } = {},
 ): Promise<ChainedRegistro> {
     const [rows] = await withOrgTx(orgId, sql`
         select id, documento_id, tipo, envio_estado, payload from verifactu_registros
@@ -269,7 +278,7 @@ export async function crearSubsanacionVerifactu(
         receptor: (doc.recipient_snapshot ?? {}) as FiscalParty,
         numSerie: String(payloadPrevio.numSerieFactura ?? doc.invoice_number ?? ''),
         fechaExpedicion: String(payloadPrevio.fechaExpedicionFactura ?? ''),
-        lines: (doc.line_items_snapshot ?? []) as FiscalLineItem[],
+        lines: opciones.lineas ?? ((doc.line_items_snapshot ?? []) as FiscalLineItem[]),
         totals,
         entorno: payloadPrevio.entorno ?? verifactuEnvioConfig().entorno,
         ...(rectificativa ? { rectificativa: { original: rectificativa.original, tipoOriginal: rectificativa.tipoOriginal } } : {}),

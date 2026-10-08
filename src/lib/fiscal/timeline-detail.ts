@@ -25,6 +25,9 @@ export function invoiceEventDetail(tipo: string, detalle: string, locale: Timeli
     if (!d) return '';
     if (REDUNDANTES[tipo]?.includes(d)) return '';
 
+    if (locale === 'en' && d === 'Registro corregido y reenviado a la AEAT') return 'Record corrected and resent to the AEAT';
+    if (locale === 'en' && d === 'Anulación corregida y reenviada a la AEAT') return 'Cancellation corrected and resent to the AEAT';
+
     let m: RegExpMatchArray | null;
 
     if ((m = d.match(/^Recordatorio de cobro \((\d+) días? vencida\)$/))) {

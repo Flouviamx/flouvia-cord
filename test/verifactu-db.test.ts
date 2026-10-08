@@ -50,6 +50,7 @@ const { SpainVerifactuProvider } = await import('../src/lib/fiscal/providers/Spa
 const { submitPendingForOrg } = await import('../src/lib/fiscal/verifactu/submit');
 const { crearSubsanacionVerifactu, reactivarAltaVerifactu } = await import('../src/lib/fiscal/verifactu/correcciones');
 const { orgTieneRegistrosVerifactu } = await import('../src/lib/fiscal/verifactu/chain');
+const { corregirRegistroVerifactu, estadoVerifactuFactura, incidenciasVerifactu } = await import('../src/lib/fiscal/verifactu/incidencias');
 const { AeatFaultError } = await import('../src/lib/fiscal/verifactu/aeat');
 const provider = new SpainVerifactuProvider();
 
@@ -83,7 +84,7 @@ beforeAll(async () => {
             id uuid primary key, org_id uuid not null references orgs(id) on delete cascade, credit_note_of uuid,
             invoice_number text, issued_at timestamptz, issuer_snapshot jsonb, recipient_snapshot jsonb,
             line_items_snapshot jsonb, currency text, ledger_currency text, fx_rate numeric, subtotal numeric,
-            tax_total numeric, total numeric, provider_data jsonb, updated_at timestamptz);
+            tax_total numeric, total numeric, provider_data jsonb, updated_at timestamptz, country_code text default 'ES');
         insert into users values ('${OWNER}');
         insert into orgs (id, owner_id, nombre, country_code) values ('${ORG}', '${OWNER}', 'ACME', 'ES'), ('${ORG2}', '${OWNER}', 'ACME 2', 'ES');`);
     await m.db.exec(seccionVerifactu());
@@ -111,7 +112,7 @@ async function nuevoDocumento(extra: Record<string, unknown> = {}): Promise<stri
             line_items_snapshot, currency, subtotal, tax_total, total)
          values ($1, $2, $3, $4, now(), $5, $6, $7, 'EUR', 100, 21, 121)`,
         [id, extra.org ?? ORG, extra.creditNoteOf ?? null, extra.numero ?? `F2026-${String(docSeq).padStart(6, '0')}`,
-            JSON.stringify(ISSUER), JSON.stringify(extra.receptor ?? CLIENTE), JSON.stringify(lineas(100))],
+            JSON.stringify(ISSUER), JSON.stringify(extra.receptor ?? CLIENTE), JSON.stringify(extra.lineas ?? lineas(100))],
     );
     return id;
 }
@@ -299,6 +300,60 @@ describe('anulación y subsanación', () => {
         await expect(m.db.query(`delete from orgs where id = $1`, [ORG])).rejects.toThrow(/obliga a conservar/);
         // Cambiar solo el estado de ENVÍO sí se permite.
         await m.db.query(`update verifactu_registros set envio_estado = 'aceptado' where id = $1`, [r.id]);
+    });
+});
+
+describe('corrección desde la factura', () => {
+    // Exportación a un cliente de EE.UU.: un concepto al 0 % cuya causa el
+    // vendedor puede fijar al corregir (E2, art. 21 LIVA).
+    const US = { legalName: 'Acme Inc.', taxId: '12-3456789', address: { countryCode: 'US' } };
+    const exportacion = [{ description: 'Maquinaria', quantity: 1, unitPrice: 100, taxRate: 0, subtotal: 100, taxAmount: 0, total: 100 }];
+    const totales = { subtotal: 100, taxes: 0, total: 100, currency: 'EUR' };
+
+    it('muestra el motivo de la AEAT, corrige con la causa elegida y la factura sale de las incidencias', async () => {
+        const doc = await nuevoDocumento({ receptor: US, lineas: exportacion });
+        await m.db.query(`update documentos_fiscales set tax_total = 0, total = 100 where id = $1`, [doc]);
+        await provider.issueDocument(request(doc, { recipient: US, lines: exportacion, totals: totales }));
+        const [orig] = await registros(doc);
+        expect((await estadoVerifactuFactura(ORG, doc))).toMatchObject({ estado: 'pendiente', corregible: false });
+        expect(await corregirRegistroVerifactu(ORG, doc, { 0: 'E2' })).toMatchObject({ ok: false, error: expect.stringMatching(/espera la respuesta/) });
+
+        await m.db.query(`update verifactu_registros set envio_estado = 'rechazado', envio_error = 'Valor del campo CalificacionOperacion incorrecto',
+                          aeat_respuesta = '{"linea": {"codigoError": 1237}}'::jsonb where id = $1`, [orig.id]);
+        expect(await estadoVerifactuFactura(ORG, doc)).toMatchObject({
+            registroId: orig.id, estado: 'rechazado', codigo: 1237, corregible: true,
+            motivo: 'Valor del campo CalificacionOperacion incorrecto',
+            lineasExentas: [{ indice: 0, descripcion: 'Maquinaria', causa: null }],
+        });
+        expect((await incidenciasVerifactu(ORG)).map((i) => i.documentoId)).toContain(doc);
+
+        // Una causa que no corresponde a un concepto con IVA se rechaza sin tocar nada.
+        expect(await corregirRegistroVerifactu(ORG, doc, { 3: 'E2' })).toMatchObject({ ok: false });
+        expect(await registros(doc)).toHaveLength(1);
+
+        const ok = await corregirRegistroVerifactu(ORG, doc, { 0: 'E2' });
+        expect(ok).toEqual({ ok: true, registroId: expect.any(String) });
+        const rows = await registros(doc);
+        expect(rows).toHaveLength(2);
+        expect(rows[1]).toMatchObject({ subsana_de: orig.id, rechazo_previo: 'X' });
+        expect(rows[1].payload.desglose[0]).toMatchObject({ claveRegimen: '02', operacionExenta: 'E2' });
+        const [{ line_items_snapshot }] = (await m.db.query(`select line_items_snapshot from documentos_fiscales where id = $1`, [doc])).rows;
+        expect(line_items_snapshot[0].exemptionReason).toBe('E2');
+        expect(m.programar).toHaveBeenCalledWith(ORG);
+        expect((await incidenciasVerifactu(ORG)).map((i) => i.documentoId)).not.toContain(doc);
+        expect(await estadoVerifactuFactura(ORG, doc)).toMatchObject({ estado: 'pendiente', esCorreccion: true, corregible: false });
+    });
+
+    it('una causa que el registro no admite no se guarda en la factura', async () => {
+        const doc = await nuevoDocumento({ receptor: US, lineas: exportacion });
+        await m.db.query(`update documentos_fiscales set tax_total = 0, total = 100 where id = $1`, [doc]);
+        await provider.issueDocument(request(doc, { recipient: US, lines: exportacion, totals: totales }));
+        await m.db.query(`update verifactu_registros set envio_estado = 'rechazado' where documento_id = $1`, [doc]);
+        // E5 (entrega intracomunitaria) exige un NIF-IVA de la UE; el cliente es de EE.UU.
+        expect(await corregirRegistroVerifactu(ORG, doc, { 0: 'E5' })).toMatchObject({ ok: false, error: expect.stringMatching(/NIF-IVA/) });
+        const [{ line_items_snapshot }] = (await m.db.query(`select line_items_snapshot from documentos_fiscales where id = $1`, [doc])).rows;
+        expect(line_items_snapshot[0].exemptionReason).toBeUndefined();
+        expect(await registros(doc)).toHaveLength(1);
     });
 });
 

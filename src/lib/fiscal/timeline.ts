@@ -24,7 +24,8 @@ export type InvoiceEventType =
     | 'reminder'     // etapa de la escalera de cobranza
     | 'void'         // anulada
     | 'credit_note'  // nota de crédito emitida
-    | 'uncollectible';
+    | 'uncollectible'
+    | 'verifactu';   // corrección del registro ante la AEAT
 
 // El timeline ya marca CADA transición del ciclo de vida de la factura, así que
 // es el ancla natural para la analítica del carril: emitir aquí hace que "¿se
