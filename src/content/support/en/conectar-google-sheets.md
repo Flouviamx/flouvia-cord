@@ -1,7 +1,7 @@
 ---
 title: "Connect Google Sheets"
 description: "Every quote and every invoice as a row in your Google spreadsheet, kept current on its own, so you track your numbers where you already track them."
-category: "Cuenta y Equipo"
+category: "Account & Team"
 order: 25
 ---
 

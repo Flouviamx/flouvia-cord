@@ -1,6 +1,6 @@
 ---
 title: "Complete app map"
-description: "What each section of Cord does, how quotes, clients, invoices, payments, collections, reports and settings connect, what is in the sidebar and top bar, and how the test environment and Cord Workbench work."
+description: "What each section of Cord does and how they connect; the sidebar (pinned pages, counters, groups, collapsed rail and mobile menu), the top bar, the notifications bell, the ⌘K command menu, every keyboard shortcut, the test environment and Cord Workbench."
 lastUpdated: "2026-10-08"
 reviewedBy: "Cord product and operations"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
@@ -29,85 +29,360 @@ databases; they show different stages of the same clients, documents and transac
 6. Cord records the online payment or the payment you mark manually.
 7. The deal moves to **Invoices** and **Collections** based on the document issued, the
    balance and the due date.
-8. **Reports** and **Team** aggregate the results without creating a second copy of the
-   transaction.
+8. **Reports** and **Performance** aggregate the results without creating a second copy
+   of the transaction.
 </Steps>
 
 ## Sidebar
 
 <DmAppMap lang="en" />
 
-At the top of the sidebar is the **organization switcher**. From it you switch
-workspaces, create a new one (**Create workspace**), open **Team settings**, turn the
-**Test environment** on or off, and sign out.
+The sidebar is the app's main navigation. From top to bottom it has: the organization
+switcher, your **Pinned** pages (if you have any), an untitled list of daily shortcuts,
+the collapsible **Revenue**, **Insights** and **Automation** groups, and the footer with
+your plan usage, the team invitation and the button to collapse the sidebar.
 
-| Group | Item | Route | What it's for |
-|---|---|---|---|
-| — | **Home** | `/app` | KPIs, pipeline, recent activity and pending follow-ups. Guide: [Home and views](/en/docs/gestion/dashboard). |
-| — | **Quotes** | `/app/cotizaciones` | Create, search, filter, edit, duplicate, send and print. The counter shows quotes that need follow-up. Guide: [Quote management](/en/docs/gestion/cotizaciones). |
-| — | **Clients** | `/app/clientes` | Directory, CSV import, commercial terms, tax details, credit and statement. Guide: [Clients and statements](/en/docs/gestion/clientes). |
-| — | **Products** | `/app/productos` | Catalog, volume pricing, CSV import and the **Kits** tab. Guide: [Import your catalog](/en/docs/cuenta/catalogo). |
-| — | **Tasks** | `/app/tareas` | Team to-dos by assignee and due date, with filters, editing and completed tasks. The counter shows your tasks (or unassigned ones) due today or overdue; it turns red when some are overdue. Guide: [Tasks and follow-up](/en/docs/gestion/tareas). |
-| Revenue | **Invoices** | `/app/facturas` | Issue, review, export and follow up on invoices; includes recurring ones (Professional or higher). Guide: [Invoices](/en/docs/pagos/facturas-emitidas). |
-| Revenue | **Payments** | `/app/cobros` | Charges, payouts, balances, refunds and disputes. Guide: [Payments dashboard](/en/docs/pagos/dashboard). |
-| Revenue | **Collections** | `/app/cobranza` | Receivables, aging and exposure by client (Professional or higher). The red counter shows overdue documents. Guide: [Receivables and follow-up](/en/docs/pagos/cartera-cobranza). |
-| Revenue | **AI agent** (under Collections) | `/app/cobranza/agente` | Configure and supervise AI collections (Pro, Scale, or Developer). Guide: [Autonomous collections (AI)](/en/docs/pagos/cobranza-ia). |
-| Insights | **Reports** | `/app/informes` | Overview, sales diagnosis, finance, cash flow, collections, clients and products. Guide: [Reports and performance](/en/docs/gestion/informes). |
-| Insights | **Performance** | `/app/desempeno` | Team performance: results attributed to whoever created or duplicated each quote. |
-| Automation | **Workflows** | `/app/workflows` | "When this happens, do this" automations, ready-made ideas and run history. Guide: [Cord Workflows](/en/docs/automatizacion/workflows). |
+**Settings is not in the sidebar.** It opens with the gear in the top bar (on a phone,
+from the menu; see [On a phone](#on-a-phone)).
 
-Also:
+### Organization switcher
 
-- **Pinned.** The pin button next to any page title (or the `X` key) adds it to the
-  **Pinned** group at the top of the sidebar.
-- **Collapsible groups.** **Revenue**, **Insights** and **Automation** collapse with a click on their
-  title.
-- **Collapse the sidebar.** The button at the bottom of the sidebar shrinks it to icons.
-- **Settings** (`/app/ajustes`) opens with the gear in the top bar. See the
-  [Settings map](/en/docs/cuenta/mapa-de-ajustes).
-- **Set up with AI** (`/app/setup`) opens from **Settings › General**.
+At the very top is your workspace: a square with the organization's initial (or its
+logo, if you uploaded one), the **Workspace** label and the name of the active
+organization. Selecting it opens a menu to:
+
+- **switch workspaces** among the organizations you belong to;
+- **Create workspace**;
+- open **Team settings** (Settings › Team & roles);
+- turn the **Test environment** on or off (see [Test environment](#test-environment));
+- **Sign out**.
+
+Everything below it (counters, pinned pages, data) belongs to the organization the
+switcher shows.
+
+### Pinned
+
+**Pinned** is its own group, above the sections, with the pages you chose to keep one
+click away: a client you work with every day, a specific report, or an invoice you are
+chasing.
+
+<Steps>
+1. Open the page you want to pin.
+2. Select the pin button next to the page title (**Pin to menu**) or press <kbd>X</kbd>.
+   Cord confirms with "Pinned to the menu" and the page appears at the end of the
+   **Pinned** group.
+3. To remove it, select the pin again (or press <kbd>X</kbd>) on that same page, or hover
+   over the pinned item and select the **X** that appears on its right.
+</Steps>
+
+- **Name and icon.** The pinned item takes the page title and the icon of the section it
+  belongs to: a pinned client carries the Clients icon; an invoice, the Invoices icon. If
+  the page doesn't belong to any sidebar section (for example, a Settings tab), it
+  carries a pin.
+- **Each report counts separately.** In **Reports**, each report (Overview, Finance, Cash
+  flow…) is pinned as a separate page.
+- **Reorder.** On desktop, drag a pinned item above or below another.
+- **Up to 12.** If you pin one more, the first one in the list is removed.
+- **They follow you.** They are saved per user and per organization: you see the same
+  ones on another computer, another browser or your phone, but each organization has its
+  own and your teammates don't see yours.
+- The **Pinned** group only appears when you have at least one.
+
+### Sidebar sections
+
+The first part of the sidebar is an untitled list with what you use every day. Below it
+are three titled groups. Each section has a <kbd>G</kbd> plus letter keyboard shortcut
+(see [Keyboard shortcuts](#keyboard-shortcuts)).
+
+| Group | Item | Shortcut | Route | What it's for |
+|---|---|---|---|---|
+| — | **Home** | <kbd>G</kbd> <kbd>D</kbd> | `/app` | KPIs, pipeline, recent activity and pending follow-ups. Guide: [Home and views](/en/docs/gestion/dashboard). |
+| — | **Quotes** | <kbd>G</kbd> <kbd>C</kbd> | `/app/cotizaciones` | Create, search, filter, edit, duplicate, send and print. Guide: [Quote management](/en/docs/gestion/cotizaciones). |
+| — | **Clients** | <kbd>G</kbd> <kbd>L</kbd> | `/app/clientes` | Directory, CSV import, commercial terms, tax details, credit and statement. Guide: [Clients and statements](/en/docs/gestion/clientes). |
+| — | **Products** | <kbd>G</kbd> <kbd>P</kbd> | `/app/productos` | Catalog, volume pricing, CSV import and the **Kits** tab. Guide: [Import your catalog](/en/docs/cuenta/catalogo). |
+| — | **Tasks** | <kbd>G</kbd> <kbd>T</kbd> | `/app/tareas` | Team to-dos by assignee and due date, with filters, editing and completed tasks. Guide: [Tasks and follow-up](/en/docs/gestion/tareas). |
+| Revenue | **Invoices** | <kbd>G</kbd> <kbd>F</kbd> | `/app/facturas` | Issue, review, export and follow up on invoices; includes recurring ones (Professional or higher). Guide: [Invoices](/en/docs/pagos/facturas-emitidas). |
+| Revenue | **Payments** | <kbd>G</kbd> <kbd>O</kbd> | `/app/cobros` | Charges, payouts, balances, refunds and disputes. Guide: [Payments dashboard](/en/docs/pagos/dashboard). |
+| Revenue | **Collections** | <kbd>G</kbd> <kbd>B</kbd> | `/app/cobranza` | Receivables, aging and exposure by client (Professional or higher). Guide: [Receivables and follow-up](/en/docs/pagos/cartera-cobranza). |
+| Revenue | **AI agent** (under Collections) | — | `/app/cobranza/agente` | Configure and supervise the AI collections agent (Pro, Scale, or Developer). Guide: [Autonomous collections (AI)](/en/docs/pagos/cobranza-ia). |
+| Insights | **Reports** | <kbd>G</kbd> <kbd>A</kbd> | `/app/informes` | Overview, sales diagnosis, finance, cash flow, collections, clients and products. Guide: [Reports and performance](/en/docs/gestion/informes). |
+| Insights | **Performance** | <kbd>G</kbd> <kbd>E</kbd> | `/app/desempeno` | Team performance: results attributed to whoever created or duplicated each quote. Guide: [Seller performance](/en/docs/gestion/informes#seller-performance). |
+| Automation | **Workflows** | <kbd>G</kbd> <kbd>W</kbd> | `/app/workflows` | "When this happens, do this" automations, ready-made ideas and run history. Guide: [Cord Workflows](/en/docs/automatizacion/workflows). |
+
+On desktop, if you rest the cursor on a section for half a second, its shortcut appears
+on the right (for example <kbd>G</kbd> <kbd>C</kbd>), unless a counter is taking that
+spot.
+
+The section you are in is marked with a tinted background and navy text; hovering over
+the others shows a fainter tint that never covers or moves the active one. When you are
+inside a page of a section (a client's detail, a specific invoice), that section stays
+highlighted.
+
+### Counters
+
+Three sections show a number on the right when something needs attention. They don't
+count history: they count what is pending right now, in the active organization.
+
+| Section | What it counts | Color |
+|---|---|---|
+| **Quotes** | Quotes your client already **viewed** and hasn't approved or rejected yet (*Viewed* status). It's the same number as the **Needs follow-up** KPI on Home. | Gray |
+| **Tasks** | Open tasks that are **yours or unassigned** and are due **today** or already **overdue**. "Today" is the day in your business's time zone. Other members' tasks don't count. | Gray; orange if any is overdue |
+| **Collections** | **Overdue** receivables: open invoices and approved quotes whose payment date has passed. A quote that already has its open invoice is counted once. | Orange |
+
+- When nothing is pending, the counter doesn't show.
+- Above 99 it shows **99+**.
+- On hover, the counter explains what it counts, for example "3 quotes viewed, no
+  reply", "2 overdue receivables" or "4 tasks due today or overdue".
+- Counters are recalculated every time you open a page.
+
+### AI agent, under Collections
+
+**AI agent** is a sub-page of **Collections**, not a separate section. It appears under
+Collections, indented with a vertical guide, only when you are in **Collections** or in
+the agent itself; everywhere else in the app, the Collections row takes a single line.
+The agent's page is titled **Collections agent**.
+
+To get there from anywhere: open **Collections** (<kbd>G</kbd> <kbd>B</kbd>) and select
+**AI agent**, or type "collections" in the [command menu](#command-menu).
+
+### Collapsible groups
+
+**Revenue**, **Insights** and **Automation** collapse and expand with a click on their
+title. The title is gray and in regular weight; the arrow appears on hover or when the
+group is collapsed.
+
+- **They are remembered.** The groups you collapse are saved to your user: they stay
+  collapsed when you change pages, when you come back another day and on another device.
+- **They open on their own if you are inside.** If you open a page of a collapsed group
+  (for example, with <kbd>G</kbd> <kbd>F</kbd> while **Revenue** is collapsed), the group
+  shows open so you can see where you are.
+- The daily-shortcuts list (Home through Tasks) has no title and doesn't collapse.
+
+### Sidebar footer
+
+| Item | What it does | When it appears |
+|---|---|---|
+| **Active quotes** | A meter with your active quotes against your plan's cap (for example, "4 / 5"), a bar and the **Upgrade plan** link, which opens **Settings › Plans & subscription**. Draft, sent, viewed and approved quotes count as active. The bar is navy, turns amber from 80% and red when you reach the limit. | Only on plans with an active-quote cap: Free (5) and Starter (50). |
+| **Invite people** | Opens **Settings › Team & roles** with the invitation form already open. | Only if you have the **Team** permission and your plan includes more than one user (Pro or higher). |
+| Collapse button | The panel icon on the right. Collapses the sidebar to a column of icons or expands it again. Shortcut: <kbd>[</kbd>. | Always, on desktop. |
+
+### Collapsed sidebar
+
+With the footer button or the <kbd>[</kbd> key, the sidebar shrinks to a narrow column of
+icons and leaves more room for the content. Select the button again (or press
+<kbd>[</kbd>) to expand it.
+
+- Every section shows, even if you collapsed groups; groups are separated by a short
+  line.
+- **Counters become a dot.** Each counter turns into a dot on the icon: gray for Quotes
+  and Tasks, red for Collections or for Tasks with overdue items.
+- **Label on hover.** Each icon shows, on its right, the section name, the counter's
+  explanation (if any) and its shortcut, for example "Quotes · 3 quotes viewed, no reply
+  · G C". It also appears when you move through the sidebar with <kbd>Tab</kbd>.
+- The organization switcher stays as the centered initial square.
+- The active-quotes meter is hidden and **Invite people** becomes an icon.
+- Collapsed or expanded is remembered **in that browser**.
+
+### When you change pages
+
+- In Chrome, Edge and Safari 18.2 or later, the sidebar stays still and only the content
+  fades when you change pages. In other browsers the page changes without a transition.
+- When you hover over a sidebar section, Cord starts loading it, so it opens faster when
+  you click.
+- The sidebar keeps its scroll position between pages.
+
+### On a phone
+
+On screens 880 px wide or narrower, the sidebar opens with the menu button (three lines)
+on the left of the top bar, as a panel over the page. It closes when you pick a page,
+tap outside it or press <kbd>Esc</kbd>.
+
+At the top it has three large rows that live in the top bar on desktop:
+
+- **Help**: opens the Help center.
+- **Theme**: shows the current mode (**Light**, **Dark** or **System**) and switches to
+  the next one with each tap.
+- **Settings**: opens **Settings**.
+
+Below come your pinned pages and the same sections, with 44 px rows for your finger and
+a single scroll. On a phone there is no collapsed sidebar, no shortcuts or floating
+labels are shown, and the **X** to remove a pinned page is always visible. To pin a new
+page, do it on desktop: the pin button doesn't appear on a phone.
 
 ## Top bar
 
-| Item | What it does |
+The top bar floats over the content, in the same material as the sidebar. From left to
+right:
+
+| Item | What it does | When it appears |
+|---|---|---|
+| Menu button | Opens the sidebar as a panel. | Only on a phone. |
+| **Search…** | Opens the [command menu](#command-menu). Shows <kbd>⌘K</kbd> on Mac and <kbd>Ctrl K</kbd> on Windows and Linux. | Always. On a phone it shrinks to a magnifier. |
+| **Setup guide** | A pill with a ring and your completion percentage. Selecting it reopens the **Set up Cord** widget. See [Create your account](/en/docs/cuenta/crear-cuenta). | While your initial setup is incomplete and you minimized the widget. On a phone only the ring shows. |
+| **Create** | Navy button with **+**: opens the menu to create (see [Create](#create)). | If you have at least one permission to create something. On a phone it's a circle with **+**. |
+| **Apps** | Your integrations and the ones you can connect (see [Apps](#apps)). | Only with the **Settings** permission. |
+| **Notifications** | The bell, with the number of unread updates (see [Notifications](#notifications)). | Always. |
+| **Help** | Opens the **Help center**. | On desktop. On a phone, from the sidebar. |
+| **Theme** | Switches between light, dark and system (see [Theme](#theme)). | On desktop. On a phone, from the sidebar. |
+| **Settings** | The gear opens the **Settings** index and stays tinted while you are in Settings. See the [Settings map](/en/docs/cuenta/mapa-de-ajustes). | On desktop. On a phone, **Settings** in the sidebar. |
+
+The top bar icons don't animate: on hover only their background changes.
+
+Below the bar is each page's header: its title, the pin button to pin it and, on the
+right, that page's own actions (for example, **Customize** on Home).
+
+### Create
+
+The **Create** menu has up to five options, each with its key:
+
+| Option | Key | What it opens | Permission needed |
+|---|---|---|---|
+| **Quote** | <kbd>C</kbd> | The editor for a new quote. | Quotes |
+| **Invoice** | <kbd>F</kbd> | The editor for a new invoice. | Quotes |
+| **Client** | <kbd>L</kbd> | Clients, with the new-client form open. | Clients |
+| **Product** | <kbd>P</kbd> | Products, with the new-product form open. | Products |
+| **Task** | <kbd>T</kbd> | **New task**, a quick window with the title and due date, without leaving the page. | Quotes, Collections or Clients |
+
+- Each option only appears if your role has its permission, and its key only works if
+  the option appears. If you have none, the **Create** button isn't shown.
+- The letters are the same ones <kbd>G</kbd> plus letter uses to go to that section:
+  <kbd>C</kbd> creates a quote and <kbd>G</kbd> <kbd>C</kbd> goes to Quotes.
+- The keys work on any desktop screen even when the menu is closed.
+
+### Apps
+
+The **Apps** button (a grid icon with a **+**) shows the logos of up to two connected
+integrations next to it. When you open it you see **Your integrations**: connected ones
+first, then available ones, with one action per row: **Open**, **Review** (if a
+connection needs attention), **Connect** or **Coming soon**. At the bottom,
+**Explore integrations** opens **Settings › Integrations**. Only people with the
+**Settings** permission see it, because they are the ones who can connect something.
+
+### Notifications
+
+The bell tells you what **your client** did and the money that **came in**, on quotes
+and invoices: views, approvals, rejections, counteroffers, messages, partial payments and
+payments. Your own actions don't light it up. It shows a number with the unread updates
+(1 to 9; from 10 on, **9+**), and when you open it you see the 15 most recent ones,
+**Mark as read** and **View all activity**. What you read is saved to your user, so it
+doesn't come back on another device. Full details in
+[Notifications](/en/docs/gestion/notificaciones#the-bell-in-the-top-bar).
+
+### Help
+
+The help icon opens the **Help center**, a side panel with an article search,
+**Keyboard shortcuts**, **User guide**, **Contact support**,
+**Frequently asked questions** and the **Cord AI** assistant, which answers questions
+about using the platform.
+
+### Theme
+
+The theme button shows the icon of the **current** mode: sun for **Light**, moon for
+**Dark** and monitor for **System**. Each click moves to the next one: Light → Dark →
+System → Light.
+
+- **System** follows your operating system's preference live: if your computer switches
+  to dark mode at night, Cord switches with it.
+- The default mode is **Light**.
+- Your choice is remembered **in that browser**; on a phone you change it from the
+  **Theme** row in the sidebar.
+
+### Keyboard use
+
+The top bar menus open one at a time: opening one closes whichever was open. **Create**
+and **Apps** can be used with the keyboard: <kbd>Enter</kbd>, <kbd>Space</kbd> or
+<kbd>↓</kbd> on the button move into the menu; <kbd>↑</kbd>, <kbd>↓</kbd>,
+<kbd>Home</kbd> and <kbd>End</kbd> move between options; <kbd>Esc</kbd> closes the menu
+and returns focus to the button. A click outside the menu also closes it.
+
+## Command menu
+
+The command menu searches your organization and takes you to any section without the
+mouse. Open it with **Search…** in the top bar, with <kbd>⌘K</kbd> on Mac or
+<kbd>Ctrl K</kbd> on Windows and Linux, or with <kbd>/</kbd>. On a phone, tap the
+magnifier.
+
+**With an empty search** it shows:
+
+- **Recent:** the last 5 pages you opened from the command menu, saved in that browser.
+- **Go to:** the app's sections, each report separately and each Settings tab (for
+  example "Settings · Taxes"). Sections that have a shortcut show it on the right
+  (<kbd>G</kbd> <kbd>C</kbd>, <kbd>G</kbd> <kbd>B</kbd>…).
+- **Actions:** **Build with AI** (opens a new quote, <kbd>C</kbd>), **New invoice**
+  (<kbd>F</kbd>), **New client** (<kbd>L</kbd>), **New product** (<kbd>P</kbd>),
+  **New task** (<kbd>T</kbd>, opens the same quick window as **Create › Task**) and
+  **View public site**. If your role doesn't have the permission to create something,
+  the corresponding action can't be completed.
+
+**As you type** it filters sections and actions, and from two letters on it also
+searches your data:
+
+| Group | Searches by | Opens | Context it shows |
+|---|---|---|---|
+| **Quotes** | Quote number or client name | The quote's detail | Status and total in the quote's currency, for example "Viewed · MX$1,200.00". |
+| **Invoices** | Invoice number or client name | The invoice's detail | Status and total in the invoice's currency, for example "Open · €3,480.00". Statuses: Draft, Open, Paid, Void and Uncollectible. |
+| **Clients** | Name or tax ID | The client's record | — |
+| **Products** | Name or SKU | The product's record | The SKU next to the name. |
+
+- Each group shows up to 6 results, newest first (clients and products, alphabetically).
+- **Invoices** only appears if you have the **Collections** permission, the same one the
+  invoice list requires.
+- Settings tabs can also be found by synonyms: "VAT", "IVA", "NIF", "RFC", "CSD", "SAML"
+  or "DNS" take you to the tab that configures them.
+
+**To move around:** <kbd>↑</kbd> and <kbd>↓</kbd> go through the results,
+<kbd>Enter</kbd> opens the selected one and <kbd>Esc</kbd> closes the menu and returns
+focus to where you were.
+
+## Keyboard shortcuts
+
+Shortcuts work on desktop, on any screen of the app, as long as you are not typing in a
+field. Press <kbd>?</kbd> to see the shortcuts panel; it only lists the create shortcuts
+your role allows.
+
+| Key | Action |
 |---|---|
-| **Search…** (`⌘K` or `Ctrl+K`) | Opens the palette to search quotes, clients, products and Settings tabs, or run a command. |
-| **Setup guide** | While your account is incomplete, shows your completion percentage and opens the **Set up Cord** widget. See [Create your account](/en/docs/cuenta/crear-cuenta). |
-| **Create** | Menu to create a **Quote**, **Invoice**, **Client**, **Product** or **Task**. It only shows what your permissions allow. |
-| **Apps** | For people with the Settings permission: which apps are connected and which you can connect, without leaving the screen. |
-| **Notifications** | Recent activity panel with **Mark as read** and **View all activity**. A dot means there is something new. Guide: [Notifications](/en/docs/gestion/notificaciones). |
-| **Help** | **Help center** with search, keyboard shortcuts, user guide, contact support, frequently asked questions and the Cord AI assistant. |
-| **Theme** | Switches between light and dark mode. |
-| **Settings** | Opens the Settings index. |
+| <kbd>⌘K</kbd> / <kbd>Ctrl K</kbd>, or <kbd>/</kbd> | Search / command menu |
+| <kbd>C</kbd> | Create quote |
+| <kbd>F</kbd> | Create invoice |
+| <kbd>L</kbd> | Create client |
+| <kbd>P</kbd> | Create product |
+| <kbd>T</kbd> | Create task |
+| <kbd>G</kbd> then <kbd>D</kbd> | Go to Home |
+| <kbd>G</kbd> then <kbd>C</kbd> | Go to Quotes |
+| <kbd>G</kbd> then <kbd>L</kbd> | Go to Clients |
+| <kbd>G</kbd> then <kbd>P</kbd> | Go to Products |
+| <kbd>G</kbd> then <kbd>T</kbd> | Go to Tasks |
+| <kbd>G</kbd> then <kbd>F</kbd> | Go to Invoices |
+| <kbd>G</kbd> then <kbd>O</kbd> | Go to Payments |
+| <kbd>G</kbd> then <kbd>B</kbd> | Go to Collections |
+| <kbd>G</kbd> then <kbd>A</kbd> | Go to Reports |
+| <kbd>G</kbd> then <kbd>E</kbd> | Go to Performance |
+| <kbd>G</kbd> then <kbd>W</kbd> | Go to Workflows |
+| <kbd>[</kbd> | Collapse or expand the sidebar |
+| <kbd>X</kbd> | Pin or unpin the current page in the sidebar |
+| <kbd>?</kbd> | Show or hide the shortcuts panel |
+| <kbd>Esc</kbd> | Close the open menu or dialog |
 
-### Keyboard shortcuts
-
-On desktop you can use these shortcuts when you are not typing in a field. On screens
-narrower than 880 px they are disabled and everything is done with visible buttons.
-
-| Shortcut | Action |
-|---|---|
-| `⌘K` / `Ctrl+K` or `/` | Open search |
-| `C` | New quote |
-| `F` | New invoice |
-| `T` | New task |
-| `G` then `D`, `C`, `L`, `P`, `T`, `B`, `A` or `F` | Go to Home, Quotes, Clients, Products, Tasks, Collections, Reports or Invoices |
-| `X` | Pin or unpin the current page in the sidebar |
-| `?` | Show or hide the shortcuts help |
+- **<kbd>G</kbd> plus letter** is typed one after the other, not at the same time: press
+  <kbd>G</kbd>, release it and press the letter within the next second.
+- Create keys respect permissions: if the option doesn't appear in your **Create** menu,
+  its key does nothing.
+- On screens 880 px wide or narrower, shortcuts are disabled and everything is done with
+  visible buttons.
 
 The quote and invoice editor (`/app/cotizaciones/nueva` and `/app/facturas/nueva`, also
 for drafts with `?draft=` and new versions with `?version=`) has its own shortcuts:
-there `/` jumps to the catalog search, `⌘ Enter` sends or issues, and `⌘ S` saves the
-draft; `⌘K` still opens search. See [Preview and sending](/en/docs/cotizacion/envio).
-
-On a phone, the sidebar opens as a panel and includes shortcuts to **Help** and
-**Settings**.
+there <kbd>/</kbd> jumps to the catalog search, <kbd>⌘ Enter</kbd> sends or issues, and
+<kbd>⌘ S</kbd> saves the draft; <kbd>⌘K</kbd> still opens search. See
+[Preview and sending](/en/docs/cotizacion/envio).
 
 <Callout type="info">
 The options you see depend on your **permissions**, your **effective plan**, your
 **country of operation** and the account's setup state. A page existing does not mean
 any member can change it.
 </Callout>
+
 
 ## Test environment
 
@@ -131,6 +406,7 @@ Keep in mind:
 - Some real actions are not available in test mode: subscribing or changing plans,
   connecting a custom domain, and applying a **Set up with AI** proposal.
 - Test documents do not consume your plan's allowance.
+- The notifications bell doesn't show an unread counter inside the test environment.
 
 Guide for integrations: [Test environments](/en/docs/desarrolladores/empezar/pruebas).
 
@@ -170,15 +446,23 @@ organization switcher before importing, issuing or changing configuration.
 
 The owner always has full access. Other members get presets or per-section permissions:
 
-- **Quotes:** create, edit, send and duplicate.
+- **Quotes:** create, edit, send and duplicate. Shows **Quote** and **Invoice** in the
+  **Create** menu.
 - **Approvals:** approve discounts, amounts or controlled changes.
-- **Collections:** review and manage receivables.
-- **Clients** and **Products:** change their directories.
-- **Analytics:** open Reports and Team (performance).
-- **Settings:** change the business configuration.
+- **Collections:** review and manage receivables. It also decides whether the command
+  menu finds invoices.
+- **Clients** and **Products:** change their directories. Each one shows its option in
+  the **Create** menu.
+- **Reports:** open Reports and Performance.
+- **Settings:** change the business configuration. Shows the **Apps** button in the top
+  bar.
 - **Payment configuration:** change Cord Payments and the payout account.
 - **Refunds:** start refunds of reconciled charges.
-- **Team:** invite people and change permissions.
+- **Team:** invite people and change permissions. On Pro or higher it shows
+  **Invite people** at the bottom of the sidebar.
+
+Creating tasks (**Create › Task** and the <kbd>T</kbd> key) requires Quotes, Collections
+or Clients, any of the three.
 
 If an action doesn't appear, check the member's permission first; then the plan and the
 configuration that feature requires.

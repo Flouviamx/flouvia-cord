@@ -9,7 +9,7 @@ Cord controls access through granular permissions, not just a fixed role: each m
 
 ### Inviting your team
 
-1. Go to **Settings > Team**.
+1. Go to **Settings > Team** (the gear in the top bar takes you to Settings). Shortcut: the **Invite people** button at the bottom of the sidebar opens the invitation directly; it shows up if you have the Team permission and your plan includes more than one user. You can also get there from **Team settings**, in the workspace switcher at the top of the sidebar.
 2. Click **Add member**.
 3. Enter their email and choose a starting role (or customize the permissions right there).
 4. The person receives an invitation link, valid for 7 days, to join the workspace.

@@ -9,7 +9,7 @@ Cord controla el acceso por permisos granulares, no solo por un rol fijo: cada m
 
 ### Invitar a tu equipo
 
-1. Ve a **Ajustes > Equipo**.
+1. Ve a **Ajustes > Equipo** (el engrane de la barra superior te lleva a Ajustes). Atajo: el botón **Invitar al equipo**, al pie del menú lateral, abre directo la invitación; aparece si tienes permiso de Equipo y tu plan incluye más de un usuario. También llegas desde **Configuración del equipo**, en el selector de espacio de trabajo de arriba del menú.
 2. Haz clic en **Agregar miembro**.
 3. Ingresa su correo y elige un rol de partida (o personaliza los permisos ahí mismo).
 4. La persona recibe un correo con un link de invitación, válido 7 días, para unirse al espacio de trabajo.

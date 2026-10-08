@@ -9,7 +9,7 @@ A workflow is a rule: **when this happens, do this**. Cord starts the workflow f
 
 ### Create your first workflow
 
-1. Open **Workflows** in the sidebar and click **New workflow**.
+1. Open **Workflows** in the sidebar (in the **Automation** group; shortcut `G` then `W`) and click **New workflow**.
 2. If it is your first one, Cord offers ready-made ideas (for example "Follow up if the client does not open"). You can start from one and change it.
 3. Choose the **trigger**: a Cord event, or a **fixed schedule** ("every Monday at 9", in your account's time zone). Besides what already happened, three triggers get ahead of a date — **A quote is about to expire**, **An invoice is about to be due** and **An invoice has been past due for days**: they carry the days left or the days elapsed, and a condition picks the exact day you want to act on.
 4. Add steps with **Add a step**:

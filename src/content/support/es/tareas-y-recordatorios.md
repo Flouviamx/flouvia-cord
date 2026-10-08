@@ -11,7 +11,7 @@ Las tareas son los pendientes de tu equipo: la llamada de seguimiento, el envío
 
 - **Inicio:** el widget **Tareas y recordatorios** muestra las más urgentes y un capturador para agregar una nueva.
 - **Tareas**, en el menú lateral (atajo `G` y luego `T`): todas las tareas, con filtros **Mías**, **Todas** y **Sin asignar**, y la pestaña **Completadas**.
-- **Crear › Tarea** en la barra superior (o la tecla `T`), desde cualquier pantalla.
+- **Crear › Tarea** en la barra superior (o la tecla `T`), desde cualquier pantalla. También con **Nueva tarea** en el buscador `⌘ K` (`Ctrl K` en Windows).
 
 ### Crear una tarea
 
@@ -27,7 +27,7 @@ Las tareas son los pendientes de tu equipo: la llamada de seguimiento, el envío
 - Marca el círculo para completarla. Durante unos segundos puedes pulsar **Deshacer**.
 - El menú **···** de cada tarea permite **Editar** (título, notas, fecha, prioridad y responsable), **Posponer** a mañana, al lunes o una semana, **Asignármela** y **Eliminar**.
 - Si la tarea viene de una cotización o factura, su folio y el cliente aparecen como enlace al documento.
-- En el menú lateral, **Tareas** muestra cuántas tuyas o sin responsable vencen hoy o ya vencieron.
+- En el menú lateral, **Tareas** lleva un contador con las tuyas o sin responsable que vencen hoy o ya vencieron. Es gris, y se vuelve naranja cuando alguna ya está vencida.
 
 ### El recordatorio por correo
 

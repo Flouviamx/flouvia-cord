@@ -1,7 +1,7 @@
 ---
 title: "Test Environments"
 description: "Learn how to isolate your development using the Cord Sandbox."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-08"
 reviewedBy: "Cord engineering"
 availablePlans: [Free, Starter, Pro, Scale, Developer]
 prerequisites: ["A test key (sk_test_) for the simulators"]
@@ -20,7 +20,7 @@ Data created in test mode (quotes, clients, webhooks) never interacts with your 
 
 ## Identifying Test Mode
 
-1. **In the Dashboard:** When Test Mode is active, you will see a visual orange indicator in the interface. All manual actions you perform will occur within the isolated environment.
+1. **In the app:** you turn on the test environment with the **Test environment** switch in the workspace selector at the top of the sidebar. While it's on, an amber strip above the content reads **Test mode** ("Everything you do here is a test — your real data is untouched.") with the **Clear test data** and **Exit test mode** buttons, and the selector changes its label to **Test environment** with an amber ring on the avatar, even with the sidebar collapsed. All manual actions you perform will occur within the isolated environment.
 2. **In the API:** Your secret API keys automatically determine which environment you are calling. A test key will interact with the Sandbox, while a live key will touch your real data.
 
 <Callout type="warning">
@@ -32,6 +32,8 @@ Data created in test mode (quotes, clients, webhooks) never interacts with your 
 During integration development, you will often generate thousands of garbage records. Cord has a radical tool to return your environment to a clean slate: the Reset Endpoint.
 
 ### Clearing test environment data
+
+From the app, the **Clear test data** button in the amber strip does exactly this after asking you to confirm.
 
 You can invoke a destructive cleanup (which will cascade delete clients, quotes, products, and events from the test environment) by making a POST to the following internal endpoint (requires an active browser session in Test Mode):
 

@@ -12,7 +12,7 @@ import '../../../styles/docs-mockups.css';
 import DmIcon from './DmIcon.astro';
 import DmSidebar from './DmSidebar.astro';
 import DmTopbar from './DmTopbar.astro';
-import type { DmLang, DmSidebarBadges } from './format';
+import type { DmLang, DmPin, DmPlanMeter, DmSidebarBadges, DmThemeMode } from './format';
 
 interface Props {
     lang: DmLang;
@@ -26,7 +26,7 @@ interface Props {
     url?: string;
     /** Alto del escenario en px. Lo que no cabe se recorta (sangrado inferior). */
     height?: number;
-    /** variant="app" + chrome="full": id de SIDEBAR_NAV activo. */
+    /** variant="app": id de SIDEBAR_NAV activo (chrome="full"). `ajustes` tinta el engrane de la topbar: Ajustes no está en la sidebar. */
     active?: string;
     /** variant="app": título de la página (h1 de la app). Sin título no hay encabezado. */
     title?: string;
@@ -40,6 +40,24 @@ interface Props {
     badges?: DmSidebarBadges;
     /** Nombre del espacio de trabajo en la sidebar. */
     org?: string;
+    /** chrome="full": páginas fijadas (grupo "Fijados"), con el icono de su sección. */
+    pins?: DmPin[];
+    /** chrome="full": medidor "Cotizaciones activas n / m" + "Mejorar plan" en el pie (Gratis y Starter). */
+    plan?: DmPlanMeter;
+    /** chrome="full": "Invitar al equipo" en el pie (Pro o superior, con permiso de Equipo). */
+    invite?: boolean;
+    /** chrome="full": ítem de la sidebar con el cursor encima (tinte de hover + atajo G + letra). */
+    hover?: string;
+    /** chrome="full": grupos plegados de la sidebar (ingresos, analisis, automatizacion). */
+    folded?: string[];
+    /** Topbar: notificaciones sin leer (contador de la campana; "9+" desde 10). */
+    notif?: number;
+    /** Topbar: botón Aplicaciones. true = icono; lista de dominios = cápsula con logos conectados; false = sin permiso de Ajustes. */
+    apps?: boolean | string[];
+    /** Topbar: modo de tema del botón (light = sol, dark = luna, system = monitor). Claro por defecto. */
+    theme?: DmThemeMode;
+    /** Topbar: menú abierto. `create` dibuja el menú Crear; `notif`/`apps` dibujan el slot "topbar-panel" bajo su botón. */
+    open?: 'create' | 'notif' | 'apps';
     /** variant="panel": ancho máximo de la tarjeta en px (480 por defecto). */
     panelWidth?: number;
     /** Color de marca del negocio (link público, PDF, correo). Navy por defecto. */
@@ -60,6 +78,15 @@ const {
     badges,
     sidebar = 'full',
     org,
+    pins,
+    plan,
+    invite,
+    hover,
+    folded,
+    notif,
+    apps,
+    theme,
+    open,
     panelWidth,
     brand,
     class: cls,
@@ -79,15 +106,20 @@ const showSidebar = variant === 'app' && chrome === 'full';
 const showTopbar = variant === 'app' && chrome !== 'none';
 const hasActions = Astro.slots.has('actions');
 const hasOverlay = Astro.slots.has('overlay');
+const hasTopbarPanel = Astro.slots.has('topbar-panel');
 ---
 <figure class:list={['dm-figure', `dm-figure-${variant}`, cls]} data-dm-variant={variant}>
     <div class:list={['dm-stage', `dm-v-${variant}`]} style={stageVars || undefined} aria-hidden="true" inert>
         {variant === 'app' && (
             <div class="dm-window">
                 <div class:list={['dm-app', { 'dm-no-sidebar': !showSidebar, 'dm-has-rail': showSidebar && sidebar === 'rail' }]}>
-                    {showSidebar && <DmSidebar lang={lang} active={active} org={org} badges={badges} rail={sidebar === 'rail'} />}
+                    {showSidebar && <DmSidebar lang={lang} active={active} org={org} badges={badges} rail={sidebar === 'rail'} pins={pins} plan={plan} invite={invite} hover={hover} folded={folded} />}
                     <div class="dm-main">
-                        {showTopbar && <DmTopbar lang={lang} setupPct={setupPct} />}
+                        {showTopbar && (
+                            <DmTopbar lang={lang} setupPct={setupPct} notif={notif} apps={apps} theme={theme} settings={active === 'ajustes'} open={open}>
+                                {hasTopbarPanel && <slot name="topbar-panel" slot="panel" />}
+                            </DmTopbar>
+                        )}
                         {(title || hasActions) && (
                             <div class="dm-page-head">
                                 <div>

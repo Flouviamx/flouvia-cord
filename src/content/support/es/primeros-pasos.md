@@ -7,6 +7,8 @@ order: 1
 
 Bienvenido a Cord. Esta guía te deja operando —cotizando, cobrando y facturando— en menos de 20 minutos. Si es tu primera vez, sigue esta ruta lineal.
 
+Para orientarte: las secciones de todos los días (Inicio, Cotizaciones, Clientes, Productos, Tareas, Facturas, Cobros, Cobranza, Informes, Desempeño, Workflows) están en el menú lateral; **Ajustes** se abre con el engrane de la barra superior, y el botón **Crear** de esa misma barra arma una cotización, factura, cliente, producto o tarea desde cualquier pantalla. El recorrido completo está en [Muévete por Cord](/soporte/moverse-por-cord).
+
 ## Paso 1: Configura tu empresa
 **Atajo:** al terminar el alta, Cord te ofrece configurar tu cuenta con IA. Le das tu sitio web, a qué se dedica tu negocio y tu lista de precios, y propone perfil, marca, impuestos, catálogo y plantillas para que los revises y apruebes. Si lo saltaste, está en **Ajustes > General > Configurar con IA**. Ver [Configura tu cuenta con IA](/soporte/configurar-con-ia).
 
@@ -37,7 +39,7 @@ El recorrido completo del editor está en [Crear una cotización o una factura p
 ## Paso 5: (Para devs) Conecta la API
 Si vas a usar Cord programáticamente:
 
-- Activa el **Modo desarrollador** con el interruptor al final del índice de **Ajustes**, abre la pestaña **API** en el dock de Desarrolladores y crea una llave (`sk_test_...` o `sk_live_...`).
+- Activa el **Modo desarrollador** con el interruptor al final del índice de **Ajustes** (el engrane de la barra superior), abre la pestaña **API** en el dock de Desarrolladores y crea una llave (`sk_test_...` o `sk_live_...`).
 - Verifica que funciona con la llamada más simple:
 
 ```bash
@@ -47,10 +49,11 @@ curl https://cordhq.app/api/v1/me -H "Authorization: Bearer sk_test_tu_llave"
 - O usa el [CLI de Cord](/soporte/cli-cord): `npx @flouviahq/cli login` conecta tu terminal desde el navegador y `npx @flouviahq/cli init` deja tu proyecto integrado.
 
 ## Paso 6: Automatiza y conecta tus apps
-- En **Workflows** crea tu primer workflow desde una de las ideas: por ejemplo, avisar al equipo cuando un cliente aprueba. Es uno de los pasos de la lista **Configura Cord**.
-- En **Ajustes › Integraciones** conecta las herramientas que ya usas. Slack, Zapier y Make se conectan con un clic, sin copiar llaves ni URLs; las apps conectadas aparecen en la barra superior.
+- En **Workflows** (menú lateral, grupo **Automatización**) crea tu primer workflow desde una de las ideas: por ejemplo, avisar al equipo cuando un cliente aprueba. Es uno de los pasos de la lista **Configura Cord**.
+- En **Ajustes › Integraciones** conecta las herramientas que ya usas. Slack, Zapier y Make se conectan con un clic, sin copiar llaves ni URLs; las apps conectadas aparecen con su logo en el botón **Aplicaciones** de la barra superior.
 
 ## ¿Qué sigue?
+- [Muévete por Cord: menú, búsqueda, atajos y notificaciones](/soporte/moverse-por-cord)
 - [Configurar Webhooks](/soporte/configurar-webhooks)
 - [Invitar a tu equipo](/soporte/invitar-miembros-roles)
 - [Manejo de disputas](/soporte/manejo-disputas)

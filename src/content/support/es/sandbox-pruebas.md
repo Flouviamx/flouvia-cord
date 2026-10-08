@@ -8,7 +8,7 @@ Antes de operar en serio querrás probar el flujo (enviar una cotización, cobra
 
 ### Activar el Entorno de prueba
 
-Abre el selector de organización (arriba a la izquierda) y enciende **Entorno de prueba**. La app navega a un espacio 1:1 con el mismo aspecto de tu cuenta (marca, prefijo de folio, plan) pero con sus propias cotizaciones, clientes, productos y facturas — nada de lo que hagas ahí toca tus datos reales. Un banner permanente lo recuerda mientras estás dentro.
+Abre el selector de espacio de trabajo, arriba del menú lateral (en el celular, primero abre el menú con el botón de tres líneas de la barra superior), y enciende **Entorno de prueba**. La app navega a un espacio 1:1 con el mismo aspecto de tu cuenta (marca, prefijo de folio, plan) pero con sus propias cotizaciones, clientes, productos y facturas — nada de lo que hagas ahí toca tus datos reales. Un banner permanente lo recuerda mientras estás dentro.
 
 - **Vaciar datos de prueba:** desde el mismo banner, el botón "Vaciar datos de prueba" borra por completo la organización espejo (en cascada); la próxima vez que entres al entorno de prueba se recrea limpia.
 - **Llaves de API en modo Test:** una llave `sk_test_...` (pestaña **API** del dock de Desarrolladores, actívalo en Ajustes) resuelve automáticamente contra esta misma organización espejo — no consume tu medidor de uso ni cuenta para tu facturación. Ver [Autenticación y Claves API](/soporte/claves-api).

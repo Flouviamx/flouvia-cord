@@ -1,6 +1,6 @@
 ---
 title: "Mapa completo de la aplicación"
-description: "Qué hace cada sección de Cord, cómo se conectan cotizaciones, clientes, facturas, cobros, cobranza, informes y ajustes, qué hay en el menú lateral y la barra superior, y cómo funcionan el entorno de prueba y Cord Workbench."
+description: "Qué hace cada sección de Cord y cómo se conectan; el menú lateral (fijados, contadores, grupos, menú contraído y versión móvil), la barra superior, la campana, el menú de comandos ⌘K, todos los atajos de teclado, el entorno de prueba y Cord Workbench."
 lastUpdated: "2026-10-08"
 reviewedBy: "Producto y operaciones de Cord"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
@@ -30,7 +30,7 @@ documentos y movimientos.
 6. Cord registra el cobro en línea o el pago que marcas a mano.
 7. La operación pasa a **Facturas** y **Cobranza** según el documento emitido, el saldo y
    la fecha de vencimiento.
-8. **Informes** y **Equipo** agregan los resultados sin crear una segunda copia de la
+8. **Informes** y **Desempeño** agregan los resultados sin crear una segunda copia de la
    operación.
 </Steps>
 
@@ -38,73 +38,348 @@ documentos y movimientos.
 
 <DmAppMap lang="es" />
 
-Arriba del menú está el **selector de organización**. Desde él cambias de espacio de
-trabajo, creas uno nuevo (**Crear espacio de trabajo**), abres
-**Configuración del equipo**, activas o desactivas el **Entorno de prueba** y cierras
-sesión.
+El menú lateral es la navegación principal de la app. De arriba a abajo tiene: el
+selector de organización, tus **Fijados** (si tienes alguno), una lista de accesos
+diarios sin encabezado, los grupos plegables **Ingresos**, **Análisis** y
+**Automatización**, y el pie con el uso de tu plan, la invitación al equipo y el botón
+para contraer el menú.
 
-| Grupo | Elemento | Ruta | Para qué sirve |
-|---|---|---|---|
-| — | **Inicio** | `/app` | KPIs, pipeline, actividad reciente y pendientes de seguimiento. Guía: [Inicio y vistas](/docs/gestion/dashboard). |
-| — | **Cotizaciones** | `/app/cotizaciones` | Crear, buscar, filtrar, editar, duplicar, enviar e imprimir. El contador indica cotizaciones que necesitan seguimiento. Guía: [Gestión de cotizaciones](/docs/gestion/cotizaciones). |
-| — | **Clientes** | `/app/clientes` | Directorio, importación CSV, condiciones comerciales, datos fiscales, crédito y estado de cuenta. Guía: [Clientes y estado de cuenta](/docs/gestion/clientes). |
-| — | **Productos** | `/app/productos` | Catálogo, precios por volumen, importación CSV y la pestaña **Kits**. Guía: [Importa tu catálogo](/docs/cuenta/catalogo). |
-| — | **Tareas** | `/app/tareas` | Pendientes del equipo por responsable y fecha límite, con filtros, edición y completadas. El contador indica tus tareas (o sin responsable) que vencen hoy o ya vencieron; va en rojo si hay vencidas. Guía: [Tareas y seguimiento](/docs/gestion/tareas). |
-| Ingresos | **Facturas** | `/app/facturas` | Emitir, consultar, exportar y dar seguimiento a facturas; incluye las recurrentes (Profesional o superior). Guía: [Facturas](/docs/pagos/facturas-emitidas). |
-| Ingresos | **Cobros** | `/app/cobros` | Cobros, depósitos, saldos, reembolsos y disputas. Guía: [Dashboard de cobros](/docs/pagos/dashboard). |
-| Ingresos | **Cobranza** | `/app/cobranza` | Cartera por cobrar, antigüedad de saldos y exposición por cliente (Profesional o superior). El contador en rojo indica documentos vencidos. Guía: [Cartera y seguimiento](/docs/pagos/cartera-cobranza). |
-| Ingresos | **Agente IA** (dentro de Cobranza) | `/app/cobranza/agente` | Configurar y supervisar la cobranza con IA (Pro, Scale o Developer). Guía: [Cobranza autónoma (IA)](/docs/pagos/cobranza-ia). |
-| Análisis | **Informes** | `/app/informes` | Resumen, diagnóstico comercial, finanzas, flujo, cobranza, clientes y productos. Guía: [Informes y desempeño](/docs/gestion/informes). |
-| Análisis | **Desempeño** | `/app/desempeno` | Desempeño del equipo: resultados atribuidos a quien creó o duplicó cada cotización. |
-| Automatización | **Workflows** | `/app/workflows` | Automatizaciones "cuando pase esto, haz esto", ideas listas e historial de ejecuciones. Guía: [Cord Workflows](/docs/automatizacion/workflows). |
+**Ajustes no está en el menú lateral.** Se abre con el engrane de la barra superior (en
+el teléfono, desde el menú; ver [En el teléfono](#en-el-teléfono)).
 
-Además:
+### Selector de organización
 
-- **Fijados.** Con el botón de chincheta junto al título de cualquier página (o la tecla
-  `X`) la agregas al grupo **Fijados**, arriba del menú.
-- **Grupos plegables.** **Ingresos**, **Análisis** y **Automatización** se pliegan con un clic en su
-  título.
-- **Contraer el menú.** El botón al pie del menú lo reduce a iconos.
-- **Ajustes** (`/app/ajustes`) se abre con el engrane de la barra superior. Consulta el
-  [Mapa de Ajustes](/docs/cuenta/mapa-de-ajustes).
-- **Configurar con IA** (`/app/setup`) se abre desde **Ajustes › General**.
+Arriba de todo está tu espacio de trabajo: un cuadro con la inicial de la organización
+(o su logo, si lo subiste), la etiqueta **Espacio de trabajo** y el nombre de la
+organización activa. Al pulsarlo se abre un menú para:
+
+- **cambiar de espacio de trabajo** entre las organizaciones a las que perteneces;
+- **Crear espacio de trabajo**;
+- abrir **Configuración del equipo** (Ajustes › Equipo y Roles);
+- activar o desactivar el **Entorno de prueba** (ver [Entorno de prueba](#entorno-de-prueba));
+- **Cerrar sesión**.
+
+Todo lo que ves debajo (contadores, fijados, datos) pertenece a la organización que
+muestra el selector.
+
+### Fijados
+
+**Fijados** es un grupo propio, arriba de las secciones, con las páginas que tú elegiste
+tener a un clic: un cliente con el que trabajas todos los días, un informe concreto o una
+factura que estás persiguiendo.
+
+<Steps>
+1. Abre la página que quieres fijar.
+2. Pulsa el botón de chincheta junto al título de la página (**Fijar en el menú**) o
+   presiona <kbd>X</kbd>. Cord confirma con "Fijado en el menú" y la página aparece al
+   final del grupo **Fijados**.
+3. Para quitarla, vuelve a pulsar la chincheta (o <kbd>X</kbd>) desde esa misma página, o
+   pasa el cursor sobre el fijado y pulsa la **X** que aparece a su derecha.
+</Steps>
+
+- **Nombre e icono.** El fijado toma el título de la página y el icono de la sección a la
+  que pertenece: un cliente fijado lleva el icono de Clientes; una factura, el de
+  Facturas. Si la página no pertenece a ninguna sección del menú (por ejemplo, una
+  pestaña de Ajustes), lleva una chincheta.
+- **Cada informe cuenta por separado.** En **Informes**, cada informe (Resumen,
+  Finanzas, Flujo de caja…) se fija como una página distinta.
+- **Reordenar.** En escritorio, arrastra un fijado arriba o abajo de otro.
+- **Máximo 12.** Si fijas uno más, se quita el primero de la lista.
+- **Te siguen a todas partes.** Se guardan por usuario y por organización: los ves igual
+  en otra computadora, en otro navegador o en el teléfono, pero cada organización tiene
+  los suyos y tus compañeros no ven los tuyos.
+- El grupo **Fijados** solo aparece cuando tienes al menos uno.
+
+### Secciones del menú
+
+La primera parte del menú es una lista sin encabezado con lo que se usa a diario. Debajo
+vienen tres grupos con título. Cada sección tiene un atajo de teclado <kbd>G</kbd> y una
+letra (ver [Atajos de teclado](#atajos-de-teclado)).
+
+| Grupo | Elemento | Atajo | Ruta | Para qué sirve |
+|---|---|---|---|---|
+| — | **Inicio** | <kbd>G</kbd> <kbd>D</kbd> | `/app` | KPIs, pipeline, actividad reciente y pendientes de seguimiento. Guía: [Inicio y vistas](/docs/gestion/dashboard). |
+| — | **Cotizaciones** | <kbd>G</kbd> <kbd>C</kbd> | `/app/cotizaciones` | Crear, buscar, filtrar, editar, duplicar, enviar e imprimir. Guía: [Gestión de cotizaciones](/docs/gestion/cotizaciones). |
+| — | **Clientes** | <kbd>G</kbd> <kbd>L</kbd> | `/app/clientes` | Directorio, importación CSV, condiciones comerciales, datos fiscales, crédito y estado de cuenta. Guía: [Clientes y estado de cuenta](/docs/gestion/clientes). |
+| — | **Productos** | <kbd>G</kbd> <kbd>P</kbd> | `/app/productos` | Catálogo, precios por volumen, importación CSV y la pestaña **Kits**. Guía: [Importa tu catálogo](/docs/cuenta/catalogo). |
+| — | **Tareas** | <kbd>G</kbd> <kbd>T</kbd> | `/app/tareas` | Pendientes del equipo por responsable y fecha límite, con filtros, edición y completadas. Guía: [Tareas y seguimiento](/docs/gestion/tareas). |
+| Ingresos | **Facturas** | <kbd>G</kbd> <kbd>F</kbd> | `/app/facturas` | Emitir, consultar, exportar y dar seguimiento a facturas; incluye las recurrentes (Profesional o superior). Guía: [Facturas](/docs/pagos/facturas-emitidas). |
+| Ingresos | **Cobros** | <kbd>G</kbd> <kbd>O</kbd> | `/app/cobros` | Cobros, depósitos, saldos, reembolsos y disputas. Guía: [Dashboard de cobros](/docs/pagos/dashboard). |
+| Ingresos | **Cobranza** | <kbd>G</kbd> <kbd>B</kbd> | `/app/cobranza` | Cartera por cobrar, antigüedad de saldos y exposición por cliente (Profesional o superior). Guía: [Cartera y seguimiento](/docs/pagos/cartera-cobranza). |
+| Ingresos | **Agente IA** (dentro de Cobranza) | — | `/app/cobranza/agente` | Configurar y supervisar el agente de cobranza con IA (Pro, Scale o Developer). Guía: [Cobranza autónoma (IA)](/docs/pagos/cobranza-ia). |
+| Análisis | **Informes** | <kbd>G</kbd> <kbd>A</kbd> | `/app/informes` | Resumen, diagnóstico comercial, finanzas, flujo, cobranza, clientes y productos. Guía: [Informes y desempeño](/docs/gestion/informes). |
+| Análisis | **Desempeño** | <kbd>G</kbd> <kbd>E</kbd> | `/app/desempeno` | Desempeño del equipo: resultados atribuidos a quien creó o duplicó cada cotización. Guía: [Desempeño por vendedor](/docs/gestion/informes#desempeño-por-vendedor). |
+| Automatización | **Workflows** | <kbd>G</kbd> <kbd>W</kbd> | `/app/workflows` | Automatizaciones "cuando pase esto, haz esto", ideas listas e historial de ejecuciones. Guía: [Cord Workflows](/docs/automatizacion/workflows). |
+
+En escritorio, si dejas el cursor medio segundo sobre una sección, aparece su atajo a la
+derecha (por ejemplo <kbd>G</kbd> <kbd>C</kbd>), salvo cuando ese lugar lo ocupa un
+contador.
+
+La sección en la que estás se marca con un fondo tintado y texto en azul marino; al
+pasar el cursor por las demás aparece un tinte más tenue que nunca tapa ni mueve a la
+activa. Cuando estás dentro de una página de una sección (el detalle de un cliente, una
+factura concreta), su sección queda resaltada.
+
+### Contadores
+
+Tres secciones muestran un número a la derecha cuando hay algo que atender. No cuentan
+historial: cuentan lo que está pendiente ahora mismo, en la organización activa.
+
+| Sección | Qué cuenta | Color |
+|---|---|---|
+| **Cotizaciones** | Cotizaciones que tu cliente ya **vio** y todavía no aprueba ni rechaza (estado *Vista*). Es el mismo número que el indicador **Por dar seguimiento** del Inicio. | Gris |
+| **Tareas** | Tareas pendientes **tuyas o sin responsable** que vencen **hoy** o ya **vencieron**. "Hoy" es el día en la zona horaria de tu negocio. Las tareas de otros miembros no cuentan. | Gris; naranja si alguna ya venció |
+| **Cobranza** | Cuentas **vencidas** de tu cartera: facturas por cobrar y cotizaciones aprobadas cuya fecha de pago ya pasó. Una cotización que ya tiene su factura por cobrar se cuenta una sola vez. | Naranja |
+
+- Si no hay nada pendiente, el contador no aparece.
+- Por encima de 99 se muestra **99+**.
+- Al pasar el cursor, el contador explica qué cuenta, por ejemplo "3 cotizaciones vistas,
+  sin responder", "2 cuentas vencidas" o "4 tareas para hoy o vencidas".
+- Los contadores se recalculan cada vez que abres una página.
+
+### Agente IA, dentro de Cobranza
+
+**Agente IA** es una sub-página de **Cobranza**, no una sección aparte. Aparece debajo de
+Cobranza, con sangría y una guía vertical, solo cuando estás en **Cobranza** o en el
+propio agente; en el resto de la app, la fila de Cobranza ocupa una sola línea. La página
+del agente se titula **Agente de cobranza**.
+
+Para llegar desde cualquier lugar: entra a **Cobranza** (<kbd>G</kbd> <kbd>B</kbd>) y
+pulsa **Agente IA**, o escribe "cobranza" en el [menú de comandos](#menú-de-comandos).
+
+### Grupos plegables
+
+**Ingresos**, **Análisis** y **Automatización** se pliegan y despliegan con un clic en
+su título. El título va en gris y en letra normal; la flecha aparece al pasar el cursor o
+cuando el grupo está plegado.
+
+- **Se recuerdan.** Los grupos que pliegas se guardan en tu usuario: siguen plegados al
+  cambiar de página, al volver otro día y en otro dispositivo.
+- **Se abren solos si estás dentro.** Si entras a una página de un grupo plegado (por
+  ejemplo, con <kbd>G</kbd> <kbd>F</kbd> con **Ingresos** plegado), el grupo se muestra
+  abierto para que veas dónde estás.
+- La lista de accesos diarios (Inicio a Tareas) no tiene título y no se pliega.
+
+### Pie del menú
+
+| Elemento | Qué hace | Cuándo aparece |
+|---|---|---|
+| **Cotizaciones activas** | Medidor con tus cotizaciones activas contra el tope de tu plan (por ejemplo, "4 / 5"), una barra y el enlace **Mejorar plan**, que abre **Ajustes › Planes y suscripción**. Cuentan como activas las cotizaciones en borrador, enviadas, vistas y aprobadas. La barra es azul marino, se vuelve ámbar desde el 80 % y roja al llegar al límite. | Solo en planes con tope de cotizaciones activas: Gratis (5) y Starter (50). |
+| **Invitar al equipo** | Abre **Ajustes › Equipo y Roles** con el formulario de invitación ya abierto. | Solo si tienes el permiso **Equipo** y tu plan incluye más de un usuario (Pro o superior). |
+| Botón de contraer | El icono de panel a la derecha. Contrae el menú a una columna de iconos o lo vuelve a expandir. Atajo: <kbd>[</kbd>. | Siempre en escritorio. |
+
+### Menú contraído
+
+Con el botón del pie o la tecla <kbd>[</kbd>, el menú se reduce a una columna angosta de
+iconos y deja más espacio al contenido. Vuelve a pulsar el botón (o <kbd>[</kbd>) para
+expandirlo.
+
+- Se ven todas las secciones, aunque tengas grupos plegados; los grupos se separan con
+  una línea corta.
+- **Contadores como punto.** Cada contador se vuelve un punto sobre el icono: gris para
+  Cotizaciones y Tareas, rojo para Cobranza o para Tareas con vencidas.
+- **Etiqueta al pasar el cursor.** Cada icono muestra a su derecha el nombre de la
+  sección, la explicación del contador (si tiene) y su atajo, por ejemplo "Cotizaciones ·
+  3 cotizaciones vistas, sin responder · G C". También aparece al recorrer el menú con
+  <kbd>Tab</kbd>.
+- El selector de organización queda como el cuadro con la inicial, centrado.
+- El medidor de cotizaciones activas se oculta e **Invitar al equipo** queda como icono.
+- Contraído o expandido se recuerda **en ese navegador**.
+
+### Al cambiar de página
+
+- En Chrome, Edge y Safari 18.2 o posterior, el menú se queda quieto y solo el contenido
+  se funde al cambiar de página. En otros navegadores la página cambia sin transición.
+- Al pasar el cursor por una sección del menú, Cord empieza a cargarla, así que abre más
+  rápido al hacer clic.
+- El menú conserva su posición de desplazamiento entre páginas.
+
+### En el teléfono
+
+En pantallas de 880 px o menos, el menú lateral se abre con el botón de menú (tres
+líneas) a la izquierda de la barra superior, como un panel sobre la página. Se cierra
+al elegir una página, al tocar fuera de él o con <kbd>Esc</kbd>.
+
+Arriba trae tres filas grandes que en escritorio viven en la barra superior:
+
+- **Ayuda**: abre el Centro de ayuda.
+- **Tema**: muestra el modo actual (**Claro**, **Oscuro** o **Sistema**) y lo cambia al
+  siguiente con cada toque.
+- **Configuración**: abre **Ajustes**.
+
+Debajo vienen tus fijados y las mismas secciones, con filas de 44 px para el dedo y un
+solo desplazamiento. En el teléfono no hay menú contraído, no se muestran atajos ni
+etiquetas flotantes, y la **X** para quitar un fijado se ve siempre. Para fijar una
+página nueva, hazlo desde escritorio: el botón de chincheta no aparece en el teléfono.
 
 ## Barra superior
 
-| Elemento | Qué hace |
+La barra superior flota sobre el contenido, con el mismo material que el menú lateral.
+De izquierda a derecha:
+
+| Elemento | Qué hace | Cuándo aparece |
+|---|---|---|
+| Botón de menú | Abre el menú lateral como panel. | Solo en el teléfono. |
+| **Buscar…** | Abre el [menú de comandos](#menú-de-comandos). Muestra <kbd>⌘K</kbd> en Mac y <kbd>Ctrl K</kbd> en Windows y Linux. | Siempre. En el teléfono se reduce a una lupa. |
+| **Guía de configuración** | Píldora con un anillo y tu porcentaje de avance. Al pulsarla vuelve a abrir el widget **Configura Cord**. Consulta [Crea tu cuenta](/docs/cuenta/crear-cuenta). | Mientras tu configuración inicial no esté completa y hayas minimizado el widget. En el teléfono solo se ve el anillo. |
+| **Crear** | Botón azul marino con **+**: abre el menú para crear (ver [Crear](#crear)). | Si tienes al menos un permiso para crear algo. En el teléfono es un círculo con **+**. |
+| **Aplicaciones** | Tus integraciones y las que puedes conectar (ver [Aplicaciones](#aplicaciones)). | Solo con permiso **Ajustes**. |
+| **Notificaciones** | La campana, con el número de novedades sin leer (ver [Notificaciones](#notificaciones)). | Siempre. |
+| **Ayuda** | Abre el **Centro de ayuda**. | En escritorio. En el teléfono, desde el menú lateral. |
+| **Tema** | Cambia entre claro, oscuro y sistema (ver [Tema](#tema)). | En escritorio. En el teléfono, desde el menú lateral. |
+| **Ajustes** | El engrane abre el índice de **Ajustes** y se ve tintado mientras estás en Ajustes. Consulta el [Mapa de Ajustes](/docs/cuenta/mapa-de-ajustes). | En escritorio. En el teléfono, **Configuración** en el menú lateral. |
+
+Los iconos de la barra no se animan: al pasar el cursor solo cambia su fondo.
+
+Debajo de la barra está el encabezado de cada página: su título, el botón de chincheta
+para fijarla y, a la derecha, las acciones propias de esa página (por ejemplo,
+**Personalizar** en el Inicio).
+
+### Crear
+
+El menú **Crear** tiene hasta cinco opciones, cada una con su tecla:
+
+| Opción | Tecla | Qué abre | Permiso necesario |
+|---|---|---|---|
+| **Cotización** | <kbd>C</kbd> | El editor de una cotización nueva. | Cotizaciones |
+| **Factura** | <kbd>F</kbd> | El editor de una factura nueva. | Cotizaciones |
+| **Cliente** | <kbd>L</kbd> | Clientes, con el formulario de cliente nuevo abierto. | Clientes |
+| **Producto** | <kbd>P</kbd> | Productos, con el formulario de producto nuevo abierto. | Productos |
+| **Tarea** | <kbd>T</kbd> | **Nueva tarea**, una ventana rápida con el título y la fecha límite, sin salir de la página. | Cotizaciones, Cobranza o Clientes |
+
+- Cada opción aparece solo si tu rol tiene su permiso, y su tecla solo funciona si la
+  opción aparece. Si no tienes ninguno, el botón **Crear** no se muestra.
+- Las letras son las mismas que <kbd>G</kbd> y letra usa para ir a esa sección:
+  <kbd>C</kbd> crea una cotización y <kbd>G</kbd> <kbd>C</kbd> va a Cotizaciones.
+- Las teclas funcionan en cualquier pantalla de escritorio aunque el menú esté cerrado.
+
+### Aplicaciones
+
+El botón **Aplicaciones** (icono de cuadrícula con un **+**) muestra al lado los logos
+de hasta dos integraciones conectadas. Al abrirlo ves **Tus integraciones**: primero las
+conectadas, luego las disponibles, con una acción por fila: **Abrir**, **Revisar** (si
+una conexión necesita atención), **Conectar** o **Próximamente**. Al pie,
+**Explorar integraciones** abre **Ajustes › Integraciones**. Solo lo ve quien tiene el
+permiso **Ajustes**, porque es quien puede conectar algo.
+
+### Notificaciones
+
+La campana avisa lo que hizo **tu cliente** y el dinero que **entró**, en cotizaciones y
+facturas: vistas, aprobaciones, rechazos, contraofertas, mensajes, abonos y pagos. Tus
+propias acciones no la encienden. Muestra un número con las novedades sin leer (de 1 a 9;
+a partir de 10, **9+**), y al abrirla ves las 15 más recientes, **Marcar como leídas** y
+**Ver toda la actividad**. Lo leído se guarda en tu usuario, así que no reaparece en otro
+dispositivo. Detalle completo en [Notificaciones](/docs/gestion/notificaciones#la-campana-de-la-barra-superior).
+
+### Ayuda
+
+El icono de ayuda abre el **Centro de ayuda**, un panel lateral con buscador de
+artículos, **Atajos de teclado**, **Guía de uso**, **Contactar soporte**,
+**Preguntas frecuentes** y el asistente **Cord AI**, que responde dudas sobre cómo usar
+la plataforma.
+
+### Tema
+
+El botón de tema muestra el icono del modo **actual**: sol para **Claro**, luna para
+**Oscuro** y monitor para **Sistema**. Cada clic pasa al siguiente: Claro → Oscuro →
+Sistema → Claro.
+
+- **Sistema** sigue en vivo la preferencia de tu sistema operativo: si tu computadora
+  cambia a modo oscuro al anochecer, Cord cambia con ella.
+- El modo predeterminado es **Claro**.
+- Tu elección se recuerda **en ese navegador**; en el teléfono se cambia desde la fila
+  **Tema** del menú lateral.
+
+### Uso con teclado
+
+Los menús de la barra se abren de uno en uno: abrir uno cierra el que estuviera abierto.
+**Crear** y **Aplicaciones** se recorren con teclado: <kbd>Enter</kbd>,
+<kbd>Espacio</kbd> o <kbd>↓</kbd> sobre el botón entran al menú; <kbd>↑</kbd>,
+<kbd>↓</kbd>, <kbd>Inicio</kbd> y <kbd>Fin</kbd> se mueven entre opciones;
+<kbd>Esc</kbd> cierra el menú y regresa el foco al botón. Un clic fuera del menú también
+lo cierra.
+
+## Menú de comandos
+
+El menú de comandos busca en tu organización y te lleva a cualquier sección sin usar el
+mouse. Se abre con **Buscar…** en la barra superior, con <kbd>⌘K</kbd> en Mac o
+<kbd>Ctrl K</kbd> en Windows y Linux, o con <kbd>/</kbd>. En el teléfono, toca la lupa.
+
+**Con el buscador vacío** muestra:
+
+- **Recientes:** las últimas 5 páginas que abriste desde el menú de comandos, guardadas en
+  ese navegador.
+- **Ir a:** las secciones de la app, cada informe por separado y cada pestaña de Ajustes
+  (por ejemplo "Ajustes · Impuestos"). Las secciones que tienen atajo lo muestran a la
+  derecha (<kbd>G</kbd> <kbd>C</kbd>, <kbd>G</kbd> <kbd>B</kbd>…).
+- **Acciones:** **Armar con IA** (abre una cotización nueva, <kbd>C</kbd>),
+  **Nueva factura** (<kbd>F</kbd>), **Nuevo cliente** (<kbd>L</kbd>),
+  **Nuevo producto** (<kbd>P</kbd>), **Nueva tarea** (<kbd>T</kbd>, abre la misma
+  ventana rápida que **Crear › Tarea**) y **Ver sitio público**. Si tu rol no tiene el
+  permiso para crear algo, la acción correspondiente no podrá completarse.
+
+**Al escribir** filtra las secciones y acciones, y a partir de dos letras busca también
+en tus datos:
+
+| Grupo | Busca por | Al elegirlo abre | Contexto que muestra |
+|---|---|---|---|
+| **Cotizaciones** | Folio o nombre del cliente | El detalle de la cotización | Estado y total en la divisa de la cotización, por ejemplo "Vista · USD 1,200.00". |
+| **Facturas** | Folio o nombre del cliente | El detalle de la factura | Estado y total en la divisa de la factura, por ejemplo "Por cobrar · EUR 3,480.00". Estados: Borrador, Por cobrar, Pagada, Anulada e Incobrable. |
+| **Clientes** | Nombre o RFC / identificador fiscal | La ficha del cliente | — |
+| **Productos** | Nombre o SKU | La ficha del producto | El SKU junto al nombre. |
+
+- Cada grupo muestra hasta 6 resultados, de lo más reciente a lo más antiguo
+  (clientes y productos, en orden alfabético).
+- **Facturas** solo aparece si tienes el permiso **Cobranza**, el mismo que pide la
+  lista de facturas.
+- Las pestañas de Ajustes también se encuentran por sinónimos: "IVA", "VAT", "NIF",
+  "RFC", "CSD", "SAML" o "DNS" llevan a la pestaña que los configura.
+
+**Para moverte:** <kbd>↑</kbd> y <kbd>↓</kbd> recorren los resultados, <kbd>Enter</kbd>
+abre el seleccionado y <kbd>Esc</kbd> cierra el menú y regresa el foco a donde estabas.
+
+## Atajos de teclado
+
+Los atajos funcionan en escritorio, en cualquier pantalla de la app, siempre que no
+estés escribiendo en un campo. Presiona <kbd>?</kbd> para ver el panel de atajos; solo
+lista los de crear que tu rol permite.
+
+| Tecla | Acción |
 |---|---|
-| **Buscar…** (`⌘K` o `Ctrl+K`) | Abre la paleta para buscar cotizaciones, clientes, productos y pestañas de Ajustes, o ejecutar un comando. |
-| **Guía de configuración** | Mientras tu cuenta no esté completa, muestra tu porcentaje de avance y abre el widget **Configura Cord**. Consulta [Crea tu cuenta](/docs/cuenta/crear-cuenta). |
-| **Crear** | Menú para crear **Cotización**, **Factura**, **Cliente**, **Producto** o **Tarea**. Solo muestra lo que tus permisos permiten. |
-| **Aplicaciones** | Para quien tiene permiso Ajustes: qué apps están conectadas y cuáles puedes conectar, sin salir de la pantalla. |
-| **Notificaciones** | Panel de actividad reciente con **Marcar como leídas** y **Ver toda la actividad**. Un punto indica novedades. Guía: [Notificaciones](/docs/gestion/notificaciones). |
-| **Ayuda** | **Centro de ayuda** con buscador, atajos de teclado, guía de uso, contacto con soporte, preguntas frecuentes y el asistente Cord AI. |
-| **Tema** | Alterna entre modo claro y oscuro. |
-| **Ajustes** | Abre el índice de Ajustes. |
+| <kbd>⌘K</kbd> / <kbd>Ctrl K</kbd>, o <kbd>/</kbd> | Buscar / menú de comandos |
+| <kbd>C</kbd> | Crear cotización |
+| <kbd>F</kbd> | Crear factura |
+| <kbd>L</kbd> | Crear cliente |
+| <kbd>P</kbd> | Crear producto |
+| <kbd>T</kbd> | Crear tarea |
+| <kbd>G</kbd> luego <kbd>D</kbd> | Ir a Inicio |
+| <kbd>G</kbd> luego <kbd>C</kbd> | Ir a Cotizaciones |
+| <kbd>G</kbd> luego <kbd>L</kbd> | Ir a Clientes |
+| <kbd>G</kbd> luego <kbd>P</kbd> | Ir a Productos |
+| <kbd>G</kbd> luego <kbd>T</kbd> | Ir a Tareas |
+| <kbd>G</kbd> luego <kbd>F</kbd> | Ir a Facturas |
+| <kbd>G</kbd> luego <kbd>O</kbd> | Ir a Cobros |
+| <kbd>G</kbd> luego <kbd>B</kbd> | Ir a Cobranza |
+| <kbd>G</kbd> luego <kbd>A</kbd> | Ir a Informes |
+| <kbd>G</kbd> luego <kbd>E</kbd> | Ir a Desempeño |
+| <kbd>G</kbd> luego <kbd>W</kbd> | Ir a Workflows |
+| <kbd>[</kbd> | Contraer o expandir el menú lateral |
+| <kbd>X</kbd> | Fijar o quitar la página actual del menú |
+| <kbd>?</kbd> | Mostrar u ocultar el panel de atajos |
+| <kbd>Esc</kbd> | Cerrar el menú o diálogo abierto |
 
-### Atajos de teclado
-
-En escritorio puedes usar estos atajos cuando no estás escribiendo en un campo. En
-pantallas menores a 880 px están desactivados y todo se hace con botones visibles.
-
-| Atajo | Acción |
-|---|---|
-| `⌘K` / `Ctrl+K` o `/` | Abrir la búsqueda |
-| `C` | Nueva cotización |
-| `F` | Nueva factura |
-| `T` | Nueva tarea |
-| `G` y luego `D`, `C`, `L`, `P`, `T`, `B`, `A` o `F` | Ir a Inicio, Cotizaciones, Clientes, Productos, Tareas, Cobranza, Informes o Facturas |
-| `X` | Fijar o quitar la página actual del menú |
-| `?` | Mostrar u ocultar la ayuda de atajos |
+- **<kbd>G</kbd> y letra** se teclean uno después del otro, no a la vez: presiona
+  <kbd>G</kbd>, suéltala y presiona la letra en el siguiente segundo.
+- Las teclas de crear respetan permisos: si la opción no aparece en tu menú **Crear**, su
+  tecla no hace nada.
+- En pantallas de 880 px o menos los atajos están desactivados y todo se hace con
+  botones visibles.
 
 El editor de cotizaciones y facturas (`/app/cotizaciones/nueva` y `/app/facturas/nueva`,
 también para borradores con `?draft=` y versiones nuevas con `?version=`) tiene atajos
-propios: ahí `/` lleva al buscador del catálogo, `⌘ Enter` envía o emite y `⌘ S` guarda
-el borrador; `⌘K` sigue abriendo la búsqueda. Ver [Vista previa y
-envío](/docs/cotizacion/envio).
-
-En el teléfono, el menú lateral se abre como panel e incluye accesos a **Ayuda** y
-**Configuración**.
+propios: ahí <kbd>/</kbd> lleva al buscador del catálogo, <kbd>⌘ Enter</kbd> envía o
+emite y <kbd>⌘ S</kbd> guarda el borrador; <kbd>⌘K</kbd> sigue abriendo la búsqueda. Ver
+[Vista previa y envío](/docs/cotizacion/envio).
 
 <Callout type="info">
 Las opciones visibles dependen de tus **permisos**, tu **plan efectivo**, el **país de
@@ -134,6 +409,8 @@ Qué tener en cuenta:
 - Algunas acciones reales no están disponibles en prueba: contratar o cambiar de plan,
   conectar un dominio propio y aplicar una propuesta de **Configurar con IA**.
 - Los documentos de prueba no consumen cuota de tu plan.
+- La campana de notificaciones no muestra contador de novedades dentro del entorno de
+  prueba.
 
 Guía para integraciones: [Entornos de prueba](/docs/desarrolladores/empezar/pruebas).
 
@@ -174,15 +451,23 @@ selector de organización antes de importar, emitir o cambiar configuración.
 El dueño siempre tiene acceso total. Los demás miembros reciben presets o permisos por
 sección:
 
-- **Cotizaciones:** crear, editar, enviar y duplicar.
+- **Cotizaciones:** crear, editar, enviar y duplicar. Muestra **Cotización** y **Factura**
+  en el menú **Crear**.
 - **Aprobaciones:** aprobar descuentos, montos o cambios controlados.
-- **Cobranza:** consultar y gestionar cuentas por cobrar.
-- **Clientes** y **Productos:** modificar sus directorios.
-- **Analítica:** abrir Informes y Equipo (desempeño).
-- **Ajustes:** cambiar la configuración del negocio.
+- **Cobranza:** consultar y gestionar cuentas por cobrar. También decide si el menú de
+  comandos encuentra facturas.
+- **Clientes** y **Productos:** modificar sus directorios. Cada uno muestra su opción en
+  el menú **Crear**.
+- **Informes:** abrir Informes y Desempeño.
+- **Ajustes:** cambiar la configuración del negocio. Muestra el botón **Aplicaciones** de
+  la barra superior.
 - **Configurar cobros:** modificar Cord Payments y la cuenta receptora.
 - **Reembolsos:** iniciar devoluciones de cobros conciliados.
-- **Equipo:** invitar personas y cambiar permisos.
+- **Equipo:** invitar personas y cambiar permisos. En Pro o superior muestra
+  **Invitar al equipo** al pie del menú lateral.
+
+Crear tareas (**Crear › Tarea** y la tecla <kbd>T</kbd>) requiere Cotizaciones, Cobranza
+o Clientes, cualquiera de los tres.
 
 Si una acción no aparece, revisa primero el permiso del miembro; después, el plan y la
 configuración que pide esa función.

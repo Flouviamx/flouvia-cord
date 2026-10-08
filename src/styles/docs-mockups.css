@@ -217,81 +217,129 @@
 .dm-browser-bar { padding-right: calc(14px + var(--dm-bleed)); }
 
 /* ── Shell de la app (chrome full / topbar / none) ───────────────────────── */
+/* Escala: el marco dm dibuja la app al ~86 % (filas de 30 → 26 px, sidebar de
+   232 → 196 px). Las proporciones son las de Sidebar.astro y AppLayout.astro. */
 .dm-app {
   flex: 1 0 auto;
   display: grid;
-  grid-template-columns: 200px minmax(0, 1fr);
+  grid-template-columns: 206px minmax(0, 1fr);
   align-items: start;
 }
 .dm-app.dm-no-sidebar { grid-template-columns: minmax(0, 1fr); }
 .dm-main { min-width: 0; display: flex; flex-direction: column; }
 
-/* Sidebar: pill blanca como la de la app (sin blur; regla 31). */
+/* Sidebar: pill blanca como la de la app (sin blur; regla 31). Con alto fijo
+   del escenario (--dm-h) se queda del alto de la pantalla, como la sticky real,
+   para que el pie se vea aunque el contenido siga hacia abajo. */
 .dm-sidebar {
   margin: 10px 0 10px 10px;
-  padding: 9px 7px 10px;
-  border-radius: 16px;
+  padding: 11px 8px 9px;
+  border-radius: 18px;
   background: var(--dm-surface);
   box-shadow: var(--dm-shadow-pill);
   align-self: stretch;
+  max-height: calc(var(--dm-h, 100000px) - var(--dm-inset) - 21px);
   min-width: 0;
-}
-.dm-sb-org {
+  min-height: 0;
   display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 5px 6px 9px;
-  margin-bottom: 7px;
-  border-bottom: 1px solid var(--dm-border);
+  flex-direction: column;
+  overflow: hidden;
 }
+
+/* Selector de organización (CustomOrgSwitcher): avatar navy, eyebrow, nombre y
+   chevron; debajo, una línea que se desvanece en los extremos. */
+.dm-sb-org { position: relative; padding-bottom: 7px; margin-bottom: 6px; flex-shrink: 0; }
+.dm-sb-org::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--dm-border) 25%, var(--dm-border) 75%, transparent);
+}
+.dm-sb-org-btn { display: flex; align-items: center; gap: 9px; padding: 6px 7px; border-radius: 10px; min-width: 0; }
 .dm-sb-org-av {
-  width: 26px;
-  height: 26px;
-  border-radius: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
   flex-shrink: 0;
   display: grid;
   place-items: center;
-  background: #13294a;
+  background: linear-gradient(135deg, #1b3a64, #0a192f);
   color: #fff;
-  font-size: 11px;
+  font-size: 11.5px;
   font-weight: 700;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.25), inset 0 0 0 0.5px rgba(255, 255, 255, 0.12), 0 3px 8px -3px rgba(10, 25, 47, 0.4);
 }
 .dm-sb-org-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; }
-.dm-sb-org-eyebrow { font-size: 8.5px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--dm-label); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.dm-sb-org-name { font-size: 11.5px; font-weight: 600; color: var(--dm-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.dm-sb-org .dm-ico { width: 13px; height: 13px; color: var(--dm-faint); flex-shrink: 0; }
-.dm-sb-group + .dm-sb-group { margin-top: 9px; }
-.dm-sb-label { padding: 2px 8px 3px; font-size: 10.5px; font-weight: 500; color: var(--dm-label); }
-.dm-sb-item {
+.dm-sb-org-eyebrow { font-size: 8.25px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--dm-label); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dm-sb-org-name { font-size: 11.75px; font-weight: 600; line-height: 1.2; color: var(--dm-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dm-sb-org-btn > .dm-ico { width: 13px; height: 13px; color: var(--dm-label); flex-shrink: 0; }
+
+/* Menú: grupos con 10 px de aire. En la app el contenedor de Fijados existe
+   aunque esté vacío, así que la lista plana siempre lleva ese aire arriba. */
+.dm-sb-nav { flex: 1 1 auto; min-height: 0; overflow: hidden; display: flex; flex-direction: column; }
+.dm-sb-group { display: flex; flex-direction: column; gap: 1px; }
+.dm-sb-group + .dm-sb-group,
+.dm-sb-nav:not(.has-pins) > .dm-sb-group:first-child { margin-top: 10px; }
+.dm-sb-label {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 3px;
+  padding: 3px 8.5px;
+  margin-bottom: 1px;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--dm-label);
+  white-space: nowrap;
+}
+.dm-sb-label .dm-ico { width: 9.5px; height: 9.5px; opacity: 0.8; transform: rotate(-90deg); }
+.dm-sb-group.is-folded .dm-sb-in-group,
+.dm-sb-group.is-folded .dm-sb-sub { display: none; }
+
+/* Ítem: fila de 26 px (30 en la app). Activo = tinte fijo; hover = otro más tenue. */
+.dm-sb-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8.5px;
   height: 26px;
-  padding: 0 6px 0 8px;
+  padding: 0 7px 0 8.5px;
   border-radius: 7px;
-  font-size: 12px;
+  font-size: 11.6px;
   font-weight: 500;
   letter-spacing: -0.005em;
   color: var(--dm-muted);
   white-space: nowrap;
+  flex-shrink: 0;
 }
 .dm-sb-item .dm-ico { width: 14px; height: 14px; flex-shrink: 0; opacity: 0.62; }
 .dm-sb-item-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.dm-sb-item.is-hover { background: var(--dm-hover); color: var(--dm-text); }
+.dm-sb-item.is-hover .dm-ico { opacity: 0.9; }
+.dm-sb-item.is-section { color: var(--dm-text); }
 .dm-sb-item.is-active { background: var(--dm-active); color: var(--dm-navy); }
-.dm-sb-item.is-active .dm-ico { opacity: 1; }
-.dm-sb-sub { position: relative; padding-left: 19px; }
-.dm-sb-sub::before { content: ''; position: absolute; left: 14px; top: 3px; bottom: 3px; width: 1px; background: var(--dm-border); }
+.dm-sb-item.is-active .dm-ico,
+.dm-sb-item.is-section .dm-ico { opacity: 1; }
+
+/* Sub-páginas (Cobranza › Agente IA): sangría, guía vertical y sin icono. */
+.dm-sb-sub { position: relative; display: flex; flex-direction: column; gap: 1px; padding-left: 20px; }
+.dm-sb-sub::before { content: ''; position: absolute; left: 14.5px; top: 3px; bottom: 3px; width: 1px; background: var(--dm-border); }
 .dm-sb-sub .dm-sb-item { padding-left: 10px; }
 .dm-sb-sub .dm-ico { display: none; }
+
+/* Contador: solo lo accionable. Gris; vencidas en tinte naranja, no rojo sólido. */
 .dm-sb-badge {
-  min-width: 16px;
-  height: 16px;
+  flex-shrink: 0;
+  min-width: 15.5px;
+  height: 15.5px;
   padding: 0 4px;
   border-radius: 5px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 10px;
+  font-size: 9.5px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   color: var(--dm-muted);
@@ -299,46 +347,143 @@
 }
 .dm-sb-badge.is-danger { color: #c2410c; background: rgba(234, 88, 12, 0.1); }
 
-/* Rail colapsado: iconos centrados en cuadros de 36×30, contadores como punto. */
-.dm-app.dm-has-rail { grid-template-columns: 58px minmax(0, 1fr); }
-.dm-sidebar.is-rail { padding: 9px 6px 10px; }
-.dm-sidebar.is-rail .dm-sb-org { justify-content: center; padding: 3px 0 9px; }
-.dm-sidebar.is-rail .dm-sb-org-text,
-.dm-sidebar.is-rail .dm-sb-org .dm-ico,
-.dm-sidebar.is-rail .dm-sb-item-label,
-.dm-sidebar.is-rail .dm-sb-sub { display: none; }
-.dm-sidebar.is-rail .dm-sb-label { height: 1px; padding: 0; margin: 0 8px 8px; background: var(--dm-border); font-size: 0; }
-.dm-sidebar.is-rail .dm-sb-item { position: relative; justify-content: center; padding: 0; height: 30px; margin-bottom: 2px; }
-.dm-sidebar.is-rail .dm-sb-item .dm-ico { width: 15px; height: 15px; }
-.dm-sidebar.is-rail .dm-sb-badge { position: absolute; top: 6px; right: 8px; min-width: 0; width: 6px; height: 6px; padding: 0; border-radius: 50%; font-size: 0; background: var(--dm-navy); opacity: 0.55; }
-.dm-sidebar.is-rail .dm-sb-badge.is-danger { background: #ea580c; opacity: 1; }
+/* Atajo G + letra: en la app aparece al detenerse sobre el ítem. */
+.dm-sb-keys { display: inline-flex; gap: 2px; flex-shrink: 0; }
+.dm-sb-keys i,
+.dm-tip-keys i {
+  font-style: normal;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 3px;
+  border-radius: 3.5px;
+  font-size: 8.5px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--dm-label);
+  background: rgba(10, 25, 47, 0.07);
+}
 
-/* Topbar: pill blanca con buscador, Crear e iconos. */
+/* Fijados: la X para quitar solo se dibuja en el cajón móvil (en escritorio es hover). */
+.dm-sb-pin-x { display: none; }
+
+/* Pie: medidor del plan (Gratis/Starter) o Invitar al equipo (Pro+), y colapsar. */
+.dm-sb-foot { display: flex; flex-direction: column; gap: 7px; padding-top: 8px; flex-shrink: 0; }
+.dm-sb-plan { display: flex; flex-direction: column; gap: 5px; padding: 8px 8.5px; border-radius: 9px; background: var(--dm-hover); }
+.dm-sb-plan-top { display: flex; justify-content: space-between; gap: 7px; font-size: 10.25px; color: var(--dm-muted); white-space: nowrap; }
+.dm-sb-plan-count { color: var(--dm-text); font-weight: 600; font-variant-numeric: tabular-nums; }
+.dm-sb-plan-bar { height: 3.5px; border-radius: 2px; background: rgba(10, 25, 47, 0.07); overflow: hidden; }
+.dm-sb-plan-bar > span { display: block; width: var(--dm-pct, 0%); height: 100%; border-radius: inherit; background: var(--dm-navy); }
+.dm-sb-plan.is-warn .dm-sb-plan-bar > span { background: #d97706; }
+.dm-sb-plan.is-full .dm-sb-plan-bar > span { background: var(--dm-danger); }
+.dm-sb-plan-cta { font-size: 10.25px; font-weight: 600; color: var(--dm-navy); }
+.dm-sb-foot-row { display: flex; align-items: center; justify-content: flex-end; }
+.dm-sb-invite { flex: 1; min-width: 0; display: flex; align-items: center; gap: 7px; height: 24px; padding: 0 7px; border-radius: 7px; font-size: 10.75px; font-weight: 500; color: var(--dm-muted); white-space: nowrap; }
+.dm-sb-invite .dm-ico { width: 13px; height: 13px; opacity: 0.62; }
+.dm-sb-invite span { overflow: hidden; text-overflow: ellipsis; }
+.dm-sb-toggle { margin-left: auto; width: 24px; height: 24px; border-radius: 7px; flex-shrink: 0; display: grid; place-items: center; color: var(--dm-muted); }
+.dm-sb-toggle .dm-ico { width: 15.5px; height: 15.5px; }
+
+/* Filas del cajón móvil (Ayuda, Tema, Configuración): solo las muestra el CSS
+   del mockup que dibuja el cajón (DmAppMap en angosto). */
+.dm-sb-mobile { display: none; flex-direction: column; gap: 6px; margin-bottom: 12px; flex-shrink: 0; }
+.dm-sb-mrow { display: flex; align-items: center; gap: 11px; min-height: 38px; padding: 0 12px; border-radius: 12px; background: var(--dm-hover); font-size: 12.5px; font-weight: 500; color: var(--dm-text); }
+.dm-sb-mrow .dm-ico { width: 17px; height: 17px; opacity: 0.85; }
+.dm-sb-mrow-val { margin-left: auto; font-size: 11.5px; color: var(--dm-muted); }
+
+/* Rail colapsado (68 px en la app → 54 aquí): iconos centrados en cuadros de
+   32×29, separadores cortos entre grupos y contadores como punto. */
+.dm-app.dm-has-rail { grid-template-columns: 64px minmax(0, 1fr); }
+.dm-sidebar.is-rail { padding: 11px 0 9px; }
+.dm-sidebar.is-rail .dm-sb-org { display: flex; justify-content: center; padding-bottom: 11px; margin-bottom: 6px; }
+.dm-sidebar.is-rail .dm-sb-org::after { left: 50%; right: auto; width: 14px; margin-left: -7px; background: var(--dm-border); }
+.dm-sidebar.is-rail .dm-sb-org-btn { width: 31px; height: 31px; padding: 0; justify-content: center; }
+.dm-sidebar.is-rail .dm-sb-org-text,
+.dm-sidebar.is-rail .dm-sb-org-btn > .dm-ico,
+.dm-sidebar.is-rail .dm-sb-label,
+.dm-sidebar.is-rail .dm-sb-item-label,
+.dm-sidebar.is-rail .dm-sb-keys,
+.dm-sidebar.is-rail .dm-sb-plan,
+.dm-sidebar.is-rail .dm-sb-invite span { display: none; }
+.dm-sidebar.is-rail .dm-sb-nav { align-items: center; }
+.dm-sidebar.is-rail .dm-sb-nav:not(.has-pins) > .dm-sb-group:first-child { margin-top: 0; }
+.dm-sidebar.is-rail .dm-sb-group { width: 100%; align-items: center; }
+/* En el rail se ven todos los ítems: plegar un grupo es cosa del menú ancho. */
+.dm-sidebar.is-rail .dm-sb-group.is-folded .dm-sb-in-group { display: flex; }
+.dm-sidebar.is-rail .dm-sb-group + .dm-sb-group { position: relative; margin-top: 7px; padding-top: 7px; }
+.dm-sidebar.is-rail .dm-sb-group + .dm-sb-group::before { content: ''; position: absolute; top: 0; left: 50%; width: 14px; margin-left: -7px; height: 1px; background: var(--dm-border); }
+.dm-sidebar.is-rail .dm-sb-item { width: 32px; height: 29px; padding: 0; gap: 0; justify-content: center; border-radius: 8.5px; }
+.dm-sidebar.is-rail .dm-sb-item .dm-ico { width: 15px; height: 15px; }
+.dm-sidebar.is-rail .dm-sb-sub { padding-left: 0; align-items: center; }
+.dm-sidebar.is-rail .dm-sb-sub::before { display: none; }
+.dm-sidebar.is-rail .dm-sb-sub .dm-sb-item { padding: 0; }
+.dm-sidebar.is-rail .dm-sb-sub .dm-ico { display: block; }
+.dm-sidebar.is-rail .dm-sb-badge {
+  position: absolute;
+  top: 5px;
+  right: 5.5px;
+  min-width: 0;
+  width: 6px;
+  height: 6px;
+  padding: 0;
+  border-radius: 50%;
+  font-size: 0;
+  background: var(--dm-muted);
+  box-shadow: 0 0 0 1.5px var(--dm-surface);
+}
+.dm-sidebar.is-rail .dm-sb-badge.is-danger { background: var(--dm-danger); }
+.dm-sidebar.is-rail .dm-sb-foot-row { flex-direction: column; align-items: center; gap: 3px; }
+.dm-sidebar.is-rail .dm-sb-invite { flex: none; width: 31px; height: 27px; padding: 0; justify-content: center; }
+.dm-sidebar.is-rail .dm-sb-toggle { margin-left: 0; }
+
+/* Tooltip del rail (#sbTip): etiqueta · contador · G + letra. */
+.dm-tip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 7px 5px 9px;
+  border-radius: 7px;
+  background: #0f1a2b;
+  color: #fff;
+  font-size: 10.75px;
+  font-weight: 500;
+  white-space: nowrap;
+  box-shadow: 0 10px 28px -10px rgba(0, 0, 0, 0.5), inset 0 0 0 0.5px rgba(255, 255, 255, 0.08);
+}
+.dm-tip-sub { color: rgba(255, 255, 255, 0.6); }
+.dm-tip-keys { display: inline-flex; gap: 2px; }
+.dm-tip-keys i { color: rgba(255, 255, 255, 0.8); background: rgba(255, 255, 255, 0.14); }
+
+/* Topbar: pill blanca (mismo material que la sidebar en la app). */
 .dm-topbar {
+  position: relative;
+  z-index: 3;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 9px;
   margin: 10px 10px 0;
-  padding: 5px 6px 5px 8px;
-  border-radius: 16px;
+  padding: 6px 7px 6px 10px;
+  border-radius: 17px;
   background: var(--dm-surface);
   box-shadow: var(--dm-shadow-pill);
   min-width: 0;
 }
-.dm-tb-burger { display: none; align-items: center; justify-content: center; width: 28px; height: 28px; color: var(--dm-text); flex-shrink: 0; }
+.dm-tb-burger { display: none; align-items: center; justify-content: center; width: 32px; height: 32px; margin-left: -5px; color: var(--dm-text); flex-shrink: 0; }
 .dm-tb-burger .dm-ico { width: 17px; height: 17px; }
 .dm-tb-search {
-  flex: 0 1 240px;
+  flex: 0 1 310px;
   min-width: 0;
   display: flex;
   align-items: center;
-  gap: 7px;
-  height: 30px;
-  padding: 0 7px 0 10px;
+  gap: 8px;
+  height: 31px;
+  padding: 0 8px 0 11px;
   border-radius: 9px;
   background: var(--dm-soft);
   border: 1px solid var(--dm-border);
-  font-size: 12px;
+  font-size: 11.6px;
   color: var(--dm-muted);
 }
 .dm-tb-search .dm-ico { width: 13px; height: 13px; color: var(--dm-label); flex-shrink: 0; }
@@ -347,7 +492,7 @@
   display: inline-flex;
   align-items: center;
   font-family: var(--dm-font);
-  font-size: 10px;
+  font-size: 9.5px;
   font-weight: 700;
   color: var(--dm-muted);
   background: #fff;
@@ -355,42 +500,96 @@
   border-radius: 5px;
   padding: 1px 5px;
   box-shadow: 0 1px 0 rgba(10, 25, 47, 0.06);
+  flex-shrink: 0;
 }
-.dm-tb-right { margin-left: auto; display: flex; align-items: center; gap: 4px; min-width: 0; }
+.dm-tb-right { margin-left: auto; display: flex; align-items: center; gap: 7px; min-width: 0; }
+.dm-tb-wrap { position: relative; display: inline-flex; flex-shrink: 0; }
 .dm-tb-create {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  height: 30px;
-  padding: 0 9px 0 8px;
+  gap: 6px;
+  height: 28.5px;
+  padding: 0 10px 0 9.5px;
   border-radius: 8px;
   background: var(--dm-navy);
   color: #fff;
-  font-size: 12px;
+  font-size: 11.75px;
   font-weight: 600;
   white-space: nowrap;
   box-shadow: 0 6px 18px -8px rgba(10, 25, 47, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.12);
-  margin-right: 2px;
+  flex-shrink: 0;
 }
 .dm-tb-create .dm-ico { width: 13px; height: 13px; }
-.dm-tb-create .dm-ico + span + .dm-ico { width: 10px; height: 10px; opacity: 0.7; }
-.dm-tb-icon { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 8px; color: var(--dm-muted); flex-shrink: 0; }
-.dm-tb-icon .dm-ico { width: 15px; height: 15px; }
+.dm-tb-create .dm-tb-caret { width: 10px; height: 10px; opacity: 0.7; }
+.dm-tb-create.is-open .dm-tb-caret { transform: rotate(180deg); }
+.dm-tb-icon { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 31px; height: 31px; border-radius: 8px; color: var(--dm-muted); flex-shrink: 0; }
+.dm-tb-icon .dm-ico { width: 14.5px; height: 14.5px; }
+.dm-tb-icon.is-open { background: var(--dm-active); color: var(--dm-text); }
+/* Engrane en Ajustes: el tinte de "aquí estás" de la sidebar. */
+.dm-tb-icon.is-active { background: var(--dm-active); color: var(--dm-navy); }
+/* Contador de la campana (no punto rojo): tinte navy, como los de la sidebar. */
+.dm-tb-count {
+  position: absolute;
+  top: 1.5px;
+  right: 1px;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 3.5px;
+  border-radius: 7px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8.75px;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--dm-navy);
+  background: #d8dade;
+  box-shadow: 0 0 0 1.5px var(--dm-surface);
+}
+
+/* Aplicaciones (TopbarApps): icono, o cápsula con logos conectados + punto verde. */
+.dm-tb-apps { display: inline-flex; align-items: center; justify-content: center; gap: 7px; width: 31px; height: 31px; border-radius: 8px; color: var(--dm-muted); flex-shrink: 0; }
+.dm-tb-apps > .dm-ico { width: 14.5px; height: 14.5px; }
+.dm-tb-apps.is-open { background: var(--dm-soft); color: var(--dm-navy); }
+.dm-tb-apps.has-apps { width: auto; height: 34px; padding: 0 11px 0 6px; border-radius: 999px; background: var(--dm-surface); box-shadow: inset 0 0 0 1px var(--dm-border); }
+.dm-tb-apps.has-apps.is-open { box-shadow: inset 0 0 0 1.5px var(--dm-navy); }
+.dm-tb-apps-logos { position: relative; display: inline-flex; flex-shrink: 0; }
+.dm-tb-apps-logos::after { content: ''; position: absolute; top: -2px; right: -2px; width: 7px; height: 7px; border-radius: 50%; background: var(--dm-ok); box-shadow: 0 0 0 2px var(--dm-surface); }
+.dm-tb-apps-chip { width: 22px; height: 22px; border-radius: 7px; overflow: hidden; display: grid; place-items: center; background: var(--dm-surface); box-shadow: 0 0 0 2px var(--dm-surface), inset 0 0 0 1px var(--dm-border); flex-shrink: 0; }
+.dm-tb-apps-chip + .dm-tb-apps-chip { margin-left: -6px; }
+.dm-tb-apps-chip img { display: block; width: 15px; height: 15px; object-fit: contain; }
+
+/* Lo que se abre bajo un botón de la topbar (menú Crear, campana, apps). */
+.dm-tb-pop { position: absolute; top: calc(100% + 7px); right: 0; z-index: 6; display: block; }
+.dm-tb-menu {
+  min-width: 200px;
+  padding: 5px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #ffffff, #fafbfe);
+  border: 1px solid rgba(10, 25, 47, 0.06);
+  box-shadow: 0 24px 60px -18px rgba(10, 25, 47, 0.42), 0 4px 12px rgba(10, 25, 47, 0.1);
+}
+.dm-tb-menu-item { display: flex; align-items: center; gap: 8.5px; padding: 7.5px 8.5px; border-radius: 8px; font-size: 11.75px; font-weight: 500; color: var(--dm-text); white-space: nowrap; }
+.dm-tb-menu-item .dm-ico { width: 14px; height: 14px; color: var(--dm-muted); }
+.dm-tb-menu-item:first-child { background: rgba(10, 25, 47, 0.06); }
+.dm-tb-menu-item:first-child .dm-ico { color: var(--dm-navy); }
+.dm-tb-menu-kbd { margin-left: auto; padding: 1px 5px; border-radius: 5px; border: 1px solid var(--dm-border); background: #fff; font-size: 9px; font-weight: 700; color: var(--dm-muted); }
 
 /* Píldora "Guía de configuración" con anillo de progreso (widget minimizado). */
 .dm-onb-pill {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  height: 30px;
+  gap: 7px;
+  height: 31px;
   padding: 0 10px 0 4px;
   border-radius: 999px;
   background: var(--dm-soft);
   border: 1px solid var(--dm-border);
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 600;
   white-space: nowrap;
-  margin-right: 2px;
+  flex-shrink: 0;
 }
 
 /* Anillo de progreso (pill y widget). --dm-ring: 0–100. */
@@ -661,12 +860,21 @@
 .dm-or::before, .dm-or::after { content: ''; flex: 1; height: 1px; background: rgba(10, 25, 47, 0.1); }
 
 /* ── Reflujo por ancho del contenedor (no del viewport) ───────────────────── */
+/* ≤ 640 px se dibuja como la app en el teléfono: sin sidebar (es un cajón),
+   hamburguesa, lupa, Crear en círculo, guía en su anillo; Ayuda, Tema y
+   Ajustes viven en el cajón. */
 @container dm (max-width: 640px) {
   .dm-app, .dm-app.dm-has-rail { grid-template-columns: minmax(0, 1fr); }
   .dm-sidebar { display: none; }
+  .dm-topbar { margin: 8px 8px 0; padding: 5px 7px; border-radius: 12px; gap: 6px; }
   .dm-tb-burger { display: inline-flex; }
-  .dm-tb-search { flex: 0 0 auto; padding: 0 8px; }
-  .dm-tb-search-label, .dm-tb-search .dm-kbd, .dm-tb-optional { display: none; }
+  .dm-tb-search { flex: 0 0 auto; width: 31px; height: 31px; padding: 0; gap: 0; justify-content: center; border: 0; background: transparent; }
+  .dm-tb-search .dm-ico { width: 15.5px; height: 15.5px; color: var(--dm-muted); }
+  .dm-tb-search-label, .dm-tb-search .dm-kbd, .dm-tb-desk, .dm-onb-pill-label { display: none; }
+  .dm-tb-create { width: 31px; height: 31px; padding: 0; justify-content: center; border-radius: 50%; }
+  .dm-tb-create span, .dm-tb-create .dm-tb-caret { display: none; }
+  .dm-onb-pill { padding: 3px; gap: 0; height: auto; }
+  .dm-tb-right { gap: 5px; }
 }
 @container dm (max-width: 520px) {
   .dm-stage { --dm-inset: 14px; --dm-bleed: 14px; border-radius: 16px; }
@@ -674,11 +882,7 @@
   .dm-v-phone { padding-top: 22px; }
   .dm-page-head { padding: 14px 14px 0; }
   .dm-content { padding: 12px 14px 18px; }
-  .dm-topbar { margin: 8px 8px 0; }
   .dm-h1 { font-size: 19px; }
-  .dm-tb-create span { display: none; }
-  .dm-tb-create { padding: 0 8px; }
-  .dm-tb-create .dm-ico + span + .dm-ico { display: none; }
   .dm-hide-narrow { display: none !important; }
 }
 

@@ -1,64 +1,153 @@
 ---
-// Sidebar de la app dentro de un mockup. Sale de la MISMA fuente que la real
-// (SIDEBAR_NAV + diccionario de la app): grupos, orden, iconos y nombres no se
-// copian a mano. La usa DocsMockup con chrome="full".
-import { SIDEBAR_NAV } from '../../../lib/sidebar-nav';
+// Sidebar de la app dentro de un mockup: calca de src/components/app/Sidebar.astro.
+//
+// Sale de la MISMA fuente que la real (SIDEBAR_NAV + diccionario de la app):
+// grupos, orden, iconos, atajos G + letra y nombres no se copian a mano. Los
+// fijados heredan el icono de su sección con sidebarIconFor(), la misma función
+// que usa la app. La usa DocsMockup con chrome="full" y DmAppMap directamente.
+//
+// De arriba a abajo, como la real: selector de organización (sin logo de Cord),
+// Fijados (si hay), lista plana, grupos con encabezado, y el pie con el medidor
+// del plan o "Invitar al equipo" y el botón de colapsar a la derecha.
+import { SIDEBAR_NAV, sidebarIconFor } from '../../../lib/sidebar-nav';
 import DmIcon from './DmIcon.astro';
-import { dmT, DEMO, type DmLang, type DmSidebarBadges } from './format';
+import { dmT, DEMO, type DmLang, type DmPin, type DmPlanMeter, type DmSidebarBadges } from './format';
 
 interface Props {
     lang: DmLang;
-    /** id de SIDEBAR_NAV activo: dashboard, cotizaciones, clientes, productos, facturas, cobros, cobranza, ai-ar, informes, desempeno, workflows. */
+    /** id de SIDEBAR_NAV activo: dashboard, cotizaciones, clientes, productos, tareas, facturas, cobros, cobranza, ai-ar, informes, desempeno, workflows. `ajustes` no marca nada (Ajustes vive en el engrane de la topbar). */
     active?: string;
     org?: string;
     /**
      * Contadores accionables, como en la app: cotizaciones vistas sin responder,
      * cuentas vencidas y tareas tuyas o sin dueño para hoy (`tareasVencidas` > 0
-     * lo pinta en rojo, igual que Sidebar.astro).
+     * lo pinta en tinte naranja, igual que Sidebar.astro).
      */
     badges?: DmSidebarBadges;
     /** Rail colapsado (68 px en la app): solo iconos; los contadores se vuelven un punto. */
     rail?: boolean;
+    /** Páginas fijadas por el miembro (máx. 12 en la app). */
+    pins?: DmPin[];
+    /** Pie: medidor "Cotizaciones activas n / m" + "Mejorar plan" (Gratis y Starter). */
+    plan?: DmPlanMeter;
+    /** Pie: "Invitar al equipo" (permiso de Equipo y plan con más de un asiento: Pro o superior). */
+    invite?: boolean;
+    /** id de un ítem con el cursor encima: tinte de hover y su atajo G + letra (si no tiene contador). */
+    hover?: string;
+    /** ids de grupos plegados (ingresos, analisis, automatizacion). Un grupo con la página activa se abre solo. */
+    folded?: string[];
+    /** Pinta también las filas del cajón móvil (Ayuda, Tema, Configuración) y la X de los fijados; las muestra el CSS del mockup que las use. */
+    mobile?: boolean;
 }
-const { lang, active = 'dashboard', org = DEMO.org, badges = {}, rail = false } = Astro.props;
+const {
+    lang, active = 'dashboard', org = DEMO.org, badges = {}, rail = false,
+    pins = [], plan, invite = false, hover, folded = [], mobile = false,
+} = Astro.props;
 const eyebrow = lang === 'en' ? 'Workspace' : 'Espacio de trabajo';
-const inSection = (it: (typeof SIDEBAR_NAV)[number]['items'][number]) => it.id === active || !!it.children?.some((c) => c.id === active);
+type NavItem = (typeof SIDEBAR_NAV)[number]['items'][number];
+const inSection = (it: NavItem) => it.id === active || !!it.children?.some((c) => c.id === active);
+const badgeOf = (it: NavItem) => {
+    const n = it.badge ? badges[it.badge] ?? 0 : 0;
+    if (n <= 0) return null;
+    const danger = it.badge === 'vencidas' || (it.badge === 'tareas' && (badges.tareasVencidas ?? 0) > 0);
+    return { text: n > 99 ? '99+' : String(n), danger };
+};
+const pct = plan ? Math.min(100, Math.round((plan.used / Math.max(1, plan.limit)) * 100)) : 0;
+const planTone = plan ? (plan.used >= plan.limit ? 'is-full' : pct >= 80 ? 'is-warn' : '') : '';
 ---
 <div class:list={['dm-sidebar', { 'is-rail': rail }]}>
     <div class="dm-sb-org">
-        <span class="dm-sb-org-av">{org.trim().charAt(0).toUpperCase()}</span>
-        <span class="dm-sb-org-text">
-            <span class="dm-sb-org-eyebrow">{eyebrow}</span>
-            <span class="dm-sb-org-name">{org}</span>
+        <span class="dm-sb-org-btn">
+            <span class="dm-sb-org-av">{org.trim().charAt(0).toUpperCase()}</span>
+            <span class="dm-sb-org-text">
+                <span class="dm-sb-org-eyebrow">{eyebrow}</span>
+                <span class="dm-sb-org-name">{org}</span>
+            </span>
+            <DmIcon name="chevron-down" />
         </span>
-        <DmIcon name="chevrons-updown" />
     </div>
-    {SIDEBAR_NAV.map((group) => (
-        <div class="dm-sb-group">
-            {group.label && <div class="dm-sb-label">{dmT(lang, group.label)}</div>}
-            {group.items.map((it) => {
-                const n = it.badge ? badges[it.badge] ?? 0 : 0;
-                const danger = it.badge === 'vencidas' || (it.badge === 'tareas' && (badges.tareasVencidas ?? 0) > 0);
-                return (
-                    <Fragment>
-                        <div class:list={['dm-sb-item', { 'is-active': it.id === active }]}>
-                            <DmIcon name={it.icon} />
-                            <span class="dm-sb-item-label">{dmT(lang, it.label)}</span>
-                            {n > 0 && <span class:list={['dm-sb-badge', { 'is-danger': danger }]}>{n}</span>}
-                        </div>
-                        {it.children && inSection(it) && (
-                            <div class="dm-sb-sub">
-                                {it.children.map((c) => (
-                                    <div class:list={['dm-sb-item', { 'is-active': c.id === active }]}>
-                                        <DmIcon name={c.icon} />
-                                        <span class="dm-sb-item-label">{dmT(lang, c.label)}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </Fragment>
-                );
-            })}
+
+    {mobile && (
+        <div class="dm-sb-mobile">
+            <span class="dm-sb-mrow"><DmIcon name="help" /><span>{dmT(lang, 'sidebar.ayuda')}</span></span>
+            <span class="dm-sb-mrow"><DmIcon name="sun" /><span>{dmT(lang, 'layout.tema')}</span><span class="dm-sb-mrow-val">{dmT(lang, 'layout.tema.claro')}</span></span>
+            <span class="dm-sb-mrow"><DmIcon name="gear" /><span>{dmT(lang, 'sidebar.configuracion')}</span></span>
         </div>
-    ))}
+    )}
+
+    <div class:list={['dm-sb-nav', { 'has-pins': pins.length > 0 }]}>
+        {pins.length > 0 && (
+            <div class="dm-sb-group dm-sb-pins">
+                <div class="dm-sb-label">{dmT(lang, 'sidebar.grupo.fijados')}</div>
+                {pins.map((p) => (
+                    <div class:list={['dm-sb-item', { 'is-active': p.active }]}>
+                        <DmIcon name={sidebarIconFor(p.href)} />
+                        <span class="dm-sb-item-label">{p.label}</span>
+                        {mobile && <span class="dm-sb-pin-x"><DmIcon name="x" stroke={2} /></span>}
+                    </div>
+                ))}
+            </div>
+        )}
+
+        {SIDEBAR_NAV.map((group) => {
+            const isFolded = !!group.label && folded.includes(group.id) && !group.items.some(inSection);
+            return (
+                <div class:list={['dm-sb-group', { 'is-folded': isFolded }]}>
+                    {group.label && (
+                        <div class="dm-sb-label">
+                            <span>{dmT(lang, group.label)}</span>
+                            {isFolded && <DmIcon name="chevron-down" stroke={2} />}
+                        </div>
+                    )}
+                    {group.items.map((it) => {
+                        const b = badgeOf(it);
+                        const isHover = hover === it.id && it.id !== active;
+                        return (
+                            <Fragment>
+                                <div class:list={['dm-sb-item', 'dm-sb-in-group', {
+                                    'is-active': it.id === active,
+                                    'is-section': inSection(it) && it.id !== active,
+                                    'is-hover': isHover,
+                                }]}>
+                                    <DmIcon name={it.icon} />
+                                    <span class="dm-sb-item-label">{dmT(lang, it.label)}</span>
+                                    {b && <span class:list={['dm-sb-badge', { 'is-danger': b.danger }]}>{b.text}</span>}
+                                    {!b && isHover && it.key && <span class="dm-sb-keys"><i>G</i><i>{it.key.toUpperCase()}</i></span>}
+                                </div>
+                                {it.children && inSection(it) && (
+                                    <div class="dm-sb-sub">
+                                        {it.children.map((c) => (
+                                            <div class:list={['dm-sb-item', 'dm-sb-in-group', { 'is-active': c.id === active }]}>
+                                                <DmIcon name={c.icon} />
+                                                <span class="dm-sb-item-label">{dmT(lang, c.label)}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </Fragment>
+                        );
+                    })}
+                </div>
+            );
+        })}
+    </div>
+
+    <div class="dm-sb-foot">
+        {plan && (
+            <div class:list={['dm-sb-plan', planTone]}>
+                <span class="dm-sb-plan-top">
+                    <span>{dmT(lang, 'set.plan.cotizaciones_activas')}</span>
+                    <span class="dm-sb-plan-count">{plan.used} / {plan.limit}</span>
+                </span>
+                <span class="dm-sb-plan-bar"><span style={`--dm-pct:${pct}%`}></span></span>
+                <span class="dm-sb-plan-cta">{dmT(lang, 'sidebar.plan.mejorar')}</span>
+            </div>
+        )}
+        <div class="dm-sb-foot-row">
+            {invite && (
+                <span class="dm-sb-invite"><DmIcon name="user-plus" /><span>{dmT(lang, 'sidebar.invitar')}</span></span>
+            )}
+            <span class="dm-sb-toggle"><DmIcon name="sidebar" /></span>
+        </div>
+    </div>
 </div>

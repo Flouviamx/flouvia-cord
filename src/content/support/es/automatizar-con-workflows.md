@@ -9,7 +9,7 @@ Un workflow es una regla: **cuando pase esto, haz esto**. Cord dispara el workfl
 
 ### Crear tu primer workflow
 
-1. Abre **Workflows** en el menú lateral y pulsa **Nuevo workflow**.
+1. Abre **Workflows** en el menú lateral (grupo **Automatización**; atajo `G` y luego `W`) y pulsa **Nuevo workflow**.
 2. Si es tu primer workflow, Cord te ofrece ideas listas (por ejemplo "Seguimiento si el cliente no abre"). Puedes empezar con una y modificarla.
 3. Elige el **disparador**: un evento de Cord, o un **horario fijo** ("cada lunes a las 9", en la zona horaria de tu cuenta). Además de lo que ya pasó, hay tres disparadores que se adelantan a una fecha —**Se acerca el vencimiento de una cotización**, **Se acerca el vencimiento de una factura** y **Una factura lleva días vencida**—: traen los días que faltan o que ya pasaron, y con una condición eliges el día exacto en que quieres actuar.
 4. Agrega pasos con **Agregar un paso**:

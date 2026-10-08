@@ -1,7 +1,7 @@
 ---
 title: "Notifications"
-seoTitle: "Cord notifications by email, Slack, and Microsoft Teams"
-description: "Which events alert you, when each one fires (including what counts as a view), which channel they arrive on, and what doesn't trigger an alert."
+seoTitle: "Cord notifications: the in-app bell, email, Slack, and Microsoft Teams"
+description: "What lights up the bell in the top bar (and what doesn't), how its counter and per-user read state work; which events alert you by email, Slack, or Teams, when each one fires (including what counts as a view), and what doesn't trigger an alert."
 lastUpdated: "2026-10-08"
 reviewedBy: "Cord product and operations"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
@@ -11,10 +11,98 @@ prerequisites: ["Settings permission to change the alert matrix", "Slack or Micr
 
 <header class="content-header">
   <h1 class="page-title">Notifications</h1>
-  <p class="page-subtitle">Find out by email, Slack, or Teams when your client decides something, without checking the app.</p>
+  <p class="page-subtitle">Find out when your client decides something or pays you: in the app's bell while you work, and by email, Slack, or Teams when you don't have it open.</p>
 </header>
 
 ## What it is
+
+Cord notifies you in two ways, independent of each other:
+
+| | The bell | Email, Slack, and Teams alerts |
+|---|---|---|
+| **Where** | In the app's top bar. | Outside the app: your email, a Slack channel, or a Teams channel. |
+| **What it includes** | What your client did and the money that came in, on quotes and invoices. | The 8 events in the **Settings › Notifications** matrix. |
+| **For whom** | Each member has their own "read" state. | Email goes to the account owner (the task reminder, to each assignee); Slack and Teams, to the connected channel. |
+| **Configured** | It isn't configured: it's always on. | With the matrix, per event and per channel. |
+
+Turning an event off in the matrix doesn't remove it from the bell, and reading the bell
+doesn't change what is sent by email, Slack, or Teams.
+
+## The bell in the top bar
+
+The bell sits in the top bar on every screen of the app, on desktop and on a phone. It
+gathers in one place what happened on your client's side so you don't have to open each
+quote or invoice.
+
+### What lights it up
+
+Only two kinds of things: **what your client did** and **the money that came in**. It
+covers quotes and invoices.
+
+| Source | Notification | When it appears |
+|---|---|---|
+| Quote | **Your client viewed the quote** | Your client opens the link (with the same rules as [what counts as a view](#what-counts-as-a-view)). |
+| Quote | **Quote approved** | Your client approves from the link. |
+| Quote | **Quote rejected** | Your client rejects from the link. |
+| Quote | **Counteroffer from your client** | Your client proposes another amount from the link. |
+| Quote | The message text | Your client writes in the quote's general chat. The notification shows their message (longer ones are trimmed). Comments on a line item don't reach the bell: you see them in the quote's conversation. |
+| Quote | **Payment received** | A payment for the quote comes in. |
+| Invoice | **Your client viewed the invoice** | Your client opens the invoice. |
+| Invoice | **Partial payment received** | A partial payment for the invoice comes in. |
+| Invoice | **Invoice paid** | The invoice is paid in full. |
+
+### What doesn't light it up
+
+**Nothing you or your team do**: sending a quote, editing a draft, creating a new
+version, marking it approved or rejected by hand, recording a payment by hand, issuing an
+invoice, or the reminders Cord sends automatically. Those actions stay in each
+document's activity, but they aren't news you need to act on.
+
+Opening your own link while signed in doesn't light it up either: Cord doesn't count it
+as a client view.
+
+### The counter
+
+A number appears on the bell with the notifications that arrived since the last time
+you opened it: from **1** to **9**, and **9+** from ten on. With nothing new, there's no
+number. The counter is calculated every time you open a page in the app.
+
+In the [Test environment](/en/docs/operacion/mapa-de-la-app#test-environment) the bell
+doesn't show a counter.
+
+### The panel
+
+Selecting the bell opens the **Notifications** panel with the **15 most recent** ones,
+newest first. Each one shows:
+
+- what happened (for example, **Quote approved**), with an icon in green for approvals
+  and payments, amber for views and counteroffers, and red for rejections;
+- the document number and the client (for example, "COT-0148 · Distribuidora El Zarco");
+- when it happened: "this minute", "5 min. ago", "3 hr. ago", "yesterday"; after a week,
+  the date in your business's time zone.
+
+The ones that arrived since you last opened the panel are **highlighted**. Select any of
+them to open its quote or invoice. If there is nothing, the panel says
+"No recent activity".
+
+### Reading and seeing everything
+
+- **Opening the bell marks it as seen.** The counter goes to zero as soon as you open the
+  panel; new ones stay highlighted while you have it open.
+- **Mark as read** removes the highlight from all of them without closing the panel.
+- **View all activity** takes you to the **Activity** widget on [Home](/en/docs/gestion/dashboard),
+  which shows the 7 most recent movements on your quotes, **including** your team's (sends,
+  for example). If you hid that widget, bring it back from the **Library** when you
+  customize Home.
+
+### Read per user, on all your devices
+
+What you've already seen is saved **to your user**, not to the browser: if you open the
+bell on your phone, those notifications no longer count as new on your computer. Each
+team member has their own read state: you opening the bell doesn't clear it for your
+teammates. If you work in several organizations, each one keeps its own read state.
+
+## Email, Slack, and Teams alerts
 
 In **Settings › Notifications › Notifications** there's a matrix of 8 events by 3
 channels (Email, Slack, and Teams). You check the boxes you want and they apply from
@@ -55,7 +143,7 @@ More in [What your client sees](/en/docs/interaccion/vista-del-cliente).
 
 ### What doesn't trigger an alert
 
-- **Messages, per-line comments, and counteroffers.** They stay in the conversation and in the bell on the top bar, but don't trigger email, Slack, or Teams. To receive them, create a [workflow](/en/docs/automatizacion/workflows/primer-workflow) with **A message is posted on a quote**.
+- **Messages, per-line comments, and counteroffers.** They stay in the conversation; general chat messages and counteroffers also appear in the [bell](#the-bell-in-the-top-bar) (per-line comments don't). None of them trigger email, Slack, or Teams. To receive them, create a [workflow](/en/docs/automatizacion/workflows/primer-workflow) with **A message is posted on a quote**.
 - **What your team does:** **Mark approved**, **Mark rejected**, and **Record payment** change the status but don't send these alerts.
 - **Internal approval requests:** they reach Slack with buttons to decide and Teams with a link to Cord, separately from this matrix (see [Internal approvals](/en/docs/cotizacion/aprobaciones-internas)).
 
@@ -126,8 +214,20 @@ is available from Starter (**Settings › Notifications › Email**).
 
 **Nothing arrives in Slack.** Check that the webhook URL is saved and the Slack column is checked for that event.
 
+**I sent a quote and the bell doesn't show it.** That's by design: the bell only shows
+what your client did or the money that came in. Your sends and changes are in the
+quote's activity and in the **Activity** widget on Home.
+
+**I already read my notifications and another tab still shows the number.** The counter
+is calculated when each page loads: in the other tab it updates as soon as you change
+pages or reload.
+
+**My teammate still sees the counter.** Read state is per user: opening the bell only
+marks it as seen for you.
+
 ## Related
 
+- [Complete app map](/en/docs/operacion/mapa-de-la-app)
 - [Chat and comments](/en/docs/interaccion/chat)
 - [Negotiation and counteroffers](/en/docs/interaccion/negociacion)
 - [Workflow triggers](/en/docs/automatizacion/workflows/disparadores)

@@ -66,7 +66,9 @@ The summary on the right shows the line and unit count, the subtotal, the discou
 
 - **⌘ Enter** (Ctrl + Enter on Windows): sends the quote or issues the invoice.
 - **⌘ S** (Ctrl + S): saves the draft.
-- **/**: jumps to the catalog search. **⌘ K** still opens the app-wide search.
+- **/**: jumps to the catalog search. **⌘ K** (Ctrl + K) still opens the app-wide search.
+
+Outside the editor, `C` opens a new quote and `F` a new invoice from any screen. Every app shortcut is in [Getting around Cord](/en/support/moverse-por-cord).
 
 ### On your phone
 

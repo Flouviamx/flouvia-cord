@@ -1,5 +1,5 @@
 ---
-// Mockup: Mi dinero › Cobros (/app/cobros) con una cuenta de cobros activa, en
+// Mockup: Ingresos › Cobros (/app/cobros) con una cuenta de cobros activa, en
 // el rango "Últimos 30 días".
 //
 // Calca de src/pages/app/cobros.astro: tres zonas (.cbr-zone) — "Tu dinero hoy"
@@ -64,14 +64,14 @@ const feePct = Math.round((FEE / COBRADO) * 1000) / 10;
 
 const DATA = {
     es: {
-        caption: `Mi dinero › Cobros de ${DEMO.org} en los últimos 30 días: saldo disponible de ${dmMoney(DISPONIBLE, CUR, 'es')} con ${dmMoney(EN_CAMINO, CUR, 'es')} en camino a su banco, la cuenta con cobros, depósitos y verificación en verde, los indicadores Cobrado, Neto depositado, Igualas activas y Disputas abiertas, y la gráfica Evolución del cobro.`,
+        caption: `Ingresos › Cobros de ${DEMO.org} en los últimos 30 días: saldo disponible de ${dmMoney(DISPONIBLE, CUR, 'es')} con ${dmMoney(EN_CAMINO, CUR, 'es')} en camino a su banco, la cuenta con cobros, depósitos y verificación en verde, los indicadores Cobrado, Neto depositado, Igualas activas y Disputas abiertas, y la gráfica Evolución del cobro.`,
         llegada: '9 oct 2026',
         ticks: ['9 sep', '16 sep', '23 sep', '30 sep', '7 oct'],
         actual: 'Este periodo',
         anterior: 'Periodo anterior',
     },
     en: {
-        caption: `${DEMO.org}'s My money › Collections over the last 30 days: an available balance of ${dmMoney(DISPONIBLE, CUR, 'en')} with ${dmMoney(EN_CAMINO, CUR, 'en')} on its way to the bank, the account with payments, payouts, and verification in green, the Collected, Net deposited, Active retainers, and Open disputes indicators, and the Collection over time chart.`,
+        caption: `${DEMO.org}'s Revenue › Payments over the last 30 days: an available balance of ${dmMoney(DISPONIBLE, CUR, 'en')} with ${dmMoney(EN_CAMINO, CUR, 'en')} on its way to the bank, the account with payments, payouts, and verification in green, the Collected, Net deposited, Active retainers, and Open disputes indicators, and the Collection over time chart.`,
         llegada: 'Oct 9, 2026',
         ticks: ['Sep 9', 'Sep 16', 'Sep 23', 'Sep 30', 'Oct 7'],
         actual: 'This period',

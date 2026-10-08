@@ -46,7 +46,7 @@ const DATA = {
 const d = pick(DATA, lang);
 const caption = Astro.props.caption ?? d.caption;
 ---
-<DocsMockup lang={lang} variant="app" chrome="full" sidebar="rail" active="" caption={caption} height={900} class="dm-plan-figure">
+<DocsMockup lang={lang} variant="app" chrome="full" sidebar="rail" active="ajustes" caption={caption} height={900} class="dm-plan-figure">
     <SetHead lang={lang} tab="plan" />
     <span class="plp-intro">{dmT(lang, 'set.plan.intro')}</span>
 

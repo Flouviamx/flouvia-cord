@@ -45,6 +45,6 @@ Zapier y Make no usan llaves: se conectan con un clic en una pantalla de Cord. C
 
 No hay rotación "en sitio" con periodo de gracia. Si una llave se filtró (ej. se subió por error a GitHub):
 
-1. Abre la pestaña **API** en el dock de Desarrolladores (actívalo en Ajustes > Empresa si no lo ves).
+1. Abre la pestaña **API** en el dock de Desarrolladores (si no lo ves, actívalo con el interruptor **Modo desarrollador** al fondo del índice de Ajustes).
 2. Crea una llave nueva y actualiza tus servidores con ella.
 3. **Revoca** la llave comprometida. La revocación es inmediata: cualquier petición con esa llave responderá `401`.

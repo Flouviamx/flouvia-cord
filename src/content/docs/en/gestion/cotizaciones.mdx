@@ -16,9 +16,17 @@ prerequisites: ["Quotes permission to create, edit, send, and delete drafts", "A
 
 ## What it is
 
-**Quotes**, in the main menu, gathers all your organization's quotes, newest first.
-From there you open each one's detail, where its actions, activity, conversation, and
-versions live.
+**Quotes**, in the sidebar (shortcut <kbd>G</kbd> <kbd>C</kbd>), gathers all your
+organization's quotes, newest first. From there you open each one's detail, where its
+actions, activity, conversation, and versions live. To create one from any screen, use
+**Create › Quote** in the top bar or the <kbd>C</kbd> key.
+
+**The sidebar counter.** The number next to **Quotes** in the sidebar counts the quotes
+your client already **viewed** and hasn't approved or rejected yet (*Viewed* status):
+the ones waiting for your follow-up. On hover it says, for example, "3 quotes viewed, no
+reply". It's the same number as the **Needs follow-up** KPI on
+[Home](/en/docs/gestion/dashboard); once the client approves or rejects, the quote stops
+counting.
 
 <DmQuotesIndex lang="en" view="list" />
 
@@ -27,7 +35,7 @@ versions live.
 - **View:** any member of the organization.
 - **Quotes permission:** create, continue editing, send, modify and resend, delete drafts, and reply in the conversation.
 - **Approvals permission:** mark approved or rejected, decide internal approvals, and record payment and issue the document from the detail.
-- **Plan:** all. The number of active quotes is capped on Free (5) and Starter (50).
+- **Plan:** all. The number of active quotes (draft, sent, viewed, or approved) is capped on Free (5) and Starter (50); on those plans, the **Active quotes** meter at the bottom of the sidebar shows how many you have.
 
 ## Find a quote
 
@@ -42,9 +50,13 @@ versions live.
 | **Paid** | Paid and Invoiced. |
 | **Closed** | Rejected and Expired. |
 
-**Search:** the list has no search box of its own. On desktop, open the command palette
-(⌘K on Mac, Ctrl+K on Windows) and type at least two characters of the quote number or
-the client's name; it shows up to 6 quotes, plus matching clients and products.
+**Search:** the list has no search box of its own. Open the
+[command menu](/en/docs/operacion/mapa-de-la-app#command-menu) with **Search…** in the top
+bar (on a phone, the magnifier), with <kbd>⌘K</kbd> on Mac, <kbd>Ctrl K</kbd> on Windows
+and Linux, or with <kbd>/</kbd>, and type at least two characters of the quote number or
+the client's name. It shows up to 6 quotes, each with its status and total in the quote's
+currency (for example, "Viewed · MX$1,200.00"), plus matching clients, products and, if
+you have the Collections permission, invoices.
 
 **From other screens:** the funnel and pipeline bars on Home open this list with the
 matching filter already applied.

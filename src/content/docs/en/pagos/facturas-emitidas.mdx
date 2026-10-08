@@ -15,14 +15,17 @@ prerequisites: ["Collections permission", "Client and issuer data", "Country-app
 
 ## Where to find invoices
 
-Open **Revenue › Invoices**. The inbox shows the invoice number, client, creation date, due date, total, balance, and operational status.
+In the sidebar, open **Revenue › Invoices** (on desktop, **G** then **F**). The inbox shows the invoice number, client, creation date, due date, total, balance, and operational status.
+
+From any screen you can also find it with the command menu (**⌘K** on Mac, **Ctrl K** on Windows and Linux, or **/** on desktop): type at least two letters of the number or the client and each invoice appears with its status (**Draft**, **Open**, **Paid**, **Void**, or **Uncollectible**) and its total in its currency. Invoices only show up there with the **Collections** permission, same as the inbox.
 
 Drafts do not have an official number yet. Cord labels them **No number** and adds a temporary `BOR-...` reference so you can recognize them. The sequential number is reserved only when you issue the invoice. Opening a draft from the inbox takes you straight to the editor.
 
 ## Create an invoice
 
-**New invoice** opens the same editor as quotes (see [Quote creation
-overview](/en/docs/cotizacion/resumen)), with invoice wording and its own step 3.
+**New invoice**, in the Invoices inbox, opens the same editor as quotes (see [Quote creation
+overview](/en/docs/cotizacion/resumen)), with invoice wording and its own step 3. You can also get there
+from any screen with **Create › Invoice** in the top bar or, on desktop, with the **F** key.
 
 <Steps>
 1. **Build with AI (optional).** The **Build the invoice with AI** block takes the order as text, a photo, or a PDF and fills the line items from your catalog (see [Cord AI](/en/docs/cotizacion/ia)).
@@ -40,7 +43,7 @@ lines, so the invoice total matches the sum of its rows.
 ### Draft saving and shortcuts
 
 - **A draft that's already saved saves itself** a few seconds after your last change (the summary says "Saved at …"). A new invoice is created as a draft the first time you click **Save and exit** or issue; until then, your browser keeps a local copy that Cord offers to **Restore** if you close without saving (it expires after 7 days).
-- On desktop, **⌘ Enter** (Ctrl Enter) opens the final review to issue and send, **⌘ S** (Ctrl S) saves the draft and exits, and **/** jumps to the catalog search. On a phone, a bar pinned to the bottom shows the **Total** and **Issue and send**.
+- On desktop, **⌘ Enter** (Ctrl Enter) opens the final review to issue and send, **⌘ S** (Ctrl S) saves the draft and exits, and **/** jumps to the catalog search (everywhere else in the app, `/` opens the command menu; inside the editor, open it with **⌘ K** or Ctrl K). On a phone, a bar pinned to the bottom shows the **Total** and **Issue and send**.
 - **Issue and send** needs the client to have an email. If they don't, Cord tells you ("This client has no email. Add one to their record or choose "Issue without sending".").
 - If an issuance failed with certainty, **Fix and retry** on the detail opens the same editor as **Fix** with the reserved number: you correct it and issue again keeping that number.
 

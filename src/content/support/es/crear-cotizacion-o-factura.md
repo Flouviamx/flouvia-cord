@@ -66,7 +66,9 @@ El resumen de la derecha muestra el conteo de líneas y unidades, el subtotal, l
 
 - **⌘ Enter** (Ctrl + Enter en Windows): envía la cotización o emite la factura.
 - **⌘ S** (Ctrl + S): guarda el borrador.
-- **/**: lleva al buscador del catálogo. **⌘ K** sigue abriendo la búsqueda general de la app.
+- **/**: lleva al buscador del catálogo. **⌘ K** (Ctrl + K) sigue abriendo la búsqueda general de la app.
+
+Fuera del editor, `C` abre una cotización nueva y `F` una factura nueva desde cualquier pantalla. Todos los atajos de la app están en [Muévete por Cord](/soporte/moverse-por-cord).
 
 ### En el celular
 

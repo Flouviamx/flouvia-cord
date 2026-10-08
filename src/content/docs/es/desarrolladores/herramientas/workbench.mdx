@@ -2,7 +2,7 @@
 title: "Cord Workbench"
 description: "El panel de desarrolladores de Cord — claves de API, webhooks, eventos, registros y salud de tu integración, todo en un dock que vive al fondo de la app."
 order: 1
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-08"
 reviewedBy: "Ingeniería de Cord"
 availablePlans: [Free, Starter, Pro, Scale, Developer]
 prerequisites: ["Modo desarrollador activo en Ajustes"]
@@ -26,11 +26,14 @@ movió aquí porque es lo que revisas mientras estás integrando.
 
 ## Activarlo
 
-1. Entra a **Ajustes** (el engrane de la barra superior) y baja hasta el final del índice de
-   categorías.
+1. Entra a **Ajustes**: el engrane del extremo derecho de la barra superior (en el celular,
+   **Configuración** en el menú lateral que abre el botón de menú). Ajustes no está en la barra lateral.
+   Baja hasta el final del índice de categorías.
 2. Activa el interruptor **"Modo desarrollador"**.
 3. Aparece una barra **"Desarrolladores"** pegada al borde inferior de la pantalla, visible en
-   toda la app. Haz clic para abrirla.
+   toda la app, con la tecla **W** a la derecha. Haz clic para abrirla.
+
+El Workbench solo aparece para quien tiene el permiso **Ajustes** en su rol.
 
 <Callout type="info">
 El Modo desarrollador es una preferencia de tu navegador (`localStorage`), no de tu cuenta —
@@ -51,7 +54,22 @@ actívalo en cada dispositivo desde el que trabajes.
   - **Mostrar las horas en UTC**: cambia el formato de todas las fechas del panel al instante
     (sin recargar nada). No afecta la zona horaria de tu cuenta, solo cómo se ven las fechas
     aquí — útil si tu backend registra todo en UTC y quieres comparar directo.
-  - Atajos de teclado y links a esta documentación y a la especificación OpenAPI.
+  - **Métodos abreviados de teclado** y links a esta documentación y a la especificación OpenAPI.
+
+### Atajos de teclado
+
+En escritorio, con el Modo desarrollador activo y sin estar escribiendo en un campo:
+
+| Tecla | Qué hace |
+|---|---|
+| **W** | Abre o cierra el Workbench. |
+| **⇧ W** | Pantalla completa. |
+| **Esc** | Cierra lo que esté abierto, de una capa a la vez: el menú de opciones, un asistente, la pantalla completa y, al final, el panel. |
+
+**W** sola es del Workbench; **G** y luego **W** es el atajo general de la app que lleva a
+Workflows. Los demás atajos de la app (**⌘K** o **Ctrl K**, **?** para la lista completa,
+**C**/**F**/**L**/**P**/**T** para crear) siguen funcionando con el panel abierto. En pantallas
+de 880 px o menos no hay atajos: el panel se abre tocando la barra y ocupa el ancho completo.
 
 ## Las pestañas
 

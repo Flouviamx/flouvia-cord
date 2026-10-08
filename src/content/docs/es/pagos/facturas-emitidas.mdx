@@ -15,14 +15,17 @@ prerequisites: ["Permiso Cobranza", "Cliente y datos del emisor", "Configuració
 
 ## Dónde encontrar tus facturas
 
-Abre **Ingresos › Facturas**. La bandeja muestra el folio, cliente, fecha de creación, vencimiento, total, saldo y estado operativo.
+En la barra lateral, abre **Ingresos › Facturas** (en escritorio, **G** y luego **F**). La bandeja muestra el folio, cliente, fecha de creación, vencimiento, total, saldo y estado operativo.
+
+Desde cualquier pantalla también la encuentras con el menú de comandos (**⌘K** en Mac, **Ctrl K** en Windows y Linux, o **/** en escritorio): escribe al menos dos letras del folio o del cliente y cada factura aparece con su estado (**Borrador**, **Por cobrar**, **Pagada**, **Anulada** o **Incobrable**) y su total en su divisa. Las facturas solo aparecen ahí con el permiso **Cobranza**, igual que la bandeja.
 
 Los borradores todavía no tienen folio oficial. Cord los identifica como **Sin folio** y les agrega una referencia temporal `BOR-...` para que puedas reconocerlos. El folio consecutivo se reserva únicamente al emitir. Al abrir un borrador desde la bandeja, Cord te lleva directo al editor.
 
 ## Crear una factura
 
-**Nueva factura** abre el mismo editor que las cotizaciones (ver [Resumen de creación
-de cotización](/docs/cotizacion/resumen)), con textos de factura y un paso 3 propio.
+**Nueva factura**, en la bandeja de Facturas, abre el mismo editor que las cotizaciones (ver [Resumen de creación
+de cotización](/docs/cotizacion/resumen)), con textos de factura y un paso 3 propio. También llegas desde
+cualquier pantalla con **Crear › Factura** en la barra superior o, en escritorio, con la tecla **F**.
 
 <Steps>
 1. **Arma con IA (opcional).** El bloque **Arma la factura con IA** acepta el pedido en texto, foto o PDF y llena los conceptos con tu catálogo (ver [Cord AI](/docs/cotizacion/ia)).
@@ -40,7 +43,7 @@ redondeadas, así que el total de la factura coincide con la suma de sus renglon
 ### Guardado del borrador y atajos
 
 - **Un borrador ya guardado se guarda solo** unos segundos después de tu último cambio (el resumen dice "Guardado a las …"). Una factura nueva se crea como borrador la primera vez que pulsas **Guardar y salir** o emites; mientras tanto, tu navegador guarda una copia local que Cord te ofrece **Recuperar** si cierras sin guardar (vence a los 7 días).
-- En escritorio, **⌘ Enter** (Ctrl Enter) abre la revisión final para emitir y enviar, **⌘ S** (Ctrl S) guarda el borrador y sale, y **/** lleva al buscador del catálogo. En el celular, una barra fija abajo muestra el **Total** y **Emitir y enviar**.
+- En escritorio, **⌘ Enter** (Ctrl Enter) abre la revisión final para emitir y enviar, **⌘ S** (Ctrl S) guarda el borrador y sale, y **/** lleva al buscador del catálogo (en el resto de la app, `/` abre el menú de comandos; dentro del editor, ábrelo con **⌘ K** o Ctrl K). En el celular, una barra fija abajo muestra el **Total** y **Emitir y enviar**.
 - **Emitir y enviar** necesita que el cliente tenga correo. Si no lo tiene, Cord te lo dice ("Este cliente no tiene correo. Agrégalo en su ficha o elige "Emitir sin enviar".").
 - Si una emisión falló con certeza, **Corregir y reintentar** en el detalle abre el mismo editor como **Corregir** con el folio reservado: corriges y vuelves a emitir conservando ese folio.
 

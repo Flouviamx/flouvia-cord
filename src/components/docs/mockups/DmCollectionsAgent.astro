@@ -1,5 +1,5 @@
 ---
-// Mockup: Cobranza con IA (/app/cobranza/agente) en modo "Requiere aprobación",
+// Mockup: Cobranza › Agente IA (/app/cobranza/agente) en modo "Requiere aprobación",
 // con un borrador en la bandeja que propone un plan de pago en cuotas.
 //
 // Calca de src/pages/app/cobranza/agente.astro: estado y botones de la topbar
@@ -28,7 +28,7 @@ const m = (n: number) => dmMoney(n, CUR, lang);
 
 const DATA = {
     es: {
-        caption: `Cobranza con IA de ${DEMO.org} en modo Requiere aprobación: los indicadores Recuperado por el agente, Esperan tu aprobación, Planes de pago activos y Correos enviados, y en la Bandeja de aprobación el borrador para Constructora Apex, vencida hace 18 días, con la etiqueta "Propone 3 cuotas de ${dmMoney(CUOTA, CUR, 'es')}" y los botones Aprobar y enviar, Regenerar, Descartar y No escribirle.`,
+        caption: `El Agente IA de Cobranza de ${DEMO.org} en modo Requiere aprobación: los indicadores Recuperado por el agente, Esperan tu aprobación, Planes de pago activos y Correos enviados, y en la Bandeja de aprobación el borrador para Constructora Apex, vencida hace 18 días, con la etiqueta "Propone 3 cuotas de ${dmMoney(CUOTA, CUR, 'es')}" y los botones Aprobar y enviar, Regenerar, Descartar y No escribirle.`,
         correo: [
             'Hola, Ing. Salgado:',
             `Gracias por su respuesta. Como lo comentamos, le propongo liquidar el saldo de ${dmMoney(SALDO, CUR, 'es')} de la cotización COT-0131 en 3 pagos mensuales: ${dmMoney(CUOTA, CUR, 'es')} hoy, ${dmMoney(CUOTA, CUR, 'es')} el 7 de noviembre y ${dmMoney(3333.34, CUR, 'es')} el 7 de diciembre.`,
@@ -39,7 +39,7 @@ const DATA = {
         otroCorreo: 'Hola, Sra. Ibarra: le escribo porque la cotización COT-0126 por',
     },
     en: {
-        caption: `${DEMO.org}'s AI Collections in Needs approval mode: the Recovered by the agent, Awaiting your approval, Active payment plans and Emails sent indicators, and in the Approval inbox the draft for Constructora Apex, 18 days overdue, labeled "Proposes 3 instalments of ${dmMoney(CUOTA, CUR, 'en')}", with the Approve and send, Regenerate, Discard and Don't email them buttons.`,
+        caption: `${DEMO.org}'s Collections AI agent in Needs approval mode: the Recovered by the agent, Awaiting your approval, Active payment plans and Emails sent indicators, and in the Approval inbox the draft for Constructora Apex, 18 days overdue, labeled "Proposes 3 instalments of ${dmMoney(CUOTA, CUR, 'en')}", with the Approve and send, Regenerate, Discard and Don't email them buttons.`,
         correo: [
             'Hello Mr. Salgado,',
             `Thank you for getting back to us. As discussed, I'd like to propose settling the ${dmMoney(SALDO, CUR, 'en')} balance on quote COT-0131 in 3 monthly payments: ${dmMoney(CUOTA, CUR, 'en')} today, ${dmMoney(CUOTA, CUR, 'en')} on November 7, and ${dmMoney(3333.34, CUR, 'en')} on December 7.`,

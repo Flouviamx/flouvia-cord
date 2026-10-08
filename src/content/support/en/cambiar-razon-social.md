@@ -19,7 +19,7 @@ This does not rewrite invoices already issued: each one keeps the issuer's detai
 
 If your company legally changed its tax identifier (a new RFC, or the equivalent in your country), do **not** edit the field on the live account. In Mexico in particular, the certificate you uploaded (CSD) is issued by the SAT under your previous RFC: if you only change the legal name text, the next invoice would still stamp with a certificate that no longer matches the declared tax ID. The right move is:
 
-1. Click your organization's name in the top left and select **Create workspace**. You can choose to create an **independent** account or one **nested** under the current organization, and the country where the new entity operates (Cord doesn't assume it's the same country as the original account).
+1. Open the workspace switcher at the top of the sidebar (your organization's name) and select **Create workspace**. You can choose to create an **independent** account or one **nested** under the current organization, and the country where the new entity operates (Cord doesn't assume it's the same country as the original account).
 2. Register the new entity's details there: tax identifier, legal name, and — if your country uses a signing certificate (CSD, exclusive to Mexico) — upload it in the new workspace.
 3. Contact support to transfer your current subscription plan to the new account, if you don't want to pay for two subscriptions in parallel.
 4. Export your client catalog from the previous account and import it into the new one.

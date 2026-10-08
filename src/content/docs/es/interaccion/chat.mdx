@@ -2,7 +2,7 @@
 title: "Chat y comentarios"
 seoTitle: "Chat de la cotización y comentarios por partida"
 description: "La conversación general y los hilos por partida dentro del link de la cotización: quién escribe, cómo respondes desde Cord, cuándo se ve en vivo y cómo enterarte de un mensaje."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-08"
 reviewedBy: "Producto y operaciones de Cord"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -61,7 +61,7 @@ Cord no manda correo, Slack ni Teams por cada mensaje o comentario del cliente.
 
 - **Pro, Scale y Developer:** con el detalle abierto, los mensajes llegan en vivo y aparece **Nuevo** en Conversación.
 - **Gratis y Starter:** recarga el detalle para ver mensajes nuevos.
-- **La campana de la barra superior** lista los 15 movimientos más recientes de tu organización, entre ellos "Nuevo mensaje del cliente" y "Contraoferta del cliente", con el folio y el cliente.
+- **La campana de la barra superior** (Notificaciones) reúne lo que hace el cliente y el dinero que entra, de cotizaciones y facturas, entre ellos "Nuevo mensaje del cliente" y "Contraoferta del cliente", con el folio y el cliente. Lleva un contador de lo que no has visto (de 1 a 9, luego "9+"), muestra las 15 más recientes y cada una abre su cotización. Tus propias respuestas no aparecen ahí.
 - **Cualquier plan:** crea un [workflow](/docs/automatizacion/workflows/primer-workflow) con el disparador **Llega un mensaje en una cotización** para recibir el aviso donde quieras (correo al equipo, Slack, Teams). El mismo evento llega a tus [webhooks](/docs/desarrolladores/herramientas/webhooks).
 
 ## Comportamiento y casos límite
@@ -69,7 +69,7 @@ Cord no manda correo, Slack ni Teams por cada mensaje o comentario del cliente.
 - **Mensajes de hasta 800 caracteres.**
 - **Al aprobar o rechazar,** el link deja de mostrar el campo para escribir y los botones de comentario; el historial se conserva en la cotización.
 - **La conversación no cambia la cotización.** Un mensaje no modifica precios ni estado. Para cambiar la propuesta usa **Modificar y reenviar**.
-- **El menú lateral no cuenta mensajes.** El número junto a **Cotizaciones** cuenta las cotizaciones enviadas o vistas que siguen esperando decisión, no los mensajes.
+- **La barra lateral no cuenta mensajes.** El número junto a **Cotizaciones** cuenta las cotizaciones que tu cliente ya vio y siguen sin respuesta, no los mensajes.
 
 ## Límites por plan
 

@@ -8,7 +8,7 @@ Before going live you'll want to test the flow (send a quote, collect, stamp) ri
 
 ### Turning on the Test environment
 
-Open the organization switcher (top left) and turn on **Test environment**. The app navigates to a 1:1 space with the same look as your account (branding, quote-number prefix, plan) but its own quotes, clients, products, and invoices — nothing you do there touches your real data. A persistent banner reminds you while you're inside.
+Open the workspace switcher at the top of the sidebar (on a phone, first open the menu with the three-line button in the top bar) and turn on **Test environment**. The app navigates to a 1:1 space with the same look as your account (branding, quote-number prefix, plan) but its own quotes, clients, products, and invoices — nothing you do there touches your real data. A persistent banner reminds you while you're inside.
 
 - **Clear test data:** from that same banner, "Clear test data" fully deletes the mirror organization (cascading); the next time you enter the test environment it's recreated clean.
 - **Test-mode API keys:** an `sk_test_...` key (**API** tab of the Developers dock, turn it on in Settings) automatically resolves against this same mirror organization — it doesn't consume your usage meter or count toward billing. See [Authentication and API Keys](/en/support/claves-api).

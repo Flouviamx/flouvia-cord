@@ -36,7 +36,7 @@ Aplica a cobros con **tarjeta** procesados por Cord Payments. Un SPEI o una tran
 3. Al abrir una disputa llegas a su página de evidencia, **Prepara una defensa clara**, con el monto, el estado y la **fecha límite** arriba.
 </Steps>
 
-Cord también agrega a [Tareas](/docs/gestion/tareas) la tarea "Responder contracargo" con el monto (en el idioma de tu cuenta), de prioridad alta, sin responsable, ligada a la cotización del cobro y con vencimiento el día, en la zona horaria de tu negocio, en que vence el plazo de evidencia. Sin responsable, el recordatorio por correo de esa tarea le llega al dueño de la cuenta. Como cualquier tarea, emite **Se crea una tarea** (`task.created`).
+Cord también agrega a [Tareas](/docs/gestion/tareas) la tarea "Responder contracargo" con el monto (en el idioma de tu cuenta), de prioridad alta, sin responsable, ligada a la cotización del cobro y con vencimiento el día, en la zona horaria de tu negocio, en que vence el plazo de evidencia. Sin responsable, el recordatorio por correo de esa tarea le llega al dueño de la cuenta, y el día del vencimiento la tarea entra en el número junto a **Tareas** en la barra lateral de cada miembro (en naranja si ya venció sin completarse). Como cualquier tarea, emite **Se crea una tarea** (`task.created`).
 
 Si usas la API o Workflows, Cord emite **Abren un contracargo** (`dispute.created`) y **Se cierra un contracargo** (`dispute.closed`, con el resultado). Ver [disparadores de Workflows](/docs/automatizacion/workflows/disparadores).
 

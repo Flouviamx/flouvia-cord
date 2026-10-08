@@ -5,10 +5,45 @@ const t = useTranslations(lang);
 const l = (p: string) => publicPath(p, lang);
 // Hero — estilo Stripe/Linear: gradient mesh sutil, mucho aire, tipografía grande,
 // mockup grande con glow. Manteniendo navy/Inter/serif-italic de Flouvia.
-// El mockup es una CALCA de la app real de hoy (light mode): sidebar clara con
-// grupos (Principal / Mi dinero / Inteligencia), breadcrumbs + page header,
-// stepper de estado del detalle y panel de actividad. Sin dots macOS.
-import { iconInner } from '../../lib/icons';
+// El mockup es una CALCA de la app real de hoy (light mode, oct 2026): sidebar
+// con selector de espacio + lista plana (Inicio … Tareas) y grupos Ingresos /
+// Análisis / Automatización, pie con "Invitar al equipo" + colapsar; topbar con
+// buscador ⌘K, Crear, Aplicaciones, campana con contador, ayuda, tema y engrane;
+// migas + page header, stepper de estado del detalle y panel de actividad.
+// Sin dots macOS.
+import { iconInner, type IconName } from '../../lib/icons';
+// Los textos del shell salen del MISMO diccionario que la app (como ClientView):
+// si la sidebar o la topbar cambian de nombre, el mockup no se queda atrás.
+import { t as tApp, type AppLocale, type AppStringKey } from '../../i18n/app';
+const A = (k: AppStringKey) => tApp(lang as AppLocale, k);
+
+// Espejo de SIDEBAR_NAV (src/lib/sidebar-nav.ts) en la pantalla que muestra el
+// mockup: el detalle de una cotización, así que el activo es Cotizaciones y la
+// sub-página "Agente IA" de Cobranza no se despliega (solo aparece estando en
+// Cobranza o en el Agente). Contadores: seguimiento (gris), tareas de hoy (gris)
+// y cuentas vencidas (tinte naranja), como getSidebarBadges().
+type MkItem = { label: AppStringKey; icon: IconName; active?: boolean; n?: number; danger?: boolean };
+const MK_NAV: { label: AppStringKey | null; items: MkItem[] }[] = [
+    { label: null, items: [
+        { label: 'sidebar.item.inicio', icon: 'overview' },
+        { label: 'sidebar.item.cotizaciones', icon: 'quote', active: true, n: 3 },
+        { label: 'sidebar.item.clientes', icon: 'clients' },
+        { label: 'sidebar.item.productos', icon: 'products' },
+        { label: 'sidebar.item.tareas', icon: 'checklist', n: 4 },
+    ] },
+    { label: 'sidebar.grupo.ingresos', items: [
+        { label: 'sidebar.item.facturas', icon: 'invoice' },
+        { label: 'sidebar.item.cobros', icon: 'coin' },
+        { label: 'sidebar.item.cobranza', icon: 'tray', n: 2, danger: true },
+    ] },
+    { label: 'sidebar.grupo.analisis', items: [
+        { label: 'sidebar.item.analitica', icon: 'chart' },
+        { label: 'sidebar.item.desempeno', icon: 'pulse' },
+    ] },
+    { label: 'sidebar.grupo.automatizacion', items: [
+        { label: 'sidebar.item.workflows', icon: 'workflow' },
+    ] },
+];
 ---
 
 <section class="hero">
@@ -43,10 +78,14 @@ import { iconInner } from '../../lib/icons';
     </div>
 
     <!-- ── MOCKUP (demo interactivo · calca de la app real) ──
-         Calca 1:1 del detalle de cotización de /app en modo claro, a ~0.8 de escala:
-         sidebar = src/components/app/Sidebar.astro (org switcher arriba, grupo plano +
-         "Mi dinero" + "Inteligencia", logo y toggle al pie); topbar y page-head =
-         AppLayout.astro (buscador ⌘K, Crear, iconos; migas + título + status pill);
+         Calca 1:1 del detalle de cotización de /app en modo claro, a ~0.84 de escala:
+         sidebar = src/components/app/Sidebar.astro (selector de espacio con línea
+         divisoria; lista plana Inicio / Cotizaciones / Clientes / Productos / Tareas;
+         grupos Ingresos, Análisis y Automatización; activo tintado; contadores
+         tintados; pie con "Invitar al equipo" y el botón de colapsar, sin logo);
+         topbar y page-head = AppLayout.astro (buscador ⌘K, Crear, Aplicaciones con
+         logos conectados, campana con contador, ayuda, tema en Claro, engrane;
+         migas + título + status pill);
          cuerpo = src/pages/app/cotizaciones/[id].astro (stepper de 5 pasos, d-head con
          total, tabla con unidad y precio de lista tachado, totales, Acciones + Actividad).
          El lienzo es #f5f5f7 como la app: el detalle no vive en una card. -->
@@ -65,74 +104,40 @@ import { iconInner } from '../../lib/icons';
         <div class="mockup-glow" aria-hidden="true"></div>
         <div class="mockup" aria-hidden="true">
             <div class="mk-body">
-                <!-- ── SIDEBAR (pill blanca flotante, igual que la app) ── -->
+                <!-- ── SIDEBAR (pill flotante, Sidebar.astro) ── -->
                 <aside class="mk-side">
                     <div class="mk-acct">
-                        <span class="mk-org-av">M</span>
-                        <span class="mk-org-txt">
-                            <span class="mk-org-eyebrow">{t("mk.org.eyebrow")}</span>
-                            <span class="mk-org-name">Materiales del Valle</span>
+                        <span class="mk-org-btn">
+                            <span class="mk-org-av">M</span>
+                            <span class="mk-org-txt">
+                                <span class="mk-org-eyebrow">{t("mk.org.eyebrow")}</span>
+                                <span class="mk-org-name">Materiales del Valle</span>
+                            </span>
+                            <svg class="mk-org-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-down')}></svg>
                         </span>
-                        <svg class="mk-org-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-down')}></svg>
                     </div>
 
                     <nav class="mk-nav">
-                        <div class="mk-grp">
-                            <span class="mk-navitem">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('grid')}></svg>
-                                <span class="mk-nav-l">{t("mk.nav.1")}</span>
-                            </span>
-                            <span class="mk-navitem active">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('document')}></svg>
-                                <span class="mk-nav-l">{t("mk.nav.2")}</span>
-                                <span class="mk-nav-badge">3</span>
-                            </span>
-                            <span class="mk-navitem">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('clients')}></svg>
-                                <span class="mk-nav-l">{t("mk.nav.3")}</span>
-                            </span>
-                            <span class="mk-navitem">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('products')}></svg>
-                                <span class="mk-nav-l">{t("mk.nav.4")}</span>
-                            </span>
-                        </div>
-
-                        <div class="mk-grp">
-                            <span class="mk-grp-label">{t("mk.grp.1")}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-down')}></svg></span>
-                            <span class="mk-navitem">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('document')}></svg>
-                                <span class="mk-nav-l">{t("mk.nav.5")}</span>
-                            </span>
-                            <span class="mk-navitem">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('coin')}></svg>
-                                <span class="mk-nav-l">{t("mk.nav.6")}</span>
-                            </span>
-                            <span class="mk-navitem">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('card')}></svg>
-                                <span class="mk-nav-l">{t("mk.nav.7")}</span>
-                                <span class="mk-nav-badge danger">2</span>
-                            </span>
-                            <span class="mk-navitem">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('cpu')}></svg>
-                                <span class="mk-nav-l">{t("mk.nav.8")}</span>
-                            </span>
-                        </div>
-
-                        <div class="mk-grp">
-                            <span class="mk-grp-label">{t("mk.grp.2")}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-down')}></svg></span>
-                            <span class="mk-navitem">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chart-line')}></svg>
-                                <span class="mk-nav-l">{t("mk.nav.9")}</span>
-                            </span>
-                            <span class="mk-navitem">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chart')}></svg>
-                                <span class="mk-nav-l">{t("mk.nav.10")}</span>
-                            </span>
-                        </div>
+                        {MK_NAV.map((g) => (
+                            <div class="mk-grp">
+                                {g.label && <span class="mk-grp-label">{A(g.label)}</span>}
+                                {g.items.map((it) => (
+                                    <span class:list={['mk-navitem', { active: it.active }]}>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner(it.icon)}></svg>
+                                        <span class="mk-nav-l">{A(it.label)}</span>
+                                        {it.n && <span class:list={['mk-nav-badge', { danger: it.danger }]}>{it.n}</span>}
+                                    </span>
+                                ))}
+                            </div>
+                        ))}
                     </nav>
 
+                    <!-- Pie: plan Pro (varios asientos) → "Invitar al equipo", no el medidor de Gratis -->
                     <div class="mk-sb-foot">
-                        <img src="/imgs/logo-cord-navy.png" alt="" class="mk-sb-logo" />
+                        <span class="mk-invite">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('user-plus')}></svg>
+                            <span>{A('sidebar.invitar')}</span>
+                        </span>
                         <span class="mk-sb-toggle">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('sidebar')}></svg>
                         </span>
@@ -140,29 +145,37 @@ import { iconInner } from '../../lib/icons';
                 </aside>
 
                 <div class="mk-app">
-                    <!-- ── TOPBAR (pill blanca, AppLayout) ── -->
+                    <!-- ── TOPBAR (pill, AppLayout) ── -->
                     <div class="mk-topbar">
                         <span class="mk-burger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('menu')}></svg></span>
                         <span class="mk-search">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('search')}></svg>
-                            <span class="mk-search-l">{t("mk.search")}</span>
+                            <span class="mk-search-l">{A('topbar.buscar')}</span>
                             <kbd>⌘K</kbd>
                         </span>
                         <span class="mk-tb-right">
                             <span class="mk-create">
                                 <svg class="mk-create-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('plus')}></svg>
-                                <span class="mk-create-l">{t("mk.create")}</span>
+                                <span class="mk-create-l">{A('layout.crear')}</span>
                                 <svg class="mk-create-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-down')}></svg>
+                            </span>
+                            <!-- Aplicaciones con dos integraciones conectadas (TopbarApps.astro) -->
+                            <span class="mk-apps">
+                                <span class="mk-apps-logos">
+                                    <span class="mk-apps-chip"><img src="/imgs/integrations/slack.png" alt="" width="22" height="22" /></span>
+                                    <span class="mk-apps-chip tile"><img src="/imgs/integrations/whatsapp.svg" alt="" width="22" height="22" /></span>
+                                </span>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('grid-plus')}></svg>
                             </span>
                             <span class="mk-tb-ico">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('bell')}></svg>
-                                <i class="mk-notif-dot"></i>
+                                <i class="mk-notif-count">2</i>
                             </span>
                             <span class="mk-tb-ico mk-tb-desk">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chat-help')}></svg>
                             </span>
                             <span class="mk-tb-ico mk-tb-desk">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('moon')}></svg>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('sun')}></svg>
                             </span>
                             <span class="mk-tb-ico mk-tb-desk">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('gear')}></svg>
@@ -173,7 +186,7 @@ import { iconInner } from '../../lib/icons';
                     <!-- ── PAGE HEAD (migas + título + status pill en ph-actions) ── -->
                     <div class="mk-ph">
                         <div class="mk-ph-titles">
-                            <div class="mk-crumbs"><span>{t("mk.nav.2")}</span><b>COT-0148</b></div>
+                            <div class="mk-crumbs"><span>{A('sidebar.item.cotizaciones')}</span><b>COT-0148</b></div>
                             <div class="mk-ph-row">
                                 <span class="mk-ph-title">COT-0148</span>
                                 <span class="mk-pin"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('pin')}></svg></span>
@@ -580,121 +593,165 @@ import { iconInner } from '../../lib/icons';
         padding: 12px 12px 12px;
     }
 
-    /* Material de las pills (sidebar + topbar): vidrio blanco de la app, aquí
-       sólido — sobre el lienzo del mockup no hay nada que desenfocar. */
+    /* Material de las pills (sidebar + topbar): el vidrio --sb-bg de la app
+       (blanco al 72 %) compuesto sobre el lienzo #f5f5f7 da #fcfcfd; aquí va
+       sólido — sobre el lienzo del mockup no hay nada que desenfocar.
+       Sombra = --sb-shadow de AppLayout a escala. */
     .mk-side, .mk-topbar {
-        background: #ffffff;
+        background: #fcfcfd;
         box-shadow:
-            0 0 0 1px rgba(10,25,47,0.035),
-            0 8px 32px -8px rgba(0,0,0,0.06),
-            0 4px 12px -2px rgba(0,0,0,0.03);
+            0 7px 27px -7px rgba(0,0,0,0.07),
+            0 3px 10px -2px rgba(0,0,0,0.035),
+            inset 0 0 0 1px rgba(255,255,255,0.5),
+            inset 0 1px 1px rgba(255,255,255,0.9);
     }
 
-    /* ── SIDEBAR (Sidebar.astro) ── */
+    /* ── SIDEBAR (Sidebar.astro × 0.84) ── */
     .mk-side {
         border-radius: 18px;
         padding: 12px 8px 9px;
         display: flex; flex-direction: column;
     }
-    .mk-acct {
-        position: relative;
-        display: flex; align-items: center; gap: 8px;
-        padding: 4px 6px 10px; margin-bottom: 6px;
-    }
+    /* Selector de espacio (CustomOrgSwitcher) + línea divisoria */
+    .mk-acct { position: relative; padding-bottom: 7px; margin-bottom: 6px; }
     .mk-acct::after {
         content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 1px;
         background: linear-gradient(to right, transparent, rgba(10,25,47,0.08) 25%, rgba(10,25,47,0.08) 75%, transparent);
     }
+    .mk-org-btn { display: flex; align-items: center; gap: 8.5px; padding: 5px 6px; border-radius: 10px; }
     .mk-org-av {
-        width: 26px; height: 26px; border-radius: 8px; flex-shrink: 0;
+        width: 27px; height: 27px; border-radius: 8.5px; flex-shrink: 0;
         background: linear-gradient(135deg, #1b3a64, #0a192f); color: #fff;
         display: inline-flex; align-items: center; justify-content: center;
-        font-size: 0.68rem; font-weight: 700;
-        box-shadow: inset 0 1px 1px rgba(255,255,255,0.25), 0 3px 8px -3px rgba(10,25,47,0.4);
+        font-size: 0.71rem; font-weight: 700;
+        box-shadow: inset 0 1px 1px rgba(255,255,255,0.25), inset 0 0 0 0.5px rgba(255,255,255,0.12), 0 3px 8px -3px rgba(10,25,47,0.4);
     }
     .mk-org-txt { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; }
-    .mk-org-eyebrow { font-size: 0.52rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: #99a2af; white-space: nowrap; }
-    .mk-org-name { font-size: 0.72rem; font-weight: 600; line-height: 1.2; color: #0f1729; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .mk-org-chev { width: 12px; height: 12px; color: #99a2af; flex-shrink: 0; }
+    .mk-org-eyebrow { font-size: 0.5rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: #99a2af; white-space: nowrap; }
+    .mk-org-name { font-size: 0.715rem; font-weight: 600; line-height: 1.2; color: #0f1729; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mk-org-chev { width: 12.5px; height: 12.5px; color: #99a2af; flex-shrink: 0; }
 
-    .mk-nav { display: flex; flex-direction: column; gap: 10px; }
-    .mk-grp { display: flex; flex-direction: column; gap: 2px; }
+    /* Grupos: encabezado 0.72rem/500 sin mayúsculas; el chevron solo aparece
+       al pasar el cursor o plegado, así que en el screenshot no se ve. */
+    .mk-nav { display: flex; flex-direction: column; }
+    .mk-grp { display: flex; flex-direction: column; gap: 1px; }
+    .mk-grp + .mk-grp { margin-top: 9.5px; }
     .mk-grp-label {
-        display: flex; align-items: center; justify-content: space-between;
-        font-size: 0.7rem; font-weight: 600; color: #99a2af;
-        padding: 6px 9px 4px;
+        padding: 3px 8.5px; margin-bottom: 1px;
+        font-size: 0.605rem; font-weight: 500; color: #99a2af;
     }
-    .mk-grp-label svg { width: 11px; height: 11px; opacity: 0.6; }
+    /* Ítem: fila de 30 px → 25; texto 0.84rem/500; icono 16 → 13.5 */
     .mk-navitem {
-        display: flex; align-items: center; gap: 9px;
-        padding: 6px 9px; border-radius: 8px;
-        font-size: 0.76rem; font-weight: 500; color: #5b6472;
+        display: flex; align-items: center; gap: 8.5px;
+        height: 25px; padding: 0 7px 0 8.5px; border-radius: 7px;
+        font-size: 0.705rem; font-weight: 500; letter-spacing: -0.005em; color: #5b6472;
     }
-    .mk-navitem svg { width: 14px; height: 14px; flex-shrink: 0; opacity: 0.62; }
+    .mk-navitem svg { width: 13.5px; height: 13.5px; flex-shrink: 0; opacity: 0.62; }
     .mk-nav-l { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .mk-navitem.active { color: #0a192f; font-weight: 600; background: rgba(10,25,47,0.07); }
+    /* Activo: fondo tintado fijo (--sb-active-bg) y texto navy, sin cambiar peso */
+    .mk-navitem.active { color: #0a192f; background: rgba(10,25,47,0.075); }
     .mk-navitem.active svg { opacity: 1; }
+    /* Contador: gris neutro; vencidas en tinte naranja, no rojo sólido */
     .mk-nav-badge {
-        flex-shrink: 0; min-width: 15px; height: 15px; padding: 0 4px; border-radius: 100px;
+        flex-shrink: 0; min-width: 15px; height: 15px; padding: 0 4px; border-radius: 5px;
         display: inline-flex; align-items: center; justify-content: center;
-        font-size: 0.56rem; font-weight: 700; letter-spacing: -0.01em;
+        font-size: 0.57rem; font-weight: 600; font-variant-numeric: tabular-nums;
         color: #5b6472; background: rgba(10,25,47,0.07);
     }
-    .mk-nav-badge.danger { color: #fff; background: #ef4444; }
+    .mk-nav-badge.danger { color: #c2410c; background: rgba(234,88,12,0.1); }
 
-    .mk-sb-foot { margin-top: auto; padding: 10px 0 0 6px; display: flex; align-items: center; }
-    .mk-sb-logo { height: 12px; width: auto; display: block; opacity: 0.55; }
+    /* Pie: Invitar al equipo + colapsar a la derecha (ya sin logo de Cord) */
+    .mk-sb-foot { margin-top: auto; padding-top: 8px; display: flex; align-items: center; gap: 4px; }
+    .mk-invite {
+        flex: 1; min-width: 0;
+        display: flex; align-items: center; gap: 7px;
+        height: 23.5px; padding: 0 7px; border-radius: 7px;
+        font-size: 0.655rem; font-weight: 500; color: #5b6472;
+    }
+    .mk-invite svg { width: 12.5px; height: 12.5px; flex-shrink: 0; opacity: 0.62; }
+    .mk-invite span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .mk-sb-toggle {
-        margin-left: auto; width: 24px; height: 24px; border-radius: 7px;
+        flex-shrink: 0; margin-left: auto; width: 23.5px; height: 23.5px; border-radius: 7px;
         display: inline-flex; align-items: center; justify-content: center;
-        background: rgba(10,25,47,0.04); box-shadow: inset 0 0 0 0.5px rgba(10,25,47,0.08);
         color: #5b6472;
     }
-    .mk-sb-toggle svg { width: 14px; height: 14px; }
+    .mk-sb-toggle svg { width: 15px; height: 15px; }
 
     /* ── COLUMNA DE LA APP ── */
     .mk-app { display: flex; flex-direction: column; min-width: 0; }
 
-    /* Topbar (AppLayout .topbar) */
+    /* Topbar (AppLayout .topbar × 0.84) */
     .mk-topbar {
         display: flex; align-items: center; gap: 10px;
-        padding: 6px 7px 6px 10px; border-radius: 18px;
+        padding: 6.5px 8px 6.5px 11px; border-radius: 18.5px;
     }
     .mk-burger { display: none; }
     .mk-search {
-        flex: 0 1 290px; min-width: 0;
-        display: flex; align-items: center; gap: 7px;
-        font-size: 0.7rem; color: #5b6472;
-        background: #fafbfc; border: 1px solid rgba(10,25,47,0.08);
-        border-radius: 8px; padding: 5px 7px 5px 10px;
+        flex: 0 1 302px; min-width: 0;
+        display: flex; align-items: center; gap: 7.5px;
+        font-size: 0.705rem; color: #5b6472;
+        background: #f5f5f7; border: 1px solid rgba(10,25,47,0.08);
+        border-radius: 8.5px; padding: 6.5px 8.5px 6.5px 11px;
     }
-    .mk-search svg { width: 12px; height: 12px; color: #99a2af; flex-shrink: 0; }
+    .mk-search svg { width: 12.5px; height: 12.5px; color: #99a2af; flex-shrink: 0; }
     .mk-search-l { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .mk-search kbd {
-        font-family: inherit; font-size: 0.53rem; font-weight: 700; color: #5b6472;
+        font-family: inherit; font-size: 0.555rem; font-weight: 700; color: #5b6472;
         background: #fff; border: 1px solid rgba(10,25,47,0.08); border-radius: 5px;
-        padding: 1px 5px; box-shadow: 0 1px 0 rgba(10,25,47,0.06);
+        padding: 1.5px 5px; box-shadow: 0 1px 0 rgba(10,25,47,0.06);
     }
-    .mk-tb-right { display: flex; align-items: center; gap: 5px; margin-left: auto; }
+    .mk-tb-right { display: flex; align-items: center; gap: 6.5px; margin-left: auto; }
     .mk-create {
         display: inline-flex; align-items: center; gap: 6px;
-        padding: 6px 10px 6px 9px; border-radius: 7px;
+        padding: 6.5px 10px 6.5px 9px; border-radius: 7.5px;
         background: #0a192f; color: #fff;
-        font-size: 0.7rem; font-weight: 600; white-space: nowrap;
+        font-size: 0.69rem; font-weight: 600; white-space: nowrap;
         box-shadow: 0 6px 18px -8px rgba(10,25,47,0.5), inset 0 1px 0 rgba(255,255,255,0.12);
     }
-    .mk-create-plus { width: 12px; height: 12px; flex-shrink: 0; }
+    .mk-create-plus { width: 12.5px; height: 12.5px; flex-shrink: 0; }
     .mk-create-caret { width: 10px; height: 10px; opacity: 0.7; flex-shrink: 0; }
+
+    /* Aplicaciones con apps conectadas: cápsula blanca con logos + grid-plus */
+    .mk-apps {
+        display: inline-flex; align-items: center; gap: 6.5px;
+        height: 33.5px; padding: 0 11px 0 6px; border-radius: 999px;
+        background: #fff; box-shadow: inset 0 0 0 1px rgba(10,25,47,0.08);
+        color: #5b6472;
+    }
+    .mk-apps > svg { width: 14.5px; height: 14.5px; flex-shrink: 0; }
+    .mk-apps-logos { position: relative; display: inline-flex; flex-shrink: 0; }
+    .mk-apps-chip {
+        width: 22px; height: 22px; border-radius: 6.5px; overflow: hidden; flex-shrink: 0;
+        display: grid; place-items: center; background: #fff;
+        box-shadow: 0 0 0 1.7px #fff, inset 0 0 0 1px rgba(10,25,47,0.08);
+    }
+    .mk-apps-chip + .mk-apps-chip { margin-left: -6px; }
+    .mk-apps-chip img { width: 15px; height: 15px; object-fit: contain; display: block; }
+    .mk-apps-chip.tile { box-shadow: 0 0 0 1.7px #fff; }
+    .mk-apps-chip.tile img { width: 100%; height: 100%; object-fit: cover; }
+    .mk-apps-logos::after {
+        content: ''; position: absolute; top: -2px; right: -2px;
+        width: 6.5px; height: 6.5px; border-radius: 50%;
+        background: #10b981; box-shadow: 0 0 0 1.7px #fff;
+    }
+
+    /* Iconos quietos (tb-icon 36 → 30) */
     .mk-tb-ico {
         position: relative;
-        width: 29px; height: 29px; border-radius: 7px;
+        width: 30px; height: 30px; border-radius: 7.5px;
         display: inline-flex; align-items: center; justify-content: center;
         color: #5b6472;
     }
-    .mk-tb-ico svg { width: 14px; height: 14px; }
-    .mk-notif-dot {
-        position: absolute; top: 5px; right: 6px; width: 7px; height: 7px; border-radius: 50%;
-        background: #ef4444; border: 1.5px solid #fff;
+    .mk-tb-ico svg { width: 14.5px; height: 14.5px; }
+    /* Contador de la campana (.tb-notif-count): navy sobre navy al 16 %, ya no punto rojo */
+    .mk-notif-count {
+        position: absolute; top: 1.5px; right: 1px;
+        min-width: 13.5px; height: 13.5px; padding: 0 3.5px; border-radius: 7px;
+        display: inline-flex; align-items: center; justify-content: center;
+        font-style: normal; font-size: 0.52rem; font-weight: 700; line-height: 1;
+        font-variant-numeric: tabular-nums;
+        color: #0a192f; background: #d8dade;
+        box-shadow: 0 0 0 1.3px #fcfcfd;
     }
 
     /* Page head (AppLayout .page-head) */
@@ -926,7 +983,9 @@ import { iconInner } from '../../lib/icons';
         .mk-search-l, .mk-search kbd { display: none; }
         .mk-tb-desk { display: none; }
         .mk-tb-ico svg { width: 17px; height: 17px; }
-        .mk-notif-dot { top: 7px; right: 8px; }
+        .mk-notif-count { top: 3px; right: 2px; }
+        .mk-apps { height: 34px; padding: 0 9px 0 5px; gap: 6px; }
+        .mk-apps > svg { width: 16px; height: 16px; }
         .mk-create { width: 34px; height: 34px; padding: 0; border-radius: 50%; justify-content: center; }
         .mk-create-plus { width: 15px; height: 15px; }
         .mk-create-l, .mk-create-caret { display: none; }

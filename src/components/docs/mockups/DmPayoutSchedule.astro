@@ -46,7 +46,7 @@ const DATA = {
 const d = pick(DATA, lang);
 const caption = Astro.props.caption ?? d.caption;
 ---
-<DocsMockup lang={lang} variant="app" chrome="full" sidebar="rail" active="" height={640} caption={caption} class="dm-pos-figure">
+<DocsMockup lang={lang} variant="app" chrome="full" sidebar="rail" active="ajustes" height={640} caption={caption} class="dm-pos-figure">
     <div class="dm-pos">
         <div class="dm-pos-crumb"><DmIcon name="chevron-left" stroke={2} />{dmT(lang, 'settings.configuracion')}</div>
         <div class="dm-pos-heading">

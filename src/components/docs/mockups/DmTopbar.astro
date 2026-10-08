@@ -1,15 +1,47 @@
 ---
-// Topbar de la app: buscador ⌘K, guía de configuración (opcional), Crear e iconos.
+// Topbar de la app: calca de la <header class="topbar"> de AppLayout.astro y de
+// TopbarApps.astro. De izquierda a derecha: (móvil) hamburguesa, buscador ⌘K,
+// y a la derecha Guía de configuración (opcional), Crear, Aplicaciones,
+// Notificaciones con contador, Ayuda, Tema (icono del modo actual) y Ajustes.
+// Iconos quietos: un botón abierto solo cambia de fondo.
+//
+// En un marco angosto (≤ 640 px, como la app en móvil) el buscador queda en
+// lupa, Crear en círculo, la guía en su anillo, y Ayuda, Tema y Ajustes se
+// ocultan: en el teléfono viven en el cajón del menú.
 import DmIcon from './DmIcon.astro';
 import DmRing from './DmRing.astro';
-import { dmT, type DmLang } from './format';
+import { dmT, favicon, notifCount, type DmLang, type DmThemeMode } from './format';
 
 interface Props {
     lang: DmLang;
     /** Muestra la píldora "Guía de configuración" con este porcentaje. */
     setupPct?: number;
+    /**
+     * Botón Aplicaciones (solo con permiso de Ajustes). `true` = icono solo;
+     * una lista de dominios = cápsula con los logos de hasta dos apps conectadas
+     * y el punto verde, como en la app. `false` lo oculta.
+     */
+    apps?: boolean | string[];
+    /** Notificaciones sin leer: contador 1–9 y luego "9+". 0 = sin contador. */
+    notif?: number;
+    /** Modo de tema: el icono es el del modo actual (sol, luna, monitor). */
+    theme?: DmThemeMode;
+    /** El engrane tintado: la pantalla es Ajustes. */
+    settings?: boolean;
+    /** Menú abierto: su botón queda tintado. `create` pinta el menú Crear; `notif` y `apps` pintan el slot "panel" debajo de su botón. Abrir la campana la marca como vista, así que su contador desaparece. */
+    open?: 'create' | 'notif' | 'apps';
 }
-const { lang, setupPct } = Astro.props;
+const { lang, setupPct, apps = true, notif = 0, theme = 'light', settings = false, open } = Astro.props;
+const THEME_ICON = { light: 'sun', dark: 'moon', system: 'monitor' } as const;
+const logos = Array.isArray(apps) ? apps.slice(0, 2) : [];
+const hasPanel = Astro.slots.has('panel');
+const CREATE = [
+    { icon: 'file-plus', key: 'layout.crear.cotizacion', k: 'C' },
+    { icon: 'document', key: 'layout.crear.factura', k: 'F' },
+    { icon: 'user-plus', key: 'layout.crear.cliente', k: 'L' },
+    { icon: 'package-plus', key: 'layout.crear.producto', k: 'P' },
+    { icon: 'checklist', key: 'layout.crear.tarea', k: 'T' },
+] as const;
 ---
 <div class="dm-topbar">
     <span class="dm-tb-burger"><DmIcon name="menu" /></span>
@@ -22,17 +54,45 @@ const { lang, setupPct } = Astro.props;
         {typeof setupPct === 'number' && (
             <span class="dm-onb-pill">
                 <DmRing pct={setupPct} size={22} />
-                <span class="dm-hide-narrow">{dmT(lang, 'layout.aria.guia_config')}</span>
+                <span class="dm-onb-pill-label">{dmT(lang, 'layout.aria.guia_config')}</span>
             </span>
         )}
-        <span class="dm-tb-create">
-            <DmIcon name="plus" stroke={2.4} />
-            <span>{dmT(lang, 'layout.crear')}</span>
-            <DmIcon name="chevron-down" stroke={2.4} />
+        <span class="dm-tb-wrap">
+            <span class:list={['dm-tb-create', { 'is-open': open === 'create' }]}>
+                <DmIcon name="plus" stroke={2.4} />
+                <span>{dmT(lang, 'layout.crear')}</span>
+                <DmIcon name="chevron-down" stroke={2.4} class="dm-tb-caret" />
+            </span>
+            {open === 'create' && (
+                <span class="dm-tb-pop dm-tb-menu">
+                    {CREATE.map((c) => (
+                        <span class="dm-tb-menu-item"><DmIcon name={c.icon} /><span>{dmT(lang, c.key)}</span><span class="dm-tb-menu-kbd">{c.k}</span></span>
+                    ))}
+                </span>
+            )}
         </span>
-        <span class="dm-tb-icon"><DmIcon name="bell" /></span>
-        <span class="dm-tb-icon dm-tb-optional"><DmIcon name="chat-help" /></span>
-        <span class="dm-tb-icon dm-tb-optional"><DmIcon name="sun" /></span>
-        <span class="dm-tb-icon"><DmIcon name="gear" /></span>
+        {apps !== false && (
+            <span class="dm-tb-wrap">
+                <span class:list={['dm-tb-apps', { 'has-apps': logos.length > 0, 'is-open': open === 'apps' }]}>
+                    {logos.length > 0 && (
+                        <span class="dm-tb-apps-logos">
+                            {logos.map((d) => <span class="dm-tb-apps-chip"><img src={favicon(d, 64)} alt="" width="16" height="16" loading="lazy" /></span>)}
+                        </span>
+                    )}
+                    <DmIcon name="grid-plus" />
+                </span>
+                {open === 'apps' && hasPanel && <span class="dm-tb-pop"><slot name="panel" /></span>}
+            </span>
+        )}
+        <span class="dm-tb-wrap">
+            <span class:list={['dm-tb-icon', { 'is-open': open === 'notif' }]}>
+                <DmIcon name="bell" />
+                {notif > 0 && open !== 'notif' && <span class="dm-tb-count">{notifCount(notif)}</span>}
+            </span>
+            {open === 'notif' && hasPanel && <span class="dm-tb-pop"><slot name="panel" /></span>}
+        </span>
+        <span class="dm-tb-icon dm-tb-desk"><DmIcon name="chat-help" /></span>
+        <span class="dm-tb-icon dm-tb-desk"><DmIcon name={THEME_ICON[theme]} /></span>
+        <span class:list={['dm-tb-icon', 'dm-tb-desk', { 'is-active': settings }]}><DmIcon name="gear" /></span>
     </span>
 </div>

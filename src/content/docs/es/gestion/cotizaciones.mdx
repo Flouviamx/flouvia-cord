@@ -16,9 +16,18 @@ prerequisites: ["Permiso Cotizaciones para crear, editar, enviar y eliminar borr
 
 ## Qué es
 
-**Cotizaciones**, en el menú principal, reúne todas las cotizaciones de tu
-organización, de la más reciente a la más antigua. Desde ahí abres el detalle de cada
-una, donde viven sus acciones, su actividad, su conversación y sus versiones.
+**Cotizaciones**, en el menú lateral (atajo <kbd>G</kbd> <kbd>C</kbd>), reúne todas las
+cotizaciones de tu organización, de la más reciente a la más antigua. Desde ahí abres el
+detalle de cada una, donde viven sus acciones, su actividad, su conversación y sus
+versiones. Para crear una desde cualquier pantalla, usa **Crear › Cotización** en la
+barra superior o la tecla <kbd>C</kbd>.
+
+**El contador del menú.** El número junto a **Cotizaciones** en el menú lateral cuenta
+las cotizaciones que tu cliente ya **vio** y todavía no aprueba ni rechaza (estado
+*Vista*): las que esperan tu seguimiento. Al pasar el cursor dice, por ejemplo,
+"3 cotizaciones vistas, sin responder". Es el mismo número que el indicador
+**Por dar seguimiento** del [Inicio](/docs/gestion/dashboard); cuando el cliente aprueba
+o rechaza, la cotización deja de contar.
 
 <DmQuotesIndex lang="es" view="list" />
 
@@ -27,7 +36,7 @@ una, donde viven sus acciones, su actividad, su conversación y sus versiones.
 - **Ver:** cualquier miembro de la organización.
 - **Permiso Cotizaciones:** crear, continuar editando, enviar, modificar y reenviar, eliminar borradores y responder en la conversación.
 - **Permiso Aprobaciones:** marcar aprobada o rechazada, decidir aprobaciones internas, y registrar pago y emitir el documento desde el detalle.
-- **Plan:** todos. El número de cotizaciones activas tiene tope en Gratis (5) y Starter (50).
+- **Plan:** todos. El número de cotizaciones activas (en borrador, enviadas, vistas o aprobadas) tiene tope en Gratis (5) y Starter (50); en esos planes, el medidor **Cotizaciones activas** al pie del menú lateral muestra cuántas llevas.
 
 ## Encuentra una cotización
 
@@ -42,9 +51,13 @@ una, donde viven sus acciones, su actividad, su conversación y sus versiones.
 | **Pagadas** | Pagada y Facturada. |
 | **Cerradas** | Rechazada y Vencida. |
 
-**Búsqueda:** la lista no tiene buscador propio. En escritorio, abre la paleta de
-comandos (⌘K en Mac, Ctrl+K en Windows) y escribe al menos dos caracteres del folio o del nombre del
-cliente; muestra hasta 6 cotizaciones, además de clientes y productos que coincidan.
+**Búsqueda:** la lista no tiene buscador propio. Abre el
+[menú de comandos](/docs/operacion/mapa-de-la-app#menú-de-comandos) con **Buscar…** en la
+barra superior (en el teléfono, la lupa), con <kbd>⌘K</kbd> en Mac, <kbd>Ctrl K</kbd> en
+Windows y Linux, o con <kbd>/</kbd>, y escribe al menos dos caracteres del folio o del
+nombre del cliente. Muestra hasta 6 cotizaciones, cada una con su estado y su total en la
+divisa de la cotización (por ejemplo, "Vista · USD 1,200.00"), además de los clientes,
+productos y, si tienes el permiso Cobranza, facturas que coincidan.
 
 **Desde otras pantallas:** las barras del embudo y del pipeline del Inicio abren esta
 lista con el filtro correspondiente ya aplicado.

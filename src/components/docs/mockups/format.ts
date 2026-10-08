@@ -80,3 +80,20 @@ export const DEMO = {
 
 /** Contadores de la sidebar de un mockup; mismas llaves que SidebarBadge de src/lib/sidebar-nav.ts. */
 export interface DmSidebarBadges { seguimiento?: number; vencidas?: number; tareas?: number; tareasVencidas?: number }
+
+/**
+ * Página fijada en la sidebar. `href` es la ruta real de /app: de ella sale el
+ * icono heredado de su sección (sidebarIconFor), igual que en la app.
+ */
+export interface DmPin { label: string; href: string; active?: boolean }
+
+/** Medidor "Cotizaciones activas n / m" del pie (solo planes con tope: Gratis 5, Starter 50). */
+export interface DmPlanMeter { used: number; limit: number }
+
+/** Modo del botón de tema de la topbar: el icono es el del modo ACTUAL. */
+export type DmThemeMode = 'light' | 'dark' | 'system';
+
+/** Contador de la campana como lo pinta la app: 1–9 y luego "9+". */
+export function notifCount(n: number): string {
+    return n >= 10 ? '9+' : String(n);
+}

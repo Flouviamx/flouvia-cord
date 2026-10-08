@@ -41,7 +41,7 @@ const caption = Astro.props.caption ?? d.caption;
 const category = localizedCategoryOfTab('aprobaciones', lang, 'MX')!;
 const activeTab = category.tabs.find((tb) => tb.id === 'aprobaciones')!;
 ---
-<DocsMockup lang={lang} variant="app" chrome="full" sidebar="rail" active="" height={790} caption={caption} class="dm-cot-ar-figure">
+<DocsMockup lang={lang} variant="app" chrome="full" sidebar="rail" active="ajustes" height={790} caption={caption} class="dm-cot-ar-figure">
     <div class="dm-cot-ar">
         <div class="dm-cot-ar-crumbs">
             <span class="dm-cot-ar-crumb"><DmIcon name="chevron-left" />{dmT(lang, 'settings.configuracion')}</span>

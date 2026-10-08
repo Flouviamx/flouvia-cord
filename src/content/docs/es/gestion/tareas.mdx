@@ -23,7 +23,7 @@ te avisa por correo cuando le toca.
 Se ven en dos lugares:
 
 - El widget **Tareas y recordatorios** del [Inicio](/docs/gestion/dashboard), con lo más urgente.
-- La página **Tareas** del menú lateral (atajo <kbd>G</kbd> <kbd>T</kbd>), con todas las tareas y las ya completadas.
+- La página **Tareas** del menú lateral (atajo <kbd>G</kbd> <kbd>T</kbd>), con todas las tareas y las ya completadas. Su contador te dice cuántas tuyas vencen hoy o ya vencieron (ver [El contador del menú](#el-contador-del-menú)).
 
 <DmTasksPage lang="es" />
 
@@ -43,10 +43,14 @@ Se ven en dos lugares:
 5. Pulsa **Agregar** (o <kbd>Enter</kbd>). La tarea aparece en la lista sin recargar la página.
 </Steps>
 
-**Desde cualquier pantalla:** pulsa **Crear** en la barra superior y elige **Tarea** (o la
-tecla <kbd>T</kbd>); la opción aparece si tienes el permiso Cotizaciones, Cobranza o
-Clientes, aunque no puedas crear nada más. Se abre **Nueva tarea**, con el título y la fecha límite; pulsa
-**Agregar tarea**. La tarea queda a tu cargo y con prioridad normal; la prioridad, las notas y
+**Desde cualquier pantalla:** pulsa **Crear** en la barra superior y elige **Tarea**,
+presiona la tecla <kbd>T</kbd> (en escritorio, sin estar escribiendo en un campo) o elige
+**Nueva tarea** en el [menú de comandos](/docs/operacion/mapa-de-la-app#menú-de-comandos)
+(<kbd>⌘K</kbd>). La opción **Tarea** y la tecla aparecen si tienes el permiso
+Cotizaciones, Cobranza o Clientes, aunque no puedas crear nada más. Se abre
+**Nueva tarea**, con el título y la fecha límite, sin salir de la página en la que
+estás; pulsa **Agregar tarea**. Si tienes abierto el Inicio o la página **Tareas**, la
+lista se actualiza sola. La tarea queda a tu cargo y con prioridad normal; la prioridad, las notas y
 el responsable se cambian después con **Editar**.
 
 **Responsable:** con una sola persona en la cuenta, cada tarea que capturas es tuya. Con
@@ -64,7 +68,20 @@ Las **notas** no se capturan al crear: se agregan con **Editar** (hasta 2,000 ca
 - **Ligada a una cotización o factura:** si la tarea está ligada a una cotización (por ejemplo, la creó un workflow, la API, un contracargo o un reembolso SPEI), su folio y el cliente aparecen como enlace a la cotización. Si está ligada a una factura (la creó un workflow sobre un evento de factura, la API o el MCP), el enlace lleva a la factura.
 - **Listas largas:** la página muestra 200 tareas por vista y debajo dice cuántas hay en total ("Se muestran 200 de 260"); el botón **Mostrar más** abre las siguientes, de 200 en 200 (en el ejemplo, **Mostrar 60 más**), hasta 1,000. Más allá, filtra por responsable o completa las que ya hiciste.
 - **Notas:** en la página se ven debajo del título; en el widget, un icono indica que la tarea tiene notas.
-- En el menú lateral, **Tareas** muestra cuántas tuyas o sin responsable vencen hoy o ya vencieron; el número va en rojo si hay vencidas.
+
+### El contador del menú
+
+En el menú lateral, **Tareas** muestra un número cuando tienes algo pendiente para hoy:
+
+- Cuenta las tareas **pendientes** que son **tuyas o no tienen responsable** y vencen
+  **hoy** o ya **vencieron**. Las de otros miembros, las completadas, las que vencen
+  después y las que no tienen fecha no cuentan.
+- "Hoy" es el día en la zona horaria de tu negocio, el mismo que usan los grupos de
+  urgencia.
+- El número va en gris; se vuelve **naranja** si al menos una ya venció. Al pasar el
+  cursor dice, por ejemplo, "4 tareas para hoy o vencidas".
+- Con el menú contraído, el número se vuelve un punto: gris, o rojo si hay vencidas.
+- Se recalcula cada vez que abres una página; sin pendientes para hoy, no aparece.
 
 ## Recordatorio por correo
 

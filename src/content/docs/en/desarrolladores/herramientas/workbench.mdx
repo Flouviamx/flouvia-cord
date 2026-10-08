@@ -2,7 +2,7 @@
 title: "Cord Workbench"
 description: "Cord's developer panel — API keys, webhooks, events, logs, and the health of your integration, all in a dock that lives at the bottom of the app."
 order: 1
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-08"
 reviewedBy: "Cord engineering"
 availablePlans: [Free, Starter, Pro, Scale, Developer]
 prerequisites: ["Developer mode turned on in Settings"]
@@ -26,11 +26,14 @@ because it's what you check while you're actually integrating.
 
 ## Turning it on
 
-1. Go to **Settings** (the gear icon in the top bar) and scroll to the bottom of the category
-   index.
+1. Go to **Settings**: the gear at the far right of the top bar (on a phone, **Settings** in the
+   side menu that the menu button opens). Settings isn't in the sidebar. Scroll to the bottom of
+   the category index.
 2. Turn on the **"Developer mode"** switch.
 3. A **"Developers"** bar appears pinned to the bottom edge of the screen, visible across the
-   whole app. Click it to open.
+   whole app, with the **W** key on its right. Click it to open.
+
+The Workbench only appears for people whose role has the **Settings** permission.
 
 <Callout type="info">
 Developer mode is a browser preference (`localStorage`), not an account setting — turn it on
@@ -50,7 +53,23 @@ on every device you work from.
   - **Show times in UTC**: switches every date in the panel instantly (no reload). It doesn't
     change your account's time zone, only how dates are displayed here — useful if your backend
     logs everything in UTC and you want a direct comparison.
-  - Keyboard shortcuts and links to this documentation and the OpenAPI spec.
+  - **Keyboard shortcuts** and links to this documentation and the OpenAPI spec.
+
+### Keyboard shortcuts
+
+On desktop, with Developer mode on and while you're not typing in a field:
+
+| Key | What it does |
+|---|---|
+| **W** | Opens or closes the Workbench. |
+| **⇧ W** | Full screen. |
+| **Esc** | Closes whatever is open, one layer at a time: the options menu, a wizard, full screen and, last, the panel. |
+
+**W** alone belongs to the Workbench; **G** then **W** is the app-wide shortcut that takes you
+to Workflows. The app's other shortcuts (**⌘K** or **Ctrl K**, **?** for the full list,
+**C**/**F**/**L**/**P**/**T** to create) keep working with the panel open. On screens 880 px wide
+or narrower there are no shortcuts: you open the panel by tapping the bar, and it takes the full
+width.
 
 ## The tabs
 

@@ -514,6 +514,31 @@ const breadcrumbSchema = {
         padding: 0;
     }
 
+    /* Tablas de markdown (atajos, secciones del menú, precios): divisores
+       hairline y scroll propio en pantallas angostas, para que una tabla ancha
+       no empuje la página a un scroll horizontal. */
+    .markdown-body :global(table) {
+        display: block;
+        max-width: 100%;
+        overflow-x: auto;
+        border-collapse: collapse;
+        margin: 0 0 1.75rem;
+        font-size: 0.95rem;
+        line-height: 1.5;
+    }
+    .markdown-body :global(th),
+    .markdown-body :global(td) {
+        text-align: left;
+        vertical-align: top;
+        padding: 10px 18px 10px 0;
+        border-bottom: 1px solid var(--color-border);
+    }
+    .markdown-body :global(th) {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--color-text-muted);
+    }
+
     /* <callout type="info|warning|success"> pasa como HTML crudo desde el
        markdown plano de esta colección (glob de .md, no MDX) — no hay
        componente Astro que lo intercepte, así que se estiliza aquí como

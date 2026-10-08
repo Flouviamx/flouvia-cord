@@ -23,7 +23,7 @@ due.
 They show in two places:
 
 - The **Tasks and reminders** widget on [Home](/en/docs/gestion/dashboard), with the most urgent ones.
-- The **Tasks** page in the sidebar (shortcut <kbd>G</kbd> <kbd>T</kbd>), with every task and the completed ones.
+- The **Tasks** page in the sidebar (shortcut <kbd>G</kbd> <kbd>T</kbd>), with every task and the completed ones. Its counter tells you how many of yours are due today or overdue (see [The sidebar counter](#the-sidebar-counter)).
 
 <DmTasksPage lang="en" />
 
@@ -43,9 +43,13 @@ They show in two places:
 5. Click **Add** (or press <kbd>Enter</kbd>). The task shows up in the list without reloading the page.
 </Steps>
 
-**From any screen:** click **Create** in the top bar and choose **Task** (or press
-<kbd>T</kbd>); the option shows if you have the Quotes, Collections, or Clients
-permission, even if you can't create anything else. **New task** opens, with the title and the due date; click **Add task**. The
+**From any screen:** click **Create** in the top bar and choose **Task**, press the
+<kbd>T</kbd> key (on desktop, while not typing in a field), or choose **New task** in the
+[command menu](/en/docs/operacion/mapa-de-la-app#command-menu) (<kbd>⌘K</kbd>). The
+**Task** option and the key show if you have the Quotes, Collections, or Clients
+permission, even if you can't create anything else. **New task** opens, with the title
+and the due date, without leaving the page you're on; click **Add task**. If you have
+Home or the **Tasks** page open, the list updates on its own. The
 task is assigned to you with normal priority; priority, notes, and assignee are changed
 later with **Edit**.
 
@@ -65,7 +69,19 @@ characters).
 - **Linked to a quote or invoice:** if the task is linked to a quote (for example, a workflow, the API, a chargeback, or a SPEI refund created it), the quote number and the client show as a link to the quote. If it's linked to an invoice (a workflow on an invoice event, the API, or MCP created it), the link goes to the invoice.
 - **Long lists:** the page shows 200 tasks per view and says below how many there are in total ("Showing 200 of 260"); the **Show more** button opens the next ones, 200 at a time (in the example, **Show 60 more**), up to 1,000. Beyond that, filter by assignee or complete the ones you already did.
 - **Notes:** on the page they show below the title; in the widget, an icon tells you the task has notes.
-- In the sidebar, **Tasks** shows how many of yours or unassigned ones are due today or overdue; the number is red when some are overdue.
+
+### The sidebar counter
+
+In the sidebar, **Tasks** shows a number when you have something due today:
+
+- It counts **open** tasks that are **yours or unassigned** and are due **today** or
+  already **overdue**. Other members' tasks, completed ones, ones due later, and ones
+  without a date don't count.
+- "Today" is the day in your business's time zone, the same one the urgency groups use.
+- The number is gray; it turns **orange** if at least one is overdue. On hover it says,
+  for example, "4 tasks due today or overdue".
+- With the sidebar collapsed, the number becomes a dot: gray, or red if some are overdue.
+- It's recalculated every time you open a page; with nothing due today, it doesn't show.
 
 ## Email reminder
 

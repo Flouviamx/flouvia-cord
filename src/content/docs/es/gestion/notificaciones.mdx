@@ -1,7 +1,7 @@
 ---
 title: "Notificaciones"
-seoTitle: "Notificaciones de Cord por correo, Slack y Microsoft Teams"
-description: "Qué eventos te avisan, cuándo se dispara cada uno (incluido qué cuenta como vista), por qué canal llegan y qué no genera aviso."
+seoTitle: "Notificaciones de Cord: la campana de la app, correo, Slack y Microsoft Teams"
+description: "Qué enciende la campana de la barra superior (y qué no), cómo funcionan su contador y el leído por usuario; qué eventos te avisan por correo, Slack o Teams, cuándo se dispara cada uno (incluido qué cuenta como vista) y qué no genera aviso."
 lastUpdated: "2026-10-08"
 reviewedBy: "Producto y operaciones de Cord"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
@@ -11,10 +11,98 @@ prerequisites: ["Permiso Ajustes para cambiar la matriz de avisos", "Slack o Mic
 
 <header class="content-header">
   <h1 class="page-title">Notificaciones</h1>
-  <p class="page-subtitle">Entérate por correo, Slack o Teams cuando tu cliente decide algo, sin estar revisando la app.</p>
+  <p class="page-subtitle">Entérate cuando tu cliente decide algo o te paga: en la campana de la app mientras trabajas, y por correo, Slack o Teams cuando no la tienes abierta.</p>
 </header>
 
 ## Qué es
+
+Cord te avisa de dos maneras, independientes entre sí:
+
+| | La campana | Avisos por correo, Slack y Teams |
+|---|---|---|
+| **Dónde** | En la barra superior de la app. | Fuera de la app: tu correo, un canal de Slack o de Teams. |
+| **Qué incluye** | Lo que hizo tu cliente y el dinero que entró, en cotizaciones y facturas. | Los 8 eventos de la matriz de **Ajustes › Notificaciones**. |
+| **Para quién** | Cada miembro tiene su propio "leído". | El correo va al dueño de la cuenta (el recordatorio de tareas, a cada responsable); Slack y Teams, al canal conectado. |
+| **Se configura** | No se configura: siempre está activa. | Con la matriz, por evento y por canal. |
+
+Apagar un evento en la matriz no lo quita de la campana, y leer la campana no cambia lo
+que se envía por correo, Slack o Teams.
+
+## La campana de la barra superior
+
+La campana está en la barra superior de cualquier pantalla de la app, en escritorio y en
+el teléfono. Reúne en un solo lugar lo que pasó del lado de tu cliente para que no
+tengas que abrir cada cotización o factura.
+
+### Qué la enciende
+
+Solo dos tipos de cosas: **lo que hizo tu cliente** y **el dinero que entró**. Cubre
+cotizaciones y facturas.
+
+| Origen | Notificación | Cuándo aparece |
+|---|---|---|
+| Cotización | **Tu cliente vio la cotización** | Tu cliente abre el link (con las mismas reglas de [qué cuenta como vista](#qué-cuenta-como-vista)). |
+| Cotización | **Cotización aprobada** | Tu cliente aprueba desde el link. |
+| Cotización | **Cotización rechazada** | Tu cliente rechaza desde el link. |
+| Cotización | **Contraoferta del cliente** | Tu cliente propone otro monto desde el link. |
+| Cotización | El texto del mensaje | Tu cliente escribe en el chat general de la cotización. La notificación muestra su mensaje (los más largos se recortan). Los comentarios sobre una partida no llegan a la campana: se ven en la conversación de la cotización. |
+| Cotización | **Pago recibido** | Entra un pago de la cotización. |
+| Factura | **Tu cliente vio la factura** | Tu cliente abre la factura. |
+| Factura | **Abono recibido** | Entra un pago parcial de la factura. |
+| Factura | **Factura pagada** | La factura queda pagada. |
+
+### Qué no la enciende
+
+**Nada de lo que haces tú o tu equipo**: enviar una cotización, editar un borrador,
+crear una versión nueva, marcarla aprobada o rechazada a mano, registrar un pago a mano,
+emitir una factura, ni los recordatorios que Cord envía en automático. Esos movimientos
+siguen en la actividad de cada documento, pero no son novedades que tengas que atender.
+
+Tampoco la enciende abrir tu propio link con tu sesión iniciada: Cord no lo cuenta como
+vista del cliente.
+
+### El contador
+
+Sobre la campana aparece un número con las notificaciones que llegaron desde la última
+vez que la abriste: de **1** a **9**, y **9+** a partir de diez. Sin novedades, no hay
+número. El contador se calcula cada vez que abres una página de la app.
+
+En el [Entorno de prueba](/docs/operacion/mapa-de-la-app#entorno-de-prueba) la campana no
+muestra contador.
+
+### El panel
+
+Al pulsar la campana se abre el panel **Notificaciones** con las **15 más recientes**,
+de la más nueva a la más antigua. Cada una muestra:
+
+- qué pasó (por ejemplo, **Cotización aprobada**), con un icono en verde para
+  aprobaciones y pagos, ámbar para vistas y contraofertas, y rojo para rechazos;
+- el folio y el cliente (por ejemplo, "COT-0148 · Distribuidora El Zarco");
+- cuándo pasó: "este minuto", "hace 5 min", "hace 3 h", "ayer"; después de una semana, la
+  fecha en la zona horaria de tu negocio.
+
+Las que llegaron desde la última vez que abriste el panel aparecen **resaltadas**. Pulsa
+cualquiera para abrir su cotización o su factura. Si no hay nada, el panel dice
+"Sin actividad reciente".
+
+### Leer y ver todo
+
+- **Abrir la campana la marca como vista.** El contador se pone en cero en cuanto abres
+  el panel; las nuevas se siguen viendo resaltadas mientras lo tienes abierto.
+- **Marcar como leídas** quita el resaltado de todas sin cerrar el panel.
+- **Ver toda la actividad** lleva al widget **Actividad** del [Inicio](/docs/gestion/dashboard),
+  que muestra los 7 movimientos más recientes de tus cotizaciones, **incluidos** los de tu
+  equipo (envíos, por ejemplo). Si ocultaste ese widget, recupéralo desde la
+  **Biblioteca** al personalizar el Inicio.
+
+### Leído por usuario, en todos tus dispositivos
+
+Lo que ya viste se guarda **en tu usuario**, no en el navegador: si abres la campana en
+el teléfono, esas notificaciones ya no cuentan como nuevas en la computadora. Cada
+miembro del equipo tiene su propio leído: que tú abras la campana no la apaga para tus
+compañeros. Si trabajas en varias organizaciones, cada una lleva su propio leído.
+
+## Avisos por correo, Slack y Teams
 
 En **Ajustes › Notificaciones › Notificaciones** hay una matriz de 8 eventos por 3
 canales (Correo, Slack y Teams). Marcas las casillas que quieres y se aplican a partir
@@ -55,7 +143,7 @@ Más detalle en [Lo que ve tu cliente](/docs/interaccion/vista-del-cliente).
 
 ### Lo que no genera aviso
 
-- **Mensajes, comentarios por partida y contraofertas.** Quedan en la conversación y en la campana de la barra superior, pero no generan correo, Slack ni Teams. Para recibirlos, crea un [workflow](/docs/automatizacion/workflows/primer-workflow) con **Llega un mensaje en una cotización**.
+- **Mensajes, comentarios por partida y contraofertas.** Quedan en la conversación; los mensajes del chat general y las contraofertas también aparecen en la [campana](#la-campana-de-la-barra-superior) (los comentarios por partida no). Ninguno genera correo, Slack ni Teams. Para recibirlos, crea un [workflow](/docs/automatizacion/workflows/primer-workflow) con **Llega un mensaje en una cotización**.
 - **Lo que hace tu equipo:** **Marcar aprobada**, **Marcar rechazada** y **Registrar pago** cambian el estado, pero no envían estos avisos.
 - **Solicitudes de aprobación interna:** llegan a Slack con botones para decidir y a Teams con un enlace a Cord, aparte de esta matriz (ver [Aprobaciones internas](/docs/cotizacion/aprobaciones-internas)).
 
@@ -128,8 +216,20 @@ los correos al cliente es desde Starter (**Ajustes › Notificaciones › Correo
 
 **No recibo nada en Slack.** Revisa que la URL del webhook esté guardada y que la columna de Slack esté marcada en ese evento.
 
+**Envié una cotización y la campana no lo muestra.** Es a propósito: la campana solo
+muestra lo que hizo tu cliente o el dinero que entró. Tus envíos y cambios están en la
+actividad de la cotización y en el widget **Actividad** del Inicio.
+
+**Ya leí las notificaciones y otra pestaña sigue mostrando el número.** El contador se
+calcula al cargar cada página: en la otra pestaña se actualiza en cuanto cambies de
+página o la recargues.
+
+**Mi compañero sigue viendo el contador.** El leído es de cada usuario: abrir la campana
+solo la marca como vista para ti.
+
 ## Relacionadas
 
+- [Mapa completo de la aplicación](/docs/operacion/mapa-de-la-app)
 - [Chat y comentarios](/docs/interaccion/chat)
 - [Negociación y contraofertas](/docs/interaccion/negociacion)
 - [Disparadores de workflows](/docs/automatizacion/workflows/disparadores)

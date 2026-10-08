@@ -7,6 +7,8 @@ order: 1
 
 Welcome to Cord. This guide gets you operating —quoting, collecting, and invoicing— in under 20 minutes. If it's your first time, follow this linear path.
 
+To find your way: the everyday sections (Home, Quotes, Clients, Products, Tasks, Invoices, Payments, Collections, Reports, Performance, Workflows) are in the sidebar; **Settings** opens with the gear in the top bar, and the **Create** button in that same bar starts a quote, invoice, client, product or task from any screen. The full tour is in [Getting around Cord](/en/support/moverse-por-cord).
+
 ## Step 1: Set up your company
 **Shortcut:** when you finish signing up, Cord offers to set up your account with AI. Give it your website, what your business does and your price list, and it proposes profile, branding, taxes, catalog and templates for you to review and approve. If you skipped it, it's in **Settings > General > Set up with AI**. See [Set up your account with AI](/en/support/configurar-con-ia).
 
@@ -34,7 +36,7 @@ The full editor walkthrough is in [Create a quote or an invoice step by step](/e
 ## Step 5: (For devs) Connect the API
 If you'll use Cord programmatically:
 
-- Go to **Settings > Developers > API** and create a key (`sk_test_...` or `sk_live_...`).
+- Turn on **Developer mode** with the switch at the bottom of the **Settings** index (the gear in the top bar), open the **API** tab in the Developers dock and create a key (`sk_test_...` or `sk_live_...`).
 - Verify it works with the simplest call:
 
 ```bash
@@ -44,10 +46,11 @@ curl https://cordhq.app/api/v1/me -H "Authorization: Bearer sk_test_your_key"
 - Or use the [Cord CLI](/en/support/cli-cord): `npx @flouviahq/cli login` connects your terminal from the browser and `npx @flouviahq/cli init` integrates your project.
 
 ## Step 6: Automate and connect your apps
-- In **Workflows** create your first workflow from one of the ideas: for example, alert the team when a client approves. It is one of the steps in the **Set up Cord** checklist.
-- In **Settings › Integrations** connect the tools you already use. Slack, Zapier and Make connect with one click, without copying keys or URLs; your connected apps show up in the top bar.
+- In **Workflows** (sidebar, **Automation** group) create your first workflow from one of the ideas: for example, alert the team when a client approves. It is one of the steps in the **Set up Cord** checklist.
+- In **Settings › Integrations** connect the tools you already use. Slack, Zapier and Make connect with one click, without copying keys or URLs; your connected apps show up with their logo in the **Apps** button in the top bar.
 
 ## What's next?
+- [Getting around Cord: menu, search, shortcuts and notifications](/en/support/moverse-por-cord)
 - [Configure Webhooks](/en/support/configurar-webhooks)
 - [Invite your team](/en/support/invitar-miembros-roles)
 - [Dispute management](/en/support/manejo-disputas)

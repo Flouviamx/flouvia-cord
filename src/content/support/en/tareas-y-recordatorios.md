@@ -11,7 +11,7 @@ Tasks are your team's to-dos: the follow-up call, the pending delivery, the char
 
 - **Home:** the **Tasks and reminders** widget shows the most urgent ones and a composer to add a new one.
 - **Tasks** in the sidebar (shortcut `G` then `T`): every task, with **Mine**, **All**, and **Unassigned** filters, and the **Completed** tab.
-- **Create › Task** in the top bar (or the `T` key), from any screen.
+- **Create › Task** in the top bar (or the `T` key), from any screen. Also with **New task** in the `⌘ K` search (`Ctrl K` on Windows).
 
 ### Create a task
 
@@ -27,7 +27,7 @@ Tasks are your team's to-dos: the follow-up call, the pending delivery, the char
 - Click the circle to complete it. For a few seconds you can click **Undo**.
 - Each task's **···** menu lets you **Edit** (title, notes, date, priority, and assignee), **Snooze** until tomorrow, Monday, or in a week, **Assign to me**, and **Delete**.
 - If the task comes from a quote or invoice, its number and the client show as a link to the document.
-- In the sidebar, **Tasks** shows how many of yours or unassigned ones are due today or overdue.
+- In the sidebar, **Tasks** carries a counter with yours or unassigned ones that are due today or overdue. It's gray, and turns orange when any of them is already overdue.
 
 ### The email reminder
 

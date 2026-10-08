@@ -36,7 +36,7 @@ It applies to **card** payments processed by Cord Payments. SPEI or a manual tra
 3. Opening a dispute takes you to its evidence page, **Build a clear response**, with the amount, the status, and the **due date** at the top.
 </Steps>
 
-Cord also adds to [Tasks](/en/docs/gestion/tareas) a high-priority task titled "Respond to the [amount] chargeback" (in your account's language), unassigned, linked to the payment's quote, and due on the day, in your business's time zone, the evidence deadline falls on. Because it's unassigned, the email reminder for that task goes to the account owner. Like any task, it emits **A task is created** (`task.created`).
+Cord also adds to [Tasks](/en/docs/gestion/tareas) a high-priority task titled "Respond to the [amount] chargeback" (in your account's language), unassigned, linked to the payment's quote, and due on the day, in your business's time zone, the evidence deadline falls on. Because it's unassigned, the email reminder for that task goes to the account owner, and on the due date the task joins the number next to **Tasks** in every member's sidebar (orange if it's already overdue and not done). Like any task, it emits **A task is created** (`task.created`).
 
 If you use the API or Workflows, Cord emits **A dispute is opened** (`dispute.created`) and **A dispute is closed** (`dispute.closed`, with the outcome). See [Workflow triggers](/en/docs/automatizacion/workflows/disparadores).
 

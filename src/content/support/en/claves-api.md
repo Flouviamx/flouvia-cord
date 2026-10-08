@@ -45,6 +45,6 @@ Zapier and Make do not use keys: they connect with one click on a Cord screen. E
 
 There is no in-place rotation with a grace period. If a key leaks (e.g. accidentally pushed to GitHub):
 
-1. Open the **API** tab in the Developers dock (turn it on in Settings > Company if you don't see it).
+1. Open the **API** tab in the Developers dock (if you don't see it, turn on the **Developer mode** switch at the bottom of the Settings index).
 2. Create a new key and update your servers with it.
 3. **Revoke** the compromised key. Revocation is immediate: any request with that key returns `401`.

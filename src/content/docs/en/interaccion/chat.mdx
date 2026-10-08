@@ -2,7 +2,7 @@
 title: "Chat and comments"
 seoTitle: "Quote chat and per-line comments"
 description: "The general conversation and per-line threads inside the quote link: who writes, how you reply from Cord, when it shows live, and how to find out about a message."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-08"
 reviewedBy: "Cord product and operations"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -61,7 +61,7 @@ Cord doesn't send email, Slack, or Teams for every client message or comment.
 
 - **Pro, Scale, and Developer:** with the detail open, messages arrive live and **New** appears in Conversation.
 - **Free and Starter:** reload the detail to see new messages.
-- **The bell on the top bar** lists your organization's 15 most recent activities, including "New message from your client" and "Counteroffer from your client", with the quote number and client.
+- **The bell on the top bar** (Notifications) collects what the client does and the money that comes in, from quotes and invoices, including "New message from your client" and "Counteroffer from your client", with the quote number and client. It carries a count of what you haven't seen (1 to 9, then "9+"), shows the 15 most recent, and each one opens its quote. Your own replies don't appear there.
 - **Any plan:** create a [workflow](/en/docs/automatizacion/workflows/primer-workflow) with the **A message is posted on a quote** trigger to get the alert wherever you want (team email, Slack, Teams). The same event reaches your [webhooks](/en/docs/desarrolladores/herramientas/webhooks).
 
 ## Behavior and edge cases
@@ -69,7 +69,7 @@ Cord doesn't send email, Slack, or Teams for every client message or comment.
 - **Messages up to 800 characters.**
 - **On approval or rejection,** the link stops showing the message field and the comment buttons; the history is kept on the quote.
 - **The conversation doesn't change the quote.** A message doesn't change prices or status. To change the proposal use **Modify and resend**.
-- **The side menu doesn't count messages.** The number next to **Quotes** counts sent or viewed quotes still waiting for a decision, not messages.
+- **The sidebar doesn't count messages.** The number next to **Quotes** counts the quotes your client has already viewed that are still unanswered, not messages.
 
 ## Limits by plan
 
