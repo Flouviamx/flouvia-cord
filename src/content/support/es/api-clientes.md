@@ -41,7 +41,7 @@ Respuesta: `{ "data": { "id": "..." } }`.
 **Campos:**
 - `empresa` (obligatorio): razón social o nombre comercial.
 - `rfc`: si capturas un RFC válido, podrás timbrar CFDI 4.0 a nombre de este cliente al facturar su cotización.
-- `terminos`: `contado`, `net30` o `net60`.
+- `terminos`: `contado` o `net<N>` para N días de crédito: `net7`, `net15`, `net30`, `net45`, `net60`, `net90`.
 - `limite`: límite de crédito en pesos (MXN).
 - `nivel`: `estandar`, `plata`, `oro` o `distribuidor` (lista de precios).
 - `descuento_pct`: descuento automático del nivel (0–100).

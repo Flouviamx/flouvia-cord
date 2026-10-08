@@ -2442,3 +2442,42 @@ Estado y archivos del contrato: [personalización de marca](../estado/personaliz
 - Integrados los cambios remotos de marketing antes del despliegue para
   conservar el trabajo ya publicado. Eliminada la traducción huérfana del botón
   SSO sustituido por el pie de guardado compartido.
+
+## 2026-10-07 — Alta de cliente y de producto para cualquier país y giro
+
+Auditoría de `ClientModal.astro` y `ProductModal.astro`, y lo que se corrigió:
+
+- **Textos traducidos que nunca se leían.** Ambos modales leían `dataset.nuevo`
+  para un atributo `data-i18n-nuevo` (cuyo nombre en `dataset` es `i18nNuevo`),
+  así que una cuenta en inglés veía títulos, errores y estados en español.
+- **Dinero con divisa fija** (regla 21): "(MXN)" en precio, costo y límite de
+  crédito; "$1,000" y `es-MX` en la vista previa del descuento; "$" fijo en los
+  niveles de volumen. Ahora sale de `orgs.moneda` y de `money-client.ts`.
+- **Teléfono sin lada.** El placeholder sugería "55 1234 5678" y WhatsApp exige
+  E.164 (`toE164()` no inventa la lada), así que esos clientes no recibían
+  avisos. Selector de lada por país y guardado `+52 55 1234 5678`
+  (`src/lib/party-format.ts`).
+- **País del cliente al frente.** Define el nombre y un ejemplo del
+  identificador fiscal, una verificación blanda de su formato (aconseja, nunca
+  bloquea: RFC, EIN, BN, CPF/CNPJ, NIF/NIE/CIF, VAT, SIREN, NIT, CUIT, RUT,
+  RUC), el nombre del código postal y de la subdivisión, y un selector de
+  estado/provincia donde hay catálogo (MX, US, CA, BR, ES). Un valor guardado
+  fuera del catálogo se conserva (regla 28).
+- **CFDI solo cuando aplica.** El bloque de régimen/uso aparece si el EMISOR es
+  mexicano y el cliente también, y filtra las claves por tipo de RFC (12 moral,
+  13 física) sin borrar la ya elegida.
+- **`step="1000"` en el límite de crédito** hacía que el navegador rechazara
+  "1500" al guardar; y el botón de guardar quedaba deshabilitado en "Creando…"
+  al reabrir el modal en el editor de cotizaciones.
+- **Producto:** tipo de venta (bien, servicio, suscripción) que propone
+  unidades —no se guarda; se deduce de la unidad—, descripción multilínea,
+  SKU de hasta 64 caracteres y **impuesto sugerido por producto**
+  (`productos.tax_rate`, `null` = el default de la org). Se valida contra el
+  catálogo de la organización al guardar y lo consumen los editores de
+  cotización y factura al agregar el producto o un kit; la línea sigue tomando
+  su propio snapshot (regla 23). Expuesto como `taxRate` en `/api/v1/productos`.
+
+Pendiente fuera de este cambio: términos de pago más allá de contado/net30/net60
+(el contrato vive en ~20 sitios, incluida la API pública y Elements), claves
+SAT de producto y unidad para el CFDI (hoy siempre `01010101`/`H87`) y el CFDI
+a un receptor extranjero (`XEXX010101000` + residencia fiscal).

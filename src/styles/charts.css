@@ -179,3 +179,8 @@ circle.is-focus, .chx-legend-item.is-focus { opacity: 1; transition: opacity 0.2
 }
 
 [data-widget-size="lg"] .chx-series-summary:empty { display: none; }
+
+/* Drill-down: una barra que lleva a su detalle se distingue por el cursor, no por
+   un adorno; el tooltip trae el enlace explícito ("Ver detalle"). */
+.chx-hbar-row.is-drillable { cursor: pointer; }
+.chx-hbar-row.is-drillable:hover .chx-hbar-name { color: var(--color-blue-deep); }

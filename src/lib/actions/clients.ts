@@ -1,12 +1,12 @@
 import { sql, withOrgTx } from '../db';
 import { requireResourceCapacity, resourceLimitError } from '../org-entitlements';
 import { isCountryCode } from '../countries';
+import { normalizeTerm } from '../payment-terms';
 import { after } from '../after';
 import { dispatchEvent } from '../webhooks';
 import { clientEventData, clientPrevData } from '../event-payloads';
 import { type ActionContext, type ActionOutcome, auditAction, done, fromResponse, isUuid } from './outcome';
 
-const TERMINOS = ['contado', 'net30', 'net60'];
 const NIVELES = ['estandar', 'plata', 'oro', 'distribuidor'];
 
 export function cleanClientInput(input: Record<string, any>) {
@@ -17,7 +17,7 @@ export function cleanClientInput(input: Record<string, any>) {
         email: String(input.email ?? '').trim() || null,
         telefono: String(input.telefono ?? '').trim() || null,
         rfc: String(input.rfc ?? '').trim().toUpperCase() || null,
-        terminos: TERMINOS.includes(input.terminos) ? input.terminos : 'contado',
+        terminos: normalizeTerm(input.terminos),
         limite: input.limite === '' || input.limite === null || input.limite === undefined
             ? null : Math.max(0, Number(input.limite) || 0),
         nivel: NIVELES.includes(input.nivel) ? input.nivel : 'estandar',

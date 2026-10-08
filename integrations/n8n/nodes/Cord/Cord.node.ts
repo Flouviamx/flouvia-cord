@@ -3,9 +3,14 @@ import { NodeConnectionTypes } from 'n8n-workflow';
 
 export const API = 'https://cordhq.app/api/v1';
 
+// `net<N>` = N días de crédito. Misma lista que src/lib/payment-terms.ts de Cord.
 const paymentTerms: INodePropertyOptions[] = [
+	{ name: 'Net 15', value: 'net15' },
 	{ name: 'Net 30', value: 'net30' },
+	{ name: 'Net 45', value: 'net45' },
 	{ name: 'Net 60', value: 'net60' },
+	{ name: 'Net 7', value: 'net7' },
+	{ name: 'Net 90', value: 'net90' },
 	{ name: 'Upfront', value: 'contado' },
 ];
 

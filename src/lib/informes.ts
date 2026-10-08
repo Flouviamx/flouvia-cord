@@ -3,14 +3,16 @@ import type { PermKey } from './permissions';
 export const REPORT_IDS = [
     'resumen', 'comercial', 'finanzas', 'flujo', 'cobranza', 'clientes', 'productos',
     'ventas', 'ventas-cliente', 'ventas-producto', 'pagos', 'impuestos', 'recompra', 'vendedores',
+    'explorar',
 ] as const;
 
 export type ReportId = typeof REPORT_IDS[number];
 export type ReportScope = 'rango' | 'snapshot';
-/** `widgets`: tablero personalizable. `tabla`: KPIs + gráfica + tabla exportable (src/lib/informes-tabla.ts). */
-export type ReportKind = 'widgets' | 'tabla';
+/** `widgets`: tablero personalizable. `tabla`: KPIs + gráfica + tabla exportable (src/lib/informes-tabla.ts).
+ *  `explorador`: una tabla cuyo "agrupar por" y métricas elige la persona (src/lib/informes-explorar.ts). */
+export type ReportKind = 'widgets' | 'tabla' | 'explorador';
 /** Categorías de la biblioteca de informes (estilo Shopify). */
-export type ReportGroup = 'resumen' | 'ventas' | 'clientes' | 'productos' | 'finanzas' | 'equipo';
+export type ReportGroup = 'resumen' | 'ventas' | 'clientes' | 'productos' | 'finanzas' | 'equipo' | 'personalizados';
 
 export interface ReportDef {
     id: ReportId;
@@ -20,10 +22,10 @@ export interface ReportDef {
     scope: ReportScope;
     kind: ReportKind;
     perm: PermKey;
-    icon: 'overview' | 'pulse' | 'finance' | 'flow' | 'collection' | 'clients' | 'products' | 'sales' | 'payments' | 'tax' | 'cohort' | 'team';
+    icon: 'overview' | 'pulse' | 'finance' | 'flow' | 'collection' | 'clients' | 'products' | 'sales' | 'payments' | 'tax' | 'cohort' | 'team' | 'explore';
 }
 
-export const REPORT_GROUPS: readonly ReportGroup[] = ['resumen', 'ventas', 'clientes', 'productos', 'finanzas', 'equipo'];
+export const REPORT_GROUPS: readonly ReportGroup[] = ['resumen', 'ventas', 'clientes', 'productos', 'finanzas', 'equipo', 'personalizados'];
 
 export const REPORTS: readonly ReportDef[] = [
     { id: 'resumen', label: 'Resumen', labelEn: 'Overview', group: 'resumen', scope: 'rango', kind: 'widgets', perm: 'analitica', icon: 'overview' },
@@ -40,6 +42,7 @@ export const REPORTS: readonly ReportDef[] = [
     { id: 'flujo', label: 'Flujo de caja · 90 días', labelEn: 'Cash flow · 90 days', group: 'finanzas', scope: 'snapshot', kind: 'widgets', perm: 'analitica', icon: 'flow' },
     { id: 'cobranza', label: 'Cobranza y cartera', labelEn: 'Collections and receivables', group: 'finanzas', scope: 'snapshot', kind: 'widgets', perm: 'cobranza', icon: 'collection' },
     { id: 'vendedores', label: 'Ventas por vendedor', labelEn: 'Sales by team member', group: 'equipo', scope: 'rango', kind: 'tabla', perm: 'analitica', icon: 'team' },
+    { id: 'explorar', label: 'Informe personalizado', labelEn: 'Custom report', group: 'personalizados', scope: 'rango', kind: 'explorador', perm: 'analitica', icon: 'explore' },
 ] as const;
 
 export const REPORT_BY_ID = Object.fromEntries(REPORTS.map((report) => [report.id, report])) as Record<ReportId, ReportDef>;

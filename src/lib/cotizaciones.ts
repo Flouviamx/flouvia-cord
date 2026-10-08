@@ -19,6 +19,7 @@ import { listOfferedCurrencies, normalizeCurrency } from './currency';
 import { taxCatalogFor, TaxCatalogUnavailableError } from './impuestos-db';
 import { intlLocale } from './fmt-server';
 import { validateFiscalReceptor, type FiscalReceptor, type FiscalReceptorInput } from '../../packages/elements/src/fiscal/receptor';
+import { normalizeTerm } from './payment-terms';
 
 // El motivo de aprobación lo lee el aprobador: el tope y el total van con la
 // divisa real de la cotización, no con un '$' que puede significar otra cosa.
@@ -324,7 +325,7 @@ export async function createCotizacion(
     const esRecurrente = !!input.es_recurrente;
     const terminos = esRecurrente
         ? 'contado'
-        : (['contado', 'net30', 'net60'].includes(input.terminos ?? '') ? input.terminos! : 'contado');
+        : normalizeTerm(input.terminos);
     // Anticipo: % válido entre 1 y 99; cualquier otro valor = sin anticipo.
     const anticipoPctRaw = Number(input.anticipo_pct);
     const anticipoPct = esRecurrente ? null

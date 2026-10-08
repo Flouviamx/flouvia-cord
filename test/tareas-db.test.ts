@@ -82,6 +82,18 @@ beforeAll(async () => {
 afterAll(async () => { await m.db?.close(); });
 beforeEach(async () => { await m.db.exec('delete from tareas'); m.sent = []; m.failTo = ''; });
 
+describe('migración de despliegue', () => {
+    it('corre en el build antes de compilar y cada sentencia es espejo de db/schema.sql', () => {
+        const build = JSON.parse(readFileSync('vercel.json', 'utf8')).buildCommand as string;
+        const steps = build.split('&&').map((s) => s.trim());
+        expect(steps.indexOf('node scripts/migrate-tareas.mjs')).toBeGreaterThan(-1);
+        expect(steps.indexOf('node scripts/migrate-tareas.mjs')).toBeLessThan(steps.indexOf('npm run build'));
+        const squash = (s: string) => s.replace(/\s+/g, ' ').trim();
+        const schema = squash(readFileSync('db/schema.sql', 'utf8'));
+        for (const stmt of migration()) expect(schema, stmt).toContain(squash(stmt));
+    });
+});
+
 describe('acciones', () => {
     it('crea con prioridad, notas y responsable, y guarda quién la creó', async () => {
         const out = await createTask(ctx(), { titulo: '  Llamar a Luis  ', prioridad: 'alta', notas: 'tel 55', asignado_a: BETO, cotizacion_id: COT });

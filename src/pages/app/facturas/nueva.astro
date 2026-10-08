@@ -15,6 +15,7 @@
 //     de dinero y el motor de totales en vez de reimplementarlos.
 import AppLayout from '../../../layouts/AppLayout.astro';
 import ClientModal from '../../../components/app/ClientModal.astro';
+import TermPicker from '../../../components/app/TermPicker.astro';
 import DatePicker from '../../../components/app/DatePicker.astro';
 import AccessGate from '../../../components/app/AccessGate.astro';
 import PlanGate from '../../../components/app/PlanGate.astro';
@@ -34,6 +35,7 @@ import { CURRENCY_FLAG } from '../../../lib/flags';
 import { listOfferedCurrencies } from '../../../lib/currency';
 import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
+import { normalizeTerm, termDueDate } from '../../../lib/payment-terms';
 import '../../../styles/modal.css';
 import '../../../styles/editor.css';
 
@@ -104,8 +106,7 @@ const CURRENCY_OPTIONS = listOfferedCurrencies(DEFAULT_CURRENCY)
         flag: CURRENCY_FLAG[code] || country,
     }));
 
-const TERM_CODES = ['contado', 'net30', 'net60'] as const;
-const TERM_DEFAULT_CODE = ORG.terminosDefault || 'contado';
+const TERM_DEFAULT_CODE = normalizeTerm(ORG.terminosDefault);
 // `toISOString()` es UTC: en cualquier huso al oeste de Greenwich, de tarde en
 // adelante devuelve el día SIGUIENTE. El vencimiento es una fecha de calendario
 // local, no un instante, así que se arma con los componentes locales.
@@ -113,7 +114,7 @@ const isoLocal = (d: Date) =>
     `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const hoy = new Date();
 const defaultDue = draft?.venceISO
-    || isoLocal(new Date(hoy.getTime() + (TERM_DEFAULT_CODE === 'net60' ? 60 : TERM_DEFAULT_CODE === 'net30' ? 30 : 0) * 86400000));
+    || isoLocal(termDueDate(hoy, TERM_DEFAULT_CODE));
 
 // Payload para el script. Va como JSON en el DOM y no por `define:vars` para
 // que el script pueda ser un módulo bundleado y así importar de verdad.
@@ -135,6 +136,7 @@ const BOOT = {
         id: p.id, nombre: p.nombre, sku: p.sku ?? null, unidad: p.unidad ?? 'pieza',
         precio: Number(p.precio) || 0,
         volumen: p.preciosVolumen ?? null,
+        taxRate: p.taxRate ?? null,
     })),
     kits: kits.map((k: any) => ({
         id: k.id, nombre: k.nombre, precioCombo: Number(k.precioCombo) || 0,
@@ -270,13 +272,7 @@ import { iconInner } from '../../../lib/icons';
                             ))}
                             <option value="__NEW__" class="opt-action">{L === 'en' ? '+ New client' : '+ Crear cliente'}</option>
                         </select>
-                        <div class="term-chips" id="termChips">
-                            {TERM_CODES.map((code) => (
-                                <button type="button" class:list={['chip', { active: code === TERM_DEFAULT_CODE }]} data-term={code}>
-                                    {t(L, `ed.term_${code}` as any)}
-                                </button>
-                            ))}
-                        </div>
+                        <TermPicker id="termChips" value={TERM_DEFAULT_CODE} ariaLabel={t(L, 'terms.label')} />
                     </div>
                     <p class="desc-note" id="descNote" hidden></p>
                 </section>
@@ -509,6 +505,8 @@ import { iconInner } from '../../../lib/icons';
     import { iconSvg } from '../../../lib/icons';
     import { createMoney } from '../../../lib/money-client';
     import { calculateDocumentTotals } from '../../../../packages/elements/src/engine';
+    import { termDueDate } from '../../../lib/payment-terms';
+    import { wireTermPicker } from '../../../lib/term-picker-client';
 
     const raiz = document.querySelector('[data-editor="invoice"]') as HTMLElement | null;
     const bootEl = document.getElementById('edBoot');
@@ -723,6 +721,14 @@ import { iconInner } from '../../../lib/icons';
         const abrirDrop = () => { pintarDrop(); $drop.hidden = false; $prod.setAttribute('aria-expanded', 'true'); };
         const cerrarDrop = () => { $drop.hidden = true; $prod.setAttribute('aria-expanded', 'false'); };
 
+        // El impuesto que el producto sugiere, si sigue en el catálogo de la org; si
+        // no (la tasa se dio de baja), el default. La línea toma su propio snapshot.
+        const catTax = new Map<string, number | null>((BOOT.catalogo || []).map((p: any) => [p.id, p.taxRate ?? null]));
+        const productTax = (id: string | null | undefined): number => {
+            const r = id ? catTax.get(id) : null;
+            return r !== null && r !== undefined && (BOOT.taxOptions || []).some((o: any) => Math.abs(Number(o.rate) - Number(r)) < 1e-9)
+                ? Number(r) : BOOT.defaultTaxRate;
+        };
         const agregarProducto = (p: any) => {
             const desc = currentDesc();
             lines.push({
@@ -730,7 +736,7 @@ import { iconInner } from '../../../lib/icons';
                 baseLista: p.precio,
                 lista: desc > 0 ? Math.round(p.precio * (1 - desc / 100) * 100) / 100 : p.precio,
                 negociado: null, cantidad: 1,
-                taxRate: BOOT.defaultTaxRate, negoTouched: false, volumen: p.volumen,
+                taxRate: productTax(p.id), negoTouched: false, volumen: p.volumen,
             });
             render();
             // Flash sobre la fila nueva: el feedback de "ya se agregó" que
@@ -806,7 +812,7 @@ import { iconInner } from '../../../lib/icons';
                         negociado: ratio !== 1 && it.productoId ? Math.round(lista * ratio * 100) / 100 : null,
                         negoTouched: ratio !== 1,
                         cantidad: it.cantidad * mult,
-                        taxRate: BOOT.defaultTaxRate,
+                        taxRate: productTax(it.productoId),
                     });
                 }
                 render();
@@ -840,9 +846,8 @@ import { iconInner } from '../../../lib/icons';
 
             const term = $client.selectedOptions[0]?.dataset.term;
             if (term) {
-                document.querySelectorAll('#termChips .chip').forEach((c) =>
-                    c.classList.toggle('active', (c as HTMLElement).dataset.term === term));
-                aplicarTermino(term);
+                termPicker.set(term);
+                aplicarTermino(termPicker.get());
             }
             render();
         });
@@ -863,10 +868,8 @@ import { iconInner } from '../../../lib/icons';
         }) as EventListener);
 
         // ── Términos → vencimiento ──────────────────────────────────────────
-        const DIAS: Record<string, number> = { contado: 0, net30: 30, net60: 60 };
         const aplicarTermino = (code: string) => {
-            const d = DIAS[code] ?? 0;
-            const fecha = new Date(Date.now() + d * 86400000);
+            const fecha = termDueDate(new Date(), code);
             const campo = $('dueDate') as HTMLInputElement;
             // Local, no UTC: con toISOString() los términos "contado" fijaban
             // mañana a partir de las 18:00 en México.
@@ -875,13 +878,9 @@ import { iconInner } from '../../../lib/icons';
             // escribir `.value` a secas dejaría el campo diciendo la fecha vieja.
             campo.dispatchEvent(new Event('change', { bubbles: true }));
         };
-        document.querySelectorAll('#termChips .chip').forEach((chip) => {
-            chip.addEventListener('click', () => {
-                document.querySelectorAll('#termChips .chip').forEach((c) => c.classList.remove('active'));
-                chip.classList.add('active');
-                aplicarTermino((chip as HTMLElement).dataset.term || 'contado');
-            });
-        });
+        // Chips comunes + "Otro plazo" (ver TermPicker.astro): cambiar el plazo
+        // recalcula el vencimiento.
+        const termPicker = wireTermPicker($('termChips'), aplicarTermino);
 
         // ── Multi-divisa ────────────────────────────────────────────────────
         const $fxBase = $('fxBase') as HTMLSelectElement | null;

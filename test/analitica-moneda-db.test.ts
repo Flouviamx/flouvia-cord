@@ -1,8 +1,7 @@
 // Analítica en la divisa y la zona horaria del negocio (reglas 21, 22, 24 y 25).
 // Corre las consultas REALES de queries.ts contra PGlite con un esquema mínimo y
 // la vista `cuentas_por_cobrar` copiada tal cual de db/schema.sql.
-import { PGlite } from '@electric-sql/pglite';
-import { readFileSync } from 'node:fs';
+import { cuentasPorCobrarView, makeSchemaDb } from './helpers/schema-subset';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const m = vi.hoisted(() => ({ db: null as any, org: '', rates: {} as Record<string, number> }));
@@ -59,40 +58,9 @@ const CL1 = 'c1000000-0000-4000-8000-000000000001';
 const CL2 = 'c2000000-0000-4000-8000-000000000002';
 
 beforeAll(async () => {
-    m.db = new PGlite();
-    await m.db.exec(`
-        create table orgs(id uuid primary key, moneda text, zona_horaria text, country_code text, interes_moratorio_pct numeric);
-        create table clientes(id uuid primary key, org_id uuid not null, empresa text, nivel text, descuento_pct numeric,
-            terminos_default text, limite_credito numeric, telefono text);
-        create table productos(id uuid primary key default gen_random_uuid(), org_id uuid, nombre text);
-        create table cotizaciones(id uuid primary key default gen_random_uuid(), org_id uuid not null, cliente_id uuid,
-            folio text, status text, total numeric, base_currency text not null default 'MXN', fiscal_currency text not null default 'MXN',
-            fx_rate numeric not null default 1, created_at timestamptz default now(), sent_at timestamptz, approved_at timestamptz,
-            paid_at timestamptz, viewer_last_seen timestamptz, vigencia date, terminos text, es_recurrente boolean,
-            public_token text default gen_random_uuid()::text, creado_por uuid, payment_method text);
-        create table org_members(org_id uuid, user_id uuid, nombre text, email text, rol text, estado text);
-        create table cotizacion_items(id uuid primary key default gen_random_uuid(), cotizacion_id uuid, producto_id uuid,
-            descripcion text, cantidad numeric, precio_unitario numeric, precio_negociado numeric);
-        create table eventos(id uuid primary key default gen_random_uuid(), org_id uuid, cotizacion_id uuid, tipo text,
-            detalle text, created_at timestamptz default now());
-        create table cotizacion_cobros(id uuid primary key default gen_random_uuid(), org_id uuid, cotizacion_id uuid,
-            monto numeric, status text, paid_at timestamptz, created_at timestamptz default now(), reembolsado_cents bigint, payment_method text);
-        create table documento_pagos(id uuid primary key default gen_random_uuid(), org_id uuid, documento_id uuid, cobro_id uuid,
-            monto numeric, currency text, metodo text default 'manual', aplicado_at timestamptz default now());
-        create table cotizacion_suscripciones(id uuid primary key default gen_random_uuid(), org_id uuid, cliente_id uuid,
-            monto numeric, moneda text, estado text, current_period_end timestamptz, cancel_at_period_end boolean default false);
-        create table promesas_pago(id uuid primary key default gen_random_uuid(), org_id uuid, cotizacion_id uuid,
-            fecha_promesa date, monto numeric, nota text, estado text default 'pendiente', created_at timestamptz default now());
-        create table documentos_fiscales(id uuid primary key default gen_random_uuid(), org_id uuid, cliente_id uuid,
-            invoice_number text, currency text, total numeric, amount_paid numeric, amount_remaining numeric, due_date date,
-            public_token text, cotizacion_id uuid, lifecycle text, ledger_currency text, fx_rate numeric, updated_at timestamptz default now());
-    `);
-    const schema = readFileSync(new URL('../db/schema.sql', import.meta.url), 'utf8');
-    const start = schema.indexOf('create or replace view cuentas_por_cobrar as');
-    const end = schema.indexOf(';', schema.indexOf('where d2.cotizacion_id = c.id', start)) + 1;
-    expect(start).toBeGreaterThan(0);
-    await m.db.exec(schema.slice(start, end));
-}, 30000);
+    // Esquema REAL (tipos incluidos) sacado de db/schema.sql: ver test/helpers/schema-subset.ts.
+    m.db = await makeSchemaDb(['orgs', 'users', 'clientes', 'productos', 'org_members', 'cotizaciones', 'cotizacion_items', 'eventos', 'cotizacion_cobros', 'cotizacion_suscripciones', 'promesas_pago', 'documentos_fiscales', 'documento_pagos'], [cuentasPorCobrarView()]);
+}, 60000);
 
 afterAll(async () => { await m.db?.close(); });
 
@@ -101,11 +69,13 @@ beforeEach(async () => {
     m.rates = { USD: 20 };
     await m.db.exec(`delete from orgs; delete from clientes; delete from cotizaciones; delete from cotizacion_items; delete from eventos;
         delete from cotizacion_cobros; delete from cotizacion_suscripciones; delete from org_members; delete from documento_pagos; delete from promesas_pago; delete from documentos_fiscales;`);
-    await m.db.query(`insert into orgs values ($1, 'MXN', 'America/Mexico_City', 'MX', 0)`, [ORG]);
+    await m.db.query(`insert into orgs(id, nombre, moneda, zona_horaria, country_code, interes_moratorio_pct) values ($1, 'Org', 'MXN', 'America/Mexico_City', 'MX', 0)`, [ORG]);
     await m.db.query(`insert into clientes(id, org_id, empresa, nivel, descuento_pct) values ($1, $3, 'Acme', 'A', 10), ($2, $3, 'Acme', 'A', 30)`, [CL1, CL2, ORG]);
 });
 
-async function quote(fields: Record<string, unknown>) {
+let folio = 0;
+async function quote(input: Record<string, unknown>) {
+    const fields = { folio: `COT-${++folio}`, ...input };
     const cols = Object.keys(fields);
     const { rows } = await m.db.query(
         `insert into cotizaciones(org_id, ${cols.join(',')}) values ($1, ${cols.map((_, i) => `$${i + 2}`).join(',')}) returning id`,
@@ -188,9 +158,9 @@ describe('días en la zona horaria del negocio', () => {
 describe('cobranza de los dos rieles', () => {
     it('suma saldos de cotizaciones y facturas, descuenta abonos y convierte', async () => {
         const cot = await quote({ cliente_id: CL1, status: 'approved', total: 1000, terminos: 'contado', approved_at: '2026-01-01T12:00:00Z' });
-        await m.db.query(`insert into cotizacion_cobros(org_id, cotizacion_id, monto, status) values ($1, $2, 400, 'pagado')`, [ORG, cot]);
-        await m.db.query(`insert into documentos_fiscales(org_id, cliente_id, invoice_number, currency, total, amount_paid, amount_remaining,
-            due_date, public_token, lifecycle, ledger_currency, fx_rate) values ($1, $2, 'F-1', 'USD', 100, 0, 100, '2099-01-01', 'tok', 'open', 'USD', 1)`, [ORG, CL2]);
+        await m.db.query(`insert into cotizacion_cobros(org_id, cotizacion_id, tipo, monto, status) values ($1, $2, 'anticipo', 400, 'pagado')`, [ORG, cot]);
+        await m.db.query(`insert into documentos_fiscales(org_id, document_type, cliente_id, invoice_number, currency, total, amount_paid, amount_remaining,
+            due_date, public_token, lifecycle, ledger_currency, fx_rate) values ($1, 'invoice', $2, 'F-1', 'USD', 100, 0, 100, '2099-01-01', 'tok', 'open', 'USD', 1)`, [ORG, CL2]);
         const c = await Q.getCobranza();
         expect(c.resumen.totalPorCobrar).toBe(600 + 100 * 20);
         const factura = c.items.find((i) => i.origen === 'factura')!;
@@ -203,9 +173,9 @@ describe('cobranza de los dos rieles', () => {
 
     it('el flujo proyecta la misma cartera que cobranza', async () => {
         await quote({ cliente_id: CL1, status: 'approved', total: 1000, terminos: 'net30' });
-        await m.db.query(`insert into documentos_fiscales(org_id, cliente_id, invoice_number, currency, total, amount_paid, amount_remaining,
-            due_date, public_token, lifecycle) values ($1, $2, 'F-2', 'MXN', 500, 200, 300, '2099-01-01', 'tok2', 'open')`, [ORG, CL2]);
-        await m.db.query(`insert into cotizacion_suscripciones(org_id, monto, moneda, estado) values ($1, 10, 'USD', 'active')`, [ORG]);
+        await m.db.query(`insert into documentos_fiscales(org_id, document_type, cliente_id, invoice_number, currency, total, amount_paid, amount_remaining,
+            due_date, public_token, lifecycle) values ($1, 'invoice', $2, 'F-2', 'MXN', 500, 200, 300, '2099-01-01', 'tok2', 'open')`, [ORG, CL2]);
+        await m.db.query(`insert into cotizacion_suscripciones(org_id, cotizacion_id, stripe_account_id, monto, moneda, estado) values ($1, gen_random_uuid(), 'acct_x', 10, 'USD', 'active')`, [ORG]);
         const cfo = await Q.getCFO();
         expect(cfo.kpis.totalCartera).toBe(1300);
         expect(cfo.mrr.activo).toBe(200);
@@ -215,7 +185,7 @@ describe('cobranza de los dos rieles', () => {
 describe('desempeño por vendedor', () => {
     it('compara vendedores en la divisa del negocio', async () => {
         const ANA = 'e1000000-0000-4000-8000-000000000001', LUIS = 'e2000000-0000-4000-8000-000000000002';
-        await m.db.query(`insert into org_members values ($1, $2, 'Ana', 'ana@x', 'owner', 'activo'), ($1, $3, 'Luis', 'luis@x', 'member', 'activo')`, [ORG, ANA, LUIS]);
+        await m.db.query(`insert into org_members(org_id, user_id, nombre, email, rol, estado) values ($1, $2, 'Ana', 'ana@x', 'owner', 'activo'), ($1, $3, 'Luis', 'luis@x', 'member', 'activo')`, [ORG, ANA, LUIS]);
         await quote({ status: 'approved', total: 1000, creado_por: ANA });
         await quote({ status: 'approved', total: 100, base_currency: 'USD', fiscal_currency: 'USD', creado_por: LUIS });
         const d = await Q.getDesempeno();
@@ -225,11 +195,11 @@ describe('desempeño por vendedor', () => {
 
 describe('facturas vencidas', () => {
     it('suma saldos en la divisa del negocio y lista primero lo que más pesa', async () => {
-        await m.db.query(`insert into documentos_fiscales(org_id, cliente_id, invoice_number, currency, total, amount_paid, amount_remaining,
+        await m.db.query(`insert into documentos_fiscales(org_id, document_type, cliente_id, invoice_number, currency, total, amount_paid, amount_remaining,
             due_date, public_token, lifecycle) values
-            ($1, $2, 'F-9', 'USD', 100, 0, 100, '2020-01-01', 'a', 'open'),
-            ($1, $2, 'F-8', 'MXN', 500, 0, 500, '2020-02-01', 'b', 'open'),
-            ($1, $2, 'F-7', 'MXN', 900, 0, 900, '2099-01-01', 'c', 'open')`, [ORG, CL1]);
+            ($1, 'invoice', $2, 'F-9', 'USD', 100, 0, 100, '2020-01-01', 'a', 'open'),
+            ($1, 'invoice', $2, 'F-8', 'MXN', 500, 0, 500, '2020-02-01', 'b', 'open'),
+            ($1, 'invoice', $2, 'F-7', 'MXN', 900, 0, 900, '2099-01-01', 'c', 'open')`, [ORG, CL1]);
         const r = await Q.getFacturasResumen();
         expect(r.vencido).toBe(100 * 20 + 500);
         expect(r.vencidas).toBe(2);

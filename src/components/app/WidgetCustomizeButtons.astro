@@ -26,9 +26,9 @@ const L = currentLocale();
 import { iconInner } from '../../lib/icons';
 ---
 
-<button type="button" class="widget-edit-btn" id={editId}>
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('sidebar')}></svg>
-    {t(L, 'widgets.personalizar')}
+<button type="button" class="widget-edit-btn is-customize" id={editId}>
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('sliders')}></svg>
+    <span>{t(L, 'widgets.personalizar')}</span>
 </button>
 <button type="button" class="widget-edit-btn is-icon" id={`${editId}Library`} aria-expanded="false" aria-label={t(L, 'widgets.biblioteca')} data-tip={t(L, 'widgets.biblioteca')} hidden>
     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('grid-plus')}></svg>

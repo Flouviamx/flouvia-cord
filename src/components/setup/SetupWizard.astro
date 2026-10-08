@@ -5,6 +5,7 @@
 // textContent: la propuesta trae texto que salió del sitio del cliente.
 import { t } from '../../i18n/app';
 import { currentLocale } from '../../lib/context';
+import { TERM_CODES, termOptionLabel } from '../../lib/payment-terms';
 
 interface Props {
     origen: 'onboarding' | 'app';
@@ -39,11 +40,7 @@ const I = {
         minimal: t(L, 'setup.tpl.minimal'),
         detallado: t(L, 'setup.tpl.detallado'),
     },
-    term: {
-        contado: t(L, 'setup.term.contado'),
-        net30: t(L, 'setup.term.net30'),
-        net60: t(L, 'setup.term.net60'),
-    },
+    term: Object.fromEntries(TERM_CODES.map((code) => [code, termOptionLabel(code, L)])),
     kind: {
         consumo: t(L, 'setup.kind.consumo'),
         retencion: t(L, 'setup.kind.retencion'),

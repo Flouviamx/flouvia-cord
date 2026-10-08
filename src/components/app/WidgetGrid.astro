@@ -279,7 +279,9 @@ const libId = `wlib-${storageKey.replace(/[^a-z0-9]+/gi, '-')}`;
         function exitEdit() { if (dragging) end(); delete host.dataset.editing; setContentInert(false); library?.close(false); if (libraryButton) { libraryButton.hidden = true; libraryButton.setAttribute('aria-expanded', 'false'); } if (editButton) editButton.hidden = false; if (doneButton) doneButton.hidden = true; if (resetButton) resetButton.hidden = true; }
         libraryButton?.addEventListener('click', () => library?.toggle());
         editButton?.addEventListener('click', enterEdit);
-        doneButton?.addEventListener('click', () => { exitEdit(); editButton?.focus(); });
+        // El foco vuelve a "Personalizar" solo si se terminó con teclado (detail 0): con
+        // el mouse, enfocarlo a mano pintaba el anillo de foco sin que nadie lo pidiera.
+        doneButton?.addEventListener('click', (event) => { exitEdit(); if ((event as MouseEvent).detail === 0) editButton?.focus(); });
         document.addEventListener('keydown', (event) => {
             if (event.key !== 'Escape' || host.dataset.editing !== '1') return;
             if (dragging) { end(false); return; }

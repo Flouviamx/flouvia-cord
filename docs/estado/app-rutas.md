@@ -154,8 +154,24 @@ existe pero es ajeno ya es filtrar entre negocios.
                    columna). Un rango nuevo recarga la página (la tabla se arma en
                    servidor). "Cobrado" en todas partes = pagosSql: pagos de cotización y de
                    factura (cobro_id null), netos de reembolsos. Categorías del selector:
-                   resumen, ventas, clientes, productos, finanzas, equipo.
-                   Lo verifica test/informes-tabla-db.test.ts.
+                   resumen, ventas, clientes, productos, finanzas, equipo, personalizados.
+                   Lo verifica test/informes-tabla-db.test.ts, que corre sobre las tablas
+                   REALES de db/schema.sql (test/helpers/schema-subset.ts): un esquema a
+                   mano escondió que cotizaciones.creado_por es text y tumbó vendedores.
+                   Explorador (oct 2026, ?r=explorar, kind 'explorador'): "agrupar por"
+                   (?dim=) y hasta 6 métricas (?m=), listas blancas en
+                   src/lib/informes-explorar.ts; cohorte = cotizaciones CREADAS en el rango.
+                   Sale como TablaReport (tabla, totales, comparativa y CSV). Informes
+                   guardados: tabla informes_guardados, API /api/informes/guardados
+                   (analitica; editar/borrar = quien lo guardó u owner/admin; tope 50 por
+                   organización) y ?guardado=<id> carga la configuración. Envío programado
+                   (semanal = lunes, mensual = día 1, en la zona del negocio): cron diario
+                   /api/cron/informes-programados manda el periodo cerrado con CSV SOLO a
+                   quien lo guardó, mientras siga activo y con analitica; el reloj avanza
+                   antes de enviar y se libera si el correo falla. Drill-down: las barras de
+                   cliente/producto abren su ficha y las de mes/semana abren ese periodo.
+                   Eventos report_viewed / report_saved (cliente). Lo verifican
+                   test/informes-explorar-db.test.ts y test/informes-programados-db.test.ts.
 /app/desempeno   → desempeño del equipo (jul 2026; hoy 2ª pestaña junto a Informes):
                    ranking por vendedor (cotizaciones creadas/enviadas/cerradas, tasa de
                    cierre, monto cerrado, cobrado, ticket promedio, días a cierre) vía

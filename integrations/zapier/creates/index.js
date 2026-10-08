@@ -3,10 +3,15 @@
 const { api } = require('../lib/config');
 const { CLIENT, QUOTE, TASK } = require('../lib/samples');
 
+// `net<N>` = N días de crédito. Misma lista que src/lib/payment-terms.ts de Cord.
 const TERMS = [
     { value: 'contado', sample: 'contado', label: 'Upfront' },
+    { value: 'net7', sample: 'net7', label: 'Net 7' },
+    { value: 'net15', sample: 'net15', label: 'Net 15' },
     { value: 'net30', sample: 'net30', label: 'Net 30' },
+    { value: 'net45', sample: 'net45', label: 'Net 45' },
     { value: 'net60', sample: 'net60', label: 'Net 60' },
+    { value: 'net90', sample: 'net90', label: 'Net 90' },
 ];
 
 const clientContactFields = (requireCompany) => [

@@ -52,7 +52,7 @@ curl -X POST "https://cordhq.app/api/v1/clientes" \
 ### Automated Business Rules
 
 When you create clients via API, Cord applies real-time logical constraints:
-- Payment terms (`terminos`) must be valid (`contado`, `net30`, `net60`). If you pass an invalid term, it defaults to `contado`.
+- Payment terms (`terminos`) must be valid: `contado` or `net7`, `net15`, `net30`, `net45`, `net60`, `net90` (N days of credit). If you pass an invalid term, it defaults to `contado`.
 - Partnership level (`nivel`) is restricted to `estandar`, `plata`, `oro`, or `distribuidor`.
 - The RFC (if you send one) is normalized to uppercase automatically.
 - The discount (`descuento_pct`) is mathematically bounded between 0 and 100.
