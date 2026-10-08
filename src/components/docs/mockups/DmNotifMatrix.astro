@@ -73,7 +73,7 @@ const caption = Astro.props.caption ?? d.caption;
                         </span>
                         {CANALES.map((c) =>
                             sinCanal(ev, c) ? (
-                                <span class="dm-nm-na">—{c === 'slack' && <span class="dm-nm-tip">{dmT(lang, 'set.notif.sin_canal')}</span>}</span>
+                                <span class="dm-nm-na">—{c === 'teams' && <span class="dm-nm-tip">{dmT(lang, 'set.notif.sin_canal')}</span>}</span>
                             ) : (
                                 <span class="dm-nm-cell"><span class:list={['dm-nm-box', { 'is-on': ON[ev].includes(c) }]}>{ON[ev].includes(c) && <DmIcon name="check" stroke={3.2} />}</span></span>
                             )
@@ -139,7 +139,7 @@ const caption = Astro.props.caption ?? d.caption;
     .dm-nm-box .dm-ico { width: 11px; height: 11px; }
     .dm-nm-na { position: relative; display: flex; justify-content: center; font-size: 13px; color: rgba(91, 100, 114, 0.45); }
     /* El aviso nativo (title) de la celda, dibujado como lo muestra el navegador al pasar el cursor. */
-    .dm-nm-tip { position: absolute; right: 50%; bottom: calc(100% + 6px); transform: translateX(50%); padding: 5px 8px; border-radius: 6px; background: var(--dm-navy); color: #fff; font-size: 9.5px; font-weight: 500; white-space: nowrap; box-shadow: 0 8px 18px -8px rgba(10, 25, 47, 0.5); }
+    .dm-nm-tip { position: absolute; right: 4px; bottom: calc(100% + 6px); padding: 5px 8px; border-radius: 6px; background: var(--dm-navy); color: #fff; font-size: 9.5px; font-weight: 500; white-space: nowrap; box-shadow: 0 8px 18px -8px rgba(10, 25, 47, 0.5); }
 
     .dm-nm-summary { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
     .dm-nm-summary small { font-size: 10px; color: var(--dm-muted); }
@@ -154,6 +154,5 @@ const caption = Astro.props.caption ?? d.caption;
         .dm-nm-figure .dm-stage { height: auto; max-height: 1180px; }
         .dm-nm-row { grid-template-columns: minmax(0, 1fr) 40px 40px 40px; }
         .dm-nm-block { padding: 14px 12px 10px; }
-        .dm-nm-tip { right: 0; transform: none; }
     }
 </style>
