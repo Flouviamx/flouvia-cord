@@ -1,0 +1,260 @@
+---
+// Mockup: /app/workflows — cupo del plan, panel "Cómo van tus automatizaciones",
+// tabla de workflows e "Ideas para empezar".
+//
+//   view="list"  · la página desde arriba (salud + tabla; las ideas asoman abajo).
+//   view="ideas" · la misma página desplazada hasta "Ideas para empezar".
+//
+// Calca de src/components/app/WorkflowsList.astro. Los textos salen de wf.* y
+// las ideas, con su cadena de íconos, de WORKFLOW_TEMPLATES en el orden real.
+import DocsMockup from './DocsMockup.astro';
+import DmIcon from './DmIcon.astro';
+import type { IconName } from '../../../lib/icons';
+import { findAction, findTrigger, TRIGGER_CATEGORIES } from '../../../lib/workflows/catalog';
+import { WORKFLOW_TEMPLATES } from '../../../lib/workflows/templates';
+import type { Step } from '../../../lib/workflows/definition';
+import { dmT, favicon, pick, tpl, type DmLang } from './format';
+
+interface Props {
+    lang: DmLang;
+    view?: 'list' | 'ideas';
+    caption?: string;
+}
+const { lang, view = 'list' } = Astro.props;
+const L = lang;
+
+const ICON: Record<string, IconName> = {
+    quotes: 'quote', invoices: 'invoice', schedule: 'calendar', approvals: 'shield', payments: 'card', clients: 'user', products: 'products', tasks: 'check-square',
+    create_task: 'check-square', notify_team: 'bell', send_client_email: 'mail-forward', expire_quote: 'clock', approve_quote_request: 'shield',
+    void_invoice: 'invoice-x', http_webhook: 'share', query: 'search-insight', wait_until: 'history', wait: 'clock', condition: 'decision', action: 'bolt',
+};
+const BRAND_DOMAIN: Record<string, string> = { slack: 'slack.com', teams: 'teams.microsoft.com', hubspot: 'hubspot.com', whatsapp: 'whatsapp.com' };
+const catLabel = (key: string) => TRIGGER_CATEGORIES.find((c) => c.key === key)?.label[L] ?? '';
+
+// Cadena de la tarjeta de idea: el mismo recorrido que chainOf() de la app.
+type Chain = { icon?: IconName; brand?: string };
+function chainOf(trigger: string, steps: Step[]) {
+    const items: Chain[] = [{ icon: ICON[findTrigger(trigger)?.category ?? 'action'] }];
+    const walk = (list: Step[]) => {
+        for (const s of list) {
+            if (s.type === 'action') {
+                const b = findAction(s.action)?.brand;
+                items.push(b && b !== 'cord' ? { brand: b } : { icon: ICON[s.action] ?? 'bolt' });
+            } else if (s.type === 'wait') items.push({ icon: 'clock' });
+            else if (s.type === 'query') items.push({ icon: 'search-insight' });
+            else if (s.type === 'condition' || s.type === 'wait_until') {
+                items.push({ icon: s.type === 'wait_until' ? 'history' : 'decision' });
+                walk(s.then); walk(s.else);
+            }
+        }
+    };
+    walk(steps);
+    return { items: items.slice(0, 4), extra: Math.max(0, items.length - 4) };
+}
+const IDEAS = WORKFLOW_TEMPLATES.map((t) => {
+    const def = t.definicion(L);
+    return { t, trig: findTrigger(def.trigger), chain: chainOf(def.trigger, def.steps) };
+});
+const tName = (key: string) => WORKFLOW_TEMPLATES.find((x) => x.key === key)!.nombre[L];
+
+const HEALTH = {
+    total: 214, exitosas: 205, fallidas: 4, esperando: 5,
+    causas: [
+        { n: 2, msg: dmT(L, 'wf.err.slack_sin_conexion'), wf: tName('escalera_seguimiento'), when: L === 'en' ? 'today, 4:20 PM' : 'hoy, 4:20 p.m.' },
+        { n: 2, msg: dmT(L, 'wf.err.cliente_sin_correo'), wf: tName('cobranza_escalonada'), when: L === 'en' ? 'Oct 5, 9:00 AM' : '5 oct, 9:00 a.m.' },
+    ],
+};
+const ROWS = [
+    { key: 'escalera_seguimiento', trigger: 'quote.sent', runs: 100, fail: 2, estado: 'active', upd: L === 'en' ? 'today, 11:08 AM' : 'hoy, 11:08 a.m.' },
+    { key: 'resumen_semanal', trigger: 'schedule.tick', runs: 4, fail: 0, estado: 'active', upd: L === 'en' ? 'Sep 8, 6:41 PM' : '8 sep, 6:41 p.m.' },
+    { key: 'cobranza_escalonada', trigger: 'invoice.past_due', runs: 110, fail: 2, estado: 'active', upd: L === 'en' ? 'Sep 22, 10:15 AM' : '22 sep, 10:15 a.m.' },
+    { key: 'teams_aprobada', trigger: 'quote.approved', runs: 0, fail: 0, estado: 'draft', upd: L === 'en' ? 'yesterday, 5:32 PM' : 'ayer, 5:32 p.m.' },
+];
+
+const DATA = {
+    es: {
+        list: `Lista de Cord Workflows: 3 de 5 workflows activos en el plan; en los últimos 30 días, ${HEALTH.total} ejecuciones, ${HEALTH.exitosas} completadas y ${HEALTH.fallidas} fallidas, con sus causas. Debajo, los cuatro workflows con su disparador, sus ejecuciones y su estado.`,
+        ideas: `Sección "Ideas para empezar" al final de la lista de Workflows: tarjetas con la cadena de pasos de cada plantilla, su descripción, el evento que la inicia y el botón "Usar".`,
+    },
+    en: {
+        list: `Cord Workflows list: 3 of 5 active workflows on the plan; in the last 30 days, ${HEALTH.total} runs, ${HEALTH.exitosas} completed and ${HEALTH.fallidas} failed, with their causes. Below, the four workflows with their trigger, runs and status.`,
+        ideas: `"Ideas to get started" section at the bottom of the Workflows list: cards with each template's chain of steps, its description, the event that starts it and the "Use" button.`,
+    },
+};
+const caption = Astro.props.caption ?? pick(DATA, L)[view];
+---
+<DocsMockup lang={L} variant="app" chrome="full" sidebar="rail" active="workflows" title={view === 'list' ? dmT(L, 'wf.heading') : undefined} height={view === 'list' ? 780 : 560} caption={caption} class={`dm-wfl-figure dm-wfl-v-${view}`}>
+    {view === 'list' && <span slot="actions" class="dm-btn dm-btn-primary"><DmIcon name="plus" />{dmT(L, 'wf.nuevo')}</span>}
+    <div class="dm-wfl">
+        {view === 'list' && (
+            <Fragment>
+                <div class="dm-wfl-top">
+                    <span class="dm-wfl-intro">{dmT(L, 'wf.intro')}</span>
+                    <span class="dm-wfl-cupo">{tpl(dmT(L, 'wf.cupo'), { usados: 3, limite: 5 })}</span>
+                </div>
+                <div class="dm-wfl-health">
+                    <div class="dm-wfl-health-head">
+                        <span class="dm-wfl-health-title">{dmT(L, 'wf.salud_titulo')}</span>
+                        <span class="dm-faint">{tpl(dmT(L, 'wf.salud_ventana'), { dias: 30 })}</span>
+                    </div>
+                    <div class="dm-wfl-kpis">
+                        <span class="dm-wfl-kpi"><b class="dm-editorial">{HEALTH.total}</b><small>{dmT(L, 'wf.salud_total')}</small></span>
+                        <span class="dm-wfl-kpi"><b class="dm-editorial">{HEALTH.exitosas}</b><small>{dmT(L, 'wf.salud_exitosas')}</small></span>
+                        <span class="dm-wfl-kpi is-bad"><b class="dm-editorial">{HEALTH.fallidas}</b><small>{dmT(L, 'wf.salud_fallidas')}</small></span>
+                        <span class="dm-wfl-kpi"><b class="dm-editorial">{HEALTH.esperando}</b><small>{dmT(L, 'wf.salud_esperando')}</small></span>
+                    </div>
+                    <span class="dm-wfl-causas-title">{dmT(L, 'wf.salud_causas')}</span>
+                    {HEALTH.causas.map((c) => (
+                        <div class="dm-wfl-causa">
+                            <span class="dm-wfl-causa-n">{c.n}</span>
+                            <span class="dm-wfl-causa-text">
+                                <span class="dm-wfl-causa-msg">{c.msg}</span>
+                                <span class="dm-wfl-causa-sub">{c.wf} · {c.when}</span>
+                            </span>
+                        </div>
+                    ))}
+                </div>
+            </Fragment>
+        )}
+
+        <div class:list={['dm-surface dm-wfl-card', { 'is-cut': view === 'ideas' }]}>
+            {view === 'list' && (
+                <div class="dm-wfl-head">
+                    <span>{dmT(L, 'wf.th_nombre')}</span>
+                    <span class="dm-hide-narrow">{dmT(L, 'wf.th_disparador')}</span>
+                    <span class="dm-wfl-num dm-hide-narrow">{dmT(L, 'wf.th_ejecuciones')}</span>
+                    <span>{dmT(L, 'wf.th_estado')}</span>
+                </div>
+            )}
+            {(view === 'ideas' ? ROWS.slice(2) : ROWS).map((r) => {
+                const t = findTrigger(r.trigger)!;
+                return (
+                    <div class="dm-wfl-row">
+                        <span class="dm-wfl-name">
+                            <span class="dm-wfl-glyph"><DmIcon name={ICON[t.category]} /></span>
+                            <span class="dm-wfl-name-text">
+                                <span class="dm-wfl-name-title">{tName(r.key)}</span>
+                                <span class="dm-wfl-small">{r.upd}</span>
+                            </span>
+                        </span>
+                        <span class="dm-wfl-trigger">
+                            <span class="dm-wfl-trigger-label">{t.label[L]}</span>
+                            <span class="dm-wfl-small">{catLabel(t.category)}</span>
+                        </span>
+                        <span class="dm-wfl-num">
+                            <span class="dm-editorial dm-wfl-runs">{r.runs}</span>
+                            {r.fail > 0 && <span class="dm-wfl-failed">{tpl(dmT(L, 'wf.fallidas'), { n: r.fail })}</span>}
+                        </span>
+                        <span class="dm-wfl-estado-cell"><span class="dm-wfl-estado" data-estado={r.estado}>{dmT(L, `wf.estado.${r.estado}` as any)}</span></span>
+                    </div>
+                );
+            })}
+        </div>
+
+        <div class="dm-wfl-ideas">
+            <span class="dm-wfl-ideas-title">{dmT(L, 'wf.plantillas')}</span>
+            <div class="dm-wfl-grid">
+                {IDEAS.slice(0, 6).map(({ t, trig, chain }) => (
+                    <div class="dm-surface dm-wfl-idea">
+                        <span class="dm-wfl-chain">
+                            {chain.items.map((it, i) => (
+                                <Fragment>
+                                    {i > 0 && <span class="dm-wfl-arrow"><DmIcon name="arrow-right" /></span>}
+                                    <span class="dm-wfl-chain-node">
+                                        {it.brand ? <img class="dm-logo" src={favicon(BRAND_DOMAIN[it.brand])} alt="" width="16" height="16" loading="lazy" decoding="async" /> : <DmIcon name={it.icon!} />}
+                                    </span>
+                                </Fragment>
+                            ))}
+                            {chain.extra > 0 && <span class="dm-wfl-more">+{chain.extra}</span>}
+                        </span>
+                        <span class="dm-wfl-idea-title">{t.nombre[L]}</span>
+                        <span class="dm-wfl-idea-desc">{t.descripcion[L]}</span>
+                        <span class="dm-wfl-idea-foot">
+                            {trig && <span class="dm-wfl-idea-trigger">{trig.label[L]}</span>}
+                            <span class="dm-wfl-idea-use">{dmT(L, 'wf.usar_plantilla')}<DmIcon name="arrow-right" /></span>
+                        </span>
+                    </div>
+                ))}
+            </div>
+        </div>
+    </div>
+</DocsMockup>
+
+<style is:global>
+    .dm-wfl-figure .dm-page-head { padding-right: calc(20px + var(--dm-bleed)); }
+    .dm-wfl { display: flex; flex-direction: column; gap: 16px; padding-right: var(--dm-bleed); }
+    .dm-wfl-top { display: flex; align-items: flex-end; justify-content: space-between; gap: 8px 18px; flex-wrap: wrap; }
+    .dm-wfl-intro { max-width: 380px; font-size: 11.5px; line-height: 1.55; color: var(--dm-muted); }
+    .dm-wfl-cupo { flex-shrink: 0; font-size: 10.5px; font-weight: 600; color: var(--dm-muted); padding: 5px 10px; border-radius: 999px; background: #fff; box-shadow: var(--dm-shadow-card); }
+
+    .dm-wfl-health { padding: 13px 14px 12px; border-radius: 16px; background: #eceef2; border: 1px solid var(--dm-border); }
+    .dm-wfl-health-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 10px; font-size: 10.5px; }
+    .dm-wfl-health-title { font-size: 12.5px; font-weight: 650; letter-spacing: -0.02em; color: var(--dm-text); }
+    .dm-wfl-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+    .dm-wfl-kpi { display: flex; flex-direction: column; gap: 1px; padding: 8px 10px; border-radius: 11px; background: #fff; min-width: 0; }
+    .dm-wfl-kpi b { font-size: 17px; line-height: 1.15; color: var(--dm-text); }
+    .dm-wfl-kpi small { font-size: 10px; color: var(--dm-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dm-wfl-kpi.is-bad b { color: #dc2626; }
+    .dm-wfl-causas-title { display: block; margin: 12px 0 6px; font-size: 9.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--dm-muted); }
+    .dm-wfl-causa { display: flex; align-items: flex-start; gap: 9px; padding: 7px 10px; border-radius: 10px; background: #fff; }
+    .dm-wfl-causa + .dm-wfl-causa { margin-top: 5px; }
+    .dm-wfl-causa-n { flex-shrink: 0; min-width: 22px; padding: 1px 6px; border-radius: 6px; background: rgba(220, 38, 38, 0.1); color: #dc2626; font-size: 10.5px; font-weight: 700; text-align: center; }
+    .dm-wfl-causa-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+    .dm-wfl-causa-msg { font-size: 11.5px; font-weight: 500; color: var(--dm-text); }
+    .dm-wfl-causa-sub { font-size: 10px; color: var(--dm-muted); }
+
+    .dm-wfl-card { overflow: hidden; }
+    .dm-wfl-card.is-cut { border-radius: 0 0 14px 14px; }
+    .dm-wfl-head, .dm-wfl-row { display: grid; grid-template-columns: minmax(0, 1.75fr) minmax(0, 1.2fr) 84px 62px; gap: 10px; align-items: center; padding: 10px 14px; }
+    .dm-wfl-head { padding-top: 11px; padding-bottom: 8px; font-size: 9.5px; line-height: 1.25; font-weight: 600; color: var(--dm-muted); }
+    .dm-wfl-row { border-top: 1px solid var(--dm-border); }
+    .dm-wfl-card.is-cut .dm-wfl-row:first-child { border-top: 0; }
+    .dm-wfl-name { display: flex; align-items: center; gap: 9px; min-width: 0; }
+    .dm-wfl-glyph { width: 28px; height: 28px; border-radius: 9px; flex-shrink: 0; display: grid; place-items: center; color: var(--dm-navy); background: #f5f5f7; }
+    .dm-wfl-glyph .dm-ico { width: 14px; height: 14px; }
+    .dm-wfl-name-text, .dm-wfl-trigger { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+    .dm-wfl-name-title { font-size: 12px; font-weight: 600; color: var(--dm-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dm-wfl-trigger-label { font-size: 11.5px; color: var(--dm-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dm-wfl-small { font-size: 10px; color: var(--dm-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dm-wfl-num { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; text-align: right; }
+    .dm-wfl-runs { font-size: 13px; color: var(--dm-navy); }
+    .dm-wfl-failed { font-size: 10px; font-weight: 600; color: #dc2626; white-space: nowrap; }
+    .dm-wfl-estado-cell { display: flex; }
+    .dm-wfl-estado { display: inline-flex; align-items: center; height: 20px; padding: 0 8px; border-radius: 999px; font-size: 10px; font-weight: 700; white-space: nowrap; }
+    .dm-wfl-estado[data-estado="draft"] { color: #5b6472; background: rgba(91, 100, 114, 0.1); }
+    .dm-wfl-estado[data-estado="active"] { color: #047857; background: rgba(16, 185, 129, 0.12); }
+
+    .dm-wfl-ideas { display: flex; flex-direction: column; gap: 10px; padding-bottom: 6px; }
+    .dm-wfl-ideas-title { font-size: 13px; font-weight: 600; letter-spacing: -0.01em; color: var(--dm-text); }
+    .dm-wfl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(178px, 1fr)); gap: 10px; }
+    .dm-wfl-idea { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; padding: 12px 13px 11px; }
+    .dm-wfl-chain { display: flex; align-items: center; gap: 4px; margin-bottom: 4px; }
+    .dm-wfl-chain-node { width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; color: var(--dm-navy); background: #f5f5f7; }
+    .dm-wfl-chain-node .dm-ico { width: 13px; height: 13px; }
+    .dm-wfl-chain-node .dm-logo { width: 14px; height: 14px; border-radius: 3px; background: transparent; }
+    .dm-wfl-arrow { color: var(--dm-muted); opacity: 0.55; }
+    .dm-wfl-arrow .dm-ico { width: 10px; height: 10px; }
+    .dm-wfl-more { font-size: 10px; font-weight: 600; color: var(--dm-muted); padding-left: 1px; }
+    .dm-wfl-idea-title { font-size: 12px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.35; color: var(--dm-text); }
+    .dm-wfl-idea-desc { flex: 1; font-size: 10.5px; line-height: 1.5; color: var(--dm-muted); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; overflow: hidden; }
+    .dm-wfl-idea-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; margin-top: 4px; }
+    .dm-wfl-idea-trigger { min-width: 0; font-size: 9.5px; font-weight: 600; color: var(--dm-muted); background: #f5f5f7; padding: 3px 8px; border-radius: 999px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dm-wfl-idea-use { display: inline-flex; align-items: center; gap: 3px; flex-shrink: 0; font-size: 11px; font-weight: 600; color: var(--dm-navy); }
+    .dm-wfl-idea-use .dm-ico { width: 11px; height: 11px; }
+
+    /* La vista "ideas" es la misma página desplazada: la tabla asoma arriba. */
+    .dm-wfl-v-ideas .dm-content { padding-top: 0; }
+    .dm-wfl-v-ideas .dm-topbar { position: relative; z-index: 2; margin-bottom: -4px; }
+
+    @container dm (max-width: 640px) {
+        .dm-wfl-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .dm-wfl-head { display: none; }
+        .dm-wfl-row { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "name estado" "trigger num"; row-gap: 6px; }
+        .dm-wfl-name { grid-area: name; }
+        .dm-wfl-trigger { grid-area: trigger; }
+        .dm-wfl-num { grid-area: num; }
+        .dm-wfl-estado-cell { grid-area: estado; justify-self: end; }
+        .dm-wfl-grid { grid-template-columns: minmax(0, 1fr); }
+        .dm-wfl-figure .dm-stage { height: 760px; }
+    }
+</style>
