@@ -28,6 +28,7 @@ export async function loadInvoiceDocumentRow(orgId: string, id: string, publicTo
            d.issuer_snapshot,
            d.recipient_snapshot, d.line_items_snapshot, d.provider_data,
            d.status, d.lifecycle, d.issued_at, d.cotizacion_id, d.notes as document_notes,
+           d.service_date::text as service_date, d.service_date_end::text as service_date_end,
            d.public_token as invoice_token, d.due_date as invoice_due,
            orig.invoice_number as credit_note_of_number,
            o.facturapi_live_key, o.facturapi_live_key_enc,
@@ -153,6 +154,8 @@ export async function renderInvoicePdf(orgId: string, doc: any, simulated: boole
     // El código, no una etiqueta: el PDF lo traduce al idioma del documento.
     paymentTermsCode: isTermCode(term) ? term : null,
     timeZone: (doc.zona_horaria as string) || null,
+    serviceDate: (doc.service_date as string) || null,
+    serviceDateEnd: (doc.service_date_end as string) || null,
     creditNoteOfNumber: (doc.credit_note_of_number as string) || null,
     verifactu: doc.provider_data?.verifactu || null,
     // El "cómo pagar" es la página de LA FACTURA: ahí está el saldo real de

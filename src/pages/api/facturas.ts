@@ -10,7 +10,7 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { getActiveOrgId, logAudit, reqIp } from '../../lib/db';
 import { requirePerm, getFacturas, invalidateMoneyCaches } from '../../lib/queries';
-import { createInvoiceDraft, parseInvoiceItems, MAX_INVOICE_ITEMS } from '../../lib/fiscal/invoices';
+import { createInvoiceDraft, parseInvoiceItems, parseServiceDates, MAX_INVOICE_ITEMS } from '../../lib/fiscal/invoices';
 import { requireEntitlement } from '../../lib/org-entitlements';
 import { currentUserId } from '../../lib/context';
 import { invoicingFeatureFor } from '../../lib/fiscal/gate';
@@ -52,6 +52,8 @@ export const POST: APIRoute = async ({ request }) => {
     if (dueDate && !isISODate(dueDate)) {
         return json({ error: 'La fecha de vencimiento no es válida.' }, 400);
     }
+    const servicio = parseServiceDates(body);
+    if (!servicio.ok) return json({ error: servicio.error }, 400);
 
     const result = await createInvoiceDraft(orgId, {
         clienteId: String(body.cliente_id ?? '').trim(),
@@ -59,6 +61,8 @@ export const POST: APIRoute = async ({ request }) => {
         documentMode: body.document_mode,
         currency: body.currency ? String(body.currency) : undefined,
         dueDate: dueDate || null,
+        serviceDate: servicio.serviceDate,
+        serviceDateEnd: servicio.serviceDateEnd,
         notes: String(body.notas ?? '').trim().slice(0, 1000) || null,
         bufferPct: Number(body.fx_buffer_pct) || 0,
         ivaIncluido: body.iva_incluido === true,

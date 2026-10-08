@@ -30,9 +30,12 @@ interface Props {
     min?: string;
     max?: string;
     ariaLabel?: string;
+    /** Muestra "Quitar fecha" en el panel: para campos opcionales, donde vacío
+     *  es un valor válido y no hay otra forma de volver a él. */
+    clearable?: boolean;
 }
 
-const { id, value = '', name, min = '', max = '', ariaLabel } = Astro.props;
+const { id, value = '', name, min = '', max = '', ariaLabel, clearable = false } = Astro.props;
 const L = currentLocale();
 import { iconInner } from '../../lib/icons';
 ---
@@ -44,6 +47,7 @@ import { iconInner } from '../../lib/icons';
          mesSiguiente: L === 'en' ? 'Next month' : 'Mes siguiente',
          elegir: L === 'en' ? 'Choose a date' : 'Elegir fecha',
          vacio: L === 'en' ? 'No date' : 'Sin fecha',
+         quitar: L === 'en' ? 'Clear date' : 'Quitar fecha',
          // Semana empezando en lunes, como el DateRangePicker.
          dias: L === 'en' ? ['M', 'T', 'W', 'T', 'F', 'S', 'S'] : ['L', 'M', 'M', 'J', 'V', 'S', 'D'],
      })}>
@@ -69,6 +73,7 @@ import { iconInner } from '../../lib/icons';
                 </div>
                 <div class="dp-cal-grid"></div>
                 <div class="dpx-actions">
+                    {clearable && <button type="button" class="dpx-today dpx-clear" data-dpx-clear></button>}
                     <button type="button" class="dpx-today" data-dpx-today></button>
                 </div>
             </div>
@@ -94,6 +99,8 @@ import { iconInner } from '../../lib/icons';
         if (!input || !trigger || !panel || !grid) return;
 
         btnHoy.textContent = T.hoy;
+        const btnQuitar = raiz.querySelector('[data-dpx-clear]') as HTMLButtonElement | null;
+        if (btnQuitar) btnQuitar.textContent = T.quitar;
         (raiz.querySelector('[data-dpx-prev]') as HTMLElement).setAttribute('aria-label', T.mesAnterior);
         (raiz.querySelector('[data-dpx-next]') as HTMLElement).setAttribute('aria-label', T.mesSiguiente);
 
@@ -200,6 +207,7 @@ import { iconInner } from '../../lib/icons';
             pintarCalendario();
         });
         btnHoy.addEventListener('click', () => elegir(iso(hoy)));
+        btnQuitar?.addEventListener('click', () => elegir(''));
 
         grid.addEventListener('click', (e) => {
             const btn = (e.target as HTMLElement).closest('.dp-day') as HTMLButtonElement | null;
@@ -275,7 +283,7 @@ import { iconInner } from '../../lib/icons';
 
     .dpx-panel .dp-main { padding: 0.9rem 1rem; }
     .dpx-panel .dp-cal-head { margin-bottom: 0.5rem; }
-    .dpx-actions { display: flex; justify-content: flex-end; margin-top: 0.7rem; padding-top: 0.7rem; border-top: 1px solid var(--color-border); }
+    .dpx-actions { display: flex; justify-content: flex-end; gap: 4px; margin-top: 0.7rem; padding-top: 0.7rem; border-top: 1px solid var(--color-border); }
     .dpx-today {
         appearance: none; border: none; background: transparent; cursor: pointer;
         font-family: var(--font-sans); font-size: 0.78rem; font-weight: 600;
@@ -283,6 +291,7 @@ import { iconInner } from '../../lib/icons';
         transition: background 0.15s var(--ease-ios);
     }
     .dpx-today:hover { background: var(--row-hover); }
+    .dpx-clear { margin-right: auto; color: var(--color-text-muted); font-weight: 500; }
 
     /* Regla 16: bajo 880 px los días se tocan con el dedo, no con el cursor. */
     @media (max-width: 880px) {

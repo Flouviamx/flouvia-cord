@@ -56,6 +56,13 @@ export interface InvoicePdfInput {
   /** Vencimiento del pago. */
   dueDate?: string | Date | null;
   /**
+   * Fecha de prestación (Leistungsdatum) y fin del periodo, aaaa-mm-dd. Sin
+   * ellas, una factura alemana dice que coincide con la fecha de emisión: el
+   * § 14 Abs. 4 Nr. 6 UStG exige que conste.
+   */
+  serviceDate?: string | null;
+  serviceDateEnd?: string | null;
+  /**
    * Código del plazo (src/lib/payment-terms.ts: `contado` o `net<N>`). El PDF
    * lo rotula en el idioma del documento; antes llegaba "Contado" ya resuelto
    * en español, también a una factura en inglés de un negocio en Austin.
@@ -179,6 +186,9 @@ const PDF_TEXT = {
   billTo: P('PARA', 'BILL TO', 'CLIENT', 'AN', 'CLIENTE'),
   corrects: P('Rectifica a', 'Corrects invoice', 'Rectifie la facture', 'Berichtigt Rechnung', 'Retifica a fatura'),
   dueDate: P('Vencimiento', 'Due date', "Date d'échéance", 'Fällig am', 'Vencimento'),
+  serviceDate: P('Fecha de prestación', 'Date of supply', 'Date de la prestation', 'Leistungsdatum', 'Data da prestação'),
+  servicePeriod: P('Periodo de prestación', 'Supply period', 'Période de prestation', 'Leistungszeitraum', 'Período da prestação'),
+  sameAsInvoiceDate: P('La de la factura', 'Same as invoice date', 'Identique à la date de facture', 'entspricht dem Rechnungsdatum', 'A da fatura'),
   terms: P('Condiciones', 'Terms', 'Conditions', 'Zahlungsbedingungen', 'Condições'),
   currency: P('Moneda', 'Currency', 'Devise', 'Währung', 'Moeda'),
   reference: P('Referencia', 'Reference', 'Référence', 'Referenz', 'Referência'),
@@ -465,21 +475,36 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
   // sin ella, el documento se lee como una factura nueva y no como lo que
   // corrige. Va primero: es el dato más importante de todo el documento.
   if (input.creditNoteOfNumber) facts.push({ k: tx('corrects'), v: input.creditNoteOfNumber });
+  if (input.serviceDate && input.serviceDateEnd) {
+    facts.push({ k: tx('servicePeriod'), v: `${fmtCalendarShort(input.serviceDate)} – ${fmtCalendarShort(input.serviceDateEnd)}` });
+  } else if (input.serviceDate) {
+    facts.push({ k: tx('serviceDate'), v: fmtCalendarShort(input.serviceDate) });
+  } else if (String(input.issuer.address?.countryCode || input.countryCode).toUpperCase() === 'DE' && !input.creditNoteOfNumber) {
+    facts.push({ k: tx('serviceDate'), v: tx('sameAsInvoiceDate') });
+  }
   if (input.dueDate) facts.push({ k: tx('dueDate'), v: fmtCalendarShort(input.dueDate) });
   if (input.paymentTermsCode) facts.push({ k: tx('terms'), v: termText(input.paymentTermsCode, lang) });
   facts.push({ k: tx('currency'), v: currency });
   if (input.reference) facts.push({ k: tx('reference'), v: input.reference });
 
+  // Más de cuatro datos van en dos filas: en una sola, cada uno tenía una
+  // sexta parte del ancho y un dato legal ("entspricht dem Rechnungsdatum",
+  // un periodo de prestación) salía cortado. Antes de cortar, se achica.
   const FACT_H = 42;
-  doc.rect(MARGIN, y, contentW, FACT_H, { fill: tint(brand, 0.93), radius: 6 });
-  const slot = contentW / facts.length;
-  facts.forEach((fact, index) => {
-    const x = MARGIN + slot * index + 14;
-    const w = slot - 28;
-    doc.text(fact.k.toUpperCase(), x, y + 17, { size: 6.6, font: 'bold', color: MUTED, tracking: 0.9 });
-    doc.text(truncateText(fact.v, w, 9.5, 'bold'), x, y + 31, { size: 9.5, font: 'bold', color: INK });
-  });
-  y += FACT_H + 24;
+  const perRow = facts.length <= 4 ? facts.length : Math.ceil(facts.length / 2);
+  for (let start = 0; start < facts.length; start += perRow) {
+    const row = facts.slice(start, start + perRow);
+    doc.rect(MARGIN, y, contentW, FACT_H, { fill: tint(brand, 0.93), radius: 6 });
+    const slot = contentW / perRow;
+    row.forEach((fact, index) => {
+      const x = MARGIN + slot * index + 14;
+      const w = slot - 28;
+      const size = [9.5, 8.5, 7.5].find((candidate) => measureText(fact.v, candidate, 'bold') <= w) ?? 7.5;
+      doc.text(fact.k.toUpperCase(), x, y + 17, { size: 6.6, font: 'bold', color: MUTED, tracking: 0.9 });
+      doc.text(truncateText(fact.v, w, size, 'bold'), x, y + 31, { size, font: 'bold', color: INK });
+    });
+    y += FACT_H + (start + perRow < facts.length ? 8 : 24);
+  }
 
   // ── Tabla de conceptos ─────────────────────────────────────────────────────
   const COLS: { title: string; width: number; align: Align }[] = [

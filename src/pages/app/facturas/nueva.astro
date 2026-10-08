@@ -123,6 +123,17 @@ const hoy = new Date();
 const defaultDue = draft?.venceISO
     || isoLocal(termDueDate(hoy, TERM_DEFAULT_CODE));
 
+// Fecha de prestación (Leistungsdatum, fecha de la operación, tax point). En
+// Alemania es mención obligatoria (§ 14 Abs. 4 Nr. 6 UStG): si queda vacía, el
+// PDF dice que coincide con la fecha de emisión, que es la forma admitida.
+const SERVICE_DATE_HINT = country === 'DE'
+    ? (L === 'en'
+        ? 'Required in Germany. Leave it empty if it matches the issue date: the invoice will say so.'
+        : 'Obligatoria en Alemania. Déjala vacía si coincide con la fecha de emisión: la factura lo indicará.')
+    : (L === 'en'
+        ? 'Only if the sale or service happened on a date other than the issue date.'
+        : 'Solo si la venta o el servicio ocurrió en una fecha distinta a la de emisión.');
+
 // Payload para el script. Va como JSON en el DOM y no por `define:vars` para
 // que el script pueda ser un módulo bundleado y así importar de verdad.
 const BOOT = {
@@ -405,6 +416,16 @@ import { iconInner } from '../../../lib/icons';
                         <span class="sum-lbl">{L === 'en' ? 'Due date' : 'Vencimiento'}</span>
                         <DatePicker id="dueDate" value={defaultDue}
                             ariaLabel={L === 'en' ? 'Due date' : 'Fecha de vencimiento'} />
+                    </div>
+
+                    <div class="sum-field">
+                        <span class="sum-lbl">{L === 'en' ? 'Date of supply' : 'Fecha de prestación'}</span>
+                        <DatePicker id="serviceDate" value={draft?.servicioISO || ''} clearable
+                            ariaLabel={L === 'en' ? 'Date of supply or start of the service period' : 'Fecha de prestación o inicio del periodo'} />
+                        <span class="sum-lbl">{L === 'en' ? 'End of period (optional)' : 'Fin del periodo (opcional)'}</span>
+                        <DatePicker id="serviceDateEnd" value={draft?.servicioFinISO || ''} clearable
+                            ariaLabel={L === 'en' ? 'End of the service period' : 'Fin del periodo de servicio'} />
+                        <p class="sum-hint">{SERVICE_DATE_HINT}</p>
                     </div>
 
                     <div class="sum-field">
@@ -1007,6 +1028,8 @@ import { iconInner } from '../../../lib/icons';
             document_mode: ($('documentMode') as HTMLSelectElement).value,
             currency,
             due_date: ($('dueDate') as HTMLInputElement).value || undefined,
+            service_date: ($('serviceDate') as HTMLInputElement).value || undefined,
+            service_date_end: ($('serviceDateEnd') as HTMLInputElement).value || undefined,
             notas: ($('notas') as HTMLTextAreaElement).value.trim() || undefined,
             iva_incluido: ivaIncluidoEl.checked,
             fx_buffer_pct: currency === BOOT.orgCurrency ? 0 : Number(($('fxBuffer') as HTMLInputElement).value) || 0,

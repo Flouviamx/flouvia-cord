@@ -35,6 +35,7 @@ import { taxCatalogFor, TaxCatalogUnavailableError } from '../impuestos-db';
 import { log } from '../log';
 import { satFormFor as satPaymentForm } from './payment-complement';
 import { serieCompartida, serieCompartidaMensaje } from './serie';
+import { isISODate } from '../rango';
 import { prepararAnulacionVerifactu, reactivarAltaVerifactu, VerifactuCorreccionError } from './verifactu/correcciones';
 import { VerifactuDatosError } from './verifactu/validacion';
 import { SifNotConfiguredError } from './verifactu/sif';
@@ -84,6 +85,12 @@ export interface CreateDraftInput {
   currency?: string;
   /** ISO date. Si falta, se deriva de los términos del cliente. */
   dueDate?: string | null;
+  /**
+   * Fecha de prestación (Leistungsdatum) y, para un periodo, su fin. ISO.
+   * Nula = coincide con la fecha de la factura.
+   */
+  serviceDate?: string | null;
+  serviceDateEnd?: string | null;
   notes?: string | null;
   createdBy?: string | null;
   /** Cobertura sobre la tasa spot, igual que en el editor de cotizaciones. */
@@ -94,6 +101,23 @@ export interface CreateDraftInput {
 
 /** Máximo de conceptos por factura. Mismo tope que una cotización. */
 export const MAX_INVOICE_ITEMS = 200;
+
+/**
+ * Fecha o periodo de prestación desde el body HTTP (`service_date`,
+ * `service_date_end`). El fin sin inicio, o anterior a él, se rechaza: el
+ * periodo se imprime en la factura alemana como Leistungszeitraum.
+ */
+export function parseServiceDates(body: Record<string, unknown>):
+  | { ok: true; serviceDate: string | null; serviceDateEnd: string | null }
+  | { ok: false; error: string } {
+  const start = String(body.service_date ?? '').trim();
+  const end = String(body.service_date_end ?? '').trim();
+  if (start && !isISODate(start)) return { ok: false, error: 'La fecha de prestación no es válida.' };
+  if (end && !isISODate(end)) return { ok: false, error: 'El fin del periodo de prestación no es válido.' };
+  if (end && !start) return { ok: false, error: 'Indica cuándo empieza el periodo de prestación.' };
+  if (end && end < start) return { ok: false, error: 'El periodo de prestación termina antes de empezar.' };
+  return { ok: true, serviceDate: start || null, serviceDateEnd: end && end !== start ? end : null };
+}
 
 /**
  * Traduce el shape HTTP del editor / API al del dominio. El saneo fino
@@ -367,7 +391,7 @@ export async function createInvoiceDraft(orgId: string, input: CreateDraftInput)
       retencion_total, retenciones_snapshot,
       lifecycle, due_date, amount_paid, amount_remaining, public_token, notes, created_by,
       issuer_snapshot, recipient_snapshot, line_items_snapshot,
-      schema_version, provider_data, updated_at
+      schema_version, provider_data, updated_at, service_date, service_date_end
     ) values (
       ${orgId}, null, ${String(head.cliente_id)}, ${country}, ${docType}, 'pending',
       ${docType === 'cfdi_40' ? 'facturapi' : 'cord'},
@@ -376,7 +400,7 @@ export async function createInvoiceDraft(orgId: string, input: CreateDraftInput)
       'draft', ${dueDate}::date, 0, ${total}, ${publicToken},
       ${input.notes || null}, ${input.createdBy || null},
       ${JSON.stringify(issuer)}, ${JSON.stringify(recipient)}, ${JSON.stringify(lines)},
-      'cord.invoice.v1', '{}'::jsonb, now()
+      'cord.invoice.v1', '{}'::jsonb, now(), ${input.serviceDate || null}::date, ${input.serviceDateEnd || null}::date
     )
     returning id, public_token`);
   const row = rows[0];
@@ -493,6 +517,8 @@ export async function updateInvoiceDraft(
       amount_remaining = ${total} - coalesce(amount_paid, 0),
       due_date = ${dueDate}::date,
       notes = ${input.notes || null},
+      service_date = ${input.serviceDate || null}::date,
+      service_date_end = ${input.serviceDateEnd || null}::date,
       issuer_snapshot = ${JSON.stringify(issuer)},
       recipient_snapshot = ${JSON.stringify(recipient)},
       line_items_snapshot = ${JSON.stringify(lines)},

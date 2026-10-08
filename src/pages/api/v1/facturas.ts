@@ -11,7 +11,7 @@ export const prerender = false;
 import { withApiAuth } from '../../../lib/apikey';
 import { getActiveOrgId, logAudit, reqIp } from '../../../lib/db';
 import { getFacturas } from '../../../lib/queries';
-import { createInvoiceDraft, parseInvoiceItems, MAX_INVOICE_ITEMS } from '../../../lib/fiscal/invoices';
+import { createInvoiceDraft, parseInvoiceItems, parseServiceDates, MAX_INVOICE_ITEMS } from '../../../lib/fiscal/invoices';
 import { ok, fail, invoiceListItem, readJsonBody } from '../../../lib/apiv1';
 import { requireEntitlement } from '../../../lib/org-entitlements';
 import { invoicingFeatureFor } from '../../../lib/fiscal/gate';
@@ -56,6 +56,8 @@ export const POST = withApiAuth('write', async ({ request }, auth) => {
     if (dueDate && !isISODate(dueDate)) {
         return fail('due_date debe ser YYYY-MM-DD', 'invalid_request', 400);
     }
+    const servicio = parseServiceDates(body);
+    if (!servicio.ok) return fail(servicio.error, 'invalid_request', 400);
 
     const result = await createInvoiceDraft(orgId, {
         clienteId,
@@ -63,6 +65,8 @@ export const POST = withApiAuth('write', async ({ request }, auth) => {
         documentMode: body.document_mode,
         currency: body.currency ? String(body.currency) : undefined,
         dueDate: dueDate || null,
+        serviceDate: servicio.serviceDate,
+        serviceDateEnd: servicio.serviceDateEnd,
         notes: String(body.notas ?? '').trim().slice(0, 1000) || null,
         bufferPct: Number(body.fx_buffer_pct) || 0,
         ivaIncluido: body.iva_incluido === true,

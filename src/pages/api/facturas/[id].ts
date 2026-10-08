@@ -10,7 +10,7 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { sql, getActiveOrgId, logAudit, reqIp, withOrgTx } from '../../../lib/db';
 import { requirePerm, invalidateMoneyCaches, getFacturaDetalle } from '../../../lib/queries';
-import { createInvoiceDraft, finalizeInvoice, voidInvoice, createCreditNote, updateInvoiceDraft, parseInvoiceItems, MAX_INVOICE_ITEMS } from '../../../lib/fiscal/invoices';
+import { createInvoiceDraft, finalizeInvoice, voidInvoice, createCreditNote, updateInvoiceDraft, parseInvoiceItems, parseServiceDates, MAX_INVOICE_ITEMS } from '../../../lib/fiscal/invoices';
 import { applyPayment, manualPaymentMethod } from '../../../lib/fiscal/payments';
 import { requireEntitlement } from '../../../lib/org-entitlements';
 import { dispatchInvoiceEvent } from '../../../lib/webhooks';
@@ -108,6 +108,8 @@ async function updateDraft(orgId: string, id: string, body: any, request: Reques
     if (dueDate && !isISODate(dueDate)) {
         return json({ error: 'La fecha de vencimiento no es válida.' }, 400);
     }
+    const servicio = parseServiceDates(body);
+    if (!servicio.ok) return json({ error: servicio.error }, 400);
 
     const result = await updateInvoiceDraft(orgId, id, {
         clienteId: String(body.cliente_id ?? '').trim(),
@@ -115,6 +117,8 @@ async function updateDraft(orgId: string, id: string, body: any, request: Reques
         documentMode: body.document_mode,
         currency: body.currency ? String(body.currency) : undefined,
         dueDate: dueDate || null,
+        serviceDate: servicio.serviceDate,
+        serviceDateEnd: servicio.serviceDateEnd,
         notes: String(body.notas ?? '').trim().slice(0, 1000) || null,
         bufferPct: Number(body.fx_buffer_pct) || 0,
         ivaIncluido: body.iva_incluido === true,

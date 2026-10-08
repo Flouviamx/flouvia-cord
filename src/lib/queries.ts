@@ -27,7 +27,7 @@ import { currencyDecimals, normalizeCurrency } from './currency';
 import { getCountryProfile, supportsMercadoPago, taxKindLabel } from './countries';
 import { normalizeTerm, termDays, termLabel as termLabelFor } from './payment-terms';
 import { onlinePaymentsSetup } from './payment-rail';
-import { fmtDate, fmtRelative, intlLocale, money } from './fmt-server';
+import { fmtCalendarDate, fmtDate, fmtRelative, intlLocale, money } from './fmt-server';
 import { calculateDocumentTotals, retencionBase, type RetencionBase } from '../../packages/elements/src/engine';
 import { dueDateFor, venceDia } from './cobros';
 import { taskBadge } from './tasks-db';
@@ -1386,7 +1386,7 @@ function rowToQuote(c: any, items: any[], eventos: any[], versiones: any[] = [],
         status: c.status as QuoteStatus,
         terminos: termLabel(c.terminos),
         terminosCode: normalizeTerm(c.terminos),
-        vigencia: fmtDate(c.vigencia),
+        vigencia: fmtCalendarDate(c.vigencia),
         vigenciaDias: c.vigencia ? Math.max(1, Math.ceil((new Date(c.vigencia).getTime() - Date.now()) / 86400000)) : null,
         creada: fmtDate(c.created_at),
         token: c.public_token,
@@ -1595,8 +1595,17 @@ function rowToFactura(r: any) {
         // hechos distintos y confundirlos es cómo se cobra dos veces.
         estado: (r.lifecycle as string) || 'open',
         estadoFiscal: r.status as string,
-        vence: r.due_date ? fmtDate(r.due_date as string) : null,
-        venceISO: r.due_date ? String(r.due_date).slice(0, 10) : null,
+        vence: r.due_date ? fmtCalendarDate(r.due_date as string) : null,
+        // El driver entrega `date` como Date: String(date).slice(0, 10) daba "Wed Oct 07".
+        venceISO: r.due_date ? venceDia(r.due_date) : null,
+        // Fecha (o periodo) de prestación; solo la trae el detalle (`d.*`).
+        servicioISO: r.service_date ? venceDia(r.service_date) : null,
+        servicioFinISO: r.service_date_end ? venceDia(r.service_date_end) : null,
+        servicio: r.service_date
+            ? (r.service_date_end
+                ? `${fmtCalendarDate(r.service_date as string)} – ${fmtCalendarDate(r.service_date_end as string)}`
+                : fmtCalendarDate(r.service_date as string))
+            : null,
         vencida: !!r.vencida,
         diasVencida: r.dias_vencida !== null && r.dias_vencida !== undefined ? Number(r.dias_vencida) : null,
         pais: r.country_code as string,
@@ -1811,7 +1820,7 @@ export async function getFacturaByToken(token: string) {
         pagado,
         saldo,
         vence,
-        venceLegible: r.due_date ? fmtDate(r.due_date as string) : null,
+        venceLegible: r.due_date ? fmtCalendarDate(r.due_date as string) : null,
         vencida: !!vence && r.lifecycle === 'open' && vence < hoy,
         emitida: r.issued_at ? fmtDate(r.issued_at as string) : fmtDate(r.created_at as string),
         notas: (r.notes as string) || null,
@@ -2052,7 +2061,7 @@ export async function getCotizacionByToken(token: string) {
         const due = new Date(base); due.setDate(due.getDate() + termDias); due.setHours(0, 0, 0, 0);
         const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
         (quote as any).pagoDisponible = termDias === 0 || due.getTime() <= hoy.getTime();
-        (quote as any).saldoVence = termDias > 0 ? fmtDate(due) : '';
+        (quote as any).saldoVence = termDias > 0 ? fmtCalendarDate(due) : '';
         (quote as any).saldoVenceDias = termDias > 0 ? Math.max(0, Math.ceil((due.getTime() - hoy.getTime()) / 86400000)) : 0;
     }
 
@@ -2072,7 +2081,7 @@ export async function getCotizacionByToken(token: string) {
             numeroCuota: num(co.numero_cuota),
             monto: num(co.monto),
             status: co.status as string,
-            vence: co.vence ? fmtDate(co.vence) : '',
+            vence: co.vence ? fmtCalendarDate(co.vence) : '',
             venceEnFuturo: co.vence ? venceDia(co.vence) > hoyDia : false,
             pagado: co.status === 'pagado',
         }));
@@ -2249,7 +2258,7 @@ export async function getLiveSnapshot(orgId: string, cotizacionId: string): Prom
         subtotal: num(c.subtotal),
         iva: num(c.iva),
         total: num(c.total),
-        vigencia: c.vigencia ? fmtDate(c.vigencia as string) : '',
+        vigencia: c.vigencia ? fmtCalendarDate(c.vigencia as string) : '',
         notas: (c.notas as string) ?? '',
         items: items.map((it: any) => {
             const precio = it.precio_negociado === null ? num(it.precio_unitario) : num(it.precio_negociado);
@@ -2268,7 +2277,7 @@ export async function getLiveSnapshot(orgId: string, cotizacionId: string): Prom
             tipo: co.tipo as string,
             monto: num(co.monto),
             status: co.status as string,
-            vence: co.vence ? fmtDate(co.vence as string) : '',
+            vence: co.vence ? fmtCalendarDate(co.vence as string) : '',
         })),
         impuestos: desglose.porTasa.filter((t: any) => t.impuesto > 0).map((t: any) => ({ tasa: t.tasa, impuesto: t.impuesto })),
         retenciones: desglose.retenciones.map((r: any) => ({ nombre: r.nombre, monto: r.monto })),
@@ -2623,7 +2632,7 @@ async function getAnalyticsDiagnosisUncached(orgId: string, desde: string, hasta
         series: seriesRows.map((r: any) => ({ fecha: r.fecha as string, cotizado: num(r.cotizado), cerrado: num(r.cerrado), cobrado: num(r.cobrado) })),
         funnel: { sent, views, approved, paid },
         pipeline: ['sent', 'viewed', 'approved', 'paid', 'invoiced'].map((key) => ({ key, ...(stages.get(key) ?? { n: 0, monto: 0 }) })),
-        stalled: stalledRows.map((r: any) => ({ id: r.id as string, folio: r.folio as string, empresa: r.empresa as string, total: num(r.total), status: r.status as string, vigencia: r.vigencia ? String(r.vigencia).slice(0, 10) : null, dias: num(r.dias_sin_movimiento) })),
+        stalled: stalledRows.map((r: any) => ({ id: r.id as string, folio: r.folio as string, empresa: r.empresa as string, total: num(r.total), status: r.status as string, vigencia: r.vigencia ? venceDia(r.vigencia) : null, dias: num(r.dias_sin_movimiento) })),
         losses: { rejected: losses.get('rejected') ?? { n: 0, monto: 0 }, expired: losses.get('expired') ?? { n: 0, monto: 0 } },
         discounts: (advanced ? discountRows : []).map((r: any) => {
             const lista = num(r.lista), negociado = num(r.negociado);
@@ -3000,7 +3009,8 @@ async function getCobranzaUncached() {
         const expected = new Date(due); expected.setDate(expected.getDate() + clientDelay);
         const expDias = Math.round((expected.getTime() - today.getTime()) / MS);
         const prom = origen === 'cotizacion' ? promMap.get(r.id as string) : undefined;
-        const fechaProm = prom ? String(prom.fecha_promesa).slice(0, 10) : '';
+        // `date` llega como Date: String(v).slice(0, 10) daba "Wed Oct 07".
+        const fechaProm = prom ? venceDia(prom.fecha_promesa) : '';
         return {
             id: r.id as string, folio: (r.folio as string) || '—',
             origen,
@@ -3012,16 +3022,16 @@ async function getCobranzaUncached() {
             status: r.status as string, token: r.token as string,
             publicUrl: await publicDocumentUrl(orgId, origen === 'factura' ? 'i' : 'q', r.token as string),
             telefono: (r.telefono as string) ?? '',
-            vence: fmtDate(due), overdue,
+            vence: fmtCalendarDate(due), overdue,
             diasVencido: overdue ? diff : 0, diasParaVencer: overdue ? 0 : -diff,
             bucket, interes: Math.round(interes),
-            expectedFecha: fmtDate(expected), expectedDias: expDias,
+            expectedFecha: fmtCalendarDate(expected), expectedDias: expDias,
             avgDiasCliente: clientDelay,
             // Promesa de pago pendiente (seguimiento manual). null = sin promesa.
             promesa: prom ? {
                 id: prom.id as string,
                 fechaISO: fechaProm,
-                fecha: fmtDate(fechaProm),
+                fecha: fmtCalendarDate(fechaProm),
                 monto: prom.monto != null ? num(prom.monto) : null,
                 nota: (prom.nota as string) || '',
             } : null,

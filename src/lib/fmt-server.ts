@@ -44,6 +44,30 @@ export function fmtDate(d: string | Date | null | undefined): string {
         .format(asDate(d)).replace('.', '');
 }
 
+/**
+ * Fecha de CALENDARIO (columna `date`: vencimiento, vigencia, prestación) —
+ * '12 ago 2026' sin pasar por la zona del negocio.
+ *
+ * `fmtDate` sirve para instantes. Con un `date` corre el día: el driver lo
+ * entrega como la medianoche del servidor (UTC en Vercel) y convertirla a
+ * America/Mexico_City la deja en las 18:00 del día ANTERIOR, así que una
+ * factura que vencía el 7 decía "Vence 6 oct". Un día de calendario no tiene
+ * huso: se toman sus componentes y se formatea en UTC.
+ */
+export function fmtCalendarDate(d: string | Date | null | undefined): string {
+    if (!d) return '—';
+    let y: number, m: number, day: number;
+    if (d instanceof Date) {
+        y = d.getFullYear(); m = d.getMonth() + 1; day = d.getDate();
+    } else {
+        const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(d);
+        if (!match) return fmtDate(d);
+        y = Number(match[1]); m = Number(match[2]); day = Number(match[3]);
+    }
+    return new Intl.DateTimeFormat(intlLocale(), { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })
+        .format(new Date(Date.UTC(y, m - 1, day))).replace('.', '');
+}
+
 /** '12 de agosto de 2026' — para documentos, no para listas. */
 export function fmtDateLong(d: string | Date | null | undefined): string {
     if (!d) return '—';

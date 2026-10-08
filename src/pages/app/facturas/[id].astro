@@ -399,6 +399,7 @@ import { iconInner } from '../../../lib/icons';
                             <div class="fd-meta">
                                 <div><span>{t(L, 'fact.d_emitida')}</span><span>{f.creado}</span></div>
                                 <div><span>{t(L, 'fact.d_vence')}</span><span>{f.vence ?? (L === 'en' ? 'Not set' : 'Sin fecha')}</span></div>
+                                {f.servicio && <div><span>{f.servicioFinISO ? (L === 'en' ? 'Service period' : 'Periodo de prestación') : (L === 'en' ? 'Date of supply' : 'Fecha de prestación')}</span><span>{f.servicio}</span></div>}
                                 <div><span>{t(L, 'fact.d_pais')}</span><span>{f.pais}</span></div>
                                 <div><span>{t(L, 'fact.d_divisa')}</span><span>{f.currency ?? (L === 'en' ? 'Not set' : 'Sin definir')}</span></div>
                                 {f.clienteEmail && <div><span>Email</span><span>{f.clienteEmail}</span></div>}

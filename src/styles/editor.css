@@ -358,6 +358,7 @@
 [data-editor] .sum-field-row .s-toggle { flex-shrink: 0; }
 [data-editor] .sum-field label,
 [data-editor] .sum-field .sum-lbl { font-size: 0.72rem; font-weight: 500; color: var(--color-text-muted); }
+[data-editor] .sum-hint { font-size: 0.72rem; color: var(--color-text-muted); margin: 0; line-height: 1.4; }
 [data-editor] .sum-note { font-size: 0.75rem; color: var(--color-text-muted); margin: 0.4rem 0 0; line-height: 1.4; text-align: center; }
 [data-editor] .sum-kbd { display: flex; align-items: center; justify-content: center; gap: 4px; font-size: 0.68rem; color: #99a2af; margin: 0.1rem 0 0; }
 

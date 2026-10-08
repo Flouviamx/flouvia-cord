@@ -3396,6 +3396,15 @@ alter table documentos_fiscales add column if not exists void_reason text;
 alter table documentos_fiscales add column if not exists credit_note_of uuid references documentos_fiscales(id) on delete set null;
 alter table documentos_fiscales add column if not exists sent_at timestamptz;
 alter table documentos_fiscales add column if not exists notes text;
+-- Fecha (o periodo) de prestación — Leistungsdatum (oct 2026). En Alemania es
+-- obligatoria en la factura (§ 14 Abs. 4 Nr. 6 UStG) y en Francia lo es cuando
+-- difiere de la fecha de emisión; sin columna, Cord no tenía dónde capturarla.
+-- Nula = coincide con la fecha de la factura (el PDF alemán lo dice).
+alter table documentos_fiscales add column if not exists service_date date;
+alter table documentos_fiscales add column if not exists service_date_end date;
+alter table documentos_fiscales drop constraint if exists chk_documentos_service_period;
+alter table documentos_fiscales add constraint chk_documentos_service_period
+  check (service_date_end is null or (service_date is not null and service_date_end >= service_date));
 alter table documentos_fiscales add column if not exists created_by uuid;
 -- PaymentIntent vivo del cobro del SALDO desde la hosted invoice page. Se
 -- reutiliza entre recargas: sin él, cada visita abre un intento nuevo y el

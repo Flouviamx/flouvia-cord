@@ -178,7 +178,7 @@ export const OPERATIONS: Operation[] = [
     { method: 'POST', path: '/productos', summary: 'Crear producto', tag: 'Productos', scope: 'write', body: z.looseObject({ nombre: z.string() }), response: Ack },
 
     { method: 'GET', path: '/facturas', summary: 'Listar facturas', tag: 'Facturas', scope: 'read', page: 'cursor', query: { ...cursorQ, estado: z.string(), cliente: z.string(), desde: z.string(), hasta: z.string(), q: z.string() }, response: Invoice },
-    { method: 'POST', path: '/facturas', summary: 'Crear factura en borrador', tag: 'Facturas', scope: 'write', body: z.object({ cliente_id: z.string(), items: z.array(QuoteItemInput).min(1).max(200), currency: z.string().optional(), due_date: z.string().optional(), notas: z.string().optional(), iva_incluido: z.boolean().optional(), document_mode: z.enum(['commercial', 'fiscal']).optional(), fx_buffer_pct: z.number().optional() }), response: Ack },
+    { method: 'POST', path: '/facturas', summary: 'Crear factura en borrador', tag: 'Facturas', scope: 'write', body: z.object({ cliente_id: z.string(), items: z.array(QuoteItemInput).min(1).max(200), currency: z.string().optional(), due_date: z.string().optional(), service_date: z.string().optional(), service_date_end: z.string().optional(), notas: z.string().optional(), iva_incluido: z.boolean().optional(), document_mode: z.enum(['commercial', 'fiscal']).optional(), fx_buffer_pct: z.number().optional() }), response: Ack },
     { method: 'GET', path: '/facturas/{id}', summary: 'Detalle de factura', tag: 'Facturas', scope: 'read', response: InvoiceDetail },
     { method: 'POST', path: '/facturas/{id}', summary: 'Emitir, enviar, anular, registrar pago o nota de crédito', tag: 'Facturas', scope: 'write', body: action(['finalize', 'send', 'void', 'payment', 'credit_note'], { monto: z.number().optional(), moneda: z.string().optional(), metodo: z.string().optional(), referencia: z.string().optional(), motivo: z.string().optional() }), response: Ack },
 
@@ -254,6 +254,8 @@ export const FIELD_DOCS: Record<string, string> = {
     document_mode: 'commercial o fiscal. Sin él, fiscal si el plan lo incluye y el país lo tiene habilitado; fiscal sin eso responde 400.',
     done: 'true si la tarea está terminada.',
     due_date: 'Fecha de vencimiento, YYYY-MM-DD.',
+    service_date: 'Fecha de prestación del servicio o de entrega (Leistungsdatum), YYYY-MM-DD. Sin ella, la factura indica que coincide con la fecha de emisión.',
+    service_date_end: 'Fin del periodo de prestación, YYYY-MM-DD. Requiere service_date y no puede ser anterior.',
     email: 'Correo electrónico.',
     emisor: 'Datos fiscales de quien emite.',
     empresa: 'Nombre de la empresa o persona.',

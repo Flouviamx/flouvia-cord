@@ -152,4 +152,20 @@ describe('idioma y menciones legales del PDF de factura', () => {
         // El QR va antes que las partes (el emisor ya sale en la cabecera).
         expect(text.indexOf('QR tributario:')).toBeLessThan(text.indexOf('Cliente SA'));
     });
+
+    it('fecha de prestación: la explícita, el periodo, y en Alemania la mención por defecto', () => {
+        const de = { legalName: 'Studio Berg GmbH', taxId: 'DE136695976', address: { countryCode: 'DE' } };
+        const kunde = { legalName: 'Kunde AG', address: { countryCode: 'DE' } };
+        const sinFecha = pdfText(createInvoicePdf(base({ countryCode: 'DE', issuer: de, recipient: kunde })));
+        expect(sinFecha).toContain('LEISTUNGSDATUM');
+        expect(sinFecha).toContain('entspricht dem Rechnungsdatum');
+        const periodo = pdfText(createInvoicePdf(base({ countryCode: 'DE', issuer: de, recipient: kunde, serviceDate: '2026-09-01', serviceDateEnd: '2026-09-30' })));
+        expect(periodo).toContain('LEISTUNGSZEITRAUM');
+        expect(periodo).not.toContain('entspricht dem Rechnungsdatum');
+        // Fuera de Alemania, sin fecha no se imprime nada.
+        const fr = pdfText(createInvoicePdf(base({})));
+        expect(fr).not.toContain('DATE DE LA PRESTATION');
+        const frConFecha = pdfText(createInvoicePdf(base({ serviceDate: '2026-09-15' })));
+        expect(frConFecha).toContain('DATE DE LA PRESTATION');
+    });
 });

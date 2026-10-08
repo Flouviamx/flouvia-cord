@@ -3331,6 +3331,14 @@
                     "type": "string",
                     "description": "Fecha de vencimiento, YYYY-MM-DD."
                   },
+                  "service_date": {
+                    "type": "string",
+                    "description": "Fecha de prestación del servicio o de entrega (Leistungsdatum), YYYY-MM-DD. Sin ella, la factura indica que coincide con la fecha de emisión."
+                  },
+                  "service_date_end": {
+                    "type": "string",
+                    "description": "Fin del periodo de prestación, YYYY-MM-DD. Requiere service_date y no puede ser anterior."
+                  },
                   "notas": {
                     "type": "string",
                     "description": "Notas internas; el cliente no las ve."

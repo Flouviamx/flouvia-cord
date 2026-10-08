@@ -952,6 +952,21 @@ Contratos que quedaron vigentes tras auditar Cord Invoicing en los 12 mercados.
 - **Entradas inválidas se rechazan, no se corrigen en silencio:** líneas con
   cantidad o precio negativo, fechas que no existen (2026-02-31), tasas fuera de
   0–100, subtipos del SAT fuera de México.
+- **Una serie por emisor.** Dos organizaciones con el mismo identificador fiscal
+  (fuera de México) no pueden numerar con la misma serie: Verifactu y la autoridad
+  identifican la factura por emisor + número, así que las dos `F2026-000001`
+  serían la misma. `cord_serie_en_uso()` (security definer, solo devuelve un
+  booleano) lo comprueba al guardar los datos fiscales (409
+  `invoice_series_in_use`) y otra vez antes de reservar el folio.
+- **Fecha de prestación** (`documentos_fiscales.service_date` y
+  `service_date_end`; `service_date` / `service_date_end` en `/api/v1`). Una fecha
+  o un periodo; el PDF la imprime como "Leistungsdatum" / "Leistungszeitraum" en
+  alemán. En Alemania es mención obligatoria (§ 14 Abs. 4 Nr. 6 UStG): si queda
+  vacía, el PDF dice "entspricht dem Rechnungsdatum", que es la forma admitida.
+- **Columnas `date` en pantalla:** `fmtCalendarDate()` (`fmt-server.ts`), nunca
+  `fmtDate()`. El driver entrega un `date` como medianoche del servidor y
+  `fmtDate` lo convierte a la zona del negocio: en México el detalle de la
+  factura decía que vencía un día antes. Para comparar o serializar, `venceDia()`.
 
 ## Seguimiento de confiabilidad
 
