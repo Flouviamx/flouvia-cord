@@ -110,7 +110,7 @@ check(read('src/lib/billing-reconcile.ts').includes('paidBaseInvoice'), 'El reco
 check(schema.includes('create unique index if not exists uq_billing_checkout_open_org'), 'Falta la exclusión concurrente de checkout.');
 check(schema.includes('create trigger trg_limit_productos') && schema.includes('create trigger trg_limit_clientes') && schema.includes('create trigger trg_limit_cotizaciones'), 'Faltan límites concurrentes en PostgreSQL.');
 check(schema.includes('alter table usage_reservations force row level security'), 'El outbox debe tener FORCE RLS.');
-check(schema.includes("dimension in ('api','usuario','ia','timbrado','envios')"), 'El CHECK de usage_reservations debe aceptar la dimensión envios.');
+check(schema.includes("dimension in ('api','usuario','ia','timbrado','envios','documento')"), 'El CHECK de usage_reservations debe aceptar las dimensiones envios y documento (meterInvoiceEmission).');
 check(queries.includes('canRemoveBranding') && queries.includes('portalPowered: canRemoveBranding'), 'El link público debe restituir la marca tras downgrade.');
 check(queries.includes('can_manage_billing') && read('src/pages/app/ajustes/plan.astro').includes('BILL.canManage'), 'Un impago debe revocar funciones sin ocultar la recuperación del Portal.');
 check(email.includes('canCustomizeEmail') && email.includes('canRemoveBranding'), 'El correo debe aplicar entitlements efectivos.');

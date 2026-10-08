@@ -1,14 +1,15 @@
 /* ── Vocabulario visual del editor de documentos ─────────────────────────────
  *
- * Lo consume el editor de facturas (`/app/facturas/nueva`). Cotizaciones aún
- * conserva su CSS embebido por el markup dinámico histórico, pero comparte este
- * mismo contrato semántico de tokens para que ambos documentos reaccionen al
- * tema como una sola familia visual.
+ * Lo consume src/components/app/DocumentEditor.astro: cotización nueva,
+ * borrador, versión nueva y factura. Antes cotizaciones/nueva arrastraba ~450
+ * líneas propias de CSS global sin llave que pisaban estas reglas (el título
+ * del paso se iba a la derecha, la fila de líneas caía en columnas cruzadas) y
+ * la pantalla de versiones tenía una tercera copia con el diseño viejo.
  *
- * TODO va llaveado por `[data-editor]` (Regla 11): buena parte de estos nodos
- * los inyecta JavaScript —las filas de línea, el dropdown del buscador— así que
- * un `<style>` scopeado de Astro no los alcanzaría, y una hoja global sin llave
- * filtraría `.chip` o `.line-row` al resto de la app.
+ * TODO va llaveado por `[data-editor]` (Regla 11): las filas de línea y el
+ * dropdown del buscador los inyecta JavaScript, así que un `<style>` scopeado
+ * de Astro no los alcanzaría, y una hoja global sin llave filtraría `.chip` o
+ * `.line-row` al resto de la app.
  */
 
 [data-editor] .editor-grid { display: grid; grid-template-columns: 1fr 320px; gap: 3rem; align-items: start; }
@@ -17,11 +18,13 @@
 [data-editor] .ed-block { padding: 0; min-width: 0; }
 [data-editor] .opt { font-size: 0.75rem; font-weight: 400; color: var(--color-text-muted); }
 
-[data-editor] .draft-tag {
-    font-size: 0.72rem; font-weight: 600; color: var(--color-text-muted);
+[data-editor] .de-tag {
+    flex-shrink: 0; font-size: 0.7rem; font-weight: 600; color: var(--color-text-muted);
     background: var(--color-bg-soft); border: 1px solid var(--color-border);
-    padding: 4px 10px; border-radius: 6px;
+    padding: 3px 9px; border-radius: 999px; white-space: nowrap;
 }
+[data-editor] .field-label { display: block; font-size: 0.72rem; font-weight: 500; color: var(--color-text-muted); margin-bottom: 0.4rem; }
+[data-editor] .field-hint { font-size: 0.76rem; color: var(--color-text-muted); margin: 0.6rem 0 0; line-height: 1.5; max-width: 60ch; }
 
 [data-editor] .section-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
 [data-editor] .section-head h2 { font-size: 0.85rem; font-weight: 600; color: var(--color-text); margin: 0; }
@@ -134,15 +137,25 @@
 [data-editor] .desc-note[hidden] { display: none; }
 
 /* ── Líneas ── */
-/* 7 columnas: concepto · cant · lista · precio · impuesto · importe · borrar.
-   La de margen del editor de cotizaciones no aplica aquí: el margen es una
-   métrica de negociación, y una factura ya no se negocia. */
+/* Columnas: concepto · cant · lista · precio · [impuesto] · importe · [margen] · quitar.
+   El impuesto solo aparece con más de una tasa; el margen solo en cotización
+   (es una métrica de negociación, y una factura ya no se negocia). La rejilla
+   se llavea por `data-cols` en el contenedor, no por el número de hijos. */
 [data-editor] .lines-head,
 [data-editor] .line-row {
     display: grid;
-    grid-template-columns: 1.8fr 70px 90px 110px 92px 1fr 30px;
+    --c-name: minmax(150px, 1.8fr);
+    --c-fixed: 76px 92px 112px;
+    grid-template-columns: var(--c-name) var(--c-fixed) minmax(84px, 1fr) 32px;
     gap: 0.8rem;
 }
+[data-editor] [data-cols="tax"] .line-row,
+[data-editor] .lines-head[data-cols="tax"] { grid-template-columns: var(--c-name) var(--c-fixed) 104px minmax(84px, 1fr) 32px; }
+[data-editor] [data-cols="margin"] .line-row,
+[data-editor] .lines-head[data-cols="margin"] { grid-template-columns: var(--c-name) var(--c-fixed) minmax(84px, 1fr) 58px 32px; }
+[data-editor] [data-cols="tax margin"] .line-row,
+[data-editor] .lines-head[data-cols="tax margin"] { grid-template-columns: var(--c-name) var(--c-fixed) 104px minmax(84px, 1fr) 58px 32px; }
+[data-editor] .lines-head[hidden] { display: none; }
 [data-editor] .lines-head {
     font-size: 0.72rem; font-weight: 500; color: var(--color-text-muted);
     padding: 0 0 0.5rem; border-bottom: 1px solid var(--color-border);
@@ -156,9 +169,31 @@
 [data-editor] .line-row { align-items: center; padding: 0.8rem 0; border-bottom: 1px solid var(--color-border); }
 [data-editor] .line-row:last-child { border-bottom: none; }
 [data-editor] .lr-name { font-size: 0.86rem; font-weight: 500; color: var(--color-text); display: flex; flex-direction: column; min-width: 0; }
+[data-editor] .lr-name-text { overflow-wrap: anywhere; }
 [data-editor] .lr-name small { font-size: 0.68rem; color: var(--color-text-muted); font-weight: 500; }
-[data-editor] .lr-volnote { color: #059669; font-weight: 600; }
-[data-editor] .lr-lista { font-size: 0.82rem; color: var(--color-text-muted); text-decoration: line-through; }
+[data-editor] .lr-volnote { color: #047857; font-weight: 600; }
+[data-editor] .lr-stock { color: var(--color-text-muted); font-weight: 500; }
+[data-editor] .lr-stock.is-low,
+[data-editor] .lr-stock.is-out,
+[data-editor] .prod-stock.is-out { color: var(--color-danger); font-weight: 600; }
+[data-editor] .lr-b2b { color: var(--color-ok); font-weight: 600; }
+[data-editor] .lr-pricing-hint {
+    font: inherit; padding: 0; background: none; border: none; border-bottom: 1px dashed currentColor;
+    cursor: pointer; color: var(--color-blue-deep); font-weight: 600; border-radius: 0;
+    transition: opacity 0.15s var(--ease-ios);
+}
+[data-editor] .lr-pricing-hint:hover { opacity: 0.7; }
+/* La lista solo se tacha cuando el precio pactado es menor: tacharla siempre
+   anunciaba un descuento que no existía. */
+[data-editor] .lr-lista { font-size: 0.82rem; color: var(--color-text-muted); font-variant-numeric: tabular-nums; }
+[data-editor] .lr-lista.is-struck { text-decoration: line-through; }
+[data-editor] .lr-margen {
+    font-size: 0.72rem; font-weight: 600; text-align: center; border-radius: 4px; padding: 2px 6px;
+    color: #047857; background: rgba(16, 185, 129, 0.1); font-variant-numeric: tabular-nums;
+}
+[data-editor] .lr-margen-na { color: var(--color-text-muted); background: transparent; font-weight: 400; }
+[data-editor] .lr-margen-low { color: #b91c1c; background: rgba(220, 38, 38, 0.1); }
+[data-editor] .lh-margen { text-align: center; cursor: help; }
 [data-editor] .lr-input {
     font-family: var(--font-sans); font-size: 0.85rem; font-weight: 500;
     color: var(--color-text); background: var(--editor-field);
@@ -168,9 +203,13 @@
 }
 [data-editor] .lr-input:hover { background: var(--editor-field-hover); }
 [data-editor] .lr-input:focus { outline: none; border-color: var(--color-blue-deep); background: var(--editor-panel); box-shadow: 0 0 0 3px var(--editor-focus-ring); }
-[data-editor] .lr-desc-input { border-color: var(--color-border); }
-[data-editor] .lr-nego.is-deal { color: #059669; font-weight: 600; }
+[data-editor] .lr-qty,
+[data-editor] .lr-nego { text-align: right; font-variant-numeric: tabular-nums; }
+[data-editor] .lr-nego.is-deal { color: #047857; font-weight: 600; }
 [data-editor] .lr-importe { font-size: 0.95rem; color: var(--color-text); text-align: right; font-weight: 500; }
+/* Error de captura: lo marca el script junto con aria-invalid. */
+[data-editor] .is-invalid,
+[data-editor] .is-invalid:focus { border-color: var(--color-danger) !important; box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.14) !important; }
 /* Selector de impuesto por línea: mismo control que el resto, más compacto. */
 [data-editor] .lr-tax {
     font-family: var(--font-sans); font-size: 0.78rem; color: var(--color-text);
@@ -180,11 +219,11 @@
     transition: border-color 0.3s var(--ease-ios), background 0.2s;
 }
 [data-editor] .lr-tax:hover { background: var(--editor-field-hover); }
-[data-editor] .lr-tax:focus { outline: none; border-color: var(--color-blue-deep); background: var(--editor-panel); }
+[data-editor] .lr-tax:focus { outline: none; border-color: var(--color-blue-deep); background: var(--editor-panel); box-shadow: 0 0 0 3px var(--editor-focus-ring); }
 [data-editor] .lr-tax.is-exento { color: var(--color-text-muted); }
 [data-editor] .lr-del {
     background: none; border: none; cursor: pointer;
-    color: #94a3b8; display: flex; align-items: center; justify-content: center;
+    color: var(--color-text-muted); display: flex; align-items: center; justify-content: center;
     border-radius: 6px; padding: 4px;
     transition: color 0.2s, background 0.2s;
 }
@@ -202,7 +241,8 @@
     text-align: center; border-bottom: 1px solid rgba(0, 0, 0, 0.05); line-height: 1.5;
     background: var(--editor-field); border-color: var(--color-border); border-radius: 12px; margin: 0.5rem 0;
 }
-[data-editor] .lines-empty svg { width: 36px; height: 36px; color: #d1d5db; }
+[data-editor] .lines-empty svg { width: 36px; height: 36px; color: var(--color-text-muted); opacity: 0.45; }
+[data-editor] .lines-empty p { margin: 0; }
 [data-editor] .lines-empty b { color: var(--color-text); font-weight: 600; }
 [data-editor] .lines-empty[hidden] { display: none; }
 
@@ -256,7 +296,7 @@
 [data-editor] .prod-item-name small { font-size: 0.66rem; color: #99a2af; font-weight: 500; }
 [data-editor] .prod-item-price { font-size: 0.82rem; color: var(--color-text); white-space: nowrap; flex-shrink: 0; }
 [data-editor] .prod-item-price small { font-size: 0.68rem; color: #99a2af; font-weight: 400; }
-[data-editor] .prod-empty { padding: 14px; font-size: 0.8rem; color: var(--color-text-muted); text-align: center; line-height: 1.5; }
+[data-editor] .prod-empty { padding: 14px; font-size: 0.8rem; color: var(--color-text-muted); text-align: center; line-height: 1.5; display: flex; flex-direction: column; gap: 2px; }
 [data-editor] .prod-empty small { font-size: 0.72rem; color: #99a2af; }
 
 /* ── Kits ── */
@@ -358,6 +398,19 @@
 [data-editor] .sum-field-row .s-toggle { flex-shrink: 0; }
 [data-editor] .sum-field label,
 [data-editor] .sum-field .sum-lbl { font-size: 0.72rem; font-weight: 500; color: var(--color-text-muted); }
+[data-editor] .sum-save { color: #047857; }
+[data-editor] .sum-save .editorial { color: #047857; }
+[data-editor] .sum-save[hidden],
+[data-editor] [hidden].sum-field { display: none; }
+[data-editor] .sum-note-inline { font-size: 0.74rem; color: var(--color-text-muted); margin: 0.35rem 0 0; line-height: 1.45; }
+[data-editor] .sum-note-inline.is-warn { color: #b45309; }
+[data-editor] .sum-note-inline[hidden] { display: none; }
+[data-editor] .ed-summary .section-head { align-items: center; }
+[data-editor] .ed-select:disabled,
+[data-editor] .ed-input:disabled,
+[data-editor] .ed-textarea:disabled,
+[data-editor] .chip:disabled { opacity: 0.6; cursor: not-allowed; }
+[data-editor] #deRecipient.is-missing { color: #b45309; }
 [data-editor] .sum-note { font-size: 0.75rem; color: var(--color-text-muted); margin: 0.4rem 0 0; line-height: 1.4; text-align: center; }
 [data-editor] .sum-kbd { display: flex; align-items: center; justify-content: center; gap: 4px; font-size: 0.68rem; color: #99a2af; margin: 0.1rem 0 0; }
 
@@ -433,25 +486,14 @@
     color: var(--color-text); font-size: 0.8rem; font-weight: 650;
 }
 
-/* ── Toast ── */
-[data-editor] .toast {
-    position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%);
-    display: flex; align-items: center; gap: 10px;
-    background: rgba(5, 5, 5, 0.85);
-    backdrop-filter: blur(16px) saturate(1.8); -webkit-backdrop-filter: blur(16px) saturate(1.8);
-    color: #fff; font-size: 0.85rem; font-weight: 500;
-    padding: 11px 20px; border-radius: 999px;
-    box-shadow: 0 0 0 0.5px rgba(255, 255, 255, 0.08), 0 8px 24px -6px rgba(0, 0, 0, 0.35);
-    z-index: 200; animation: toast-in 0.4s var(--ease-spring);
+/* ── Foco visible y movimiento reducido ── */
+[data-editor] :is(.ai-attach-btn, .ai-file-chip button, .lr-pricing-hint, .lr-del, .chip, .fx-cush-chip, .btn-free-line, .kit-insert-add, .btn-text):focus-visible,
+[data-editor] .s-toggle input:focus-visible + .s-toggle-track {
+    outline: 2px solid var(--color-blue-deep); outline-offset: 2px;
 }
-/* `display:flex` de arriba le gana al `hidden` del navegador: sin esta regla
-   el aviso nunca se ocultaba. */
-[data-editor] .toast[hidden] { display: none; }
-@keyframes toast-in {
-    from { opacity: 0; transform: translate(-50%, 12px) scale(0.95); }
-    to { opacity: 1; transform: translate(-50%, 0) scale(1); }
+@media (prefers-reduced-motion: reduce) {
+    [data-editor] *, [data-editor] *::before, [data-editor] *::after { animation: none !important; transition: none !important; }
 }
-[data-editor] .toast-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--color-ok); box-shadow: 0 0 6px rgba(16, 185, 129, 0.5); }
 
 /* ── Responsive (Regla 16: se reordena, no se esconde) ── */
 @media (max-width: 980px) {
@@ -499,23 +541,28 @@
     [data-editor] .ed-summary { padding: 1.2rem; border-radius: 18px; }
     [data-editor] .btn-send,
     [data-editor] .btn-draft { width: 100%; min-height: 48px; }
-    [data-editor] .toast {
-        bottom: calc(0.9rem + env(safe-area-inset-bottom));
-        width: calc(100vw - (var(--mobile-gutter) * 2));
-        justify-content: center; text-align: center;
-    }
 
     /* La fila se reordena en tres renglones. Ningún dato se oculta: cantidad,
        precio, impuesto e importe siguen visibles y editables. */
-    [data-editor] .line-row {
+    [data-editor] .lines .line-row,
+    [data-editor] [data-cols] .line-row {
         grid-template-columns: minmax(0, 1fr) minmax(92px, 0.72fr) 44px;
         grid-template-areas:
             "name name delete"
             "quantity price price"
-            "list tax amount";
+            "list margin amount";
         gap: 0.65rem 0.75rem;
         padding: 1rem 0;
     }
+    /* La tasa es información comercial: en móvil se apila, no se esconde. */
+    [data-editor] [data-cols~="tax"] .line-row {
+        grid-template-areas:
+            "name name delete"
+            "quantity price price"
+            "tax tax tax"
+            "list margin amount";
+    }
+    [data-editor] .line-row > .lr-margen { grid-area: margin; justify-self: start; align-self: center; }
     [data-editor] .line-row > :is(.lr-name, .lr-desc-input) { grid-area: name; min-width: 0; }
     [data-editor] .line-row > .lr-qty { grid-area: quantity; }
     [data-editor] .line-row > .lr-lista { grid-area: list; display: block; align-self: center; }

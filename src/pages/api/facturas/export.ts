@@ -4,6 +4,7 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
+import { dateOnly } from '../../../lib/date-only';
 import { requirePerm } from '../../../lib/queries';
 import { getActiveOrgId, sql, withOrgTx } from '../../../lib/db';
 
@@ -58,7 +59,7 @@ export const GET: APIRoute = async ({ url }) => {
     const header = ['folio', 'cliente', 'estado', 'estado_fiscal', 'creada', 'vence', 'divisa', 'total', 'pagado', 'saldo'];
     const body = rows.map((f) => [
         f.invoice_number || '', f.empresa || '', f.lifecycle, f.status,
-        String(f.created_at || '').slice(0, 10), f.due_date ? String(f.due_date).slice(0, 10) : '', f.currency || '',
+        dateOnly(f.created_at), f.due_date ? dateOnly(f.due_date) : '', f.currency || '',
         Number(f.total || 0), Number(f.amount_paid || 0), Number(f.amount_remaining ?? f.total ?? 0),
     ]);
     const csv = [header, ...body].map((row) => row.map(csvCell).join(',')).join('\r\n');

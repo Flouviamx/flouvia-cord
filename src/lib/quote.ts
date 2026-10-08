@@ -36,6 +36,8 @@ export interface Quote {
     clienteInicial: string;
     status: QuoteStatus;
     terminos: 'Contado' | 'Net 30' | 'Net 60';
+    /** Código estable de los términos ('contado' | 'net30' | 'net60'); `terminos` es la etiqueta. */
+    terminosCode?: string;
     vigencia: string;
     creada: string;
     token: string;

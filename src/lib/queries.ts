@@ -29,6 +29,7 @@ import { onlinePaymentsSetup } from './payment-rail';
 import { fmtDate, fmtRelative, intlLocale, money } from './fmt-server';
 import { calculateDocumentTotals } from '../../packages/elements/src/engine';
 import { isRetryableIssuanceError } from './fiscal/retry';
+import { dateOnly } from './date-only';
 import { dueDateFor, venceDia } from './cobros';
 import type { PublicViewer } from './public-viewer';
 import {
@@ -1377,6 +1378,10 @@ function rowToQuote(c: any, items: any[], eventos: any[], versiones: any[] = [],
         clienteInicial: initials(c.empresa ?? '—'),
         status: c.status as QuoteStatus,
         terminos: termLabel(c.terminos),
+        // El código estable (contado/net30/net60). `terminos` es la etiqueta
+        // para mostrar: el editor la comparaba contra códigos y al reabrir un
+        // borrador ningún chip coincidía y se guardaba "contado".
+        terminosCode: (c.terminos as string) || 'contado',
         vigencia: fmtDate(c.vigencia),
         vigenciaDias: c.vigencia ? Math.max(1, Math.ceil((new Date(c.vigencia).getTime() - Date.now()) / 86400000)) : null,
         creada: fmtDate(c.created_at),
@@ -1587,7 +1592,7 @@ function rowToFactura(r: any) {
         estado: (r.lifecycle as string) || 'open',
         estadoFiscal: r.status as string,
         vence: r.due_date ? fmtDate(r.due_date as string) : null,
-        venceISO: r.due_date ? String(r.due_date).slice(0, 10) : null,
+        venceISO: r.due_date ? dateOnly(r.due_date) || null : null,
         vencida: !!r.vencida,
         diasVencida: r.dias_vencida !== null && r.dias_vencida !== undefined ? Number(r.dias_vencida) : null,
         pais: r.country_code as string,
@@ -1883,7 +1888,14 @@ export async function getFacturaDetalle(id: string) {
             // impuesto/subtotal de importes redondeados daba 0.0801 en vez de
             // 0.08, que ya no coincide con ninguna tasa del catálogo.
             taxRate: l.taxRate === null || l.taxRate === undefined ? null : num(l.taxRate),
+            // Lo capturado en el editor (borradores desde oct 2026); los
+            // documentos anteriores no lo traen y se reabren como líneas libres.
+            productoId: (l.editor?.productId as string) || null,
+            unidad: (l.editor?.unit as string) || null,
+            precioLista: l.editor?.listPrice === undefined ? null : num(l.editor.listPrice),
+            precioNegociado: l.editor?.negotiatedPrice === null || l.editor?.negotiatedPrice === undefined ? null : num(l.editor.negotiatedPrice),
         })),
+        preciosConImpuesto: ((r.line_items_snapshot as any[]) || []).some((l: any) => l?.editor?.pricesIncludeTax === true),
         anuladaEn: r.voided_at ? fmtDate(r.voided_at as string) : null,
         motivoAnulacion: (r.void_reason as string) || null,
         acreditado: num(r.amount_credited), reembolsado: num(r.amount_refunded), porDevolver: num(r.refund_due),

@@ -1658,3 +1658,39 @@ para las fases siguientes.
   guardado de un solo vuelo (doble clic creaba dos folios), avisos que de verdad
   se ocultan, y un borrador ya no se abre en la pantalla de versiones (que borraba
   cliente, notas y términos).
+
+## 2026-10-08 — Fase 2: un solo editor de documentos
+
+Cotización nueva, borrador, versión nueva y factura usan ahora el mismo editor:
+`src/components/app/DocumentEditor.astro` (markup), `src/lib/editor/document-editor.ts`
+(navegador) y `src/lib/editor/core.ts` (precios, líneas, kits y totales, sin
+DOM, con `test/editor-core.test.ts`). Las tres copias anteriores divergían:
+
+- **Precio automático único**: el descuento por nivel del cliente se aplica al
+  precio pactado sobre la lista vigente (con volumen), con los decimales de la
+  divisa; la lista B2B manda. Cambiar de cliente ya no borra precios escritos a
+  mano, combos de kit ni precios de la IA, y cruzar un tramo de volumen ya no
+  pierde el descuento ni se queda en el tramo alto al bajar la cantidad.
+- **Cantidades decimales** (1.5 kg, 2.5 h) y números escritos con coma; una
+  cantidad 0 o un precio vacío se señalan en la línea en vez de guardarse.
+- **Borradores sin pérdida**: la cotización reabre sus términos (el DTO trae
+  `terminosCode`); la factura guarda en cada línea del snapshot un bloque
+  `editor` (producto, unidad, lista, precio pactado, IVA incluido) y reabre con
+  su cliente. El vencimiento de la factura llegaba como "Sat Nov 07" porque el
+  driver convierte `date` en `Date`; `src/lib/date-only.ts` lo corrige también en
+  la exportación CSV y en las anclas de tiempo.
+- **Versión nueva** en el editor principal (`?version=<id>`); la pantalla de
+  versiones vieja ponía costo 0 en cada línea y, abierta sobre un borrador,
+  borraba cliente y condiciones.
+- **IA**: pregunta antes de reemplazar líneas existentes, comprime fotos y topa
+  PDFs también en factura, y respeta la tasa que propone si está en el catálogo.
+- **Divisa**: cambiarla avisa que los precios no se convierten.
+- **Guardado**: un solo vuelo, aviso al salir con cambios sin guardar, la URL de
+  la factura pasa a `?draft=` desde el primer guardado y los avisos usan el
+  toast global de la app.
+
+Al probarlo contra Postgres real apareció un bug de producción: desde el 5 de
+octubre `meterInvoiceEmission` reserva la dimensión `documento`, que el CHECK de
+`usage_reservations` no aceptaba, así que toda emisión de un documento comercial
+fallaba con "No pudimos verificar ni registrar tu consumo". El CHECK ya la
+incluye; hay que correr `npm run db:migrate` para que aplique en Neon.

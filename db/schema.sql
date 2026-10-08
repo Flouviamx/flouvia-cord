@@ -3048,9 +3048,12 @@ create table if not exists usage_reservations (
 alter table usage_reservations add column if not exists meter_value integer not null default 0;
 -- 'envios' (tope duro de Gratis, sin meter) se agregó ago 2026 — re-declarar el
 -- check permite que db:migrate siga siendo re-ejecutable sobre una tabla ya creada.
+-- 'documento' (documentos comerciales: proforma y factura comercial, sin meter)
+-- la reserva `meterInvoiceEmission` desde oct 2026. Sin ella en el check, cada
+-- emisión comercial fallaba con "No pudimos verificar ni registrar tu consumo".
 alter table usage_reservations drop constraint if exists usage_reservations_dimension_check;
 alter table usage_reservations add constraint usage_reservations_dimension_check
-  check (dimension in ('api','usuario','ia','timbrado','envios'));
+  check (dimension in ('api','usuario','ia','timbrado','envios','documento'));
 create index if not exists idx_usage_reservations_outbox
   on usage_reservations(meter_status, next_attempt_at, created_at)
   where status = 'committed' and meter_status in ('pending','failed');

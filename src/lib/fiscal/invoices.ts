@@ -59,6 +59,7 @@ export interface DraftLineInput {
   precioUnitario: number;
   /** Producto del catálogo, si la línea vino de ahí. */
   productoId?: string | null;
+  unidad?: string | null;
   /** Precio pactado; si viene, manda sobre `precioUnitario` (el de lista). */
   precioNegociado?: number | null;
   costoUnitario?: number | null;
@@ -106,7 +107,8 @@ export function parseInvoiceItems(raw: unknown): DraftLineInput[] {
     descripcion: String(i?.descripcion ?? '').trim().slice(0, 500),
     cantidad: Number(i?.cantidad) || 0,
     precioUnitario: Number(i?.precio_unitario ?? i?.precioUnitario) || 0,
-    productoId: i?.producto_id ? String(i.producto_id) : null,
+    productoId: i?.producto_id && /^[0-9a-f-]{36}$/i.test(String(i.producto_id)) ? String(i.producto_id) : null,
+    unidad: i?.unidad ? String(i.unidad).trim().slice(0, 40) : null,
     precioNegociado: numOrNull(i?.precio_negociado),
     costoUnitario: numOrNull(i?.costo_unitario),
     // `?? null` y no `|| null`: una línea exenta manda 0, y con `||` ese 0
@@ -165,7 +167,20 @@ function buildLines(
   // cuadraban por centavos y que el validador del CFDI rechazaba.
   // Con impuesto incluido, el documento fiscal declara el precio SIN impuesto:
   // es lo que el rail espera como valor unitario, y `taxAmount` lo acompaña.
-  return roundDocumentTotals(totals, decimals);
+  const rounded = roundDocumentTotals(totals, decimals);
+  return {
+    ...rounded,
+    lines: rounded.lines.map((line, i) => ({
+      ...line,
+      editor: {
+        productId: items[i]?.productoId ?? null,
+        unit: items[i]?.unidad || 'pieza',
+        listPrice: items[i]?.precioUnitario ?? line.unitPrice,
+        negotiatedPrice: items[i]?.precioNegociado ?? null,
+        pricesIncludeTax: ivaIncluido,
+      },
+    })),
+  };
 }
 
 
