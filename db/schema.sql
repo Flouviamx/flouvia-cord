@@ -6035,4 +6035,13 @@ begin
       'ops_revoke_' || t, t);
   end loop;
 end $$;
+
+-- 5. Índices de la búsqueda global (⌘K) y de los filtros de Ops. Búsqueda por
+--    prefijo de folio y número de factura, y conteos globales de actividad que
+--    antes recorrían domain_events completo (solo tenía índices por org_id).
+create index if not exists idx_cotizaciones_folio_lower on cotizaciones (lower(folio) text_pattern_ops);
+create index if not exists idx_docs_invoice_number_lower on documentos_fiscales (lower(invoice_number) text_pattern_ops);
+create index if not exists idx_domain_events_created on domain_events (created_at desc);
+create index if not exists idx_orgs_created on orgs (created_at desc, id desc);
+create index if not exists idx_users_created on users (created_at desc, id desc);
 -- END ops-hardening

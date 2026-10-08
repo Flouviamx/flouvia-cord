@@ -13,6 +13,7 @@ export const OPS_AUDIT_LABELS: Record<string, string> = {
   'ops.login_totp_locked': 'Segundo factor bloqueado por intentos',
   'ops.passkey_registered': 'Passkey de Ops registrada',
   'ops.passkey_deleted': 'Passkey de Ops eliminada',
+  'ops.list_exported': 'Lista exportada a CSV',
   'ops.session_user_agent_mismatch': 'Sesión revocada por dispositivo',
   'ops.user_sessions_revoked': 'Sesiones de usuario revocadas',
   'ops.user_unlocked': 'Cuenta desbloqueada',

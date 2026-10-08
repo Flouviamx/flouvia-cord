@@ -1,0 +1,68 @@
+---
+// Barra de filtros de una lista de Ops. Es un <form method="get">: funciona sin
+// JavaScript (botón Aplicar) y el estado vive en la URL, así que una vista
+// filtrada se comparte copiando el enlace. Con JS, cada select se aplica al
+// cambiar y el botón se oculta.
+import { iconInner } from '../../lib/icons';
+
+interface Field {
+  name: string;
+  label: string;
+  value: string;
+  options: { value: string; label: string }[];
+}
+interface Props {
+  action: string;
+  q: string;
+  placeholder: string;
+  fields: Field[];
+  /** Hay filtros activos además de la búsqueda: se ofrece limpiar. */
+  active: boolean;
+  /** Exportación CSV con los mismos filtros; solo se pasa a administradores. */
+  exportHref?: string;
+  resultLabel?: string;
+}
+
+const { action, q, placeholder, fields, active, exportHref, resultLabel } = Astro.props;
+---
+<form class="ops-filters" method="get" action={action} role="search" data-ops-filters>
+  <label class="ops-search">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('search')}></svg>
+    <input name="q" value={q} placeholder={placeholder} aria-label={placeholder} type="search" />
+  </label>
+  {fields.map((field) => (
+    <label class="ops-filter">
+      <span class="ops-sr-only">{field.label}</span>
+      <select class="ops-select sm" name={field.name} data-active={field.value ? 'true' : undefined}>
+        {field.options.map((option) => <option value={option.value} selected={option.value === field.value}>{option.label}</option>)}
+      </select>
+    </label>
+  ))}
+  <button class="ops-button secondary sm" type="submit" data-ops-filters-submit>Aplicar</button>
+  {(active || q) && <a class="ops-button ghost sm" href={action}>Limpiar</a>}
+  <span class="ops-filters-end">
+    {resultLabel && <span class="ops-filters-count">{resultLabel}</span>}
+    {exportHref && (
+      <a class="ops-button secondary sm" href={exportHref} download>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('download')} />
+        Exportar CSV
+      </a>
+    )}
+  </span>
+</form>
+
+<script>
+  document.querySelectorAll<HTMLFormElement>('[data-ops-filters]').forEach((form) => {
+    form.querySelector<HTMLElement>('[data-ops-filters-submit]')?.setAttribute('hidden', '');
+    form.querySelectorAll('select').forEach((select) => select.addEventListener('change', () => {
+      // Un select vacío no ensucia la URL con `?plan=`.
+      form.querySelectorAll('select').forEach((s) => { s.disabled = !s.value; });
+      form.requestSubmit();
+    }));
+    form.addEventListener('submit', () => {
+      const input = form.querySelector<HTMLInputElement>('input[name="q"]');
+      if (input && !input.value.trim()) input.disabled = true;
+      form.querySelectorAll('select').forEach((s) => { if (!s.value) s.disabled = true; });
+    });
+  });
+</script>

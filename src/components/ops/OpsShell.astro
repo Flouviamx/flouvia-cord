@@ -1,6 +1,7 @@
 ---
 import { iconInner, type IconName } from '../../lib/icons';
 import OpsActionDialog from './OpsActionDialog.astro';
+import OpsCommand from './OpsCommand.astro';
 
 type OpsSection =
   | 'overview' | 'activity' | 'organizations' | 'users' | 'invoices' | 'workflows'
@@ -18,23 +19,23 @@ const operator = Astro.locals.opsOperator;
 
 // Iconos del registro único "Cord Glass" (regla 9): la gramática la impone
 // iconInner(), no cada icono.
-const groups: { label: string; items: { id: OpsSection; href: string; label: string; icon: IconName }[] }[] = [
+const groups: { label: string; items: { id: OpsSection; href: string; label: string; icon: IconName; key: string }[] }[] = [
   { label: 'General', items: [
-    { id: 'overview', href: '/ops', label: 'Resumen', icon: 'overview' },
-    { id: 'activity', href: '/ops/activity', label: 'Actividad', icon: 'pulse' },
+    { id: 'overview', href: '/ops', label: 'Resumen', icon: 'overview', key: 'r' },
+    { id: 'activity', href: '/ops/activity', label: 'Actividad', icon: 'pulse', key: 'a' },
   ] },
   { label: 'Negocio', items: [
-    { id: 'organizations', href: '/ops/organizations', label: 'Organizaciones', icon: 'building' },
-    { id: 'users', href: '/ops/users', label: 'Usuarios', icon: 'user' },
-    { id: 'invoices', href: '/ops/invoices', label: 'Facturas', icon: 'invoice' },
-    { id: 'workflows', href: '/ops/workflows', label: 'Workflows', icon: 'workflow' },
-    { id: 'integrations', href: '/ops/integrations', label: 'Integraciones', icon: 'plug' },
+    { id: 'organizations', href: '/ops/organizations', label: 'Organizaciones', icon: 'building', key: 'o' },
+    { id: 'users', href: '/ops/users', label: 'Usuarios', icon: 'user', key: 'u' },
+    { id: 'invoices', href: '/ops/invoices', label: 'Facturas', icon: 'invoice', key: 'f' },
+    { id: 'workflows', href: '/ops/workflows', label: 'Workflows', icon: 'workflow', key: 'w' },
+    { id: 'integrations', href: '/ops/integrations', label: 'Integraciones', icon: 'plug', key: 'i' },
   ] },
   { label: 'Plataforma', items: [
-    { id: 'usage', href: '/ops/usage', label: 'Uso y costos', icon: 'chart' },
-    { id: 'status', href: '/ops/status', label: 'Disponibilidad', icon: 'check-circle' },
-    { id: 'security', href: '/ops/security', label: 'Seguridad', icon: 'shield' },
-    { id: 'database', href: '/ops/database', label: 'Base de datos', icon: 'database' },
+    { id: 'usage', href: '/ops/usage', label: 'Uso y costos', icon: 'chart', key: 'c' },
+    { id: 'status', href: '/ops/status', label: 'Disponibilidad', icon: 'check-circle', key: 'd' },
+    { id: 'security', href: '/ops/security', label: 'Seguridad', icon: 'shield', key: 's' },
+    { id: 'database', href: '/ops/database', label: 'Base de datos', icon: 'database', key: 'b' },
   ] },
 ];
 const section = groups.flatMap((g) => g.items).find((item) => item.id === active)!;
@@ -107,6 +108,11 @@ const svg = (name: IconName) => iconInner(name);
           </Fragment>
         ) : <span aria-current="page">{section.label}</span>}
       </nav>
+      <button class="ops-command-trigger" type="button" data-ops-command-open aria-label="Buscar en Cord Ops">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={svg('search')} />
+        <span>Buscar</span>
+        <span class="ops-command-keys"><kbd class="ops-kbd">⌘</kbd><kbd class="ops-kbd">K</kbd></span>
+      </button>
       <div class="ops-topbar-end">
         <span class:list={['ops-session-pill', remainingMs < 30 * 60_000 && 'warn']} title={`Sesión privilegiada · ${method}. Se cierra tras 30 min sin uso o al cumplir 8 h.`}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={svg('lock')} />
@@ -130,6 +136,7 @@ const svg = (name: IconName) => iconInner(name);
   </div>
 </div>
 <OpsActionDialog />
+<OpsCommand nav={groups.flatMap((g) => g.items)} isAdmin={operator?.role === 'admin'} />
 
 <script>
   const shell = document.querySelector<HTMLElement>('[data-ops-shell]');

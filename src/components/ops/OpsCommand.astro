@@ -1,0 +1,246 @@
+---
+// Paleta de comandos de Ops (⌘K) y atajos de teclado.
+//
+// Regla 16: bajo 880 px no hay atajos ni indicadores <kbd>; la paleta se abre
+// con el botón visible de la barra superior y funciona con el teclado virtual.
+// Los resultados del servidor se pintan con textContent: un nombre de
+// organización lo escribe su dueño y nunca entra como HTML.
+import { iconInner, type IconName } from '../../lib/icons';
+
+export interface OpsCommandNav { href: string; label: string; icon: IconName; key: string }
+interface Props {
+  nav: OpsCommandNav[];
+  isAdmin: boolean;
+}
+
+const { nav, isAdmin } = Astro.props;
+const actions = [
+  { id: 'theme', label: 'Cambiar tema', hint: 'Sistema, claro u oscuro', icon: 'contrast' as IconName },
+  { id: 'passkey', label: 'Registrar passkey de Ops', hint: 'Seguridad', icon: 'key' as IconName, href: '/ops/security#passkeys' },
+  ...(isAdmin ? [{ id: 'incident', label: 'Publicar un incidente', hint: 'Disponibilidad', icon: 'alert' as IconName, href: '/ops/status#incidente' }] : []),
+  { id: 'logout', label: 'Cerrar sesión de Ops', hint: 'Termina la sesión privilegiada', icon: 'logout' as IconName },
+];
+const svg = (name: IconName) => iconInner(name);
+---
+<dialog class="ops-command" id="ops-command" aria-label="Buscar en Cord Ops">
+  <div class="ops-command-box">
+    <label class="ops-command-input">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={svg('search')} />
+      <input id="ops-command-q" type="search" autocomplete="off" spellcheck="false" placeholder="Busca una organización, persona, folio, factura o pega un ID"
+        role="combobox" aria-expanded="true" aria-controls="ops-command-list" aria-autocomplete="list" />
+      <kbd class="ops-kbd">esc</kbd>
+    </label>
+    <div class="ops-command-list" id="ops-command-list" role="listbox" aria-label="Resultados">
+      <div class="ops-command-group" data-static>
+        <p>Ir a</p>
+        {nav.map((item) => (
+          <a class="ops-command-item" role="option" href={item.href} data-label={item.label.toLowerCase()}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={svg(item.icon)} />
+            <span>{item.label}</span>
+            <span class="ops-command-keys"><kbd class="ops-kbd">G</kbd><kbd class="ops-kbd">{item.key.toUpperCase()}</kbd></span>
+          </a>
+        ))}
+      </div>
+      <div class="ops-command-group" data-static>
+        <p>Acciones</p>
+        {actions.map((action) => action.href ? (
+          <a class="ops-command-item" role="option" href={action.href} data-label={action.label.toLowerCase()}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={svg(action.icon)} />
+            <span>{action.label}</span><small>{action.hint}</small>
+          </a>
+        ) : (
+          <button class="ops-command-item" role="option" type="button" data-action={action.id} data-label={action.label.toLowerCase()}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={svg(action.icon)} />
+            <span>{action.label}</span><small>{action.hint}</small>
+          </button>
+        ))}
+      </div>
+      <div class="ops-command-remote" data-remote></div>
+      <p class="ops-command-status" data-status aria-live="polite"></p>
+    </div>
+    <footer class="ops-command-foot">
+      <span><kbd class="ops-kbd">↑</kbd><kbd class="ops-kbd">↓</kbd> moverse</span>
+      <span><kbd class="ops-kbd">↵</kbd> abrir</span>
+      <span><kbd class="ops-kbd">?</kbd> atajos</span>
+    </footer>
+  </div>
+</dialog>
+
+<dialog class="ops-dialog ops-kbd-help" id="ops-kbd-help" aria-labelledby="ops-kbd-help-title">
+  <form method="dialog">
+    <button class="ops-dialog-close" value="cancel" aria-label="Cerrar">×</button>
+    <span class="ops-kicker">Teclado</span>
+    <h2 id="ops-kbd-help-title">Atajos de Cord Ops</h2>
+    <dl class="ops-kbd-list">
+      <div><dt>Buscar y ejecutar</dt><dd><kbd class="ops-kbd">⌘</kbd><kbd class="ops-kbd">K</kbd> o <kbd class="ops-kbd">/</kbd></dd></div>
+      {nav.map((item) => <div><dt>Ir a {item.label}</dt><dd><kbd class="ops-kbd">G</kbd><kbd class="ops-kbd">{item.key.toUpperCase()}</kbd></dd></div>)}
+      <div><dt>Siguiente / anterior fila de una tabla</dt><dd><kbd class="ops-kbd">J</kbd><kbd class="ops-kbd">K</kbd></dd></div>
+      <div><dt>Abrir la fila seleccionada</dt><dd><kbd class="ops-kbd">↵</kbd></dd></div>
+      <div><dt>Mostrar esta ayuda</dt><dd><kbd class="ops-kbd">?</kbd></dd></div>
+    </dl>
+  </form>
+</dialog>
+
+<script>
+  const palette = document.getElementById('ops-command') as HTMLDialogElement | null;
+  const help = document.getElementById('ops-kbd-help') as HTMLDialogElement | null;
+  const input = document.getElementById('ops-command-q') as HTMLInputElement | null;
+  const list = document.getElementById('ops-command-list');
+  const remote = list?.querySelector<HTMLElement>('[data-remote]');
+  const status = list?.querySelector<HTMLElement>('[data-status]');
+  const desktop = window.matchMedia('(min-width: 881px)');
+  let active = -1;
+  let timer = 0;
+  let controller: AbortController | null = null;
+
+  const items = () => Array.from(list?.querySelectorAll<HTMLElement>('.ops-command-item') ?? []).filter((el) => !el.closest('[hidden]') && !el.hidden);
+
+  function highlight(index: number) {
+    const all = items();
+    if (!all.length) { active = -1; return; }
+    active = (index + all.length) % all.length;
+    all.forEach((el, i) => {
+      el.classList.toggle('active', i === active);
+      el.setAttribute('aria-selected', String(i === active));
+      if (i === active) { el.id = 'ops-command-active'; el.scrollIntoView({ block: 'nearest' }); }
+      else if (el.id === 'ops-command-active') el.removeAttribute('id');
+    });
+    input?.setAttribute('aria-activedescendant', 'ops-command-active');
+  }
+
+  function filterStatic(q: string) {
+    list?.querySelectorAll<HTMLElement>('[data-static]').forEach((group) => {
+      let visible = 0;
+      group.querySelectorAll<HTMLElement>('.ops-command-item').forEach((item) => {
+        const match = !q || (item.dataset.label || '').includes(q);
+        item.hidden = !match;
+        if (match) visible++;
+      });
+      group.hidden = visible === 0;
+    });
+  }
+
+  function renderRemote(results: { group: string; label: string; sub: string; href: string }[]) {
+    if (!remote) return;
+    remote.textContent = '';
+    const groups = new Map<string, typeof results>();
+    for (const r of results) groups.set(r.group, [...(groups.get(r.group) || []), r]);
+    for (const [name, rows] of groups) {
+      const group = document.createElement('div');
+      group.className = 'ops-command-group';
+      const title = document.createElement('p');
+      title.textContent = name;
+      group.append(title);
+      for (const row of rows) {
+        const a = document.createElement('a');
+        a.className = 'ops-command-item';
+        a.setAttribute('role', 'option');
+        a.href = row.href;
+        const label = document.createElement('span');
+        label.textContent = row.label;
+        const sub = document.createElement('small');
+        sub.textContent = row.sub;
+        a.append(label, sub);
+        group.append(a);
+      }
+      remote.append(group);
+    }
+  }
+
+  async function search(q: string) {
+    controller?.abort();
+    if (q.length < 2) { renderRemote([]); if (status) status.textContent = ''; highlight(0); return; }
+    controller = new AbortController();
+    if (status) status.textContent = 'Buscando';
+    try {
+      const res = await fetch(`/api/ops/search?q=${encodeURIComponent(q)}`, { signal: controller.signal });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'No se pudo buscar.');
+      renderRemote(data.results || []);
+      if (status) status.textContent = data.results?.length ? `${data.results.length} resultados` : items().length ? '' : 'Sin resultados.';
+    } catch (error: any) {
+      if (error?.name === 'AbortError') return;
+      if (status) status.textContent = error?.message || 'No se pudo buscar.';
+    }
+    highlight(0);
+  }
+
+  function openPalette() {
+    if (!palette || palette.open) return;
+    help?.open && help.close();
+    palette.showModal();
+    if (input) { input.value = ''; }
+    filterStatic('');
+    renderRemote([]);
+    if (status) status.textContent = '';
+    highlight(0);
+    input?.focus();
+  }
+
+  input?.addEventListener('input', () => {
+    const q = input.value.trim().toLowerCase();
+    filterStatic(q);
+    highlight(0);
+    window.clearTimeout(timer);
+    timer = window.setTimeout(() => search(input.value.trim()), 180);
+  });
+  input?.addEventListener('keydown', (event) => {
+    if (event.key === 'ArrowDown') { event.preventDefault(); highlight(active + 1); }
+    else if (event.key === 'ArrowUp') { event.preventDefault(); highlight(active - 1); }
+    else if (event.key === 'Enter') {
+      const target = items()[active];
+      if (target) { event.preventDefault(); target.click(); }
+    }
+  });
+  palette?.addEventListener('click', (event) => { if (event.target === palette) palette.close(); });
+  list?.addEventListener('click', (event) => {
+    const button = (event.target as HTMLElement).closest<HTMLElement>('[data-action]');
+    if (!button) return;
+    palette?.close();
+    if (button.dataset.action === 'theme') document.querySelector<HTMLButtonElement>('[data-ops-theme]')?.click();
+    if (button.dataset.action === 'logout') document.getElementById('ops-shell-logout')?.click();
+  });
+  document.querySelectorAll('[data-ops-command-open]').forEach((el) => el.addEventListener('click', openPalette));
+
+  // ── Atajos (solo escritorio) ──
+  const typing = (target: EventTarget | null) => {
+    const el = target as HTMLElement | null;
+    return !!el && (el.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName));
+  };
+  const navKeys = new Map(Array.from(document.querySelectorAll<HTMLAnchorElement>('[data-static] a.ops-command-item[href]'))
+    .map((a) => [a.querySelector('.ops-command-keys kbd:last-child')?.textContent?.toLowerCase() || '', a.href] as const)
+    .filter(([key]) => key));
+  let pendingG = 0;
+  let row = -1;
+
+  function moveRow(step: number) {
+    const rows = Array.from(document.querySelectorAll<HTMLTableRowElement>('[data-ops-rows] tbody tr')).filter((tr) => tr.querySelector('a'));
+    if (!rows.length) return;
+    row = Math.max(0, Math.min(rows.length - 1, row + step));
+    rows.forEach((tr, i) => tr.classList.toggle('ops-row-selected', i === row));
+    rows[row].scrollIntoView({ block: 'nearest' });
+    rows[row].querySelector<HTMLAnchorElement>('a')?.focus({ preventScroll: true });
+  }
+
+  document.addEventListener('keydown', (event) => {
+    if (!desktop.matches) return;
+    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+      event.preventDefault();
+      palette?.open ? palette.close() : openPalette();
+      return;
+    }
+    if (event.metaKey || event.ctrlKey || event.altKey || typing(event.target) || palette?.open || document.querySelector('dialog[open]')) return;
+    const key = event.key.toLowerCase();
+    if (pendingG && Date.now() - pendingG < 1200) {
+      pendingG = 0;
+      const href = navKeys.get(key);
+      if (href) { event.preventDefault(); window.location.href = href; }
+      return;
+    }
+    if (key === 'g') { pendingG = Date.now(); return; }
+    if (key === '/') { event.preventDefault(); openPalette(); return; }
+    if (event.key === '?') { event.preventDefault(); help?.showModal(); return; }
+    if (key === 'j') { event.preventDefault(); moveRow(1); return; }
+    if (key === 'k') { event.preventDefault(); moveRow(-1); return; }
+  });
+</script>
