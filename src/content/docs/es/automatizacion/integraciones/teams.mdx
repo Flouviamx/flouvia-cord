@@ -1,10 +1,12 @@
 ---
 title: "Microsoft Teams"
 seoTitle: "Conectar Cord con Microsoft Teams"
-description: "Cómo conectar Microsoft Teams con Cord iniciando sesión con Microsoft o con un flujo de Power Automate, activar los avisos por evento, usar Teams en workflows y resolver problemas."
-lastUpdated: "2026-09-28"
+description: "Cómo conectar Microsoft Teams con Cord iniciando sesión con Microsoft o con un flujo de Power Automate: requisitos, qué viaja y en qué dirección, avisos por evento, Teams en workflows, solicitudes de aprobación, límites, cómo desconectar y problemas frecuentes."
+lastUpdated: "2026-10-07"
 reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Permiso Ajustes en Cord", "Cuenta de trabajo o escuela de Microsoft 365 con Teams", "Ser miembro del equipo y del canal donde se publicará, o poder crear flujos de Power Automate en ese canal"]
 ---
 
 <header class="content-header">
@@ -12,17 +14,31 @@ availablePlans: [Free, Starter, Pro, Scale, Developer]
   <p class="page-subtitle">Tu equipo ve en su canal de Teams cuando un cliente abre, aprueba o paga.</p>
 </header>
 
-## Cómo funciona
+## Qué hace
 
-Cord publica una tarjeta en el canal de Teams que elijas cuando una cotización avanza. Hay dos formas de conectarlo, y solo una puede estar activa:
+Cord publica una tarjeta en el canal de Teams que elijas cuando una cotización avanza, cuando una cotización pide aprobación interna y cuando un workflow tuyo lo indica. Hay dos formas de conectarlo, y solo una puede estar activa a la vez:
 
 | | Conectar con Microsoft | Flujo de Power Automate |
 |---|---|---|
-| **Cómo** | Inicias sesión con tu cuenta de trabajo y eliges equipo y canal. | Creas un flujo en el canal y pegas su URL. |
-| **Quién publica** | La tarjeta sale a nombre de quien conectó; la tarjeta de Cord lo dice. | El flujo del canal. |
+| **Cómo** | Inicias sesión con tu cuenta de trabajo y eliges equipo y canal de las listas. | Creas un flujo en el canal y pegas su URL. |
+| **Quién publica** | La tarjeta sale a nombre de quien conectó; la tarjeta de Cord lo dice ("Los avisos se publican a nombre de…"). | El flujo del canal. |
 | **Requisito** | Cuenta de trabajo o escuela de Microsoft 365 (los canales no existen en cuentas personales). | Poder crear flujos en el canal. |
+| **Estado** | Función nueva | Disponible |
+
+## Requisitos
+
+| Dónde | Qué necesitas |
+|---|---|
+| **Cord** | El permiso de **Ajustes**. Cualquier plan. |
+| **Microsoft 365** | Una cuenta de trabajo o escuela con Teams. Las cuentas personales de Microsoft no tienen canales. |
+| **Teams** | Con **Conectar con Microsoft**, pertenecer al equipo y al canal donde se publicará. Con Power Automate, poder crear flujos en ese canal. |
+| **Tu organización de Microsoft** | Si no deja que cada persona autorice apps por su cuenta, un administrador de Microsoft 365 tendrá que aprobar la app de Cord. |
 
 ## Conectar con Microsoft
+
+<Callout type="info">
+Esta función es nueva y puede no estar habilitada todavía en tu cuenta. Si no la ves, escríbenos.
+</Callout>
 
 <Steps>
 1. Ve a **Ajustes › Integraciones › Microsoft Teams**.
@@ -31,7 +47,9 @@ Cord publica una tarjeta en el canal de Teams que elijas cuando una cotización 
 4. Pulsa **Enviar prueba**: aparece una tarjeta de ejemplo en el canal.
 </Steps>
 
-Cord pide leer tu perfil, los equipos y canales a los que perteneces, y enviar mensajes a canales. Ninguno requiere que un administrador lo apruebe.
+Cord pide leer tu perfil, los equipos y canales a los que perteneces, y enviar mensajes a canales. No pide leer los mensajes del canal. Microsoft puede mostrarte el aviso de que el editor de la app no está verificado mientras Microsoft termina esa verificación.
+
+{/* MOCKUP: tarjeta de Microsoft Teams en Ajustes › Integraciones, conectada con Microsoft. Arriba "Conectado a #ventas" en el equipo "Distribuidora Andina", y la línea "Los avisos se publican a nombre de Mariana Ortega". Botones "Cambiar de canal", "Enviar prueba" y "Desconectar". Debajo, el bloque plegado "Usar un flujo de Power Automate — Para publicar desde un flujo propio en lugar de tu cuenta de Microsoft." */}
 
 ## Con un flujo de Power Automate
 
@@ -41,10 +59,21 @@ Los conectores antiguos de Teams ("Incoming Webhook" de Office 365) están retir
 1. En el canal, abre **Workflows** desde el menú de los tres puntos.
 2. Usa la plantilla **"Post to a channel when a webhook request is received"** y elige equipo y canal.
 3. Copia la URL del flujo (empieza con `https://prod-` y termina en `logic.azure.com`).
-4. En Cord, abre **Usar un flujo de Power Automate** en la tarjeta de Teams, pega la URL, guarda y pulsa **Enviar prueba**.
+4. En Cord, abre **Usar un flujo de Power Automate** en la tarjeta de Teams, pega la URL, pulsa **Guardar** y luego **Enviar prueba**.
 </Steps>
 
-La URL es una credencial: si se filtra, borra el flujo y crea otro.
+La URL es una credencial: quien la tenga puede publicar en tu canal. Si se filtra, borra el flujo y crea otro.
+
+## Qué viaja y en qué dirección
+
+Teams es una integración **de salida**: Cord publica en tu canal y no lee nada de Teams.
+
+| Dirección | Qué viaja | Cuándo |
+|---|---|---|
+| **De Cord a Teams** | Una tarjeta por cada aviso que marques en Notificaciones: folio, cliente, total con su divisa y un enlace a la cotización. | Al ocurrir el evento. |
+| **De Cord a Teams** | La tarjeta de una solicitud de aprobación interna, con el botón **Decidir en Cord**. | Al pedirse la aprobación. |
+| **De Cord a Teams** | El texto que escribas en la acción **Enviar un mensaje a Teams** de un workflow. | Cuando corre el workflow. |
+| **De Teams a Cord** | Nada. Responder en el canal o reaccionar a la tarjeta no cambia nada en Cord. | — |
 
 ## Activar los avisos
 
@@ -59,21 +88,57 @@ Conectar no activa ningún aviso. En **Ajustes › Notificaciones** marca la col
 | **Cotización por vencer** | 3 días antes de la vigencia. |
 | **Pago vencido** | Una cuenta por cobrar pasó su fecha. |
 
-Correo, Slack y Teams se marcan por separado.
+Correo, Slack y Teams se marcan por separado: puedes tener un evento en Teams y otro solo por correo.
 
 ## Teams en un workflow
 
-La acción **Enviar un mensaje a Teams** de [Cord Workflows](/docs/automatizacion/workflows) publica tu propio texto con datos del evento (`{{cliente}}`, `{{folio}}`, `{{total}}`), aunque los avisos estén apagados.
+La acción **Enviar un mensaje a Teams** de [Cord Workflows](/docs/automatizacion/workflows/acciones) publica tu propio texto con datos del evento (`{{cliente}}`, `{{folio}}`, `{{total}}`), aunque los avisos estén apagados. Sirve para avisar solo en ciertos casos —una venta grande, un anticipo, un contracargo— o con tu propio texto. La idea lista [Teams cuando el cliente aprueba](/docs/automatizacion/workflows/ideas#3-teams-cuando-el-cliente-aprueba) lo trae armado.
+
+## Solicitudes de aprobación
+
+Cuando una cotización pide aprobación interna, Cord publica en el canal conectado una tarjeta con el folio, el cliente, el total y un botón **Decidir en Cord**. La decisión se toma en Cord: la tarjeta de Teams no tiene botones para aprobar o rechazar. Las aprobaciones internas requieren el plan **Scale** o superior.
+
+## Límites
+
+| Límite | Valor |
+|---|---|
+| Destinos por organización | Un canal a la vez. Elegir un canal con Microsoft borra la URL del flujo, y guardar un flujo desconecta la cuenta de Microsoft. |
+| Mensajes desde workflows | 120 por hora por organización |
+| Largo del mensaje de un workflow | 1,000 caracteres |
+| Pruebas desde Ajustes | 10 por minuto |
+| A nombre de quién | Con **Conectar con Microsoft**, siempre de la persona que conectó. Si deja la empresa o pierde acceso al canal, alguien más debe volver a conectar. |
+
+Si quieres avisos en varios canales, una opción es usar [Make](/docs/automatizacion/integraciones/make) o [Zapier](/docs/automatizacion/integraciones/zapier) con los eventos de Cord.
 
 ## Desconectar
 
-Con **Desconectar** en la tarjeta. Microsoft no permite revocar un solo acceso desde fuera: si quieres quitar la app de tu cuenta, hazlo en myapps.microsoft.com.
+**Si conectaste con Microsoft:**
+
+<Steps>
+1. En **Ajustes › Integraciones › Microsoft Teams**, pulsa **Desconectar**.
+2. Cord borra su acceso a tu cuenta y deja de publicar.
+3. Si además quieres quitar la app de Cord de tu cuenta de Microsoft, hazlo en myapps.microsoft.com: Microsoft no permite revocar un solo acceso desde fuera.
+</Steps>
+
+**Si usas un flujo de Power Automate:** abre **Usar un flujo de Power Automate**, borra la URL y pulsa **Guardar**. Para cortar el acceso del todo, apaga o borra el flujo en Teams.
+
+Al desconectar, los avisos de Teams en Notificaciones dejan de salir y los workflows con la acción de Teams fallan con "Conecta Microsoft Teams en Ajustes › Integraciones para usar esta acción." hasta que vuelvas a conectar.
 
 ## Problemas frecuentes
 
 | Mensaje o síntoma | Qué hacer |
 |---|---|
 | **"Microsoft ya no acepta la conexión"** | Caducó o se revocó el acceso. Pulsa **Volver a conectar**. |
-| **No aparece ningún equipo** | Tu cuenta no pertenece a equipos de Teams, o es una cuenta personal. |
-| **"La URL de Teams debe ser la del flujo"** | Pegaste otra dirección; debe terminar en un dominio de `logic.azure.com`. |
-| **"Teams no aceptó la tarjeta"** | El flujo se apagó o se borró. Actívalo en Workflows o pega una URL nueva. |
+| **"Tu cuenta no pertenece a ningún equipo"** | Tu cuenta no está en equipos de Teams, o es una cuenta personal. Inicia sesión con tu cuenta de trabajo. |
+| **"Ese canal ya no está disponible en tu cuenta. Elige otro."** | El canal se borró o ya no eres miembro. Pulsa **Cambiar de canal**. |
+| **Microsoft pide la aprobación de un administrador** | Tu organización no deja que cada persona autorice apps. Pide a un administrador de Microsoft 365 que la apruebe, o usa un flujo de Power Automate. |
+| **"La URL de Teams debe ser la del flujo..."** | Pegaste otra dirección; debe terminar en un dominio de `logic.azure.com`. |
+| **"Teams no aceptó la tarjeta"** | El flujo se apagó o se borró, o el canal ya no existe. Actívalo en Workflows de Teams, pega una URL nueva o elige otro canal. |
+| **La prueba llega pero los avisos no** | Los eventos no tienen Teams marcado. Revisa **Ajustes › Notificaciones**. |
+
+## Relacionadas
+
+- [Slack](/docs/automatizacion/integraciones/slack)
+- [Microsoft Excel](/docs/automatizacion/integraciones/excel): usa el mismo inicio de sesión de Microsoft, con su propio permiso.
+- [Notificaciones](/docs/gestion/notificaciones)
+- [Acciones de workflows](/docs/automatizacion/workflows/acciones)

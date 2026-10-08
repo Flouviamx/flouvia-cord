@@ -273,8 +273,11 @@ export async function runARAgent(context: ARContext): Promise<ARResult> {
   const captura: { plan?: PlanPropuesto } = {};
 
   try {
+    // Haiku 5.5 piensa por default y el pensamiento cuenta dentro de max_tokens:
+    // esfuerzo bajo (es un correo corto) y margen para que no corte el texto.
     let response = await anthropic.messages.create({
-      model: MODEL(), max_tokens: 1024, system: systemPrompt, messages,
+      model: MODEL(), max_tokens: 2048, system: systemPrompt, messages,
+      output_config: { effort: 'low' },
       ...(tools.length ? { tools } : {}),
     });
     await trackExternalUsage({
@@ -300,8 +303,9 @@ export async function runARAgent(context: ARContext): Promise<ARResult> {
         messages.push({ role: 'assistant', content: response.content });
         messages.push({ role: 'user', content: toolResults });
         response = await anthropic.messages.create({
-          model: MODEL(), max_tokens: 1024, system: systemPrompt, messages, tools,
+          model: MODEL(), max_tokens: 2048, system: systemPrompt, messages, tools,
           tool_choice: { type: 'none' },
+          output_config: { effort: 'low' },
         });
         await trackExternalUsage({
           orgId: context.orgId, provider: 'anthropic', category: 'ai',

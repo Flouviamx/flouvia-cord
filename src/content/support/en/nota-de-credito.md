@@ -24,4 +24,4 @@ Cord **does not automatically email** the client when you create the Credit Note
 
 Only an issued, non-void credit note reduces the balance; a draft does not. In Mexico it is issued as an expense CFDI linked to the original UUID. If the invoice was already paid, an amount may remain to return. Issuing the note does not execute a refund. See [how balances are calculated](/en/support/saldo-pagos-creditos).
 
-> Availability of the September improvements is being verified. See [scope and release status](https://docs.cordhq.app/en/pagos/mejoras-confiabilidad); contact support if a described action is not yet shown in your account.
+> Availability of the September improvements is being verified. See [scope and release status](https://docs.cordhq.app/en/docs/pagos/mejoras-confiabilidad); contact support if a described action is not yet shown in your account.

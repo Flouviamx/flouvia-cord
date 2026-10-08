@@ -1,181 +1,165 @@
 ---
 title: "Complete Settings map"
-description: "Reference for every Cord Settings section: business, brand, quotes, taxes, invoicing, payments, team, security, integrations, AI, data, and personal account."
-lastUpdated: "2026-08-28"
-reviewedBy: "Cord Product"
+description: "Reference for every Settings category and tab in Cord: your account, general, brand, team, notifications, plans, advanced, quotes, invoicing, payments, integrations, and developer options."
+lastUpdated: "2026-10-07"
+reviewedBy: "Cord product and operations"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
-prerequisites: ["Settings permission to change organization configuration", "Some sections require additional permissions or plans"]
+prerequisites: ["Settings permission to enter Settings and change the organization's configuration", "Some tabs require additional permissions or plans"]
 ---
 
 <header class="content-header">
   <h1 class="page-title">Complete Settings map</h1>
-  <p class="page-subtitle">What every setting changes, who it affects, and what to check before saving.</p>
+  <p class="page-subtitle">What each category and tab contains, who it affects, and where the detailed guide is.</p>
 </header>
 
-Open **Settings** from the app navigation. The page groups personal settings,
-organization configuration, commercial operations, and developer tools. Settings
-search also recognizes alternative terms such as VAT, tax ID, CSD, SAML, and API.
+Open **Settings** with the gear in the top bar. The index groups categories into four
+sections: **Personal settings**, **Account settings**, **Product settings** and
+**Developers**. Each category opens its first tab and shows the others in a horizontal
+bar.
+
+The index search (and the **⌘K** palette) also recognizes alternative terms: IVA, VAT,
+RFC, NIF, CSD, SAML, DNS, API and others.
 
 <Callout type="info">
 Organization changes affect everyone working in that workspace. Your password, 2FA,
-passkeys, and sessions are personal and do not change when you switch organizations.
+passkeys and sessions are personal and don't change when you switch organizations.
 </Callout>
 
 ## Before changing anything
 
-- Confirm that you are in the correct organization, particularly if you manage more
-  than one business or a test organization.
-- **Settings** controls most sections; **Team**, **Configure payments**, and other
-  sensitive operations have separate permissions.
-- Some changes apply only to new documents. Issued documents retain their tax and
-  commercial snapshot.
-- Each screen shows country and plan availability. Inclusion in this map does not mean
-  that a setting is enabled for every account.
+- Confirm you are in the right organization, and outside the test environment if you are
+  configuring something real.
+- **Settings** controls most tabs; **Team**, **Payment configuration** and other
+  sensitive operations have their own permissions.
+- Many values are defaults for new documents: documents already sent or issued keep their
+  version.
+- Availability by country and plan is shown inside each screen. An option appearing on
+  this map does not mean it is enabled for every account.
 
-## Your account
+## Personal settings
 
-### Profile and security
+### Your account › Profile & security
 
-Manage your name, image, email addresses, password, connected Google or Apple accounts,
-2FA, recovery codes, passkeys, and active sessions. This is also where you permanently
-delete your personal account.
+Your name, picture, emails, password, connected Google or Apple accounts, 2FA, backup
+codes, passkeys, active sessions, and deleting your personal account. Guide:
+[Team, permissions and security](/en/docs/cuenta/equipo-seguridad).
 
-This section belongs to your identity. Use **Team & permissions > Security** for shared
-rules such as allowed domains, inactivity timeouts, or mandatory 2FA. Read
-[Team, permissions, and security](/en/docs/cuenta/equipo-seguridad) before removing an
-access method or deleting the only owner account.
-
-## Organization configuration
+## Account settings
 
 ### General
 
-Set the business name, base currency, contact email and phone, address, website,
-WhatsApp number, country of operation, language, and time zone. These values feed
-documents, communications, date formats, and country-specific behavior.
+| Tab | What it contains |
+|---|---|
+| **General** | Business name, base currency, contact email and phone, address, website, WhatsApp, country of operation, language and time zone. Guide: [Configure your account](/en/docs/cuenta/configuracion). |
+| **Set up with AI** | A proposal for your brand, profile, taxes, catalog and templates based on your website and price list. Guide: [Set up your account with AI](/en/docs/cuenta/configurar-con-ia). |
 
-Changing the base currency does not automatically convert historical amounts. Review
-open documents and tax configuration first.
+Changing the base currency does not convert historical amounts.
 
-**Set up with AI**, in this same category, proposes all of these values plus your catalog,
-taxes, and templates from your website and price list. See
-[Set up your account with AI](/docs/cuenta/configurar-con-ia).
+### Brand appearance
 
-### Branding and client portal
+| Tab | What it contains | Plan |
+|---|---|---|
+| **Identity** | Primary and on-color logo, size, palette and typography, with a preview on portal, quote, PDF and email. Guide: [Customize your branding](/en/docs/cuenta/marca). | All |
+| **Client portal** | Layout, top announcement, welcome, comments and counteroffers, Cord branding. Guide: [Client portal](/en/docs/cuenta/portal-cliente). | All; removing Cord branding from Starter |
+| **Custom domain** | A subdomain of your company for your links, with DNS records and verification. Guide: [Custom domain](/en/docs/cuenta/dominio-propio). | Professional or higher |
 
-Upload a logo, choose primary and secondary colors, and set the welcome message. The
-client portal settings add a banner, accent color, chat control, and the **Powered by
-Cord** label. Removing Cord branding requires **Starter or higher**.
+### Team & permissions
 
-The portal is the secure link where a client reviews the quote, communicates, and,
-depending on status and configuration, approves or pays. Turning chat off does not
-delete earlier messages.
+| Tab | What it contains | Plan |
+|---|---|---|
+| **Team & roles** | Members, invitations, roles and per-section permissions. | Inviting from Professional |
+| **SSO** | SAML 2.0 connections, **Require SSO** and emergency access. Requires the Team permission. | Scale or Developer |
+| **Security** | Require 2FA, allowed domains for invitations and inactivity timeout. | All |
 
-### Team, security, and SSO
+Guide: [Team, permissions and security](/en/docs/cuenta/equipo-seguridad).
 
-Invite members, resend or revoke invitations, and assign permissions. Team access starts
-on **Pro**; pending invitations reserve a seat and expire after seven days.
+### Notifications
 
-Organization security can require 2FA, restrict invitation domains, and set an
-inactivity timeout. SAML 2.0 connections add Entity ID, sign-in URL, certificates,
-verified domains, JIT provisioning, and attribute-to-role rules. SSO requires **Scale
-or Developer** and the Team permission.
+| Tab | What it contains | Plan |
+|---|---|---|
+| **Notifications** | A matrix of which event alerts through each channel: email, Slack and Microsoft Teams. Slack and Teams only alert if their channel is connected; the new-member alert only arrives by email. Guide: [Notifications](/en/docs/gestion/notificaciones). | All |
+| **Email** | Sender name, reply-to address, introduction and signature of the emails to your clients, with a preview. | Customizing from Starter |
 
-### Notifications and email
+### Plans & subscription
 
-Choose which events notify each available channel: in-app, email, and Slack when it is
-connected. Email settings customize the sender name, reply-to address, introduction,
-and signature. Send a test quote to verify rendering in your mail provider.
+**Subscription:** your effective plan, status, cycle, usage for the period, plan changes
+and access to Billing for your card, receipts and invoices. Guide:
+[Your Cord subscription](/en/docs/cuenta/suscripcion).
 
-### Plan and subscription
+### Advanced
 
-View the effective plan, subscription status, renewal, available plans, period usage,
-and the payment method used to pay Cord. Cord subscription billing is separate from
-payments collected from your clients. See [plans, limits, and billing](/en/docs/cuenta/suscripcion).
+| Tab | What it contains | Plan |
+|---|---|---|
+| **Data & privacy** | Download everything (JSON), catalog and clients as CSV, data retention, and the danger zone to delete the organization (requires recent authentication). | All |
+| **Settings history** | Who changed the configuration and when, with previous and saved values (last 50). You can restore appearance and text values with no later changes; it does not restore logos, payments, permissions or tax data. | Professional or higher |
+| **Audit log** | Relevant actions with actor, date, resource and context. | Professional or higher |
 
-### Data, privacy, and audit log
+## Product settings
 
-Export the organization, products, or clients, review retention, and enter the danger
-zone to delete the organization. Deletion requires recent authentication and extra
-confirmation. Export first and preserve documents required by local law separately.
+### Quotes
 
-The audit log records relevant actions with actor, time, resource, and available
-context. It requires **Pro or higher** and supports investigations; it does not replace
-access controls or an internal retention policy.
-
-## Commercial configuration
-
-### Quote defaults, taxes, and PDF
-
-Configure prefix, series, default tax rate, validity, payment terms, deposit, and legal
-text. Build reusable tax profiles and decide whether prices include tax by default.
-Choose a minimal, classic, or detailed PDF template and control logo, footer message,
-terms, and line-item visibility.
-
-These are starting values for new documents. Review every quote before sending and test
-long names, discounts, taxes, and page breaks in the preview.
-
-### Approvals and message templates
-
-Set maximum discount and amount thresholds plus minimum margin. Quotes outside a rule
-enter the applicable internal approval flow. Approval workflows require **Scale or
-Developer**.
-
-Reusable email and WhatsApp templates support the variables shown in Settings. Always
-preview the result because missing source data can leave a message incomplete.
+| Tab | What it contains | Plan |
+|---|---|---|
+| **Numbering & tax** (outside Mexico, **Numbering & taxes**) | Number prefix and series, validity, payment terms, deposit and default legal text. | All |
+| **Taxes** | Rate catalog with name, type (consumption, withholding or exempt) and rate, and whether your prices include tax. Guide: [Products and discounts](/en/docs/cotizacion/productos). | All |
+| **PDF document** | Minimal, Classic or Detailed template, footer message, terms and line-item listing. | All |
+| **Approvals** | Internal thresholds for maximum discount, maximum amount and minimum margin. Any late-interest rate shown here is suspended: it generates no new charges. Guide: [Credit terms](/en/docs/pagos/credito). | Scale or Developer |
+| **Templates** | Reference texts for email, WhatsApp or notes with variables such as `{cliente}`, `{folio}`, `{total}` and `{link}`. For now the send buttons use their own text. | All |
 
 ### Invoicing
 
-In Mexico, configure RFC, legal name, tax regime, postal code, CFDI use, and CSD to
-issue CFDI 4.0. In other markets, set invoice identity, address, tax number, and prefix
-for commercial invoices. See [invoicing by market](/en/docs/pagos/facturacion).
+**Tax details** (outside Mexico, **Tax profile**): in Mexico, RFC, legal name, tax
+regime, postal code, CFDI use and your CSD to stamp CFDI 4.0; in the other countries, your
+local tax identifier, address and invoice prefix. Issued invoices live in **Invoices** in
+the sidebar. Guides: [Add tax information (CSD)](/en/docs/cuenta/csd) and
+[Invoicing by country](/en/docs/pagos/facturacion).
 
 ### Payments
 
-Connect the payment account, complete provider verification, and enable available
-methods. Card payments use Cord Payments in supported markets; automated SPEI is only
-available in Mexico. Manual bank-transfer instructions can work without a connected
-payment account.
+**Payments:** connect Cord Payments and complete your account verification, choose
+methods (card; SPEI only in Mexico), review fees and manage the payout account (changing
+it requires recent authentication and the Payment configuration permission). In Mexico
+and Brazil you can also connect Mercado Pago; in Colombia, Argentina, Chile and Peru it is
+the way to collect online. Guides: [Connect account (KYC)](/en/docs/pagos/onboarding),
+[Payment methods](/en/docs/pagos/metodos) and [Mercado Pago](/en/docs/pagos/mercado-pago).
 
-The screen displays the applicable fee before acceptance. Deposit account details are
-sensitive, and changing them requires recent authentication.
+### Integrations
 
-## Integrations and developer tools
+**Integrations:** a directory of 13 apps —HubSpot, Shopify, Google Sheets, Microsoft
+Excel, Gmail, QuickBooks Online, Xero, Slack, Microsoft Teams, WhatsApp Business, Make,
+Zapier and n8n— with one page per app to connect it, configure it and see the workflows
+that use it. Apps marked as upcoming have no committed date. Guide:
+[Integrations](/en/docs/automatizacion/integraciones).
 
-The developer block stays hidden on the Settings index until you enable **Developer
-mode**. Direct URLs still work when you have access.
+## Developers
 
-### Integrations and MCP
+This group appears in the index only when you turn on **Developer mode** at the bottom of
+Settings. The same switch turns on the **Cord Workbench** dock across the app. Each tab's
+direct URL works even when the mode is off.
 
-Apps directory: HubSpot, Slack, Make, and Zapier. Each card shows its status and opens
-its own page with the connection, settings, and the workflows that use that app. Items
-marked as upcoming do not promise a release date. See the
-[integrations guide](/en/docs/automatizacion/integraciones).
+| Category | What it contains | Plan |
+|---|---|---|
+| **MCP** | Configuration to connect an AI assistant to Cord through the MCP server. Guide: [MCP Server](/en/docs/desarrolladores/herramientas/mcp). | All |
+| **Artificial intelligence** | Status of **AI collections** (Off, On · with your approval or On · automatic) and connections to your other systems that the AI can look up when quoting. Guide: [Autonomous collections (AI)](/en/docs/pagos/cobranza-ia). | AI collections and agent governance on Scale or Developer |
+| **Embeddable quote builder** | Preview, allowed domains and code to embed the quote builder on your site. Guide: [Cord Elements](/en/docs/desarrolladores/herramientas/elements/resumen). | All |
 
-The MCP screen checks for an active API key, provides connection configuration, and
-lists the tools exposed to a compatible Model Context Protocol client. Manage the key
-in Workbench and never paste it into screenshots, chat, or browser code. See the
-[MCP guide](/en/docs/desarrolladores/herramientas/mcp).
+API keys, webhooks, logs and events are not in Settings: they live in
+[Cord Workbench](/en/docs/desarrolladores/herramientas/workbench).
 
-### Artificial intelligence
+## If a change doesn't show up
 
-Govern AI collections and the MCP connections an agent may use. The page shows status,
-pending items, and controls to grant or withdraw autonomy. Agent governance requires
-**Scale or Developer**; every action remains subject to permissions, limits, and
-organization configuration.
+<Steps>
+1. Confirm the save finished without an error.
+2. Check the effective organization, permission, country and plan.
+3. Open a new document if the option only works as a default.
+4. Leave test mode if you are validating an external provider.
+5. If it persists, note the route, time, user, expected result and visible message
+   before contacting [support](https://cordhq.app/soporte).
+</Steps>
 
-### Embeddable quote builder
+## Related pages
 
-Preview the builder, restrict allowed domains, and copy installation code for another
-site. Domain restrictions are an origin layer; the integrating site must still enforce
-its own authentication and authorization.
-
-## If a change does not appear
-
-1. confirm that saving completed without an error;
-2. verify the organization, permission, country, and effective plan;
-3. create a new document if the setting is only a default;
-4. leave test mode when validating an external provider;
-5. if the problem remains, record the route, time, user, expected result, and visible
-   message before contacting support.
-
+- [Complete app map](/en/docs/operacion/mapa-de-la-app)
+- [Create your account](/en/docs/cuenta/crear-cuenta)
+- [Your Cord subscription](/en/docs/cuenta/suscripcion)

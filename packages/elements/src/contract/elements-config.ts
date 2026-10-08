@@ -17,7 +17,11 @@ export interface CordRetencion {
     base: 'subtotal' | 'impuesto' | 'gravado';
 }
 
-export type CordTerminos = 'contado' | 'net30' | 'net60';
+/** `contado` o `net<N>`: N días naturales de crédito desde la fecha del documento. */
+export type CordTerminos = 'contado' | 'net7' | 'net15' | 'net30' | 'net45' | 'net60' | 'net90';
+
+/** Los plazos que acepta Cord, en orden. Fuente: src/lib/payment-terms.ts (un test verifica la paridad). */
+export const CORD_TERMINOS: readonly CordTerminos[] = ['contado', 'net7', 'net15', 'net30', 'net45', 'net60', 'net90'];
 
 export interface CordElementsConfig {
     object: 'elements_config';

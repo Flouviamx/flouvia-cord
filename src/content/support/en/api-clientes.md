@@ -41,7 +41,7 @@ Response: `{ "data": { "id": "..." } }`.
 **Fields:**
 - `empresa` (required): legal or trade name.
 - `rfc`: if you capture a valid RFC, you can stamp CFDI 4.0 in this customer's name when invoicing their quote.
-- `terminos`: `contado` (cash), `net30`, or `net60`.
+- `terminos`: `contado` (due on receipt) or `net<N>` for N days of credit: `net7`, `net15`, `net30`, `net45`, `net60`, `net90`.
 - `limite`: credit limit in pesos (MXN).
 - `nivel`: `estandar`, `plata`, `oro`, or `distribuidor` (price tier).
 - `descuento_pct`: automatic tier discount (0–100).

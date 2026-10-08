@@ -1,9 +1,11 @@
 ---
 title: "Crea tu primer workflow"
 description: "Recorrido completo por el editor de Cord Workflows: crear, elegir el disparador, agregar pasos, guardar, publicar y comprobar que funciona."
-lastUpdated: "2026-09-15"
+lastUpdated: "2026-10-07"
 reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Permiso Ajustes","Un lugar libre de workflows activos en tu plan para publicar"]
 ---
 
 <header class="content-header">
@@ -15,7 +17,7 @@ availablePlans: [Free, Starter, Pro, Scale, Developer]
 
 - Necesitas el permiso de **Ajustes** en tu organización.
 - Piensa la regla en una frase: "cuando **pase esto**, **haz esto**". Por ejemplo: "cuando el cliente rechace una cotización, crea una tarea para llamarle mañana".
-- Si tu regla usa Slack o HubSpot, conéctalos primero en **Ajustes › Integraciones**. Puedes armar el workflow sin conectarlos, pero sus pasos fallarán al ejecutarse.
+- Si tu regla usa Slack, Teams, WhatsApp o HubSpot, conéctalos primero en **Ajustes › Integraciones**. Puedes armar el workflow sin conectarlos, pero sus pasos fallarán al ejecutarse.
 
 ## 1. Crea el workflow
 
@@ -43,9 +45,10 @@ El disparador decide qué datos tendrás disponibles en el resto del workflow. U
 
 Debajo del disparador, en **Haz esto**, pulsa **Agregar un paso** y elige:
 
-- **Agregar acción:** crear una tarea, avisar al equipo por correo, enviar un mensaje a Slack o agregar una nota en HubSpot.
+- **Acción o consulta:** una de las 11 [acciones](/docs/automatizacion/workflows/acciones) —crear una tarea, avisar al equipo por correo, escribirle al cliente, mandarle un WhatsApp al cliente, caducar la cotización, aprobar la solicitud interna, anular la factura, mandar los datos a una URL, enviar un mensaje a Slack o a Teams, o agregar una nota en HubSpot— o una [consulta](/docs/automatizacion/workflows/consultas).
 - **Agregar condición:** dividir el flujo en **Si se cumple** y **Si no se cumple**.
 - **Agregar espera:** pausar entre 1 y 30 días.
+- **Esperar hasta que...:** pausar hasta que se cumpla una condición, con un plazo de 1 a 30 días.
 
 Al agregar un paso se abre el panel lateral para configurarlo (**Editar acción**, **Editar condición** o **Editar espera**). Completa los campos y pulsa **Listo**. Cada tarjeta del lienzo muestra un resumen: el título de la tarea, "Esperar 3 días", o la primera condición seguida de "y 2 más".
 

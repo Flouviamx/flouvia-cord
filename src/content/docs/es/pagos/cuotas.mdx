@@ -1,0 +1,98 @@
+---
+title: "Planes de pago en cuotas"
+seoTitle: "Planes de pago en cuotas para saldos vencidos en Cord"
+description: "Cómo funciona un plan de pagos en cuotas mensuales: quién lo propone, cómo se aprueba, cómo se reparte el saldo, qué ve tu cliente en el link, cómo se cobra cada cuota y qué pasa con el saldo anterior."
+lastUpdated: "2026-10-07"
+reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Pro, Scale, Developer]
+prerequisites: ["Plan Pro, Scale o Developer", "Permiso Cobranza", "Agente de cobranza con IA activado", "Cotización aprobada con saldo vencido"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Planes de pago en cuotas</h1>
+  <p class="page-subtitle">Cuando un cliente no puede liquidar de golpe, su saldo vencido se reparte en cuotas mensuales que se pagan desde el mismo link.</p>
+</header>
+
+## Qué es
+
+Un **plan de pagos en cuotas** reemplaza el saldo pendiente de una cotización vencida por **entre 2 y 6 cuotas mensuales** que suman exactamente ese saldo. Cada cuota es un cobro independiente: tu cliente la paga desde el mismo link de la cotización, con los métodos que tengas activos, y la cotización queda pagada cuando se cubre la última.
+
+Hoy los planes en cuotas los negocia el [agente de cobranza con IA](/docs/pagos/cobranza-ia): no hay un botón para crear un plan a mano desde la cotización. Si quieres dividir un cobro **desde el principio**, usa [anticipo y saldo](/docs/pagos/anticipos) o un [término de crédito](/docs/pagos/credito).
+
+## Requisitos
+
+| Requisito | Detalle |
+|---|---|
+| Plan | Pro, Scale o Developer (los planes que incluyen la cobranza con IA). |
+| Permiso | **Cobranza**, para aprobar el correo que activa el plan. |
+| Configuración | Agente de cobranza activado, con **Máximo de cuotas** y **Ofrecer plan a los** configurados. |
+| Documento | Una **cotización** aprobada con saldo vencido. En facturas, el cliente puede abonar parcialmente desde el link de la factura, pero el agente no arma un plan de cuotas sobre ella. |
+| Cobro en línea | Opcional. Sin Cord Payments ni Mercado Pago, el cliente ve las cuotas y su vencimiento, y tú registras cada pago a mano. |
+
+## Cómo nace un plan
+
+<Steps>
+1. **La cuenta llega al umbral.** El agente solo puede ofrecer cuotas cuando la cotización lleva al menos los días de atraso que pusiste en **Ofrecer plan a los** (15 por defecto) y no tiene ya un plan propuesto o activo.
+2. **El cliente acepta en la conversación.** El agente propone el plan solo después de que el cliente aceptó pagar en cuotas dentro del hilo de correo.
+3. **Cord valida los números.** Cord comprueba que el número de cuotas esté entre 2 y tu máximo configurado, y que la propuesta cubra el saldo completo, sin descuentos sobre el capital. Los importes de cada cuota los calcula Cord, no el agente.
+4. **Tú apruebas (modo Aprobación).** El correo con el plan queda en la **Bandeja de aprobación** con la etiqueta "Propone N cuotas de [monto]". Al pulsar **Aprobar y enviar**, Cord te avisa que el plan se activa y reemplaza los cobros pendientes de la cotización.
+5. **El plan se activa.** Cord cancela el cobro pendiente anterior, crea las cuotas y envía el correo al cliente con el link de pago.
+</Steps>
+
+En **modo Automático**, los pasos 4 y 5 ocurren sin tu revisión: el plan se activa en cuanto el agente lo registra.
+
+<Callout type="warning" title="Descartar un borrador cancela su plan">
+Si descartas o regeneras un borrador que proponía un plan, el plan propuesto se elimina. Como nunca se activó, no hay cobros que revertir.
+</Callout>
+
+## Cómo se reparte el saldo
+
+- El saldo se divide en partes iguales y **la última cuota absorbe la diferencia de redondeo**, de modo que la suma es exacta al centavo.
+- La **primera cuota vence el día en que se activa el plan**; cada una de las siguientes, un mes después de la anterior.
+- Las cuotas se expresan en la divisa de la cotización.
+
+Por ejemplo, un saldo de $10,000.00 MXN en 3 cuotas queda en dos cuotas de $3,333.33 MXN y una de $3,333.34 MXN, con vencimientos hoy, dentro de un mes y dentro de dos meses.
+
+## Qué ve tu cliente
+
+{/* MOCKUP: link público de la cotización con el desglose de cobros: "Cuota 1 · pagada", "Cuota 2 · vence 7 nov 2026 · $3,333.33 MXN", "Cuota 3 · vence 7 dic 2026", y el botón de pago "Pagar Cuota 2 a pagar · del total de $10,000.00 MXN". */}
+
+En el link de la cotización aparece cada cuota con su número, su monto y su estado. El botón de pago cobra **la siguiente cuota que ya venció**, nunca el saldo completo ni una cuota futura. Cuando no hay ninguna cuota exigible hoy, el link explica cuándo vence la próxima en lugar de mostrar el botón.
+
+Cada cuota se paga con los métodos activos de tu cuenta: tarjeta, SPEI (cotizaciones en MXN) o Mercado Pago. Si pagas con SPEI, cada cuota tiene sus propias instrucciones de transferencia.
+
+## Comisión
+
+Cada cuota es una transacción independiente para efectos de comisión: en cobros en pesos mexicanos (MXN), Cord Payments aplica su tarifa sobre cada cuota por separado; en otras divisas no aplica hoy comisión de plataforma. Ver [Tarifas de Cord Payments](/docs/pagos/condiciones).
+
+## Seguimiento
+
+- **Agente de cobranza › Planes negociados** muestra cada plan con su avance ("2 de 3 cuotas pagadas") y la fecha de la próxima cuota.
+- **Agente de cobranza › Planes de pago activos** suma lo comprometido en cuotas.
+- Mientras el cliente está **al corriente** (ninguna cuota vencida sin pagar), el agente no le escribe: en **En la mira** aparece como "Plan al corriente". Si una cuota vence sin pago, la cuenta vuelve a la cobranza y el correo apunta a esa cuota, no al saldo completo.
+- La línea de tiempo de la cotización registra cuándo se acordó o aprobó el plan.
+
+## Límites
+
+- De 2 a 6 cuotas mensuales; el máximo lo fijas tú entre esos dos valores (3 por defecto).
+- Solo cuotas mensuales.
+- Un plan propuesto o activo por cotización.
+- Sin descuentos sobre el capital ni intereses agregados.
+- Solo sobre cotizaciones, no sobre facturas.
+- No se crean desde el editor de cotizaciones.
+
+## Problemas comunes
+
+**El agente no ofrece cuotas.** Revisa que la cuenta haya alcanzado los días de **Ofrecer plan a los**, que no tenga ya un plan, y que el cliente haya aceptado en la conversación.
+
+**Un cliente con plan dejó de recibir correos del agente.** Está al corriente: ninguna cuota está vencida. Volverá a la cobranza si una cuota vence sin pagarse.
+
+**El cliente pagó el saldo anterior después de activarse el plan.** Si una transferencia que ya estaba en camino llega después, Cord la registra igual, porque el dinero sí llegó. Revisa los cobros de la cotización y, si sobra dinero, gestiona la devolución con tu cliente.
+
+## Relacionadas
+
+- [Cobranza con IA](/docs/pagos/cobranza-ia)
+- [Anticipo y saldo](/docs/pagos/anticipos)
+- [Términos de crédito](/docs/pagos/credito)
+- [Cartera y cobranza operativa](/docs/pagos/cartera-cobranza)

@@ -62,7 +62,7 @@ export const PLANES_EN: Plan[] = [
             'Unlimited quotes',
             '5 users included',
             '200 tax invoices + 50 AI generations/mo',
-            'Collections, recurring invoices and 90-day cash flow',
+            'AI collections, recurring invoices and 90-day cash flow',
             'Live tracking and your own domain for links',
         ],
     },
@@ -78,7 +78,7 @@ export const PLANES_EN: Plan[] = [
             'Everything in Professional',
             '15 users included',
             '500 tax invoices + 500 AI generations/mo',
-            'Autonomous AI collections and approval flows',
+            'Discount and margin approval flows',
             'Enterprise SSO and AI agent governance',
         ],
     },
@@ -154,7 +154,7 @@ export const COMPARATIVA_EN: CompareGroup[] = [
         titulo: 'Artificial Intelligence',
         rows: [
             { label: 'Build a quote from text with AI', free: true, starter: true, pro: true, scale: true, developer: true },
-            { label: 'Autonomous AI collections (negotiates installments)', free: false, starter: false, pro: false, scale: true, developer: true },
+            { label: 'Autonomous AI collections (negotiates installments)', free: false, starter: false, pro: true, scale: true, developer: true },
             { label: 'AI CFO (cash flow insight)', free: false, starter: false, pro: true, scale: true, developer: true },
         ],
     },
@@ -276,7 +276,7 @@ export const FAQ_PRECIOS_EN: { q: string; a: string }[] = [
     },
     {
         q: 'When should I pay for Cord?',
-        a: 'Choose Starter for tax-compliant invoices where Cord supports them, unlimited sends or to remove “Powered by Cord”. Professional adds unlimited quotes, 5 included users, live tracking, collections, recurring invoices and a 90-day cash-flow view. Scale adds approvals, autonomous AI collections and SSO. Stay on Free as long as its limits fit your business.',
+        a: 'Choose Starter for tax-compliant invoices where Cord supports them, unlimited sends or to remove “Powered by Cord”. Professional adds unlimited quotes, 5 included users, live tracking, AI collections, recurring invoices and a 90-day cash-flow view. Scale adds approvals and SSO. Stay on Free as long as its limits fit your business.',
     },
     {
         q: 'Can I remove Cord branding and use my own domain?',

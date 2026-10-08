@@ -1,0 +1,113 @@
+---
+title: "Client portal"
+seoTitle: "Customize the portal your client sees in Cord"
+description: "What your client sees when opening a quote link and how to adjust it: layout, top announcement, welcome, comments and counteroffers, and Cord branding by plan."
+lastUpdated: "2026-10-07"
+reviewedBy: "Cord product and operations"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Settings permission", "Starter plan or higher to remove Cord branding"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Client portal</h1>
+  <p class="page-subtitle">The secure link where your client reviews, discusses, approves and pays. Adjust what they see and how it looks.</p>
+</header>
+
+The **client portal** is the page that opens when your client clicks a quote link. They
+need no account or password: the link is their access. From there they review the
+proposal, comment, approve or reject and, when applicable, pay online.
+
+## Requirements
+
+- **Settings permission** to change the portal configuration.
+- **All plans** can customize layout, announcement, welcome and comments.
+- **Starter or higher** to remove Cord branding.
+- **Professional or higher** to serve the portal from your own domain. See
+  [Custom domain](/en/docs/cuenta/dominio-propio).
+
+## What your client sees
+
+| Element | Detail |
+|---|---|
+| **Header with your brand** | Your logo, colors and typography from [Identity](/en/docs/cuenta/marca). |
+| **Top announcement** | A strip in your brand color, if you wrote an announcement. |
+| **Welcome** | Your welcome message, if you wrote one. |
+| **Line items** | Each item with quantity, price and amount, in the quote's currency. If the negotiated price is lower than the list price, the list price appears struck through. |
+| **Partial approval** | While the quote is open, each line has an **Include this line in your approval** checkbox. |
+| **Line comments and conversation** | If comments are on: a button to comment on each line and a general chat with **Counteroffer**. |
+| **Approve or reject** | **Approve quote** records the signer's name and technical evidence; **Reject quote** accepts an optional reason. |
+| **Online payment** | If you have an active payment method and the quote allows it. See [Accept a payment](/en/docs/pagos/aceptar). |
+| **Download PDF** | The quote document. |
+| **Contact** | Shortcuts to reach you by WhatsApp, email or phone, based on the contact details you entered in Settings › General. |
+| **Activity notice** | "Whoever sent you this proposal can see when you open it and which sections you review." |
+| **Cord branding** | The "Verified by Cord" seal, unless your plan allows removing it and you turned it off. |
+
+{/* MOCKUP: client portal on desktop with top announcement, welcome, line items with partial-approval checkboxes, and the chat with Counteroffer */}
+
+<Callout type="info">
+**Your own visit does not count as a view.** If you open the link while signed in to
+Cord, you see a **Preview — this is what your client sees** strip. Cord does not record
+that visit as client activity or trigger "viewed" alerts.
+</Callout>
+
+## Customize the portal
+
+<Steps>
+1. Open **Settings › Brand appearance › Client portal**.
+2. Under **Layout**, choose the header style (**Essential**, **Soft** or **Contrast**),
+   **Corners** (Precise, Soft or Rounded) and **Spacing** (Comfortable or Compact).
+3. Under **Messages**, write the **Top announcement** (up to 200 characters; leave it
+   empty to hide it) and the **Welcome message** (up to 280 characters).
+4. Under **Interaction**, turn **Comments and counteroffers** and **Show Cord branding**
+   on or off.
+5. Check the preview on the right and save.
+</Steps>
+
+The preview shows a sample quote on **Portal**, **Quote**, **PDF** and **Email**, on
+**Desktop** or **Mobile**, and lets you compare **Your draft** against **Saved**. It
+generates no activity or messages.
+
+## Behavior and edge cases
+
+- **Layout is shared.** The header style, corners and spacing are also used in emails
+  and commercial invoices. The quote PDF has its own design under
+  **Settings › Quotes › PDF document**.
+- **Turning comments off does not delete the conversation.** The client stops seeing the
+  per-line button, the chat and the counteroffer, but earlier messages are kept on your
+  side.
+- **Closed quote.** Once approved or rejected, the partial-approval checkboxes and the
+  option to comment on lines disappear.
+- **Logo and colors** are not edited here: they come from **Identity**. The **Edit** link
+  on the **Shared identity** card takes you there.
+- **The contact details** your client sees come from **Settings › General**: if you
+  leave WhatsApp, email or phone empty, that shortcut does not appear.
+
+## Cord branding by plan
+
+| Plan | Cord branding in the portal |
+|---|---|
+| Free | Always visible. The switch appears disabled and takes you to review your plan. |
+| Starter, Professional, Scale and Developer | You can hide it with **Show Cord branding**. |
+
+If you downgrade to Free, the branding shows on your links again even if you had turned
+it off; when you return to an eligible plan your choice is respected again.
+
+## Common problems
+
+**I saved an announcement and don't see it.** Open the link in a new window and confirm
+the text was not left empty. Remember the announcement appears on the quote link.
+
+**The client says they can't comment.** Check that **Comments and counteroffers** is on
+and that the quote is still open.
+
+**I can't remove Cord branding.** You need the Starter plan or higher; see
+[Your subscription](/en/docs/cuenta/suscripcion).
+
+## Related pages
+
+- [Customize your branding](/en/docs/cuenta/marca)
+- [Custom domain](/en/docs/cuenta/dominio-propio)
+- [Chat and negotiation](/en/docs/interaccion/chat)
+- [Approval and evidence](/en/docs/interaccion/firma)
+- [Preview and sending](/en/docs/cotizacion/envio)

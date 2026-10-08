@@ -1,10 +1,12 @@
 ---
 title: "Slack"
 seoTitle: "Connect Cord with Slack"
-description: "How to connect a Slack channel with Cord using Add to Slack or your own webhook, turn on alerts per event, what each message contains, use Slack in workflows and fix problems."
-lastUpdated: "2026-09-21"
+description: "How to connect a Slack channel with Cord using Add to Slack or your own webhook, turn on alerts per event, what each message contains, link previews, the /cord command, approval buttons, use Slack in workflows and fix problems."
+lastUpdated: "2026-10-07"
 reviewedBy: "Cord product and operations"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Settings permission in Cord", "A Slack workspace where you can install apps", "Scale plan or higher for approval buttons"]
 ---
 
 <header class="content-header">
@@ -14,15 +16,25 @@ availablePlans: [Free, Starter, Pro, Scale, Developer]
 
 ## How it works
 
-Cord posts to Slack through an **Incoming Webhook**: an address Slack generates for a specific channel. With **Add to Slack** you pick the channel in Slack and Cord receives that address on its own; Cord does not read your messages and can only post to that channel.
+Cord posts to Slack through an **Incoming Webhook**: an address Slack generates for a specific channel. With **Add to Slack** you pick the channel in Slack and Cord receives that address on its own. Alerts and workflow messages go only to that channel.
+
+When you authorize, Slack shows you the permissions the Cord app asks for: post to the channel you picked, see and complete Cord links pasted in your workspace (for the preview), receive the `/cord` command, and read the name and email of whoever clicks an approval button. None of them lets Cord read your messages.
 
 There are two ways to get messages, and you can use both:
 
 | | Notification alerts | Workflow action |
 |---|---|---|
 | **What it posts** | A standard message per quote event. | The text you write, with event data. |
-| **When** | On the events you check in Settings › Notifications. | On any of the 41 triggers, with conditions and waits. |
+| **When** | On the events you check in Settings › Notifications. | On any of the 44 event triggers or the scheduled trigger, with conditions and waits. |
 | **Where to set it up** | **Settings › Notifications** | **Workflows** |
+
+## Requirements
+
+| Where | What you need |
+|---|---|
+| **Cord** | The **Settings** permission. Any plan. |
+| **Slack** | Being able to install apps in your workspace. If your workspace restricts installs, a Slack admin will need to approve the Cord app. |
+| **Approval buttons** | Internal approvals, which come with the **Scale** plan or higher, and the person clicking the button must use the same email in Slack as in Cord and have the **Approvals** permission. |
 
 ## 1. Connect your channel
 
@@ -67,7 +79,21 @@ Each notification alert is a short message with:
 - The **client** and the **total** with its currency.
 - A link that opens the quote in Cord.
 
-Notification alerts are about quotes: an event without a quote number is not posted to Slack. The text of these alerts is currently in Spanish; for messages in English, use the workflow action below.
+Notification alerts are about quotes: an event without a quote number is not posted to Slack. Alerts are written in your account's language (Spanish or English, as set in Settings › General).
+
+## Previews, the /cord command and approvals
+
+<Callout type="info">
+This feature is new and may not be enabled on your account yet. If you do not see it, write to us.
+</Callout>
+
+With **Add to Slack**, the Cord app also does this in your workspace:
+
+- **Link previews.** A public quote link pasted in Slack opens as a card with the quote number, client, status, total and an **Open in Cord** button. It only happens with quotes from your own organization.
+- **The `/cord` command.** Type `/cord` and a quote number or a client name, for example `/cord COT-0152`. Only you see the answer, with up to 5 quotes.
+- **Approval buttons.** When a quote requests internal approval, it reaches the channel with **Approve**, **Reject** and **Open in Cord** buttons. The buttons only work if your Slack account uses the same email as your Cord account and you have the **Approvals** permission; otherwise Slack tells you to decide from Cord. Internal approvals require the **Scale** plan or higher.
+
+If you connected Slack before these existed, the card asks you to reconnect: click **Change channel** and authorize again. They are not available with your own webhook.
 
 ## Custom messages with workflows
 
@@ -78,6 +104,27 @@ With the **Send a Slack message** action in [Cord Workflows](/en/docs/automatiza
 - When a large sale is approved, only if the total passes a certain amount.
 
 This action posts to the same channel and works even if notification alerts are off.
+
+## What flows and in which direction
+
+| Direction | What flows | When |
+|---|---|---|
+| **From Cord to Slack** | The alerts you check in Notifications: quote number, what happened, client, total with its currency and the **View quote** link. | When the event happens. |
+| **From Cord to Slack** | The text you write in a workflow's **Send a Slack message** action. | When the workflow runs. |
+| **From Cord to Slack** | The preview card for a quote link from your organization, and the `/cord` reply, which only the person who typed the command sees. | When someone pastes the link or uses the command. |
+| **From Slack to Cord** | The decision from the **Approve** or **Reject** buttons on an internal approval request. | When someone with permission clicks the button. |
+| **From Slack to Cord** | Nothing else. Cord does not read the messages in your channels. | — |
+
+## Limits
+
+| Limit | Value |
+|---|---|
+| Channels per organization | One at a time, the one you picked when connecting |
+| Messages from workflows | 120 per hour per organization |
+| Length of a workflow message | 1,000 characters |
+| `/cord` results | Up to 5 quotes |
+| Link previews | Only quotes from your own organization |
+| Notifications alerts | Only quote events with a quote number |
 
 ## Change channel or disconnect
 
@@ -92,8 +139,8 @@ Cord can post to **one channel** at a time. For alerts in several channels, one 
 | Message | Cause | What to do |
 |---|---|---|
 | The URL must be from hooks.slack.com | You pasted another URL, such as the channel or app URL. | Copy the Incoming Webhook URL, the one starting with `https://hooks.slack.com/`. |
-| No Slack webhook connected (shown in Spanish) | You clicked **Send test** without saving. | Click **Save**, then test. |
-| Slack responded with an error (shown in Spanish) | Slack rejected the message: the webhook was deleted, the app removed or the URL is incomplete. | Create a new webhook and paste the full URL. |
+| There is no Slack webhook connected. Paste the URL and save first. | You clicked **Send test** without saving. | Click **Save**, then test. |
+| Slack did not accept the message. Check the webhook URL. | Slack rejected the message: the webhook was deleted, the app removed or the URL is incomplete. | Create a new webhook and paste the full URL. |
 | Could not send | Network error while testing. | Try again. |
 | The test arrives but alerts do not | The events do not have Slack checked. | Check **Settings › Notifications**. |
 
@@ -101,7 +148,9 @@ Cord can post to **one channel** at a time. For alerts in several channels, one 
 Treat the webhook URL like a password: anyone who has it can post to your channel. If you think it leaked, delete it in Slack and create a new one.
 </Callout>
 
-## Next
+## Related
 
+- [Microsoft Teams](/en/docs/automatizacion/integraciones/teams)
+- [Notifications](/en/docs/gestion/notificaciones)
 - [Workflow actions](/en/docs/automatizacion/workflows/acciones)
-- [Integrations](/en/docs/automatizacion/integraciones)
+- [Ready-made ideas](/en/docs/automatizacion/workflows/ideas): "HubSpot note when the client approves" also posts to Slack.

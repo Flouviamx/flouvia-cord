@@ -1,43 +1,134 @@
 ---
 title: "Notificaciones"
-description: "Decide qué eventos te avisan y por dónde: correo al dueño de la cuenta, Slack o Microsoft Teams."
+seoTitle: "Notificaciones de Cord por correo, Slack y Microsoft Teams"
+description: "Qué eventos te avisan, cuándo se dispara cada uno (incluido qué cuenta como vista), por qué canal llegan y qué no genera aviso."
+lastUpdated: "2026-10-07"
+reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Permiso Ajustes para cambiar la matriz de avisos", "Slack o Microsoft Teams conectados para recibir avisos en esos canales"]
 ---
 
 <header class="content-header">
   <h1 class="page-title">Notificaciones</h1>
-  <p class="page-subtitle">Entérate por correo, Slack o Teams en el momento en que tu cliente decide algo, sin tener que estar revisando el dashboard.</p>
+  <p class="page-subtitle">Entérate por correo, Slack o Teams cuando tu cliente decide algo, sin estar revisando la app.</p>
 </header>
 
-## Cómo funciona
+## Qué es
 
-En **Ajustes › Notificaciones** hay una matriz de 7 eventos por 3 canales (correo, Slack y Microsoft Teams). Marca las casillas que quieras — cada combinación se guarda de inmediato y aplica a partir de ese momento.
+En **Ajustes › Notificaciones › Notificaciones** hay una matriz de 7 eventos por 3
+canales (Correo, Slack y Teams). Marcas las casillas que quieres y se aplican a partir
+de ese momento a toda la organización.
 
-| Evento | Cuándo se dispara |
-|---|---|
-| Cotización vista | El cliente abrió el link público |
-| Cotización aprobada | El cliente aceptó la propuesta |
-| Cotización rechazada | El cliente rechazó o contraofertó |
-| Pago recibido | Se registró un pago en línea |
-| Cotización por vencer | 3 días antes de la fecha de vigencia |
-| Pago vencido | Una cuenta por cobrar pasó su fecha límite |
-| Alguien se unió al equipo | Un invitado aceptó tu invitación |
+{/* MOCKUP: Ajustes › Notificaciones con la matriz de 8 filas (Tu cliente vio la cotización, Cotización aprobada, Cotización rechazada, Pago recibido, Cotización por vencer, Pago vencido, Alguien se unió al equipo, Recordatorio de tareas) y las columnas Correo, Slack y Teams; Aprobada, Rechazada y Pago recibido marcadas en Correo, y la celda de Slack y Teams de "Alguien se unió al equipo" con "No aplica a este evento". Debajo, las secciones Canal de Slack y Teams. */}
+
+## Requisitos
+
+- **Permiso:** Ajustes, para cambiar la matriz.
+- **Plan:** todos.
+- **Canales:** el correo llega siempre al dueño de la cuenta. Slack y Teams requieren conectarlos (ver abajo).
+
+## Los eventos
+
+| Evento | Cuándo se dispara | Lo dispara |
+|---|---|---|
+| **Tu cliente vio la cotización** | La primera vez que el cliente abre el link (ver abajo qué cuenta como vista). | El cliente |
+| **Cotización aprobada** | El cliente firma la propuesta, completa o parcial, desde el link. | El cliente |
+| **Cotización rechazada** | El cliente confirma el rechazo desde el link. | El cliente |
+| **Pago recibido** | Cord confirma un pago en línea que salda la cotización. | El cobro en línea |
+| **Cotización por vencer** | Exactamente 3 días antes de la fecha de vigencia, si sigue enviada o vista. | El proceso diario |
+| **Pago vencido** | El día después de que vence el pago de una cotización aprobada o facturada que sigue sin pagarse. | El proceso diario |
+| **Alguien se unió al equipo** | Un invitado acepta tu invitación. | Tu equipo |
+| **Recordatorio de tareas** | Cada mañana, desde las 8:00 de la zona de tu negocio, si alguien tiene tareas que vencen hoy o ya vencieron. | El proceso diario |
+
+### Qué cuenta como "vista"
+
+El aviso de vista es para saber que **tu cliente** abrió la propuesta, así que Cord
+descarta todo lo que no es el cliente:
+
+- **Tu equipo no cuenta.** Si abres el link con tu sesión iniciada en la organización, ves el aviso de vista previa y no se dispara nada.
+- **Los generadores de vista previa no cuentan.** Pegar el link en WhatsApp, Slack o un correo no lo marca como visto.
+- **Se mide con la página abierta y visible.** La vista se registra desde el propio link cuando la pestaña está visible, no al cargarse el enlace en segundo plano.
+- **Una sola vez.** El aviso sale cuando la cotización pasa de *Enviada* a *Vista*. Recargar o volver a abrirla no repite el aviso.
+
+Más detalle en [Lo que ve tu cliente](/docs/interaccion/vista-del-cliente).
+
+### Lo que no genera aviso
+
+- **Mensajes, comentarios por partida y contraofertas.** Quedan en la conversación y en la campana de la barra superior, pero no generan correo, Slack ni Teams. Para recibirlos, crea un [workflow](/docs/automatizacion/workflows/primer-workflow) con **Llega un mensaje en una cotización**.
+- **Lo que hace tu equipo:** **Marcar aprobada**, **Marcar rechazada** y **Registrar pago** cambian el estado, pero no envían estos avisos.
+- **Solicitudes de aprobación interna:** llegan a Slack con botones para decidir y a Teams con un enlace a Cord, aparte de esta matriz (ver [Aprobaciones internas](/docs/cotizacion/aprobaciones-internas)).
+
+## Antes de guardar por primera vez
+
+Mientras no guardes la matriz, Cord te avisa **por correo** de tres eventos: cotización
+aprobada, rechazada y pago recibido, y manda el **Recordatorio de tareas**. En cuanto guardas la pantalla una vez, manda tu
+selección: puedes apagar cualquiera de los tres o encender los demás.
+
+## Canales
+
+<Tabs>
+<TabItem label="Correo">
+
+Llega a la cuenta del dueño del negocio. No se manda a todo el equipo: si varias
+personas necesitan enterarse, usa Slack o Teams. El correo lleva el folio, el cliente,
+el total con su divisa y un botón para abrir la cotización.
+
+</TabItem>
+<TabItem label="Slack">
+
+En la sección **Canal de Slack** de la misma pantalla, pega la URL de un **Webhook
+entrante de Slack** y marca la columna de Slack en los eventos que quieras. El mensaje
+incluye folio, cliente, total y un enlace a la cotización. Ver
+[Slack](/docs/automatizacion/integraciones/slack).
+
+</TabItem>
+<TabItem label="Microsoft Teams">
+
+Conecta Teams con **Conectar con Microsoft** en **Ajustes › Integraciones** (eliges el
+canal, sin copiar nada), o pega la URL de un flujo de Power Automate de Teams en
+**Ajustes › Notificaciones**. Marca la columna de Teams en los eventos que quieras. Es
+un canal aparte de Slack: puedes tener los dos y elegir en cuál llega cada aviso. Ver
+[Microsoft Teams](/docs/automatizacion/integraciones/teams).
+
+</TabItem>
+</Tabs>
 
 <Callout type="info">
-**Antes de guardar tu matriz por primera vez**, Cord ya te avisa por correo cuando una cotización se aprueba, se rechaza o se paga — son los tres eventos con más valor y vienen encendidos por default. En cuanto guardas la pantalla una vez, tu selección manda: puedes apagar cualquiera de los tres o encender los demás.
+**El recordatorio de tareas no va al dueño, va a cada responsable.** Cada persona recibe
+solo sus tareas (ver [Tareas](/docs/gestion/tareas#recordatorio-por-correo)). Al
+apagarlo aquí se apaga para toda la organización. Es solo por correo.
 </Callout>
-
-## Correo
-
-El correo siempre llega a la cuenta del dueño del negocio (`Ajustes › Tu cuenta`). No se manda a todo el equipo — si varias personas necesitan enterarse, usa Slack o Teams.
-
-## Slack
-
-Conecta un **Incoming Webhook** de Slack en la misma pantalla (`Ajustes › Integraciones`) y marca la columna de Slack en los eventos que quieras publicar en tu canal. El mensaje incluye el folio, el cliente, el total y un link directo a la cotización.
 
 <Callout type="warning">
-**"Alguien se unió al equipo" no tiene versión de Slack ni de Teams.** Ese aviso no está atado a ninguna cotización (sin folio, sin monto que mostrar en el canal), así que solo se puede recibir por correo.
+**"Alguien se unió al equipo" solo llega por correo.** No está atado a una cotización
+(no hay folio ni monto que mostrar en el canal), así que Slack y Teams muestran "No
+aplica a este evento".
 </Callout>
 
-## Microsoft Teams
+## Lo que Cord le manda a tu cliente
 
-Conecta Teams en `Ajustes › Integraciones`, con **Conectar con Microsoft** (eliges el canal, sin copiar nada) o con la URL de un flujo de Workflows de Teams, y marca la columna de Teams en los eventos que quieras. Es un canal aparte de Slack: puedes tener los dos conectados y elegir en cuál llega cada aviso. La tarjeta lleva el mismo folio, cliente, total y link.
+Aparte de esta matriz, y sin configuración, Cord le envía al cliente un recordatorio de
+pago por correo cuando una cotización aprobada vence en los próximos 3 días, siempre
+que el cliente tenga correo capturado. Las organizaciones de prueba no envían
+recordatorios.
+
+## Límites por plan
+
+Los avisos están en todos los planes. La personalización del remitente y la firma de
+los correos al cliente es desde Starter (**Ajustes › Notificaciones › Correo**).
+
+## Problemas comunes
+
+**No me llegó el aviso de vista.** Abriste el link tú mismo con sesión, la cotización ya estaba *Vista*, o el evento no está marcado en tu matriz (viene apagado por default).
+
+**Mi socio no recibe los correos.** El correo solo va al dueño de la cuenta; usa Slack o Teams.
+
+**No recibo nada en Slack.** Revisa que la URL del webhook esté guardada y que la columna de Slack esté marcada en ese evento.
+
+## Relacionadas
+
+- [Chat y comentarios](/docs/interaccion/chat)
+- [Negociación y contraofertas](/docs/interaccion/negociacion)
+- [Disparadores de workflows](/docs/automatizacion/workflows/disparadores)
+- [Webhooks](/docs/desarrolladores/herramientas/webhooks)

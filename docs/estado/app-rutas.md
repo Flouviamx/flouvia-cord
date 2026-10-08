@@ -137,11 +137,58 @@ existe pero es ajeno ya es filtrar entre negocios.
                    (cord.report.<id>.v1). Gate: memberCan('analitica') + ReportDef.perm.
                    Los informes 'snapshot' NO renderizan el selector de fechas — muestran
                    un chip "Al día de hoy" (así no hay control que ignorar).
+                   Divisa y zona (oct 2026): toda la analítica (dashboard, Informes,
+                   Cobranza, MCP) suma en orgs.moneda y corta los días en
+                   orgs.zona_horaria vía src/lib/report-scope.ts (quoteFx/documentFx,
+                   dayStart/dayEnd). Tasa congelada primero, la publicada hoy después;
+                   sin tasa el importe queda fuera y MonedaNota.astro lo dice. La cartera
+                   (Cobranza y Flujo) sale de la vista cuentas_por_cobrar: facturas y
+                   abonos parciales incluidos. Lo verifica test/analitica-moneda-db.test.ts.
+                   "Todo" en el selector significa los últimos 12 meses y así se rotula.
+                   Informes tabla (oct 2026, estilo Shopify): ventas, ventas-cliente,
+                   ventas-producto, pagos, impuestos, recompra y vendedores
+                   (ReportDef.kind = 'tabla'). KPIs contra el periodo anterior + gráfica +
+                   tabla ordenable con totales; datos en src/lib/informes-tabla.ts, vista en
+                   components/app/informes/TablaReport.astro. Exportan CSV en
+                   /api/informes/<id>?format=csv (importes como número, divisa en su
+                   columna). Un rango nuevo recarga la página (la tabla se arma en
+                   servidor). "Cobrado" en todas partes = pagosSql: pagos de cotización y de
+                   factura (cobro_id null), netos de reembolsos. Categorías del selector:
+                   resumen, ventas, clientes, productos, finanzas, equipo, personalizados.
+                   Lo verifica test/informes-tabla-db.test.ts, que corre sobre las tablas
+                   REALES de db/schema.sql (test/helpers/schema-subset.ts): un esquema a
+                   mano escondió que cotizaciones.creado_por es text y tumbó vendedores.
+                   Explorador (oct 2026, ?r=explorar, kind 'explorador'): "agrupar por"
+                   (?dim=) y hasta 6 métricas (?m=), listas blancas en
+                   src/lib/informes-explorar.ts; cohorte = cotizaciones CREADAS en el rango.
+                   Sale como TablaReport (tabla, totales, comparativa y CSV). Informes
+                   guardados: tabla informes_guardados, API /api/informes/guardados
+                   (analitica; editar/borrar = quien lo guardó u owner/admin; tope 50 por
+                   organización) y ?guardado=<id> carga la configuración. Envío programado
+                   (semanal = lunes, mensual = día 1, en la zona del negocio): cron diario
+                   /api/cron/informes-programados manda el periodo cerrado con CSV SOLO a
+                   quien lo guardó, mientras siga activo y con analitica; el reloj avanza
+                   antes de enviar y se libera si el correo falla. Drill-down: las barras de
+                   cliente/producto abren su ficha y las de mes/semana abren ese periodo.
+                   Eventos report_viewed / report_saved (cliente). Lo verifican
+                   test/informes-explorar-db.test.ts y test/informes-programados-db.test.ts.
 /app/desempeno   → desempeño del equipo (jul 2026; hoy 2ª pestaña junto a Informes):
                    ranking por vendedor (cotizaciones creadas/enviadas/cerradas, tasa de
                    cierre, monto cerrado, cobrado, ticket promedio, días a cierre) vía
                    getDesempeno() en queries.ts. Atribución por cotizaciones.creado_por
                    (`users.id`); gateado por el permiso `analitica`.
+/app/tareas      → TAREAS (oct 2026): todas las tareas, no solo las del widget del Inicio.
+                   Filtros Pendientes/Completadas y Mías/Todas/Sin asignar en la URL
+                   (?estado=&scope=), contadores arriba, edición en modal. La interacción
+                   vive en components/app/tasks/TaskBoard.astro (la comparte el widget) y
+                   las filas en TaskList.astro, el ÚNICO constructor de filas: lo renderizan
+                   el SSR y el fragmento /app/tareas/lista (`partial = true`), que el
+                   navegador pide después de cada cambio en vez de recargar la página.
+                   Leer: todos los miembros. Escribir: Cotizaciones, Cobranza o Clientes
+                   (TASK_PERMISSIONS). Sidebar: G T, badge con lo tuyo o sin dueño que
+                   vence hoy o antes (rojo solo si hay vencidas). Read-model en
+                   src/lib/tasks-db.ts; reglas de fecha (día civil del negocio) en
+                   src/lib/tasks.ts.
 /app/workflows   → CORD WORKFLOWS (sep 2026): lista, plantillas y cupo de workflows activos
                    del plan. Permiso `ajustes`.
 /app/workflows/[id] → editor visual (lienzo con disparador, acciones, condiciones con dos
@@ -493,7 +540,10 @@ APIs de cobros (ago 2026)
                    el token; el crudo original no es recuperable, solo su hash).
 
 # API Pública (REST + MCP)
-/api/notificaciones  → GET feed de actividad reciente (reusa tabla eventos; último ts para punto rojo)
+/api/notificaciones  → GET bandeja de la campana: solo acciones del cliente o pagos, cotizaciones y
+                       facturas juntas (`src/lib/notificaciones.ts`, filtra por `eventos.actor`). El
+                       contador sin leer lo pinta AppLayout en el SSR.
+/api/app/notif-seen  → PUT "visto hasta" por miembro en `org_members.widget_prefs['cord.notif.v1']`.
 /api/q/[token]   → acciones del CLIENTE (sin auth). approve | reject | comment |
                    counter | item_comment | ping | hito.
                    `ping` es el latido del documento vivo: marca la vista (una sola
@@ -705,8 +755,15 @@ los importan desde `lib/queries`, que los re-exporta. Los datos mock en memoria
 pública (`src/lib/demo-quote.ts`).
 
 **AppLayout (`src/layouts/AppLayout.astro`):** sidebar de vidrio sticky **temada con `--sb-*`**
-(blanca en claro / navy en oscuro; logo navy↔blanco según tema, nav con íconos, org-switcher
-arriba, "Fijados" antes de los grupos nav, footer con logo). El `<OnboardingWidget>` y su píldora
+(blanca en claro / navy en oscuro). Estructura en `src/lib/sidebar-nav.ts` (fuente única de
+menú, atajos `G` + letra y panel de atajos): lista plana (Inicio, Cotizaciones, Clientes,
+Productos) → Ingresos (Facturas, Cobros, Cobranza › Agente IA) → Análisis (Informes,
+Desempeño) → Automatización (Workflows). Org-switcher arriba, "Fijados" antes de los grupos,
+pie con medidor de cotizaciones activas (solo planes con tope), "Invitar al equipo" (permiso
+`equipo`, planes con más de un asiento; abre `/app/ajustes/equipo?invitar=1`) y botón de colapsar (`[`).
+Entre páginas de /app: transiciones nativas + prefetch al pasar el cursor (sin `ClientRouter`).
+Fijados y grupos plegados son preferencias por miembro: `org_members.widget_prefs['cord.sidebar.v1']`
+vía `PUT /api/app/sidebar-prefs` (antes localStorage; se migran solos la primera vez). El `<OnboardingWidget>` y su píldora
 (`#onbPill` en `.tb-right`) se montan aquí, gated por `!setup.complete`.
 Props: `title`, `page`, `heading?`, `crumbs?` (breadcrumbs). Slots: `topbar-actions`
 (botones del page-header, derecha), `page-sub` (subtítulo opcional bajo el título),
@@ -723,6 +780,15 @@ gated por la cookie `cord_test_mode` (ver ../historial/README.md). Entradas con 
 escalonado (NO GSAP). Mobile: sidebar → drawer (ocupa 80vw, tab bar inferior ELIMINADA jun 2026).
 En móvil la topbar muestra burger + crear (círculo) + lupa (ícono) + campana. Ayuda y config
 viven en la sección `.sb-mobile-actions` dentro del drawer (oculta en desktop).
+**Panel de Ayuda (oct 2026):** hoja flotante a z-index 870 (sobre el Workbench y el
+widget de onboarding) con dos vistas: inicio (buscador de FAQ + artículos del Centro de
+ayuda vía `/api/support-search.json`, accesos y la tarjeta de Cord AI) y chat. El chat
+llama a `POST /api/ayuda/ia` (`src/lib/help-assistant.ts`): Claude Haiku 5.5 sin
+pensamiento, esfuerzo bajo, prompt de sistema cacheado (reglas + FAQ + índice) y solo
+los 3 artículos más relevantes por pregunta. Lo paga Cord — no reserva cuota del plan;
+el gasto lo acotan los topes de la ruta (por persona y global diario). Si la IA no
+responde, el panel contesta con la búsqueda local (`src/lib/help-search.ts`, la misma
+que usa el servidor). No ve datos de la cuenta ni ejecuta acciones.
 ⚠️ Estilos de contenido inyectado por JS (Cmd+K items, notif panel, toasts, pins)
 DEBEN vivir en `<style is:global>` — Astro scopea por `[data-astro-cid]` y el HTML
 dinámico no lleva ese atributo. NO moverlos al bloque `<style>` scopeado.

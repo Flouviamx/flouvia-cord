@@ -1,88 +1,137 @@
 ---
 title: "Tarifas de Cord Payments"
-description: "La tabla de tarifas real de Cord Payments por método de cobro, cómo se calcula el IVA, el tope en SPEI y qué pasa con la comisión si reembolsas un pago."
+seoTitle: "Tarifas de Cord Payments por método y por divisa"
+description: "Cuánto cobra Cord por procesar un pago, en qué divisas aplica comisión de plataforma, cómo se calcula el IVA, el tope de SPEI, cómo se activa la tarifa y qué pasa con la comisión en reembolsos y disputas."
+lastUpdated: "2026-10-07"
+reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Cuenta de Cord Payments conectada", "Permiso Configurar cobros para aceptar la tarifa"]
 ---
 
 <header class="content-header">
   <h1 class="page-title">Tarifas de Cord Payments</h1>
-  <p class="page-subtitle">Cuánto cobra Cord por procesar un pago, cómo se calcula, y las reglas que aplican a reembolsos y disputas.</p>
+  <p class="page-subtitle">Cuánto cobra Cord por procesar un pago, en qué divisas aplica y las reglas para reembolsos y disputas.</p>
 </header>
 
-## La tarifa por método
+## Qué es
 
-Cord Payments cobra una comisión por transacción que **ya incluye** el costo de procesamiento — no hay una segunda tarifa oculta de un tercero que se sume después. La tarifa depende del método de cobro.
+La tarifa de Cord Payments es la comisión por transacción que Cord descuenta de cada cobro en línea procesado con tu cuenta de cobros. **Ya incluye el costo de procesamiento**: no hay una segunda tarifa de un tercero que se sume después. Es independiente de tu [suscripción a Cord](/docs/cuenta/suscripcion): se aplica igual en todos los planes.
+
+## Tarifa por divisa
+
+La comisión depende de la **divisa en la que se cobra**, no del país ni del plan.
+
+| Divisa del cobro | Comisión de plataforma de Cord hoy |
+|---|---|
+| **MXN** (pesos mexicanos) | Sí: la tabla por método de abajo. |
+| **USD** (dólares estadounidenses) | No aplica. |
+| **EUR** (euros) | No aplica. |
+| **GBP** (libras esterlinas) | No aplica. |
+| **CAD** (dólares canadienses) | No aplica. |
+| **BRL** (reales brasileños) | No aplica. |
+
+En las divisas sin comisión de plataforma pagas únicamente el costo de procesamiento de tu cuenta de cobros y tu suscripción a Cord. **Ajustes › Cobros** te lo dice con la divisa de tu cuenta. Si en el futuro se activa una comisión en otra divisa, se publicará aquí y tendrás que aceptarla antes de que se aplique.
 
 <Callout type="info">
-**Esta tabla es la tarifa vigente para cobros en pesos mexicanos (MXN)** — hoy el único riel donde Cord Payments tiene una tarifa publicada y activa. Si cobras en cualquier otra divisa (USD, EUR, GBP, CAD, BRL), **Cord no aplica hoy ninguna comisión de plataforma sobre ese cobro**: pagas únicamente el costo de tu procesador y tu suscripción a Cord. Ajustes › Cobros lo dice también ahí, con la divisa de tu cuenta.
+Los cobros con [Mercado Pago](/docs/pagos/mercado-pago) no llevan comisión de Cord: pagas la comisión de tu cuenta de Mercado Pago, según tus condiciones con ellos. La transferencia manual no lleva comisión de nadie.
 </Callout>
 
-| Método | Tarifa | Ejemplo sobre $10,000 MXN |
+## Tabla de tarifas en MXN
+
+| Método | Tarifa total | Ejemplo sobre un cobro de $10,000.00 MXN |
 |---|---|---|
-| **Tarjeta** (crédito/débito) | 4% + $3.00 MXN + IVA | $46.40 |
-| **SPEI** (transferencia automática) | 1% + $7.00 MXN + IVA, con un **tope de $588.12 MXN** por cobro | $11.60 |
-| **Igualas** (cobro recurrente mensual) | 4% + $3.00 MXN + IVA por cada cargo mensual | — |
-| **Transferencia manual** | $0.00 — no pasa por Cord Payments | $0.00 |
+| **Tarjeta** (crédito/débito) | 4% + $3.00 MXN + IVA | $467.48 MXN |
+| **SPEI** (transferencia automática) | 1% + $7.00 MXN + IVA, con un **máximo de $588.12 MXN** por cobro | $124.12 MXN |
+| **Igualas** (cobro recurrente mensual con tarjeta) | 4% + $3.00 MXN + IVA por cada cargo mensual | $467.48 MXN por cargo |
+| **Transferencia manual** | $0.00 MXN: no pasa por Cord Payments | $0.00 MXN |
 
 <Callout type="info">
-El IVA (16%) se calcula sobre el componente porcentual + el componente fijo de la tarifa, nunca sobre el monto total del cobro. La cifra que ves arriba ya lo incluye.
+El IVA (16%) se calcula sobre la tarifa (el componente porcentual más el fijo), nunca sobre el monto total del cobro. Con tarjeta: (4% de $10,000.00 MXN + $3.00 MXN) × 1.16 = $467.48 MXN. Con SPEI: (1% de $10,000.00 MXN + $7.00 MXN) × 1.16 = $124.12 MXN.
 </Callout>
 
 ### Por qué SPEI tiene tope y tarjeta no
 
-El costo real de procesar un SPEI es prácticamente el mismo sin importar el monto — mover $1,000 o mover $500,000 cuesta lo mismo por debajo. Por eso, a partir de cotizaciones de **$50,000 MXN en adelante**, la comisión de Cord en un cobro por SPEI deja de crecer y se congela en **$588.12 MXN** (IVA incluido), sin importar qué tan grande sea el cobro:
+El costo de procesar un SPEI es prácticamente el mismo sin importar el monto. Por eso la parte porcentual de la tarifa SPEI (el 1%) tiene un tope de **$500.00 MXN** antes de IVA, que se alcanza en un cobro de **$50,000.00 MXN**. A partir de ahí, la tarifa total de un SPEI queda en **$588.12 MXN**: ($500.00 MXN + $7.00 MXN) × 1.16.
 
-| Monto del cobro | Comisión por tarjeta | Comisión por SPEI |
+| Monto del cobro | Tarifa total con tarjeta | Tarifa total con SPEI |
 |---|---|---|
-| $50,000 | $2,320.00 (4.64%) | $580.00 → **$588.12 con IVA** |
-| $100,000 | $4,640.00 (4.64%) | **$588.12** (0.59% efectivo) |
-| $500,000 | $23,200.00 (4.64%) | **$588.12** (0.12% efectivo) |
+| $50,000.00 MXN | $2,323.48 MXN (4.65%) | **$588.12 MXN** (1.18% efectivo) |
+| $100,000.00 MXN | $4,643.48 MXN (4.64%) | **$588.12 MXN** (0.59% efectivo) |
+| $500,000.00 MXN | $23,203.48 MXN (4.64%) | **$588.12 MXN** (0.12% efectivo) |
 
-Para cotizaciones B2B grandes, esto hace que SPEI sea, por mucho, la forma más barata de cobrar en línea con tarjeta o transferencia automática.
+Para cobros grandes en pesos, SPEI es por mucho el método en línea más barato.
 
-### Igualas y cobros recurrentes
+### Cobros divididos
 
-Una iguala (retainer mensual) se cobra siempre con tarjeta — es la única forma de que el cargo salga solo cada mes sin que el cliente tenga que hacer nada. La tarifa es la **misma que un cobro de tarjeta normal**: 4% + $3.00 MXN + IVA, aplicada a cada cargo mensual individual. No existe una tarifa reducida especial para igualas: el costo de procesar la tarjeta es el mismo se cobre una vez o doce veces.
+Cada parte de una cotización es una transacción independiente: el [anticipo y el saldo](/docs/pagos/anticipos), cada [cuota](/docs/pagos/cuotas) y cada abono parcial de una factura llevan su propia comisión, calculada con la misma tabla.
 
-### Transferencia manual — sigue siendo gratis
+### Igualas
 
-Si prefieres compartir tu CLABE directamente y que el cliente te transfiera fuera de Cord Payments (subiendo su comprobante para que tú marques el cobro a mano), esa opción sigue costando **$0.00**. No pasa por Cord Payments, así que no genera ninguna comisión — pero tampoco tiene conciliación automática ni protección ante contracargos.
+Una [iguala](/docs/pagos/igualas) se cobra siempre con tarjeta, porque es la única forma de que el cargo salga solo cada mes. La tarifa es la misma que un cobro de tarjeta normal, aplicada a cada cargo mensual.
 
 ## Cómo se activa tu tabla de tarifas
 
-Cord Payments exige que aceptes explícitamente la tabla de tarifas vigente antes de empezar a cobrar. Hay dos momentos donde esto pasa:
+La comisión de Cord no se aplica hasta que **aceptas explícitamente la versión vigente** de la tabla:
 
-- **Cuenta nueva:** la aceptación es el último paso del asistente de conexión (ver [Conectar tu cuenta](/docs/pagos/onboarding), paso "Términos") — no puedes terminar de conectar tu cuenta sin marcar la casilla que acepta la tabla de tarifas vigente.
-- **Cuenta ya conectada, o si la tabla cambia:** ve a **Ajustes › Cobros** (necesitas el permiso *Configurar cobros*), revisa la tabla de tarifas actual y marca la casilla de aceptación.
+<Steps>
+1. Conecta tu cuenta de cobros. Ver [Conectar tu cuenta](/docs/pagos/onboarding).
+2. Abre **Ajustes › Cobros** con el permiso **Configurar cobros**. Si hay una versión que no has aceptado, aparece la sección **Tarifa de Cord Payments** con el aviso "La versión actual todavía no está aceptada. Hasta que la aceptes, Cord no añadirá su comisión".
+3. Revisa las tarifas que te aplican. Si tu cuenta cobra en una divisa sin comisión de plataforma, la sección te lo dice en lugar de mostrar la tabla mexicana.
+4. Marca la casilla de aceptación de los términos de comisión de Cord Payments.
+5. Pulsa **Activar tarifa actual** y confirma tu identidad cuando Cord te lo pida.
+</Steps>
 
-Hasta que no aceptes, tu cuenta puede seguir conectada y recibiendo cobros manuales, pero **no puede procesar tarjeta ni SPEI** a través de Cord Payments.
+La aceptación se registra con la versión de los términos, la fecha y la dirección IP en la bitácora de auditoría. Si cambiamos la tabla, el cambio **no es retroactivo**: la sección vuelve a aparecer y la nueva versión no se aplica hasta que la aceptes.
 
-<Callout type="warning">
-**Cuentas anteriores al lanzamiento de Cord Payments:** si tu negocio ya cobraba en línea desde antes de que existiera esta tabla de tarifas, tus cobros existentes quedan protegidos a **0% de comisión** hasta que tú, de forma voluntaria, aceptes la tabla vigente en Ajustes › Cobros. Nadie te cambia la tarifa sin que tú lo confirmes primero.
+<Callout type="warning" title="Mientras no aceptes, no hay comisión">
+Una cuenta conectada que todavía no acepta la versión vigente sigue cobrando con tarjeta y SPEI, y Cord no añade su comisión a esos cobros. Esto protege a las cuentas que ya cobraban antes de que existiera esta tabla: nadie te cambia la tarifa sin que tú lo confirmes. Aceptar la tarifa también activa la pantalla de pago en la que tu cliente elige primero entre tarjeta y SPEI.
 </Callout>
 
-Si en algún momento cambiamos la tabla de tarifas, no se aplica de forma retroactiva a una aceptación ya hecha — tendrás que volver a aceptar la nueva versión antes de que te cobre distinto. El texto legal completo vive en [Términos y condiciones, sección Cord Payments](https://cordhq.app/terminos#cord-pagos).
+El texto legal completo vive en [Términos y condiciones, sección Cord Payments](https://cordhq.app/terminos#cord-pagos).
 
 ## Qué pasa con la comisión si reembolsas
 
-Si le regresas dinero a un cliente desde **Mis cobros › Reembolsar**, el monto que reembolses se descuenta de tu ingreso neto en los reportes — pero **la comisión de procesamiento del cobro original no se devuelve**. Es un costo ya incurrido en el momento en que se procesó la tarjeta o el SPEI, sea que el cobro se mantenga o lo reembolses después.
+Si le devuelves dinero a un cliente desde el [dashboard de cobros](/docs/pagos/reembolsos), el monto reembolsado se descuenta de tu ingreso neto, pero **la comisión del cobro original no se devuelve**: es un costo que se generó al procesar el pago.
 
-## Qué pasa con la comisión si hay una disputa (contracargo)
+## Qué pasa con la comisión si hay una disputa
 
-Si un cliente desconoce el cargo con su banco (un contracargo/chargeback), verás el caso en **Mis cobros › Disputas**. Mientras la disputa está abierta, el monto queda retenido; si la pierdes, ese dinero (más una cuota de disputa) sale de tu saldo — la comisión original de Cord Payments tampoco se devuelve en este caso. Ver [Disputas y contracargos](/docs/pagos/disputas) para el detalle completo del proceso de defensa.
+Si un cliente desconoce el cargo con su banco (contracargo), el monto queda retenido mientras se resuelve. Si pierdes la disputa, ese dinero sale de tu saldo junto con una cuota de disputa del procesador, y la comisión original de Cord tampoco se devuelve. Ver [Disputas y contracargos](/docs/pagos/disputas).
 
 ## Ventajas de cobrar con Cord Payments
 
-1. **Conciliación 100% automática.** Cada cobro se asocia a su cotización y el estado cambia a pagado en tiempo real — no hay que cazar depósitos en el portal del banco.
-2. **El dinero es tuyo, directo a tu cuenta.** Cord Payments nunca retiene tus fondos ni actúa como intermediario del dinero — tú eres el comerciante de registro de cada cobro.
-3. **Checkout con tu marca.** Tu cliente paga en una pantalla incrustada en el documento, con tu nombre y tus colores — sin redirecciones a sitios externos ni logos de terceros.
-4. **Anticipos, saldos e igualas.** El mismo sistema cobra un anticipo hoy y el saldo después (Net 30/60), o una iguala mensual automática, sin que tengas que perseguir el cobro a mano.
+1. **Conciliación automática.** Cada cobro se asocia a su cotización o factura y el estado cambia a pagado en cuanto se confirma.
+2. **El dinero es tuyo, directo a tu cuenta.** Cord no retiene tus fondos ni es intermediario del dinero: tú eres el comerciante de registro de cada cobro.
+3. **Checkout con tu marca.** Tu cliente paga dentro del documento, con tu nombre y tus colores.
+4. **Cobros divididos sin trabajo doble.** Anticipo y saldo, cuotas, abonos parciales e igualas salen del mismo link.
 
-## Consideraciones antes de activar
+## Antes de activar
 
-1. **Tiempo de depósito.** El dinero no llega a tu banco al instante — los depósitos siguen un calendario que normalmente tarda entre 2 y 7 días hábiles después de cada cobro.
-2. **Verificación de identidad (KYC).** Para activar Cord Payments necesitas pasar una verificación — identificación oficial, RFC, y datos de tu negocio. Es un requisito regulatorio, no una decisión de Cord.
-3. **Contracargos.** Si un cliente desconoce un cargo, el dinero puede quedar retenido mientras se resuelve la disputa. Cord te da las herramientas para defenderte con evidencia, pero la responsabilidad del contracargo es del negocio que cobró.
+1. **Tiempo de depósito.** El dinero no llega a tu banco al instante: primero entra al saldo de tu cuenta de cobros y se deposita con la [frecuencia que elijas](/docs/pagos/depositos).
+2. **Verificación de identidad.** Para activar Cord Payments pasas una verificación regulatoria del negocio y de quienes lo controlan. Ver [Conectar tu cuenta](/docs/pagos/onboarding).
+3. **Contracargos.** Si un cliente desconoce un cargo con tarjeta, la responsabilidad es del negocio que cobró. Cord te da las herramientas para defenderte con evidencia.
 
 <Callout type="info">
-**Recomendación:** para cotizaciones de montos muy grandes donde el tope de SPEI ya no representa una ventaja clara, la Transferencia Manual (0% de comisión) sigue siendo la opción más barata — a cambio de perder la conciliación automática y la protección ante disputas.
+**Recomendación:** en cotizaciones muy grandes en pesos, la transferencia manual sigue siendo la opción sin costo, a cambio de perder la conciliación automática y tener que verificar cada depósito a mano.
 </Callout>
+
+## Límites
+
+- La comisión de plataforma solo aplica hoy a cobros en MXN.
+- La comisión no se devuelve en reembolsos ni en disputas.
+- La tarifa no se negocia por cuenta desde la app.
+
+## Problemas comunes
+
+**No veo la sección para aceptar la tarifa.** Ya aceptaste la versión vigente, no tienes el permiso **Configurar cobros** o tu cuenta de cobros todavía no está conectada.
+
+**Mi cobro en USD no muestra comisión de Cord.** Es lo esperado: hoy no aplica comisión de plataforma fuera de MXN.
+
+**El neto depositado no coincide con el cobrado.** Revisa el widget **A dónde va cada peso** del [dashboard de cobros](/docs/pagos/dashboard): separa comisión, reembolsos y disputas.
+
+## Relacionadas
+
+- [Métodos de cobro](/docs/pagos/metodos)
+- [Depósitos a tu banco](/docs/pagos/depositos)
+- [Facturación fiscal por país](/docs/pagos/facturacion) (comprobante fiscal de la comisión en México)
+- [Suscripción](/docs/cuenta/suscripcion)

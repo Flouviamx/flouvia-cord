@@ -108,7 +108,7 @@ For partial payment, record the actual amount and preserve the remaining balance
 
 ## Automate within explicit limits
 
-Cord supports manual collections from Pro. On Scale and Developer, the collections
+Cord supports manual collections and the collections agent from Pro. The
 agent can draft or send communications according to its configured mode. AI should not
 invent discounts, write-offs, or payment agreements outside your policy.
 

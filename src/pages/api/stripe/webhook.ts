@@ -677,9 +677,10 @@ async function recordDisputeEvent(dispute: any, account: string | undefined, eve
               evidence_due_at = excluded.evidence_due_at, updated_at = now()
             returning id`,
         ...(eventType === 'charge.dispute.created'
-            ? [sql`insert into tareas (org_id, titulo, due_date)
+            // Con plazo de evidencia y dinero en disputa: prioridad alta.
+            ? [sql`insert into tareas (org_id, titulo, due_date, prioridad)
                     values (${orgId}, ${`Responder contracargo ${fromMinorUnits(amount, currency)} ${currency}`},
-                            ${dueAt ? dueAt.slice(0, 10) : null})`]
+                            ${dueAt ? dueAt.slice(0, 10) : null}, 'alta')`]
             : []),
     );
     await logAudit(orgId, {

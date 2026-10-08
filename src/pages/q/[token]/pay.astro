@@ -10,6 +10,7 @@ import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
 import type { PayStrings } from '../../../components/q/PaymentIsland';
 import { availableRails } from '../../../lib/payment-rail';
+import { termDays } from '../../../lib/payment-terms';
 
 const token = Astro.params.token ?? '';
 const identity = await resolvePublicQuote(token);
@@ -132,7 +133,7 @@ if (esRecurrente) {
     // ── ¿QUÉ se paga hoy? ──
     // Cobros parciales (anticipo/saldo/cuotas): se paga el siguiente cobro pendiente
     // cuya fecha ya llegó. Sin cobros: el total, gateado por términos de crédito
-    // (contado = pagable ya; net30/net60 = hasta la fecha de vencimiento).
+    // (contado = pagable ya; net<N> = hasta la fecha de vencimiento).
     let [cobros] = await withOrgTx(orgId, sql`
         select id, tipo, numero_cuota, monto, status, vence
         from cotizacion_cobros
@@ -155,8 +156,7 @@ if (esRecurrente) {
     const pendientes = cobros.filter((co: any) => co.status === 'pendiente');
     const nextCobro = pendientes.find((co: any) => !co.vence || venceDia(co.vence) <= hoyISO) || null;
 
-    const DAYS: Record<string, number> = { contado: 0, net30: 30, net60: 60 };
-    const termDias = DAYS[(q.terminos as string) || 'contado'] ?? 0;
+    const termDias = termDays(q.terminos);
     const due = new Date((q.approved_at as string) || (q.created_at as string));
     due.setDate(due.getDate() + termDias);
     const totalPagableHoy = termDias === 0 || due.toISOString().slice(0, 10) <= hoyISO;

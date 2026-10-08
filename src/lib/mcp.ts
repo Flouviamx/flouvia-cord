@@ -33,6 +33,7 @@ import { sanitizeAppearance } from '../../packages/elements/src/appearance';
 import { WEBHOOK_EVENT_TYPES, isWebhookEventType } from '../../packages/elements/src/contract/webhook-events';
 import { loadDocsIndex, searchDocs } from './docs-search';
 import { isISODate } from './rango';
+import { TERM_CODES } from './payment-terms';
 
 // ── Texto de TERCEROS que viaja al modelo ───────────────────────────────────
 // `eventos.detalle` de tipo comment/counter es texto LIBRE que escribe cualquier
@@ -504,7 +505,7 @@ export const MCP_TOOLS: McpToolDef[] = [
             email: { type: 'string', description: 'Correo (opcional)' },
             telefono: { type: 'string', description: 'Teléfono (opcional)' },
             rfc: { type: 'string', description: 'Identificador fiscal: RFC, NIF, EIN… (opcional)' },
-            terminos: { type: 'string', enum: ['contado', 'net30', 'net60'], description: 'Términos de pago (opcional, default contado)' },
+            terminos: { type: 'string', enum: [...TERM_CODES], description: 'Términos de pago: contado o net<N> = N días de crédito (opcional, default contado)' },
             country_code: { type: 'string', description: 'País ISO de 2 letras (opcional)' },
             ...IDEMPOTENCY_PROP,
         }, ['empresa']),
@@ -524,7 +525,7 @@ export const MCP_TOOLS: McpToolDef[] = [
             email: { type: 'string' },
             telefono: { type: 'string' },
             rfc: { type: 'string' },
-            terminos: { type: 'string', enum: ['contado', 'net30', 'net60'] },
+            terminos: { type: 'string', enum: [...TERM_CODES], description: 'contado o net<N> = N días de crédito' },
             country_code: { type: 'string' },
         }, ['id']),
         outputSchema: out({ ok: { type: 'boolean' } }),

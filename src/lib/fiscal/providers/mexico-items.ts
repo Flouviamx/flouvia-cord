@@ -1,4 +1,11 @@
 import type { FiscalDocumentRequest } from '../index';
+import { DEFAULT_PRODUCT_KEY, DEFAULT_UNIT_KEY, isProductKey, isUnitKey } from '../sat-claves';
+
+function satKey(value: unknown, fallback: string, valid: (v: unknown) => boolean, description: unknown): string {
+  if (value === undefined || value === null || value === '') return fallback;
+  if (!valid(value)) throw new Error(`El concepto "${String(description || 'Concepto').slice(0, 60)}" tiene una clave SAT con formato inválido.`);
+  return String(value);
+}
 
 const rounded = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 const matches = (a: number, b: number) => Number.isFinite(a) && Number.isFinite(b) && Math.abs(a - b) < 0.011;
@@ -55,7 +62,11 @@ export function mexicoItems(request: FiscalDocumentRequest) {
       quantity: line.quantity,
       product: {
         description: String(line.description || 'Concepto').slice(0, 1000),
-        product_key: String(line.productKey || '01010101'), unit_key: String(line.unitKey || 'H87'),
+        // Claves SAT del producto (sat-claves.ts) o los defaults del SAT: 01010101
+        // "No existe en el catálogo" y H87 "Pieza". Una clave con forma inválida
+        // se rechaza aquí, con el concepto nombrado, en vez de llegar al PAC.
+        product_key: satKey(line.productKey, DEFAULT_PRODUCT_KEY, isProductKey, line.description),
+        unit_key: satKey(line.unitKey, DEFAULT_UNIT_KEY, isUnitKey, line.description),
         price, tax_included: false,
         taxes: [
           { type: 'IVA', rate: line.taxRate, factor: line.taxRate === 0 ? 'Exento' : 'Tasa' },

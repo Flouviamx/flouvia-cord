@@ -1,104 +1,86 @@
 ---
-title: "SDK de servidor (@flouviahq/node)"
-description: "Llama la API de Cord y verifica webhooks desde tu backend con @flouviahq/node: Node, Bun, Deno, Cloudflare Workers y Vercel."
+title: "Proxy de servidor"
+seoTitle: "Proxy de servidor para Cord Elements (createElementsProxy)"
+description: "Usa Cord Elements sin llave publicable: tu backend atiende el modo proxyUrl con createElementsProxy de @flouviahq/node, con una llave restringida y solo desde tu origen."
+lastUpdated: "2026-10-07"
+reviewedBy: "Ingeniería de Cord"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["@flouviahq/node 1.0.0 o superior", "Una llave secreta o restringida de Cord en tu servidor"]
 ---
 
 <header class="content-header">
-  <h1 class="page-title">SDK de servidor</h1>
-  <p class="page-subtitle">@flouviahq/node: la API de Cord y la verificación de webhooks desde tu backend, con tu Secret Key.</p>
+  <h1 class="page-title">Proxy de servidor</h1>
+  <p class="page-subtitle">El navegador habla con tu backend y tu backend con Cord: ninguna llave llega a la página.</p>
 </header>
 
-Cord Elements vive en el navegador; `@flouviahq/node` vive en tu servidor. Es un paquete aparte, sin dependencias, que corre en Node 20+, Bun, Deno, Cloudflare Workers y Vercel. Reemplaza al antiguo `@flouviahq/elements/server`, que sigue funcionando pero ya no recibe cambios.
+Cord Elements funciona de dos maneras: con una llave publicable (`pk_`) directo a Cord, o con `proxyUrl`, donde tu propio backend atiende las peticiones y llama a Cord con una llave de servidor. Usa el proxy cuando quieras que el Builder lea tu directorio de clientes, mande la cotización por correo o fije precios negociados: cosas que una `pk_` nunca puede hacer.
+
+El proxy vive en [`@flouviahq/node`](/docs/desarrolladores/herramientas/sdks), el SDK de servidor. Ese paquete reemplaza al antiguo `@flouviahq/elements/server`, que sigue funcionando pero ya no recibe cambios.
+
+## Montarlo
 
 ```bash
 npm install @flouviahq/node
 ```
 
 ```ts
-import { Cord } from '@flouviahq/node';
-
-const cord = new Cord(process.env.CORD_SECRET_KEY!); // sk_live_…, sk_test_… o una restringida rk_…
-
-const quote = await cord.quotes.create({
-  cliente: { empresa: 'Acme', email: 'compras@acme.mx' },
-  items: [{ descripcion: 'Instalación', cantidad: 1, precio_unitario: 12500, tax_rate: 0.16 }],
-  base_currency: 'MXN',
-});
-console.log(quote.folio, quote.link_publico);
-```
-
-<Callout type="warning">
-Una Secret Key vive solo en tu servidor. El SDK se niega a correr en un navegador y la API rechaza una `sk_` que llega desde uno.
-</Callout>
-
-## Recursos
-
-`cord.quotes`, `cord.clients`, `cord.products`, `cord.invoices`, `cord.collections`, `cord.events`, `cord.tasks`, `cord.webhookEndpoints`, `cord.elements` y `cord.me`. Las listas se recorren completas con `listAll()`:
-
-```ts
-for await (const invoice of cord.invoices.listAll({ estado: 'open' })) {
-  // recorre todas las páginas
-}
-```
-
-## Reintentos sin duplicados
-
-Cada operación que crea o cambia algo lleva una `Idempotency-Key`, la misma en todos sus reintentos: un corte de red nunca crea dos cotizaciones ni registra dos pagos. Los reintentos (red, 429, 5xx) respetan `Retry-After`. Para atar la operación a tu propio identificador:
-
-```ts
-await cord.invoices.recordPayment(id, { monto: 5000, moneda: 'MXN' }, { idempotencyKey: `pago-${tuId}` });
-```
-
-Los errores son `CordError` con `status`, `code`, `requestId` y `docUrl`.
-
-## Versión de la API
-
-El SDK manda `Cord-Version` con la versión con la que se construyó, así que una actualización de Cord no cambia lo que lees. Para fijar otra: `new Cord(sk, { apiVersion: '2026-10-01' })`. Más en [Versiones de la API](/docs/desarrolladores/esenciales/versiones).
-
-## Webhooks
-
-```ts
-import { constructEvent } from '@flouviahq/node';
-
-export async function POST(req: Request) {
-  const event = await constructEvent(await req.text(), req.headers, process.env.CORD_WEBHOOK_SECRET!);
-  if (event.event === 'invoice.paid') {
-    event.data.saldo; // TypeScript sabe que es una factura
-  }
-  return new Response('ok');
-}
-```
-
-- Usa el cuerpo **crudo**, nunca uno ya parseado.
-- Exige `X-Cord-Signature-V1` con timestamp y 5 minutos de tolerancia: un aviso viejo reenviado se rechaza.
-- Durante una rotación de secreto llegan dos firmas; basta con que una cuadre.
-- Deduplica por `event.id`: un reintento trae el mismo id.
-
-## Proxy para Cord Elements
-
-Si prefieres no usar una llave publicable en el navegador, tu backend hace de intermediario:
-
-```ts
-// app/api/cord/[...path]/route.ts
+// app/api/cord/[...path]/route.ts (Next.js App Router)
 import { createElementsProxy } from '@flouviahq/node';
 
 const proxy = createElementsProxy({
   secretKey: process.env.CORD_SECRET_KEY!,
-  authorizeClients: async (req) => !!(await getSession(req)),
+  authorizeClients: async (req) => Boolean(await getSession(req)),
 });
+
 export const GET = proxy;
 export const POST = proxy;
 ```
 
 ```tsx
-<CordProvider proxyUrl="/api/cord">…</CordProvider>
+<CordProvider proxyUrl="/api/cord">
+  <CordBuilder />
+</CordProvider>
 ```
 
-El proxy solo atiende la configuración, el catálogo, crear cotizaciones y, si lo autorizas, el directorio de clientes; solo desde tu origen, y sanea la cotización igual que una llave publicable.
+`getSession` es tu propia función de sesión. `createElementsProxy` devuelve un handler `(Request) => Promise<Response>`, así que funciona igual en Next.js, Astro, Remix, Hono, Bun o Cloudflare Workers. `cord init` lo crea por ti en un proyecto de Next.js.
 
-### Dale al proxy una llave restringida
+## Qué atiende
 
-El proxy no necesita una Secret Key con todos los permisos. Crea una **llave restringida** (`rk_`) en Desarrolladores › API con solo esto:
+| Petición del navegador | Llama a Cord | Condición |
+|---|---|---|
+| `GET {proxyUrl}/elements/config` | `GET /api/v1/elements/config` | Siempre. |
+| `GET {proxyUrl}/productos` | `GET /api/v1/productos` | Siempre. |
+| `POST {proxyUrl}/cotizaciones` | `POST /api/v1/cotizaciones` | Siempre, con el cuerpo saneado. |
+| `POST {proxyUrl}/elements/ai-draft` | `POST /api/v1/elements/ai-draft` | Siempre. El stream de la IA se reenvía tal cual; archivo de hasta 4 MB. |
+| `GET {proxyUrl}/clientes` | `GET /api/v1/clientes?limit=200` | Solo si `authorizeClients` devuelve `true`. Si no, `403` con `code: "clients_require_proxy"`. |
+
+Cualquier otra ruta o método responde `404`. El proxy no reintenta: el navegador ya reintenta por su cuenta.
+
+## Opciones
+
+| Opción | Detalle |
+|---|---|
+| `secretKey` | **Obligatoria.** Una llave `sk_` o `rk_`. |
+| `allowedOrigins` | Orígenes que pueden usar el proxy. Por defecto, solo el origen de la propia petición: un proxy abierto a cualquier sitio equivale a publicar tu llave. |
+| `authorizeClients(request)` | Autoriza leer el directorio de clientes. Sin ella, nunca se lee. |
+| `authorizeSellerFields(request)` | Autoriza los campos de vendedor al crear: `cliente_id`, `send` (enviar por correo), `fiscal_currency`, y en cada línea `precio_negociado` y `costo_unitario`. Sin ella, se descartan y la cotización nace como borrador, igual que con una `pk_`. |
+| `baseUrl` | Origen de Cord. Default `https://cordhq.app`. |
+| `fetch` | Para pruebas. |
+
+```ts
+const proxy = createElementsProxy({
+  secretKey: process.env.CORD_PROXY_KEY!,
+  allowedOrigins: ['https://portal.tuempresa.com'],
+  authorizeClients: async (req) => (await getSession(req))?.rol === 'vendedor',
+  authorizeSellerFields: async (req) => (await getSession(req))?.rol === 'vendedor',
+});
+```
+
+El proxy reenvía la `Idempotency-Key` del navegador (el Builder manda una por intento de envío), y devuelve los errores de Cord con su `code`, `request_id` y `doc_url`.
+
+## Dale al proxy una llave restringida
+
+El proxy no necesita una Secret Key con todos los permisos. Crea una **llave restringida** (`rk_`) en **Desarrolladores › API** con solo esto:
 
 | Recurso | Nivel | Para qué |
 |---|---|---|
@@ -107,20 +89,10 @@ El proxy no necesita una Secret Key con todos los permisos. Crea una **llave res
 | `cotizaciones` | escritura | Crear la cotización |
 | `clientes` | lectura | Solo si usas `authorizeClients` |
 
-Si tu servidor se ve comprometido, esa llave no puede leer facturas, cobranza ni webhooks. Puedes además fijar las IPs de tu servidor y ponerle vencimiento. `createElementsProxy` acepta una `rk_` igual que una `sk_`.
+{/* MOCKUP: diálogo "Crear llave restringida" del Workbench con los recursos elements (escritura), productos (lectura), cotizaciones (escritura) y clientes (lectura), y el resto en "ninguno". */}
 
-## Registro de peticiones
+Si tu servidor se ve comprometido, esa llave no puede leer facturas, cobranza ni webhooks. Puedes además fijar las IPs de tu servidor y ponerle vencimiento. Ver [Autenticación](/docs/desarrolladores/esenciales/autenticacion#llaves-restringidas).
 
-Cada llamada a la API queda en **Desarrolladores › Registros**: método, ruta, estado, duración, IP y llave. Busca ahí el `requestId` de un `CordError` para ver qué recibió Cord.
+## Depurar
 
-## Modo prueba
-
-Con una `sk_test_` puedes provocar lo que en producción hace un tercero, por el mismo código que producción:
-
-```ts
-await cord.testHelpers.fiscal.setNextOutcome('pac_caido');
-await cord.testHelpers.quotes.view(quoteId);
-await cord.testHelpers.webhooks.trigger('invoice.paid');
-```
-
-Para recibir los webhooks en tu máquina, usa el [CLI](/docs/desarrolladores/herramientas/cli): `cord listen --forward-to localhost:3000/api/webhooks`.
+Cada llamada del proxy a Cord queda en **Desarrolladores › Registros** del Workbench con su `request_id`, método, ruta, estado, duración e IP. El mismo `request_id` llega al navegador en el header `Cord-Request-Id` y en el cuerpo de un error.

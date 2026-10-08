@@ -2,6 +2,10 @@
 title: "Clients API"
 seoTitle: "Cord Clients API"
 description: "Synchronize and manage the client directory from your accounting systems."
+lastUpdated: "2026-10-07"
+reviewedBy: "Cord engineering"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["A key with permission on the clientes resource"]
 ---
 
 <header class="content-header">
@@ -40,7 +44,7 @@ curl -X POST "https://cordhq.app/api/v1/clientes" \
 ```json
 {
   "data": {
-    "id": "cus_8f7b2c..."
+    "id": "8f7b2c1e-4d3a-4b9f-a6e2-1c5d7e9f0a3b"
   }
 }
 ```
@@ -48,7 +52,7 @@ curl -X POST "https://cordhq.app/api/v1/clientes" \
 ### Automated Business Rules
 
 When you create clients via API, Cord applies real-time logical constraints:
-- Payment terms (`terminos`) must be valid (`contado`, `net30`, `net60`). If you pass an invalid term, it defaults to `contado`.
+- Payment terms (`terminos`) must be valid: `contado` or `net7`, `net15`, `net30`, `net45`, `net60`, `net90` (N days of credit). If you pass an invalid term, it defaults to `contado`.
 - Partnership level (`nivel`) is restricted to `estandar`, `plata`, `oro`, or `distribuidor`.
 - The RFC (if you send one) is normalized to uppercase automatically.
 - The discount (`descuento_pct`) is mathematically bounded between 0 and 100.
@@ -66,7 +70,7 @@ curl -X GET "https://cordhq.app/api/v1/clientes?limit=100" \
 {
   "data": [
     {
-      "id": "cus_8f7b2c...",
+      "id": "8f7b2c1e-4d3a-4b9f-a6e2-1c5d7e9f0a3b",
       "empresa": "Stark Industries",
       "contacto": "Tony Stark",
       "email": "tony@stark.com",
@@ -86,11 +90,11 @@ curl -X GET "https://cordhq.app/api/v1/clientes?limit=100" \
       "cerrado": 32000
     }
   ],
-  "meta": { "limit": 100, "offset": 0, "total": 1 }
+  "meta": { "limit": 100, "offset": 0, "total": 1, "next_cursor": null }
 }
 ```
 
-`direccionLine1`/`direccionLine2`, `ciudad`, and `region` come back on reads (the app fills them in to satisfy the recipient's address on an invoice), but the API doesn't accept them yet — today they're only captured from Settings › Clients. `country_code` is accepted on create and update.
+When **creating** a client, `POST /api/v1/clientes` also accepts the recipient's address and tax details: `country_code` (ISO 3166-1 alpha-2), `direccion_line1` and `direccion_line2` (up to 200 characters), `ciudad` and `region` (up to 100), and for Mexico `regimen_fiscal`, `uso_cfdi`, and `cp_fiscal`. On reads they come back as `countryCode`, `direccionLine1`, `direccionLine2`, `ciudad`, `region`, `regimenFiscal`, `usoCfdi`, and `cpFiscal`. When **updating** with `PATCH`, only `country_code` from that group can be changed; the address and tax details are edited from the client's record in the app.
 
 ### Searching clients
 
@@ -110,7 +114,7 @@ curl -X GET "https://cordhq.app/api/v1/clientes?email=tony@stark.com" \
 `PATCH /api/v1/clientes/{id}` changes only the fields you send: `empresa`, `contacto`, `email`, `telefono`, `rfc`, `terminos`, and `country_code`. Everything else is kept. Credit limit, level, and discount can't be changed through this endpoint even if you send them. Requires a key with write permission.
 
 ```bash
-curl -X PATCH "https://cordhq.app/api/v1/clientes/8f7b2c..." \
+curl -X PATCH "https://cordhq.app/api/v1/clientes/8f7b2c1e-4d3a-4b9f-a6e2-1c5d7e9f0a3b" \
      -H "Authorization: Bearer sk_live_tU..." \
      -H "Content-Type: application/json" \
      -d '{ "email": "procurement@stark.com" }'

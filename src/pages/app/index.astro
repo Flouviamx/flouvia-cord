@@ -1,15 +1,24 @@
 ---
 // Dashboard — pipeline, dinero, actividad reciente. Datos reales (Neon).
 import AppLayout from '../../layouts/AppLayout.astro';
-import { getDashboard, getTareas, getCFO, getAnalytics, getOrg, getSerieDiaria, getCobranza, getMyMembership, STATUS_META, money } from '../../lib/queries';
+import { getDashboard, getCFO, getAnalytics, getOrg, getSerieDiaria, getCobranza, getMyMembership, getFacturasResumen, getDesempeno, STATUS_META, money } from '../../lib/queries';
 import { memberCan } from '../../lib/permissions';
 import { currentLocale } from '../../lib/context';
 import { t } from '../../i18n/app';
 import DateRangePicker from '../../components/app/DateRangePicker.astro';
+import MonedaNota from '../../components/app/MonedaNota.astro';
 import MetricWidget from '../../components/app/widgets/MetricWidget.astro';
+import TrendKpi from '../../components/app/widgets/TrendKpi.astro';
+import ScopeTag from '../../components/app/widgets/ScopeTag.astro';
+import { totalsFor, deltaPct, deltaPts, sparkValues } from '../../lib/dash-kpis';
+import { addDaysISO } from '../../lib/rango';
+import { invoicingFeatureFor } from '../../lib/fiscal/gate';
 import WidgetGrid from '../../components/app/WidgetGrid.astro';
 import WidgetCustomizeButtons from '../../components/app/WidgetCustomizeButtons.astro';
 import WidgetEmpty from '../../components/app/WidgetEmpty.astro';
+import TaskBoard from '../../components/app/tasks/TaskBoard.astro';
+import { listTasks, taskAssignees } from '../../lib/tasks-db';
+import { TASK_PERMISSIONS } from '../../lib/actions/tasks';
 import { getActiveOrgId } from '../../lib/db';
 import { checkEntitlement } from '../../lib/org-entitlements';
 
@@ -28,15 +37,23 @@ const canCollections = canCobranza && (await checkEntitlement(await getActiveOrg
 const EMPTY_CFO = { kpis: { dso: 0, concentracion: 0, totalEsperado: 0, totalPipeline: 0 }, semanas: [], silenciadas: [] } as any;
 const EMPTY_ANALYTICS = { funnel: { enviadas: 0, vistas: 0, aprobadas: 0, pagadas: 0 }, kpis: { ticketPromedio: 0 }, margen: { pct: 0 }, clientes: [], productos: [] } as any;
 const EMPTY_COBRANZA = { aging: [] } as any;
-const [dash, TAREAS, CFO, ANALYTICS, ORG, SERIE, COBRANZA] = await Promise.all([
-    getDashboard(), getTareas(), canCfo ? getCFO() : EMPTY_CFO, canAnalytics ? getAnalytics() : EMPTY_ANALYTICS,
+// Facturas vencidas: mismo gate que /app/facturas (permiso de cobranza + plan de facturación).
+const canFacturas = memberCan(ME, 'cobranza') && (await checkEntitlement(await getActiveOrgId(), await invoicingFeatureFor(await getActiveOrgId()))).ok;
+// Tareas: con equipo, el Inicio abre en "Mías" (lo que le toca a quien mira).
+const TASK_PEOPLE = await taskAssignees();
+const TASK_SCOPE = TASK_PEOPLE.length > 1 && TASK_PEOPLE.some((a) => a.esYo) ? 'mias' : 'todas';
+const TASK_LIMIT = 8;
+const canTasks = TASK_PERMISSIONS.some((k) => memberCan(ME, k));
+const [dash, TAREAS, CFO, ANALYTICS, ORG, SERIE, COBRANZA, FACTURAS, DESEMPENO] = await Promise.all([
+    getDashboard(), listTasks({ estado: 'pendientes', scope: TASK_SCOPE, limit: TASK_LIMIT }), canCfo ? getCFO() : EMPTY_CFO, canAnalytics ? getAnalytics() : EMPTY_ANALYTICS,
     getOrg(), getSerieDiaria(), canCollections ? getCobranza() : EMPTY_COBRANZA,
+    canFacturas ? getFacturasResumen() : null, canAnalytics ? getDesempeno() : null,
 ]);
 // Aviso de Cord Payments — solo para cuentas reales sin Stripe conectado todavía.
 // No se muestra en orgs sandbox (modo de prueba), identificadas por sandboxOf != null.
 // Se oculta permanentemente al conectar (server-side) o al descartarlo (localStorage).
 const mostrarNudgeCobros = !ORG.stripeAccountId && !ORG.sandboxOf;
-const { quotes: COTIZACIONES, porCerrar, tasaCierre, abiertas, feed: eventosFeed } = dash;
+const { quotes: COTIZACIONES, porCerrar, abiertas, feed: eventosFeed } = dash;
 const recientes = COTIZACIONES.slice(0, 5);
 const seguimiento = dash.seguimiento;
 
@@ -49,7 +66,14 @@ const concTone = concentracion >= 70 ? 'danger' : concentracion >= 40 ? 'warn' :
 const margenPct = Math.round(ANALYTICS.margen.pct);
 const margenTone = margenPct < 10 ? 'ok' : margenPct < 25 ? 'warn' : 'danger';
 const esperadoPct = totalPipeline > 0 ? Math.round((ingresoEsperado / totalPipeline) * 100) : 0;
-const clientesTasa = [...ANALYTICS.clientes].filter(c => c.cotizaciones > 0).sort((a, b) => b.tasa - a.tasa).slice(0, 5);
+// Ranking por tasa de aprobación: un cliente con 1 de 1 no es "el mejor" — cuando hay
+// al menos tres con muestra (2+ cotizaciones) se rankea solo entre ellos.
+const rankByTasa = <T extends { cotizaciones: number; tasa: number }>(rows: T[]) => {
+    const conMuestra = rows.filter((c) => c.cotizaciones >= 2);
+    const base = conMuestra.length >= 3 ? conMuestra : rows.filter((c) => c.cotizaciones > 0);
+    return [...base].sort((a, b) => b.tasa - a.tasa || b.cotizaciones - a.cotizaciones).slice(0, 5);
+};
+const clientesTasa = rankByTasa(ANALYTICS.clientes as any[]);
 const topProductos = ANALYTICS.productos.slice(0, 5);
 
 const dotColor = (tipo: string) =>
@@ -71,6 +95,32 @@ const diasSerie = SERIE.dias;
 // dashboard (Stripe/Shopify) y coincide con el rango que aplica el script del cliente.
 const heroTotal = diasSerie.slice(-30).reduce((s, d) => s + d.cerrado, 0);
 
+// ── KPIs del rango: primer render con el default (30 días) — el cliente los repinta
+// con el rango guardado, con el MISMO cálculo (src/lib/dash-kpis.ts). ──
+const kHasta = diasSerie[diasSerie.length - 1]?.fecha ?? new Date().toISOString().slice(0, 10);
+const kDesde = addDaysISO(kHasta, -29);
+const kPrevHasta = addDaysISO(kDesde, -1);
+const kPrevDesde = addDaysISO(kPrevHasta, -29);
+const K = totalsFor(diasSerie, kDesde, kHasta);
+const KP = totalsFor(diasSerie, kPrevDesde, kPrevHasta);
+const kpiTasaSub = K.enviadas ? tf('dash.kpi_tasa_sub', { g: String(K.ganadasCreadas), n: String(K.enviadas) }) : t(L, 'dash.kpi_sin_envios');
+const kpiTicketSub = K.ganadas ? tf('dash.kpi_ticket_n', { n: String(K.ganadas) }) : t(L, 'dash.kpi_sin_ventas');
+const kpiCobradoSub = KP.cobrado > 0 ? tf('dash.kpi_vs_monto', { monto: money(KP.cobrado, 0) }) : t(L, 'dash.kpi_sin_base');
+// Plantillas para que el cliente rearme los subtítulos sin texto propio.
+const kpiLabels = {
+    tasaSub: t(L, 'dash.kpi_tasa_sub'), sinEnvios: t(L, 'dash.kpi_sin_envios'),
+    ticketSub: t(L, 'dash.kpi_ticket_n'), sinVentas: t(L, 'dash.kpi_sin_ventas'),
+    vsMonto: t(L, 'dash.kpi_vs_monto'), sinBase: t(L, 'dash.kpi_sin_base'),
+};
+
+// ── Por cerrar: cuánto está enviado y cuánto ya lo vio el cliente (foto de hoy). ──
+const porCerrarSent = dash.statusStats.find((r) => r.status === 'sent')?.total ?? 0;
+const porCerrarViewed = dash.statusStats.find((r) => r.status === 'viewed')?.total ?? 0;
+const porCerrarBase = porCerrarSent + porCerrarViewed;
+
+// ── Ranking de vendedores (histórico): solo quienes ya cerraron algo. ──
+const rankVendedores = (DESEMPENO?.vendedores ?? []).filter((v) => v.cerradoTotal > 0).slice(0, 5);
+
 // ── Ciclo de venta: embudo + pipeline por estado (segmentado) ──
 // href de drill-down: mapea al filtro más fino que /app/cotizaciones realmente
 // soporta (sus pills no distinguen enviada/vista, ambas caen en "open").
@@ -81,19 +131,14 @@ const funnelSteps = [
     { label: t(L, 'dash.funnel_pagadas'), value: ANALYTICS.funnel.pagadas, href: '/app/cotizaciones?f=paid' },
 ];
 const PIPELINE_FILTER: Record<string, string> = { draft: 'open', sent: 'open', viewed: 'open', approved: 'approved', paid: 'paid' };
-const pipelineSegments = (['draft', 'sent', 'viewed', 'approved', 'paid'] as const).map((st) => {
+// Sin el permiso `analitica` el widget no se dibuja y su dato tampoco viaja en el HTML.
+const pipelineSegments = !canAnalytics ? [] : (['draft', 'sent', 'viewed', 'approved', 'paid'] as const).map((st) => {
     const stat = dash.statusStats.find((row) => row.status === st);
     return { key: st, label: `${STATUS_META[st].label} · ${stat?.n ?? 0}`, value: stat?.total ?? 0, color: STATUS_META[st].color, href: `/app/cotizaciones?f=${PIPELINE_FILTER[st]}` };
 });
 
 // Nota: la tendencia mensual se deriva 100% en el cliente de la MISMA serie diaria de
 // 365 días del hero (agregada por día/semana/mes según el ancho del rango elegido).
-
-// ── Estado "Todo" (default) del embudo/rankings: exactamente lo que ANALYTICS ya trae,
-// embebido para que el rango por defecto no dispare ningún fetch al cargar la página. ──
-const rangoTodoFunnel = ANALYTICS.funnel;
-const rangoTodoClientes = ANALYTICS.clientes;
-const rangoTodoProductos = ANALYTICS.productos;
 
 // ── Onboarding / Aha-moment Tour ──
 const isDemo = dash.totalQuotes === 1 && String(COTIZACIONES[0]?.notas || '').includes('"is_demo": true');
@@ -146,7 +191,7 @@ import { iconInner } from '../../lib/icons';
                     <button type="button" class="hero-metric-pill" data-metric="cotizado">{t(L, 'dash.hero_metric_cotizado')}</button>
                 </div>
                 <div class="hero-rev-row">
-                    <span class="editorial hero-rev-num" id="heroNum" data-countup={heroTotal.toFixed(2)}>{money(heroTotal)}</span>
+                    <span class="editorial hero-rev-num" id="heroNum">{money(heroTotal)}</span>
                     <span class="hero-rev-delta" id="heroDelta" hidden>
                         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-up')}></svg>
                         <span id="heroDeltaVal">0%</span>
@@ -155,15 +200,14 @@ import { iconInner } from '../../lib/icons';
                 </div>
             </div>
 
-            <DateRangePicker minISO={diasSerie[0]?.fecha ?? new Date().toISOString().slice(0, 10)} maxISO={diasSerie[diasSerie.length - 1]?.fecha ?? new Date().toISOString().slice(0, 10)} initialKey="30" storageKey="cord.dash.range.v1" />
+            <DateRangePicker minISO={diasSerie[0]?.fecha ?? new Date().toISOString().slice(0, 10)} maxISO={diasSerie[diasSerie.length - 1]?.fecha ?? new Date().toISOString().slice(0, 10)} initialKey="30" storageKey="cord.dash.range.v1" syncUrl={false} />
         </div>
         <p class="hero-rev-nota">{t(L, 'dash.rango_nota')}</p>
+        <MonedaNota nota={SERIE.moneda} />
         <div class="hero-rev-chart" id="heroChart"
+            data-kpi-labels={JSON.stringify(kpiLabels)}
             data-empty-msg={t(L, 'dash.sin_datos_rango')}
             data-points={JSON.stringify(diasSerie)}
-            data-funnel-todo={JSON.stringify(rangoTodoFunnel)}
-            data-clientes-todo={JSON.stringify(rangoTodoClientes)}
-            data-productos-todo={JSON.stringify(rangoTodoProductos)}
         ></div>
     </section>
 
@@ -178,11 +222,9 @@ import { iconInner } from '../../lib/icons';
         id="dashWidgets"
         storageKey="cord.dash.v1"
         serverPrefs={ME.widgetPrefs?.['cord.dash.v1'] as Record<string, unknown> | undefined}
-        librarySearchPlaceholder={t(L, 'widgets.buscar_ph')} libraryNoResults={t(L, 'widgets.sin_resultados')} libraryAddLabel={t(L, 'widgets.agregar')}
         editButtonId="dashEditBtn"
         doneButtonId="dashDoneBtn"
         resetButtonId="dashResetBtn"
-        trayTitle={t(L, 'dash.widgets_ocultos')}
         resetConfirm={t(L, 'dash.confirmar_restablecer')}
         labels={{
             drag: t(L, 'dash.widget_arrastrar'), up: t(L, 'dash.widget_subir'),
@@ -192,30 +234,39 @@ import { iconInner } from '../../lib/icons';
     >
 
         <article class="dash-widget" data-widget="kpi-por-cerrar" data-title={t(L, 'dash.w_kpi_por_cerrar')} data-group={t(L, 'widgets.grupo_kpis')} data-size-sm="1" data-size-lg="2" data-span="1">
-            <div class="dash-card kpi-card">
-                <span class="kpi-label">{t(L, 'dash.kpi_por_cerrar')}</span>
-                <span class="editorial kpi-num" data-countup={porCerrar.toFixed(2)}>{money(porCerrar)}</span>
+            <div class="dash-card kpi-card wx-kpi">
+                <div class="wx-kpi-head"><span class="kpi-label">{t(L, 'dash.kpi_por_cerrar')}</span><ScopeTag scope="hoy" /></div>
+                <span class="editorial kpi-num" data-countup={porCerrar.toFixed(2)}>{money(porCerrar, 0)}</span>
                 <span class="kpi-sub">{tf('dash.kpi_cotizaciones_activas', { n: String(abiertas) })}</span>
-                <div class="kpi-spark" id="kpiSpark" data-values={JSON.stringify(diasSerie.slice(-14).map(d => d.cotizado))}></div>
+                {/* Cuánto del monto por cerrar ya lo abrió el cliente: lo visto está más cerca. */}
+                {porCerrarBase > 0 && (
+                    <div class="wx-split kpi-spark" data-widget-detail>
+                        <div class="wx-split-bar" role="presentation">
+                            <span style={`flex-grow:${porCerrarSent}; background:${STATUS_META.sent.color}`}></span>
+                            <span style={`flex-grow:${porCerrarViewed}; background:${STATUS_META.viewed.color}`}></span>
+                        </div>
+                        <div class="wx-split-legend">
+                            <span><i style={`background:${STATUS_META.sent.color}`}></i>{t(L, 'cot.col.sent')} <b class="editorial">{money(porCerrarSent, 0)}</b></span>
+                            <span><i style={`background:${STATUS_META.viewed.color}`}></i>{t(L, 'cot.col.viewed')} <b class="editorial">{money(porCerrarViewed, 0)}</b></span>
+                        </div>
+                    </div>
+                )}
             </div>
         </article>
 
-        <article class="dash-widget" data-widget="kpi-tasa" data-title={t(L, 'dash.w_kpi_tasa')} data-group={t(L, 'widgets.grupo_kpis')} data-size-sm="1" data-size-lg="2" data-span="1" hidden={!canAnalytics}>
-            <div class="dash-card kpi-card kpi-card-gauge">
-                <span class="kpi-label">{t(L, 'dash.kpi_tasa_cierre')}</span>
-                <div class="kpi-gauge" id="kpiTasaGauge" data-value={tasaCierre} data-tone={tasaCierre >= 40 ? 'ok' : tasaCierre >= 20 ? 'warn' : 'danger'}></div>
-                <span class="kpi-sub">{t(L, 'dash.kpi_ultimos_90d')}</span>
-            </div>
-        </article>
+        <TrendKpi id="kpi-tasa" kind="tasa" title={t(L, 'dash.w_kpi_tasa')} label={t(L, 'dash.kpi_tasa_cierre')}
+            group={t(L, 'widgets.grupo_kpis')} tone="commercial" hidden={!canAnalytics}
+            value={K.tasa === null ? '—' : `${K.tasa}%`} sub={kpiTasaSub}
+            delta={deltaPts(K.tasa, KP.tasa)} deltaMode="pts" progress={K.tasa} />
 
-        <MetricWidget id="kpi-ticket" title={t(L, 'dash.w_kpi_ticket')} label={t(L, 'dash.kpi_ticket_promedio')}
-            group={t(L, 'widgets.grupo_kpis')} hidden={!canAnalytics} value={money(ANALYTICS.kpis.ticketPromedio, 0)}
-            description={t(L, 'dash.kpi_ticket_sub')}
-            details={ANALYTICS.funnel.aprobadas > 0 ? [{label:t(L, 'dash.kpi_ticket_promedio'), value:tf('dash.kpi_ticket_n', { n: String(ANALYTICS.funnel.aprobadas) })}] : []} />
+        <TrendKpi id="kpi-ticket" kind="ticket" title={t(L, 'dash.w_kpi_ticket')} label={t(L, 'dash.kpi_ticket_promedio')}
+            group={t(L, 'widgets.grupo_kpis')} tone="commercial" hidden={!canAnalytics}
+            value={K.ticket === null ? '—' : money(K.ticket, 0)} sub={kpiTicketSub}
+            delta={deltaPct(K.ticket, KP.ticket)} spark={sparkValues(diasSerie, kDesde, kHasta, 'cerrado')} />
 
         <article class="dash-widget" data-widget="kpi-seguimiento" data-title={t(L, 'dash.w_kpi_seguimiento')} data-group={t(L, 'widgets.grupo_kpis')} data-size-sm="1" data-size-lg="2" data-span="1">
-            <a class="dash-card kpi-card kpi-link" href="/app/cotizaciones">
-                <span class="kpi-label">{t(L, 'dash.kpi_por_seguimiento')}</span>
+            <a class="dash-card kpi-card wx-kpi kpi-link" href="/app/cotizaciones">
+                <div class="wx-kpi-head"><span class="kpi-label">{t(L, 'dash.kpi_por_seguimiento')}</span><ScopeTag scope="hoy" /></div>
                 <span class:list={['editorial', 'kpi-num', { 'kpi-warn': seguimiento > 0 }]}>{seguimiento}</span>
                 <span class="kpi-sub">{seguimiento === 1 ? t(L, 'dash.kpi_vista_singular') : t(L, 'dash.kpi_vista_plural')}</span>
             </a>
@@ -223,7 +274,7 @@ import { iconInner } from '../../lib/icons';
 
         <article class="dash-widget" data-widget="funnel" data-title={t(L, 'dash.w_funnel')} data-group={t(L, 'widgets.grupo_pipeline')} data-widget-tone="commercial" data-size-sm="2" data-size-lg="4" data-span="2" hidden={!canAnalytics}>
             <div class="dash-card">
-                <div class="sec-head"><h2 class="sec-title">{t(L, 'dash.funnel_titulo')}</h2></div>
+                <div class="sec-head"><h2 class="sec-title">{t(L, 'dash.funnel_titulo')} <ScopeTag scope="rango" /></h2></div>
                 <div class="chart-host" id="funnelChart" data-steps={JSON.stringify(funnelSteps)}
                     data-labels={JSON.stringify({
                         enviadas: t(L, 'dash.funnel_enviadas'), vistas: t(L, 'dash.funnel_vistas'),
@@ -236,7 +287,7 @@ import { iconInner } from '../../lib/icons';
         <article class="dash-widget" data-widget="pipeline" data-title={t(L, 'dash.w_pipeline')} data-group={t(L, 'widgets.grupo_pipeline')} data-widget-tone="commercial" data-size-sm="2" data-size-lg="4" data-span="2" hidden={!canAnalytics}>
             <div class="dash-card">
                 <div class="sec-head">
-                    <h2 class="sec-title">{t(L, 'dash.pipeline_titulo')}</h2>
+                    <h2 class="sec-title">{t(L, 'dash.pipeline_titulo')} <ScopeTag scope="hoy" /></h2>
                     <a href="/app/cotizaciones" class="sec-link">{t(L, 'dash.ver_todas')}</a>
                 </div>
                 <div class="chart-host" id="pipeSegChart" data-segments={JSON.stringify(pipelineSegments)}></div>
@@ -245,24 +296,24 @@ import { iconInner } from '../../lib/icons';
 
         <article class="dash-widget" data-widget="tendencia" data-title={t(L, 'dash.w_tendencia')} data-group={t(L, 'widgets.grupo_pipeline')} data-widget-tone="commercial" data-size-sm="2" data-size-lg="4" data-span="4" hidden={!canAnalytics}>
             <div class="dash-card">
-                <div class="sec-head"><h2 class="sec-title">{t(L, 'dash.tendencia_titulo')}</h2></div>
+                <div class="sec-head"><h2 class="sec-title">{t(L, 'dash.tendencia_titulo')} <ScopeTag scope="rango" /></h2></div>
                 <div class="chart-host chart-host-tall" id="tendenciaChart"
                     data-lbl-cotizado={t(L, 'dash.tendencia_cotizado')} data-lbl-cerrado={t(L, 'dash.tendencia_cerrado')}
                 ></div>
             </div>
         </article>
 
-        <article class="dash-widget" data-widget="aging" data-title={t(L, 'dash.w_aging')} data-group={t(L, 'widgets.grupo_finanzas')} data-widget-tone="finance" data-size-sm="2" data-size-lg="4" data-span="2" hidden={!canCobranza}>
+        <article class="dash-widget" data-widget="aging" data-title={t(L, 'dash.w_aging')} data-group={t(L, 'widgets.grupo_finanzas')} data-widget-tone="finance" data-size-sm="2" data-size-lg="4" data-span="2" hidden={!canCollections}>
             <div class="dash-card">
-                <div class="sec-head"><h2 class="sec-title">{t(L, 'dash.aging_titulo')}</h2></div>
-                <div class="chart-host" id="agingChart" data-slices={JSON.stringify(COBRANZA.aging.map(a => ({ key: a.key, label: a.label, value: a.monto, color: a.color })))}></div>
+                <div class="sec-head"><h2 class="sec-title">{t(L, 'dash.aging_titulo')} <ScopeTag scope="hoy" /></h2></div>
+                <div class="chart-host" id="agingChart" data-slices={JSON.stringify(COBRANZA.aging.map(a => ({ key: a.key, label: t(L, `cob.aging_${a.key}` as any), value: a.monto, color: a.color })))}></div>
             </div>
         </article>
 
         <article class="dash-widget" data-widget="flujo" data-title={t(L, 'dash.w_flujo')} data-group={t(L, 'widgets.grupo_finanzas')} data-widget-tone="finance" data-size-sm="2" data-size-lg="4" data-span="2" hidden={!canAnalytics}>
             <div class="dash-card">
                 <div class="sec-head">
-                    <h2 class="sec-title">{t(L, 'dash.flujo_titulo')}</h2>
+                    <h2 class="sec-title">{t(L, 'dash.flujo_titulo')} <ScopeTag scope="hoy" /></h2>
                     <a href="/app/informes?r=flujo" class="sec-link">{t(L, 'dash.tesoreria')}</a>
                 </div>
                 <div class="chart-host chart-host-tall" id="flowChart"
@@ -274,7 +325,7 @@ import { iconInner } from '../../lib/icons';
         <article class="dash-widget" data-widget="salud" data-title={t(L, 'dash.w_salud')} data-group={t(L, 'widgets.grupo_finanzas')} data-widget-tone="finance" data-size-sm="4" data-size-lg="4" data-span="4" hidden={!canAnalytics}>
             <div class="dash-card">
                 <div class="sec-head">
-                    <h2 class="sec-title">{t(L, 'dash.salud_titulo')}</h2>
+                    <h2 class="sec-title">{t(L, 'dash.salud_titulo')} <ScopeTag scope="hoy" /></h2>
                     <a href="/app/informes?r=finanzas" class="sec-link">{t(L, 'dash.ver_cfo')}</a>
                 </div>
                 <div class="health-grid">
@@ -304,16 +355,16 @@ import { iconInner } from '../../lib/icons';
 
         <article class="dash-widget" data-widget="rank-clientes" data-title={t(L, 'dash.w_rank_clientes')} data-group={t(L, 'widgets.grupo_rankings')} data-widget-tone="commercial" data-size-sm="2" data-size-lg="4" data-span="2" hidden={!canAnalytics}>
             <div class="dash-card">
-                <div class="sec-head"><h2 class="sec-title">{t(L, 'dash.rank_clientes_titulo')}</h2></div>
+                <div class="sec-head"><h2 class="sec-title">{t(L, 'dash.rank_clientes_titulo')} <ScopeTag scope="rango" /></h2></div>
                 {clientesTasa.length > 0
-                    ? <div class="chart-host" id="rankClientesChart" data-items={JSON.stringify(clientesTasa.map(c => ({ label: c.empresa, value: c.tasa })))} data-format="pct"></div>
+                    ? <div class="chart-host" id="rankClientesChart" data-items={JSON.stringify(clientesTasa.map(c => ({ label: c.empresa, value: c.tasa, sub: `${c.aprobadas}/${c.cotizaciones}` })))} data-format="pct"></div>
                     : <WidgetEmpty icon="clients" title={t(L, 'dash.rank_sin_historial')} />}
             </div>
         </article>
 
         <article class="dash-widget" data-widget="rank-productos" data-title={t(L, 'dash.w_rank_productos')} data-group={t(L, 'widgets.grupo_rankings')} data-widget-tone="commercial" data-size-sm="2" data-size-lg="4" data-span="2" hidden={!canAnalytics}>
             <div class="dash-card">
-                <div class="sec-head"><h2 class="sec-title">{t(L, 'dash.rank_productos_titulo')}</h2></div>
+                <div class="sec-head"><h2 class="sec-title">{t(L, 'dash.rank_productos_titulo')} <ScopeTag scope="rango" /></h2></div>
                 {topProductos.length > 0
                     ? <div class="chart-host" id="rankProductosChart" data-items={JSON.stringify(topProductos.map(p => ({ label: p.nombre, value: p.importe })))} data-format="money" data-color="ok"></div>
                     : <WidgetEmpty icon="products" title={t(L, 'dash.rank_sin_productos')} />}
@@ -323,7 +374,7 @@ import { iconInner } from '../../lib/icons';
         <article class="dash-widget" data-widget="seguimiento-lista" data-title={t(L, 'dash.w_seguimiento_lista')} data-group={t(L, 'widgets.grupo_actividad')} data-widget-tone="activity" data-size-sm="2" data-size-lg="4" data-span="2">
             <div class="dash-card">
                 <div class="sec-head">
-                    <h2 class="sec-title">{t(L, 'dash.seguimiento_titulo')}</h2>
+                    <h2 class="sec-title">{t(L, 'dash.seguimiento_titulo')} <ScopeTag scope="hoy" /></h2>
                     {silenciadas.length > 0 && <span class="silence-count">{CFO.kpis.nSilenciadas}</span>}
                 </div>
                 {silenciadas.length > 0 ? (
@@ -374,7 +425,7 @@ import { iconInner } from '../../lib/icons';
             </div>
         </article>
 
-        <article class="dash-widget" data-widget="actividad" data-title={t(L, 'dash.w_actividad')} data-group={t(L, 'widgets.grupo_actividad')} data-widget-tone="activity" data-size-sm="2" data-size-lg="4" data-span="4">
+        <article class="dash-widget" id="actividad" data-widget="actividad" data-title={t(L, 'dash.w_actividad')} data-group={t(L, 'widgets.grupo_actividad')} data-widget-tone="activity" data-size-sm="2" data-size-lg="4" data-span="4">
             <div class="dash-card">
                 <div class="sec-head"><h2 class="sec-title">{t(L, 'dash.actividad_titulo')}</h2></div>
                 {eventosFeed.length > 0 ? (
@@ -397,42 +448,74 @@ import { iconInner } from '../../lib/icons';
 
         <article class="dash-widget" data-widget="tareas" data-title={t(L, 'dash.w_tareas')} data-group={t(L, 'widgets.grupo_actividad')} data-widget-tone="activity" data-size-sm="4" data-size-lg="4" data-span="4">
             <div class="dash-card tasks-card">
-                <div class="sec-head"><h2 class="sec-title">{t(L, 'dash.tareas_titulo')}</h2></div>
-                <form class="task-add" id="taskAdd">
-                    <input id="taskTitulo" class="task-input" placeholder={t(L, 'dash.tarea_ph')} autocomplete="off" required />
-                    <input id="taskDue" class="task-date" type="date" aria-label={t(L, 'dash.tarea_fecha_limite')} />
-                    <button class="task-btn" type="submit">{t(L, 'dash.agregar')}</button>
-                </form>
-                <div class="task-list" id="taskList">
-                    {TAREAS.map((tarea) => (
-                        <div class="task-row" data-id={tarea.id}>
-                            <button class="task-check" data-done aria-label={t(L, 'dash.marcar_completada')}></button>
-                            <div class="task-body">
-                                <span class="task-title">{tarea.titulo}</span>
-                                {(tarea.folio || tarea.due) && <span class="task-meta">{[tarea.folio, tarea.due].filter(Boolean).join(' · ')}</span>}
-                            </div>
-                            {tarea.vencida && <span class="task-overdue">{t(L, 'dash.vencida')}</span>}
-                            <button class="task-del" data-del aria-label={t(L, 'dash.eliminar')}>×</button>
-                        </div>
-                    ))}
-                    <p class="task-empty" id="taskEmpty" hidden={TAREAS.length > 0}>{t(L, 'dash.tareas_vacio')}</p>
-                </div>
+                <TaskBoard variant="widget" title={t(L, 'dash.tareas_titulo')} result={TAREAS} estado="pendientes"
+                           scope={TASK_SCOPE} limit={TASK_LIMIT} canEdit={canTasks} assignees={TASK_PEOPLE} />
             </div>
         </article>
 
         {canAnalytics && <MetricWidget id="opcional-conversion-pago" optional title={L === 'en' ? 'Sent to paid' : 'De enviada a pagada'} group={t(L, 'widgets.grupo_kpis')}
             value={ANALYTICS.funnel.enviadas ? Math.round(ANALYTICS.funnel.pagadas / ANALYTICS.funnel.enviadas * 100) : '—'} suffix={ANALYTICS.funnel.enviadas ? '%' : ''}
-            description={L === 'en' ? 'Conversion in the selected range' : 'Conversión en el rango seleccionado'}
+            description={t(L, 'dash.kpi_historica_desc')}
             details={[{label:L === 'en' ? 'Sent' : 'Enviadas',value:ANALYTICS.funnel.enviadas},{label:L === 'en' ? 'Paid' : 'Pagadas',value:ANALYTICS.funnel.pagadas}]} />}
         {canCfo && <MetricWidget id="opcional-ponderado" optional title={L === 'en' ? 'Expected pipeline' : 'Pipeline esperado'} group={t(L, 'widgets.grupo_kpis')}
             value={money(ingresoEsperado,0)} description={L === 'en' ? 'Probability-weighted open pipeline today' : 'Pipeline abierto ponderado por probabilidad, hoy'}
             details={[{label:L === 'en' ? 'Open pipeline' : 'Pipeline abierto',value:money(totalPipeline,0)}]} />}
+
+        {/* ── Opcionales nuevos (fase 3): viven en la biblioteca hasta que alguien los agrega. ── */}
+        {canAnalytics && (
+            <TrendKpi id="kpi-cobrado" kind="cobrado" optional title={t(L, 'dash.w_kpi_cobrado')} label={t(L, 'dash.kpi_cobrado')}
+                group={t(L, 'widgets.grupo_kpis')} tone="finance" description={t(L, 'dash.kpi_cobrado_desc')}
+                value={money(K.cobrado, 0)} sub={kpiCobradoSub}
+                delta={deltaPct(K.cobrado, KP.cobrado)} spark={sparkValues(diasSerie, kDesde, kHasta, 'cobrado')} />
+        )}
+        {canAnalytics && (
+            <article class="dash-widget" data-widget="kpi-dias-cierre" data-widget-optional="1" data-title={t(L, 'dash.w_dias_cierre')} data-group={t(L, 'widgets.grupo_kpis')} data-desc={t(L, 'dash.kpi_dias_cierre_desc')} data-widget-tone="commercial" data-span="1" data-size-sm="1" data-size-lg="1" hidden>
+                <div class="dash-card kpi-card wx-kpi">
+                    <div class="wx-kpi-head"><span class="kpi-label">{t(L, 'dash.kpi_dias_cierre')}</span><ScopeTag scope="historico" /></div>
+                    <span class="editorial kpi-num">{ANALYTICS.kpis.diasCierre > 0 ? tf('dash.kpi_dias', { n: String(ANALYTICS.kpis.diasCierre) }) : '—'}</span>
+                    <span class="kpi-sub">{t(L, 'dash.kpi_dias_cierre_desc')}</span>
+                </div>
+            </article>
+        )}
+        {canFacturas && FACTURAS && (
+            <article class="dash-widget" data-widget="facturas-vencidas" data-widget-optional="1" data-title={t(L, 'dash.w_facturas_vencidas')} data-group={t(L, 'widgets.grupo_finanzas')} data-desc={t(L, 'dash.facturas_vencidas_desc')} data-widget-tone="finance" data-span="2" data-size-sm="2" data-size-lg="4" hidden>
+                <div class="dash-card">
+                    <div class="sec-head">
+                        <h2 class="sec-title">{t(L, 'dash.w_facturas_vencidas')} <ScopeTag scope="hoy" /></h2>
+                        <a href="/app/facturas" class="sec-link">{t(L, 'dash.ver_todas')}</a>
+                    </div>
+                    {FACTURAS.topVencidas.length > 0 ? (
+                        <>
+                            <p class="wx-list-total">{tf('dash.facturas_vencidas_total', { n: String(FACTURAS.vencidas), monto: money(FACTURAS.vencido, 0) })}</p>
+                            <div class="report-list">
+                                {FACTURAS.topVencidas.map((f) => (
+                                    <a href={`/app/facturas/${f.id}`}><span><strong>{f.empresa}</strong><small>{f.folio} · {tf('dash.dias_vencida', { n: String(f.dias) })}</small></span><b class="editorial">{money(f.saldo, 0)}</b></a>
+                                ))}
+                            </div>
+                        </>
+                    ) : <WidgetEmpty icon="check" title={t(L, 'dash.facturas_vencidas_vacio')} />}
+                </div>
+            </article>
+        )}
+        {canAnalytics && (
+            <article class="dash-widget" data-widget="rank-vendedores" data-widget-optional="1" data-title={t(L, 'dash.w_rank_vendedores')} data-group={t(L, 'widgets.grupo_rankings')} data-desc={t(L, 'dash.rank_vendedores_desc')} data-widget-tone="team" data-span="2" data-size-sm="2" data-size-lg="4" hidden>
+                <div class="dash-card">
+                    <div class="sec-head">
+                        <h2 class="sec-title">{t(L, 'dash.w_rank_vendedores')} <ScopeTag scope="historico" /></h2>
+                        <a href="/app/desempeno" class="sec-link">{t(L, 'dash.ver_todas')}</a>
+                    </div>
+                    {rankVendedores.length > 0
+                        ? <div class="chart-host" data-chart="hbar" data-format="money" data-items={JSON.stringify(rankVendedores.map((v) => ({ label: v.nombre, value: v.cerradoTotal })))}></div>
+                        : <WidgetEmpty icon="clients" title={t(L, 'dash.rank_vendedores_vacio')} />}
+                </div>
+            </article>
+        )}
     </WidgetGrid>
 
     {showTour && (
         <div id="demoTour" class="demo-tour-popover">
             <div class="demo-tour-inner">
-                <span class="demo-tour-ico">✨</span>
+                <span class="demo-tour-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('rocket')}></svg></span>
                 <div class="demo-tour-text">
                     <strong>{t(L, 'dash.tour_titulo')}</strong>
                     <p id="demoTourMsg">{t(L, 'dash.tour_msg_inicial')}</p>
@@ -558,7 +641,6 @@ import { iconInner } from '../../lib/icons';
        NO aquí: el contenedor lo renderiza WidgetGrid.astro y por eso nunca recibe el
        `data-astro-cid-*` de esta página — un `#dashWidgets { display: grid }` scopeado no
        matchea nada. Esta página comparte exactamente el mismo grid que /app/informes. */
-    .widget-tray-title { font-size: 0.78rem; font-weight: 700; color: var(--color-text-muted); margin: 0 0 0.7rem; }
     .dash-widget.is-dragging { opacity: 0.92; }
     .dash-widget.is-dragging > .dash-card { box-shadow: 0 30px 60px -14px rgba(10,25,47,0.4); }
     /* Los controles que WidgetGrid crea en runtime viven en styles/widgets.css;
@@ -632,25 +714,6 @@ import { iconInner } from '../../lib/icons';
     .feed-text { font-size: 0.8rem; color: var(--color-text); font-weight: 500; }
     .feed-meta { font-size: 0.68rem; color: var(--color-text-muted); }
 
-    /* Tareas / recordatorios */
-    .task-add { display: flex; gap: 0.6rem; margin-bottom: 1rem; flex-wrap: wrap; }
-    .task-input { flex: 1; min-width: 180px; font-family: var(--font-sans); font-size: 0.85rem; color: var(--color-text); background: var(--color-bg-soft); border: 1px solid var(--color-border); border-radius: 9px; padding: 9px 12px; }
-    .task-input:focus, .task-date:focus { outline: none; border-color: var(--color-blue-deep); }
-    .task-date { font-family: var(--font-sans); font-size: 0.82rem; color: var(--color-text); background: var(--color-bg-soft); border: 1px solid var(--color-border); border-radius: 9px; padding: 9px 10px; }
-    .task-btn { font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; color: #fff; background: var(--color-blue-deep); border: none; border-radius: 9px; padding: 9px 16px; cursor: pointer; transition: transform 0.3s var(--ease-spring); }
-    .task-btn:hover { transform: translateY(-2px); }
-    .task-list { display: flex; flex-direction: column; }
-    .task-row { display: flex; align-items: center; gap: 11px; padding: 0.65rem 0; border-bottom: 1px solid var(--color-border); }
-    .task-row:last-of-type { border-bottom: none; }
-    .task-check { width: 19px; height: 19px; flex-shrink: 0; border: 1.8px solid var(--color-border); border-radius: 6px; background: var(--surface); cursor: pointer; transition: border-color 0.2s, background 0.2s; }
-    .task-check:hover { border-color: var(--color-ok); background: rgba(16,185,129,0.08); }
-    .task-body { display: flex; flex-direction: column; min-width: 0; flex: 1; }
-    .task-title { font-size: 0.85rem; font-weight: 500; color: var(--color-text); }
-    .task-meta { font-size: 0.7rem; color: var(--color-text-muted); }
-    .task-overdue { font-size: 0.6rem; font-weight: 800; letter-spacing: 0.4px; text-transform: uppercase; color: var(--color-danger); background: rgba(239,68,68,0.1); padding: 3px 8px; border-radius: 100px; flex-shrink: 0; }
-    .task-del { background: none; border: none; cursor: pointer; color: var(--color-text-muted); font-size: 1.1rem; line-height: 1; padding: 2px 6px; border-radius: 6px; transition: color 0.2s, background 0.2s; }
-    .task-del:hover { color: var(--color-danger); background: rgba(239,68,68,0.07); }
-    .task-empty { font-size: 0.82rem; color: var(--color-text-muted); margin: 0.6rem 0; }
 
     @media (max-width: 680px) {
         .hero-rev { padding: 1.25rem 1rem; }
@@ -691,9 +754,6 @@ import { iconInner } from '../../lib/icons';
         .qr-info { grid-area: info; }
         .quote-row .status-pill { grid-area: status; display: inline-flex; justify-self: start; }
         .qr-amount { grid-area: amount; }
-        .task-add { flex-direction: column; align-items: stretch; }
-        .task-input, .task-date, .task-btn { width: 100%; min-width: 0; min-height: 46px; font-size: 16px; }
-        .task-check, .task-del { min-width: 44px; min-height: 44px; }
     }
 </style>
 
@@ -712,6 +772,8 @@ import { iconInner } from '../../lib/icons';
     } from '../../lib/chart';
     import type { ChartHandle, LineChartHandle } from '../../lib/chart';
     import { compareRangeFor as resolveCompareRange, rangeFor as resolveRange, type Rango, type RangoKey } from '../../lib/rango';
+    import { totalsFor, deltaPct, deltaPts, sparkValues } from '../../lib/dash-kpis';
+    import { mountAll as mountDeclarativeCharts } from '../../lib/chart-mount';
     import { dateShort, intlLocale, money as formatMoney, moneyFull, month as formatMonth } from '../../lib/fmt';
 
     const localeIntl = intlLocale();
@@ -720,7 +782,7 @@ import { iconInner } from '../../lib/icons';
     const dateFmt = (iso: string) => dateShort(iso, localeIntl);
     const monthFmt = (iso: string) => formatMonth(iso, localeIntl);
 
-    type Dia = { fecha: string; cotizado: number; cerrado: number; cobrado: number };
+    type Dia = { fecha: string; cotizado: number; cerrado: number; cobrado: number; enviadas?: number; ganadas?: number; ganadasCreadas?: number };
     type Range = Rango;
 
     // dias (365 puntos) es la ÚNICA fuente para hero Y tendencia — se parsea una vez aquí y
@@ -793,12 +855,14 @@ import { iconInner } from '../../lib/icons';
         const total = main.reduce((s, p) => s + p.y, 0);
         const prevTotal = cmp.reduce((s, p) => s + p.y, 0);
         if (numEl) numEl.textContent = moneyFmtFull(total);
-        const hasCompare = !!cmpRange && (total > 0 || prevTotal > 0);
+        // Sin base en el periodo anterior no hay variación que mostrar: un "+100%" contra
+        // cero no significa nada.
+        const hasCompare = !!cmpRange && prevTotal > 0;
         if (deltaEl) {
             if (!hasCompare) { deltaEl.hidden = true; }
             else {
                 deltaEl.hidden = false;
-                const delta = prevTotal > 0 ? Math.round(((total - prevTotal) / prevTotal) * 100) : 100;
+                const delta = Math.round(((total - prevTotal) / prevTotal) * 100);
                 deltaEl.classList.toggle('is-down', delta < 0);
                 const svgPath = deltaEl.querySelector('svg path');
                 if (svgPath) svgPath.setAttribute('d', delta >= 0 ? 'M12 19V5M5 12l7-7 7 7' : 'M12 5v14M19 12l-7 7-7-7');
@@ -823,19 +887,15 @@ import { iconInner } from '../../lib/icons';
         });
     }
 
-    // ── Embudo + rankings — "Todo" usa los datos ya embebidos (cero fetch); cualquier otro
-    // rango llama a /api/dashboard/rango una sola vez y remonta los 3 charts. ──
+    // ── Embudo + rankings — cada rango (incluido "12 meses") llama a /api/dashboard/rango
+    // una sola vez y remonta los 3 charts: así embudo y hero miden la MISMA ventana. ──
     const funnelEl = document.getElementById('funnelChart');
     const rankClientesEl = document.getElementById('rankClientesChart');
     const rankProductosEl = document.getElementById('rankProductosChart');
     let funnelHandle: ChartHandle | null = null, rankClientesHandle: ChartHandle | null = null, rankProductosHandle: ChartHandle | null = null;
     const funnelLabels = (() => { try { return JSON.parse(funnelEl?.dataset.labels || '{}'); } catch { return {}; } })();
-    const todoData = {
-        funnel: (() => { try { return JSON.parse(heroEl?.dataset.funnelTodo || '{}'); } catch { return {}; } })(),
-        clientes: (() => { try { return JSON.parse(heroEl?.dataset.clientesTodo || '[]'); } catch { return []; } })(),
-        productos: (() => { try { return JSON.parse(heroEl?.dataset.productosTodo || '[]'); } catch { return []; } })(),
-    };
-    const rangoCache = new Map<string, typeof todoData>();
+    type RangoData = { funnel: any; clientes: any[]; productos: any[] };
+    const rangoCache = new Map<string, RangoData>();
 
     function buildFunnelSteps(funnel: any) {
         // Mismo mapeo que el SSR (ver funnelSteps en el frontmatter): las pills de
@@ -847,14 +907,18 @@ import { iconInner } from '../../lib/icons';
             { label: funnelLabels.pagadas || 'Pagadas', value: funnel.pagadas || 0, href: '/app/cotizaciones?f=paid' },
         ];
     }
-    function applyRangoData(data: typeof todoData) {
+    function applyRangoData(data: RangoData) {
         if (funnelEl) {
             funnelHandle?.destroy();
             funnelHandle = mountFunnel(funnelEl, { steps: buildFunnelSteps(data.funnel), formatY: (v) => new Intl.NumberFormat(localeIntl).format(v), emptyMessage: emptyMsg });
         }
         if (rankClientesEl) {
-            const items = (data.clientes || []).filter((c: any) => c.cotizaciones > 0).sort((a: any, b: any) => b.tasa - a.tasa).slice(0, 5)
-                .map((c: any) => ({ label: c.empresa, value: c.tasa }));
+            // Misma regla de muestra mínima que el SSR (rankByTasa).
+            const rows = (data.clientes || []) as any[];
+            const conMuestra = rows.filter((c) => c.cotizaciones >= 2);
+            const items = (conMuestra.length >= 3 ? conMuestra : rows.filter((c) => c.cotizaciones > 0))
+                .sort((a, b) => b.tasa - a.tasa || b.cotizaciones - a.cotizaciones).slice(0, 5)
+                .map((c) => ({ label: c.empresa, value: c.tasa, sub: `${c.aprobadas}/${c.cotizaciones}` }));
             rankClientesHandle?.destroy();
             rankClientesHandle = mountHBarChart(rankClientesEl, { items, formatY: (v) => `${v}%`, emptyMessage: emptyMsg });
         }
@@ -864,18 +928,75 @@ import { iconInner } from '../../lib/icons';
             rankProductosHandle = mountHBarChart(rankProductosEl, { items, formatY: (v) => moneyFmt(v), color: 'var(--color-ok)', emptyMessage: emptyMsg });
         }
     }
+    // Mientras llega el rango nuevo, las tarjetas que dependen de él se marcan ocupadas
+    // (esqueleto en widgets.css) en vez de mostrar números del rango anterior.
+    const rangoCards = [funnelEl, rankClientesEl, rankProductosEl]
+        .map((el) => el?.closest<HTMLElement>('.dash-card'))
+        .filter((el): el is HTMLElement => !!el);
+    let rangoRequest = 0;
     async function refreshRango(r: Range) {
-        if (r.key === 'todo') { applyRangoData(todoData); return; }
         const cacheKey = `${r.desde}:${r.hasta}`;
         const cached = rangoCache.get(cacheKey);
         if (cached) { applyRangoData(cached); return; }
+        const ticket = ++rangoRequest;
+        rangoCards.forEach((card) => card.setAttribute('aria-busy', 'true'));
         try {
             const res = await fetch(`/api/dashboard/rango?desde=${r.desde}&hasta=${r.hasta}`);
             if (!res.ok) return;
             const data = await res.json();
             rangoCache.set(cacheKey, data);
+            if (ticket !== rangoRequest) return; // llegó tarde: ya se pidió otro rango
+            rangoCards.forEach((card) => card.removeAttribute('aria-busy'));
             applyRangoData(data);
         } catch { /* deja el estado anterior visible si falla la red */ }
+        finally { if (ticket === rangoRequest) rangoCards.forEach((card) => card.removeAttribute('aria-busy')); }
+    }
+
+    // ── KPIs del rango (tasa, ticket, cobrado): misma cuenta que el SSR (dash-kpis.ts) ──
+    const kpiLabels = (() => { try { return JSON.parse(heroEl?.dataset.kpiLabels || '{}'); } catch { return {}; } })() as Record<string, string>;
+    const fill = (tpl: string | undefined, vars: Record<string, string>) => (tpl || '').replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? '');
+    const sparkHandles = new Map<HTMLElement, ChartHandle>();
+    function paintDelta(card: HTMLElement, delta: number | null, mode: string) {
+        const el = card.querySelector<HTMLElement>('[data-kpi-delta]');
+        const val = card.querySelector<HTMLElement>('[data-kpi-delta-val]');
+        if (!el || !val) return;
+        el.hidden = delta === null;
+        if (delta === null) return;
+        el.dataset.dir = delta > 0 ? 'up' : delta < 0 ? 'down' : 'flat';
+        val.textContent = mode === 'pts' ? `${Math.abs(delta)} pts` : `${Math.abs(delta)}%`;
+    }
+    function paintSpark(card: HTMLElement, values: number[]) {
+        const el = card.querySelector<HTMLElement>('[data-kpi-spark]');
+        if (!el) return;
+        sparkHandles.get(el)?.destroy();
+        sparkHandles.set(el, mountSparkline(el, { values, height: 34, area: true, color: 'var(--widget-accent, var(--chart-fill))' }));
+    }
+    function refreshKpis(r: Range) {
+        const cmp = compareRangeFor(r);
+        const cur = totalsFor(dias, r.desde, r.hasta);
+        const prev = cmp ? totalsFor(dias, cmp.desde, cmp.hasta) : null;
+        document.querySelectorAll<HTMLElement>('[data-kpi]').forEach((card) => {
+            const kind = card.dataset.kpi;
+            const value = card.querySelector<HTMLElement>('[data-kpi-value]');
+            const sub = card.querySelector<HTMLElement>('[data-kpi-sub]');
+            if (kind === 'tasa') {
+                if (value) value.textContent = cur.tasa === null ? '—' : `${cur.tasa}%`;
+                if (sub) sub.textContent = cur.enviadas ? fill(kpiLabels.tasaSub, { g: String(cur.ganadasCreadas), n: String(cur.enviadas) }) : kpiLabels.sinEnvios || '';
+                paintDelta(card, deltaPts(cur.tasa, prev?.tasa ?? null), 'pts');
+                const bar = card.querySelector<HTMLElement>('[data-kpi-progress] > span');
+                if (bar) bar.style.width = `${Math.max(0, Math.min(100, cur.tasa ?? 0))}%`;
+            } else if (kind === 'ticket') {
+                if (value) value.textContent = cur.ticket === null ? '—' : moneyFmt(cur.ticket);
+                if (sub) sub.textContent = cur.ganadas ? fill(kpiLabels.ticketSub, { n: String(cur.ganadas) }) : kpiLabels.sinVentas || '';
+                paintDelta(card, deltaPct(cur.ticket, prev?.ticket ?? null), 'pct');
+                paintSpark(card, sparkValues(dias, r.desde, r.hasta, 'cerrado'));
+            } else if (kind === 'cobrado') {
+                if (value) value.textContent = moneyFmt(cur.cobrado);
+                if (sub) sub.textContent = prev && prev.cobrado > 0 ? fill(kpiLabels.vsMonto, { monto: moneyFmt(prev.cobrado) }) : kpiLabels.sinBase || '';
+                paintDelta(card, deltaPct(cur.cobrado, prev?.cobrado ?? null), 'pct');
+                paintSpark(card, sparkValues(dias, r.desde, r.hasta, 'cobrado'));
+            }
+        });
     }
 
     let appliedRange = rangeFor('30');
@@ -884,6 +1005,7 @@ import { iconInner } from '../../lib/icons';
         appliedRange = r;
         refreshHero(r);
         refreshTendencia(r);
+        refreshKpis(r);
         refreshRango(r);
     }
 
@@ -905,23 +1027,9 @@ import { iconInner } from '../../lib/icons';
     });
 
 
-    // ── KPIs: sparkline + gauge ──
-    const sparkEl = document.getElementById('kpiSpark');
-    if (sparkEl) {
-        let values: number[] = [];
-        try { values = JSON.parse(sparkEl.dataset.values || '[]'); } catch { values = []; }
-        mountSparkline(sparkEl, { values, height: 30 });
-    }
-    const tasaGaugeEl = document.getElementById('kpiTasaGauge');
-    if (tasaGaugeEl) {
-        mountGauge(tasaGaugeEl, {
-            value: Number(tasaGaugeEl.dataset.value || '0'),
-            max: 100,
-            size: 76,
-            tone: (tasaGaugeEl.dataset.tone as any) || 'neutral',
-            formatValue: (v) => `${Math.round(v)}%`,
-        });
-    }
+    // Widgets declarativos (data-chart), p. ej. el ranking de vendedores: se montan al
+    // hacerse visibles, también cuando se agregan desde la biblioteca.
+    mountDeclarativeCharts(document);
 
     // ── Salud del pipeline: 4 gauges (snapshot de HOY — no sigue el rango) ──
     document.querySelectorAll<HTMLElement>('.health-gauge').forEach((el) => {
@@ -983,33 +1091,6 @@ import { iconInner } from '../../lib/icons';
                 if (p < 1) requestAnimationFrame(tick);
             };
             requestAnimationFrame(tick);
-        });
-    });
-</script>
-
-<script>
-    // ── Tareas / recordatorios ──
-    document.getElementById('taskAdd')?.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const tEl = document.getElementById('taskTitulo') as HTMLInputElement;
-        const dEl = document.getElementById('taskDue') as HTMLInputElement;
-        const titulo = tEl.value.trim();
-        if (!titulo) return;
-        try {
-            const res = await fetch('/api/tareas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ titulo, due_date: dEl.value || null }) });
-            if (!res.ok) throw new Error();
-            location.reload();
-        } catch { /* noop */ }
-    });
-    document.querySelectorAll<HTMLElement>('.task-row').forEach((row) => {
-        const id = row.dataset.id;
-        row.querySelector('[data-done]')?.addEventListener('click', async () => {
-            await fetch('/api/tareas', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, done: true }) }).catch(() => {});
-            row.remove();
-        });
-        row.querySelector('[data-del]')?.addEventListener('click', async () => {
-            await fetch('/api/tareas', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) }).catch(() => {});
-            row.remove();
         });
     });
 </script>

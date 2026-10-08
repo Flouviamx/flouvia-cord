@@ -45,6 +45,6 @@ const prerequisites = doc.data.prerequisites || undefined;
 const seoTitle = doc.data.seoTitle || undefined;
 ---
 
-<DocsLayout title={doc.data.title} lang={lang} description={description} headings={headings} lastUpdated={lastUpdated} reviewedBy={reviewedBy} appliesToMarkets={appliesToMarkets} availablePlans={availablePlans} prerequisites={prerequisites} seoTitle={seoTitle} alternates={alternates}>
+<DocsLayout title={doc.data.title} slug={entrySlug} lang={lang} description={description} headings={headings} lastUpdated={lastUpdated} reviewedBy={reviewedBy} appliesToMarkets={appliesToMarkets} availablePlans={availablePlans} prerequisites={prerequisites} seoTitle={seoTitle} alternates={alternates}>
   <Content components={{ Callout, Tabs, TabItem, Steps }} />
 </DocsLayout>

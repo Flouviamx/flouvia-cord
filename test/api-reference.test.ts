@@ -1,5 +1,4 @@
 import { describe, it, expect } from 'vitest';
-import { execFileSync } from 'node:child_process';
 import { OPERATIONS } from '../src/lib/api-schema';
 import { samples, fieldsOf, bodyExample } from '../src/lib/api-reference';
 import { Cord } from '../packages/node/src/index';
@@ -22,11 +21,10 @@ describe('referencia de la API', () => {
         }
     });
 
-    it('los ejemplos de Python llaman métodos que existen en cord-sdk', () => {
-        const paths = [...new Set(OPERATIONS.flatMap((op) => calls(samples(op).python, /cord\.([a-z_.]+)\(/g).map((p) => p.join('.'))))];
-        const script = `import sys\nfrom cord import Cord\nc = Cord("sk_test_x")\ndef ok(p):\n    obj = c\n    for k in p.split("."):\n        obj = getattr(obj, k, None)\n        if obj is None:\n            return False\n    return callable(obj)\nprint(",".join(p for p in sys.argv[1:] if not ok(p)))`;
-        const out = execFileSync('python3', ['-c', script, ...paths], { env: { ...process.env, PYTHONPATH: 'packages/python/src' } }).toString().trim();
-        expect(out).toBe('');
+    it('solo hay ejemplos de SDK publicados (curl y Node)', () => {
+        for (const op of OPERATIONS) {
+            for (const k of Object.keys(samples(op))) expect(['curl', 'node'], `${op.method} ${op.path}`).toContain(k);
+        }
     });
 
     it('el ejemplo de crear cotización es válido según el contrato', () => {

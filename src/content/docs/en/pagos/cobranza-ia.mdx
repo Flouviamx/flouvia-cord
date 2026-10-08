@@ -1,42 +1,144 @@
 ---
-title: "Autonomous Collections (AI)"
-description: "Delegate accounts-receivable follow-up to an AI Agent that monitors due dates and negotiates dynamic payment plans."
-lastUpdated: "2026-08-28"
-reviewedBy: "Cord Product and Operations"
+title: "AI collections"
+seoTitle: "Cord's AI collections agent: setup, approval, and installments"
+description: "How the AI collections agent works: which accounts it picks, how often it writes, approval or automatic mode, the drafts inbox, plans of 2 to 6 installments, exclusions, promises, and AI quota per plan."
+lastUpdated: "2026-10-07"
+reviewedBy: "Cord product and operations"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
-availablePlans: [Scale, Developer]
-prerequisites: ["Collections permission", "Overdue receivables", "Configure mode, cadence, tone, and exclusions"]
+availablePlans: [Pro, Scale, Developer]
+prerequisites: ["Pro, Scale, or Developer plan", "Collections permission", "Settings permission to turn on and configure the agent", "Customers with an email on file"]
 ---
 
 <header class="content-header">
-  <h1 class="page-title">Autonomous Collections (AI)</h1>
-  <p class="page-subtitle">Delegate accounts-receivable follow-up to an AI Agent that monitors due dates and negotiates dynamic payment plans.</p>
+  <h1 class="page-title">AI collections</h1>
+  <p class="page-subtitle">An agent that writes, negotiates, and collects overdue accounts for you. You decide what goes out.</p>
 </header>
 
-## Your new collections manager
+## What it is
 
-Cord includes an Artificial Intelligence Agent designed specifically to manage accounts receivable. This agent acts autonomously (if you enable it) to recover revenue from quotes and invoices that have exceeded their credit terms.
+The **collections agent** (sidebar › **My money › AI Collections**) reviews your overdue receivables every day, drafts an email for each account with the real balance, days overdue, and payment link, and, if the customer needs it, negotiates an [installment payment plan](/en/docs/pagos/cuotas). It starts **off**: it doesn't email anyone until you turn it on.
 
-<Callout type="info">
-Autonomous Collections (AI) is available starting on **Scale** and is also included on **Developer**. **Pro** includes manual work from [operating receivables](/en/docs/pagos/cartera-cobranza). Free and Starter don't include the collections module.
-</Callout>
+## Requirements
 
-### How does it work?
+| Requirement | Detail |
+|---|---|
+| Plan | Pro, Scale, or Developer. Free and Starter don't include collections. |
+| Permission | **Collections** to see the page and approve, edit, or discard drafts. **Settings** to turn on and configure the agent. |
+| AI quota | Each email drafted or regenerated uses one AI unit from your plan: 50 included per month on Pro and 500 on Scale (overage is billed as usage) and unlimited on Developer. |
+| Customers | With an email on file. Without one, the agent can't send. |
+| Account | Doesn't run on test accounts or the demo account. |
 
-1. **Periodic monitoring:** an automated process reviews your accounts-receivable portfolio for overdue quotes and invoices, on the cadence you configure in days (every 7 days per account, by default).
-2. **Smart contact:** when it detects a delay, it drafts an email to the delinquent client in the tone you pick (warm, professional, or firm), requesting that the account be regularized and always including the real payment link.
-3. **Active negotiation:** once an account has been overdue long enough (a threshold you set), the agent can structure and offer a **monthly installment plan** — 2 up to a configurable maximum between 2 and 6 installments (3 by default) — that add up to exactly the balance, with no discount on the principal.
-4. **Dynamic links:** once an agreement is reached or the client agrees to pay, the agent sends dynamic payment links (SPEI or Card) that update the balance in real time as they're processed.
+## Turn it on
 
-### Approval mode vs. Automatic mode
+<Steps>
+1. Open **AI Collections**. The first time you'll see what the agent does, a sample email, and how many accounts it would email today.
+2. Click **Turn on with approval**. The agent starts in **Needs approval** mode: nothing goes out without your sign-off.
+3. Click **Configure** to adjust grace, cadence, installments, tone, language, and signature.
+4. Check **Up next** to see whom it will email on the next run and whom it won't.
+</Steps>
 
-You decide how much human control stays in place before the customer sees anything:
+{/* MOCKUP: AI Collections with the four indicators (Recovered by the agent, Awaiting your approval, Active payment plans, Emails sent), the "Approval inbox" with a draft "18 days overdue" labeled "Proposes 3 instalments of $3,333.33 MXN", and the buttons "Approve and send", "Regenerate", "Discard", and "Don't email them". */}
 
-- **Approval mode (default):** the agent drafts the email and, if it negotiated a payment plan, leaves it **proposed** without activating it — nothing gets sent and no pending payments get rewritten until you approve it. You get a single digest email listing the drafts waiting on your review.
-- **Automatic mode:** the agent sends the email and activates the negotiated payment plan without waiting for your approval.
+## Settings
 
-### Benefits
+| Option | What it controls | Default | Range |
+|---|---|---|---|
+| **Operating mode** | With approval, the agent drafts and waits. On automatic, it sends on its own. | Needs approval | — |
+| **Grace days** | How long it waits after the due date before writing. | 3 days | 0 to 90 |
+| **Days between emails** | Minimum before emailing the same account again. | 7 days | 1 to 90 |
+| **Offer a plan after** | Days overdue from which it may negotiate installments. | 15 days | 1 to 365 |
+| **Maximum instalments** | Cap on a plan's monthly installments. | 3 | 2 to 6 |
+| **Minimum amount** | It won't write for smaller balances. | No minimum | — |
+| **Maximum per run** | Cap on emails per run. | 25 | 1 to 200 |
+| **Tone** | Warm, Professional, or Firm. | Professional | — |
+| **Email language** | Spanish or English. | Spanish | — |
+| **Signature** | How the email signs off (up to 400 characters). | No signature | — |
 
-- **Less repetitive follow-up:** the agent prepares or sends reminders within configured limits.
-- **Explicit alternatives:** when enabled, it can propose installments without discounting principal.
-- **Transparent audit trail:** every email sent and every negotiated interaction by the Agent is logged in the quote's "Activity" tab, giving you full control and context.
+## How it decides whom to email
+
+Every day, the agent takes receivables from the [unified accounts receivable view](/en/docs/pagos/cartera-cobranza#the-unified-accounts-receivable-view), quotes and invoices, that are **more days overdue than your grace days**, from most to least overdue. From that list it **skips**:
+
+| Reason in "Up next" | Why |
+|---|---|
+| **Already settled** | The balance is already zero. |
+| **Excluded** | The customer, quote, or invoice is on **Never email**. |
+| **Below minimum amount** | The balance is below your minimum. |
+| **Emailed recently** | There's an unresolved draft, or the last email sent was fewer days ago than your cadence. |
+| **Plan on track** | The account has an installment plan and no overdue unpaid installment. |
+| **Over the run cap** | The per-run maximum was reached; it goes into the next run. |
+
+Recurring retainers never enter: they charge themselves every month.
+
+## The email
+
+- The agent writes it with the **real balance**, days overdue, and chosen tone, in the configured language.
+- It always includes the **payment link**: the invoice's or the quote's. If you collect online, the button says "Pay [amount] online" with the amount due today (the overdue installment, if there's a plan); otherwise "View quote and payment options".
+- It goes out under your business's legal name "vía Cord" and replies go to your contact email.
+- The footer includes your legal name, your tax ID, a notice that it's an automated collections message sent by Cord on your behalf, and how to ask for the messages to stop.
+- **It never offers discounts on the principal.**
+
+## Approval mode and automatic mode
+
+| | Needs approval | Automatic |
+|---|---|---|
+| Email | Stays as a draft in the **Approval inbox**. | Sent during the run. |
+| Installment plan | Stays **proposed**: it doesn't touch the customer's charges until you approve. | Activates when recorded. |
+| Notice for you | A single email per run: "N collection emails awaiting approval". | Failed ones show in the inbox. |
+
+In the inbox you can:
+
+- **Approve and send.** If the draft proposes installments, Cord warns you that the plan will replace that quote's pending charges.
+- **Edit** the text and **Save changes**.
+- **Regenerate**, optionally with an instruction ("shorter and less formal").
+- **Discard**: the email doesn't go out and its proposed plan is canceled. The agent may write again on the next run.
+- **Don't email them**: adds the account to **Never email**.
+
+If you approve several emails without changing a word, Cord suggests switching to automatic. Your call.
+
+## Installment payment plans
+
+When a quote reaches the **Offer a plan after** days and the customer agrees to pay in parts within the conversation, the agent can propose **2 up to your maximum monthly installments** (up to 6) that add up to exactly the balance. Cord validates the numbers and calculates the amounts; the agent can't invent them. Full details in [Installment payment plans](/en/docs/pagos/cuotas).
+
+## Conversations, exclusions, and promises
+
+- **Conversations:** one thread per account, with each message labeled **Agent**, **Customer**, or **You**. You can take over and write yourself from the thread.
+- **Never email:** customers, quotes, or invoices the agent ignores entirely. Click **Remove from list** to bring them back.
+- **Payment promises:** recorded from [receivables](/en/docs/pagos/cartera-cobranza#record-a-payment-promise). A promise doesn't stop the agent; to pause an account while you wait for an agreed payment, add it to **Never email**.
+
+## Run now
+
+**Run now** runs the agent at that moment with the same logic as the daily run. Use it to test your settings; it still respects cadence and exclusions.
+
+## Indicators
+
+| Indicator | What it measures |
+|---|---|
+| **Recovered by the agent** | What was collected in the last 30 days on accounts the agent emailed. |
+| **Awaiting your approval** | Pending drafts (on automatic, it says emails go out on their own). |
+| **Active payment plans** | Amount committed in installments. |
+| **Emails sent** | In the last 30 days, with the share that replied and those that couldn't be delivered. |
+
+## Limits
+
+- Pro, Scale, and Developer only.
+- One daily run plus the ones you trigger with **Run now**.
+- Plans on quotes only, 2 to 6 monthly installments.
+- Each email uses AI quota from the plan.
+- The agent doesn't send via WhatsApp or SMS.
+
+## Common problems
+
+**The agent doesn't email an overdue account.** Check its reason in **Up next**: grace, cadence, exclusion, minimum amount, plan on track, or run cap.
+
+**I don't see Configure.** You need the **Settings** permission.
+
+**An email shows as "not sent".** The customer has no email or the send failed. Fix the record and try again from the inbox.
+
+**Emails fail because of AI quota.** The period's AI usage cap was reached and the agent couldn't draft. Check your usage in [Subscription](/en/docs/cuenta/suscripcion).
+
+## Related
+
+- [Installment payment plans](/en/docs/pagos/cuotas)
+- [Receivables and operating collections](/en/docs/pagos/cartera-cobranza)
+- [Automatic payment reminders](/en/docs/pagos/recordatorios)
+- [Credit terms](/en/docs/pagos/credito)

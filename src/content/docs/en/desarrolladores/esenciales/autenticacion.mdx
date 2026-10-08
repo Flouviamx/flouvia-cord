@@ -1,6 +1,10 @@
 ---
 title: "Authentication"
 description: "How to authenticate your requests to the Cord API using Bearer Tokens."
+lastUpdated: "2026-10-07"
+reviewedBy: "Cord engineering"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["A Cord API key"]
 ---
 
 <header class="content-header">
@@ -33,7 +37,7 @@ Cord has three kinds of key:
 
 Publishable keys have automatic security restrictions imposed by the API. For example, if you query the [Products API](/en/docs/desarrolladores/funciones/productos) using a publishable key, the Cord server will automatically omit the `costo` (margin) field to ensure your website visitors cannot discover your profit margins.
 
-A Publishable Key can also only be used on four routes: `GET /api/v1/productos`, `POST /api/v1/cotizaciones`, `GET /api/v1/elements/config` and `POST /api/v1/elements/ai-draft`. Any other responds `403 insufficient_scope`. The request must also send an `Origin` or `Referer` header; if you registered allowed domains for that key, Cord checks that they match before accepting it.
+A Publishable Key can also only be used on four routes: `GET /api/v1/productos`, `POST /api/v1/cotizaciones`, `GET /api/v1/elements/config` and `POST /api/v1/elements/ai-draft`. Any other responds `403 insufficient_scope`. The request must also send an `Origin` or `Referer` header matching your organization's allowed domains, configured in **Settings › Embeddable quote builder**. A `pk_live_` key with no domains configured responds `403 origin_allowlist_required`; a `pk_test_` key is accepted from any origin.
 
 <Callout type="warning">
 **Caution:**
@@ -56,18 +60,25 @@ An `rk_` key carries a level per resource. Cord derives the resource from the ro
 | `webhooks` | `/api/v1/webhooks/*` |
 | `elements` | `/api/v1/elements/*` |
 | `test_helpers` | `/api/v1/test_helpers/*` |
+| `setup` | `/api/v1/setup/*` |
 
-`read` allows `GET`; `write` also allows creating, editing and actions. `GET /api/v1/me` answers to any secret or restricted key. A restricted key doesn't work with the MCP server, which spans several resources at once: use a read-only Secret Key for that. Without permission the response is `403 insufficient_permissions` and names the resource.
+`read` allows `GET`; `write` also allows creating, editing and actions. `GET /api/v1/me` answers to any secret or restricted key. A restricted key doesn't work with the MCP server, which spans several resources at once: use a Secret Key for that (read-only if your agent only reads). Without permission the response is `403 insufficient_permissions` and names the resource.
 
 ## Allowed IPs
 
 You can pin up to 20 IPs or CIDR ranges (IPv4 or IPv6) on an `sk_` or `rk_` key. Cord checks the source IP recorded by its delivery network, not a header the client can write, so `X-Forwarded-For` can't bypass the list. A request from another IP responds `403 ip_not_allowed` and is recorded in your organization's audit log, once per hour per IP.
 
-Publishable Keys are limited by domain in Settings › Elements, not by IP.
+Publishable Keys are limited by domain in **Settings › Embeddable quote builder**, not by IP.
 
 ## Expiration and rolling
 
 When you create a key you can make it expire in 7, 30, 90 or 365 days; after that it responds `401 key_expired`. **Rolling** creates a new key with the same permissions, IPs and API version, and keeps the old one alive for the time you choose (immediately, 1 hour, 24 hours or 7 days) while you update your systems. The key in its grace period no longer counts against your plan's limit. Creating, editing, rolling and revoking keys is recorded in the audit log with who did it and from which IP.
+
+## Keys included per plan
+
+Each plan includes a maximum number of active keys: 2 on Free, 5 on Starter, 20 on Professional, 50 on Scale and 200 on Developer. Secret, restricted and publishable keys that aren't revoked, expired or in a rolling grace period count; connections authorized through OAuth (Zapier, Make) don't. Once you reach the cap, the Workbench won't let you create another until you revoke one.
+
+If your organization ends up with more active keys than its plan includes (for example, after a downgrade), the oldest ones keep working and the ones over the allowance respond `402 subscription_key_limit` until you revoke keys or upgrade.
 
 ## Quick Identity Check
 

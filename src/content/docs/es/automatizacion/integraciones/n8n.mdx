@@ -1,10 +1,12 @@
 ---
 title: "n8n"
 seoTitle: "Conectar Cord con n8n"
-description: "Cómo conectar n8n con Cord con el nodo n8n-nodes-cord o con el nodo HTTP Request: credencial con llave de API, disparador con firma verificada, acciones disponibles y límites."
-lastUpdated: "2026-09-28"
+description: "Cómo conectar n8n con Cord con el nodo n8n-nodes-cord o con el nodo HTTP Request: requisitos, credencial con llave de API, los 41 eventos del disparador, las operaciones del nodo, qué viaja en cada dirección, cuota de API por plan, cómo desconectar y problemas comunes."
+lastUpdated: "2026-10-07"
 reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Permiso Ajustes en Cord para crear la llave de API", "n8n 1.x autoalojado, con permiso para instalar nodos comunitarios", "Cuota mensual de API disponible en tu plan de Cord"]
 ---
 
 <header class="content-header">
@@ -12,37 +14,166 @@ availablePlans: [Free, Starter, Pro, Scale, Developer]
   <p class="page-subtitle">Flujos propios con el nodo de Cord, o con el nodo HTTP para cualquier endpoint.</p>
 </header>
 
-## Cómo funciona
+## Qué hace
 
-n8n se conecta a Cord de dos formas. El **nodo de Cord** (`n8n-nodes-cord`) es el camino corto; el **nodo HTTP Request** sirve para cualquier endpoint de la [API](/docs/desarrolladores/empezar/resumen) que el nodo todavía no cubra.
+n8n se conecta a Cord de dos formas. El **nodo de Cord** (`n8n-nodes-cord`) es el camino corto: trae un disparador, **Cord Trigger**, que arranca tu flujo cuando pasa algo en Cord, y un nodo de acciones, **Cord**, que crea y consulta clientes, cotizaciones y tareas. El **nodo HTTP Request** sirve para cualquier endpoint de la [API](/docs/desarrolladores/empezar/resumen) que el nodo todavía no cubra.
 
 n8n usa una **llave de API** de Cord, no la autorización de un clic de Zapier y Make: cada instalación de n8n tiene su propia dirección de regreso, y Cord solo acepta direcciones registradas de antemano.
 
-## Con el nodo de Cord
+## Requisitos
+
+| Dónde | Qué necesitas |
+|---|---|
+| **Cord** | El permiso de **Ajustes** para activar el modo desarrollador y crear una llave secreta con permiso de escritura. Cualquier plan. |
+| **n8n** | Una instalación propia de n8n 1.x y ser administrador para instalar nodos comunitarios. En n8n Cloud el nodo aparecerá cuando n8n termine de verificarlo. |
+| **Red** | Que tu n8n tenga una dirección `https` pública: Cord no entrega eventos a `http`, `localhost` ni a direcciones internas o privadas. |
+| **Cuota** | Cada operación del nodo gasta llamadas de la cuota mensual de API de tu plan de Cord. Ver [Límites](#límites). |
+
+## Conectar con el nodo de Cord
 
 <Steps>
-1. En n8n, entra a **Settings › Community nodes** e instala `n8n-nodes-cord`. Necesitas una instalación propia de n8n y ser administrador. En n8n Cloud aparecerá cuando n8n termine de verificarlo.
-2. En Cord, ve a **Ajustes**, activa el modo desarrollador al final del índice y abre **API**. Crea una llave con permiso de escritura; las que empiezan con `sk_test_` trabajan contra tu entorno de prueba.
-3. En n8n crea una credencial **Cord API** y pega la llave. El botón de probar te dice si es de prueba o de producción.
+1. En n8n, entra a **Settings › Community nodes** e instala `n8n-nodes-cord`.
+2. En Cord, ve a **Ajustes**, activa el modo desarrollador al final del índice y abre **API**. Crea una llave secreta con permiso de escritura; las que empiezan con `sk_test_` trabajan contra tu entorno de prueba. La llave se muestra una sola vez.
+3. En n8n crea una credencial **Cord API** y pega la llave. El botón de probar confirma que la llave funciona.
 4. Agrega el nodo **Cord Trigger**, elige los eventos y activa el flujo: n8n registra el webhook en Cord y lo borra cuando lo desactivas.
 5. Para actuar sobre Cord, usa el nodo **Cord**.
 </Steps>
 
-| Recurso | Operaciones |
-|---|---|
-| **Clientes** | Crear, actualizar, obtener y buscar. |
-| **Cotizaciones** | Crear, obtener, buscar, enviar y marcar pagada. |
-| **Tareas** | Crear. |
+{/* MOCKUP: flujo de n8n con tres nodos: "Cord Trigger" (Events: "Quotes: Quote approved", "Payments: Partial payment received"; Verify Signature activado), "IF" y "Cord" (Resource: Task, Operation: Create, Title: "Preparar pedido de {{ $json.data.folio }}"). Panel lateral de la credencial "Cord API" con el campo API Key enmascarado. */}
 
-El disparador verifica la firma `X-Cord-Signature-V1` de cada entrega: un POST que no venga de Cord se descarta.
+## El disparador: Cord Trigger
+
+En **Events** eliges uno o varios de los 41 eventos de Cord. Cord solo envía los que elegiste y el nodo verifica la firma `X-Cord-Signature-V1` de cada entrega con el secreto que recibió al registrar el webhook (**Verify Signature**, activado por defecto): un POST que no venga de Cord se rechaza.
+
+Los eventos aparecen en n8n en inglés, agrupados por categoría:
+
+| Categoría | Evento en n8n | Clave | Cuándo ocurre |
+|---|---|---|---|
+| Quotes | Quote created | `quote.created` | Se crea una cotización. |
+| Quotes | Quote sent | `quote.sent` | Se envía una cotización. |
+| Quotes | Client opened a quote | `quote.viewed` | El cliente abre la cotización. |
+| Quotes | Quote approved | `quote.approved` | Se aprueba una cotización. |
+| Quotes | Quote rejected | `quote.rejected` | Se rechaza una cotización. |
+| Quotes | Quote edited and resent | `quote.updated` | Se modifica y reenvía una cotización. |
+| Quotes | Quote expired | `quote.expired` | Vence una cotización. |
+| Quotes | Draft deleted | `quote.deleted` | Se elimina un borrador. |
+| Quotes | Message posted on a quote | `quote.comment_added` | Llega un mensaje en una cotización. |
+| Approvals | Internal approval requested | `quote.approval_requested` | Una cotización pide aprobación interna. |
+| Approvals | Internal approval decided | `quote.approval_decided` | Se decide una aprobación interna. |
+| Payments | Quote paid in full | `quote.paid` | Se paga por completo una cotización. |
+| Payments | Partial payment received | `payment.partial` | Llega un pago parcial. |
+| Payments | Recurring charge failed | `payment.failed` | Falla un cobro recurrente. |
+| Payments | Dispute opened | `dispute.created` | Abren un contracargo. |
+| Payments | Dispute closed | `dispute.closed` | Se cierra un contracargo. |
+| Payments | Refund succeeded | `refund.succeeded` | Se completa un reembolso. |
+| Payments | Refund failed | `refund.failed` | Falla un reembolso. |
+| Payments | Payout paid | `payout.paid` | Se paga un depósito a tu banco. |
+| Payments | Payout failed | `payout.failed` | Falla un depósito. |
+| Payments | Payments account updated | `account.updated` | Cambia tu cuenta de cobros. |
+| Invoices | Quote invoiced | `invoice.issued` | Se factura una cotización. |
+| Invoices | Quote CFDI stamped | `invoice.stamped` | Se timbra el CFDI de una cotización. |
+| Invoices | Invoice issued | `invoice.finalized` | Se emite una factura. |
+| Invoices | Invoice sent | `invoice.sent` | Se envía una factura. |
+| Invoices | Invoice paid | `invoice.paid` | Se paga una factura. |
+| Invoices | Invoice payment failed | `invoice.payment_failed` | Falla el pago de una factura. |
+| Invoices | Invoice overdue | `invoice.overdue` | Vence una factura. |
+| Invoices | Invoice voided | `invoice.voided` | Se anula una factura. |
+| Invoices | Invoice marked uncollectible | `invoice.marked_uncollectible` | Se marca una factura como incobrable. |
+| Clients | Client created | `client.created` | Se crea un cliente. |
+| Clients | Client updated | `client.updated` | Se actualiza un cliente. |
+| Clients | Client deleted | `client.deleted` | Se elimina un cliente. |
+| Products | Product created | `product.created` | Se crea un producto. |
+| Products | Product updated | `product.updated` | Se actualiza un producto. |
+| Products | Product deleted | `product.deleted` | Se elimina un producto. |
+| Tasks | Task created | `task.created` | Se crea una tarea. |
+| Tasks | Task completed | `task.completed` | Se completa una tarea. |
+| Tasks | Payment promise recorded | `promise.created` | Se registra una promesa de pago. |
+| Tasks | Payment promise kept | `promise.kept` | Se cumple una promesa de pago. |
+| Tasks | Payment promise broken | `promise.broken` | Se incumple una promesa de pago. |
+
+Los disparadores de tiempo de Cord Workflows (vencimientos que se acercan y facturas que llevan días vencidas) y el disparador programado no existen en n8n: usa el nodo **Schedule Trigger** de n8n y las búsquedas del nodo **Cord** para armarlos. Los campos que trae cada evento están en [Webhooks para desarrolladores](/docs/desarrolladores/herramientas/webhooks).
+
+Si cambias los eventos de un **Cord Trigger** ya activo, el nodo filtra los que quitaste aunque Cord siga enviándolos; para que Cord deje de enviarlos, desactiva y vuelve a activar el flujo.
+
+## Las acciones: el nodo Cord
+
+| Recurso | Operación | Campos |
+|---|---|---|
+| **Client** | Create | **Company** (obligatorio). Opcionales: Contact, Email, Phone, Tax ID, Country Code y Payment Terms (Upfront, Net 30 o Net 60). |
+| **Client** | Update | **Client ID** y los campos que quieras cambiar. |
+| **Client** | Get | **Client ID**. |
+| **Client** | Search | Texto o correo a buscar. |
+| **Quote** | Create | **Client ID** y **Items** (Description, Quantity, Unit Price). Opcionales: Currency, Payment Terms, Valid For (Days), Notes y **Send Now** para enviarla al crearla. |
+| **Quote** | Get | **Quote ID**. |
+| **Quote** | Search | Folio o cliente a buscar. |
+| **Quote** | Send | **Quote ID** de un borrador. |
+| **Quote** | Mark as Paid | **Quote ID** y, opcional, **Payment Method**. |
+| **Task** | Create | **Title**. Opcionales: Due Date y Quote ID para ligarla a una cotización. |
+
+El nodo **Cord** también se puede usar como herramienta de un agente de IA dentro de n8n.
 
 ## Con el nodo HTTP Request
 
 <Steps>
-1. En Cord, agrega un webhook en **Ajustes › Modo desarrollador › Webhooks** con la URL del nodo **Webhook** de n8n.
+1. Para recibir eventos, agrega un webhook en **Ajustes › Modo desarrollador › Webhooks** con la URL del nodo **Webhook** de n8n y elige los eventos.
 2. Para llamar a la API, usa **HTTP Request** contra `https://cordhq.app/api/v1/...` con el encabezado `Authorization: Bearer sk_...`.
+3. Agrega el encabezado `Idempotency-Key` con un valor único por operación cuando crees datos, para que un reintento no los duplique.
 </Steps>
+
+Con el nodo **Webhook** genérico tú verificas la firma; los detalles están en [Webhooks para desarrolladores](/docs/desarrolladores/herramientas/webhooks).
+
+## Qué viaja y en qué dirección
+
+| Dirección | Qué viaja | Cuándo |
+|---|---|---|
+| **De Cord a n8n** | Los eventos que elegiste en **Cord Trigger**, firmados, con `id`, `event`, `created_at` y `data`. | Al instante, cada vez que pasa en Cord. Si n8n no responde, Cord reintenta la entrega. |
+| **De n8n a Cord** | Lo que haga el nodo **Cord** o tu **HTTP Request**: clientes, cotizaciones, pagos registrados o tareas. | Cuando el flujo corre. |
+
+Lo que n8n hace en Cord dispara los mismos eventos que si lo hiciera una persona, con **Quién lo originó: La API**. Si un flujo escucha un evento y además lo provoca, cuidado con los ciclos: filtra por el campo que cambió o por el actor.
 
 ## Límites
 
-Los webhooks y las llamadas de API cuentan contra los límites de tu plan, igual que con Zapier o Make. Los ves en **Ajustes › Modo desarrollador**.
+| Límite | Valor |
+|---|---|
+| Llamadas a la API al mes | Gratis 100, Starter 1,000, Pro 5,000, Scale 10,000, Developer 50,000 |
+| Al pasar la cuota | En Gratis las llamadas se rechazan hasta el siguiente mes; desde Starter se cobran como excedente, con un tope de seguridad de 10 veces lo incluido |
+| Llaves de API activas | Gratis 2, Starter 5, Pro 20, Scale 50, Developer 200 |
+| Webhooks que registra **Cord Trigger** | 100 por organización, compartidos con Zapier y Make, aparte de los endpoints de tu plan |
+| Webhooks que creas a mano (nodo HTTP) | Los de tu plan: 16 en Gratis, Starter y Pro; 32 en Scale; 100 en Developer |
+
+- **Qué gasta cuota:** cada operación del nodo **Cord** y cada llamada de **HTTP Request** con una llave `sk_live_…`, más registrar o borrar el webhook al activar o desactivar un flujo con **Cord Trigger**. Recibir eventos no gasta cuota, y una llave `sk_test_…` tampoco.
+- **Cuánto llevas:** en **Ajustes › Planes y suscripción › Suscripción**, fila **Llamadas a la API**.
+
+## Desconectar
+
+- **Apagar un flujo:** al desactivar un flujo con **Cord Trigger**, n8n borra en Cord el webhook que había registrado. Si el webhook ya no existía en Cord, n8n se desactiva igual.
+- **Cortar el acceso por completo:**
+
+<Steps>
+1. En Cord, ve a **Ajustes › Modo desarrollador › API**.
+2. Busca la llave que pegaste en n8n y pulsa **Revocar**. Confirma: deja de funcionar de inmediato y no se puede deshacer.
+3. En n8n, borra la credencial **Cord API**.
+</Steps>
+
+Al revocar la llave, n8n ya no puede llamar a la API con ella, y los webhooks que esa llave había registrado dejan de recibir eventos.
+
+- **Con el nodo HTTP Request:** borra también el webhook en **Ajustes › Modo desarrollador › Webhooks**.
+
+## Problemas comunes
+
+| Mensaje o síntoma | Qué hacer |
+|---|---|
+| **La prueba de la credencial falla** | Pega una llave secreta (`sk_live_` o `sk_test_`). Las llaves publicables (`pk_`) no sirven aquí. Si la llave se revocó, crea otra. |
+| **El flujo no se activa con Cord Trigger** | La llave necesita permiso de escritura para registrar el webhook. Revisa también que la dirección de n8n sea `https` y pública: Cord rechaza `http`, `localhost` y direcciones internas o privadas. |
+| **"Tus integraciones ya crearon 100 suscripciones, el máximo por organización."** | Desactiva los flujos de n8n, Zaps o escenarios que ya no uses para liberar espacio. |
+| **n8n responde 401 a las entregas de Cord** | El disparador rechaza las entregas cuya firma no coincide con el secreto que recibió al registrar el webhook. Desactiva y vuelve a activar el flujo para que registre uno nuevo. |
+| **El nodo Cord responde 429** | Pasaste el límite por minuto o la cuota mensual de API. Revisa tu consumo; en Gratis, espera al siguiente mes o sube de plan. |
+| **No puedes crear la llave** | Llegaste al máximo de llaves activas de tu plan. Revoca una que ya no uses. |
+
+## Relacionadas
+
+- [Zapier](/docs/automatizacion/integraciones/zapier)
+- [Make](/docs/automatizacion/integraciones/make)
+- [Claves de API](/docs/desarrolladores/empezar/apikey)
+- [Webhooks para desarrolladores](/docs/desarrolladores/herramientas/webhooks)
+- [Integraciones y cuota de API](/docs/automatizacion/integraciones#integraciones-y-cuota-de-api)

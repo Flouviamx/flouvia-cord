@@ -22,16 +22,22 @@ const EVENTOS = [
     { id: 'quote_expiring',  label: t(L, 'set.notif.ev.expiring'), desc: t(L, 'set.notif.ev.expiring_desc') },
     { id: 'payment_overdue', label: t(L, 'set.notif.ev.overdue'),  desc: t(L, 'set.notif.ev.overdue_desc') },
     { id: 'team_join',       label: t(L, 'set.notif.ev.team_join'), desc: t(L, 'set.notif.ev.team_join_desc') },
+    { id: 'task_due',        label: t(L, 'set.notif.ev.task_due'), desc: t(L, 'set.notif.ev.task_due_desc') },
 ];
 const CANALES = [
     { id: 'email', label: t(L, 'set.notif.canal.email') },
     { id: 'slack', label: t(L, 'set.notif.canal.slack') },
     { id: 'teams', label: t(L, 'set.notif.canal.teams') },
 ];
-const on = (ev: string, c: string) => !!(P[ev] && P[ev][c]);
+// task_due nació después de la matriz: una org que ya la había guardado no
+// tiene la llave, y el recordatorio sale encendido (mismo default que lee
+// src/pages/api/cron/tareas.ts).
+const on = (ev: string, c: string) => ev === 'task_due' && c === 'email' && !P.task_due ? true : !!(P[ev] && P[ev][c]);
 // team_join no tiene forma de mensaje de canal (no hay folio/cliente/total que
-// mostrar) — se deja sin celda interactiva en vez de fingir que aplica.
-const sinCanal = (ev: string, c: string) => c !== 'email' && ev === 'team_join';
+// mostrar) — se deja sin celda interactiva en vez de fingir que aplica. El
+// recordatorio de tareas es un correo PERSONAL a cada responsable: tampoco va
+// a un canal compartido.
+const sinCanal = (ev: string, c: string) => c !== 'email' && (ev === 'team_join' || ev === 'task_due');
 ---
 
 <SettingsShell title="Notificaciones — Ajustes" tab="notificaciones"

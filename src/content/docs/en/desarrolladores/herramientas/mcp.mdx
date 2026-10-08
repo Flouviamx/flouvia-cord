@@ -1,6 +1,10 @@
 ---
 title: "Cord MCP Server"
 description: "Connect AI clients like Claude and Cursor to your company's financial system — 26 tools, real pagination, safe-to-retry calls, and activity metered like the rest of the API."
+lastUpdated: "2026-10-07"
+reviewedBy: "Cord engineering"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["A Secret Key (restricted keys don't work with MCP)", "An MCP-compatible client"]
 ---
 
 <header class="content-header">
@@ -23,8 +27,9 @@ By configuring the Cord MCP Server, you empower agents like Claude or IDE-integr
 
 Authentication for your AI client is performed using your standard Cord **API Key** (`sk_live_…` / `sk_test_…`) — the same one the REST API uses.
 
-1. Navigate to **Settings › Developers › MCP** in the Cord interface (it appears once you turn
-   on **Developer mode** at the bottom of the Settings index).
+1. Navigate to **Settings › MCP** in the Cord interface. It's in the **Developers** section of
+   the Settings index, which appears once you turn on **Developer mode** at the bottom of that
+   index.
 2. A status card at the top tells you whether you already have an active key and, if an AI
    client is already connected, when it was last used. If you don't have one, the
    **"Create a key for MCP"** button generates a `write` key without leaving the page — it's
@@ -67,7 +72,7 @@ key must belong to the same organization that opened the session.
 | `crear_cotizacion_borrador` | Creates a DRAFT quote (doesn't send it). Idempotent if you pass `idempotency_key`. | **write** |
 | `listar_facturas` | Lists **Cord Invoicing** invoices with their balance and state (`draft`\|`open`\|`paid`\|`void`\|`uncollectible`\|`overdue`). Filter by state, client, or free text. Paginated. | read |
 | `detalle_factura` | Full detail of ONE invoice: line items, issuer, recipient, taxes, declared FX rate, balance, and payments received. | read |
-| `crear_factura_borrador` | Creates a DRAFT invoice for a client, without needing a prior quote. Requires the Starter plan or higher (Cord Invoicing). | **write** |
+| `crear_factura_borrador` | Creates a DRAFT invoice for a client, without needing a prior quote. Available on every plan, including Free. | **write** |
 | `enviar_cotizacion` | Sends a draft quote to the client (email with the link). On the Free plan it uses one of the monthly sends. | **write** |
 | `aprobar_cotizacion` | Marks a sent or viewed quote as approved. | **write** |
 | `rechazar_cotizacion` | Marks a sent or viewed quote as rejected. | **write** |
@@ -102,20 +107,31 @@ alongside the text. Amounts travel with their currency in `moneda`: never assume
 
 ## Pagination
 
-`listar_cotizaciones`, `buscar_cliente`, `listar_productos`, `listar_facturas`, and `listar_eventos` return pages, not the whole table:
+`listar_cotizaciones`, `buscar_cliente`, `listar_productos`, `listar_facturas`, and `listar_eventos` return pages, not the whole table. There are two response shapes.
+
+`buscar_cliente` and `listar_productos` return the list in `items`, with `total`, `has_more`, `next_cursor`, and the currency in `moneda`; `listar_cotizaciones` returns `total`, `has_more`, and `next_cursor` with the list in `cotizaciones`, and the currency goes on each quote:
 
 ```json
 {
-  "items": [ { "id": "…", "empresa": "Distribuidora El Zarco" } ],
+  "items": [ { "id": "9a1c3e5f-7b2d-4f6a-8c0e-1d3b5f7a9c2e", "empresa": "Distribuidora El Zarco" } ],
   "total": 47,
+  "moneda": "MXN",
   "has_more": true,
   "next_cursor": "20"
 }
 ```
 
-If `has_more` comes back `true`, call the same tool again passing `cursor: next_cursor` for the
-next page. `next_cursor` is `null` once there are no more results.
-`listar_cotizaciones` returns the list in `cotizaciones` and `listar_eventos` in `eventos`.
+`listar_facturas` and `listar_eventos` return only the list (in `facturas` or `eventos`) and `next_cursor`, without `total` or `has_more`:
+
+```json
+{
+  "eventos": [ { "id": "6b0e2f4a-8c1d-4e3b-9a5f-7d2c0e8b1a46", "type": "quote.approved" } ],
+  "next_cursor": "MjAyNi0wOS0xNFQxODozMjowNC4xMjMwMDBafDZiMGUyZjRhLThjMWQtNGUzYi05YTVmLTdkMmMwZThiMWE0Ng"
+}
+```
+
+In every case, call the same tool again passing `cursor: next_cursor` for the next page.
+`next_cursor` is `null` once there are no more results.
 
 <Callout type="info">
 `listar_productos` **never** includes a product's internal cost/margin — only list price, SKU,
@@ -138,7 +154,7 @@ arguments returns an error, and the key expires after 24 hours.
   "name": "crear_cotizacion_borrador",
   "arguments": {
     "idempotency_key": "a1b2c3d4-…",
-    "cliente_id": "…",
+    "cliente_id": "9a1c3e5f-7b2d-4f6a-8c0e-1d3b5f7a9c2e",
     "items": [{ "descripcion": "Installation", "cantidad": 1, "precio_unitario": 4500 }]
   }
 }
@@ -166,8 +182,11 @@ Business rules are strictly applied. If the AI attempts to apply a 150% discount
 ## Limits, metering, and activity
 
 Every real call (not protocol notifications like `notifications/initialized`) counts just like
-a REST API call: against your plan's usage quota, against the per-key rate limit (600/min), and
-shows up in the **Logs** tab of the [Cord Workbench](/en/docs/desarrolladores/herramientas/workbench)
+a REST API call against your plan's usage quota. Every HTTP request to the MCP server,
+notifications included, counts against the API's per-minute limits (600 per secret key and 120
+per source IP), and the tools that change a quote's state also share the 120-per-minute limit
+per organization; see the [limits table](/en/docs/desarrolladores/esenciales/errores#rate-limits).
+Each call shows up in the **Logs** tab of the [Cord Workbench](/en/docs/desarrolladores/herramientas/workbench)
 with the tool that was called (e.g. `/mcp/tools/call:listar_productos`) — so you can see exactly
 what your agent is doing, with which key, and when. You can filter that log by method or status,
 or search for `mcp` in the route to isolate just what the AI did.

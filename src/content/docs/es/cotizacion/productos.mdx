@@ -1,53 +1,133 @@
 ---
 title: "Productos y descuentos"
-description: "Añade SKUs, agrupa artículos en kits y negocia precios."
+seoTitle: "Productos, kits, descuentos y margen en una cotización"
+description: "Agrega productos, kits y líneas libres, negocia precios, usa el precio sugerido por tu historial, vigila el margen y entiende cómo se calculan impuestos y descuentos."
+lastUpdated: "2026-10-07"
+reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Permiso Cotizaciones", "Permiso Productos para crear o importar el catálogo"]
 ---
 
 <header class="content-header">
   <h1 class="page-title">Productos y descuentos</h1>
-  <p class="page-subtitle">Construye tu propuesta comercial añadiendo artículos, agrupando en kits y negociando el precio perfecto.</p>
+  <p class="page-subtitle">Arma la propuesta con tu catálogo, negocia el precio de cada línea y mira el margen antes de enviar.</p>
 </header>
 
-## Formas de armar tu Catálogo
+## Qué es
 
-Antes de agregar productos a una cotización, Cord te permite nutrir tu catálogo base de diferentes formas:
+El paso **¿Qué le vas a cotizar?** del editor es donde agregas las partidas. Cada
+partida guarda su precio de **Lista** (el de tu catálogo) y su precio **Negociado**
+(el que realmente pagará el cliente). El descuento no es un campo aparte: es la
+diferencia entre los dos.
 
-1. **Creación Manual:** Añade SKUs uno por uno, definiendo su SKU, nombre, descripción, unidad y Precio de Lista. Si además capturas el costo, Cord calcula el margen de lista automáticamente y lo compara contra el margen realmente cobrado en cada venta.
-2. **Importación Masiva por CSV / Excel:** Descarga nuestra plantilla, pega tu inventario desde tu ERP actual (SAP, Microsip, Excel) y súbelo. Cord detecta las columnas de nombre, SKU, unidad y precio automáticamente; puedes actualizar miles de productos en una sola carga.
-3. **Kits de Productos (Bundles):** Si sueles vender las mismas cosas juntas (Ej: *Kit de Punto de Venta: Computadora + Lector de Código de Barras + Impresora Térmica*), puedes crear un **Kit** en Cord. Al cotizar, simplemente seleccionas el Kit y el sistema añadirá automáticamente todas sus partes, ahorrándote el tener que buscar y agregar los mismos artículos varias veces. Un kit puede tener un precio de combo fijo, distinto a la suma de sus partes — Cord prorratea ese total entre las líneas al insertarlo.
+{/* MOCKUP: paso "¿Qué le vas a cotizar?" con tres líneas (Licencia anual × 5, Laptop Pro 14 × 2, Capacitación por hora × 10), columnas Producto, Cant., Lista, Negociado, IVA, Importe y Margen; en la segunda línea el texto "Sugerido: MXN 27,550.00 (68% cierra)" bajo el nombre y el margen 18% en rojo. */}
+
+## Requisitos
+
+- **Permiso:** Cotizaciones para cotizar; **Productos** para crear, editar o importar el catálogo.
+- **Plan:** todos. El precio sugerido por historial está desde Starter. Gratis admite hasta 50 productos y Starter hasta 500; desde Pro no hay tope.
+- **Límite por cotización:** 200 líneas.
+
+## Arma tu catálogo
+
+1. **Manual:** en **Productos › + Nuevo producto** defines SKU, nombre, descripción, unidad y precio de lista. Si capturas el **costo**, Cord calcula el margen.
+2. **Importación por CSV:** con **Importar CSV**, Cord propone qué columna corresponde a nombre, SKU, unidad, precio y estado; tú confirmas el mapeo. Hasta 2,000 filas por archivo; si un SKU ya existe, se actualiza.
+3. **Kits:** agrupan productos que vendes juntos. Un kit puede tener un **precio de combo** fijo, distinto de la suma de sus partes.
+
+Ver [Importa tu catálogo](/docs/cuenta/catalogo) para el detalle de la importación.
 
 ### Precios por volumen
 
-Desde la ficha de cada producto puedes definir escalones de precio por cantidad mínima (Ej: *10% de descuento a partir de 50 unidades*). Al cotizar, Cord aplica automáticamente el escalón que corresponde a la cantidad que capturaste, sin que tengas que recordar la tabla ni calcularla a mano.
+En la ficha de cada producto puedes definir escalones: un precio unitario fijo a partir
+de una cantidad mínima (por ejemplo, 90 por pieza desde 500 unidades). Al cotizar, Cord
+aplica el escalón que corresponde a la cantidad capturada.
 
-## Agregando partidas a la cotización
+## Agrega partidas
 
-En la sección de **Partidas** del cotizador, tienes dos opciones:
+<Steps>
+1. **Busca en el catálogo** por nombre o SKU en el buscador de la sección. Presiona Enter para agregar el resultado y sigue escribiendo para agregar varios seguidos.
+2. **Inserta un kit** con **+ Insertar kit**: elige el kit, escribe cuántas veces insertarlo y pulsa **Agregar**. Cord añade todas sus partes multiplicando las cantidades; si el kit tiene precio de combo, lo reparte entre sus líneas y te dice cuánto ahorra el cliente.
+3. **Agrega una línea libre** con **+ Línea libre** para algo que no está en tu catálogo: escribes la descripción, la cantidad y el precio.
+4. **Ajusta cada línea:** cantidad, precio **Negociado** y, si tu catálogo tiene más de una tasa, el impuesto de la línea.
+</Steps>
 
-1. **Buscar en el Catálogo:** Utiliza la barra de búsqueda para encontrar los productos, servicios o Kits que ya configuraste en tu catálogo.
-2. **Partida Libre:** Si necesitas cotizar algo único sobre la marcha (Ej: *Un servicio especial de instalación de fin de semana*), puedes agregar una **Línea Libre**. Simplemente escribes el nombre que quieras, le pones la cantidad y le asignas el precio que desees en ese momento, sin tener que ir a crear un producto en el catálogo primero.
+Las partidas no llevan notas propias. Para aclaraciones al cliente usa **Notas para el
+cliente** (ver [Opciones avanzadas](/docs/cotizacion/opciones)).
 
-Por cada partida que agregues, puedes personalizar:
-- **Cantidad:** Número de unidades.
-- **Sobrescribir el Precio Unitario:** El sistema cargará el Precio Base de tu catálogo, pero puedes editarlo libremente en ese momento (Ej: bajar de $500 a $450) para esa cotización específica sin afectar el catálogo general.
-- **Notas para el cliente:** Agrega notas o descripciones largas justo debajo del producto. Si vendes "Consultoría", puedes añadir como nota: *"Incluye 10 horas de desarrollo frontend y 2 horas de diseño"*. El cliente verá estas notas debajo de cada partida en el enlace web.
+## Cómo se forma el descuento
 
-### Descuentos Inteligentes
+1. **Nivel del cliente (automático):** si el cliente tiene un descuento en su nivel de precio, Cord baja el negociado de los productos de catálogo en ese porcentaje y muestra "Nivel del cliente: −10% aplicado automáticamente a los precios de lista".
+2. **Lista de precios B2B de Shopify (automático):** si conectaste [Shopify](/docs/automatizacion/integraciones/shopify) y el cliente compra por una empresa con lista de precios B2B, esa lista manda sobre el descuento por nivel, producto por producto, y solo cuando la cotización está en la divisa de la lista. Si ya cambiaste el negociado a mano, Cord no lo sobrescribe.
+3. **Precio por volumen (automático):** si la cantidad alcanza un escalón, el precio de lista de la línea pasa al del escalón.
+4. **Negociado manual:** puedes bajar el negociado de cualquier línea.
 
-El B2B vive de la negociación. Cord maneja los descuentos de manera jerárquica:
-
-1. **Descuento de Nivel de Cliente (Automático):** Si seleccionaste un cliente VIP, Cord ya aplicó su descuento base automáticamente.
-2. **Descuento por partida:** Se aplica únicamente a un producto específico (Ej: *20% de descuento en el Software, pero el Hardware se cobra completo*).
-3. **Descuento global:** Se aplica al subtotal de toda la cotización. Puedes ingresarlo como porcentaje (*10%*) o monto fijo en la divisa de la cotización (Ej: *-$5,000*).
+En **Revisa y envía**, **Le descontaste** suma la diferencia entre lista y negociado de
+toda la cotización. Cord no tiene un descuento global sobre el subtotal.
 
 <Callout type="warning">
-Los descuentos siempre se calculan **antes** de aplicar impuestos — es una regla del motor de cálculo de Cord, no una configuración opcional, así que nunca hay descuadres de centavos entre lo que ve el vendedor y lo que factura el sistema. Para cuentas en México, esto además cumple con las reglas de redondeo del CFDI 4.0.
+Los descuentos siempre se calculan **antes** de impuestos. El editor y el servidor usan
+el mismo motor de cálculo: lo que ves es lo que se guarda, se cobra y se factura.
 </Callout>
 
-## Cálculo en Tiempo Real
+## Precio sugerido por tu historial
 
-A medida que agregas productos o modificas descuentos, Cord actualiza instantáneamente el desglose en la parte inferior de la pantalla:
-- **Subtotal:** Suma de todas las partidas sin impuestos.
-- **Descuentos:** Total restado.
-- **Impuestos:** Cada partida lleva su propia tasa, tomada del catálogo fiscal de tu país al capturarla — el nombre que se imprime es el de tu país (IVA en México y España, VAT en Reino Unido, GST en Canadá, Sales tax por estado en Estados Unidos), nunca un rótulo genérico.
-- **Total:** Lo que el cliente pagará.
+Desde Starter, al agregar un producto de catálogo Cord consulta tus cotizaciones ya
+decididas (aprobadas, pagadas, facturadas, rechazadas o vencidas) y propone un precio.
+Agrupa el historial en bandas de descuento de 5 en 5 puntos y elige la banda más baja
+que cierra al menos 60% de las veces; si ninguna llega, elige la de mejor cierre.
+
+- Cord busca primero en el historial de **ese producto**, luego en el de **ese cliente** y al final en el de **toda tu organización**, y usa el primero que tenga al menos 3 líneas decididas.
+- La sugerencia aparece bajo el nombre como "Sugerido: … (68% cierra)". Haz clic para aplicarla al negociado.
+- Si el negociado ya coincide con la sugerencia, o no hay historial suficiente, no aparece nada.
+
+## Margen
+
+La columna **Margen** muestra tu ganancia sobre el precio negociado, ya descontado el
+costo: (negociado − costo) ÷ negociado. Las líneas sin costo muestran un guion. Si
+tu organización tiene un margen mínimo en [aprobaciones
+internas](/docs/cotizacion/aprobaciones-internas), el margen de las líneas por debajo
+se pinta en rojo.
+
+La columna de margen es interna: no aparece en el link ni en el PDF.
+
+## Existencias de Shopify
+
+Si tus productos vienen de una tienda Shopify conectada, el editor muestra junto a cada
+uno "N en existencia", "Solo hay N en existencia" si la cantidad supera lo disponible,
+o "Agotado". Es un aviso: Cord no bloquea la cotización.
+
+## Cálculo en tiempo real
+
+El panel **Revisa y envía** se actualiza al instante:
+
+- **Subtotal:** suma de las partidas sin impuestos.
+- **Le descontaste:** diferencia total entre lista y negociado (solo si hay descuento).
+- **Impuestos:** un renglón por tasa, con el nombre de tu país (IVA en México y España, VAT en Reino Unido, GST en Canadá, Sales tax por estado en Estados Unidos).
+- **Retenciones:** si tu catálogo las tiene, se restan.
+- **Total:** lo que pagará el cliente.
+
+## Límites por plan
+
+| | Gratis | Starter | Pro | Scale | Developer |
+|---|---|---|---|---|---|
+| Productos en catálogo | 50 | 500 | Sin tope | Sin tope | Sin tope |
+| Precio sugerido por historial | No | Sí | Sí | Sí | Sí |
+| Líneas por cotización | 200 | 200 | 200 | 200 | 200 |
+
+## Problemas comunes
+
+**No aparece "Sugerido".** Tu plan es Gratis, el producto no tiene historial suficiente, o el negociado ya es el sugerido.
+
+**El margen sale con guion.** El producto no tiene costo capturado, o es una línea libre.
+
+**No veo la columna de impuesto por línea.** Tu catálogo tiene una sola tasa; todas las líneas usan esa.
+
+**La lista de Shopify no se aplicó.** La cotización está en otra divisa que la de la lista, o ya editaste el negociado de esa línea.
+
+## Relacionadas
+
+- [Datos del cliente](/docs/cotizacion/cliente)
+- [Opciones avanzadas](/docs/cotizacion/opciones)
+- [Importa tu catálogo](/docs/cuenta/catalogo)
+- [Aprobaciones internas](/docs/cotizacion/aprobaciones-internas)

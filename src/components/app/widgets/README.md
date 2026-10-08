@@ -12,7 +12,8 @@ Punto de entrada para construir widgets de la app. En VS Code: ⌘P y escribir
 | `ChartWidget.astro` | Encabezado, datos declarativos, gráfica y estado vacío | Informes; líneas, barras, rankings, embudo y segmentos |
 | `ListWidget.astro` | Filas, enlaces, detalles y estado vacío | Volumen de productos |
 | `WidgetHeader.astro` | Título y descripción uniformes | Gráficas y listas |
-| `ChartPreview.astro` | Miniatura estática derivada de datos reales | Biblioteca de gráficas, aun estando ocultas |
+| `TrendKpi.astro` | KPI que sigue al rango: cifra, variación contra el periodo anterior y sparkline (o barra para tasas). El cálculo vive en `src/lib/dash-kpis.ts` y lo comparten SSR y cliente | Inicio (tasa, ticket, cobrado) |
+| `ScopeTag.astro` | Pastilla Hoy / Rango / Histórico: qué ventana mide el widget | Inicio e Informes |
 
 ```astro
 ---
@@ -34,7 +35,15 @@ reescribir la etiqueta, descripción o superficie.
 
 ## Infraestructura compartida
 
-- `../WidgetGrid.astro`: posiciones, edición, biblioteca, visibilidad y persistencia.
+- `../WidgetGrid.astro`: posiciones, edición, visibilidad y persistencia.
+- `src/lib/widget-library.ts`: la biblioteca flotante (tarjeta anclada al botón en
+  escritorio, hoja inferior en móvil). Se monta en `<body>` para escapar del
+  `transform` y los `overflow:hidden` de los ancestros del grid.
+- `src/lib/widget-preview.ts`: miniaturas de la biblioteca, dibujadas con los MISMOS
+  datos que la tarjeta trae en su markup (`data-items`, `data-points`, `data-steps`,
+  `data-segments`, `data-slices`, `data-values`, `.kpi-num`, filas de lista). Un
+  widget nuevo se ve bien en la biblioteca si declara sus datos así; no hace falta
+  una plantilla aparte.
 - `../WidgetEditButtons.astro`: controles de cada widget.
 - `../WidgetCustomizeButtons.astro`: entrada/salida del editor.
 - `../WidgetEmpty.astro`: estados vacíos existentes.
@@ -64,8 +73,9 @@ sorpresa en layouts guardados y Restablecer lo devuelve a la biblioteca. No hay
 cambio en el formato del endpoint de preferencias. Contrato: `widget-defaults.ts`
 y `test/widget-defaults.test.ts`; la fase prepaint refleja la misma regla.
 
-Catálogo opcional (13 widgets):
-- Inicio: conversión enviada a pagada, pipeline ponderado.
+Catálogo opcional (17 widgets):
+- Inicio: conversión enviada a pagada, pipeline ponderado, cobrado del rango, días a cierre,
+  facturas vencidas y ranking de vendedores.
 - Equipo: ticket por cotización ganada de miembros activos.
 - Resumen: cotizaciones decididas de la cohorte.
 - Comercial: seguimientos detenidos.
@@ -79,8 +89,10 @@ Catálogo opcional (13 widgets):
 - Cobranza IA: fallos de envío en 30 días.
 
 Todos usan datos ya cargados por su página; conservan sus rangos y permisos.
-La biblioteca permite buscar, filtrar Todos/Para agregar y recuperar widgets.
-Las previews son inertes, sin IDs ni bindings duplicados.
+La biblioteca permite buscar, filtrar por Todos / Para agregar / categoría
+(`group`) y recuperar widgets. Un widget oculto desde el servidor (permiso, plan o
+conexión) queda bloqueado y la biblioteca no lo ofrece. Las miniaturas no clonan
+DOM: no arrastran ids ni bindings.
 
 La migración es incremental: Informes comparte la superficie de todas sus tarjetas;
 varias gráficas y la lista de volumen ya son componentes completos. Los widgets

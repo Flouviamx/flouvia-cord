@@ -1,10 +1,12 @@
 ---
 title: "n8n"
 seoTitle: "Connect Cord with n8n"
-description: "How to connect n8n with Cord using the n8n-nodes-cord node or the HTTP Request node: API key credential, signature-verified trigger, available actions and limits."
-lastUpdated: "2026-09-28"
+description: "How to connect n8n with Cord using the n8n-nodes-cord node or the HTTP Request node: requirements, API key credential, the trigger's 41 events, the node's operations, what flows each way, API quota per plan, how to disconnect and common issues."
+lastUpdated: "2026-10-07"
 reviewedBy: "Cord product and operations"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Settings permission in Cord to create the API key", "Self-hosted n8n 1.x, with permission to install community nodes", "Monthly API quota available on your Cord plan"]
 ---
 
 <header class="content-header">
@@ -12,37 +14,164 @@ availablePlans: [Free, Starter, Pro, Scale, Developer]
   <p class="page-subtitle">Your own flows with the Cord node, or with the HTTP node for any endpoint.</p>
 </header>
 
-## How it works
+## What it does
 
-n8n connects to Cord in two ways. The **Cord node** (`n8n-nodes-cord`) is the short path; the **HTTP Request node** covers any [API](/en/docs/desarrolladores/empezar/resumen) endpoint the node does not yet include.
+n8n connects to Cord in two ways. The **Cord node** (`n8n-nodes-cord`) is the short path: it brings a trigger, **Cord Trigger**, that starts your flow when something happens in Cord, and an actions node, **Cord**, that creates and looks up clients, quotes and tasks. The **HTTP Request node** covers any [API](/en/docs/desarrolladores/empezar/resumen) endpoint the node does not yet include.
 
 n8n uses a Cord **API key**, not the one-click authorization of Zapier and Make: each n8n installation has its own return address, and Cord only accepts addresses registered in advance.
 
-## With the Cord node
+## Requirements
+
+| Where | What you need |
+|---|---|
+| **Cord** | The **Settings** permission to turn on developer mode and create a secret key with write permission. Any plan. |
+| **n8n** | Your own n8n 1.x installation and admin rights to install community nodes. On n8n Cloud the node will appear once n8n finishes verifying it. |
+| **Network** | A public `https` address for your n8n: Cord does not deliver events to `http`, `localhost` or internal or private addresses. |
+| **Quota** | Every node operation uses calls from your Cord plan's monthly API quota. See [Limits](#limits). |
+
+## Connect with the Cord node
 
 <Steps>
-1. In n8n, go to **Settings › Community nodes** and install `n8n-nodes-cord`. You need your own n8n installation and admin rights. On n8n Cloud it will appear once n8n finishes verifying it.
-2. In Cord, go to **Settings**, turn on developer mode at the end of the index and open **API**. Create a key with write permission; keys starting with `sk_test_` work against your test environment.
-3. In n8n, create a **Cord API** credential and paste the key. The test button tells you whether it is a test or production key.
+1. In n8n, go to **Settings › Community nodes** and install `n8n-nodes-cord`.
+2. In Cord, go to **Settings**, turn on developer mode at the end of the index and open **API**. Create a secret key with write permission; keys starting with `sk_test_` work against your test environment. The key is shown only once.
+3. In n8n, create a **Cord API** credential and paste the key. The test button confirms the key works.
 4. Add the **Cord Trigger** node, pick the events and activate the flow: n8n registers the webhook in Cord and deletes it when you deactivate the flow.
 5. To act on Cord, use the **Cord** node.
 </Steps>
 
-| Resource | Operations |
-|---|---|
-| **Clients** | Create, update, get and search. |
-| **Quotes** | Create, get, search, send and mark paid. |
-| **Tasks** | Create. |
+{/* MOCKUP: n8n flow with three nodes: "Cord Trigger" (Events: "Quotes: Quote approved", "Payments: Partial payment received"; Verify Signature on), "IF" and "Cord" (Resource: Task, Operation: Create, Title: "Prepare order for {{ $json.data.folio }}"). Side panel of the "Cord API" credential with the masked API Key field. */}
 
-The trigger verifies the `X-Cord-Signature-V1` signature of each delivery: a POST that does not come from Cord is discarded.
+## The trigger: Cord Trigger
+
+In **Events** you choose one or more of Cord's 41 events. Cord only sends the ones you chose, and the node verifies the `X-Cord-Signature-V1` signature of every delivery with the secret it received when registering the webhook (**Verify Signature**, on by default): a POST that does not come from Cord is rejected.
+
+| Category | Event in n8n | Key | When it happens |
+|---|---|---|---|
+| Quotes | Quote created | `quote.created` | A quote is created. |
+| Quotes | Quote sent | `quote.sent` | A quote is sent. |
+| Quotes | Client opened a quote | `quote.viewed` | The client opens the quote. |
+| Quotes | Quote approved | `quote.approved` | A quote is approved. |
+| Quotes | Quote rejected | `quote.rejected` | A quote is rejected. |
+| Quotes | Quote edited and resent | `quote.updated` | A quote is edited and resent. |
+| Quotes | Quote expired | `quote.expired` | A quote expires. |
+| Quotes | Draft deleted | `quote.deleted` | A draft is deleted. |
+| Quotes | Message posted on a quote | `quote.comment_added` | A message is posted on a quote. |
+| Approvals | Internal approval requested | `quote.approval_requested` | A quote requests internal approval. |
+| Approvals | Internal approval decided | `quote.approval_decided` | An internal approval is decided. |
+| Payments | Quote paid in full | `quote.paid` | A quote is paid in full. |
+| Payments | Partial payment received | `payment.partial` | A partial payment arrives. |
+| Payments | Recurring charge failed | `payment.failed` | A recurring charge fails. |
+| Payments | Dispute opened | `dispute.created` | A dispute is opened. |
+| Payments | Dispute closed | `dispute.closed` | A dispute is closed. |
+| Payments | Refund succeeded | `refund.succeeded` | A refund succeeds. |
+| Payments | Refund failed | `refund.failed` | A refund fails. |
+| Payments | Payout paid | `payout.paid` | A payout is paid to your bank. |
+| Payments | Payout failed | `payout.failed` | A payout fails. |
+| Payments | Payments account updated | `account.updated` | Your payments account changes. |
+| Invoices | Quote invoiced | `invoice.issued` | A quote is invoiced. |
+| Invoices | Quote CFDI stamped | `invoice.stamped` | A quote CFDI is stamped. |
+| Invoices | Invoice issued | `invoice.finalized` | An invoice is issued. |
+| Invoices | Invoice sent | `invoice.sent` | An invoice is sent. |
+| Invoices | Invoice paid | `invoice.paid` | An invoice is paid. |
+| Invoices | Invoice payment failed | `invoice.payment_failed` | An invoice payment fails. |
+| Invoices | Invoice overdue | `invoice.overdue` | An invoice becomes overdue. |
+| Invoices | Invoice voided | `invoice.voided` | An invoice is voided. |
+| Invoices | Invoice marked uncollectible | `invoice.marked_uncollectible` | An invoice is marked uncollectible. |
+| Clients | Client created | `client.created` | A client is created. |
+| Clients | Client updated | `client.updated` | A client is updated. |
+| Clients | Client deleted | `client.deleted` | A client is deleted. |
+| Products | Product created | `product.created` | A product is created. |
+| Products | Product updated | `product.updated` | A product is updated. |
+| Products | Product deleted | `product.deleted` | A product is deleted. |
+| Tasks | Task created | `task.created` | A task is created. |
+| Tasks | Task completed | `task.completed` | A task is completed. |
+| Tasks | Payment promise recorded | `promise.created` | A payment promise is recorded. |
+| Tasks | Payment promise kept | `promise.kept` | A payment promise is kept. |
+| Tasks | Payment promise broken | `promise.broken` | A payment promise is broken. |
+
+Cord Workflows' time-based triggers (upcoming due dates and invoices past due for days) and the scheduled trigger do not exist in n8n: use n8n's **Schedule Trigger** node and the **Cord** node's searches to build them. The fields each event carries are in [Webhooks for developers](/en/docs/desarrolladores/herramientas/webhooks).
+
+If you change the events of a **Cord Trigger** that is already active, the node filters out the ones you removed even if Cord keeps sending them; for Cord to stop sending them, deactivate and activate the flow again.
+
+## The actions: the Cord node
+
+| Resource | Operation | Fields |
+|---|---|---|
+| **Client** | Create | **Company** (required). Optional: Contact, Email, Phone, Tax ID, Country Code and Payment Terms (Upfront, Net 30 or Net 60). |
+| **Client** | Update | **Client ID** and the fields you want to change. |
+| **Client** | Get | **Client ID**. |
+| **Client** | Search | Text or email to look for. |
+| **Quote** | Create | **Client ID** and **Items** (Description, Quantity, Unit Price). Optional: Currency, Payment Terms, Valid For (Days), Notes and **Send Now** to send it when it is created. |
+| **Quote** | Get | **Quote ID**. |
+| **Quote** | Search | Quote number or client to look for. |
+| **Quote** | Send | **Quote ID** of a draft. |
+| **Quote** | Mark as Paid | **Quote ID** and, optionally, **Payment Method**. |
+| **Task** | Create | **Title**. Optional: Due Date and Quote ID to link it to a quote. |
+
+The **Cord** node can also be used as a tool by an AI agent inside n8n.
 
 ## With the HTTP Request node
 
 <Steps>
-1. In Cord, add a webhook under **Settings › Developer mode › Webhooks** with the URL from n8n's **Webhook** node.
+1. To receive events, add a webhook in **Settings › Developer mode › Webhooks** with the URL of the n8n **Webhook** node and choose the events.
 2. To call the API, use **HTTP Request** against `https://cordhq.app/api/v1/...` with the header `Authorization: Bearer sk_...`.
+3. Add the `Idempotency-Key` header with a unique value per operation when you create data, so a retry does not duplicate it.
 </Steps>
+
+With the generic **Webhook** node you verify the signature yourself; details are in [Webhooks for developers](/en/docs/desarrolladores/herramientas/webhooks).
+
+## What flows and in which direction
+
+| Direction | What flows | When |
+|---|---|---|
+| **From Cord to n8n** | The events you chose in **Cord Trigger**, signed, with `id`, `event`, `created_at` and `data`. | Instantly, every time it happens in Cord. If n8n does not respond, Cord retries the delivery. |
+| **From n8n to Cord** | Whatever the **Cord** node or your **HTTP Request** does: clients, quotes, recorded payments or tasks. | When the flow runs. |
+
+What n8n does in Cord fires the same events as if a person had done it, with **Who caused it: The API**. If a flow listens to an event and also causes it, watch out for loops: filter by the field that changed or by the actor.
 
 ## Limits
 
-Webhooks and API calls count against your plan limits, same as with Zapier or Make. You see them under **Settings › Developer mode**.
+| Limit | Value |
+|---|---|
+| API calls per month | Free 100, Starter 1,000, Pro 5,000, Scale 10,000, Developer 50,000 |
+| When you go over the quota | On Free, calls are rejected until the next month; from Starter they are billed as overage, with a safety cap of 10 times what is included |
+| Active API keys | Free 2, Starter 5, Pro 20, Scale 50, Developer 200 |
+| Webhooks registered by **Cord Trigger** | 100 per organization, shared with Zapier and Make, separate from your plan's endpoints |
+| Webhooks you create by hand (HTTP node) | Your plan's: 16 on Free, Starter and Pro; 32 on Scale; 100 on Developer |
+
+- **What uses quota:** every **Cord** node operation and every **HTTP Request** call with an `sk_live_…` key, plus registering or removing the webhook when you activate or deactivate a flow with **Cord Trigger**. Receiving events does not use quota, and neither does an `sk_test_…` key.
+- **How much you have used:** in **Settings › Plans & subscription › Subscription**, **API calls** row.
+
+## Disconnect
+
+- **Turn off a flow:** when you deactivate a flow with **Cord Trigger**, n8n deletes the webhook it had registered in Cord. If the webhook no longer existed in Cord, n8n deactivates anyway.
+- **Cut access completely:**
+
+<Steps>
+1. In Cord, go to **Settings › Developer mode › API**.
+2. Find the key you pasted into n8n and click **Revoke**. Confirm: it stops working immediately and cannot be undone.
+3. In n8n, delete the **Cord API** credential.
+</Steps>
+
+Once the key is revoked, n8n can no longer call the API with it, and the webhooks that key had registered stop receiving events.
+
+- **With the HTTP Request node:** also delete the webhook in **Settings › Developer mode › Webhooks**.
+
+## Common issues
+
+| Message or symptom | What to do |
+|---|---|
+| **The credential test fails** | Paste a secret key (`sk_live_` or `sk_test_`). Publishable keys (`pk_`) do not work here. If the key was revoked, create another one. |
+| **The flow with Cord Trigger does not activate** | The key needs write permission to register the webhook. Also check that the n8n address is public `https`: Cord rejects `http`, `localhost` and internal or private addresses. |
+| **Cord says your integrations reached the maximum of 100 subscriptions per organization** | Deactivate the n8n flows, Zaps or scenarios you no longer use to free up space. |
+| **n8n answers 401 to Cord's deliveries** | The trigger rejects deliveries whose signature does not match the secret it received when registering the webhook. Deactivate and reactivate the flow so it registers a new one. |
+| **The Cord node returns 429** | You went over the per-minute limit or the monthly API quota. Check your usage; on Free, wait for the next month or upgrade. |
+| **You cannot create the key** | You reached your plan's maximum of active keys. Revoke one you no longer use. |
+
+## Related
+
+- [Zapier](/en/docs/automatizacion/integraciones/zapier)
+- [Make](/en/docs/automatizacion/integraciones/make)
+- [API keys](/en/docs/desarrolladores/empezar/apikey)
+- [Webhooks for developers](/en/docs/desarrolladores/herramientas/webhooks)
+- [Integrations and the API quota](/en/docs/automatizacion/integraciones#integrations-and-the-api-quota)

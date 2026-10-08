@@ -366,7 +366,18 @@
                                 "type": "null"
                               }
                             ],
-                            "description": "Términos de pago: contado, net30 o net60."
+                            "description": "Etiqueta legible del plazo en el idioma de la cuenta (\"Contado\", \"Net 45\"); para comparar usa terminos_codigo."
+                          },
+                          "terminos_codigo": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ],
+                            "description": "Código estable del plazo: contado o net<N> (net7, net15, net30, net45, net60, net90)."
                           },
                           "vigencia": {
                             "anyOf": [
@@ -403,6 +414,7 @@
                           "total",
                           "moneda",
                           "terminos",
+                          "terminos_codigo",
                           "vigencia",
                           "creada",
                           "link_publico"
@@ -794,10 +806,14 @@
                     "type": "string",
                     "enum": [
                       "contado",
+                      "net7",
+                      "net15",
                       "net30",
-                      "net60"
+                      "net45",
+                      "net60",
+                      "net90"
                     ],
-                    "description": "Términos de pago: contado, net30 o net60."
+                    "description": "Términos de pago: contado o net<N> (N días de crédito: 7, 15, 30, 45, 60 o 90)."
                   },
                   "vigencia_dias": {
                     "type": "integer",
@@ -944,7 +960,18 @@
                               "type": "null"
                             }
                           ],
-                          "description": "Términos de pago: contado, net30 o net60."
+                          "description": "Etiqueta legible del plazo en el idioma de la cuenta (\"Contado\", \"Net 45\"); para comparar usa terminos_codigo."
+                        },
+                        "terminos_codigo": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ],
+                          "description": "Código estable del plazo: contado o net<N> (net7, net15, net30, net45, net60, net90)."
                         },
                         "vigencia": {
                           "anyOf": [
@@ -1111,6 +1138,7 @@
                         "total",
                         "moneda",
                         "terminos",
+                        "terminos_codigo",
                         "vigencia",
                         "creada",
                         "link_publico",
@@ -1745,7 +1773,7 @@
                           },
                           "terminosCode": {
                             "type": "string",
-                            "description": "Código de términos de pago: contado, net30 o net60."
+                            "description": "Código de términos de pago: contado o net<N> (net7, net15, net30, net45, net60, net90)."
                           },
                           "limite": {
                             "type": "number",
@@ -2114,7 +2142,7 @@
                         },
                         "terminosCode": {
                           "type": "string",
-                          "description": "Código de términos de pago: contado, net30 o net60."
+                          "description": "Código de términos de pago: contado o net<N> (net7, net15, net30, net45, net60, net90)."
                         },
                         "limite": {
                           "type": "number",
@@ -2520,6 +2548,39 @@
                               }
                             ],
                             "description": "Unidades disponibles; null si no se lleva inventario."
+                          },
+                          "taxRate": {
+                            "anyOf": [
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ],
+                            "description": "Impuesto que se sugiere al agregar el producto a una línea, como fracción 0–1; null = el predeterminado de la organización."
+                          },
+                          "claveSat": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ],
+                            "description": "Clave de producto o servicio del SAT (c_ClaveProdServ, 8 dígitos) para el CFDI en México; null si no se clasificó."
+                          },
+                          "claveUnidadSat": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ],
+                            "description": "Clave de unidad del SAT (c_ClaveUnidad, como H87 o E48) para el CFDI en México; null = se deduce de la unidad."
                           }
                         },
                         "required": [
@@ -2532,7 +2593,10 @@
                           "activo",
                           "createdAt",
                           "preciosVolumen",
-                          "existencias"
+                          "existencias",
+                          "taxRate",
+                          "claveSat",
+                          "claveUnidadSat"
                         ],
                         "additionalProperties": {}
                       },
@@ -2827,6 +2891,24 @@
             "description": "Cliente al que va dirigido: nombre de la empresa, o los datos para darlo de alta si no existe."
           },
           {
+            "name": "desde",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Fecha inicial YYYY-MM-DD, incluida; filtra por fecha de creación."
+          },
+          {
+            "name": "hasta",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Fecha final YYYY-MM-DD, incluida; filtra por fecha de creación."
+          },
+          {
             "name": "q",
             "in": "query",
             "required": false,
@@ -2915,7 +2997,7 @@
                           },
                           "tipo": {
                             "type": "string",
-                            "description": "Formato del documento según el país, por ejemplo cfdi_40 (México) o invoice (comercial)."
+                            "description": "Tipo de documento: cfdi_40, cfdi_egreso, proforma, commercial_invoice, commercial_credit_note, verifactu_invoice o verifactu_credit_note."
                           },
                           "moneda": {
                             "anyOf": [
@@ -3198,6 +3280,7 @@
                   },
                   "items": {
                     "minItems": 1,
+                    "maxItems": 200,
                     "type": "array",
                     "items": {
                       "type": "object",
@@ -3251,6 +3334,22 @@
                   "notas": {
                     "type": "string",
                     "description": "Notas internas; el cliente no las ve."
+                  },
+                  "iva_incluido": {
+                    "type": "boolean",
+                    "description": "true si los precios capturados ya incluyen el impuesto."
+                  },
+                  "document_mode": {
+                    "type": "string",
+                    "enum": [
+                      "commercial",
+                      "fiscal"
+                    ],
+                    "description": "commercial o fiscal. Sin él, fiscal si el plan lo incluye y el país lo tiene habilitado; fiscal sin eso responde 400."
+                  },
+                  "fx_buffer_pct": {
+                    "type": "number",
+                    "description": "Cobertura en puntos porcentuales sobre el tipo de cambio de referencia (2 = +2%); se acota a 25. Default 0."
                   }
                 },
                 "required": [
@@ -3376,7 +3475,7 @@
                         },
                         "tipo": {
                           "type": "string",
-                          "description": "Formato del documento según el país, por ejemplo cfdi_40 (México) o invoice (comercial)."
+                          "description": "Tipo de documento: cfdi_40, cfdi_egreso, proforma, commercial_invoice, commercial_credit_note, verifactu_invoice o verifactu_credit_note."
                         },
                         "moneda": {
                           "anyOf": [
@@ -3923,7 +4022,7 @@
                           "description": "Totales de un vistazo."
                         },
                         "aging": {
-                          "description": "Saldo vencido agrupado por antigüedad (0-30, 31-60, 61-90 y más de 90 días)."
+                          "description": "Cartera por antigüedad en cuatro cubetas fijas: vigente (por vencer), d30 (1-30 días vencida), d60 (31-60) y d60p (más de 60). Cada una trae key, label, monto y n."
                         },
                         "items": {
                           "type": "array",
@@ -5042,18 +5141,26 @@
                             "type": "string",
                             "enum": [
                               "contado",
+                              "net7",
+                              "net15",
                               "net30",
-                              "net60"
+                              "net45",
+                              "net60",
+                              "net90"
                             ]
                           },
-                          "description": "Términos de pago: contado, net30 o net60."
+                          "description": "Términos de pago: contado o net<N> (N días de crédito: 7, 15, 30, 45, 60 o 90)."
                         },
                         "terminos_default": {
                           "type": "string",
                           "enum": [
                             "contado",
+                            "net7",
+                            "net15",
                             "net30",
-                            "net60"
+                            "net45",
+                            "net60",
+                            "net90"
                           ],
                           "description": "Términos de pago por defecto."
                         },
@@ -7943,7 +8050,7 @@
                       },
                       "tipo": {
                         "type": "string",
-                        "description": "Formato del documento según el país, por ejemplo cfdi_40 (México) o invoice (comercial)."
+                        "description": "Tipo de documento: cfdi_40, cfdi_egreso, proforma, commercial_invoice, commercial_credit_note, verifactu_invoice o verifactu_credit_note."
                       },
                       "moneda": {
                         "anyOf": [
@@ -8125,7 +8232,7 @@
                       },
                       "tipo": {
                         "type": "string",
-                        "description": "Formato del documento según el país, por ejemplo cfdi_40 (México) o invoice (comercial)."
+                        "description": "Tipo de documento: cfdi_40, cfdi_egreso, proforma, commercial_invoice, commercial_credit_note, verifactu_invoice o verifactu_credit_note."
                       },
                       "moneda": {
                         "anyOf": [
@@ -8307,7 +8414,7 @@
                       },
                       "tipo": {
                         "type": "string",
-                        "description": "Formato del documento según el país, por ejemplo cfdi_40 (México) o invoice (comercial)."
+                        "description": "Tipo de documento: cfdi_40, cfdi_egreso, proforma, commercial_invoice, commercial_credit_note, verifactu_invoice o verifactu_credit_note."
                       },
                       "moneda": {
                         "anyOf": [
@@ -8489,7 +8596,7 @@
                       },
                       "tipo": {
                         "type": "string",
-                        "description": "Formato del documento según el país, por ejemplo cfdi_40 (México) o invoice (comercial)."
+                        "description": "Tipo de documento: cfdi_40, cfdi_egreso, proforma, commercial_invoice, commercial_credit_note, verifactu_invoice o verifactu_credit_note."
                       },
                       "moneda": {
                         "anyOf": [
@@ -8671,7 +8778,7 @@
                       },
                       "tipo": {
                         "type": "string",
-                        "description": "Formato del documento según el país, por ejemplo cfdi_40 (México) o invoice (comercial)."
+                        "description": "Tipo de documento: cfdi_40, cfdi_egreso, proforma, commercial_invoice, commercial_credit_note, verifactu_invoice o verifactu_credit_note."
                       },
                       "moneda": {
                         "anyOf": [
@@ -8853,7 +8960,7 @@
                       },
                       "tipo": {
                         "type": "string",
-                        "description": "Formato del documento según el país, por ejemplo cfdi_40 (México) o invoice (comercial)."
+                        "description": "Tipo de documento: cfdi_40, cfdi_egreso, proforma, commercial_invoice, commercial_credit_note, verifactu_invoice o verifactu_credit_note."
                       },
                       "moneda": {
                         "anyOf": [
@@ -9035,7 +9142,7 @@
                       },
                       "tipo": {
                         "type": "string",
-                        "description": "Formato del documento según el país, por ejemplo cfdi_40 (México) o invoice (comercial)."
+                        "description": "Tipo de documento: cfdi_40, cfdi_egreso, proforma, commercial_invoice, commercial_credit_note, verifactu_invoice o verifactu_credit_note."
                       },
                       "moneda": {
                         "anyOf": [

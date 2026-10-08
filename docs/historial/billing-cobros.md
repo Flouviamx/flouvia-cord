@@ -1625,3 +1625,63 @@ conservación en `orgs`).
   devuelve un SoapFault sino una redirección a la página HTML "403 Error de
   identificación". El cliente la seguía y la trataba como fallo de red (reintento
   infinito); ahora es `AeatCertificadoError` y se clasifica como fallo de cabecera.
+## 2026-10-07 — Bloqueo por plan rediseñado
+
+Auditoría del paywall de `/app/cobranza` y de las otras nueve páginas con
+`PlanGate`. Lo que se encontró en el modal de dos tarjetas:
+
+- **La página detrás estaba vacía** y el backdrop tapaba también el menú lateral:
+  no se veía nada de lo que se iba a comprar, y cerrar con ✕ hacía
+  `location.replace()` a otra ruta — salir o pagar, sin una tercera opción.
+- **Dos CTA navy idénticos** repartían la atención entre el plan que desbloquea
+  la función y uno que la super-incluye.
+- **El título describía la restricción** ("es una función de plan superior") y
+  los bullets eran los genéricos del plan, no los de la función bloqueada.
+- **El anual no decía que el cobro es anual**: el interruptor cambiaba $590 por
+  $492 "/ mes" sin mencionar los $5,900 de un solo cobro.
+- **Sin medición**: no había ningún evento antes del checkout, así que una función
+  bloqueada que nadie abre se leía igual que un paywall que no convence.
+
+Ahora: `PlanGate` dibuja la página desenfocada con datos de ejemplo
+(`PlanGatePreview`, `inert` + `aria-hidden`, rotulada "vista previa con datos de
+ejemplo") y el panel flota encima con la navegación viva; un plan recomendado con
+un solo CTA primario y el siguiente peldaño como fila secundaria; precio anual con
+su total; "lo que desbloqueas" por función (cobranza, cobranza con IA,
+recurrentes); y `paywall_viewed` / `paywall_cta_clicked`. El contenido vive en
+`PlanUpsell.astro` y lo comparten `PlanGate` (página) y `PlanPaywallModal`
+(upsell contextual de asientos, llaves de API y webhooks), que ya no se abre solo
+ni redirige al cerrar.
+
+## 2026-10-07 — Cobranza con IA baja de Scale a Profesional
+
+Decisión de André: el agente de cobranza con IA (`collections_ai`) se incluye
+desde Profesional, junto al módulo de cobranza. Además de `FEATURE_MIN_PLAN`
+hubo que cambiar el filtro del cron (`orgsConCobranzaActiva()` en
+`src/lib/agents/cobranza-run.ts` tenía `('scale', 'developer')` escrito en SQL):
+sin eso, una cuenta Pro habría visto la pantalla del agente y el agente nunca
+habría corrido. Pro paga el agente con su cuota de IA (50 al mes, con excedente
+medido). Intereses moratorios (`late_interest`) se queda en Scale y sigue
+suspendido; la viñeta de Scale pasa a "Aprobaciones de descuento y margen".
+Se actualizaron precios, comparativa, FAQ, página de producto, caso de uso de
+agencias, blog y la documentación pública ES/EN.
+
+## 2026-10-08 — Términos de pago net<N>, claves SAT por producto y CFDI a extranjeros
+
+- **Términos:** la lista `contado | net30 | net60` vivía escrita a mano en ~20 sitios
+  (API, MCP, Elements, PDF, cron de recordatorios, vista de cartera, tres consultas SQL,
+  importación CSV, workflows, n8n/Make/Zapier). Ahora `src/lib/payment-terms.ts` y
+  `cord_term_days()` son la fuente; se agregan Net 7, 15, 45 y 90. Hallazgos de paso: el
+  editor de cotizaciones guardaba la ETIQUETA ("Net 30") en `data-term` de cada cliente y
+  comparaba contra el CÓDIGO, así que elegir un cliente nunca aplicaba sus términos y un
+  borrador se reabría en contado; y el PDF de la factura decía "Contado" en inglés.
+- **Claves SAT:** todo CFDI salía con 01010101 / H87, incluso servicios. Producto con
+  clave de producto/servicio y de unidad (deducida de la unidad si no se captura),
+  buscador del catálogo vía Facturapi y validación de forma antes del PAC.
+- **Extranjeros:** un cliente con país distinto de México se timbraba con el RFC de
+  público en general (XAXX) y régimen 601/616, declarándolo nacional. Ahora va como
+  residente en el extranjero según la guía de clientes de Facturapi (`address.country`
+  alfa-3, `tax_id` extranjero opcional, sin `tax_system`, uso S01).
+- **Despliegue:** primera migración de columnas acoplada al `buildCommand`
+  (`migrate-catalogo-fiscal.mjs`), igual que `migrate-brand-profile.mjs`.
+- Pendiente fuera del repo: publicar `@flouviahq/elements` 2.1.0, `n8n-nodes-cord` 1.2.0
+  y las apps de Zapier y Make con las nuevas opciones de plazo.

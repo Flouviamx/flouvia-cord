@@ -8,19 +8,19 @@ interface Props {
 
 const { headings, lang } = Astro.props;
 
-// Only keep h2 and h3
+// Solo h2 y h3: más profundo convierte el índice en una segunda página.
 const toc = headings.filter((heading) => heading.depth === 2 || heading.depth === 3);
 
 const tocTitle = lang === 'es' ? 'En esta página' : 'On this page';
 ---
 
 {toc.length > 0 && (
-  <nav class="toc-nav">
-    <h4 class="toc-title">{tocTitle}</h4>
+  <nav class="toc-nav" aria-labelledby="toc-title">
+    <p class="toc-title" id="toc-title">{tocTitle}</p>
     <ul class="toc-list">
       {toc.map((heading) => (
         <li class={`toc-item depth-${heading.depth}`}>
-          <a href={`#${heading.slug}`} class="toc-link">
+          <a href={`#${heading.slug}`} class="toc-link" data-toc-slug={heading.slug}>
             {heading.text}
           </a>
         </li>
@@ -30,95 +30,140 @@ const tocTitle = lang === 'es' ? 'En esta página' : 'On this page';
 )}
 
 <script>
-  // ScrollSpy logic for Table of Contents
-  const observerOptions = {
-    root: null,
-    rootMargin: '0px 0px -80% 0px', // Trigger when heading crosses top 20% of viewport
-    threshold: 1.0,
-  };
-
+  // Seguimiento de lectura: el activo es el ÚLTIMO encabezado cuya parte
+  // superior ya pasó por debajo del header fijo. Se recalcula en un rAF por
+  // scroll (igual de fiable al subir que al bajar) y al cargar con #hash; el
+  // IntersectionObserver sólo despierta el cálculo cuando un encabezado cruza
+  // la franja superior, para no depender de su orden de entradas.
   function initScrollSpy() {
-    const headings = document.querySelectorAll('.docs-main h2, .docs-main h3');
-    const tocLinks = document.querySelectorAll('.toc-link');
+    const links = Array.from(document.querySelectorAll<HTMLAnchorElement>('.toc-link[data-toc-slug]'));
+    if (!links.length) return;
 
-    if (headings.length === 0 || tocLinks.length === 0) return;
+    const pairs = links
+      .map((link) => ({ link, heading: document.getElementById(link.dataset.tocSlug || '') }))
+      .filter((pair): pair is { link: HTMLAnchorElement; heading: HTMLElement } => Boolean(pair.heading));
+    if (!pairs.length) return;
 
-    // Remove active class from all links
-    const removeAllActive = () => {
-      tocLinks.forEach(link => link.classList.remove('active'));
+    let current: HTMLAnchorElement | null = null;
+    let frame = 0;
+
+    const headerOffset = () => {
+      const header = document.querySelector<HTMLElement>('.docs-header');
+      return (header?.getBoundingClientRect().bottom ?? 0) + 24;
     };
 
-    const observer = new IntersectionObserver((entries) => {
-      // Find the currently active heading (the one closest to top, or most recently passed)
-      // Since IntersectionObserver can be tricky with scrolling up/down,
-      // a simpler approach is finding which heading is currently visible,
-      // or the last one that scrolled past the top.
-      
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          const id = entry.target.getAttribute('id');
-          if (id) {
-            removeAllActive();
-            const activeLink = document.querySelector(`.toc-link[href="#${id}"]`);
-            if (activeLink) activeLink.classList.add('active');
-          }
-        }
-      });
-    }, observerOptions);
+    const setActive = (link: HTMLAnchorElement | null) => {
+      if (link === current) return;
+      current?.classList.remove('active');
+      current?.removeAttribute('aria-current');
+      current = link;
+      if (!link) return;
+      link.classList.add('active');
+      link.setAttribute('aria-current', 'location');
+      // Mantén el activo a la vista si el índice es más alto que la ventana.
+      const box = link.closest<HTMLElement>('.docs-toc');
+      if (box && box.scrollHeight > box.clientHeight) {
+        const top = link.offsetTop;
+        const outside = top < box.scrollTop || top + link.offsetHeight > box.scrollTop + box.clientHeight;
+        if (outside) box.scrollTo({ top: Math.max(0, top - box.clientHeight / 2) });
+      }
+    };
 
-    headings.forEach(heading => observer.observe(heading));
+    const compute = () => {
+      frame = 0;
+      const limit = headerOffset();
+      const atBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4;
+      if (atBottom) {
+        setActive(pairs[pairs.length - 1].link);
+        return;
+      }
+      let active: HTMLAnchorElement | null = null;
+      for (const { link, heading } of pairs) {
+        if (heading.getBoundingClientRect().top - limit <= 1) active = link;
+        else break;
+      }
+      setActive(active ?? pairs[0].link);
+    };
+
+    const schedule = () => {
+      if (!frame) frame = window.requestAnimationFrame(compute);
+    };
+
+    if ('IntersectionObserver' in window) {
+      const observer = new IntersectionObserver(schedule, { rootMargin: '0px 0px -60% 0px' });
+      pairs.forEach(({ heading }) => observer.observe(heading));
+    }
+    window.addEventListener('scroll', schedule, { passive: true });
+    window.addEventListener('resize', schedule, { passive: true });
+    window.addEventListener('hashchange', schedule);
+    window.addEventListener('load', schedule);
+    compute();
   }
 
-  // Initialize on load
-  document.addEventListener('DOMContentLoaded', initScrollSpy);
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initScrollSpy, { once: true });
+  } else {
+    initScrollSpy();
+  }
 </script>
 
 <style>
+  /* El contenedor .docs-toc (DocsLayout) es el único sticky. */
   .toc-nav {
-    position: sticky;
-    top: 110px; /* Below sticky header */
-    max-height: calc(100vh - 120px);
-    overflow-y: auto;
     padding: 0 0 32px 24px;
-    border-left: 1px solid rgba(0,0,0,0.05); /* Hairline border */
     font-size: 13px;
   }
 
   .toc-title {
+    margin: 0 0 12px;
+    font-size: 12px;
     font-weight: 600;
-    color: #050505;
-    margin-bottom: 12px;
-    letter-spacing: -0.01em;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--docs-text-3, #5e6677);
   }
 
   .toc-list {
     list-style: none;
     padding: 0;
     margin: 0;
+    border-left: 1px solid var(--docs-hairline, rgba(0, 0, 0, 0.07));
   }
 
   .toc-item {
-    margin-bottom: 8px;
+    margin: 0;
     line-height: 1.4;
   }
 
-  .toc-item.depth-3 {
-    padding-left: 12px; /* Indent subheadings */
+  .toc-link {
+    position: relative;
+    display: block;
+    padding: 5px 0 5px 14px;
+    margin-left: -1px;
+    border-left: 2px solid transparent;
+    color: var(--docs-text-3, #5e6677);
+    font-weight: 500;
+    text-decoration: none;
+    transition: color 0.2s ease, border-color 0.2s ease;
   }
 
-  .toc-link {
-    color: #697386;
-    text-decoration: none;
-    transition: color 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
-    display: inline-block;
+  .toc-item.depth-3 .toc-link {
+    padding-left: 26px;
   }
 
   .toc-link:hover {
-    color: #050505;
+    color: var(--docs-text, #050505);
   }
 
+  /* Peso constante: el activo cambia color y barra, nunca el ancho del texto. */
   .toc-link.active {
-    color: #0a192f; /* Cord Navy */
-    font-weight: 600;
+    color: var(--docs-text, #050505);
+    border-left-color: var(--docs-text, #050505);
+  }
+
+  .toc-link:focus-visible {
+    outline: 2px solid var(--docs-focus, rgba(0, 113, 227, 0.55));
+    outline-offset: 2px;
+    border-radius: 4px;
   }
 </style>

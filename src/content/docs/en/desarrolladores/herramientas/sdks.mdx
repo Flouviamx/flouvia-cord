@@ -1,0 +1,244 @@
+---
+title: "Node SDK"
+seoTitle: "Cord Node SDK (@flouviahq/node)"
+description: "Install @flouviahq/node and use the full v1 API from your server: configuration, resources and methods, automatic pagination, idempotency, typed errors and webhook verification."
+lastUpdated: "2026-10-07"
+reviewedBy: "Cord engineering"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Node 20 or later, Bun, Deno, Cloudflare Workers or Vercel", "A secret (sk_) or restricted (rk_) key"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Node SDK</h1>
+  <p class="page-subtitle">@flouviahq/node: the full v1 API and webhook verification from your server, with no dependencies.</p>
+</header>
+
+## Official SDKs and tools
+
+| Package | What it's for | Status |
+|---|---|---|
+| `@flouviahq/node` | v1 API from your server, webhooks, Elements proxy | Published (1.1.0) |
+| `@flouviahq/elements` | Quote, invoice and tax form in the browser | Published (2.0.2). See [Cord Elements](/en/docs/desarrolladores/herramientas/elements/resumen). |
+| `@flouviahq/cli` | Sign-in, simulators and webhooks on your `localhost` | Published (1.2.1). See [CLI](/en/docs/desarrolladores/herramientas/cli). |
+| Python and PHP | — | **Not published yet.** There is no package on PyPI or Packagist. |
+
+Until the Python and PHP SDKs exist, call the [REST API](/en/docs/desarrolladores/referencia) directly. To verify webhooks in Laravel, Django, Flask or FastAPI, `cord init` adds a dependency-free signature verifier to your project; you can also copy the [verification algorithm](/en/docs/desarrolladores/herramientas/webhooks#verify-the-signature-by-hand).
+
+## Installation
+
+```bash
+npm install @flouviahq/node
+```
+
+It runs on Node 20 or later, Bun, Deno, Cloudflare Workers and Vercel. It ships as ESM and CommonJS, with types.
+
+```ts
+import { Cord } from '@flouviahq/node';
+
+const cord = new Cord(process.env.CORD_SECRET_KEY!);
+```
+
+<Callout type="warning">
+The SDK accepts a secret key (`sk_live_`, `sk_test_`) or a restricted one (`rk_live_`, `rk_test_`). It rejects a publishable key (`pk_`) and refuses to run in a browser: a secret key on a web page is exposed.
+</Callout>
+
+## Configuration
+
+```ts
+const cord = new Cord(process.env.CORD_SECRET_KEY!, {
+  apiVersion: '2026-10-01',
+  timeoutMs: 15000,
+  maxRetries: 3,
+  appInfo: { name: 'my-erp', version: '4.2.0' },
+});
+```
+
+| Option | Default | What it does |
+|---|---|---|
+| `apiVersion` | `2026-10-01` (`CORD_API_VERSION`) | Sent in the `Cord-Version` header of every request. See [Versions](/en/docs/desarrolladores/esenciales/versiones). |
+| `baseUrl` | `https://cordhq.app` | Cord's origin. The SDK appends `/api/v1`. |
+| `timeoutMs` | `30000` | Cuts each attempt off. |
+| `maxRetries` | `2` (max 5) | Retries on network failure, `408`, `425`, `429`, `5xx` and `409 idempotency_in_progress`. |
+| `fetch` | global `fetch` | Inject your own `fetch` (tests, proxies). |
+| `appInfo` | — | Adds your app to the `User-Agent` (`cord-node/1.1.0 my-erp/4.2.0`). Useful when asking for support. |
+
+`cord.mode` is `'test'` or `'live'` depending on the key's prefix.
+
+## Resources and methods
+
+Every method maps to a v1 API route and keeps the server's field names. Methods that read or write one object return the response's `data`; `list()` methods return `{ data, meta }`.
+
+| Resource | Methods | Route |
+|---|---|---|
+| `cord.me()` | — | `GET /me` |
+| `cord.quotes` | `list`, `listAll`, `retrieve`, `create`, `send`, `resend`, `approve`, `reject`, `markPaid`, `del`, `draftFromText` | `/cotizaciones`, `/cotizaciones/{id}`, `/cotizaciones/ia` |
+| `cord.clients` | `list`, `listAll`, `retrieve`, `create`, `update` | `/clientes`, `/clientes/{id}` |
+| `cord.products` | `list`, `listAll`, `create` | `/productos` |
+| `cord.invoices` | `list`, `listAll`, `retrieve`, `create`, `finalize`, `send`, `void`, `recordPayment`, `creditNote` | `/facturas`, `/facturas/{id}` |
+| `cord.collections` | `retrieve` | `GET /cobranza` (Professional plan or higher) |
+| `cord.events` | `list`, `listAll` | `GET /events` |
+| `cord.tasks` | `create` | `POST /tareas` |
+| `cord.webhookEndpoints` | `list`, `create`, `del` | `/webhooks`, `/webhooks/{id}` |
+| `cord.elements` | `config` | `GET /elements/config` |
+| `cord.testHelpers` | `fiscal.setNextOutcome`, `quotes.view`, `quotes.expire`, `webhooks.trigger` | `/test_helpers/*` (`sk_test_` only) |
+| `cord.webhooks` | `constructEvent`, `signPayload` | Local verification, no network |
+
+```ts
+const quote = await cord.quotes.create({
+  cliente: { empresa: 'Acme', email: 'purchasing@acme.com' },
+  items: [{ descripcion: 'Installation', cantidad: 1, precio_unitario: 12500 }],
+  base_currency: 'MXN',
+  send: true,
+});
+// quote: { id, token, folio, link_publico, needs_approval, motivo, email }
+
+await cord.quotes.markPaid(quote.id, { payment_method: 'transferencia' });
+
+const factura = await cord.invoices.create({
+  cliente_id: '0e6f2b8a-91c4-4d7e-b3a5-6c2d8f1e4a90',
+  items: [{ descripcion: 'Monthly maintenance', cantidad: 1, precio_unitario: 4500 }],
+  currency: 'MXN',
+  due_date: '2026-11-06',
+});
+await cord.invoices.finalize(factura.id); // issues it: irreversible
+await cord.invoices.recordPayment(factura.id, { monto: 5220, moneda: 'MXN', metodo: 'transferencia' });
+```
+
+`quotes.del()` only deletes drafts. `invoices.create()` creates a **draft**; `finalize()` issues it. `recordPayment()` requires `monto` (amount) and `moneda` (currency) together.
+
+## Lists and automatic pagination
+
+```ts
+const page = await cord.quotes.list({ status: 'sent', limit: 50 });
+console.log(page.meta.total, page.meta.next_cursor);
+
+for await (const invoice of cord.invoices.listAll({ estado: 'open' })) {
+  console.log(invoice.numero, invoice.saldo, invoice.moneda);
+}
+```
+
+`listAll()` requests pages of 200 and follows `next_cursor` until it comes back `null`: it never skips or repeats records even if others are created while you iterate. Invoices and events paginate by cursor only.
+
+<Callout type="info" title="If you're still on 1.0.0">
+In 1.0.0, `quotes.listAll()`, `clients.listAll()` and `products.listAll()` iterate by `offset`, and `list()` on those three resources doesn't accept `cursor`. Since 1.1.0 they iterate by cursor and `clients.list()` accepts `q` and `email`. Upgrade with `npm install @flouviahq/node@latest`.
+</Callout>
+
+## Idempotency and retries
+
+Every write (`POST`, `PATCH`, `DELETE`) carries an `Idempotency-Key`. If you don't pass one, the SDK generates a UUID per call and repeats it on every retry of that call: a network drop never creates two quotes or records two payments. To tie the operation to an identifier of yours that survives a restart of your process:
+
+```ts
+await cord.invoices.recordPayment(
+  facturaId,
+  { monto: 5000, moneda: 'MXN', referencia: 'SPEI-88213' },
+  { idempotencyKey: `payment-${paymentId}` },
+);
+```
+
+Per-call options are `idempotencyKey`, `timeoutMs` and `signal` (an `AbortSignal`). Retries wait for whatever `Retry-After` says (up to 60 s) or an exponential backoff with jitter.
+
+## Typed errors
+
+Every error response becomes a `CordError`:
+
+| Property | Content |
+|---|---|
+| `status` | HTTP status. `0` if there was no response (network down or timeout). |
+| `code` | The API's stable `code` (`invalid_request`, `insufficient_permissions`, `invalid_state`…). `network_error` if there was no response. |
+| `message` | The message from the `error` field. |
+| `requestId` | The `Cord-Request-Id` (`req_…`). Look it up in **Developers › Logs**. |
+| `docUrl` | Link to the explanation of the code. |
+| `raw` | The full body, with extra fields such as `limit` or `plan_required`. |
+
+```ts
+import { Cord, CordError } from '@flouviahq/node';
+
+try {
+  await cord.quotes.approve(quoteId);
+} catch (err) {
+  if (err instanceof CordError && err.code === 'invalid_state') {
+    // The quote wasn't sent or viewed: nothing was applied.
+  } else {
+    throw err;
+  }
+}
+```
+
+The full list of codes is in [Error handling](/en/docs/desarrolladores/esenciales/errores).
+
+## Webhooks: `constructEvent`
+
+```ts
+import { constructEvent, CordWebhookSignatureError } from '@flouviahq/node';
+
+export async function POST(req: Request) {
+  let event;
+  try {
+    event = await constructEvent(await req.text(), req.headers, process.env.CORD_WEBHOOK_SECRET!);
+  } catch (err) {
+    if (err instanceof CordWebhookSignatureError) return new Response(err.code, { status: 400 });
+    throw err;
+  }
+  switch (event.event) {
+    case 'invoice.paid':
+      console.log(event.data.numero, event.data.saldo, event.data.moneda);
+      break;
+    case 'payment.partial':
+      console.log(event.data.tipo, event.data.monto, event.data.saldo_pendiente);
+      break;
+  }
+  return new Response('ok');
+}
+```
+
+`constructEvent(payload, headers, secret, options?)` uses WebCrypto, so it's the same function in every environment:
+
+- `payload` is the **raw** body (`string`, `Uint8Array` or `ArrayBuffer`). An object that was parsed and serialized again won't match the signature.
+- `headers` accepts a `Headers` object or a plain object such as Node's `req.headers`.
+- It requires `X-Cord-Signature-V1` and rejects a delivery more than 300 seconds off (`tolerance`, in seconds). During a secret rotation two signatures arrive: one matching is enough.
+- The legacy `X-Cord-Signature` signature, without a timestamp, is only accepted with `{ allowLegacySignature: true }`.
+- It returns `CordWebhookEvent`, a union discriminated by `event` with the exact `data` of the 41 events and of `ping`.
+
+| `CordWebhookSignatureError.code` | Cause |
+|---|---|
+| `missing_signature` | No signature arrived, or the secret is missing. |
+| `invalid_signature_header` | The header doesn't have the shape `t=<unix>,v1=<hex>`. |
+| `timestamp_out_of_tolerance` | The signature is older (or newer) than the tolerance: possible replay. |
+| `signature_mismatch` | The signature doesn't match that secret. |
+| `legacy_signature_rejected` | Only the legacy signature arrived and you didn't accept it. |
+| `invalid_payload` | The body isn't JSON with the shape `{ id, event, created_at, data }`. |
+
+`signPayload(body, secret, timestamp?)` signs a body the way Cord does, for your tests:
+
+```ts
+import { signPayload, constructEvent } from '@flouviahq/node';
+
+const body = JSON.stringify({ id: 'evt_test', event: 'quote.sent', created_at: new Date().toISOString(), data: {} });
+const header = await signPayload(body, 'whsec_test');
+const event = await constructEvent(body, { 'x-cord-signature-v1': header }, 'whsec_test');
+```
+
+It also exports `WEBHOOK_EVENT_TYPES`, `WEBHOOK_EVENT_OBJECTS` and `isWebhookEventType()` with the event catalog.
+
+## Test mode
+
+With an `sk_test_` key, `cord.testHelpers` triggers what a third party does in production, through the same code as production. With a live key it throws before calling Cord.
+
+```ts
+await cord.testHelpers.fiscal.setNextOutcome('pac_caido');
+await cord.testHelpers.quotes.view(quoteId);
+await cord.testHelpers.quotes.expire(quoteId);
+await cord.testHelpers.webhooks.trigger('invoice.paid');
+```
+
+To receive the webhooks on your machine, use `cord listen` from the [CLI](/en/docs/desarrolladores/herramientas/cli).
+
+## Other utilities
+
+- `createElementsProxy()`: the backend for Cord Elements' `proxyUrl` mode. See [Server proxy](/en/docs/desarrolladores/herramientas/elements/server).
+- `validateFiscalReceptor()`, `validRfc()`, `validSpainTaxId()` and `validEin()`: the same tax validation Cord applies when saving, so your server can validate before calling the API. See [Tax form](/en/docs/desarrolladores/herramientas/elements/fiscal).
+- `newIdempotencyKey()` and `CORD_API_VERSION`.
+
+## Changes by version
+
+The full history lives in the package's `CHANGELOG.md`. A published version is never rewritten: every change bumps the number.

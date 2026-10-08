@@ -1,38 +1,110 @@
 ---
 title: "Versiones de la API"
 seoTitle: "Versiones de la API de Cord"
-description: "Cómo Cord fija la versión de la API por llave y por webhook, y cómo cambiarla por petición con Cord-Version."
+description: "La versión vigente de la API de Cord, cómo se fija por llave, por endpoint de webhook y por petición con Cord-Version, qué cambia sin versión nueva y el error invalid_api_version."
+lastUpdated: "2026-10-07"
+reviewedBy: "Ingeniería de Cord"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Una llave de API de Cord"]
 ---
 
 <header class="content-header">
   <h1 class="page-title">Versiones de la API</h1>
-  <p class="page-subtitle">Tu integración no se rompe cuando Cord cambia: cada llave y cada webhook se quedan en la versión con la que nacieron.</p>
+  <p class="page-subtitle">Tu integración no se rompe cuando Cord cambia: cada llave y cada endpoint de webhook se quedan en la versión con la que nacieron.</p>
 </header>
 
-## Cómo funciona
+## Versión vigente
 
-Cada versión se nombra con una fecha (`2026-10-01`). Una llave y un endpoint de webhook quedan **fijados** a la versión vigente cuando se crean. Cord produce cada respuesta en su forma más nueva y la convierte, cambio por cambio, a la versión de tu integración.
-
-Toda respuesta trae el header `Cord-Version` con la versión con la que se respondió.
-
-## Elegir la versión por petición
-
-```bash
-curl https://cordhq.app/api/v1/cotizaciones \
-  -H "Authorization: Bearer sk_test_..." \
-  -H "Cord-Version: 2026-10-01"
-```
-
-El header gana sobre la versión fijada de la llave. Una versión que no existe responde `400 invalid_api_version`: Cord nunca cae en silencio a otra.
-
-Los SDK oficiales (`@flouviahq/node` y `@flouviahq/elements`) mandan la versión con la que se construyeron.
-
-## Qué es un cambio que rompe compatibilidad
-
-Nunca llega sin versión nueva: quitar o renombrar un campo, cambiar su tipo o su significado, o cambiar un código de error. Sí llegan sin versión nueva los cambios aditivos: campos nuevos en una respuesta, eventos nuevos, endpoints nuevos y parámetros opcionales. Tu integración debe ignorar campos que no conoce.
-
-## Versiones
+La versión vigente es **`2026-10-01`**. Es también la única: la versión base que fijó la forma de la API cuando Cord empezó a versionarla. Cada versión se nombra con la fecha en que se publica.
 
 | Versión | Cambios |
 |---|---|
 | `2026-10-01` | Versión base: la forma de la API cuando se fijó el versionado. |
+
+## Cómo se elige la versión de una petición
+
+Cord resuelve la versión de cada petición a `/api/v1` en este orden:
+
+1. **El header `Cord-Version`** de la petición, si lo mandas.
+2. **La versión fijada de la llave.** Cada llave queda fijada a la versión vigente el día que se crea. Rotar una llave conserva la versión de la anterior.
+3. **La versión base** (`2026-10-01`), para llaves creadas antes de que existiera el versionado.
+
+Cord produce cada respuesta en su forma más nueva y la convierte, cambio por cambio, a la versión resuelta. Toda respuesta trae el header `Cord-Version` con la versión con la que se respondió.
+
+```bash
+curl -i https://cordhq.app/api/v1/me \
+  -H "Authorization: Bearer sk_test_..." \
+  -H "Cord-Version: 2026-10-01"
+```
+
+```text
+HTTP/2 200
+content-type: application/json
+cord-request-id: req_3f9c2a1b7d4e6f8a0b1c2d3e
+cord-version: 2026-10-01
+```
+
+Hoy no hay forma de cambiar la versión fijada de una llave existente. Para moverte a una versión nueva, manda el header `Cord-Version` en tus peticiones o crea una llave nueva.
+
+## En los SDK y el CLI
+
+Los clientes oficiales mandan siempre la versión con la que se construyeron, así que actualizar Cord no cambia lo que leen:
+
+| Cliente | Versión que manda | Cómo cambiarla |
+|---|---|---|
+| `@flouviahq/node` | `CORD_API_VERSION` (`2026-10-01`) | `new Cord(sk, { apiVersion: '2026-10-01' })` |
+| `@flouviahq/elements` | `CORD_API_VERSION` (`2026-10-01`) | Se actualiza con el paquete. |
+| `@flouviahq/cli` | `2026-10-01` | Se actualiza con el paquete. |
+
+```ts
+import { Cord, CORD_API_VERSION } from '@flouviahq/node';
+
+const cord = new Cord(process.env.CORD_SECRET_KEY!, { apiVersion: CORD_API_VERSION });
+```
+
+## Webhooks
+
+Cada endpoint de webhook queda fijado a la versión vigente el día que se crea, ya sea desde el Workbench, por `POST /api/v1/webhooks` o con una sesión de `cord listen`. El `data` de cada entrega se convierte a la versión de **ese endpoint**, no a la de la llave que provocó el evento. Si tienes dos endpoints en versiones distintas, ambos reciben el mismo evento, con el mismo `id`, cada uno en su forma.
+
+Las entregas no llevan el header `Cord-Version`, y no hay un header para pedir otra versión por entrega: para recibir otra forma, crea un endpoint nuevo.
+
+## Versión inválida
+
+Una versión que no existe responde `400` con `code: "invalid_api_version"`. Cord nunca cae en silencio a otra versión. El mensaje lista las versiones disponibles:
+
+```bash
+curl https://cordhq.app/api/v1/me \
+  -H "Authorization: Bearer sk_test_..." \
+  -H "Cord-Version: 2025-01-01"
+```
+
+```json
+{
+  "error": "Cord-Version \"2025-01-01\" no existe. Versiones disponibles: 2026-10-01.",
+  "code": "invalid_api_version",
+  "request_id": "req_8a1c4e7b2d9f3a6c0e5b8d1f",
+  "doc_url": "https://docs.cordhq.app/docs/desarrolladores/esenciales/errores#invalid_api_version"
+}
+```
+
+El formato también importa: `Cord-Version: 2026-10` o `latest` responden el mismo error.
+
+## Política de cambios
+
+**Requiere una versión nueva** (nunca llega a tu integración sin que la pidas):
+
+- quitar o renombrar un campo de una respuesta o de un webhook;
+- cambiar el tipo o el significado de un campo;
+- cambiar un código de error.
+
+**Llega sin versión nueva**, porque no rompe una integración bien escrita:
+
+- campos nuevos en una respuesta o en el `data` de un webhook;
+- tipos de evento nuevos;
+- endpoints nuevos y parámetros opcionales nuevos.
+
+El texto del campo `error` es un mensaje para personas y puede mejorar en cualquier momento: programa contra `code`, nunca contra el texto.
+
+Tu integración debe ignorar los campos que no conoce y tratar un tipo de evento desconocido como algo que puede descartar. Si dejaste los eventos de un endpoint sin marcar, recibes **todos**, incluidos los que Cord agregue después.
+
+Cuando exista una versión nueva, aparecerá en la tabla de arriba con lo que cambió.

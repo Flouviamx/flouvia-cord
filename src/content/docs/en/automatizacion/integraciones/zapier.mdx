@@ -1,53 +1,108 @@
 ---
 title: "Zapier"
 seoTitle: "Connect Cord with Zapier"
-description: "How to connect the Cord app on Zapier, which triggers and actions it includes and how to use Webhooks by Zapier and the Cord API."
-lastUpdated: "2026-09-21"
+description: "How to connect the Cord app on Zapier: requirements, one-click authorization, triggers, actions and searches, what flows each way, the monthly API quota per plan, how to disconnect, Webhooks by Zapier as an alternative and common problems."
+lastUpdated: "2026-10-07"
 reviewedBy: "Cord product and operations"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Settings permission in the Cord workspace", "A Zapier account", "Monthly API quota available on your Cord plan"]
 ---
 
 <header class="content-header">
   <h1 class="page-title">Zapier</h1>
-  <p class="page-subtitle">Connect Cord with thousands of apps without writing code.</p>
+  <p class="page-subtitle">Connect Cord with thousands of apps without writing code: your Zaps start when something happens in Cord and can create data in Cord.</p>
 </header>
+
+## What it does
+
+The Cord app for Zapier has **instant triggers** (a Zap starts as soon as something happens in Cord), **actions** (the Zap creates or changes data in Cord) and **searches** (the Zap finds a client or a quote before acting). It is authorized with one click on a Cord screen: you do not create or paste any key.
+
+## Requirements
+
+| Where | What you need |
+|---|---|
+| **Cord** | The **Settings** permission in the workspace you are connecting. Any plan. |
+| **Zapier** | A Zapier account. What you can build (how many Zaps, how many steps) depends on your Zapier plan. |
+| **Quota** | Every action and search uses calls from your Cord plan's monthly API quota. See [Limits](#limits). |
 
 ## Connect the Cord app
 
-The Cord app for Zapier is shared by invitation. In **Settings › Integrations › Zapier** you will find the **Open Cord on Zapier** button, which takes you straight to the invitation.
+The Cord app for Zapier is shared by invitation. In **Settings › Integrations › Zapier** there is an **Open Cord on Zapier** button that goes straight to the invitation.
 
 <Steps>
 1. **Accept the invitation.** Click **Open Cord on Zapier** and accept. Zapier adds Cord to your apps.
-2. **Create a Zap.** Choose Cord as a trigger or an action and click **Connect**.
-3. **Authorize in Cord.** A Cord screen opens where you pick the workspace and click **Authorize**. There are no keys to create or paste.
+2. **Create a Zap.** Choose Cord as the trigger or as an action and click **Connect**.
+3. **Authorize in Cord.** A Cord screen opens where you pick the workspace and click **Authorize**. The screen says what Zapier will and will not be able to do: it cannot see passwords or card details, change your plan or manage your team.
+4. **Test the Zap.** Zapier brings in a sample event so you can map the fields in the following steps.
 </Steps>
 
-Whoever authorizes needs access to **Settings** in that workspace. Zapier renews the access on its own; if you ever want to cut it, revoke the connection in **Settings › Developer mode › API**, where it shows up as Zapier's **Authorized connection**.
+Zapier renews the access on its own. The connection shows up in Cord as Zapier's **Authorized connection**, in **Settings › Developer mode › API**.
+
+{/* MOCKUP: Cord authorization screen opened from Zapier. Title "Zapier wants to connect to Cord", "Workspace" selector with "Distribuidora Andina", list "Zapier will be able to": "View your quotes, invoices, clients, products and collections", "Create and edit quotes, invoices, clients, products and tasks", "Record payments and get notified when something changes in Cord"; below, "It will not be able to see your passwords or card details, change your plan or manage your team." Buttons "Cancel" and "Authorize". */}
 
 ## What the app includes
 
 | Type | What you can do |
 |---|---|
-| **Instant triggers** | Quote created, sent, opened, approved, rejected or paid; partial payment; invoice paid; new client; or any Cord event. |
-| **Actions** | Create and update clients, create and send quotes, mark them paid and create tasks. |
-| **Searches** | Client by email or name, and quote by number. |
+| **Instant triggers** | Quote created, sent, opened by the client, approved, rejected or paid; partial payment received; invoice paid; new client; or **New Event**, to pick any of Cord's 41 events. |
+| **Actions** | Create client, update client, create quote (with line items, currency, terms, validity and the option to send it right away), send quote, mark quote as paid and create task. |
+| **Searches** | Client by exact email or by name, and quote by number. |
 
-Each active Zap creates its own webhook in Cord, with a limit of 100 per organization **separate** from your plan's endpoints, so your Zaps do not take slots.
+The list of the 41 events is in [Triggers](/en/docs/automatizacion/workflows/disparadores#the-same-events-outside-workflows) and in [Webhooks for developers](/en/docs/desarrolladores/herramientas/webhooks).
+
+## What flows and in which direction
+
+| Direction | What flows | When |
+|---|---|---|
+| **From Cord to Zapier** | The event you chose, with the object's data: number, client, total, currency, status and the public link for a quote. | Instantly, every time it happens in Cord. |
+| **From Zapier to Cord** | Whatever the action does: a new or updated client, a new or sent quote, a recorded payment or a task. | When the Zap runs. |
+| **Searches** | Zapier reads a client or a quote to use it in the next step. It changes nothing. | When the Zap runs. |
+
+What an action does in Cord fires the same events as if a person had done it, with **Who caused it: The API**. If you have workflows or Zaps listening to those events, they run too.
+
+## Limits
+
+| Limit | Value |
+|---|---|
+| API calls per month | Free 100, Starter 1,000, Pro 5,000, Scale 10,000, Developer 50,000 |
+| When you go over the quota | On Free, calls are rejected until the next month; from Starter they are billed as overage, with a safety cap of 10 times what is included |
+| Webhooks created by your Zaps | 100 per organization, separate from your plan's webhook endpoints |
+| Live authorized connections | 25 per app and per organization |
+
+- **What uses quota:** every action and every search (at least one call; some actions read the quote after changing it) and registering or removing the webhook when you turn a Zap on or off. Receiving events does not use quota.
+- **How much you have used:** in **Settings › Plans & subscription › Subscription**, **API calls** row.
+- Every active Zap with a Cord trigger creates its own webhook in Cord; when you turn the Zap off, Zapier removes it.
+
+## Disconnect
+
+There are two levels, depending on whether you want to turn off one Zap or cut Zapier's access completely.
+
+**Turn off one Zap:** turn it off or delete it in Zapier. Zapier removes the webhook that Zap had created in Cord; the other Zaps keep working.
+
+**Cut Zapier's access to Cord:**
+
+<Steps>
+1. Go to **Settings › Integrations › Zapier** and click **View authorized connections**. **Settings › Developer mode › API** opens.
+2. Find Zapier's **Authorized connection** row, with the **OAuth** tag.
+3. Click **Revoke** and confirm.
+</Steps>
+
+From that moment Zapier can no longer call the API with that connection, and the webhooks its Zaps had created stop receiving events. In Zapier, Cord Zaps fail with an authorization error until you connect the account again. If you also want to remove the account from Zapier, delete it in Zapier's **My Apps**.
 
 ## Alternative: Webhooks by Zapier
 
-If you prefer not to install the app, you can connect Zapier with its generic modules.
+If you prefer not to install the app, you can connect Zapier with the generic modules. Webhooks by Zapier is a Zapier app available on its paid plans.
 
-Webhooks by Zapier is a Zapier app available on its paid plans.
-
-### Receive Cord events
+<Tabs>
+<TabItem label="Receive Cord events">
 
 <Steps>
 1. **Create the Zap.** In Zapier, choose **Webhooks by Zapier › Catch Hook** as the trigger and copy the URL it gives you.
 2. **Register the endpoint in Cord.** Turn on **Developer mode** (switch at the bottom of the Settings index), open **Webhooks** in the Developers panel, paste the Zapier URL and save.
 3. **Choose the events**, for example `quote.approved`.
-4. **Send a test event.** Click **Test** on the Cord endpoint and, in Zapier, **Test trigger**. Zapier shows the fields: `event`, `data__folio`, `data__total`, `data__cliente`, etc.
-5. **Add the Zap actions** and turn it on.
+4. **Send a test event.** Click **Test** on the Cord endpoint and, in Zapier, **Test trigger**. Zapier shows the fields: `event`, `data__folio`, `data__total`, `data__cliente`, and so on.
+5. **Add the Zap's actions** and turn it on.
 </Steps>
 
 Each event carries `id`, `event`, `created_at` and `data`. If you register several events on one endpoint, add a **Filter by Zapier** or **Paths** step on the `event` field.
@@ -56,26 +111,43 @@ Each event carries `id`, `event`, `created_at` and `data`. If you register sever
 Zapier does not verify Cord's signature. Treat the Catch Hook URL as a secret; if you think it leaked, delete the endpoint in Cord and create a new Zap.
 </Callout>
 
-Endpoints registered this way count toward your plan's webhook limit: 16 on Free, Starter and Pro; 32 on Scale; 100 on Developer.
+Endpoints you register this way count toward your plan's webhook limit: 16 on Free, Starter and Pro; 32 on Scale; 100 on Developer.
 
-### Create or update data in Cord
+</TabItem>
+<TabItem label="Create or update data in Cord">
 
 <Steps>
 1. In **API**, in the Developers panel, create a **secret key** with **write** scope.
 2. In your Zap add **Webhooks by Zapier › Custom Request**.
-3. Set **Method** (`POST`, `PATCH` or `GET`), **URL** (for example `https://cordhq.app/api/v1/clientes`), JSON **Data** and the **Headers** `Authorization: Bearer` + your key and `Content-Type: application/json`.
-4. Add the `Idempotency-Key` header with a unique value per operation (for example the id of the record that started the Zap) so a retry does not duplicate data.
+3. Set **Method** (`POST`, `PATCH` or `GET`), **URL** (for example `https://cordhq.app/api/v1/clientes`), **Data** as JSON and the **Headers** `Authorization: Bearer` + your key and `Content-Type: application/json`.
+4. Add the `Idempotency-Key` header with a unique value per operation (for example the ID of the record that started the Zap) so a retry does not duplicate data.
 </Steps>
 
-The available requests are the same as in [Make](/en/docs/automatizacion/integraciones/make): find and create clients, create quotes, send, approve or mark them paid, and create tasks. The fields are in the [developer documentation](/en/docs/desarrolladores/funciones/clientes).
+The available requests are the same as in [Make](/en/docs/automatizacion/integraciones/make#what-you-can-do): find and create clients, create quotes, send, approve or mark them paid, and create tasks. The fields are in the [developer documentation](/en/docs/desarrolladores/funciones/clientes). These requests also use the monthly API quota.
+
+</TabItem>
+</Tabs>
 
 ## Examples
 
-- **Quote paid → Google Sheets:** Catch Hook with `quote.paid` → Google Sheets › Create Spreadsheet Row.
-- **New lead in your form → client in Cord:** your form app → Custom Request `POST /api/v1/clientes`.
-- **Quote approved → new project:** Catch Hook with `quote.approved` → Asana, Trello or ClickUp › Create task.
+- **Quote paid → Google Sheets:** **Quote Paid** trigger → Google Sheets › Create Spreadsheet Row. (If you only want the spreadsheet, the [direct Google Sheets integration](/en/docs/automatizacion/integraciones/google-sheets) does not use quota.)
+- **New lead in your form → client in Cord:** your form app → **Find Client** by email → if it does not exist, **Create Client**.
+- **Quote approved → new project:** **Quote Approved** trigger → Asana, Trello or ClickUp › Create task.
 
-## Next
+## Common problems
+
+| Message or symptom | What to do |
+|---|---|
+| **"You cannot connect apps here"** when authorizing | Your user does not have the Settings permission in that workspace. Ask someone who has it to authorize, or sign in with another account. |
+| **"The return address of this request does not match..."** | Start the connection again from Zapier, not from a saved link. |
+| **The Zap fails with an authorization error** | The connection was revoked in Cord. Connect the Cord account again in Zapier. |
+| **The Zap fails with 429** | You went over the per-minute limit or the monthly API quota. Check your usage in Settings › Plans & subscription; on Free, wait for the next month or upgrade. |
+| **Cord says your integrations reached the maximum of 100 subscriptions per organization** | Turn off the Zaps, scenarios or n8n flows you no longer use to free up space. |
+| **The trigger receives no events** | Check that the Zap is on and that the event happens after turning it on: a Zap does not receive earlier events. To test, cause the real event, for example by sending a quote to your own email. |
+
+## Related
 
 - [Make](/en/docs/automatizacion/integraciones/make)
-- [Integrations](/en/docs/automatizacion/integraciones)
+- [n8n](/en/docs/automatizacion/integraciones/n8n)
+- [Integrations and the API quota](/en/docs/automatizacion/integraciones#integrations-and-the-api-quota)
+- [Cord OAuth for developers](/en/docs/desarrolladores/herramientas/oauth)

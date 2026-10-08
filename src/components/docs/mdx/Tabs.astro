@@ -1,62 +1,137 @@
 ---
 // src/components/docs/mdx/Tabs.astro
+//
+// Pestañas accesibles renderizadas en servidor: la lista de pestañas, los ids
+// y el primer panel activo salen del HTML, así que sin JavaScript se lee el
+// primer panel completo. El script sólo agrega teclado (flechas, Inicio, Fin
+// con tabindex itinerante) y recuerda la elección entre bloques de la página.
+const html = await Astro.slots.render('default');
+const uid = `tabs-${Math.random().toString(36).slice(2, 9)}`;
+
+// TabItem marca su panel con `data-cord-tab`. Los Tabs anidados ya se
+// renderizaron (y consumieron su marca) antes que este, así que aquí sólo
+// quedan los paneles propios. `label` llega ya escapado por Astro.
+const labels: string[] = [];
+const panels = html.replace(
+  /<div class="tab-panel" data-cord-tab(?:="")? data-label="([^"]*)"([^>]*)>/g,
+  (_match, label: string, rest: string) => {
+    const index = labels.push(label) - 1;
+    const first = index === 0;
+    return `<div class="tab-panel${first ? ' active' : ''}" role="tabpanel" id="${uid}-panel-${index}" aria-labelledby="${uid}-tab-${index}" data-label="${label}" tabindex="0"${first ? '' : ' hidden'}${rest}>`;
+  }
+);
 ---
 
 <cord-tabs class="cord-tabs">
-  <div class="tabs-header" role="tablist">
-    <!-- Buttons injected via JS -->
-  </div>
-  <div class="tabs-panels">
-    <slot />
-  </div>
+  {labels.length > 0 && (
+    <div class="tabs-header" role="tablist">
+      {labels.map((label, index) => (
+        <button
+          type="button"
+          class={`tab-btn${index === 0 ? ' active' : ''}`}
+          role="tab"
+          id={`${uid}-tab-${index}`}
+          aria-selected={index === 0 ? 'true' : 'false'}
+          aria-controls={`${uid}-panel-${index}`}
+          tabindex={index === 0 ? '0' : '-1'}
+          data-label={label}
+          set:html={label}
+        />
+      ))}
+    </div>
+  )}
+  <div class="tabs-panels" set:html={panels} />
 </cord-tabs>
 
 <script>
+  const STORAGE_KEY = 'cord_docs_tab_choice';
+  const SYNC_EVENT = 'cord-tabs:choose';
+
+  function readChoice(): string | null {
+    try {
+      return window.localStorage.getItem(STORAGE_KEY);
+    } catch {
+      return null;
+    }
+  }
+
+  function saveChoice(label: string) {
+    try {
+      window.localStorage.setItem(STORAGE_KEY, label);
+    } catch {
+      // Sin almacenamiento la pestaña funciona igual; sólo no se recuerda.
+    }
+  }
+
   class CordTabs extends HTMLElement {
-    constructor() {
-      super();
-      
-      const panels = Array.from(this.querySelectorAll('.tab-panel'));
-      const header = this.querySelector('.tabs-header');
-      
-      if (!header || panels.length === 0) return;
-      
-      panels.forEach((panel, i) => {
-        const label = panel.getAttribute('data-label');
-        const btn = document.createElement('button');
-        btn.className = `tab-btn ${i === 0 ? 'active' : ''}`;
-        btn.setAttribute('role', 'tab');
-        btn.setAttribute('aria-selected', i === 0 ? 'true' : 'false');
-        btn.textContent = label || `Tab ${i + 1}`;
-        btn.addEventListener('click', () => {
-          // Deactivate all
-          this.querySelectorAll('.tab-btn').forEach(b => {
-            b.classList.remove('active');
-            b.setAttribute('aria-selected', 'false');
-          });
-          panels.forEach(p => {
-            p.classList.remove('active');
-            p.setAttribute('hidden', '');
-          });
-          
-          // Activate clicked
-          btn.classList.add('active');
-          btn.setAttribute('aria-selected', 'true');
-          panel.classList.add('active');
-          panel.removeAttribute('hidden');
-        });
-        
-        header.appendChild(btn);
-        
-        if (i !== 0) {
-          panel.setAttribute('hidden', '');
-        } else {
-          panel.classList.add('active');
-        }
+    private tabs: HTMLButtonElement[] = [];
+    private onSync = (event: Event) => {
+      const label = (event as CustomEvent<string>).detail;
+      if (event.target !== this) this.selectByLabel(label);
+    };
+
+    connectedCallback() {
+      const header = this.querySelector(':scope > .tabs-header');
+      if (!header || this.tabs.length) return;
+      this.tabs = Array.from(header.querySelectorAll<HTMLButtonElement>(':scope > [role="tab"]'));
+      if (!this.tabs.length) return;
+
+      this.tabs.forEach((tab, index) => {
+        tab.addEventListener('click', () => this.choose(index, false));
+        tab.addEventListener('keydown', (event) => this.onKeydown(event, index));
+      });
+
+      const remembered = readChoice();
+      if (remembered) this.selectByLabel(remembered);
+      document.addEventListener(SYNC_EVENT, this.onSync);
+    }
+
+    disconnectedCallback() {
+      document.removeEventListener(SYNC_EVENT, this.onSync);
+    }
+
+    private onKeydown(event: KeyboardEvent, index: number) {
+      const last = this.tabs.length - 1;
+      let next = -1;
+      if (event.key === 'ArrowRight') next = index === last ? 0 : index + 1;
+      else if (event.key === 'ArrowLeft') next = index === 0 ? last : index - 1;
+      else if (event.key === 'Home') next = 0;
+      else if (event.key === 'End') next = last;
+      if (next < 0) return;
+      event.preventDefault();
+      this.choose(next, true);
+    }
+
+    private choose(index: number, focus: boolean) {
+      this.select(index);
+      if (focus) this.tabs[index].focus();
+      const label = this.tabs[index].dataset.label || '';
+      if (!label) return;
+      saveChoice(label);
+      // Las demás pestañas de la página con la misma opción la siguen
+      // (por ejemplo, el mismo lenguaje en varios bloques de código).
+      this.dispatchEvent(new CustomEvent(SYNC_EVENT, { detail: label, bubbles: true }));
+    }
+
+    selectByLabel(label: string) {
+      const index = this.tabs.findIndex((tab) => tab.dataset.label === label);
+      if (index >= 0) this.select(index);
+    }
+
+    private select(index: number) {
+      this.tabs.forEach((tab, i) => {
+        const active = i === index;
+        tab.classList.toggle('active', active);
+        tab.setAttribute('aria-selected', active ? 'true' : 'false');
+        tab.tabIndex = active ? 0 : -1;
+        const panel = document.getElementById(tab.getAttribute('aria-controls') || '');
+        if (!panel) return;
+        panel.classList.toggle('active', active);
+        panel.hidden = !active;
       });
     }
   }
-  
+
   if (!customElements.get('cord-tabs')) {
     customElements.define('cord-tabs', CordTabs);
   }
@@ -65,67 +140,61 @@
 <style>
   .cord-tabs {
     display: block;
-    margin: 24px 0;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
+    margin: 28px 0;
+    border: 1px solid var(--docs-hairline, rgba(0, 0, 0, 0.07));
+    border-radius: 14px;
     overflow: hidden;
-    background: #fff;
+    background: var(--docs-surface, #ffffff);
   }
-  
+
   .tabs-header {
     display: flex;
-    background: #f8fafc;
-    border-bottom: 1px solid #e2e8f0;
+    gap: 4px;
     padding: 0 8px;
-    gap: 8px;
+    border-bottom: 1px solid var(--docs-hairline, rgba(0, 0, 0, 0.07));
+    overflow-x: auto;
+    scrollbar-width: none;
   }
-  
-  .tabs-header :global(.tab-btn) {
+  .tabs-header::-webkit-scrollbar { display: none; }
+
+  .tab-btn {
+    flex-shrink: 0;
     background: transparent;
     border: none;
-    padding: 12px 16px;
-    font-size: 14px;
-    font-weight: 500;
-    color: #64748b;
-    cursor: pointer;
     border-bottom: 2px solid transparent;
     margin-bottom: -1px;
-    transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+    padding: 12px 12px 11px;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--docs-text-2, #4f566b);
+    cursor: pointer;
+    transition: color 0.2s ease, border-color 0.2s ease;
   }
-  
-  .tabs-header :global(.tab-btn:hover) {
-    color: #0f172a;
+  .tab-btn:hover { color: var(--docs-text, #050505); }
+  .tab-btn.active {
+    color: var(--docs-text, #050505);
+    border-bottom-color: var(--docs-text, #050505);
   }
-  
-  .tabs-header :global(.tab-btn.active) {
-    color: #0f172a;
-    border-bottom-color: #0f172a;
+  .tab-btn:focus-visible {
+    outline: 2px solid var(--docs-focus, rgba(0, 113, 227, 0.55));
+    outline-offset: -4px;
+    border-radius: 8px;
   }
-  
-  .tabs-panels {
-    padding: 20px;
+
+  .tabs-panels { padding: 20px; }
+
+  .tabs-panels > :global(.tab-panel[hidden]) { display: none; }
+  .tabs-panels > :global(.tab-panel:focus-visible) {
+    outline: 2px solid var(--docs-focus, rgba(0, 113, 227, 0.55));
+    outline-offset: 4px;
+    border-radius: 8px;
   }
-  
-  /* Fix code blocks inside tabs to not have double padding/margin if possible */
-  .tabs-panels :global(> .tab-panel) {
-    display: none;
-  }
-  
-  .tabs-panels :global(> .tab-panel.active) {
-    display: block;
-    animation: tabFadeIn 0.3s ease;
-  }
-  
-  .tabs-panels :global(.tab-panel > *:first-child) {
-    margin-top: 0;
-  }
-  
-  .tabs-panels :global(.tab-panel > *:last-child) {
-    margin-bottom: 0;
-  }
-  
-  @keyframes tabFadeIn {
-    from { opacity: 0; transform: translateY(4px); }
-    to { opacity: 1; transform: translateY(0); }
+  .tabs-panels :global(.tab-panel > *:first-child) { margin-top: 0; }
+  .tabs-panels :global(.tab-panel > *:last-child) { margin-bottom: 0; }
+
+  @media (max-width: 880px) {
+    .tab-btn { min-height: 44px; }
+    .tabs-panels { padding: 16px; }
   }
 </style>

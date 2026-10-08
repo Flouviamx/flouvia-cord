@@ -1,9 +1,11 @@
 ---
 title: "Create your first workflow"
 description: "A complete walkthrough of the Cord Workflows editor: create, choose the trigger, add steps, save, publish and check that it works."
-lastUpdated: "2026-09-15"
+lastUpdated: "2026-10-07"
 reviewedBy: "Cord product and operations"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Settings permission","A free active-workflow slot in your plan to publish"]
 ---
 
 <header class="content-header">
@@ -15,7 +17,7 @@ availablePlans: [Free, Starter, Pro, Scale, Developer]
 
 - You need the **Settings** permission in your organization.
 - Put the rule in one sentence: "when **this happens**, **do this**". For example: "when the client rejects a quote, create a task to call them tomorrow".
-- If your rule uses Slack or HubSpot, connect them first in **Settings › Integrations**. You can build the workflow without them, but those steps will fail when they run.
+- If your rule uses Slack, Teams, WhatsApp or HubSpot, connect them first in **Settings › Integrations**. You can build the workflow without them, but those steps will fail when they run.
 
 ## 1. Create the workflow
 
@@ -43,9 +45,10 @@ The trigger decides which data is available in the rest of the workflow. A quote
 
 Below the trigger, under **Do this**, click **Add a step** and choose:
 
-- **Add action:** create a task, email the team, send a Slack message or add a note in HubSpot.
+- **Action or lookup:** one of the 11 [actions](/en/docs/automatizacion/workflows/acciones) (create a task, email the team, email the client, send the client a WhatsApp, expire the quote, approve the internal request, void the invoice, send the data to a URL, send a Slack or Teams message, or add a note in HubSpot) or a [lookup](/en/docs/automatizacion/workflows/consultas).
 - **Add condition:** split the flow into **If the condition is met** and **If the condition isn't met**.
 - **Add wait:** pause for 1 to 30 days.
+- **Wait until...:** pause until a condition is met, with a deadline of 1 to 30 days.
 
 Adding a step opens the side panel to configure it (**Edit action**, **Edit condition** or **Edit wait**). Fill in the fields and click **Done**. Each card on the canvas shows a summary: the task title, "Wait 3 days", or the first condition followed by "and 2 more".
 

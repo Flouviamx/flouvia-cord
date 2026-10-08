@@ -1,9 +1,11 @@
 ---
 title: "Ejecuciones y errores"
-description: "Cómo leer la pestaña Ejecuciones de un workflow: estados, resultado de cada paso, reintentos automáticos, reintentar y cancelar, y qué hacer con cada mensaje de error."
-lastUpdated: "2026-09-15"
+description: "Cómo leer la pestaña Ejecuciones de un workflow: estados, resultado de cada paso, reintentos automáticos y cuándo ocurren, reintentar a mano con la versión original, cancelar, y qué hacer con cada mensaje de error."
+lastUpdated: "2026-10-07"
 reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Permiso Ajustes", "Un workflow publicado al menos una vez"]
 ---
 
 <header class="content-header">
@@ -17,6 +19,8 @@ availablePlans: [Free, Starter, Pro, Scale, Developer]
 - Dentro del editor, la pestaña **Ejecuciones** muestra las 50 más recientes, de la más nueva a la más antigua. Pulsa **Actualizar** para traer las últimas.
 
 Cada fila indica el estado, el evento que la inició y cuándo ocurrió. Tócala para ver el detalle.
+
+{/* MOCKUP: pestaña "Ejecuciones" del editor de un workflow. Lista con filas: "Completada — Se envía una cotización — hace 2 h", "En espera — Continúa 9 oct 2026", "En cola — Intento 1 de 3", "Fallida — Conecta Slack en Ajustes › Integraciones para usar esta acción" con botón "Reintentar". Una fila abierta muestra el detalle paso por paso: "Espera hasta que... — Se cumplió", "Crear una tarea — Hecho", "Enviar un mensaje a Slack — Error" con el motivo debajo. Arriba a la derecha, el botón "Actualizar". */}
 
 ## Estados de una ejecución
 
@@ -48,18 +52,37 @@ Los pasos de la rama que no se tomó no aparecen, porque no corrieron.
 Cuando una acción falla, Cord no se rinde a la primera:
 
 1. **Reintento inmediato.** Si el fallo parece pasajero (Slack o HubSpot no respondieron, el correo no salió), Cord vuelve a intentar el mismo paso segundos después, sin gastar un intento.
-2. **Nuevo intento más tarde.** Si sigue fallando, la ejecución vuelve a **En cola** y el detalle muestra "Intento 1 de 3". El siguiente intento se programa con más separación cada vez y se procesa en la siguiente revisión de Cord o cuando tu cuenta tenga actividad nueva.
+2. **Nuevo intento más tarde.** Si sigue fallando, la ejecución vuelve a **En cola** y el detalle muestra "Intento 1 de 3". El segundo intento se programa una hora después del primer fallo, y el tercero dos horas después del segundo. Cord revisa las ejecuciones pendientes cada hora y también cuando tu cuenta tiene actividad nueva, así que el intento puede correr un poco después de la hora programada.
 3. **Fallida.** Si el tercer intento también falla, la ejecución queda **Fallida** con el último mensaje de error.
 
 Los errores que no se arreglan solos, como "Conecta Slack…", no hacen el reintento inmediato, pero sí pasan por los 3 intentos: si conectas Slack a tiempo, el siguiente intento funciona.
 
 Cada intento continúa **desde el paso que falló**. Los pasos que ya se hicieron no se repiten: si la tarea se creó y falló el Slack que venía después, el reintento solo manda el Slack.
 
+| Intento | Cuándo corre | Estado mientras espera |
+|---|---|---|
+| 1 | Al ocurrir el evento, con un reintento inmediato si el fallo parece pasajero | Ejecutando |
+| 2 | Una hora después del primer fallo | En cola, "Intento 1 de 3" |
+| 3 | Dos horas después del segundo fallo | En cola, "Intento 2 de 3" |
+| Sin más intentos | La ejecución queda **Fallida** | Fallida |
+
 ## Reintentar a mano
 
 En una ejecución **Fallida**, pulsa **Reintentar**. Vuelve a **En cola** con los intentos en cero, continúa desde el paso que falló y corre en ese momento. Úsalo después de arreglar la causa, por ejemplo al reconectar HubSpot.
 
 Solo se pueden reintentar ejecuciones fallidas. Si lo intentas con otra verás "Solo se pueden reintentar ejecuciones fallidas."
+
+<Callout type="warning">
+**Reintentar usa la versión con la que empezó la ejecución.** Sirve cuando la causa estaba fuera del workflow: una app desconectada, un cliente sin correo o sin teléfono, un servicio que no respondió. Si la causa estaba en el propio workflow —un texto vacío, una URL equivocada, las variables de WhatsApp—, corrígelo y publica: el arreglo aplica a los eventos nuevos, y reintentar la ejecución vieja volverá a fallar igual.
+</Callout>
+
+## Volver a ejecutar
+
+No hay un botón para repetir una ejecución que ya terminó (**Completada** o **Cancelada**): repetirla podría mandar dos veces el mismo correo al cliente o crear la misma tarea dos veces. Según lo que necesites:
+
+- **Ver qué haría con un evento real**, sin enviar nada: usa **Probar** en el editor. Ver [Publicar, pausar y eliminar](/docs/automatizacion/workflows/publicar#probar-antes-de-publicar).
+- **Que vuelva a correr de verdad**: provoca otra vez el evento, por ejemplo reenviando la cotización. Cada evento nuevo crea su propia ejecución.
+- **Recuperar una ejecución fallida**: **Reintentar**, como se explica arriba.
 
 ## Cancelar
 
@@ -72,6 +95,7 @@ En una ejecución **En cola** o **En espera**, pulsa **Cancelar**. Queda **Cance
 | Mensaje | Causa | Qué hacer |
 |---|---|---|
 | El título de la tarea quedó vacío. | El título solo tenía datos del evento y llegaron vacíos. | Agrega texto fijo al título. |
+| No se pudo crear la tarea. | Cord no pudo guardar la tarea. | Pulsa **Reintentar**. Si persiste, escríbenos. |
 | Se alcanzó el máximo de tareas por hora de los workflows. | Tus workflows crearon 120 tareas en una hora. | Revisa si un workflow se dispara más de lo esperado; reintenta después. |
 
 ### Correo al equipo
@@ -80,7 +104,29 @@ En una ejecución **En cola** o **En espera**, pulsa **Cancelar**. Queda **Cance
 |---|---|---|
 | No hay a quién enviar el correo. | La cuenta no tiene dueño con correo o no hay miembros activos. | Revisa **Ajustes › Equipo y Roles** o cambia **Para**. |
 | El correo no está disponible por ahora. | No se pudo entregar a nadie. | Cord reintenta solo. Si persiste, escríbenos a contacto@cordhq.app. |
-| Se alcanzó el máximo de correos por hora de los workflows. | 30 correos en una hora. | Considera Slack para avisos frecuentes. |
+| Se alcanzó el máximo de correos por hora de los workflows. | 30 correos en una hora. | Considera Slack o Teams para avisos frecuentes. |
+
+### Correo al cliente
+
+| Mensaje | Causa | Qué hacer |
+|---|---|---|
+| Este evento no trae una cotización sobre la que actuar. | El disparador no trae una cotización, o la cotización ya no existe. | Usa un disparador de cotización o de factura. |
+| Este evento no trae una factura sobre la que actuar. | La factura del evento ya no existe. | Nada que reintentar para ese documento. |
+| El cliente no tiene un correo registrado. | El cliente del documento no tiene correo. | Agrega el correo en el cliente y pulsa **Reintentar**. |
+| El mensaje quedó vacío. | El mensaje solo tenía datos vacíos. | Agrega texto fijo. |
+| Alcanzaste el límite de envíos de tu plan este mes. | Se acabó la cuota mensual de envíos (5 en el plan Gratis). | Espera al siguiente mes o sube de plan. |
+| No se pudo enviar el correo al cliente. | El envío falló. | Cord reintenta solo. Si queda Fallida, pulsa **Reintentar**. |
+| Se alcanzó el máximo de correos al cliente por hora de los workflows. | 60 correos al cliente en una hora. | Reintenta después. |
+
+### WhatsApp
+
+| Mensaje | Causa | Qué hacer |
+|---|---|---|
+| Conecta WhatsApp en Ajustes › Integraciones para usar esta acción. | WhatsApp no está conectado. | [Conecta WhatsApp](/docs/automatizacion/integraciones/whatsapp) y pulsa **Reintentar**. |
+| El cliente no tiene un teléfono con lada de país registrado. | El cliente no tiene teléfono, o no empieza con `+` y la lada. | Edita el cliente, guarda el número con `+` y reintenta. |
+| WhatsApp no aceptó tu plantilla. Revísala en Ajustes › Integraciones: tiene que estar aprobada y con el mismo número de variables. | La plantilla no está aprobada, el nombre no coincide o el número de variables es distinto. | Si el problema es la plantilla, corrígela en Meta o en Ajustes › Integraciones y reintenta. Si son las variables del paso, corrígelas y publica: aplica a los eventos nuevos. |
+| WhatsApp no aceptó el mensaje. Se reintenta solo. | Un rechazo temporal. | Nada; Cord reintenta. |
+| Se alcanzó el máximo de WhatsApp por hora de los workflows. | 60 mensajes en una hora. | Reintenta después. |
 
 ### Slack
 
@@ -91,16 +137,44 @@ En una ejecución **En cola** o **En espera**, pulsa **Cancelar**. Queda **Cance
 | El mensaje quedó vacío. | El mensaje solo tenía datos vacíos. | Agrega texto fijo. |
 | Se alcanzó el máximo de mensajes por hora de los workflows. | 120 mensajes en una hora. | Reintenta después. |
 
+### Teams
+
+| Mensaje | Causa | Qué hacer |
+|---|---|---|
+| Conecta Microsoft Teams en Ajustes › Integraciones para usar esta acción. | Teams no está conectado. | [Conecta Teams](/docs/automatizacion/integraciones/teams) y pulsa **Reintentar**. |
+| Microsoft ya no acepta la conexión de Teams. Vuelve a conectarla en Ajustes › Integraciones. | Con **Conectar con Microsoft**, el acceso caducó o se revocó. | Pulsa **Volver a conectar** en la tarjeta y reintenta. |
+| Teams no aceptó el mensaje. Revisa que el canal o el flujo sigan activos. | El canal ya no existe, perdiste acceso a él, o el flujo de Power Automate se apagó o se borró. | Elige otro canal o pega la URL de un flujo nuevo, y reintenta. |
+| El mensaje quedó vacío. | El mensaje solo tenía datos vacíos. | Agrega texto fijo. |
+| Se alcanzó el máximo de mensajes de Teams por hora de los workflows. | 120 mensajes en una hora. | Reintenta después. |
+
 ### HubSpot
 
 | Mensaje | Causa | Qué hacer |
 |---|---|---|
-| Conecta HubSpot en Ajustes › Integraciones para usar esta acción. | HubSpot no está conectado. | [Conecta HubSpot](/docs/automatizacion/integraciones/hubspot). |
 | HubSpot necesita reconectarse en Ajustes › Integraciones. | Se revocó el acceso de Cord. | Pulsa **Volver a conectar** y reintenta. |
-| Este registro todavía no está en HubSpot. Se reintenta cuando termine de sincronizarse. | La cotización o el cliente aún no llegan a HubSpot, o el disparador no tiene cotización ni cliente. | Espera; si queda Fallida, revisa que las etapas estén completas y que el disparador sea de cotización o cliente. |
-| El registro ya no existe en HubSpot. | El Deal o la Empresa se borró en HubSpot. | Nada que reintentar para ese registro. |
-| HubSpot no dio permiso para esta operación. Vuelve a conectar la cuenta para aceptar los permisos. | Faltan permisos en la conexión. | Reconecta HubSpot. |
+| HubSpot no aceptó los datos de este paso. Revisa la configuración en Ajustes › Integraciones. | HubSpot no está conectado o pide reconectar; la cotización o el cliente aún no llegan a HubSpot, o el disparador no tiene cotización ni cliente; o el Deal o la Empresa se borró en HubSpot. | Revisa la conexión. Si el registro no ha llegado, espera; si queda Fallida, revisa que las etapas estén completas y que el disparador sea de cotización o cliente. |
+| HubSpot no respondió. Se reintenta solo. | Un fallo temporal de HubSpot. | Nada; Cord reintenta. |
+| La nota quedó vacía. | La nota solo tenía datos vacíos. | Agrega texto fijo. |
 | Se alcanzó el máximo de notas por hora en HubSpot. | 120 notas en una hora. | Reintenta después. |
+
+### Mandar los datos a una URL
+
+| Mensaje | Causa | Qué hacer |
+|---|---|---|
+| La URL de destino no es válida o apunta a un servidor interno. | La URL no es `https` o no es de un servidor público. | Corrige la URL y publica. El arreglo aplica a los eventos nuevos; esta ejecución conserva la URL anterior. |
+| La URL de destino no aceptó el envío. | El destino respondió con un error o no respondió a tiempo. | Revisa el destino; Cord reintenta dentro de los 3 intentos. |
+| Se alcanzó el máximo de envíos por hora a una URL. | 120 envíos en una hora. | Reintenta después. |
+
+### Acciones sobre el documento
+
+| Mensaje | Causa | Qué hacer |
+|---|---|---|
+| Este evento no trae una cotización sobre la que actuar. | **Caducar la cotización** o **Aprobar la solicitud interna** con un evento sin cotización. | Usa un disparador de cotización. |
+| La cotización ya no está en un estado que admita esta acción. | Al caducar: la cotización ya se aprobó, se rechazó o ya estaba vencida. | Nada que reintentar. |
+| Tu plan actual no incluye aprobaciones internas. | **Aprobar la solicitud interna** sin aprobaciones en tu plan. | Las aprobaciones internas requieren el plan Scale o superior. |
+| Esta cotización ya no tiene una solicitud de aprobación pendiente. | Alguien ya la decidió o se retiró. | Nada que reintentar. |
+| Este evento no trae una factura sobre la que actuar. | **Anular la factura** con un evento sin factura. | Usa un disparador de factura. |
+| Esta factura no se puede anular: revísala en Facturas. | Tiene pagos aplicados (pide una nota de crédito) u otra regla impide anularla. | Revísala en **Facturas**. |
 
 ### Generales
 
@@ -109,7 +183,9 @@ En una ejecución **En cola** o **En espera**, pulsa **Cancelar**. Queda **Cance
 | El workflow se pausó o se eliminó antes de terminar esta ejecución. | Estaba pausado cuando le tocaba continuar. | Nada; si querías que corriera, reanuda antes de que termine la espera. |
 | Tu plan actual no incluye este workflow activo. | Bajaste de plan y este workflow quedó fuera del límite. | Pausa otros workflows o sube de plan. Ver [Límites](/docs/automatizacion/workflows/limites). |
 | El evento que inició esta ejecución ya no existe. | El registro del evento se eliminó. | Nada que hacer. |
+| El workflow excedió el número de pasos permitido. | La ejecución pasó del máximo de pasos. | Divide la regla en dos workflows. |
 | Esta acción ya no está disponible. | La ejecución usaba una acción que Cord retiró. | Edita el workflow y publica de nuevo. |
+| Esta consulta ya no está disponible. | La ejecución usaba una consulta que Cord retiró. | Edita el workflow y publica de nuevo. |
 | Error interno al ejecutar la acción. | Un fallo inesperado de Cord. | Se reintenta solo. Si queda Fallida, pulsa **Reintentar** o escríbenos. |
 
 ## El panel de salud
@@ -120,7 +196,8 @@ Debajo, **Por qué fallaron**: las cinco causas más frecuentes, con cuántas ve
 
 El panel aparece en cuanto hay ejecuciones. Si ninguna falló en el periodo, lo dice en vez de mostrar una lista vacía.
 
-## Siguiente
+## Relacionadas
 
-- [Límites](/docs/automatizacion/workflows/limites)
-- [Acciones](/docs/automatizacion/workflows/acciones)
+- [Publicar, pausar y eliminar](/docs/automatizacion/workflows/publicar): versiones y prueba sin publicar.
+- [Límites](/docs/automatizacion/workflows/limites): topes por hora que pueden hacer fallar un paso.
+- [Acciones](/docs/automatizacion/workflows/acciones): qué necesita cada acción para funcionar.

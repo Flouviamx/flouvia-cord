@@ -1,6 +1,10 @@
 ---
 title: "Manejo de Errores"
 description: "Comprende los códigos de estado y respuestas de error de la API de Cord."
+lastUpdated: "2026-10-07"
+reviewedBy: "Ingeniería de Cord"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Una llave de API de Cord"]
 ---
 
 <header class="content-header">
@@ -20,15 +24,18 @@ La API de Cord siempre devuelve códigos de estado HTTP estándar. Como regla ge
 | Código | Descripción |
 |---|---|
 | **200 OK** | Todo funcionó como se esperaba. |
-| **400 Bad Request** | La petición era inaceptable. Generalmente significa `invalid_request` (faltan campos) o `invalid_json`. |
+| **400 Bad Request** | La petición era inaceptable. Generalmente significa `invalid_request` (faltan campos) o `invalid_json`; también `invalid_cursor` o `invalid_api_version`. |
 | **401 Unauthorized** | Falta tu Clave de API, es incorrecta o fue revocada. |
-| **402 Payment Required** | La operación requiere un plan superior (`subscription_required`) o excede un límite de tu plan actual (`plan_limit_reached`, ej. número de clientes o productos). |
+| **402 Payment Required** | La operación requiere un plan superior (`subscription_required`), excede un límite de tu plan actual (`plan_limit_reached`, ej. número de clientes o productos) o la llave excede el número de llaves que incluye tu plan (`subscription_key_limit`). |
 | **403 Forbidden** | Tienes permisos insuficientes (ej. intentaste escribir con una clave que solo tiene permisos de lectura, o una Publishable Key intentó una operación fuera de su alcance). |
 | **404 Not Found** | El recurso (cotización, cliente, factura) no existe. |
-| **409 Conflict** | Un cambio de estado inválido para el recurso (`invalid_state`) — por ejemplo, aprobar una cotización que sigue en borrador, anular una factura que necesita una nota de crédito, o borrar datos de prueba (`/api/test-mode/reset`) sin estar en una organización tipo Sandbox. También cuando otra petición con la misma `Idempotency-Key` sigue en proceso (`idempotency_in_progress`). |
-| **422 Unprocessable Entity** | Reutilizaste una `Idempotency-Key` con una petición distinta (`idempotency_key_reused`). |
-| **429 Too Many Requests** | Superaste el límite de peticiones por minuto de tu llave (`rate_limited`) o la cuota mensual de tu plan (`api_quota_exceeded`). Respeta el header `Retry-After`. |
-| **503 Service Unavailable** | Un servicio del que depende la operación no respondió — por ejemplo, no se pudo obtener un tipo de cambio (`fx_unavailable`) o el catálogo de impuestos (`tax_catalog_unavailable`). Cord nunca inventa una tasa: si no la puede demostrar, la operación falla cerrada. Reintenta más tarde. |
+| **409 Conflict** | Un cambio de estado inválido para el recurso (`invalid_state`) — por ejemplo, aprobar una cotización que sigue en borrador, o borrar datos de prueba (`/api/test-mode/reset`) sin estar en una organización tipo Sandbox. También cuando otra petición con la misma `Idempotency-Key` sigue en proceso (`idempotency_in_progress`), o cuando una factura timbrada necesita una nota de crédito en lugar de anularse (`credit_note_required`). |
+| **413 Payload Too Large** | El cuerpo supera 1 MB (`payload_too_large`); en `POST /api/v1/elements/ai-draft`, el archivo supera 4 MB, y en `POST /api/v1/setup/plans`, el archivo supera 3 MB. |
+| **415 Unsupported Media Type** | El cuerpo no se envió como `application/json` (`unsupported_media_type`). |
+| **422 Unprocessable Entity** | Reutilizaste una `Idempotency-Key` con una petición distinta (`idempotency_key_reused`), o la IA no encontró productos en el texto (`no_items`). |
+| **429 Too Many Requests** | Superaste un límite de peticiones por minuto (`rate_limited`, ver [Límites de peticiones](#límites-de-peticiones)), la cuota mensual de API de tu plan (`api_quota_exceeded`) o la de IA (`ai_quota_exceeded`). Respeta el header `Retry-After`. |
+| **502 Bad Gateway** | Un proveedor externo rechazó o no completó la operación: el proveedor fiscal al emitir (`provider_error`) o el envío de un correo (`send_failed`). |
+| **503 Service Unavailable** | Un servicio del que depende la operación no respondió — por ejemplo, no se pudo obtener un tipo de cambio (`fx_unavailable`) o el catálogo de impuestos (`tax_catalog_unavailable`), o no se pudo verificar tu suscripción (`subscription_verification_unavailable`). Cord nunca inventa una tasa: si no la puede demostrar, la operación falla cerrada. Reintenta más tarde. |
 
 ## Estructura del Objeto Error
 
@@ -67,7 +74,7 @@ Toda respuesta de `/api/v1` lleva el header `Cord-Request-Id` (`req_…`). En un
   "error": "API key inválida o revocada.",
   "code": "invalid_key",
   "request_id": "req_3f9c2a1b7d4e6f8a0b1c2d3e",
-  "doc_url": "https://docs.cordhq.app/desarrolladores/esenciales/errores#invalid_key"
+  "doc_url": "https://docs.cordhq.app/docs/desarrolladores/esenciales/errores#invalid_key"
 }
 ```
 
@@ -75,6 +82,7 @@ Toda respuesta de `/api/v1` lleva el header `Cord-Request-Id` (`req_…`). En un
 
 - <a id="invalid_json"></a>`invalid_json`: El cuerpo de tu petición `POST` no es JSON válido, o no se envió `Content-Type: application/json`.
 - <a id="invalid_request"></a>`invalid_request`: Fallan las validaciones de negocio (falta un campo, un descuento fuera de rango, una cotización sin cliente válido). El campo `error` explica la razón exacta.
+- <a id="invalid_fiscal_data"></a>`invalid_fiscal_data` (400): Los datos fiscales de `cliente.fiscal` no pasan la validación del país. La respuesta trae `issues`, una lista de `{ field, code }`. Ver [Formulario fiscal](/docs/desarrolladores/herramientas/elements/fiscal#códigos-de-validación).
 - <a id="missing_key"></a><a id="invalid_key"></a>`missing_key` / `invalid_key`: Falta el header `Authorization: Bearer`, o la llave no existe / fue revocada.
 - <a id="token_expired"></a>`token_expired`: La credencial de una conexión autorizada (Zapier, Make) venció. La app la renueva sola con su refresh token.
 - <a id="insufficient_scope"></a>`insufficient_scope`: Tu llave no tiene el alcance necesario (una llave de solo lectura intentó escribir, o una Publishable Key intentó una ruta fuera de su lista permitida).
@@ -83,17 +91,45 @@ Toda respuesta de `/api/v1` lleva el header `Cord-Request-Id` (`req_…`). En un
 - <a id="key_expired"></a>`key_expired` (401): La llave venció, o se rotó y terminó su periodo de gracia. Usa la llave nueva o genera otra.
 - <a id="not_found"></a>`not_found`: El recurso solicitado no existe en tu organización.
 - <a id="subscription_required"></a>`subscription_required`: La capacidad requiere un plan superior. La respuesta incluye `plan` (el actual) y `plan_required`.
-- <a id="plan_limit_reached"></a>`plan_limit_reached`: Alcanzaste un límite duro de tu plan (clientes, productos, llaves de API). La respuesta incluye `resource`, `limit` y `plan`.
+- <a id="plan_limit_reached"></a>`plan_limit_reached`: Alcanzaste un límite duro de tu plan (clientes, productos o cotizaciones activas). La respuesta incluye `resource`, `limit` y `plan`.
 - <a id="integration_limit_reached"></a>`integration_limit_reached` (403): tus integraciones ya crearon las 100 suscripciones de webhook permitidas por organización. Borra las que ya no uses.
 - <a id="rate_limited"></a><a id="api_quota_exceeded"></a>`rate_limited` / `api_quota_exceeded`: Límite de peticiones por minuto o de cuota mensual de la API. Reintenta respetando `Retry-After`.
 - <a id="fx_unavailable"></a><a id="tax_catalog_unavailable"></a>`fx_unavailable` / `tax_catalog_unavailable`: Un dato de terceros (tipo de cambio o catálogo de impuestos) no se pudo obtener con certeza. La operación no se completó — no asumas que sí ocurrió.
+- <a id="subscription_key_limit"></a>`subscription_key_limit` (402): Tu organización tiene más llaves activas de las que incluye su plan (por ejemplo, después de bajar de plan) y esta llave quedó fuera del cupo; las más antiguas siguen funcionando. Revoca llaves que ya no uses o sube de plan. El cupo cuenta llaves secretas, restringidas y publicables activas, sin las conexiones autorizadas por OAuth: 2 en Gratis, 5 en Starter, 20 en Profesional, 50 en Scale y 200 en Developer.
+- <a id="subscription_verification_unavailable"></a>`subscription_verification_unavailable` (503): Cord no pudo verificar tu suscripción o registrar el uso de la llamada. La operación no se ejecutó; reintenta.
+- <a id="invalid_api_version"></a>`invalid_api_version` (400): El header `Cord-Version` pide una versión que no existe. El mensaje lista las disponibles. Ver [Versiones](/docs/desarrolladores/esenciales/versiones).
+- <a id="invalid_cursor"></a>`invalid_cursor` (400): El `cursor` no es válido. Usa tal cual el `next_cursor` de la respuesta anterior.
+- <a id="payload_too_large"></a>`payload_too_large` (413): El cuerpo JSON supera 1 MB, o el archivo enviado a `POST /api/v1/elements/ai-draft` supera 4 MB.
+- <a id="unsupported_media_type"></a>`unsupported_media_type` (415): El cuerpo no viene como `application/json` (o como `multipart/form-data` en `POST /api/v1/elements/ai-draft`).
+- <a id="test_mode_only"></a>`test_mode_only` (403): Los simuladores de `/api/v1/test_helpers` solo funcionan con una llave `sk_test_` y sobre el entorno de prueba.
+- <a id="credit_note_required"></a>`credit_note_required` (409): La factura ya timbrada no se puede anular directamente. Emite una nota de crédito con `action: "credit_note"`.
+- <a id="provider_error"></a>`provider_error` (502): El proveedor fiscal rechazó o no completó la emisión. El campo `error` explica la razón.
+- <a id="send_failed"></a>`send_failed` (502): No se pudo enviar el correo de la factura. Reintenta el envío.
+- <a id="ai_quota_exceeded"></a><a id="no_items"></a><a id="ai_unavailable"></a><a id="missing_text"></a><a id="text_too_long"></a>`ai_quota_exceeded` (429) / `no_items` (422) / `ai_unavailable` (502 o 503) / `missing_text` / `text_too_long` (400): Errores de las rutas con IA (`POST /api/v1/cotizaciones/ia` y `POST /api/v1/elements/ai-draft`): se agotó el cupo de IA de tu plan, el texto no traía productos, la IA no está disponible o no pudo procesar el pedido, o el texto falta o supera el máximo. En `ai-draft` estos códigos llegan como evento `error` dentro del stream.
 
 - <a id="invalid_state"></a>`invalid_state`: El recurso no está en un estado que permita la operación, o cambió mientras la procesábamos. No se aplicó nada.
 - <a id="invalid_url"></a>`invalid_url`: La URL de un webhook no es `https://` o apunta a un host interno.
 - <a id="invalid_idempotency_key"></a><a id="idempotency_key_reused"></a><a id="idempotency_in_progress"></a><a id="idempotency_unavailable"></a>`invalid_idempotency_key` / `idempotency_key_reused` / `idempotency_in_progress` / `idempotency_unavailable`: Ver la sección siguiente.
-- <a id="secret_key_in_browser"></a>`secret_key_in_browser` (403): Una Secret Key llegó desde un navegador. Ya quedó expuesta en el código de la página: revócala en Ajustes › Developers y llama a la API solo desde tu servidor.
-- <a id="missing_origin"></a><a id="unauthorized_origin"></a><a id="invalid_origin"></a>`missing_origin` / `unauthorized_origin` / `invalid_origin` (403): Una Publishable Key llegó sin `Origin`, o desde un dominio que no está en los dominios permitidos de Cord Elements.
-- <a id="origin_allowlist_required"></a>`origin_allowlist_required` (403): Una Publishable Key en vivo solo funciona con dominios permitidos configurados en Ajustes › Elements. Las llaves `pk_test_` funcionan desde cualquier origen.
+- <a id="secret_key_in_browser"></a>`secret_key_in_browser` (403): Una Secret Key llegó desde un navegador. Ya quedó expuesta en el código de la página: revócala en la pestaña **API** del [Cord Workbench](/docs/desarrolladores/herramientas/workbench) y llama a la API solo desde tu servidor.
+- <a id="missing_origin"></a><a id="unauthorized_origin"></a><a id="invalid_origin"></a>`missing_origin` / `unauthorized_origin` / `invalid_origin` (403): Una Publishable Key llegó sin `Origin`, o desde un dominio que no está en los dominios permitidos de tu organización (Ajustes › Cotizador embebible).
+- <a id="origin_allowlist_required"></a>`origin_allowlist_required` (403): Una Publishable Key en vivo solo funciona con dominios permitidos configurados en **Ajustes › Cotizador embebible**. Las llaves `pk_test_` funcionan desde cualquier origen.
+
+## Límites de peticiones
+
+Cord aplica estos límites por ventana de un minuto, salvo donde se indica. Al superarlos responde `429` con `code: "rate_limited"`, en general con el header `Retry-After` en segundos. Los marcados como estrictos no dejan pasar peticiones cuando Cord no puede contarlas: en `/api/v1/cotizaciones/{id}` y `/api/v1/elements/ai-draft` responden entonces `503` con `error: "access_temporarily_unavailable"`.
+
+| Límite | Alcance | Aplica a |
+|---|---|---|
+| 120 por minuto | Por IP de origen | Toda petición a `/api/v1` y al servidor MCP, con cualquier llave, antes de validar la llave. |
+| 600 por minuto | Por llave secreta (`sk_`, `rk_` o conexión OAuth) | Toda petición a `/api/v1` y al servidor MCP. |
+| 120 por minuto | Por llave publicable (`pk_`) | Las cuatro rutas que admite una `pk_`. |
+| 120 por minuto (estricto) | Por organización | `POST` y `DELETE` en `/api/v1/cotizaciones/{id}` y las herramientas MCP que cambian el estado de una cotización. |
+| 20 por minuto | Por llave | `POST /api/v1/webhooks`. |
+| 20 por minuto | Por organización | `POST /api/v1/cotizaciones/ia`. |
+| 6 por minuto por IP, 60 por minuto y 500 al día por organización (estrictos) | IP y organización | `POST /api/v1/elements/ai-draft`. |
+| 6 al día (estricto) | Por organización | `POST /api/v1/setup/plans` y `proponer_configuracion` en MCP. |
+
+Como el límite por IP es menor que el de una llave secreta, un servidor que manda todo desde una sola IP llega primero a 120 por minuto. Aparte de estos límites, las llaves en vivo consumen la cuota mensual de API de tu plan (`api_quota_exceeded`).
 
 ## Reintentos seguros con `Idempotency-Key`
 

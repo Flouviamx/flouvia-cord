@@ -1,0 +1,160 @@
+---
+title: "Payouts to your bank"
+seoTitle: "Cord Payments payouts: frequency, statuses, and bank account"
+description: "How the money you collect with Cord Payments reaches your bank: daily, weekly, monthly, or manual frequency, the status of each payout, history, payout account by country, and why a payout can be paused."
+lastUpdated: "2026-10-07"
+reviewedBy: "Cord product and operations"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Verified and active Cord Payments account", "Payment settings permission to change frequency or account", "Collections permission to view the history"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Payouts to your bank</h1>
+  <p class="page-subtitle">How often your money leaves for your bank account, how to track each payout, and what to do if one stops.</p>
+</header>
+
+## What a payout is
+
+When your customer pays by card or SPEI, the payment first lands in the **balance of your payments account**, in your business's name. A **payout** is the transfer of that balance to your bank account. Cord doesn't hold the money or move it through an account of its own: you choose the pace and Cord shows you every movement.
+
+[Mercado Pago](/en/docs/pagos/mercado-pago) payments don't go through here: they land in your Mercado Pago account and you withdraw them from there. Manual transfers don't either, because the money is already in your bank.
+
+## Requirements
+
+| Requirement | Detail |
+|---|---|
+| Plan | All plans. |
+| Country | Mexico, United States, Canada, Brazil, Spain, United Kingdom, Germany, and France (where Cord Payments operates). |
+| Account | A verified [payments account](/en/docs/pagos/onboarding) with status **Active**. |
+| Permission to configure | **Payment settings**, to change the frequency or the payout account. |
+| Permission to view | **Collections**, to see the history in **My money › Payments**. |
+| Currency | Payouts arrive in the currency of your payments account's country: MXN in Mexico, USD in the United States, CAD in Canada, BRL in Brazil, EUR in Spain, Germany, and France, GBP in the United Kingdom. |
+
+## Choose your payout frequency
+
+<Steps>
+1. Open **Settings › Payments**. The **Payout frequency** section appears once your account is active.
+2. Under **Frequency**, choose **Daily**, **Weekly**, **Monthly**, or **Manual**.
+3. If you chose **Weekly**, pick the **day of the week** (Monday to Friday). If you chose **Monthly**, pick the **day of the month**, from 1 to 28.
+4. Click **Save**. Cord asks you to confirm your identity with your password or your two-step verification code: deciding how fast your money leaves is as sensitive as changing where it goes.
+5. You'll see **Payout frequency updated**. What gets saved is what your payments account confirmed, not just what you picked.
+</Steps>
+
+{/* MOCKUP: Settings › Payments, "Payout frequency" section: explanatory text, "Frequency" selector set to "Weekly", "Day of the week" selector set to "Friday", and a "Save" button. */}
+
+### Which option fits
+
+| Frequency | When the money leaves | Use it if |
+|---|---|---|
+| **Daily** | Every business day, whatever is available goes out. | You need constant liquidity. You pay each transfer's fixed cost more often. |
+| **Weekly** | Once a week, on the day you choose. | You reconcile weekly or pay suppliers on a fixed day. |
+| **Monthly** | Once a month, on the day you choose. | You prefer to pool the money and reconcile once. The money stays away from your bank longer. |
+| **Manual** | It doesn't leave automatically. | Read the warning below before choosing it. |
+
+<Callout type="warning" title="The day of the month is capped at 28">
+Days 29, 30, and 31 don't exist in every month: a payout scheduled for the 31st would silently skip February. That's why Cord only accepts 1 through 28.
+</Callout>
+
+<Callout type="warning" title="Manual: the money stays in your balance">
+With **Manual**, payments pile up in your payments account balance and are not sent to your bank on their own. Today Cord has no button to request a one-off payout from the app. If you choose Manual and need to release the money, switch to Daily, Weekly, or Monthly, or write to us.
+</Callout>
+
+## Payout statuses
+
+Each payout appears in the **Deposits** widget of [My money › Payments](/en/docs/pagos/dashboard) with its amount, currency, arrival date, and one of these statuses:
+
+| Status | What it means |
+|---|---|
+| **Scheduled** | The payout was created and is waiting its turn. |
+| **In transit** | It left for your bank and arrival isn't confirmed yet. |
+| **Deposited** | Your bank received it. Final status. |
+| **Failed** | The bank rejected it (for example, the account no longer exists or the holder doesn't match). Final status. |
+| **Canceled** | It was canceled before leaving. Final status. |
+
+A final status never goes backwards: if a late notice arrives after a payout is **Deposited**, Cord doesn't move it back to **In transit**.
+
+### History
+
+Cord stores every payout as its status changes. The history loads with the page, survives changes of frequency or account, and helps you reconcile against your bank statement: look for the same amount and arrival date.
+
+<Callout type="info">
+Today Cord doesn't show which payments make up each payout. To match a payout to its payments, use the date and amount, plus the **Recent payments** table on the same dashboard.
+</Callout>
+
+### Payout events
+
+If you use the API or Workflows, Cord emits two events:
+
+- **A payout is paid to your bank** (`payout.paid`): with amount, currency, arrival date, and method.
+- **A payout fails** (`payout.failed`): also includes the failure reason.
+
+Use them to alert finance in Slack or record the payout in your accounting. See [Workflow triggers](/en/docs/automatizacion/workflows/disparadores) and [webhooks](/en/docs/desarrolladores/herramientas/webhooks).
+
+## Your payout account
+
+The account is registered in the **Bank account** step when you [connect your account](/en/docs/pagos/onboarding) and uses your business country's banking format. Cord checks the format **before** sending it, so a mistyped digit is flagged by Cord instead of a bank rejection days later.
+
+| Country | What you enter | What Cord checks |
+|---|---|---|
+| Mexico | CLABE (18 digits) | Length and check digit. |
+| Spain, Germany, and France | IBAN | Structure and check digits (mod 97). |
+| United States | Routing number (ABA, 9 digits) and account number (4 to 17 digits) | Length and the routing number's check digit. |
+| United Kingdom | Sort code (6 digits) and account number (8 digits) | Length and format. The sort code has no check digit. |
+| Canada | Transit number (5 digits), institution number (3 digits), and account number (5 to 12 digits) | Length and format. |
+| Brazil | Bank code (3 digits), branch code (agência, 4 digits), and account number with check digit | Length and format. The account check digit depends on each bank. |
+
+Besides the number, you enter the **account holder name**. The account must be in the name of the business or its legal representative.
+
+### Change your payout account
+
+<Steps>
+1. Open **Settings › Payments** with the **Payment settings** permission.
+2. In your active account summary, click **Change** next to the bank account (or **Edit bank account** if you haven't registered one yet).
+3. Enter the full new account and the holder name. For security, Cord never shows the previous account again, only its last four digits.
+4. Confirm your identity when Cord asks.
+5. The next payouts go to the new account. The summary shows the bank and the last four digits.
+</Steps>
+
+<Callout type="info">
+The payout account is stored encrypted. Every change is recorded in your organization's audit log.
+</Callout>
+
+## Paused payouts
+
+If the frequency section says **Payouts are paused until verification completes**, or the **Account status** widget shows **Payouts: Inactive**, your payments account may still have pending requirements. Meanwhile, payments keep accumulating in your balance but don't leave for your bank.
+
+The usual causes:
+
+- **A pending or overdue verification requirement**, such as an unreadable photo, an expired document, or an unverified person. The **Account status** widget shows how many requirements are missing and their deadline; **Manage** takes you straight to them.
+- **A rejected payout account**, for example a closed account or one in someone else's name. Register a valid account.
+- **A review of the payments account.** If the widget says your account is temporarily paused, review the requirements to reactivate it.
+
+Once you complete what's pending, payouts resume at the frequency you had.
+
+## Limits
+
+- Frequency and account can only be configured when the payments account is **Active**, and only in the eight Cord Payments countries.
+- The weekly day ranges from Monday to Friday; the monthly day from 1 to 28.
+- No instant or on-demand payouts from Cord.
+- No breakdown of which payments each payout contains.
+- The country and currency of the payments account can't be changed after it's created.
+
+## Common problems
+
+**I don't see the frequency section.** Your account isn't **Active** yet, your country doesn't have Cord Payments, or you don't have the **Payment settings** permission.
+
+**I saved the frequency and it asked for my password again.** Identity confirmation lasts a few minutes. If more time passed, Cord asks again.
+
+**A payout shows Failed.** Check that the account is still open and in the correct holder's name. If it changed, register it again. If the account is correct, write to us with the payout's date and amount.
+
+**My balance grows but nothing reaches my bank.** Check whether you chose **Manual** or whether payouts are paused for verification.
+
+**The payout amount doesn't match what I collected.** Payouts are net: they already deduct fees, refunds, and amounts held by disputes. Check the **Where every peso goes** widget on the [payments dashboard](/en/docs/pagos/dashboard).
+
+## Related
+
+- [Connect your account](/en/docs/pagos/onboarding)
+- [Payments dashboard](/en/docs/pagos/dashboard)
+- [Cord Payments fees](/en/docs/pagos/condiciones)
+- [Disputes and chargebacks](/en/docs/pagos/disputas)

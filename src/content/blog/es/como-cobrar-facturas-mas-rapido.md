@@ -133,7 +133,7 @@ proveedor de pagos. Si el pago es parcial, registra el importe real y conserva e
 
 ## 7. Automatiza con límites explícitos
 
-Cord permite seguimiento manual desde Pro. En Scale y Developer, el agente de cobranza
+Cord permite seguimiento manual y el agente de cobranza desde Pro. El agente
 puede preparar o enviar comunicaciones según el modo configurado. La IA no debe decidir
 por sí sola descuentos, quitas o acuerdos que tu política no autoriza.
 

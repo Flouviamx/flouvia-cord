@@ -1,10 +1,12 @@
 ---
 title: "WhatsApp Business"
 seoTitle: "Connect Cord with WhatsApp Business"
-description: "How to connect your WhatsApp Business number with Cord: Meta-approved templates, variables with event data, phone numbers with country code, limits and common issues."
-lastUpdated: "2026-09-28"
+description: "How to connect your WhatsApp Business number with Cord: Meta requirements (app, sending number, approved template and token), connecting step by step, variables with event data, outbound-only direction, limits, how to disconnect and common issues."
+lastUpdated: "2026-10-07"
 reviewedBy: "Cord product and operations"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Settings permission in Cord", "A WhatsApp Business app in Meta for Developers with your sending number", "A message template approved by Meta", "A permanent Meta access token", "Clients with a phone number that includes the country code"]
 ---
 
 <header class="content-header">
@@ -12,42 +14,108 @@ availablePlans: [Free, Starter, Pro, Scale, Developer]
   <p class="page-subtitle">Your client gets the reminder where they actually read it, from your own number.</p>
 </header>
 
-## How it works
+## What it does
 
-Cord sends WhatsApp messages with **Meta's Cloud API** and **your** account: messages come from your number and Meta bills the conversation to your account, not Cord.
+With WhatsApp connected, the **Send the client a WhatsApp** action in [Cord Workflows](/en/docs/automatizacion/workflows/acciones) sends your approved template to the phone of the document's client, with event data in its variables: a payment reminder before the due date, a heads-up that a quote is about to expire, a deposit confirmation.
 
-Meta does not allow starting a conversation with free text, only with an **approved template**. That is why Cord asks for your template name and fills its variables; there is no free-text field because Meta would reject it.
+Cord sends WhatsApp through **Meta's Cloud API** and with **your** account: messages come from your number and Meta charges the conversation to your account, not Cord.
+
+Meta does not allow starting a conversation with free text, only with an **approved template**. That is why Cord asks for your template's name and fills in its variables; there is no free-text message field because Meta would reject it.
+
+<Callout type="info">
+Without connecting anything, **Collections** (the **Remind via WhatsApp** button) and each client's page have a button that opens WhatsApp on your phone or computer with the message ready, for you to send. That button does not use this integration: this page is for Cord to send the message on its own, from a workflow.
+</Callout>
+
+## Requirements
+
+| Where | What you need |
+|---|---|
+| **Cord** | The **Settings** permission. Any plan. |
+| **Meta for Developers** | An app with the **WhatsApp** product and your sending number added. That is where the **phone number ID** (digits only) comes from. |
+| **WhatsApp Manager** | A **message template approved** by Meta, with up to 4 variables (`{{1}}` to `{{4}}`). Note its exact name and language. |
+| **Token** | A **permanent access token** from your Meta account with permission to send messages from that number. A token that expires stops working and messages start failing. |
+| **Your clients** | A phone number saved **with its country code** (`+52 55 1234 5678`). Cord does not guess the country: the same number exists in several. |
+| **Cost** | Meta charges each template-initiated conversation to your Meta account, based on the recipient's country. Cord does not charge for messages. |
 
 ## Connect
 
 <Steps>
-1. At [Meta for Developers](https://developers.facebook.com), create a **WhatsApp Business** app and add your sending number.
-2. In **WhatsApp Manager**, create a message template and submit it for approval. Example: `Hi {{1}}, your quote {{2}} expires on {{3}}. You can see it here: {{4}}`.
+1. In [Meta for Developers](https://developers.facebook.com), create a **WhatsApp Business** app and add your sending number.
+2. In **WhatsApp Manager**, create a template and submit it for approval. Example: `Hi {{1}}, your invoice {{2}} for {{3}} is due on {{4}}. You can pay it from the link we emailed you.`
 3. Copy the **phone number ID** (digits only) and generate a **permanent access token**.
-4. In Cord, go to **Settings › Integrations › WhatsApp Business**, paste both, plus the template name and language (for example `en_US`).
-5. Click **Save**, then **Send test** to your own number, with country code.
+4. In Cord, go to **Settings › Integrations › WhatsApp Business** and fill in **Phone number ID**, **Access token**, **Template name** (lowercase, without spaces or accents, as it appears in Meta) and **Template language** (for example `es_MX` or `en_US`).
+5. Click **Save** and then **Send test** to your own number, with the country code.
 </Steps>
 
-The token is stored encrypted and never shown again. To change the template, leave the token field empty.
+The token is stored encrypted and never shown again; the card only says "A token is saved". To change the template, leave the token field empty and save: Cord keeps the one it already had.
+
+{/* MOCKUP: WhatsApp Business card in Settings › Integrations. Fields "Phone number ID" (109876543210987), "Access token" empty with the note "A token is saved", "Template name" (payment_reminder) and "Template language" (en_US). Buttons "Save" and "Disconnect". Below, "Your number with country code" (+1 512 555 0142) and the "Send test" button. */}
 
 ## Use it in a workflow
 
-The **Send the client a WhatsApp** action in [Cord Workflows](/en/docs/automatizacion/workflows) sends your template to the phone of the document's client. Each step variable fills `{{1}}`, `{{2}}`… in order, and accepts event data: `{{cliente}}`, `{{folio}}`, `{{total}}`, `{{vence}}`.
+The **Send the client a WhatsApp** step has up to **4 variables**, up to 200 characters each. Each variable fills `{{1}}`, `{{2}}`… of your template in order, and accepts event data: `{{cliente}}`, `{{folio}}`, `{{numero}}`, `{{total}}`, `{{saldo}}`, `{{vence}}`. Line breaks inside a variable become spaces.
 
-The phone comes from the client, never from a step field, and must have its **country code** (`+1 512 555 0100`). Cord does not guess the country: the same number exists in several.
+With the example template, in a workflow with the **An invoice is about to be due** trigger:
+
+| Step variable | Value | Arrives as |
+|---|---|---|
+| Variable 1 | `{{cliente}}` | Lone Star Supply |
+| Variable 2 | `{{numero}}` | F-00231 |
+| Variable 3 | `{{saldo}} {{moneda}}` | 12,500 USD |
+| Variable 4 | `{{vence}}` | 2026-10-10 |
+
+The phone number comes from the document's client, never from a field in the step: a workflow cannot message a number that is not your client's.
+
+## What flows and in which direction
+
+WhatsApp is an **outbound-only** integration.
+
+| Direction | What flows | When |
+|---|---|---|
+| **From Cord to the client** | Your approved template, with the variables filled in, from your number. | When the workflow step runs. |
+| **From the client to Cord** | Nothing. If the client replies, the reply reaches your number in Meta's tools; Cord does not read or store it. | — |
+
+That is why the template should send the client where they can act (the document link they already received by email) and your team should handle replies from the business's WhatsApp account.
 
 ## Limits
 
 | Limit | Value |
 |---|---|
-| Messages from workflows | 60 per hour per account |
+| Messages from workflows | 60 per hour per organization |
 | Tests from Settings | 5 per hour |
-| Cost per conversation | Billed by Meta to your account, by country |
+| Variables per message | 4, up to 200 characters |
+| Sending numbers per organization | 1 |
+| Templates per organization | 1 (the one saved on the card) |
+| Cost per conversation | Charged by Meta to your account, by country |
+
+## Disconnect
+
+<Steps>
+1. Go to **Settings › Integrations › WhatsApp Business**.
+2. Click **Disconnect**. You will see "WhatsApp disconnected".
+</Steps>
+
+Cord deletes the phone number ID, the token and the template, and stops sending messages. Workflows with the WhatsApp action will fail with "Connect WhatsApp in Settings › Integrations to use this action." until you connect again.
+
+Disconnecting in Cord does not revoke the token in Meta. If you want to invalidate it, also do it from your Meta account.
 
 ## Common issues
 
 | Message or symptom | What to do |
 |---|---|
-| **"The client has no phone with country code"** | Edit the client and save the number with `+` and its country code. |
-| **"WhatsApp did not accept your template"** | Check it is approved, the name matches and the number of variables is the same. |
-| **"WhatsApp did not accept the message"** | Usually the token expired or the sending number was disabled in Meta. |
+| **"The client has no phone with a country code on file."** | Edit the client and save the number with `+` and its country code. Then click **Retry** on the run. |
+| **"WhatsApp did not accept your template"** | Check that it is approved, that the name and language match, and that the step has the same number of variables as the template. |
+| **"WhatsApp did not accept the message"** | Usually the token expired or the sending number was deactivated in Meta. In a workflow, Cord retries on its own; for the test, check the token and the sending number. |
+| **"Connect WhatsApp in Settings › Integrations to use this action"** | The phone number ID, the token or the template name is missing. Fill them in and save. |
+| **"The phone number ID is digits only..."** | You pasted the phone number instead of the ID. Copy it from Meta's WhatsApp panel. |
+| **"The template name goes in lowercase, without spaces or accents"** | Type the name exactly as it appears in Meta, for example `payment_reminder`. |
+| **"The template language goes as es_MX or en_US"** | Use the language code the template was approved with. |
+| **The test fails but the template is approved** | **Send test** fills only `{{1}}` with the word "test". If your template does not have exactly one variable, Meta may reject the test even though the workflow works: test from a workflow with every variable. |
+| **A variable's text lands in another spot** | If you leave a middle variable empty (for example 2) and fill the next one, Cord does not send the empty one and the following ones shift: 3 fills `{{2}}`. Fill the variables in order, with no gaps. |
+
+## Related
+
+- [Workflow actions](/en/docs/automatizacion/workflows/acciones)
+- [Ready-made ideas](/en/docs/automatizacion/workflows/ideas): swap the email in "Remind the client 3 days before the due date" for a WhatsApp.
+- [Runs and errors](/en/docs/automatizacion/workflows/ejecuciones#whatsapp)
+- [Receivables and operating collections](/en/docs/pagos/cartera-cobranza)

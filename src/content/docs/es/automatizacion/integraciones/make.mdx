@@ -1,16 +1,30 @@
 ---
 title: "Make"
 seoTitle: "Conectar Cord con Make"
-description: "Cómo conectar la app de Cord en Make, qué módulos incluye, y cómo usar Webhooks y HTTP como alternativa: eventos, duplicados y errores."
-lastUpdated: "2026-09-21"
+description: "Cómo conectar la app de Cord en Make: requisitos, autorización con un clic, módulos, qué viaja en cada dirección, cuota mensual de API por plan, cómo desconectar, Webhooks y HTTP como alternativa, duplicados y errores."
+lastUpdated: "2026-10-07"
 reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Permiso Ajustes en el espacio de trabajo de Cord", "Una cuenta de Make con rol de Administrador, Propietario o Desarrollador de aplicaciones para instalar la app", "Cuota mensual de API disponible en tu plan de Cord"]
 ---
 
 <header class="content-header">
   <h1 class="page-title">Make</h1>
   <p class="page-subtitle">Lleva lo que pasa en Cord a cualquier app de Make, y crea datos en Cord desde tus escenarios.</p>
 </header>
+
+## Qué hace
+
+La app de Cord para Make tiene un disparador instantáneo (**Watch Events**), acciones para crear y cambiar datos en Cord, búsquedas con paginación y un módulo universal para cualquier otra operación de la API. Se autoriza con un clic en una pantalla de Cord, sin llaves, y funciona en todas las zonas de Make.
+
+## Requisitos
+
+| Dónde | Qué necesitas |
+|---|---|
+| **Cord** | El permiso de **Ajustes** en el espacio de trabajo que vas a conectar. Cualquier plan. |
+| **Make** | Una cuenta de Make. Para instalar la app, ser Administrador, Propietario o Desarrollador de aplicaciones de esa organización de Make. Las operaciones que consumen tus escenarios las cobra Make según tu plan de Make. |
+| **Cuota** | Cada módulo de acción o búsqueda gasta llamadas de la cuota mensual de API de tu plan de Cord. Ver [Límites](#límites). |
 
 ## Conectar la app de Cord
 
@@ -32,6 +46,45 @@ Quien autoriza necesita acceso a **Ajustes** en ese espacio. Make renueva el acc
 | **Universal** | **Make an API Call**, para cualquier otra operación de la API de Cord. |
 
 Cada **Watch Events** activo crea su propio webhook en Cord, con un cupo aparte de los endpoints de tu plan.
+
+{/* MOCKUP: escenario de Make con tres módulos en cadena: "Cord — Watch Events" (eventos: quote.approved), "Cord — Get a Client" y "Google Sheets — Add a Row". Abajo, el panel de conexión de Cord con "Create a connection" y el nombre "Cord (Distribuidora Andina)". */}
+
+## Qué viaja y en qué dirección
+
+| Dirección | Qué viaja | Cuándo |
+|---|---|---|
+| **De Cord a Make** | El evento que elegiste en **Watch Events**, con los datos del objeto. | Al instante, cada vez que pasa en Cord. |
+| **De Make a Cord** | Lo que haga el módulo: crear o actualizar un cliente, crear o enviar una cotización, marcarla pagada o crear una tarea. | Cuando el escenario corre. |
+| **Búsquedas y consultas** | Make lee clientes o cotizaciones para usarlos en el módulo siguiente. No cambia nada. | Cuando el escenario corre. |
+
+Lo que un módulo hace en Cord dispara los mismos eventos que si lo hiciera una persona, con **Quién lo originó: La API**.
+
+## Límites
+
+| Límite | Valor |
+|---|---|
+| Llamadas a la API al mes | Gratis 100, Starter 1,000, Pro 5,000, Scale 10,000, Developer 50,000 |
+| Al pasar la cuota | En Gratis las llamadas se rechazan hasta el siguiente mes; desde Starter se cobran como excedente, con un tope de seguridad de 10 veces lo incluido |
+| Webhooks que crean tus escenarios | 100 por organización, aparte de los endpoints de webhook de tu plan |
+| Conexiones autorizadas vivas | 25 por app y por organización |
+
+- **Qué gasta cuota:** cada módulo de acción, búsqueda o **Make an API Call**, y registrar o borrar el webhook de **Watch Events**. Recibir eventos no gasta cuota.
+- **Cuánto llevas:** en **Ajustes › Planes y suscripción › Suscripción**, fila **Llamadas a la API**.
+- Las peticiones con **HTTP › Make a request** y una llave `sk_live_…` también gastan cuota; con `sk_test_…` no.
+
+## Desconectar
+
+**Apagar un escenario:** desactívalo en Make. Para que Cord deje de enviarle eventos, borra también su webhook en la sección **Webhooks** de Make: al borrarlo, Make lo retira de Cord.
+
+**Cortar el acceso de Make a Cord:**
+
+<Steps>
+1. Ve a **Ajustes › Integraciones › Make** y pulsa **Ver conexiones autorizadas**. Se abre **Ajustes › Modo desarrollador › API**.
+2. Busca la fila **Conexión autorizada** de Make, con la etiqueta **OAuth**.
+3. Pulsa **Revocar** y confirma.
+</Steps>
+
+Desde ese momento Make ya no puede llamar a la API con esa conexión, y los webhooks que habían creado sus escenarios dejan de recibir eventos. En Make, los módulos de Cord fallan con un error de autorización hasta que vuelvas a crear la conexión. Si usaste la alternativa con Webhooks y HTTP, borra el endpoint en **Webhooks** y revoca la llave en **API**.
 
 ## Alternativa: Webhooks y HTTP
 
@@ -133,11 +186,14 @@ Con una llave `sk_test_…` tu escenario trabaja sobre el entorno de prueba de t
 | **404** | El id no existe en tu organización. | Revisa que mapeaste el `id` correcto, no el folio. |
 | **409** `invalid_state` | La acción no aplica al estado actual, por ejemplo aprobar un borrador. | Revisa el estado de la cotización antes de la acción. |
 | **422** `idempotency_key_reused` | Usaste la misma `Idempotency-Key` con otra petición. | Usa una clave distinta por operación. |
-| **429** | Superaste el límite por minuto o la cuota mensual. | Agrega una pausa entre módulos o reduce la frecuencia. |
+| **429** | Superaste el límite por minuto o la cuota mensual de API. | Agrega una pausa entre módulos o reduce la frecuencia. Revisa tu consumo en Ajustes › Planes y suscripción; en Gratis, espera al siguiente mes o sube de plan. |
+| **"No puedes conectar apps aquí"** al autorizar | Tu usuario no tiene el permiso de Ajustes en ese espacio. | Pide a quien lo tenga que autorice. |
 
 Más en [Errores de la API](/docs/desarrolladores/esenciales/errores).
 
-## Siguiente
+## Relacionadas
 
 - [Zapier](/docs/automatizacion/integraciones/zapier)
+- [n8n](/docs/automatizacion/integraciones/n8n)
+- [Integraciones y cuota de API](/docs/automatizacion/integraciones#integraciones-y-cuota-de-api)
 - [Guía de integraciones para desarrolladores](/docs/desarrolladores/herramientas/integraciones)

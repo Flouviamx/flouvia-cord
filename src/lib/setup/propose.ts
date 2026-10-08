@@ -87,7 +87,9 @@ async function askModel(ctx: {
     try {
         const msg = await client.messages.create({
             model: MODEL,
-            max_tokens: 8000,
+            // Llamada forzada (no piensa). Margen por el tokenizer de Haiku 5.5.
+            max_tokens: 10000,
+            output_config: { effort: 'medium' },
             system: SYSTEM,
             tools: [{ name: 'proponer_configuracion', description: 'Propone la configuración inicial de la cuenta.', input_schema: toolSchema() }],
             tool_choice: { type: 'tool', name: 'proponer_configuracion' },

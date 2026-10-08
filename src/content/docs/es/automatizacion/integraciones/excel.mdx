@@ -2,9 +2,11 @@
 title: "Microsoft Excel"
 seoTitle: "Conectar Cord con Microsoft Excel"
 description: "Cómo conectar Excel con Cord: el libro que Cord crea en tu OneDrive con tablas de Excel reales, qué columnas trae, cómo se actualiza por folio y cómo resolver problemas."
-lastUpdated: "2026-09-28"
+lastUpdated: "2026-10-07"
 reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Permiso Ajustes en Cord", "Una cuenta de trabajo o escuela de Microsoft 365 con OneDrive"]
 ---
 
 <header class="content-header">
@@ -18,7 +20,15 @@ Cord crea un libro de Excel en tu OneDrive y escribe ahí tus cotizaciones y fac
 
 Los datos entran en una **tabla de Excel** real, no en un rango suelto: tienes filtros, bandas, encabezado fijo al desplazar y fórmulas por nombre de columna, como `=SUMA(CordCotizaciones[total])`. Las tablas se llaman `CordCotizaciones` y `CordFacturas`.
 
-**Cord trabaja solo con el libro que crea.** Usa la misma app de Microsoft que Microsoft Teams, pero los permisos se piden por conexión: si solo conectas Excel, nunca ves los de Teams.
+**Cord trabaja solo con el libro que crea.** Al autorizar, Microsoft te pide permiso para leer y escribir tus archivos de OneDrive; Cord solo abre y escribe el libro que creó. Conectar Excel no le da a Cord acceso a tus canales de Teams.
+
+## Requisitos
+
+| Dónde | Qué necesitas |
+|---|---|
+| **Cord** | El permiso de **Ajustes**. Cualquier plan. |
+| **Microsoft Excel** | Una cuenta de trabajo o escuela de Microsoft 365 con OneDrive. Cord crea el archivo en esa cuenta. |
+| **Otra hoja** | Puedes tener Google Sheets conectado al mismo tiempo; cada uno lleva su propio archivo. |
 
 ## Conectar
 
@@ -45,11 +55,32 @@ Dos pestañas, **Cotizaciones** y **Facturas**, con una fila por documento:
 
 ## Cómo se mantiene al día
 
-Cuando una cotización se envía, se aprueba, se rechaza, vence o se paga —y cuando una factura se emite, se envía, se paga, se vence o se cancela— Cord busca su **folio en la columna A** y reemplaza esa fila. Si no la encuentra, la agrega al final.
+Cuando una cotización se envía, se reenvía, se aprueba, se rechaza, vence, recibe un pago parcial o se paga —y cuando una factura se emite, se envía, se paga, se vence, se anula o se marca como incobrable— Cord busca su **folio en la columna A** y reemplaza esa fila. Si no la encuentra, la agrega al final. Los borradores no se escriben.
 
 Por eso puedes ordenar, filtrar y agregar tus propias columnas a la derecha: Cord se guía por el folio, no por el número de fila. Lo único que no conviene tocar es la **columna A**.
 
 **Actualizar ahora** vuelve a escribir tus últimos 500 documentos de cada pestaña. Úsalo al conectar por primera vez o si dudas de algo.
+
+## Qué viaja y en qué dirección
+
+Microsoft Excel es una integración **solo de salida**: Cord escribe en el libro en tu OneDrive y no lee nada de vuelta.
+
+| Dirección | Qué viaja | Cuándo |
+|---|---|---|
+| **De Cord a la hoja** | Una fila por cotización y una por factura, con las columnas de arriba. | Al conectar (relleno inicial), cuando el documento cambia de estado y al pulsar **Actualizar ahora**. |
+| **De la hoja a Cord** | Nada. Editar una celda, borrar una fila o agregar columnas no cambia nada en Cord. | — |
+
+Si corriges a mano una fila, Cord la vuelve a escribir la siguiente vez que ese documento cambie. Tus columnas a la derecha de las de Cord no se tocan.
+
+## Límites
+
+| Límite | Valor |
+|---|---|
+| Archivos por conexión | Uno, que Cord crea al conectar |
+| Relleno inicial y **Actualizar ahora** | Los últimos 500 documentos de cada pestaña |
+| **Actualizar ahora** | Hasta 3 veces cada 5 minutos |
+| Conexiones por organización | Una por proveedor |
+| Documentos que entran | Cotizaciones enviadas en adelante y facturas emitidas; los borradores no |
 
 ## Desconectar
 
@@ -64,3 +95,9 @@ Desde la misma tarjeta, con **Desconectar**. El archivo se queda en tu cuenta co
 | **Borraste la primera fila** | No pasa nada: Cord la vuelve a escribir en la siguiente actualización. |
 | **"No se pudo abrir el libro"** justo después de conectar | OneDrive a veces tarda unos segundos en tener listo un archivo nuevo. Pulsa **Actualizar ahora** en un minuto. |
 | **Una fila se duplicó** | Revisa que nadie haya editado la columna A; Cord empareja por folio. |
+
+## Relacionadas
+
+- [Google Sheets](/docs/automatizacion/integraciones/google-sheets)
+- [QuickBooks Online](/docs/automatizacion/integraciones/quickbooks) y [Xero](/docs/automatizacion/integraciones/xero), si lo que buscas es llevar las facturas a tu contabilidad.
+- [Informes y desempeño comercial](/docs/gestion/informes): los números de tu negocio sin salir de Cord.

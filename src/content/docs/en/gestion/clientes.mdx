@@ -1,11 +1,11 @@
 ---
 title: "Clients, terms, and statements"
 description: "How to create and import clients, configure discounts, credit, terms, and tax data, and read commercial history and balances."
-lastUpdated: "2026-08-28"
-reviewedBy: "Cord Product and Operations"
+lastUpdated: "2026-10-07"
+reviewedBy: "Cord product and operations"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
-prerequisites: ["Clients permission to create, edit, import, or delete", "Company name is required"]
+prerequisites: ["Clients permission to create, edit, import, export, or delete", "Company name is required"]
 ---
 
 <header class="content-header">
@@ -15,6 +15,8 @@ prerequisites: ["Clients permission to create, edit, import, or delete", "Compan
 
 A Cord client is more than a contact. Its record stores reusable commercial and tax
 identity plus terms that control suggested discounts, due dates, and credit exposure.
+
+{/* MOCKUP: Clients directory with the "Search clients…" box, the filters All / With quotes / Not quoted / With tier / With credit / Missing tax data, the "Highest closed" sort, and rows with client, contact, tax ID, terms, credit limit, and quote count; on the right, the "Constructora GAMA" profile with closed value, pipeline, close rate, credit-limit usage, and the statement by aging. */}
 
 ## Create a client
 
@@ -52,8 +54,10 @@ invoice into an automatic filing with the receiver's authority.
 The **Clients > Import CSV** flow lets you upload a `.csv`, map columns, preview rows,
 and choose whether to update existing matches.
 
-One import accepts up to **2,000 rows**. Rows without a company are skipped. Valid
-term codes are `contado`, `net30`, and `net60`; anything else becomes due now.
+One import accepts up to **2,000 rows**. Rows without a company are skipped. The terms
+column accepts codes (`contado`, `net7` to `net90`) or plain text such as "Net 45" or
+"45 days": Cord picks the offered term that does not exceed what was written. "Credit"
+without a number reads as `net30`, and any other text becomes due now.
 
 With **Update existing** enabled, Cord matches by exact tax ID first and case-insensitive
 company name second. Matches update contact, email, phone, ID, terms, and limit; other
@@ -76,14 +80,37 @@ balance, overdue amount, oldest item, and current, 1–30, 31–60, 61–90, and
 aging bands. An invoiced operation appears as an invoice only, avoiding a duplicate
 balance.
 
+## Client source
+
+The profile shows under **Source** how the client arrived:
+
+- **Added manually:** created from Clients, the quote editor, the CSV import, or the clients API.
+- **Self-registered:** created automatically when a quote came in from your [embedded quote builder](/en/docs/desarrolladores/herramientas/elements/resumen) (or the quotes API) with a new client whose company or email didn't exist in your directory. The profile marks it with a label.
+
+A self-registered client is never updated automatically: if the same company quotes
+again from your site, Cord reuses the existing profile without changing its data.
+Review these clients and complete their information before invoicing them.
+
+## Export clients to CSV
+
+<Steps>
+1. Go to **Settings › Advanced › Data & privacy**.
+2. Under **Catalog and clients (CSV)**, click **Clients**.
+3. A CSV downloads with the columns empresa, contacto, email, telefono, rfc, terminos, and limite: the same format as the import, to open in Excel or migrate.
+</Steps>
+
+To open that screen you need the Settings permission, and to download the file, the
+Clients permission. On the same screen, **Download everything (JSON)** exports products,
+clients, quotes with their lines and events, tasks, and the audit log.
+
 ## Start a quote from the client
 
-Select **New quote** in the client record. The editor opens with that client selected
+Select **New quote** in the client record (requires the Clients permission). The editor opens with that client selected
 and uses its terms as defaults. Always review recipient, currency, tax, discounts, and
 due date for the current document.
 
-Later client edits don't silently rewrite issued fiscal documents; those retain
-immutable issuer, receiver, line, and amount snapshots.
+Later client edits don't silently rewrite issued fiscal documents; those keep the
+issuer, recipient, line, and amount data they were issued with.
 
 ## Permissions, limits, and deletion
 
@@ -104,3 +131,12 @@ company name.
 
 **Balance exceeds the limit.** This is an alert; decide whether to change terms,
 request an upfront payment, or stop new sales.
+
+**I can't find how to export.** Export lives in **Settings › Advanced › Data & privacy**, not in the directory.
+
+## Related
+
+- [Client data in a quote](/en/docs/cotizacion/cliente)
+- [Receivables and collections](/en/docs/pagos/cartera-cobranza)
+- [Credit terms](/en/docs/pagos/credito)
+- [Clients API](/en/docs/desarrolladores/funciones/clientes)

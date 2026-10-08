@@ -1,10 +1,12 @@
 ---
 title: "Microsoft Teams"
 seoTitle: "Connect Cord with Microsoft Teams"
-description: "How to connect Microsoft Teams with Cord by signing in with Microsoft or with a Power Automate flow, turn on alerts per event, use Teams in workflows and fix problems."
-lastUpdated: "2026-09-28"
+description: "How to connect Microsoft Teams with Cord by signing in with Microsoft or with a Power Automate flow: requirements, what flows and in which direction, alerts per event, Teams in workflows, approval requests, limits, how to disconnect and common issues."
+lastUpdated: "2026-10-07"
 reviewedBy: "Cord product and operations"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Settings permission in Cord", "A Microsoft 365 work or school account with Teams", "Being a member of the team and channel to post to, or being able to create Power Automate flows in that channel"]
 ---
 
 <header class="content-header">
@@ -12,17 +14,31 @@ availablePlans: [Free, Starter, Pro, Scale, Developer]
   <p class="page-subtitle">Your team sees in its Teams channel when a client opens, approves or pays.</p>
 </header>
 
-## How it works
+## What it does
 
-Cord posts a card in the Teams channel you choose when a quote moves forward. There are two ways to connect it, and only one can be active:
+Cord posts a card to the Teams channel you choose when a quote moves forward, when a quote requests internal approval and when one of your workflows says so. There are two ways to connect it, and only one can be active at a time:
 
 | | Connect with Microsoft | Power Automate flow |
 |---|---|---|
-| **How** | Sign in with your work account and pick team and channel. | Create a flow in the channel and paste its URL. |
-| **Who posts** | The card is posted in the name of whoever connected; Cord's card says so. | The channel's flow. |
+| **How** | Sign in with your work account and pick team and channel from the lists. | Create a flow in the channel and paste its URL. |
+| **Who posts** | The card is posted as whoever connected; Cord's card says so ("Alerts are posted as…"). | The channel's flow. |
 | **Requirement** | A Microsoft 365 work or school account (channels do not exist in personal accounts). | Being able to create flows in the channel. |
+| **Status** | New feature | Available |
+
+## Requirements
+
+| Where | What you need |
+|---|---|
+| **Cord** | The **Settings** permission. Any plan. |
+| **Microsoft 365** | A work or school account with Teams. Personal Microsoft accounts have no channels. |
+| **Teams** | With **Connect with Microsoft**, being a member of the team and channel to post to. With Power Automate, being able to create flows in that channel. |
+| **Your Microsoft organization** | If it does not let each person authorize apps on their own, a Microsoft 365 administrator will need to approve the Cord app. |
 
 ## Connect with Microsoft
+
+<Callout type="info">
+This feature is new and may not be enabled on your account yet. If you do not see it, write to us.
+</Callout>
 
 <Steps>
 1. Go to **Settings › Integrations › Microsoft Teams**.
@@ -31,7 +47,9 @@ Cord posts a card in the Teams channel you choose when a quote moves forward. Th
 4. Click **Send test**: a sample card appears in the channel.
 </Steps>
 
-Cord asks to read your profile, the teams and channels you belong to, and to send channel messages. None needs an administrator's approval.
+Cord asks to read your profile, the teams and channels you belong to, and to send channel messages. It does not ask to read the channel's messages. Microsoft may show a notice that the app's publisher is unverified while Microsoft finishes that verification.
+
+{/* MOCKUP: Microsoft Teams card in Settings › Integrations, connected with Microsoft. At the top "Connected to #sales" in the "Distribuidora Andina" team, and the line "Alerts are posted as Mariana Ortega". Buttons "Change channel", "Send test" and "Disconnect". Below, the collapsed block "Use a Power Automate flow — To post from your own flow instead of your Microsoft account." */}
 
 ## With a Power Automate flow
 
@@ -41,10 +59,21 @@ Teams' old connectors (Office 365 "Incoming Webhook") are retired; the URL comes
 1. In the channel, open **Workflows** from the three-dot menu.
 2. Use the template **"Post to a channel when a webhook request is received"** and pick team and channel.
 3. Copy the flow URL (it starts with `https://prod-` and ends in `logic.azure.com`).
-4. In Cord, open **Use a Power Automate flow** on the Teams card, paste the URL, save and click **Send test**.
+4. In Cord, open **Use a Power Automate flow** on the Teams card, paste the URL, click **Save** and then **Send test**.
 </Steps>
 
-The URL is a credential: if it leaks, delete the flow and create another.
+The URL is a credential: anyone who has it can post to your channel. If it leaks, delete the flow and create another.
+
+## What flows and in which direction
+
+Teams is an **outbound** integration: Cord posts to your channel and reads nothing from Teams.
+
+| Direction | What flows | When |
+|---|---|---|
+| **From Cord to Teams** | One card per alert you check in Notifications: quote number, client, total with its currency and a link to the quote. | When the event happens. |
+| **From Cord to Teams** | The card of an internal approval request, with the **Decide in Cord** button. | When the approval is requested. |
+| **From Cord to Teams** | The text you write in a workflow's **Send a Teams message** action. | When the workflow runs. |
+| **From Teams to Cord** | Nothing. Replying in the channel or reacting to the card changes nothing in Cord. | — |
 
 ## Turn on alerts
 
@@ -59,21 +88,57 @@ Connecting turns on no alerts. In **Settings › Notifications**, check the **Te
 | **Quote expiring** | 3 days before the valid-until date. |
 | **Payment overdue** | A receivable passed its due date. |
 
-Email, Slack and Teams are checked separately.
+Email, Slack and Teams are checked separately: you can have one event in Teams and another only by email.
 
 ## Teams in a workflow
 
-The **Send a Teams message** action in [Cord Workflows](/en/docs/automatizacion/workflows) posts your own text with event data (`{{cliente}}`, `{{folio}}`, `{{total}}`), even if alerts are off.
+The **Send a Teams message** action in [Cord Workflows](/en/docs/automatizacion/workflows/acciones) posts your own text with event data (`{{cliente}}`, `{{folio}}`, `{{total}}`), even if alerts are off. Use it to post only in some cases (a large sale, a deposit, a dispute) or with your own text. The ready-made idea [Teams when the client approves](/en/docs/automatizacion/workflows/ideas#3-teams-when-the-client-approves) comes with it set up.
+
+## Approval requests
+
+When a quote requests internal approval, Cord posts a card in the connected channel with the quote number, client, total and a **Decide in Cord** button. The decision is made in Cord: the Teams card has no buttons to approve or reject. Internal approvals require the **Scale** plan or higher.
+
+## Limits
+
+| Limit | Value |
+|---|---|
+| Destinations per organization | One channel at a time. Picking a channel with Microsoft clears the flow URL, and saving a flow disconnects the Microsoft account. |
+| Messages from workflows | 120 per hour per organization |
+| Length of a workflow message | 1,000 characters |
+| Tests from Settings | 10 per minute |
+| Posted as | With **Connect with Microsoft**, always the person who connected. If they leave the company or lose access to the channel, someone else must reconnect. |
+
+If you want alerts in several channels, one option is to use [Make](/en/docs/automatizacion/integraciones/make) or [Zapier](/en/docs/automatizacion/integraciones/zapier) with Cord's events.
 
 ## Disconnect
 
-With **Disconnect** on the card. Microsoft does not allow revoking a single access from outside: to remove the app from your account, do it at myapps.microsoft.com.
+**If you connected with Microsoft:**
+
+<Steps>
+1. In **Settings › Integrations › Microsoft Teams**, click **Disconnect**.
+2. Cord deletes its access to your account and stops posting.
+3. If you also want to remove the Cord app from your Microsoft account, do it at myapps.microsoft.com: Microsoft does not allow revoking a single access from outside.
+</Steps>
+
+**If you use a Power Automate flow:** open **Use a Power Automate flow**, clear the URL and click **Save**. To cut access completely, turn off or delete the flow in Teams.
+
+Once disconnected, Teams alerts from Notifications stop and workflows with the Teams action fail with "Connect Microsoft Teams in Settings › Integrations to use this action." until you connect again.
 
 ## Common issues
 
 | Message or symptom | What to do |
 |---|---|
 | **"Microsoft no longer accepts the connection"** | Access expired or was revoked. Click **Reconnect**. |
-| **No teams appear** | Your account does not belong to any Teams team, or it is a personal account. |
-| **"The Teams URL must be the flow's URL"** | You pasted another address; it must end in a `logic.azure.com` domain. |
-| **"Teams did not accept the card"** | The flow was turned off or deleted. Turn it on in Workflows or paste a new URL. |
+| **"Your account is not a member of any team"** | Your account is not in any Teams team, or it is a personal account. Sign in with your work account. |
+| **"That channel is no longer available in your account. Pick another one."** | The channel was deleted or you are no longer a member. Click **Change channel**. |
+| **Microsoft asks for an administrator's approval** | Your organization does not let each person authorize apps. Ask a Microsoft 365 administrator to approve it, or use a Power Automate flow. |
+| **"The Teams URL must be the one from the channel's Power Automate flow"** | You pasted another address; it must end in a `logic.azure.com` domain. |
+| **"Teams did not accept the card"** | The flow was turned off or deleted, or the channel no longer exists. Turn it on in Teams Workflows, paste a new URL or pick another channel. |
+| **The test arrives but alerts do not** | The events do not have Teams checked. Check **Settings › Notifications**. |
+
+## Related
+
+- [Slack](/en/docs/automatizacion/integraciones/slack)
+- [Microsoft Excel](/en/docs/automatizacion/integraciones/excel): uses the same Microsoft sign-in, with its own permission.
+- [Notifications](/en/docs/gestion/notificaciones)
+- [Workflow actions](/en/docs/automatizacion/workflows/acciones)

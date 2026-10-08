@@ -99,8 +99,10 @@ La actualización documental no debe desplegar el worktree compartido completo.
    - `elements.yml` — solo si cambia `packages/elements/**`: tipos, build,
      exports contra `api-report.json`, `attw` y `publint`. En verde desde sep 2026.
    - `status-probe.yml` — sonda horaria de disponibilidad (ver `cord-ops.md`).
-   - `cord-crons.yml` — los 16 crons de Cord, cada hora, con la misma tabla de
-     horarios de `vercel.json`. Existe porque el plan Hobby de Vercel solo
+   - `cord-crons.yml` — los 17 crons de Cord, cada hora, con la misma tabla de
+     horarios de `vercel.json`. `cron/tareas` (recordatorio de tareas, oct 2026)
+     vive SOLO aquí: corre cada hora y él mismo decide en qué organizaciones ya
+     son las 8:00 locales. Existe porque el plan Hobby de Vercel solo
      admite crons DIARIOS: un `0 * * * *` ahí no es un cron que no corre, es un
      deployment RECHAZADO — pasó el 20 sep 2026 al volver horario el barrido de
      workflows, que lo necesita para honrar un horario elegido por el negocio y

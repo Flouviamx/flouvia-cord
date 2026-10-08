@@ -1,8 +1,8 @@
 ---
 title: "Create, issue, and collect invoices"
 description: "Create an invoice, assign its number when issuing, deliver it, and track its balance in Cord."
-lastUpdated: "2026-09-08"
-reviewedBy: "Cord Product and Fiscal Operations"
+lastUpdated: "2026-10-07"
+reviewedBy: "Cord product and operations"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
 prerequisites: ["Collections permission", "Client and issuer data", "Country-appropriate fiscal setup"]
@@ -12,10 +12,6 @@ prerequisites: ["Collections permission", "Client and issuer data", "Country-app
   <h1 class="page-title">Create, issue, and collect invoices</h1>
   <p class="page-subtitle">Cord brings invoice capture, fiscal issuance, delivery, and collection into one workflow.</p>
 </header>
-
-<Callout type="info">
-This guide includes the September improvements. Their combined publication and integrated acceptance still need verification. See [scope and availability](/en/docs/pagos/mejoras-confiabilidad).
-</Callout>
 
 ## Where to find invoices
 
@@ -38,7 +34,7 @@ Issuing is irreversible: it assigns the official number and locks the fiscal doc
 
 ## What your client receives
 
-The email includes the PDF and the public invoice link. From that page, the client can review the balance and payment history; if your payments account is enabled, they can also pay by card.
+The email includes the PDF and the public invoice link. From that page, the client can review the balance and payment history; if your payments account is enabled, they can also pay by card, and with [Mercado Pago](/en/docs/pagos/mercado-pago) if you connected it. They can pay the full balance or choose **Pay another amount** to pay part of it.
 
 The public page presents your business brand, invoice number, balance, parties, line items, and downloads in one view. If the document was created in test mode or without fiscal issuance, Cord displays a clear warning and disables online payment.
 
@@ -59,7 +55,7 @@ keeps **Test** from replacing or contradicting states such as **Open** or **Paid
 
 ## Actions from the invoice detail
 
-You can resend the email, record manual or partial payments, copy the public link, download PDF and XML when available, void, create a credit note, duplicate as a draft, or start a monthly recurrence.
+You can resend the email, record manual or partial payments, copy the public link, download PDF and XML when available, void, create a credit note, use **Duplicate invoice** to open a new copy in the editor, or start a monthly recurrence with **Repeat monthly**.
 
 The progress bar separates five moments: **Draft**, **Issued**, **Sent**, **Viewed**, and **Paid**. The action column provides direct access to open or copy the client link, download the PDF, and share through WhatsApp. Exceptional actions, such as voiding or marking an invoice uncollectible, stay under **More actions**.
 
@@ -115,7 +111,7 @@ and activity. Check currency and the relevant document. If a movement is pending
 wait for confirmation or request a review; do not add another manual payment to
 force the balance to zero.
 
-These changes do not silently recalculate every historical document. Older cases
-that do not match require individual review.
+Cord does not silently recalculate older documents. If an older invoice does not
+match, review it individually.
 
-Commercial documents are included in Free (5/month); integrated fiscal issuance starts at Starter where enabled. The commercial option in Mexico and Spain is a pro forma, not a test invoice. It has no fiscal XML and does not replace a tax invoice.
+Commercial documents are included in Free (10 per month); integrated fiscal issuance starts at Starter where enabled. The commercial option in Mexico and Spain is a pro forma, not a test invoice. It has no fiscal XML and does not replace a tax invoice.

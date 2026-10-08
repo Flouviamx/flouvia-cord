@@ -41,6 +41,12 @@ export default defineConfig({
   // rutas SSR, incluidas las privadas de /app/*) — usamos el curado a mano en
   // src/pages/sitemap.xml.ts, que cubre solo lo público con hreflang ES/EN correcto.
   integrations: [react(), mdx()],
+  // Precarga explícita: solo los enlaces con `data-astro-prefetch` (la sidebar de
+  // /app) se descargan al pasar el cursor. Junto con las transiciones nativas
+  // entre documentos (src/styles/view-transitions.css) la navegación se siente
+  // inmediata sin convertir la app en SPA: cada página sigue cargando completa y
+  // sus scripts corren como siempre.
+  prefetch: { prefetchAll: false, defaultStrategy: 'hover' },
   adapter: vercel(),
 
   vite: {

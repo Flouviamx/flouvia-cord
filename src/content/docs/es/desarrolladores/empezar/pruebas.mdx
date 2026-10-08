@@ -1,6 +1,10 @@
 ---
 title: "Entornos de Prueba"
 description: "Aprende cómo aislar tu desarrollo usando el Sandbox de Cord."
+lastUpdated: "2026-10-07"
+reviewedBy: "Ingeniería de Cord"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Una llave de prueba (sk_test_) para los simuladores"]
 ---
 
 <header class="content-header">
@@ -57,7 +61,7 @@ Resultados: `exito`, `pac_caido` (la factura queda en borrador y se puede reinte
 ### Simular al cliente y al tiempo
 
 ```bash
-curl -X POST https://cordhq.app/api/v1/test_helpers/cotizaciones/{id} \
+curl -X POST https://cordhq.app/api/v1/test_helpers/cotizaciones/8b0c6f0e-2d55-4c1e-9a43-6a2f1c7d9e10 \
   -H "Authorization: Bearer sk_test_..." -H "Content-Type: application/json" \
   -d '{ "accion": "vista" }'
 ```
@@ -69,7 +73,7 @@ curl -X POST https://cordhq.app/api/v1/test_helpers/cotizaciones/{id} \
 ```bash
 curl -X POST https://cordhq.app/api/v1/test_helpers/webhooks \
   -H "Authorization: Bearer sk_test_..." -H "Content-Type: application/json" \
-  -d '{ "evento": "invoice.paid", "objeto_id": "uuid-opcional" }'
+  -d '{ "evento": "quote.approved", "objeto_id": "8b0c6f0e-2d55-4c1e-9a43-6a2f1c7d9e10" }'
 ```
 
-Acepta cualquiera de los eventos del catálogo. Con `objeto_id` de una cotización o factura de prueba usa sus datos reales; sin él, datos de ejemplo con ids `test_…`. La entrega pasa por el outbox real: firma, reintentos e historial en Ajustes › Developers.
+Acepta cualquiera de los eventos del catálogo. Con `objeto_id` de una cotización o factura de prueba usa sus datos reales; sin él, datos de ejemplo con ids `test_…`. El `objeto_id` debe ser del tipo del evento: una cotización para `quote.*`, `payment.*`, `invoice.stamped` e `invoice.issued`, y una factura para los demás `invoice.*`. En los eventos de clientes, productos, tareas, promesas, contracargos, reembolsos, depósitos y cuenta se usan siempre datos de ejemplo. La entrega pasa por el outbox real: firma, reintentos e historial en las pestañas **Webhooks** y **Eventos** del [Cord Workbench](/docs/desarrolladores/herramientas/workbench).

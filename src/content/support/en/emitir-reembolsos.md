@@ -39,4 +39,4 @@ again. A refund can arrive before the payment record and await that link. A cred
 note reduces the document amount while a refund returns money: these are separate
 actions. Review [balance calculation](https://docs.cordhq.app/en/docs/pagos/facturas-emitidas).
 
-> Availability of the September improvements is being verified. See [scope and release status](https://docs.cordhq.app/en/pagos/mejoras-confiabilidad); contact support if a described action is not yet shown in your account.
+> Availability of the September improvements is being verified. See [scope and release status](https://docs.cordhq.app/en/docs/pagos/mejoras-confiabilidad); contact support if a described action is not yet shown in your account.

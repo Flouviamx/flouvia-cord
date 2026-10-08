@@ -20,6 +20,7 @@ import {
   type Align, type FontKey, type RGB,
 } from '../pdf/writer';
 import type { FiscalLineItem, FiscalParty, FiscalRetencion } from './index';
+import { termDays } from '../payment-terms';
 
 export interface InvoicePdfInput {
   brandProfile?: unknown;
@@ -55,12 +56,11 @@ export interface InvoicePdfInput {
   /** Vencimiento del pago. */
   dueDate?: string | Date | null;
   /**
-   * Condiciones de pago. Un código conocido (`contado`, `net30`, `net60`) se
-   * traduce al idioma del documento; cualquier otro texto se imprime tal cual.
-   * Antes llegaba "Contado" ya resuelto en español, también a una factura en
-   * inglés de un negocio en Austin.
+   * Código del plazo (src/lib/payment-terms.ts: `contado` o `net<N>`). El PDF
+   * lo rotula en el idioma del documento; antes llegaba "Contado" ya resuelto
+   * en español, también a una factura en inglés de un negocio en Austin.
    */
-  paymentTerms?: string | null;
+  paymentTermsCode?: string | null;
   /**
    * Zona horaria del EMISOR (`orgs.zona_horaria`). La fecha de expedición es un
    * instante y se imprime en el día del negocio: formateada en la zona del
@@ -221,11 +221,14 @@ const PDF_TEXT = {
   ),
 } satisfies Record<string, Phrase>;
 
-const TERM_TEXT: Record<string, Phrase> = {
-  contado: P('Contado', 'Due on receipt', 'Paiement à réception', 'Sofort fällig', 'À vista'),
-  net30: P('30 días', 'Net 30', '30 jours', '30 Tage netto', '30 dias'),
-  net60: P('60 días', 'Net 60', '60 jours', '60 Tage netto', '60 dias'),
-};
+const CONTADO_TEXT = P('Contado', 'Due on receipt', 'Paiement à réception', 'Sofort fällig', 'À vista');
+
+/** "net45" → "45 días" / "Net 45" / "45 jours"… en la lengua del documento. */
+export function termText(code: unknown, lang: DocLang): string {
+  const days = termDays(code);
+  if (!days) return CONTADO_TEXT[lang];
+  return { es: `${days} días`, en: `Net ${days}`, fr: `${days} jours`, de: `${days} Tage netto`, pt: `${days} dias` }[lang];
+}
 
 /**
  * Mención obligatoria de la inversión del sujeto pasivo (art. 226.11 bis de la
@@ -463,10 +466,7 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
   // corrige. Va primero: es el dato más importante de todo el documento.
   if (input.creditNoteOfNumber) facts.push({ k: tx('corrects'), v: input.creditNoteOfNumber });
   if (input.dueDate) facts.push({ k: tx('dueDate'), v: fmtCalendarShort(input.dueDate) });
-  if (input.paymentTerms) {
-    const termText = TERM_TEXT[String(input.paymentTerms)]?.[lang] ?? String(input.paymentTerms);
-    facts.push({ k: tx('terms'), v: termText });
-  }
+  if (input.paymentTermsCode) facts.push({ k: tx('terms'), v: termText(input.paymentTermsCode, lang) });
   facts.push({ k: tx('currency'), v: currency });
   if (input.reference) facts.push({ k: tx('reference'), v: input.reference });
 

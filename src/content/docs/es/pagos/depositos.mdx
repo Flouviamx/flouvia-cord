@@ -1,0 +1,160 @@
+---
+title: "Depósitos a tu banco"
+seoTitle: "Depósitos de Cord Payments: frecuencia, estados y cuenta"
+description: "Cómo llega a tu banco el dinero que cobras con Cord Payments: frecuencia diaria, semanal, mensual o manual, estados de cada depósito, historial, cuenta de depósito por país y por qué un depósito puede quedar pausado."
+lastUpdated: "2026-10-07"
+reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Cuenta de Cord Payments verificada y activa", "Permiso Configurar cobros para cambiar frecuencia o cuenta", "Permiso Cobranza para ver el historial"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Depósitos a tu banco</h1>
+  <p class="page-subtitle">Cada cuánto sale tu dinero hacia tu cuenta bancaria, cómo seguir cada depósito y qué hacer si uno se detiene.</p>
+</header>
+
+## Qué es un depósito
+
+Cuando tu cliente paga con tarjeta o SPEI, el cobro entra primero al **saldo de tu cuenta de cobros**, a nombre de tu negocio. Un **depósito** es la transferencia de ese saldo a tu cuenta bancaria. Cord no retiene el dinero ni lo mueve por una cuenta propia: decide contigo el ritmo y te muestra cada movimiento.
+
+Los cobros por [Mercado Pago](/docs/pagos/mercado-pago) no pasan por aquí: llegan a tu cuenta de Mercado Pago y se retiran desde ahí. Las transferencias manuales tampoco, porque el dinero ya está en tu banco.
+
+## Requisitos
+
+| Requisito | Detalle |
+|---|---|
+| Plan | Todos los planes. |
+| País | México, Estados Unidos, Canadá, Brasil, España, Reino Unido, Alemania y Francia (donde opera Cord Payments). |
+| Cuenta | [Cuenta de cobros](/docs/pagos/onboarding) verificada, con estado **Activo**. |
+| Permiso para configurar | **Configurar cobros**, para cambiar la frecuencia o la cuenta de depósito. |
+| Permiso para consultar | **Cobranza**, para ver el historial en **Mi dinero › Cobros**. |
+| Divisa | El depósito llega en la divisa del país de tu cuenta de cobros: MXN en México, USD en Estados Unidos, CAD en Canadá, BRL en Brasil, EUR en España, Alemania y Francia, GBP en Reino Unido. |
+
+## Elegir la frecuencia de depósito
+
+<Steps>
+1. Abre **Ajustes › Cobros**. La sección **Frecuencia de depósito** aparece cuando tu cuenta está activa.
+2. En **Frecuencia**, elige **Diaria**, **Semanal**, **Mensual** o **Manual**.
+3. Si elegiste **Semanal**, indica el **día de la semana** (de lunes a viernes). Si elegiste **Mensual**, indica el **día del mes**, del 1 al 28.
+4. Pulsa **Guardar**. Cord te pide confirmar tu identidad con tu contraseña o tu código de verificación en dos pasos: decidir a qué ritmo sale tu dinero es tan sensible como cambiar a dónde sale.
+5. Verás el aviso **Frecuencia de depósito actualizada**. Lo que queda guardado es lo que confirmó tu cuenta de cobros, no solo lo que elegiste.
+</Steps>
+
+{/* MOCKUP: Ajustes › Cobros, sección "Frecuencia de depósito": texto explicativo, selector "Frecuencia" en "Semanal", selector "Día de la semana" en "Viernes" y botón "Guardar". */}
+
+### Qué opción conviene
+
+| Frecuencia | Cuándo sale el dinero | Úsala si |
+|---|---|---|
+| **Diaria** | Cada día hábil sale lo que ya está disponible. | Necesitas liquidez constante. Pagas más veces el costo fijo de cada transferencia. |
+| **Semanal** | Una vez por semana, el día que elijas. | Concilias por semana o pagas proveedores un día fijo. |
+| **Mensual** | Una vez al mes, el día que elijas. | Prefieres juntar el dinero y conciliar una sola vez. El dinero queda más tiempo fuera de tu banco. |
+| **Manual** | No sale de forma automática. | Ver la advertencia de abajo antes de elegirla. |
+
+<Callout type="warning" title="El día del mes se topa en 28">
+Un día 29, 30 o 31 no existe en todos los meses: un depósito programado para el 31 se saltaría febrero sin avisar. Por eso Cord solo acepta del 1 al 28.
+</Callout>
+
+<Callout type="warning" title="Manual: el dinero se queda en tu saldo">
+Con **Manual**, los cobros se acumulan en el saldo de tu cuenta de cobros y no se envían a tu banco por sí solos. Hoy Cord no tiene un botón para solicitar un depósito puntual desde la app. Si eliges Manual y necesitas liberar el dinero, cambia a Diaria, Semanal o Mensual, o escríbenos.
+</Callout>
+
+## Estados de un depósito
+
+Cada depósito aparece en el widget **Depósitos** de [Mi dinero › Cobros](/docs/pagos/dashboard) con su monto, su divisa, su fecha de llegada y uno de estos estados:
+
+| Estado | Qué significa |
+|---|---|
+| **Programado** | El depósito se creó y espera su turno para salir. |
+| **En camino** | Ya salió hacia tu banco y todavía no se confirma la llegada. |
+| **Depositado** | Tu banco lo recibió. Es un estado final. |
+| **Falló** | El banco lo rechazó (por ejemplo, la cuenta ya no existe o el titular no coincide). Es un estado final. |
+| **Cancelado** | Se canceló antes de salir. Es un estado final. |
+
+Un estado final no retrocede: si un aviso atrasado llega después de que un depósito quedó **Depositado**, Cord no lo regresa a **En camino**.
+
+### Historial
+
+Cord guarda cada depósito conforme cambia de estado. El historial carga con la página, se conserva aunque cambies de frecuencia o de cuenta, y sirve para conciliar contra tu estado de cuenta bancario: busca el mismo monto y la misma fecha de llegada.
+
+<Callout type="info">
+Hoy Cord no muestra qué cobros componen cada depósito. Para conciliar un depósito con sus cobros, usa la fecha y el monto, y la tabla de **Cobros recientes** del mismo panel.
+</Callout>
+
+### Avisos de depósito
+
+Si usas la API o Workflows, Cord emite dos eventos:
+
+- **Se paga un depósito a tu banco** (`payout.paid`): con monto, divisa, fecha de llegada y método.
+- **Falla un depósito** (`payout.failed`): además incluye el motivo de la falla.
+
+Puedes usarlos para avisar a finanzas en Slack o registrar el depósito en tu contabilidad. Ver [disparadores de Workflows](/docs/automatizacion/workflows/disparadores) y [webhooks](/docs/desarrolladores/herramientas/webhooks).
+
+## Tu cuenta de depósito
+
+La cuenta se registra en el paso **Cuenta bancaria** de la [conexión de tu cuenta](/docs/pagos/onboarding) y usa el formato bancario del país de tu negocio. Cord revisa el formato **antes** de enviarlo, para que un dígito mal tecleado te lo diga Cord y no un rechazo del banco días después.
+
+| País | Qué se captura | Qué revisa Cord |
+|---|---|---|
+| México | CLABE interbancaria (18 dígitos) | Longitud y dígito de control. |
+| España, Alemania y Francia | IBAN | Estructura y dígitos de control (mod 97). |
+| Estados Unidos | Routing number (ABA, 9 dígitos) y número de cuenta (4 a 17 dígitos) | Longitud y dígito de control del routing number. |
+| Reino Unido | Sort code (6 dígitos) y número de cuenta (8 dígitos) | Longitud y formato. El sort code no tiene dígito de control. |
+| Canadá | Transit number (5 dígitos), institution number (3 dígitos) y número de cuenta (5 a 12 dígitos) | Longitud y formato. |
+| Brasil | Código del banco (3 dígitos), agência (4 dígitos) y conta con dígito | Longitud y formato. El dígito de la conta depende de cada banco. |
+
+Además del número, se captura el **nombre del titular**. La cuenta debe estar a nombre del negocio o de su representante legal.
+
+### Cambiar la cuenta de depósito
+
+<Steps>
+1. Abre **Ajustes › Cobros** con el permiso **Configurar cobros**.
+2. En el resumen de tu cuenta activa, pulsa **Cambiar** junto a la cuenta bancaria (o **Editar cuenta bancaria** si todavía no registraste una).
+3. Escribe la cuenta nueva completa y el nombre del titular. Por seguridad, Cord no vuelve a mostrar la cuenta anterior: solo sus últimos cuatro dígitos.
+4. Confirma tu identidad cuando Cord te lo pida.
+5. Los depósitos siguientes van a la cuenta nueva. El resumen muestra el banco y los últimos cuatro dígitos.
+</Steps>
+
+<Callout type="info">
+La cuenta de depósito se guarda cifrada. Cada cambio queda en la bitácora de auditoría de tu organización.
+</Callout>
+
+## Depósitos pausados
+
+Si la sección de frecuencia dice **Los depósitos están pausados hasta que se complete la verificación**, o el widget **Estado de la cuenta** marca **Depósitos: Inactivos**, tu cuenta de cobros todavía puede tener requisitos pendientes. Mientras tanto, los cobros se siguen acumulando en tu saldo, pero no salen hacia tu banco.
+
+Las causas habituales son:
+
+- **Un requisito de verificación pendiente o vencido**, por ejemplo una foto ilegible, un documento vencido o una persona sin verificar. El widget **Estado de la cuenta** dice cuántos requisitos faltan y su fecha límite; **Administrar** te lleva directo a completarlos.
+- **Una cuenta de depósito rechazada**, por ejemplo una cuenta cerrada o a nombre de otra persona. Registra una cuenta válida.
+- **Una revisión de la cuenta de cobros.** Si el widget dice que tu cuenta está pausada temporalmente, revisa los requisitos para reactivarla.
+
+Al completar lo pendiente, los depósitos se reanudan con la frecuencia que tenías.
+
+## Límites
+
+- La frecuencia y la cuenta solo se configuran cuando la cuenta de cobros está **Activa**, y solo en los ocho países de Cord Payments.
+- El día semanal se elige entre lunes y viernes; el mensual, entre el 1 y el 28.
+- No hay depósitos instantáneos ni bajo demanda desde Cord.
+- No hay desglose de qué cobros trae cada depósito.
+- El país y la divisa de la cuenta de cobros no se pueden cambiar después de crearla.
+
+## Problemas comunes
+
+**No veo la sección de frecuencia.** Tu cuenta no está **Activa** todavía, tu país no tiene Cord Payments o no tienes el permiso **Configurar cobros**.
+
+**Guardé la frecuencia y me volvió a pedir la contraseña.** La confirmación de identidad dura unos minutos. Si pasó más tiempo, Cord la pide otra vez.
+
+**Un depósito aparece como Falló.** Revisa que la cuenta siga abierta y a nombre del titular correcto. Si cambió, regístrala de nuevo. Si la cuenta es correcta, escríbenos con la fecha y el monto del depósito.
+
+**El saldo crece pero no llega nada a mi banco.** Revisa si elegiste **Manual** o si los depósitos están pausados por verificación.
+
+**El monto depositado no coincide con lo cobrado.** El depósito es neto: ya descuenta comisiones, reembolsos y montos retenidos por disputas. Revisa el widget **A dónde va cada peso** en el [dashboard de cobros](/docs/pagos/dashboard).
+
+## Relacionadas
+
+- [Conectar tu cuenta](/docs/pagos/onboarding)
+- [Dashboard de cobros](/docs/pagos/dashboard)
+- [Tarifas de Cord Payments](/docs/pagos/condiciones)
+- [Disputas y contracargos](/docs/pagos/disputas)

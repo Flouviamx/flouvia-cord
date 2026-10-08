@@ -2,9 +2,11 @@
 title: "Google Sheets"
 seoTitle: "Connect Cord with Google Sheets"
 description: "How to connect Google Sheets with Cord: the sheet Cord creates in your Drive, its columns, how rows update by number, the permission it asks for and how to fix problems."
-lastUpdated: "2026-09-28"
+lastUpdated: "2026-10-07"
 reviewedBy: "Cord product and operations"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Settings permission in Cord", "A Google account (Gmail or Google Workspace) with Google Drive"]
 ---
 
 <header class="content-header">
@@ -17,6 +19,14 @@ availablePlans: [Free, Starter, Pro, Scale, Developer]
 Cord creates a spreadsheet in your Google Drive and writes your quotes and invoices into it: one row per document, updated on its own when the document changes status. It is there for the usual work —totaling the month, filtering by client, building a chart— without exporting anything by hand.
 
 **Cord can only open the sheet it creates.** It asks for `drive.file`, the narrowest permission Google offers: it sees nothing else in your Drive.
+
+## Requirements
+
+| Where | What you need |
+|---|---|
+| **Cord** | The **Settings** permission. Any plan. |
+| **Google Sheets** | A Google account (Gmail or Google Workspace) with Google Drive. Cord creates the file in that account. |
+| **Another spreadsheet** | You can have Microsoft Excel connected at the same time; each one keeps its own file. |
 
 ## Connect
 
@@ -45,11 +55,32 @@ Two tabs, **Quotes** and **Invoices**, with one row per document:
 
 ## How it stays current
 
-When a quote is sent, approved, rejected, expires or is paid —and when an invoice is issued, sent, paid, becomes overdue or is canceled— Cord looks for its **number in column A** and replaces that row. If it is not there, it adds it at the end.
+When a quote is sent, resent, approved, rejected, expires, receives a partial payment or is paid —and when an invoice is issued, sent, paid, becomes overdue, is voided or is marked uncollectible— Cord looks for its **number in column A** and replaces that row. If it is not there, it adds it at the end. Drafts are not written.
 
 That is why you can sort, filter and add your own columns to the right: Cord matches by number, not by row position. The only thing you should not touch is **column A**.
 
 **Update now** rewrites your latest 500 documents in each tab. Use it right after connecting or whenever you are unsure.
+
+## What flows and in which direction
+
+Google Sheets is an **outbound-only** integration: Cord writes to the spreadsheet in your Google Drive and reads nothing back.
+
+| Direction | What flows | When |
+|---|---|---|
+| **From Cord to the spreadsheet** | One row per quote and one per invoice, with the columns above. | When you connect (initial fill), when the document changes status and when you click **Update now**. |
+| **From the spreadsheet to Cord** | Nothing. Editing a cell, deleting a row or adding columns changes nothing in Cord. | — |
+
+If you fix a row by hand, Cord writes it again the next time that document changes. Your columns to the right of Cord's are not touched.
+
+## Limits
+
+| Limit | Value |
+|---|---|
+| Files per connection | One, which Cord creates when you connect |
+| Initial fill and **Update now** | The latest 500 documents in each tab |
+| **Update now** | Up to 3 times every 5 minutes |
+| Connections per organization | One per provider |
+| Documents included | Quotes from sent onward and issued invoices; drafts are not |
 
 ## Disconnect
 
@@ -63,3 +94,9 @@ With **Disconnect** on the card. The file stays in your account with what it had
 | **You deleted the file** | Disconnect and connect again; Cord creates and fills a new one. |
 | **You deleted the first row** | No problem: Cord writes it again on the next update. |
 | **A row got duplicated** | Check that nobody edited column A; Cord matches by number. |
+
+## Related
+
+- [Microsoft Excel](/en/docs/automatizacion/integraciones/excel)
+- [QuickBooks Online](/en/docs/automatizacion/integraciones/quickbooks) and [Xero](/en/docs/automatizacion/integraciones/xero), if what you want is to take invoices to your accounting.
+- [Reports and sales performance](/en/docs/gestion/informes): your business numbers without leaving Cord.

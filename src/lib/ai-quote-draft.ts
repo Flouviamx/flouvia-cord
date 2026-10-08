@@ -142,9 +142,13 @@ export async function armarLineasConIa(orgId: string, input: { text: string; fil
     for (let i = 0; i < 5; i++) {
         let msg: any;
         try {
+            // Haiku 5.5 piensa por default (cuenta en max_tokens) y su tokenizer
+            // usa ~30% más tokens: margen suficiente para una lista larga de
+            // líneas, con esfuerzo bajo porque es extracción, no razonamiento.
             msg = await client.messages.create({
                 model: MODEL,
-                max_tokens: 1024,
+                max_tokens: 4096,
+                output_config: { effort: 'low' },
                 system: SYSTEM + "\n\nPuedes usar las herramientas adicionales proporcionadas para consultar información de CRMs o bases de datos externas si el cliente lo requiere implícitamente antes de armar la cotización. Tu objetivo final SIEMPRE debe ser llamar a la herramienta 'armar_cotizacion' con los resultados.",
                 tools: allTools,
                 tool_choice: { type: 'auto' },

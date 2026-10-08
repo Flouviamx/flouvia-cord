@@ -1,6 +1,11 @@
 ---
 title: "Tesorería y FX Lock"
 description: "Dónde ver la predicción de flujo de caja, el estado del interés moratorio y la cobertura cambiaria a 30 días."
+lastUpdated: "2026-10-07"
+reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Cotizar en una divisa distinta de la contable para usar FX Lock", "Plan Pro o superior para el flujo de caja a 90 días"]
 ---
 
 <header class="content-header">
@@ -12,13 +17,13 @@ description: "Dónde ver la predicción de flujo de caja, el estado del interés
 
 Este documento cubre tres herramientas financieras distintas de Cord que a veces se confunden entre sí porque todas tocan "dinero", pero viven en lugares distintos de la app:
 
-- **La predicción de flujo de caja** (a 90 días, con el AI CFO Insight) vive en **`/app/informes`**, no en Mis cobros. Es un informe de análisis, separado del [dashboard de Cord Payments](/docs/pagos/dashboard) que muestra lo que ya cobraste.
-- **Los intereses moratorios** se configuran en **Ajustes › Aprobaciones**.
+- **La predicción de flujo de caja** a 90 días es el informe **Flujo de caja · 90 días** de **Informes** (`/app/informes`), no vive en Mis cobros. Requiere el plan Pro o superior. Es un informe de análisis, separado del [dashboard de Cord Payments](/docs/pagos/dashboard) que muestra lo que ya cobraste.
+- **Los intereses moratorios** aparecen en **Ajustes › Aprobaciones** (hoy suspendidos; ver abajo).
 - **El FX Lock** es una propiedad de cada cotización en el editor, no un panel aparte.
 
 ## Flujo de Caja a 90 días
 
-En `/app/informes`, el informe de flujo cruza los términos de crédito de tus cotizaciones abiertas con el **historial de comportamiento de pago real** de cada cliente.
+En **Informes › Flujo de caja · 90 días** (plan Pro o superior), el informe cruza los términos de crédito de tus cotizaciones abiertas con el **historial de comportamiento de pago real** de cada cliente.
 
 Si un cliente tiene términos Net 30 pero históricamente se retrasa 15 días en promedio, la predicción ajusta la entrada esperada de capital con ese comportamiento real — no asume que todo se cobra exactamente en la fecha de vencimiento — dándote una visibilidad más realista de tu liquidez a 90 días.
 
@@ -52,8 +57,9 @@ venta en el editor de cotizaciones, aparece el panel de cobertura cambiaria.
 Al guardar una cotización en otra moneda, Cord toma el tipo de cambio del día y lo
 **congela por 30 días**:
 
-- **Colchón de protección:** puedes añadir un margen sobre el tipo de cambio del día
-  para absorber la volatilidad durante la ventana de crédito. Tú eliges cuánto.
+- **Colchón de protección:** añades un margen sobre el tipo de cambio del día para
+  absorber la volatilidad durante la ventana de crédito. En el editor eliges entre
+  **Poco** (+1%), **Normal** (+2%, el predeterminado) o **Cauto** (+5%).
 - **Certeza en los dos lados:** tu cliente sabe exactamente cuánto paga en su moneda, y
   tú sabes con qué tipo de cambio va a entrar a tus libros aunque el mercado se mueva
   entre la aprobación y el cobro.

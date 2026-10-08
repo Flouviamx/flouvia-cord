@@ -1,0 +1,270 @@
+---
+// Informe "tabla" (estilo Shopify): KPIs contra el periodo anterior, gráfica y la
+// tabla completa — ordenable, con totales y exportable a CSV. Los datos salen de
+// src/lib/informes-tabla.ts; las etiquetas, de src/lib/informes-csv.ts.
+import { t } from '../../../i18n/app';
+import { iconInner } from '../../../lib/icons';
+import { money } from '../../../lib/queries';
+import { tablaLabel } from '../../../lib/informes-csv';
+import type { ColFormat, TablaReport } from '../../../lib/informes-tabla';
+import type { ReportId } from '../../../lib/informes';
+
+// `zoomHref`: drill-down en el tiempo — una barra de mes abre ese mes (y una de
+// semana, esa semana) con el mismo informe. La página decide a qué URL.
+interface Props { data: TablaReport; L: 'es' | 'en'; reportId: ReportId; csvHref: string; granHref?: (g: 'day' | 'week' | 'month') => string; zoomHref?: (desde: string, hasta: string) => string }
+const { data: D, L, reportId, csvHref, granHref, zoomHref } = Astro.props;
+const locale = L === 'en' ? 'en-US' : 'es-MX';
+const nf = new Intl.NumberFormat(locale, { maximumFractionDigits: 1 });
+
+function fmtDate(value: unknown) {
+    if (!value) return '—';
+    const d = new Date(`${String(value).slice(0, 10)}T12:00:00Z`);
+    if (Number.isNaN(d.getTime())) return String(value);
+    const opts: Intl.DateTimeFormatOptions = D.granularity === 'month'
+        ? { month: 'short', year: 'numeric', timeZone: 'UTC' }
+        : D.granularity === 'week'
+            ? { day: 'numeric', month: 'short', timeZone: 'UTC' }
+            : { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' };
+    return new Intl.DateTimeFormat(locale, opts).format(d);
+}
+function fmt(value: unknown, format: ColFormat, key?: string): string {
+    if (value === null || value === undefined || value === '') return '—';
+    if (key === 'metodo') return tablaLabel(L, `metodo:${value}`);
+    switch (format) {
+        case 'money': return money(Number(value), 0);
+        case 'number': return nf.format(Number(value));
+        case 'pct': return `${Number(value)}%`;
+        case 'days': return t(L, 'inf.t.n_dias').replace('{n}', nf.format(Number(value)));
+        case 'date': return fmtDate(value);
+        default: return String(value);
+    }
+}
+// Para ordenar: el valor crudo (número o fecha ISO), nunca el texto formateado.
+const sortValue = (value: unknown) => (value === null || value === undefined ? '' : String(value));
+function delta(k: TablaReport['kpis'][number]) {
+    if (k.value === null || k.prev === null) return null;
+    if (k.format === 'pct') return { text: `${Math.abs(k.value - k.prev)} pts`, dir: k.value > k.prev ? 'up' : k.value < k.prev ? 'down' : 'flat' };
+    if (k.prev <= 0) return null;
+    const pct = Math.round(((k.value - k.prev) / k.prev) * 100);
+    return { text: `${Math.abs(pct)}%`, dir: pct > 0 ? 'up' : pct < 0 ? 'down' : 'flat' };
+}
+// En el eje basta día y mes (o mes y año): el año completo en cada barra satura.
+const axisDate = (value: string) => new Intl.DateTimeFormat(locale, D.granularity === 'month'
+    ? { month: 'short', year: '2-digit', timeZone: 'UTC' }
+    : { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(new Date(`${value}T12:00:00Z`));
+const isoDay = (iso: string, days: number) => { const d = new Date(`${iso}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + days); return d.toISOString().slice(0, 10); };
+function periodHref(start: string): string | undefined {
+    if (!zoomHref || (D.granularity !== 'month' && D.granularity !== 'week')) return undefined;
+    const end = D.granularity === 'month' ? isoDay(isoDay(`${start.slice(0, 7)}-01`, 32).slice(0, 7) + '-01', -1) : isoDay(start, 6);
+    const desde = start < D.rango.desde ? D.rango.desde : start;
+    const hasta = end > D.rango.hasta ? D.rango.hasta : end;
+    return desde <= hasta ? zoomHref(desde, hasta) : undefined;
+}
+const chartItems = D.chart?.items.map((item) => {
+    const isDate = /^\d{4}-\d{2}-\d{2}$/.test(item.label);
+    return {
+        label: item.label.startsWith('metodo:') ? tablaLabel(L, item.label) : isDate ? axisDate(item.label) : item.label,
+        value: item.value,
+        href: item.href ?? (isDate ? periodHref(item.label) : undefined),
+    };
+}) ?? [];
+const hasRows = D.rows.length > 0;
+const heat = new Set(D.heat ?? []);
+const heatStyle = (v: unknown) => v === null || v === undefined ? '' : `--heat:${Math.min(1, Number(v) / 60).toFixed(2)}`;
+const granOptions: ('day' | 'week' | 'month')[] = ['day', 'week', 'month'];
+---
+<section class="rt" data-tabla-report data-report={reportId}>
+    <header class="rt-head">
+        <p class="rt-desc">{t(L, `inf.desc.${reportId}` as any)}</p>
+        <div class="rt-actions">
+            {granHref && D.granularity && (
+                <div class="rt-seg" role="group" aria-label={t(L, 'inf.t.agrupar')}>
+                    {granOptions.map((g) => <a href={granHref(g)} aria-current={D.granularity === g ? 'true' : undefined}>{t(L, `inf.t.g_${g}` as any)}</a>)}
+                </div>
+            )}
+            {hasRows && (
+                <a class="rt-export" href={csvHref} download>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('download')}></svg>
+                    {t(L, 'inf.t.exportar')}
+                </a>
+            )}
+        </div>
+    </header>
+
+    <div class="rt-kpis">
+        {D.kpis.map((k) => {
+            const d = delta(k);
+            return (
+                <div class="rt-kpi">
+                    <span class="kpi-label">{tablaLabel(L, k.label)}</span>
+                    <div class="wx-kpi-row">
+                        <strong class="editorial rt-kpi-num">{fmt(k.value, k.format)}</strong>
+                        {d && (
+                            <span class="wx-delta" data-dir={d.dir}>
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-up')}></svg>
+                                {d.text}
+                            </span>
+                        )}
+                    </div>
+                    {D.rango.compare && <small>{k.prev === null ? t(L, 'dash.kpi_sin_base') : t(L, 'inf.t.vs_prev').replace('{v}', fmt(k.prev, k.format))}</small>}
+                </div>
+            );
+        })}
+    </div>
+
+    {D.chart && chartItems.length > 0 && (
+        <div class="dash-card rt-chart">
+            <div class="chart-host report-chart" data-chart={D.chart.kind === 'line' ? 'bar' : D.chart.kind} data-format={D.chart.format}
+                data-items={JSON.stringify(chartItems)} data-empty-icon="chart" data-empty-title={t(L, 'inf.t.sin_datos')}></div>
+        </div>
+    )}
+
+    <div class="dash-card rt-table-card">
+        {hasRows ? (
+            <div class="rt-scroll">
+                <table class="rt-table" data-rt-table>
+                    <thead>
+                        <tr>
+                            {D.columns.map((c, i) => (
+                                <th scope="col" class:list={[{ 'is-num': c.format !== 'text' && c.format !== 'date', 'is-first': i === 0 }]} aria-sort="none">
+                                    <button type="button" data-rt-sort={c.key} data-rt-type={c.format === 'text' ? 'text' : 'num'}>
+                                        {tablaLabel(L, c.label)}
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevrons-updown')}></svg>
+                                    </button>
+                                </th>
+                            ))}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {D.rows.map((row) => (
+                            <tr>
+                                {D.columns.map((c, i) => (
+                                    <td class:list={[{ 'is-num': c.format !== 'text' && c.format !== 'date', 'is-first': i === 0, 'is-heat': heat.has(c.key), 'is-empty': row[c.key] === null }]}
+                                        data-v={sortValue(row[c.key])} style={heat.has(c.key) ? heatStyle(row[c.key]) : undefined}>
+                                        {i === 0 && row._href ? <a href={row._href}>{fmt(row[c.key], c.format, c.key)}</a> : fmt(row[c.key], c.format, c.key)}
+                                    </td>
+                                ))}
+                            </tr>
+                        ))}
+                    </tbody>
+                    {D.totals && (
+                        <tfoot>
+                            <tr>
+                                {D.columns.map((c, i) => (
+                                    <td class:list={[{ 'is-num': c.format !== 'text' && c.format !== 'date', 'is-first': i === 0 }]}>
+                                        {i === 0 ? t(L, 'inf.t.total_fila') : c.key in D.totals! ? fmt(D.totals![c.key], c.format) : ''}
+                                    </td>
+                                ))}
+                            </tr>
+                        </tfoot>
+                    )}
+                </table>
+            </div>
+        ) : (
+            <div class="rt-empty">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chart')}></svg>
+                <strong>{t(L, 'inf.t.sin_datos')}</strong>
+                <p>{t(L, 'inf.t.sin_datos_desc')}</p>
+            </div>
+        )}
+    </div>
+    {reportId === 'ventas-producto' && <p class="rt-note">{t(L, 'inf.t.nota_margen')}</p>}
+    {reportId === 'recompra' && <p class="rt-note">{t(L, 'inf.t.nota_cohorte')}</p>}
+</section>
+
+<script>
+    // Orden por columna en el cliente (los datos ya están en la página): clic alterna
+    // descendente/ascendente y aria-sort lo anuncia.
+    document.querySelectorAll<HTMLTableElement>('[data-rt-table]').forEach((table) => {
+        const body = table.tBodies[0];
+        if (!body) return;
+        table.querySelectorAll<HTMLButtonElement>('[data-rt-sort]').forEach((button) => {
+            button.addEventListener('click', () => {
+                const th = button.closest('th')!;
+                const index = Array.from(th.parentElement!.children).indexOf(th);
+                const desc = th.getAttribute('aria-sort') !== 'descending';
+                table.querySelectorAll('th').forEach((h) => h.setAttribute('aria-sort', 'none'));
+                th.setAttribute('aria-sort', desc ? 'descending' : 'ascending');
+                const numeric = button.dataset.rtType === 'num';
+                const rows = Array.from(body.rows);
+                rows.sort((a, b) => {
+                    const va = a.cells[index]?.dataset.v ?? '', vb = b.cells[index]?.dataset.v ?? '';
+                    // Vacíos siempre al final, en cualquier dirección.
+                    if (va === '' || vb === '') return va === vb ? 0 : va === '' ? 1 : -1;
+                    const cmp = numeric && !/^\d{4}-/.test(va) ? Number(va) - Number(vb) : va.localeCompare(vb);
+                    return desc ? -cmp : cmp;
+                });
+                rows.forEach((row) => body.appendChild(row));
+            });
+        });
+    });
+</script>
+
+<style>
+    .rt { display: flex; flex-direction: column; gap: 1.2rem; }
+    .rt-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+    .rt-desc { margin: 0; max-width: 70ch; font-size: .84rem; line-height: 1.5; color: var(--color-text-muted); }
+    .rt-actions { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+    .rt-seg { display: inline-flex; padding: 3px; border-radius: 999px; background: var(--color-bg-soft); box-shadow: inset 0 0 0 1px var(--color-border); }
+    .rt-seg a { padding: .42rem .8rem; border-radius: 999px; font-size: .76rem; font-weight: 600; color: var(--color-text-muted); text-decoration: none; }
+    .rt-seg a[aria-current="true"] { background: var(--surface); color: var(--color-text); box-shadow: 0 1px 4px rgba(10,25,47,.08); }
+    .rt-export {
+        display: inline-flex; align-items: center; gap: .45rem; min-height: 36px; padding: 0 .95rem;
+        border-radius: 999px; border: 1px solid var(--color-border); background: var(--surface);
+        font-size: .78rem; font-weight: 650; color: var(--color-text); text-decoration: none;
+        transition: background .15s, transform .15s;
+    }
+    .rt-export:hover { background: var(--row-hover); }
+    .rt-export:active { transform: scale(.97); }
+    .rt-export:focus-visible, .rt-seg a:focus-visible { outline: 2px solid var(--color-blue-deep); outline-offset: 2px; }
+
+    .rt-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 1px; overflow: hidden; border-radius: 22px; background: var(--color-border); box-shadow: var(--card-shadow); }
+    .rt-kpi { display: flex; flex-direction: column; gap: .4rem; padding: 1.15rem 1.3rem 1.2rem; background: var(--surface); min-width: 0; }
+    .rt-kpi-num { font-size: clamp(1.45rem, 2.2vw, 1.8rem); color: var(--color-blue-deep); line-height: 1.05; letter-spacing: -.035em; font-variant-numeric: tabular-nums; }
+    .rt-kpi small { font-size: .72rem; color: var(--color-text-muted); font-variant-numeric: tabular-nums; }
+
+    .rt-chart { padding: 1.2rem 1.3rem 1rem; }
+    .rt-table-card { padding: 0; overflow: hidden; }
+    .rt-scroll { overflow-x: auto; max-height: 70vh; overscroll-behavior-x: contain; }
+    .rt-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: .82rem; font-variant-numeric: tabular-nums; }
+    .rt-table th, .rt-table td { padding: .7rem 1rem; text-align: left; white-space: nowrap; border-bottom: 1px solid var(--color-border); }
+    .rt-table .is-num { text-align: right; }
+    .rt-table thead th { position: sticky; top: 0; z-index: 2; background: var(--surface); padding: 0; }
+    .rt-table thead button {
+        appearance: none; display: inline-flex; align-items: center; gap: .3rem; width: 100%;
+        padding: .8rem 1rem .7rem; border: 0; background: transparent; cursor: pointer;
+        font: 700 .62rem var(--font-sans); letter-spacing: .07em; text-transform: uppercase; color: var(--color-text-muted);
+    }
+    .rt-table th.is-num button { justify-content: flex-end; }
+    .rt-table thead button svg { opacity: .35; flex: 0 0 auto; }
+    .rt-table th[aria-sort="ascending"] button, .rt-table th[aria-sort="descending"] button { color: var(--color-text); }
+    .rt-table th[aria-sort="ascending"] svg, .rt-table th[aria-sort="descending"] svg { opacity: .9; }
+    .rt-table thead button:focus-visible { outline: 2px solid var(--color-blue-deep); outline-offset: -2px; }
+    .rt-table tbody tr { transition: background .15s; }
+    .rt-table tbody tr:hover { background: var(--row-hover); }
+    .rt-table td { color: var(--color-text); }
+    .rt-table td.is-first { font-weight: 600; max-width: 280px; overflow: hidden; text-overflow: ellipsis; }
+    .rt-table td.is-first a { color: inherit; text-decoration: none; }
+    .rt-table td.is-first a:hover { color: var(--color-blue-deep); text-decoration: underline; text-underline-offset: 3px; }
+    .rt-table td.is-empty { color: var(--color-text-muted); }
+    .rt-table .is-first { position: sticky; left: 0; z-index: 1; background: var(--surface); }
+    .rt-table thead .is-first { z-index: 3; }
+    .rt-table tbody tr:hover .is-first { background: var(--surface); }
+    .rt-table tfoot td { position: sticky; bottom: 0; background: var(--color-bg-soft); font-weight: 700; border-bottom: 0; border-top: 1px solid var(--color-border); }
+    .rt-table tfoot .is-first { background: var(--color-bg-soft); }
+    .rt-table td.is-heat { background: rgba(66, 108, 197, calc(var(--heat, 0) * .55 + .03)); font-weight: 600; }
+    .rt-table td.is-heat.is-empty { background: transparent; }
+
+    .rt-empty { display: flex; flex-direction: column; align-items: center; gap: .45rem; padding: 3rem 1rem; text-align: center; color: var(--color-text-muted); }
+    .rt-empty strong { color: var(--color-text); font-size: .9rem; }
+    .rt-empty p { margin: 0; max-width: 42ch; font-size: .78rem; line-height: 1.5; }
+    .rt-note { margin: -.3rem 0 0; font-size: .74rem; color: var(--color-text-muted); }
+
+    @media (max-width: 880px) {
+        .rt-export, .rt-seg a { min-height: 44px; display: inline-flex; align-items: center; }
+        .rt-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .rt-table th, .rt-table td { padding: .65rem .8rem; }
+        .rt-table td.is-first { max-width: 160px; }
+    }
+    @media (prefers-reduced-motion: reduce) { .rt-export, .rt-table tbody tr { transition: none; } }
+</style>

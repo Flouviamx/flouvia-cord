@@ -1,0 +1,179 @@
+---
+title: "Headless Elements"
+seoTitle: "Headless Cord Elements: client, quote builder and tax form"
+description: "Build your own interface on top of the Cord Elements core: an HTTP client with idempotency and ETag caching, a quote builder with the server's totals and a tax form, with no framework."
+lastUpdated: "2026-10-07"
+reviewedBy: "Cord engineering"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["@flouviahq/elements 2.0.0 or later", "A publishable key (pk_) or a server proxy with createElementsProxy"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Headless Elements</h1>
+  <p class="page-subtitle">The same state and rules Cord's Builder uses, without a single line of UI: you bring the design.</p>
+</header>
+
+`@flouviahq/elements/headless` is the core of Cord Elements. `<CordBuilder>`, the React and Vue hooks and the Web Components all consume this same core. Importing it doesn't register elements or touch the DOM: only state, validation and network. Use it when you want your own interface, in any framework or none.
+
+```bash
+npm install @flouviahq/elements
+```
+
+```ts
+import { createCordClient, createQuoteBuilder, createFiscalForm } from '@flouviahq/elements/headless';
+```
+
+| Exports | What for |
+|---|---|
+| `createCordClient` | Browser HTTP client to Cord or to your proxy. |
+| `createQuoteBuilder` | The full state of building a quote: client, lines, taxes, totals, submission. |
+| `createFiscalForm` | The state of the recipient's [tax form](/en/docs/desarrolladores/herramientas/elements/fiscal). |
+| `createStore` | The observable store all three use (`get`, `subscribe`, `set`). |
+| `reduceQuoteView`, `INITIAL_QUOTE_VIEW` | The reducer for an embedded quote's live state. |
+| `calculateDocumentTotals`, `roundMoney` | The totals engine the server uses. |
+| `validateFiscalReceptor`, `validRfc`, `validSpainTaxId`, `validEin`, `fiscalText` | Tax validation and its texts in Spanish and English. |
+| `sanitizeAppearance`, `appearanceToCss` | The [Appearance API](/en/docs/desarrolladores/herramientas/elements/apariencia) validator. |
+| `CordError` | The typed error, with `code` and `requestId`. |
+
+## `createCordClient`
+
+```ts
+const client = createCordClient({ publishableKey: 'pk_test_...' });
+// or, with your backend in between:
+const viaProxy = createCordClient({ proxyUrl: '/api/cord' });
+```
+
+Pass **one** of the two: `publishableKey` (a `pk_` key, which can only use the Elements routes) or `proxyUrl` (the base of your [server proxy](/en/docs/desarrolladores/herramientas/elements/server), shaped like `/api/v1`). With both, or with an `sk_` key, it throws.
+
+| Option | Default | Detail |
+|---|---|---|
+| `publishableKey` | — | A `pk_live_` or `pk_test_` key. |
+| `proxyUrl` | — | For example `/api/cord`. Requests go with your site's cookies. |
+| `baseUrl` | `https://cordhq.app` | Cord's origin in publishable mode. |
+| `timeoutMs` | `15000` | Cuts each attempt off. |
+| `maxRetries` | `2` (max 5) | Retries on network failure, `429` and `5xx`, respecting `Retry-After`. |
+| `debug` | `false` | Logs every request with its `request_id` to the console. |
+| `fetch` | global `fetch` | For tests. |
+
+| Method | What it does |
+|---|---|
+| `config({ force? })` | `GET /elements/config`: your organization's currencies, country taxes, terms and validity. It's cached with its `ETag` and the next call sends `If-None-Match`: if nothing changed, Cord answers `304` and the copy is used. `force: true` requests it in full. |
+| `products()` | `GET /productos`: the catalog, without costs. |
+| `createQuote(input, { idempotencyKey? })` | `POST /cotizaciones` with an `Idempotency-Key` (yours or a new UUID). |
+| `aiDraft(input, onItem, { signal? })` | `POST /elements/ai-draft`: fills lines with AI from text (`texto`, up to 4,000 characters) or a file (`archivo`, JPG, PNG or PDF up to 4 MB). Calls `onItem` for each line as soon as it's read. |
+
+```ts
+const config = await client.config();
+console.log(config.org.moneda, config.impuestos.etiqueta, config.monedas);
+```
+
+## `createQuoteBuilder`
+
+```ts
+const builder = createQuoteBuilder({
+  client,
+  onCreated: (quote) => console.log(quote.folio, quote.link_publico),
+});
+
+const unsubscribe = builder.subscribe((state) => render(state));
+
+builder.setCliente({ empresa: 'Acme', email: 'purchasing@acme.com' });
+const key = builder.addItem({ descripcion: 'Installation', cantidad: 1, precio_unitario: 12500 });
+builder.updateItem(key, { cantidad: 2 });
+
+const quote = await builder.submit(); // null if there are errors or it failed
+```
+
+On creation, the builder loads the configuration and catalog on its own (`status` goes from `loading` to `ready`). Every change recomputes totals with the same engine as the server, and each line's rate comes from the organization's real tax catalog.
+
+| Method | What it does |
+|---|---|
+| `setCliente(patch)` | `empresa`, `email`, `contacto`, `telefono`. |
+| `setFiscal(recipient \| null)` | The tax recipient that travels with the quote. |
+| `setMoneda(code)`, `setTerminos(t)`, `setVigencia(days)`, `setNotas(text)`, `setPreciosIncluyenImpuesto(bool)` | The quote's conditions. |
+| `addItem(item?)` | Adds a line and returns its `key`. Without `tax_rate`, it uses the default rate. |
+| `addProduct(product, quantity?)` | Adds a catalog product. |
+| `updateItem(key, patch)`, `removeItem(key)` | Edits or removes a line by its `key`. |
+| `searchProducts(text, limit?)` | Searches the loaded catalog by name or SKU. |
+| `validate()` | Returns and stores the `issues`. |
+| `submit()` | Validates, creates the quote and returns the response, or `null`. |
+| `draftWithAi(input, { signal? })` | Fills lines with AI; each proposed line carries `sugerida`. |
+| `reset()`, `load()` | Empties the quote, or reloads configuration and catalog. |
+
+`submit()` uses **a single** `Idempotency-Key` per submission attempt: a double click or a network retry never creates two quotes. The key is renewed as soon as you change anything.
+
+The state (`builder.get()`) carries:
+
+| Field | Content |
+|---|---|
+| `status` | `loading`, `ready`, `submitting`, `success` or `error`. |
+| `config`, `products` | What it loaded from Cord. |
+| `cliente`, `fiscal`, `moneda`, `terminos`, `vigencia_dias`, `notas`, `precios_incluyen_impuesto` | What the person entered. |
+| `items` | The lines, each with its `key`. |
+| `totals` | `subtotal`, `impuestos`, `retencionTotal`, `total`, the breakdown by rate (`porTasa`), the `retenciones` and the computed `lineas`. |
+| `issues` | `{ field, code }` for each problem, for example `{ field: 'items', code: 'no_items' }`. |
+| `result`, `error` | The created quote, or the `CordError` from the last attempt. |
+| `ai` | `status`, `count` and `error` of the AI fill. |
+
+For your analytics, `onEvent(event, data)` receives `builder.loaded`, `builder.item_added`, `builder.item_removed`, `builder.submitted`, `builder.created`, `builder.failed` and `builder.ai_drafted`. The names are stable across versions.
+
+## `createFiscalForm`
+
+```ts
+const fiscal = createFiscalForm({ country: 'MX' });
+
+fiscal.subscribe((s) => {
+  console.log(s.visibleErrors, s.regimenes.map((r) => r.codigo));
+});
+
+fiscal.set('tax_id', 'EKU9003173C9');
+fiscal.touch('tax_id');
+const recipient = fiscal.submit(); // the normalized recipient, or null
+
+builder.setFiscal(recipient);
+```
+
+The state carries `values`, `touched`, `validation` (with `ok`, `value`, `errors`, `warnings` and `persona`), `visibleErrors`, the `regimenes` and `usosCfdi` that apply to the RFC type, and the country's `fields`. The rules are in [Tax form](/en/docs/desarrolladores/herramientas/elements/fiscal).
+
+## With your framework
+
+The store follows the `get()` + `subscribe()` contract, so it plugs into any reactive system:
+
+<Tabs>
+<TabItem label="React">
+
+```tsx
+import { useSyncExternalStore } from 'react';
+
+function useBuilderState(builder) {
+  return useSyncExternalStore(builder.subscribe, builder.get, builder.get);
+}
+```
+
+</TabItem>
+<TabItem label="Vue">
+
+```ts
+import { useCordQuoteBuilder, useCordStore } from '@flouviahq/elements/vue';
+// useCordStore(store) returns a ShallowRef that follows the store.
+```
+
+</TabItem>
+<TabItem label="No framework">
+
+```ts
+const total = document.querySelector('#total');
+builder.subscribe((s) => {
+  total.textContent = new Intl.NumberFormat(s.config?.org.locale ?? 'en', {
+    style: 'currency',
+    currency: s.moneda || 'USD',
+  }).format(s.totals.total);
+});
+```
+
+</TabItem>
+</Tabs>
+
+## Live state of an embedded quote
+
+`reduceQuoteView(state, event)` turns the events relayed by `<cord-quote>`'s iframe into a state (`ready`, `status`, `folio`, `moneda`, `total`, `approved`, `rejected`, `paid`, `signedBy`, `lastEvent`). It's what's behind the Web Component's `state` property and `statechange` event; see [Web Components](/en/docs/desarrolladores/herramientas/elements/web-components#live-state-state-and-statechange).

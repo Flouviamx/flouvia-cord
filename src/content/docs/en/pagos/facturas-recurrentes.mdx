@@ -1,8 +1,8 @@
 ---
 title: "Recurring invoices"
-description: "How to repeat an invoice monthly, quarterly, or annually, what data is frozen, how each document is issued, and what happens when it pauses, fails, or is deleted."
-lastUpdated: "2026-09-08"
-reviewedBy: "Cord Product and Fiscal Operations"
+description: "How to repeat an invoice every month, what data is frozen, how each document is issued, and what happens when it pauses, fails, or is deleted."
+lastUpdated: "2026-10-07"
+reviewedBy: "Cord product and operations"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Pro, Scale, Developer]
 prerequisites: ["Collections permission", "A successfully issued invoice", "Valid tax data for every issue"]
@@ -12,10 +12,6 @@ prerequisites: ["Collections permission", "A successfully issued invoice", "Vali
   <h1 class="page-title">Recurring invoices</h1>
   <p class="page-subtitle">Repeat an issued invoice without recapturing the same lines every period.</p>
 </header>
-
-<Callout type="info">
-This guide includes the September improvements. Their combined publication and integrated acceptance still need verification. See [scope and availability](/en/docs/pagos/mejoras-confiabilidad).
-</Callout>
 
 A **recurring invoice** schedules new documents. It isn't the same as a **recurring
 retainer payment**: one repeats document issuance; the other creates a client-authorized
@@ -27,8 +23,14 @@ recorded payments.
 
 ## Create one from an existing invoice
 
-Open an issued invoice, choose **Repeat this invoice**, set an internal name, monthly,
-quarterly, or annual cadence, issue day, credit days, first issue, and optional end date.
+Open an issued invoice, choose **Repeat monthly** under **More actions**, and Cord
+creates the recurrence and takes you to **Invoices › View recurring**.
+
+The recurrence the app creates is **monthly**: it issues on the 1st of each month, due
+on the issue date (0 credit days). Its internal name is the client's name or, if there
+isn't one, the base invoice's number. The app doesn't currently let you change the
+cadence, day, credit days, or an end date afterwards; from the list you can pause,
+resume, or delete it.
 
 Cord copies the client, currency, notes, and line snapshot from the issued document.
 It doesn't reread current catalog prices, so later Product edits don't silently alter
@@ -36,11 +38,11 @@ the schedule.
 
 ## Calendar and due date
 
-- Cadence: monthly, quarterly, or annual.
-- Day of month: 1 through 28, avoiding skipped February issues.
-- Credit days: 0 through 365, added to each issue date.
-- First issue: optional; otherwise Cord calculates the next period.
-- End date: optional; no new issue is selected after it.
+- Cadence: monthly.
+- Day of month: the 1st. The issue day never goes past the 28th, so February is never skipped.
+- Credit days: 0; each invoice is due on its issue date.
+- First issue: Cord calculates the next period from the cadence and day.
+- End date: none; the recurrence stays active until you pause or delete it.
 
 A daily process selects active, due recurrences. Sandbox organizations don't issue
 recurring documents.
@@ -63,8 +65,8 @@ Open **Invoices > View recurring**. Pause stops future issues without deleting s
 Resume enables it again when the plan allows. Delete removes the schedule but preserves
 every issued invoice.
 
-Pausing remains available after a downgrade. Creating, editing, resuming, and each
-scheduled run validate Pro-or-higher access.
+Pausing remains available after a downgrade. Creating, resuming, and each scheduled
+run validate Pro-or-higher access.
 
 ## Email failure
 

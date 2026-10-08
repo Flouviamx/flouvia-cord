@@ -1,6 +1,10 @@
 ---
 title: "Collections API"
 description: "Query the aging of your client portfolio and accounts receivable."
+lastUpdated: "2026-10-07"
+reviewedBy: "Cord engineering"
+availablePlans: [Pro, Scale, Developer]
+prerequisites: ["Professional plan or higher", "A key with read permission on the cobranza resource"]
 ---
 
 <header class="content-header">
@@ -19,7 +23,7 @@ This endpoint is perfect for being consumed by a Cron job (`node-cron` or Github
 The `GET /api/v1/cobranza` endpoint returns a master summary of the organization's financial health.
 
 <Callout type="info">
-**Requires the Scale plan or higher.** Collections is a paid capability (Rule 17). Without the required plan, the endpoint responds `402 Payment Required` with `code: "subscription_required"` instead of data — see [Error Handling](/en/docs/desarrolladores/esenciales/errores).
+**Requires the Professional plan or higher.** Collections is a paid capability. Without the required plan, the endpoint responds `402 Payment Required` with `code: "subscription_required"` instead of data — see [Error Handling](/en/docs/desarrolladores/esenciales/errores).
 </Callout>
 
 **Request:**
@@ -31,7 +35,7 @@ curl -X GET "https://cordhq.app/api/v1/cobranza" \
 
 **Response (Analytical Snapshot):**
 
-The response is structured for immediate use, stripping each account's secret public `token` for security — publishing it in a list would turn any read-only key into a payment-link dispenser. Amounts are expressed in the organization's accounting currency.
+The response is structured for immediate use, stripping each account's secret public `token` for security — publishing it in a list would turn any read-only key into a payment-link dispenser. Each `total` is the quote total in its own sale currency, unconverted; the response doesn't include each account's currency. `resumen`, `aging`, and `clientes` add those totals as they are, so if your business quotes in more than one currency those sums mix currencies. The portfolio includes approved or invoiced quotes (`approved`, `invoiced`) that aren't recurring retainers; Cord Invoicing invoices are read with the [Invoices API](/en/docs/desarrolladores/funciones/facturas).
 
 ```json
 {
@@ -58,10 +62,10 @@ The response is structured for immediate use, stripping each account's secret pu
     ],
     "items": [
       {
-        "id": "qte_...",
+        "id": "2a9d8e4f-6b1c-4d7a-9e3f-5c8b1a2d4e6f",
         "folio": "COT-00104",
         "empresa": "Stark Industries",
-        "clienteId": "cus_...",
+        "clienteId": "8f7b2c1e-4d3a-4b9f-a6e2-1c5d7e9f0a3b",
         "status": "invoiced",
         "total": 5000,
         "overdue": true,
@@ -83,4 +87,4 @@ The response is structured for immediate use, stripping each account's secret pu
 }
 ```
 
-`aging` is an array of 4 fixed buckets (`vigente`, `d30`, `d60`, `d60p`), not an object keyed by day range. `status` in `items` is the real quote/invoice state (`approved`, `invoiced`…); when it's overdue, `overdue` comes back `true` and `diasVencido` counts the days.
+`aging` is an array of 4 fixed buckets, not an object keyed by day range: `vigente` (not yet due), `d30` (1 to 30 days overdue), `d60` (31 to 60), and `d60p` (more than 60). `status` in `items` is the real quote state (`approved` or `invoiced`); when it's overdue, `overdue` comes back `true` and `diasVencido` counts the days.

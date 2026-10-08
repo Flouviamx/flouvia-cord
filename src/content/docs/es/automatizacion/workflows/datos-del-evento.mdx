@@ -2,9 +2,11 @@
 title: "Datos del evento"
 seoTitle: "Datos del evento en Cord Workflows"
 description: "Cómo insertar datos del evento en los textos de un workflow con llaves dobles, cómo se ven al ejecutarse y la lista completa de datos disponibles por disparador."
-lastUpdated: "2026-09-15"
+lastUpdated: "2026-10-07"
 reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Permiso Ajustes","Un workflow con su disparador elegido"]
 ---
 
 <header class="content-header">
@@ -26,7 +28,7 @@ Cuando la cotización COT-128 de Grupo Norte por 48,500 MXN dispara el workflow,
 
 En el panel de cada acción, debajo de los campos de texto, aparece **Datos del evento**. Coloca el cursor donde quieres el dato y toca su nombre: Cord inserta las llaves por ti. Solo aparecen los datos que trae el disparador que elegiste.
 
-Funcionan en: el título de una tarea, el asunto y el mensaje de un correo, el mensaje de Slack y la nota de HubSpot.
+Funcionan en: el título de una tarea, el asunto y el mensaje de un correo (al equipo o al cliente), las variables de WhatsApp, el mensaje de Slack, el mensaje de Teams, la nota de HubSpot, el mensaje del POST a una URL y el motivo de una anulación. La URL de destino del POST no los admite.
 
 ## Cómo se ven al ejecutarse
 
@@ -99,12 +101,15 @@ Además, según el disparador:
 | Llega un pago parcial | Monto pagado | `{{monto}}` | Número |
 | Llega un pago parcial | Saldo pendiente | `{{saldo_pendiente}}` | Número |
 | Llega un pago parcial | Tipo de pago | `{{tipo}}` | Opción |
+| Se modifica y reenvía una cotización | Total anterior | `{{total_anterior}}` | Número |
+| Se acerca el vencimiento de una cotización | Días para que venza | `{{dias_para_vencer}}` | Número |
+| Se acerca el vencimiento de una cotización | Fecha de vigencia | `{{vence}}` | Texto |
 
 **Se elimina un borrador** trae todos los de la primera tabla menos el estado actual.
 
 ### Facturas de Cord Invoicing
 
-Aplica a Se emite, Se envía, Se paga, Falla el pago, Vence, Se anula y Se marca como incobrable.
+Aplica a Se emite, Se envía, Se paga, Falla el pago, Vence, Se acerca el vencimiento, Lleva días vencida, Se anula y Se marca como incobrable.
 
 | Dato | Nombre | Tipo |
 |---|---|---|
@@ -117,6 +122,15 @@ Aplica a Se emite, Se envía, Se paga, Falla el pago, Vence, Se anula y Se marca
 | Estado en el evento | `{{estado}}` | Opción |
 | Estado actual de la factura | `{{estado_actual}}` | Opción, se consulta al ejecutar |
 | Quién lo originó | `{{actor_tipo}}` | Opción |
+
+Además, según el disparador:
+
+| Disparador | Dato | Nombre | Tipo |
+|---|---|---|---|
+| Se acerca el vencimiento de una factura | Días para que venza | `{{dias_para_vencer}}` | Número |
+| Se acerca el vencimiento de una factura | Fecha de vencimiento | `{{vence}}` | Texto |
+| Una factura lleva días vencida | Días de vencida | `{{dias_vencida}}` | Número |
+| Una factura lleva días vencida | Fecha de vencimiento | `{{vence}}` | Texto |
 
 "Se factura una cotización" y "Se timbra el CFDI de una cotización" usan los datos de cotización, no estos.
 
@@ -162,6 +176,8 @@ Aplica a Se emite, Se envía, Se paga, Falla el pago, Vence, Se anula y Se marca
 | Términos de pago | `{{terminos}}` | Opción (Contado, 30 días, 60 días) |
 | Quién lo originó | `{{actor_tipo}}` | Opción |
 
+**Se actualiza un cliente** trae además el valor anterior de tres datos: Empresa anterior `{{empresa_anterior}}`, Correo anterior `{{email_anterior}}` y Términos anteriores `{{terminos_anterior}}`.
+
 **Se elimina un cliente** solo trae Empresa y Quién lo originó.
 
 ### Productos
@@ -173,6 +189,8 @@ Aplica a Se emite, Se envía, Se paga, Falla el pago, Vence, Se anula y Se marca
 | Activo | `{{activo}}` | Sí o no |
 | Quién lo originó | `{{actor_tipo}}` | Opción |
 
+**Se actualiza un producto** trae además Precio de lista anterior `{{precio_lista_anterior}}` y Activo antes `{{activo_anterior}}`.
+
 **Se elimina un producto** solo trae Nombre y Quién lo originó.
 
 ### Tareas y promesas
@@ -182,6 +200,15 @@ Aplica a Se emite, Se envía, Se paga, Falla el pago, Vence, Se anula y Se marca
 | Se crea una tarea, Se completa una tarea | Título `{{titulo}}`, Quién lo originó `{{actor_tipo}}` |
 | Se registra una promesa de pago | Monto prometido `{{monto}}`, Fecha prometida `{{fecha_promesa}}`, Quién lo originó `{{actor_tipo}}` |
 | Se cumple / Se incumple una promesa de pago | Monto prometido `{{monto}}`, Quién lo originó `{{actor_tipo}}` |
+
+### Disparador programado
+
+| Dato | Nombre | Tipo |
+|---|---|---|
+| Fecha | `{{fecha}}` | Texto |
+| Día de la semana | `{{dia_semana}}` | Texto |
+| Día del mes | `{{dia_mes}}` | Número |
+| Hora | `{{hora}}` | Número |
 
 ## Siguiente
 

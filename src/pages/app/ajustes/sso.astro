@@ -9,7 +9,7 @@ import SettingsShell from '../../../components/app/SettingsShell.astro';
 import PlanGate from '../../../components/app/PlanGate.astro';
 import { getMyMembership, getOrg } from '../../../lib/queries';
 import { getActiveOrgId } from '../../../lib/db';
-import { memberCan, planTieneSso, planLabel } from '../../../lib/permissions';
+import { memberCan, planTieneSso } from '../../../lib/permissions';
 import { minimumPlan } from '../../../lib/entitlements';
 import { listConnections } from '../../../lib/saml';
 import { currentLocale } from '../../../lib/context';
@@ -42,10 +42,11 @@ import { iconInner } from '../../../lib/icons';
             id="ssoPlanModal"
             class="is-inset"
             title={t(L, 'set.sso.upsell_titulo')}
-            desc={t(L, 'set.sso.upsell_desc').replace('{plan}', planLabel(org.plan_raw))}
+            desc={t(L, 'set.sso.upsell_desc')}
             requiredPlan={requiredPlan}
             locale={L === 'en' ? 'en' : 'es'}
-            returnHref="/app/ajustes" />
+            preview="ajustes"
+            feature="sso" />
     )}
 
     {hasPlan && connections.length === 0 && (

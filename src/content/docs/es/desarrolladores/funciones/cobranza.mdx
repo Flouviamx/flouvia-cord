@@ -1,6 +1,10 @@
 ---
 title: "API de Cobranza"
 description: "Consulta el envejecimiento de la cartera de clientes y cuentas por cobrar."
+lastUpdated: "2026-10-07"
+reviewedBy: "Ingeniería de Cord"
+availablePlans: [Pro, Scale, Developer]
+prerequisites: ["Plan Profesional o superior", "Una llave con permiso de lectura sobre el recurso cobranza"]
 ---
 
 <header class="content-header">
@@ -19,7 +23,7 @@ Este endpoint es perfecto para ser consumido por un trabajo Cron (`node-cron` o 
 El endpoint `GET /api/v1/cobranza` devuelve un resumen maestro de la salud financiera de la organización.
 
 <Callout type="info">
-**Requiere plan Scale o superior.** Cobranza es una capacidad de pago (Regla 17). Sin el plan requerido, el endpoint responde `402 Payment Required` con `code: "subscription_required"` en vez de datos — ver [Manejo de Errores](/docs/desarrolladores/esenciales/errores).
+**Requiere plan Profesional o superior.** Cobranza es una capacidad de pago. Sin el plan requerido, el endpoint responde `402 Payment Required` con `code: "subscription_required"` en vez de datos — ver [Manejo de Errores](/docs/desarrolladores/esenciales/errores).
 </Callout>
 
 **Petición:**
@@ -31,7 +35,7 @@ curl -X GET "https://cordhq.app/api/v1/cobranza" \
 
 **Respuesta (Snapshot Analítico):**
 
-La respuesta está estructurada para uso inmediato, retirando el `token` público secreto de cada cuenta por seguridad — publicarlo en un listado convertiría cualquier llave de solo lectura en un repartidor de links de cobro. Los montos se expresan en la divisa contable de la organización.
+La respuesta está estructurada para uso inmediato, retirando el `token` público secreto de cada cuenta por seguridad — publicarlo en un listado convertiría cualquier llave de solo lectura en un repartidor de links de cobro. Cada `total` es el total de la cotización en su propia divisa de venta, sin convertir; la respuesta no incluye la divisa de cada cuenta. `resumen`, `aging` y `clientes` suman esos totales tal cual, así que si tu negocio cotiza en más de una divisa esas sumas mezclan divisas. La cartera incluye las cotizaciones aprobadas o facturadas (`approved`, `invoiced`) que no son igualas recurrentes; las facturas de Cord Invoicing se consultan con la [API de Facturas](/docs/desarrolladores/funciones/facturas).
 
 ```json
 {
@@ -58,10 +62,10 @@ La respuesta está estructurada para uso inmediato, retirando el `token` públic
     ],
     "items": [
       {
-        "id": "qte_...",
+        "id": "2a9d8e4f-6b1c-4d7a-9e3f-5c8b1a2d4e6f",
         "folio": "COT-00104",
         "empresa": "Stark Industries",
-        "clienteId": "cus_...",
+        "clienteId": "8f7b2c1e-4d3a-4b9f-a6e2-1c5d7e9f0a3b",
         "status": "invoiced",
         "total": 5000,
         "overdue": true,
@@ -83,4 +87,4 @@ La respuesta está estructurada para uso inmediato, retirando el `token` públic
 }
 ```
 
-`aging` es un arreglo de 4 cubetas fijas (`vigente`, `d30`, `d60`, `d60p`), no un objeto por rango de días. `status` en `items` es el estado real de la cotización/factura (`approved`, `invoiced`…); si está vencida, `overdue` viene en `true` y `diasVencido` cuenta los días.
+`aging` es un arreglo de 4 cubetas fijas, no un objeto por rango de días: `vigente` (todavía no vence), `d30` (1 a 30 días vencida), `d60` (31 a 60) y `d60p` (más de 60). `status` en `items` es el estado real de la cotización (`approved` o `invoiced`); si está vencida, `overdue` viene en `true` y `diasVencido` cuenta los días.

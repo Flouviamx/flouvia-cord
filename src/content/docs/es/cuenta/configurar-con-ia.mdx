@@ -2,6 +2,11 @@
 title: "Configura tu cuenta con IA"
 seoTitle: "Configura tu cuenta de Cord con IA"
 description: "Cord lee tu sitio, una descripción de tu negocio y tu lista de precios, y propone tu configuración para que la apruebes."
+lastUpdated: "2026-10-07"
+reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Permiso Ajustes", "Estar fuera del entorno de prueba para aplicar la propuesta"]
 ---
 
 <header class="content-header">
@@ -15,7 +20,7 @@ Al terminar el alta, Cord te pide tres cosas, todas opcionales:
 
 - **Tu sitio web.** De ahí salen el nombre, el contacto, el logo y el color de tu marca.
 - **A qué se dedica tu negocio.** Cómo cobras, a qué plazo y qué impuestos manejas, en tus palabras. Por ejemplo: "vendemos material de construcción a crédito a 30 días y retenemos 4 % en fletes".
-- **Tu lista de precios** en Excel, CSV, PDF o foto, hasta 3 MB. Cord toma de ahí el catálogo con SKU, unidad y precio.
+- **Tu lista de precios** en Excel, CSV, PDF o foto, hasta 4 MB. Cord toma de ahí el catálogo con SKU, unidad y precio.
 
 Con eso arma una propuesta y te la muestra para que la revises. Puedes cambiar cualquier campo, quitar el logo, desmarcar productos o impuestos, y luego aplicarla. Si prefieres hacerlo después, sáltalo: el asistente vive también en **Ajustes › General › Configurar con IA**.
 
@@ -28,7 +33,7 @@ Con eso arma una propuesta y te la muestra para que la revises. Puedes cambiar c
 | Cotizaciones | Términos de pago, vigencia, prefijo del folio, impuesto incluido en el precio, condiciones y mensaje del PDF. |
 | Impuestos | Solo los que tu negocio usa y tu catálogo todavía no tiene. Llegan **desmarcados**. |
 | Catálogo | Los productos de tu lista de precios, en tu divisa. |
-| Mensajes | Plantillas para enviar cotizaciones y recordatorios por correo o WhatsApp. |
+| Mensajes | Plantillas de mensaje para correo o WhatsApp, que se guardan en Ajustes como textos de referencia. |
 
 ## Qué no hace
 
@@ -45,6 +50,6 @@ La misma propuesta se puede pedir desde fuera de la app, y siempre termina en la
 
 - **CLI:** `cord setup --sitio tuempresa.com --archivo precios.xlsx` abre la revisión en tu navegador y te muestra el resultado en la terminal. Ver [CLI de Cord](/docs/desarrolladores/herramientas/cli).
 - **Agentes de IA:** con el [servidor MCP](/docs/desarrolladores/herramientas/mcp), la herramienta `proponer_configuracion` te comparte el link de revisión.
-- **API:** `POST /api/v1/setup/plans` devuelve `review_url`. Ver la [referencia de la API](/docs/desarrolladores/referencia).
+- **API:** `POST /api/v1/setup/plans` devuelve `review_url`. Por esta vía el archivo puede pesar hasta 3 MB. Ver la [referencia de la API](/docs/desarrolladores/referencia).
 
 Si abres el link estando en el entorno de prueba, Cord te pide salir de él: la propuesta configura tu cuenta real.

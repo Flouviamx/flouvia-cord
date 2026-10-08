@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "node scripts/migrate-brand-profile.mjs && npm run build",
+  "buildCommand": "node scripts/migrate-brand-profile.mjs && node scripts/migrate-catalogo-fiscal.mjs && node scripts/migrate-tareas.mjs && npm run build",
   "crons": [
     {
       "path": "/api/health",
@@ -65,6 +65,10 @@
     {
       "path": "/api/cron/integraciones",
       "schedule": "30 14 * * *"
+    },
+    {
+      "path": "/api/cron/informes-programados",
+      "schedule": "45 13 * * *"
     }
   ],
   "headers": [

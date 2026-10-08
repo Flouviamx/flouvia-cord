@@ -1,29 +1,29 @@
 ---
 title: "Resumen de Cord Payments"
-description: "Cobra a tus clientes B2B por tarjeta, SPEI o transferencia manual directamente desde la cotización. Fondos directo a tu banco, con una sola tarifa transparente."
-lastUpdated: "2026-09-08"
-reviewedBy: "Pagos y operaciones de Cord"
-appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR]
+description: "Cobra a tus clientes con tarjeta, SPEI, Mercado Pago o transferencia manual directamente desde la cotización. El dinero entra a tu propia cuenta y la tarifa se ve antes de cobrar."
+lastUpdated: "2026-10-07"
+reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
-prerequisites: ["Activar Cord Payments para cobros en línea", "Configurar la cuenta bancaria receptora"]
+prerequisites: ["Activar Cord Payments o conectar Mercado Pago para cobrar en línea", "Configurar la cuenta bancaria receptora"]
 ---
 
 <header class="content-header">
   <h1 class="page-title">Resumen de Cord Payments</h1>
-  <p class="page-subtitle">El motor de cobros de tu negocio B2B. Tarjeta, SPEI o transferencia manual, con el dinero directo a tu banco.</p>
+  <p class="page-subtitle">El motor de cobros de tu negocio. Tarjeta, SPEI, Mercado Pago o transferencia manual, con el dinero en tu propia cuenta.</p>
 </header>
 
-<Callout type="info">
-Esta guía incluye las mejoras de septiembre. Su publicación conjunta y aceptación integrada siguen pendientes de verificación. Consulta [alcance y disponibilidad](/docs/pagos/mejoras-confiabilidad).
-</Callout>
+**Cord Payments** es el sistema con el que aceptas cobros con tarjeta, transferencia SPEI (solo en México y en pesos) o transferencia manual directamente desde una cotización. El dinero entra a tu propia cuenta de cobros y de ahí se deposita en tu cuenta bancaria con la [frecuencia que elijas](/docs/pagos/depositos) en **Ajustes › Cobros**: diaria, semanal, mensual o manual.
 
-**Cord Payments** es el sistema con el que aceptas cobros por tarjeta, transferencia SPEI o transferencia manual directamente desde una cotización, con los fondos depositados en tu propia cuenta bancaria en un plazo de entre 2 y 7 días hábiles. Cord cobra una sola comisión por transacción, calculada de forma transparente y visible antes de cobrar — sin cargos ocultos ni sorpresas. Ver la [tabla completa de tarifas](/docs/pagos/condiciones).
+En cobros en pesos mexicanos (MXN), Cord cobra una comisión por transacción que conoces y aceptas antes de empezar a cobrar. En cobros en cualquier otra divisa, Cord no aplica hoy comisión de plataforma. Ver la [tabla completa de tarifas](/docs/pagos/condiciones).
+
+En México, Brasil, Colombia, Argentina, Chile y Perú también puedes cobrar con [Mercado Pago](/docs/pagos/mercado-pago), usando tu propia cuenta de Mercado Pago.
 
 <section class="docs-section split" style="margin-top: 40px; border-top: none; padding-top: 0; margin-bottom: 64px;">
 <div class="section-text">
 <h2>Empieza ahora</h2>
-<p>Usa Cord para empezar a aceptar pagos B2B al instante, automatizar la conciliación de transferencias bancarias y —en México— timbrar el CFDI de manera nativa.</p>
-<a href="/docs/pagos/aceptar?lang=es" class="action-link-text">Encuentra tu caso de uso &rarr;</a>
+<p>Usa Cord para aceptar pagos en línea desde el mismo link de la cotización, conciliar automáticamente los cobros que pasan por Cord y —en México, con tu Certificado de Sello Digital (CSD) cargado— timbrar el CFDI de tus ventas.</p>
+<a href="/docs/pagos/aceptar" class="action-link-text">Encuentra tu caso de uso &rarr;</a>
 </div>
 <div class="section-visual">
 <div class="mockup-card" style="background: #f8fafc; border-radius: 24px; transform: scale(1); box-shadow: 0 12px 32px rgba(0,0,0,0.05), 0 0 0 1px rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: center; width: 100%; padding: 48px 24px;">
@@ -58,26 +58,53 @@ Esta guía incluye las mejoras de septiembre. Su publicación conjunta y aceptac
 
 ## Adiós a las conciliaciones manuales
 
-En el B2B tradicional, recibir un pago significa: pedirle al cliente que envíe el comprobante de transferencia por correo, que ventas lo reenvíe a finanzas, y que finanzas busque el depósito exacto en el portal del banco al día siguiente para cruzarlo contra la cotización.
+En muchos negocios, recibir un pago significa: pedirle al cliente que envíe el comprobante de transferencia por correo, que ventas lo reenvíe a finanzas, y que finanzas busque el depósito exacto en el portal del banco al día siguiente para cruzarlo contra la cotización.
 
-**Cord Payments elimina ese proceso por completo.** Nuestra infraestructura de pagos está diseñada nativamente para B2B, automatizando la conciliación y enviando el dinero directo a tu cuenta bancaria.
+**Cord Payments elimina ese proceso para los cobros en línea.** Cada pago con tarjeta o SPEI se asocia a su cotización y cambia su estado en cuanto se confirma, sin cruzar comprobantes a mano.
 
 ### Lo que aprenderás en esta sección:
 
-1. **[Aceptar un pago](/docs/pagos/aceptar):** Cómo funcionan las CLABEs dinámicas (SPEI) y los cobros con tarjeta, y por qué el dinero llega directo a ti.
-2. **[Tarifas y ventajas](/docs/pagos/condiciones):** Cuánto cobra Cord por cada método, y por qué.
-3. **[Anticipos y saldos](/docs/pagos/anticipos):** Cómo cobrar un porcentaje hoy y el resto después.
-4. **[Igualas recurrentes](/docs/pagos/igualas):** Cómo domiciliar un cobro mensual automático.
-5. **[Reembolsos](/docs/pagos/reembolsos)** y **[disputas](/docs/pagos/disputas):** Qué hacer cuando algo sale distinto a lo esperado.
+**Activar y cobrar**
 
-## Una arquitectura "Direct-to-Bank"
+1. **[Aceptar un pago](/docs/pagos/aceptar):** Qué ve tu cliente al pagar desde el link de la cotización o de la factura.
+2. **[Conectar tu cuenta](/docs/pagos/onboarding):** La verificación de tu negocio, los documentos por país, la captura desde el teléfono y los estados de la cuenta.
+3. **[Tarifas de Cord Payments](/docs/pagos/condiciones):** Cuánto cobra Cord por método y por divisa, y cómo se activa la tarifa.
+4. **[Métodos de cobro](/docs/pagos/metodos):** Tarjeta, SPEI, Mercado Pago y transferencia manual por país y divisa, y cómo se confirma cada uno.
+5. **[Mercado Pago](/docs/pagos/mercado-pago):** El segundo riel de cobro en línea, con tu propia cuenta.
 
-A diferencia de las pasarelas de pago genéricas que retienen tu dinero y luego te hacen "payouts" cada tanto, Cord Payments usa **cargos directos**: cuando tu cliente paga, el dinero viaja directamente a tu propia cuenta bancaria conectada — nunca pasa por una cuenta de Cord. Cord no es un intermediario del dinero, es la capa de software que orquesta la transacción, verifica tu identidad y calcula la comisión — en México, además, factura el CFDI correspondiente a esa comisión (ver [Facturación fiscal por país](/docs/pagos/facturacion)).
+**Modelos de cobro**
+
+6. **[Anticipo y saldo](/docs/pagos/anticipos):** Cómo cobrar un porcentaje hoy y el resto después.
+7. **[Planes de pago en cuotas](/docs/pagos/cuotas):** Un saldo vencido repartido en cuotas mensuales desde el mismo link.
+8. **[Igualas recurrentes](/docs/pagos/igualas):** Un cobro mensual automático con tarjeta.
+9. **[Términos de crédito](/docs/pagos/credito):** Net 30 y Net 60, y cuándo se habilita el pago.
+
+**Seguimiento del dinero**
+
+10. **[Dashboard de cobros](/docs/pagos/dashboard):** Saldo, depósitos, comisiones, disputas y cobros recientes.
+11. **[Depósitos a tu banco](/docs/pagos/depositos):** Frecuencia, estados, historial, cuenta de depósito por país y depósitos pausados.
+12. **[Reembolsos](/docs/pagos/reembolsos)** y **[disputas y contracargos](/docs/pagos/disputas):** Qué hacer cuando algo sale distinto a lo esperado.
+
+**Facturación**
+
+13. **[Facturación fiscal por país](/docs/pagos/facturacion):** CFDI 4.0 en México, el estado de España, factura comercial en los demás mercados y cuotas por plan.
+14. **[Crear, emitir y cobrar facturas](/docs/pagos/facturas-emitidas):** El ciclo completo de una factura y su saldo.
+15. **[Facturas recurrentes](/docs/pagos/facturas-recurrentes):** Repetir una factura cada mes sin volver a capturarla.
+
+**Cobranza y tesorería**
+
+16. **[Recordatorios automáticos de cobro](/docs/pagos/recordatorios):** La escalera de correos antes y después del vencimiento.
+17. **[Cartera y cobranza operativa](/docs/pagos/cartera-cobranza)** y **[cobranza con IA](/docs/pagos/cobranza-ia):** Cómo dar seguimiento a lo que te deben.
+18. **[Tesorería y FX Lock](/docs/pagos/tesoreria-fx):** Pronóstico de flujo y tipo de cambio congelado.
+
+## Cargos directos a tu propia cuenta
+
+Cord Payments usa **cargos directos**: cuando tu cliente paga, el cobro se registra en tu propia cuenta de cobros, a nombre de tu negocio — nunca pasa por una cuenta de Cord. De ahí, el dinero se deposita en tu cuenta bancaria según la frecuencia de depósito que elijas. Cord no es un intermediario del dinero, es la capa de software que orquesta la transacción, verifica tu identidad y calcula la comisión — en México, además, factura el CFDI correspondiente a esa comisión (ver [Facturación fiscal por país](/docs/pagos/facturacion)).
 
 <Callout type="info">
 Esto también significa que tú eres el comerciante de registro de cada cobro — no Cord. Eres responsable ante tu cliente por el bien o servicio vendido, y ante el banco por cualquier contracargo. Ver [Tarifas y ventajas](/docs/pagos/condiciones) para el detalle.
 </Callout>
 
-## Mejoras recientes
+## Novedades
 
-Consulta [qué cambió en pagos, facturas, seguridad y planes](/docs/pagos/mejoras-confiabilidad), qué aporta a tu operación y qué sigue pendiente de validar.
+Consulta las [novedades de pagos y facturación](/docs/pagos/mejoras-confiabilidad): qué cambió en el cobro de facturas, las notas de crédito, las descargas del link de la factura y los planes.

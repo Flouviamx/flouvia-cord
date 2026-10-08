@@ -35,7 +35,7 @@ describe('idioma y menciones legales del PDF de factura', () => {
     });
 
     it('una factura francesa sale en francés con autoliquidación y las menciones B2B', () => {
-        const text = pdfText(createInvoicePdf(base({ paymentTerms: 'net30' })));
+        const text = pdfText(createInvoicePdf(base({ paymentTermsCode: 'net30' })));
         expect(text).toContain('FACTURE');
         expect(text).toContain('Total HT');
         expect(text).toContain('30 jours');
@@ -77,7 +77,7 @@ describe('idioma y menciones legales del PDF de factura', () => {
             issuedAt: new Date('2026-10-08T01:30:00Z'),
             timeZone: 'America/Mexico_City',
             dueDate: '2026-11-07',
-            paymentTerms: 'contado',
+            paymentTermsCode: 'contado',
         })));
         expect(text).toContain('7 de octubre de 2026');
         expect(text).not.toContain('8 de octubre de 2026');
@@ -91,7 +91,7 @@ describe('idioma y menciones legales del PDF de factura', () => {
             currency: 'USD',
             issuer: { legalName: 'Sample Studio', address: { countryCode: 'US' } },
             recipient: { legalName: 'Buyer', address: { countryCode: 'US' } },
-            paymentTerms: 'contado',
+            paymentTermsCode: 'contado',
         })));
         expect(text).toContain('Due on receipt');
         expect(text).not.toContain('Contado');

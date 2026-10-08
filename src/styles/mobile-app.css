@@ -328,11 +328,31 @@
         min-height: var(--mobile-tap);
     }
 
-    .help-panel,
-    .help-panel.ai-active {
-        width: 100%;
+    /* Ayuda: hoja de borde a borde que sube desde abajo, como el resto de las
+       hojas móviles. El chat no cambia de ancho aquí. */
+    html .help-panel,
+    html .help-panel.ai-active {
+        top: calc(env(safe-area-inset-top) + 10px);
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: auto;
         max-width: none;
+        border-radius: 22px 22px 0 0;
         padding-bottom: env(safe-area-inset-bottom);
+        animation-name: help-up;
+    }
+
+    html .help-drawer.is-closing .help-panel {
+        animation-name: help-down;
+    }
+
+    @keyframes help-up { from { transform: translateY(100%); } }
+    @keyframes help-down { to { transform: translateY(100%); } }
+
+    .help-search input,
+    .chat-real-input {
+        font-size: 16px;
     }
 }
 

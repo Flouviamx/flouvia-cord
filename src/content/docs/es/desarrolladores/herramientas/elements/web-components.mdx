@@ -1,6 +1,10 @@
 ---
 title: "Elements en Vue y Web Components"
 description: "Descubre cómo usar los componentes web nativos de Cord en Vue, HTML puro, PHP o cualquier otro stack."
+lastUpdated: "2026-10-07"
+reviewedBy: "Ingeniería de Cord"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["@flouviahq/elements 2.0.0 o superior", "Dominios permitidos en Ajustes › Cotizador embebible para recibir datos en los eventos"]
 ---
 
 <header class="content-header">
@@ -21,7 +25,7 @@ Este componente está compilado bajo los estándares de la plataforma web, lo qu
 <!-- Renderizar el componente nativo -->
 <div style="height: 800px;">
   <cord-quote
-    token="tok_A1B2C3D4E5"
+    token="9f3b6c2a7e1d4f8b0a5c3e7d1b9f2a46"
     min-height="500">
   </cord-quote>
 </div>
@@ -54,9 +58,77 @@ Este componente está compilado bajo los estándares de la plataforma web, lo qu
 </script>
 ```
 
-El botón de pago abre la factura hospedada en una ventana de Cord: los datos de pago nunca se capturan dentro del iframe. Mientras la factura sigue abierta, el embed consulta su saldo y emite `status_changed` cuando cambia y `paid` cuando queda saldada. Con `embed.js`, agrega `data-cord-document="invoice"` al `div`. Igual que la cotización, sin dominios permitidos en Ajustes › Elements los eventos llegan sin datos.
+El botón de pago abre la factura hospedada en una ventana de Cord: los datos de pago nunca se capturan dentro del iframe. Mientras la factura sigue abierta, el embed consulta su saldo y emite `status_changed` cuando cambia y `paid` cuando queda saldada. Con `embed.js`, agrega `data-cord-document="invoice"` al `div`. Igual que la cotización, sin dominios permitidos en **Ajustes › Cotizador embebible** los eventos llegan sin datos.
 
 `theme`, `variables` y `fonts` del [Appearance API](/docs/desarrolladores/herramientas/elements/apariencia) aplican a la factura; `rules` y `layout` son del cotizador.
+
+## Estado en vivo: `state` y `statechange`
+
+`<cord-quote>` y `<cord-invoice>` reducen los eventos del iframe a un estado que puedes leer en cualquier momento con la propiedad `state`, y emiten `statechange` cada vez que cambia. Así dibujas tu propio resumen sin escuchar evento por evento.
+
+```html
+<cord-quote token="9f3b6c2a7e1d4f8b0a5c3e7d1b9f2a46"></cord-quote>
+<p id="resumen"></p>
+
+<script type="module">
+  const quote = document.querySelector('cord-quote');
+  const resumen = document.querySelector('#resumen');
+
+  quote.addEventListener('statechange', (e) => {
+    const s = e.detail; // igual a quote.state
+    if (!s.ready) return;
+    const total = s.total === null ? '' : new Intl.NumberFormat('es-MX', { style: 'currency', currency: s.moneda }).format(s.total);
+    resumen.textContent = `${s.folio ?? ''} ${s.status ?? ''} ${total}`;
+    if (s.paid) resumen.textContent += ' · pagada';
+  });
+</script>
+```
+
+| Campo | Contenido |
+|---|---|
+| `ready` | El cotizador terminó de dibujarse. |
+| `status` | `sent`, `viewed`, `approved`, `rejected`, `paid`, `expired`… |
+| `folio`, `moneda`, `total` | Del documento. El total viaja siempre con su divisa. |
+| `approved`, `rejected`, `paid` | Atajos booleanos. `paid` también es verdadero para una cotización ya facturada. |
+| `signedBy` | Quién aprobó, si aprobó en esta sesión. |
+| `lastEvent` | El último evento recibido, por ejemplo `cord:approved`. |
+
+Sin dominios permitidos en **Ajustes › Cotizador embebible**, los eventos llegan sin datos y `status`, `folio`, `moneda` y `total` se quedan en `null`. En React es `onStateChange` en `<CordCotizador>`; en Vue, el evento `@state`.
+
+## Estilos: `::part`
+
+Los dos elementos viven en un Shadow DOM: tus estilos no los rompen y los suyos no tocan tu página. Para personalizarlos desde afuera:
+
+```css
+cord-quote::part(frame) {
+  border-radius: 24px;
+  box-shadow: 0 12px 40px rgba(10, 25, 47, 0.08);
+}
+
+cord-quote::part(skeleton) {
+  border-radius: 24px;
+}
+```
+
+| Parte | Elemento |
+|---|---|
+| `root` | El contenedor del elemento. |
+| `skeleton` | El marcador de carga que se ve mientras llega el documento. |
+| `frame` | El `<iframe>` con el documento de Cord. |
+
+El contenido de adentro del iframe se personaliza con el [Appearance API](/docs/desarrolladores/herramientas/elements/apariencia) (atributo `appearance` como JSON, o la propiedad `appearance` como objeto), no con CSS de tu página.
+
+| Atributo | Detalle |
+|---|---|
+| `token` | **Obligatorio.** El token público del documento. |
+| `appearance` | Appearance como JSON. |
+| `min-height` | Alto mínimo del iframe en píxeles (420 por defecto). |
+| `base-url` | Origen de Cord, si usas un dominio propio. |
+| `debug` | Activa la barra de depuración (ver [Eventos](/docs/desarrolladores/herramientas/elements/eventos#barra-de-depuración)). |
+
+## Formulario fiscal
+
+`<cord-fiscal-form>` captura los datos fiscales de tu cliente con la misma validación que Cord y se integra a tus formularios HTML. Ver [Formulario fiscal](/docs/desarrolladores/herramientas/elements/fiscal).
 
 ## Vue y Nuxt
 
@@ -77,7 +149,7 @@ Importa el componente `<CordCotizador>` desde el entrypoint `/vue` y pásalo a t
 import { CordCotizador } from '@flouviahq/elements/vue';
 import { ref } from 'vue';
 
-const miToken = ref('tok_A1B2C3D4E5');
+const miToken = ref('9f3b6c2a7e1d4f8b0a5c3e7d1b9f2a46');
 
 function handleApproved(detail) {
   console.log('El cliente firmó:', detail.signed_by);

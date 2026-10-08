@@ -1,0 +1,142 @@
+---
+title: "Aprobaciones internas"
+seoTitle: "Aprobaciones internas de cotizaciones por descuento, monto o margen"
+description: "Cómo configurar topes de descuento, monto y margen que detienen una cotización hasta que un responsable la aprueba, y cómo se decide desde Cord, Slack o Teams."
+lastUpdated: "2026-10-07"
+reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Scale, Developer]
+prerequisites: ["Plan Scale o Developer", "Permiso Ajustes para configurar los topes", "Permiso Aprobaciones para decidir solicitudes", "Costo capturado en los productos para el tope de margen"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Aprobaciones internas</h1>
+  <p class="page-subtitle">Protege tus márgenes: una cotización que rebasa tus topes no llega al cliente hasta que alguien con autoridad la aprueba.</p>
+</header>
+
+## Qué es
+
+Las aprobaciones internas son una regla de tu organización. Defines hasta dónde puede
+llegar un vendedor sin pedir permiso (descuento máximo, monto máximo y margen mínimo).
+Cuando una cotización nueva rebasa alguno de esos topes al usar **Crear y enviar**,
+Cord no la envía: la deja como borrador marcada **Pendiente de aprobación** y avisa a
+quien puede decidir.
+
+No tiene que ver con la aprobación del cliente. Esa es la [firma en el
+link](/docs/interaccion/firma); esta es un control interno de tu equipo.
+
+## Requisitos
+
+- **Plan:** Scale o Developer. En otros planes los topes no se pueden guardar con un
+  valor mayor a 0 y Cord no los evalúa.
+- **Permiso para configurar:** **Ajustes**.
+- **Permiso para decidir:** **Aprobaciones**. El dueño de la cuenta siempre puede decidir.
+- **País:** disponible en los 12 mercados.
+
+## Configura los topes
+
+<Steps>
+1. Ve a **Ajustes › Cotizaciones › Aprobaciones**.
+2. En **Umbrales de aprobación**, captura los topes que quieras usar. Cada uno es independiente; un valor de **0** significa "sin tope".
+3. Guarda los cambios. Aplican a las cotizaciones que se creen a partir de ese momento.
+</Steps>
+
+{/* MOCKUP: Ajustes › Cotizaciones › Aprobaciones con la sección "Umbrales de aprobación": Descuento máx. sin aprobación (%) = 15, Monto máx. sin aprobación = 250,000, Margen bruto mínimo sin aprobación (%) = 20, y debajo la sección Tesorería con el interés moratorio deshabilitado. */}
+
+| Tope | Qué compara Cord | Cuándo pide aprobación |
+|---|---|---|
+| **Descuento máx. sin aprobación (%)** | El mayor descuento de cualquier línea: la diferencia entre su precio de lista y su precio negociado. | Si alguna línea tiene un descuento mayor al tope. |
+| **Monto máx. sin aprobación** | El total de la cotización. | Si el total es mayor al tope. |
+| **Margen bruto mínimo sin aprobación (%)** | El margen de cada línea con costo capturado: (precio negociado − costo) ÷ precio negociado. | Si alguna línea con costo queda por debajo del mínimo. Las líneas sin costo no cuentan. |
+
+<Callout type="warning">
+**El monto se compara sin convertir divisas.** Cord compara el número del tope contra
+el total de la cotización en la divisa en que la cotizas. Si tu tope es 250,000 y
+cotizas en USD, la regla salta a partir de USD 250,000, no de su equivalente en tu
+divisa contable. Si cotizas en varias divisas, ajusta el tope pensando en la de mayor
+valor unitario.
+</Callout>
+
+## Qué pasa al enviar
+
+Cuando el vendedor pulsa **Crear y enviar** y la cotización rebasa al menos un tope:
+
+1. La cotización se guarda como **Borrador** con el estado interno **Pendiente de aprobación**. El cliente no recibe correo y el link no se activa.
+2. Cord escribe el motivo, por ejemplo: "descuento 22% supera el 15% permitido y total USD 310,000 supera el tope de USD 250,000". El motivo aparece en el detalle y en la actividad.
+3. La cotización aparece en **Cotizaciones** con el filtro **Por aprobar**, y arriba de la lista ves cuántas **esperan tu aprobación**.
+4. Cord emite el evento de solicitud de aprobación, que alimenta Slack, Teams, webhooks y [workflows](/docs/automatizacion/workflows/disparadores).
+
+Con **Guardar borrador**, Cord no evalúa los topes: la regla se revisa al crear la
+cotización con **Crear y enviar**.
+
+## Quién aprueba y cómo
+
+<Tabs>
+<TabItem label="Desde Cord">
+
+En el detalle de la cotización aparece el aviso **Pendiente de aprobación** con el
+motivo. Quien tiene el permiso Aprobaciones ve dos botones:
+
+- **Aprobar y enviar:** la cotización pasa a *Enviada*, el link queda activo y la actividad registra "Aprobada por gerencia y enviada al cliente".
+- **Rechazar:** Cord pide confirmar ("¿Rechazar esta solicitud de aprobación?"). La cotización sigue como borrador y el detalle muestra **Solicitud de aprobación rechazada por gerencia**.
+
+</TabItem>
+<TabItem label="Desde Slack">
+
+Si conectaste la app de Slack de Cord, la solicitud llega a tu canal con el folio, el
+cliente, el total, el motivo y los botones **Aprobar** y **Rechazar**.
+
+Para que el botón decida, el correo de tu cuenta de Slack debe coincidir con un miembro
+activo de Cord con el permiso Aprobaciones. Si no coincide, Slack responde que tu
+cuenta no corresponde a un miembro con ese permiso y que decidas desde Cord. Al
+decidir, el mensaje se actualiza con quién aprobó o rechazó.
+
+</TabItem>
+<TabItem label="Desde Teams">
+
+Si conectaste Microsoft Teams, la solicitud llega al canal como tarjeta con el folio,
+el cliente, el total y el motivo, y un botón **Decidir en Cord** que abre el detalle.
+Teams no permite decidir desde la tarjeta: la decisión se toma en Cord.
+
+</TabItem>
+<TabItem label="Con un workflow">
+
+La acción **Aprobar la solicitud interna** de [Workflows](/docs/automatizacion/workflows/acciones)
+aprueba la solicitud pendiente y envía la cotización. Úsala con cuidado: un workflow
+que aprueba sin condiciones anula el propósito del tope.
+
+</TabItem>
+</Tabs>
+
+{/* MOCKUP: detalle de una cotización con el aviso ámbar "Pendiente de aprobación", el motivo "descuento 22% supera el 15% permitido" y los botones "Aprobar y enviar" y "Rechazar"; al lado, el mensaje de Slack con los botones Aprobar y Rechazar. */}
+
+## Comportamiento y casos límite
+
+- **Aprobar y enviar no manda el correo al cliente.** Activa el link y marca la cotización como enviada, pero el correo con el link no sale en este paso. Compártelo desde el detalle con **Copiar link**, **WhatsApp** o tu correo.
+- **Un borrador enviado después no se reevalúa.** Si la cotización se guardó como borrador y luego se envía con **Enviar al cliente**, desde el tablero o por la API de acciones, Cord no vuelve a revisar los topes. Si necesitas que todo pase por la regla, pide a tu equipo que use **Crear y enviar**.
+- **Una solicitud se decide una sola vez.** Si dos responsables deciden a la vez, el segundo recibe "No hay una solicitud de aprobación pendiente".
+- **El vendedor ve el margen antes de enviar.** En el editor, la columna **Margen** se pinta en rojo cuando una línea queda por debajo de tu margen mínimo.
+- **Si tu plan baja de Scale,** Cord deja de evaluar los topes en cotizaciones nuevas, y las solicitudes que quedaron pendientes solo se pueden decidir al recuperar el plan.
+
+## Límites por plan
+
+| | Gratis | Starter | Pro | Scale | Developer |
+|---|---|---|---|---|---|
+| Aprobaciones internas | No | No | No | Sí | Sí |
+
+## Problemas comunes
+
+**No puedo guardar un tope mayor a 0.** Tu plan no incluye aprobaciones internas.
+
+**El tope de margen no se dispara.** Las líneas no tienen costo. Captura el costo en la ficha de cada producto; las líneas libres no tienen costo.
+
+**Aprobé y el cliente no recibió nada.** Es lo esperado: comparte el link desde el detalle.
+
+**El botón de Slack dice que no tengo permiso.** El correo de tu Slack no coincide con tu usuario de Cord o tu rol no tiene Aprobaciones.
+
+## Relacionadas
+
+- [Vista previa y envío](/docs/cotizacion/envio)
+- [Gestión de cotizaciones](/docs/gestion/cotizaciones)
+- [Equipo y seguridad](/docs/cuenta/equipo-seguridad)
+- [Slack](/docs/automatizacion/integraciones/slack) y [Microsoft Teams](/docs/automatizacion/integraciones/teams)

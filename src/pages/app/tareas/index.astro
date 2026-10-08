@@ -1,0 +1,93 @@
+---
+// /app/tareas — todas las tareas de la organización, no solo las 12 del widget.
+// Filtros por estado (pendientes / completadas) y por responsable (mías /
+// todas / sin asignar), viajan en la URL para que un link compartido abra la
+// misma vista. Toda la interacción vive en TaskBoard.astro.
+import AppLayout from '../../../layouts/AppLayout.astro';
+import TaskBoard from '../../../components/app/tasks/TaskBoard.astro';
+import { getMyMembership } from '../../../lib/queries';
+import { memberCan } from '../../../lib/permissions';
+import { TASK_PERMISSIONS } from '../../../lib/actions/tasks';
+import { listTasks, taskAssignees } from '../../../lib/tasks-db';
+import { isTaskScope, isTaskState, type TaskScope, type TaskState } from '../../../lib/tasks';
+import { currentLocale } from '../../../lib/context';
+import { t } from '../../../i18n/app';
+
+const L = currentLocale();
+const q = Astro.url.searchParams;
+const estado: TaskState = isTaskState(q.get('estado')) ? q.get('estado') as TaskState : 'pendientes';
+const ME = await getMyMembership();
+const canEdit = TASK_PERMISSIONS.some((k) => memberCan(ME, k));
+const assignees = await taskAssignees();
+// Con una sola persona en la cuenta "Mías" y "Todas" son lo mismo: no se ofrece el filtro.
+const defaultScope: TaskScope = assignees.length > 1 && assignees.some((a) => a.esYo) ? 'mias' : 'todas';
+const scope: TaskScope = assignees.length > 1 && isTaskScope(q.get('scope')) ? q.get('scope') as TaskScope : defaultScope;
+const LIMIT = 200;
+const result = await listTasks({ estado, scope, limit: LIMIT });
+const { vencidas, hoy, pendientes, mias, sinAsignar } = result.counts;
+const equipo = assignees.length > 1;
+---
+
+<AppLayout title={t(L, 'tareas.pagina.title')} page="tareas" heading={t(L, 'tareas.pagina.heading')}>
+    <p slot="page-sub" class="tk-page-sub">{t(L, 'tareas.pagina.sub')}</p>
+
+    <div class="tk-stats">
+        <div class:list={['tk-stat', { 'is-danger': vencidas > 0 }]}>
+            <span class="tk-stat-label">{t(L, 'tareas.stat.vencidas')}</span>
+            <span class="tk-stat-num" data-stat="vencidas">{vencidas}</span>
+        </div>
+        <div class="tk-stat">
+            <span class="tk-stat-label">{t(L, 'tareas.stat.hoy')}</span>
+            <span class="tk-stat-num" data-stat="hoy">{hoy}</span>
+        </div>
+        {equipo ? (
+            <>
+                <div class="tk-stat">
+                    <span class="tk-stat-label">{t(L, 'tareas.stat.mias')}</span>
+                    <span class="tk-stat-num" data-stat="mias">{mias}</span>
+                </div>
+                <div class="tk-stat">
+                    <span class="tk-stat-label">{t(L, 'tareas.stat.sin_asignar')}</span>
+                    <span class="tk-stat-num" data-stat="sinAsignar">{sinAsignar}</span>
+                </div>
+            </>
+        ) : (
+            <div class="tk-stat">
+                <span class="tk-stat-label">{t(L, 'tareas.stat.pendientes')}</span>
+                <span class="tk-stat-num" data-stat="pendientes">{pendientes}</span>
+            </div>
+        )}
+    </div>
+
+    <div class="surface-card tk-page-card">
+        <TaskBoard variant="page" result={result} estado={estado} scope={scope} limit={LIMIT}
+                   canEdit={canEdit} assignees={assignees} />
+    </div>
+</AppLayout>
+
+<script>
+    // Los números de arriba siguen a la lista: completar o posponer los mueve sin recargar.
+    document.addEventListener('cord:tasks-refreshed', (e) => {
+        const d = (e as CustomEvent<Record<string, string>>).detail || {};
+        document.querySelectorAll<HTMLElement>('[data-stat]').forEach((el) => {
+            const v = d[el.dataset.stat!];
+            if (v === undefined) return;
+            el.textContent = v;
+            if (el.dataset.stat === 'vencidas') el.closest('.tk-stat')?.classList.toggle('is-danger', Number(v) > 0);
+        });
+    });
+</script>
+
+<style>
+    .tk-page-sub { margin: 0.25rem 0 0; font-size: 0.85rem; color: var(--color-text-muted); }
+    .tk-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 1.25rem; }
+    .tk-stat { display: flex; flex-direction: column; gap: 0.35rem; background: var(--surface); border-radius: var(--card-radius); box-shadow: var(--card-shadow); padding: 1.1rem 1.3rem; }
+    .tk-stat-label { font-size: 0.66rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-text-muted); }
+    .tk-stat-num { font-size: 1.6rem; font-weight: 600; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; color: var(--color-text); line-height: 1.1; }
+    .tk-stat.is-danger .tk-stat-num { color: var(--color-danger); }
+    .tk-page-card { max-width: 920px; }
+    @media (max-width: 680px) {
+        .tk-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.6rem; }
+        .tk-page-card { padding: 1.1rem 1rem; }
+    }
+</style>

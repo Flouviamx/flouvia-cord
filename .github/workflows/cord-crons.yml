@@ -10,7 +10,9 @@ name: Cord crons
 # rechazado, que es exactamente lo que pasó el 20 de septiembre de 2026.
 #
 # Este workflow corre cada hora y decide qué endpoints tocan, con la MISMA
-# tabla de horarios que tenía vercel.json. Los de vercel.json se quedan como
+# tabla de horarios que tenía vercel.json. `cron/tareas` solo vive aquí: es
+# horario porque manda el recordatorio a las 8:00 de CADA zona horaria, y él
+# mismo decide en qué organizaciones ya es esa hora. Los de vercel.json se quedan como
 # respaldo para el día que la cuenta suba de plan: todos los endpoints son
 # idempotentes, así que una doble corrida no duplica trabajo.
 #
@@ -64,6 +66,7 @@ jobs:
           # lo que quedó). En vercel.json sigue diario como respaldo.
           TABLA="
           *:*:api/cron/workflows
+          *:*:api/cron/tareas
           10:*:api/health
           13:*:api/cron/recurrencias
           15:*:api/cron/recordatorios

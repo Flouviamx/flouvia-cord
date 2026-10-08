@@ -1,0 +1,126 @@
+---
+title: "Dominio propio"
+seoTitle: "Conecta un dominio propio para tus links de Cord"
+description: "Sirve los links de tus cotizaciones y facturas desde un subdominio de tu empresa: requisitos, registros DNS TXT y CNAME, estados de la conexión y qué pasa si deja de estar disponible."
+lastUpdated: "2026-10-07"
+reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Pro, Scale, Developer]
+prerequisites: ["Plan Profesional o superior", "Permiso Ajustes", "Acceso al panel DNS de tu dominio", "Estar fuera del entorno de prueba"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Dominio propio</h1>
+  <p class="page-subtitle">Dale a tus cotizaciones y facturas una dirección con tu marca, como cotizaciones.tuempresa.com.</p>
+</header>
+
+Con un dominio propio, el link que recibe tu cliente deja de empezar con `cordhq.app` y
+usa un subdominio de tu empresa. Tu sitio web principal no cambia: Cord solo ocupa la
+dirección que le asignes.
+
+## Requisitos
+
+- **Plan Profesional o superior.** En Gratis y Starter la pestaña te muestra
+  **Ver plan Profesional**.
+- **Permiso Ajustes** en tu rol.
+- **Un subdominio libre** de un dominio que ya tengas, por ejemplo
+  `cotizaciones.tuempresa.com`. No necesitas comprar otro dominio. No se aceptan
+  dominios raíz (`tuempresa.com`), comodines, direcciones IP, puertos ni rutas.
+- **Acceso al panel DNS** donde administras tu dominio.
+- **Estar fuera del entorno de prueba.** En modo de prueba la pestaña muestra
+  **No disponible en el entorno de prueba**.
+
+Una organización tiene un solo dominio propio a la vez.
+
+## Conectar tu dominio
+
+Abre **Ajustes › Marca y apariencia › Dominio propio**.
+
+<Steps>
+1. **Elige tu dominio.** En **Subdominio** escribe solo el nombre, sin `https://`, rutas
+   ni puertos, y pulsa **Guardar dominio**.
+2. **Configura el DNS.** Cord te muestra una tabla con **Tipo**, **Nombre** y **Valor**.
+   Primero aparece un registro **TXT** de propiedad, con nombre `_cord.` seguido de tu
+   subdominio. Agrégalo en tu panel DNS exactamente como aparece (usa **Copiar nombre**
+   y **Copiar valor**).
+3. Pulsa **Verificar conexión**. Cuando Cord confirma el TXT, aparece el registro
+   **CNAME** que conecta tu subdominio. Agrégalo también.
+4. Vuelve a pulsar **Verificar conexión** hasta que el estado diga **Activo**. Los
+   cambios DNS pueden tardar en propagarse y el certificado HTTPS también necesita
+   tiempo.
+</Steps>
+
+{/* MOCKUP: pestaña Dominio propio con los tres pasos numerados, la tabla de registros TXT y CNAME y el estado "Esperando DNS" */}
+
+<Callout type="warning">
+**Conserva el registro TXT** después de activar el dominio: Cord lo vuelve a revisar
+periódicamente. Modifica solo el subdominio que vas a usar, sin tocar los registros de
+tu sitio web ni de tu correo. Si tu panel DNS agrega el dominio al nombre
+automáticamente, no lo escribas dos veces.
+</Callout>
+
+## Estados de la conexión
+
+| Estado | Qué significa | Qué hacer |
+|---|---|---|
+| **Pendiente de configuración** | El dominio está guardado, pero la conexión no está activa. | Agrega los registros DNS y verifica. |
+| **Esperando DNS** | Cord todavía no confirma tus registros. | Revisa nombres y valores; vuelve a verificar más tarde. |
+| **Preparando HTTPS** | El DNS está bien y se está emitiendo el certificado. | Espera unos minutos y verifica de nuevo. |
+| **Activo** | Tu dirección funciona y está protegida con HTTPS. | Nada; puedes abrirla con **Abrir dominio**. |
+| **Requiere atención** | No se pudo completar la conexión. | Lee el mensaje que acompaña al estado; si persiste, contacta a soporte. |
+
+El estado se consulta cuando abres la pestaña o pulsas **Verificar conexión**. La
+pantalla muestra la fecha de la **Última verificación**.
+
+## Qué cambia cuando está activo
+
+- **Los links nuevos usan tu dominio.** El link público de cada cotización (`/q/...`) y
+  de cada factura (`/i/...`), incluido el que viaja en los correos que Cord envía en tu
+  nombre, se arma con tu subdominio.
+- **La raíz de tu subdominio** muestra una página mínima con la marca de tu negocio.
+- **Solo se sirven tus documentos.** Por tu dominio no se puede entrar a la app, a
+  Ajustes ni a documentos de otra organización: un link que no es de tu cuenta no se
+  abre ahí.
+- **Tus links no se indexan** en buscadores.
+
+## Si el dominio deja de estar disponible
+
+- **Si la conexión falla o vence una verificación,** Cord intenta verificarla de nuevo
+  cuando alguien abre un link. Mientras no se confirme, los links nuevos se generan con
+  `cordhq.app` para que tus envíos sigan funcionando.
+- **Si bajas de plan,** los links que tus clientes ya tienen con tu dominio los
+  redirigen a la misma cotización o factura en `cordhq.app`. Nada se borra; recuperas tu
+  dominio al volver a un plan elegible.
+- **Si la pestaña dice "Estamos preparando los dominios propios",** la conexión todavía
+  no está disponible para tu cuenta. Tus links siguen funcionando en `cordhq.app`;
+  podrás configurarla ahí cuando esté lista.
+
+## Desconectar o cambiar de dominio
+
+Para usar otro dominio, primero desconecta el actual con **Desconectar dominio** y
+confirma. Los links que usen esa dirección dejarán de estar disponibles en ella. Cord
+no borra los registros de tu proveedor DNS: elimínalos tú si ya no los necesitas.
+
+## Problemas comunes
+
+**"No encontramos el TXT de propiedad".** Revisa que el nombre empiece con `_cord.` y
+que el valor esté completo, sin comillas extra.
+
+**"El servidor DNS no respondió".** No cambies tus registros por este mensaje: espera un
+minuto y verifica de nuevo.
+
+**"Esta dirección ya está asignada o necesita una revisión".** Contacta a soporte. No
+borres su configuración para intentar conectarla otra vez.
+
+**"Escribe un nombre de dominio válido".** Escribe solo el subdominio, sin protocolo,
+rutas ni puertos.
+
+**"No tienes permiso para gestionar dominios".** Pide a quien administra tu
+organización que te dé el permiso Ajustes o que haga la conexión.
+
+## Páginas relacionadas
+
+- [Personaliza tu marca](/docs/cuenta/marca)
+- [Portal del cliente](/docs/cuenta/portal-cliente)
+- [Tu suscripción a Cord](/docs/cuenta/suscripcion)
+- [Vista previa y envío](/docs/cotizacion/envio)

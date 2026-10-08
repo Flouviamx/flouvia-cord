@@ -7,13 +7,11 @@ import { getOrg, getSetupProgress, getMyMembership } from '../lib/queries';
 import OnboardingWidget from '../components/app/OnboardingWidget.astro';
 import DevWorkbench from '../components/app/DevWorkbench.astro';
 import Sidebar from '../components/app/Sidebar.astro';
+import { SIDEBAR_PREFS_KEY, sidebarShortcuts } from '../lib/sidebar-nav';
+import { NOTIF_PREFS_KEY, countNotificacionesSinLeer, notifSeenFrom } from '../lib/notificaciones';
 import TopbarApps from '../components/app/TopbarApps.astro';
 import { estadosPorProveedor } from '../lib/integraciones/conexiones';
 import { connectedOAuthApps } from '../lib/oauth-provider';
-import CordDynamicBg from '../components/CordDynamicBg.jsx';
-// Shader estándar de Cord — paleta oceánica del Centro de Ayuda
-// (navy casi negro + teal profundo + cobalto).
-const SUPPORT_PAL = { base: '#0A0F1C', color1: '#075E5A', color2: '#0D1E61', color3: '#0F3F7A' };
 // Autenticación propia (Custom Auth Fase 2+)
 import { memberCan } from '../lib/permissions';
 import { currentLocale, currentUserId } from '../lib/context';
@@ -28,6 +26,7 @@ import '../styles/daterange.css';
 import '../styles/widgets.css';
 import '../styles/report-widgets.css';
 import '../styles/mobile-app.css';
+import '../styles/view-transitions.css';
 
 
 const L = currentLocale();
@@ -47,8 +46,17 @@ const [ORG, ME] = await Promise.all([getOrg(), getMyMembership()]);
 const SETTINGS_NAV = localizeCategories(L, ORG.countryCode).flatMap((c) =>
     c.tabs.map((tb) => [`${RT_BASE.cmdkAjustes} · ${tb.label}`, tb.href, 'gear', c.label, tb.keywords || ''])
 );
-const RT = { ...RT_BASE, cmdkNav: [...RT_BASE.cmdkNav, ...SETTINGS_NAV] };
+// ⌘K muestra junto a "Ir a…" el mismo atajo G + letra que enseña la sidebar.
+const CMDK_KEYS = Object.fromEntries(sidebarShortcuts().map((it) => [it.href, `G ${it.key!.toUpperCase()}`]));
+const RT = { ...RT_BASE, cmdkNav: [...RT_BASE.cmdkNav, ...SETTINGS_NAV], cmdkKeys: CMDK_KEYS };
 const analyticsInternal = await isInternalAnalyticsOrg(ORG.id);
+// Contador de la campana en el SSR: antes cada carga de página pedía la lista
+// completa desde el navegador solo para decidir si prendía un punto rojo.
+const notifSeen = notifSeenFrom(ME.widgetPrefs?.[NOTIF_PREFS_KEY]);
+// El sandbox del entorno de prueba no tiene fila de membresía donde guardar
+// "visto": su contador nunca bajaría, así que ahí no se muestra.
+const notifUnread = ORG.id && !ORG.sandboxOf ? await countNotificacionesSinLeer(ORG.id, notifSeen).catch(() => 0) : 0;
+const notifLabel = t(L, 'topbar.notificaciones');
 
 
 const canCotizar = memberCan(ME, 'cotizar');
@@ -144,15 +152,24 @@ import { iconInner } from '../lib/icons';
         <script is:inline>
             // Restaura estado colapsado de la sidebar + tema antes del primer paint (sin flash).
             try { if (localStorage.getItem('cord.sb.collapsed') === '1') document.documentElement.classList.add('sb-collapsed'); } catch (e) {}
-            try { if (localStorage.getItem('cord.theme') === 'dark') document.documentElement.setAttribute('data-theme', 'dark'); } catch (e) {}
+            // Tema en tres modos: claro (default), oscuro o "sistema" (sigue al SO).
+            // data-theme sigue siendo el tema RESUELTO que lee todo el CSS;
+            // data-theme-mode es la preferencia, para pintar el control.
+            try {
+                var thm = localStorage.getItem('cord.theme');
+                if (thm !== 'dark' && thm !== 'system') thm = 'light';
+                document.documentElement.setAttribute('data-theme-mode', thm);
+                if (thm === 'dark' || (thm === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) document.documentElement.setAttribute('data-theme', 'dark');
+            } catch (e) {}
             // Cord Workbench: si el "Modo desarrollador" está activo, reserva de una
-            // vez el espacio de la barra colapsada (--wb-h) para que el contenido no
-            // salte al montar el dock (mismo patrón anti-flash que sidebar/tema).
+            // vez el espacio de la píldora colapsada (--wb-h: 40px de alto + 16px de
+            // separación del borde) para que el contenido no salte al montar el dock
+            // (mismo patrón anti-flash que sidebar/tema). El script la remide.
             try {
                 if (localStorage.getItem('cord.devmode') === '1') {
                     document.documentElement.classList.add('cord-dev');
-                    document.documentElement.style.setProperty('--wb-h', '46px');
-                    document.documentElement.style.setProperty('--wb-bar-h', '46px');
+                    document.documentElement.style.setProperty('--wb-h', '56px');
+                    document.documentElement.style.setProperty('--wb-bar-h', '56px');
                 }
             } catch (e) {}
         </script>
@@ -160,7 +177,6 @@ import { iconInner } from '../lib/icons';
             /* ASTRO OPTIMIZATION BYPASS: Forced CSS injection */
             
             /* Stacking Context Global (Resuelve translucidez visual en ambos estados) */
-            .sidebar { z-index: 800 !important; }
             .sb-account { position: relative !important; z-index: 9999 !important; }
             .custom-org-switcher { position: relative !important; z-index: 9999 !important; }
 
@@ -169,13 +185,8 @@ import { iconInner } from '../lib/icons';
                estado "colapsado" persistido NO debe encogerlo (si no, la hamburguesa
                abre una tira inútil de 68px y parece que "no hace nada"). */
             @media (min-width: 881px) {
-            html.sb-collapsed .sidebar { width: 68px !important; padding-left: 0 !important; padding-right: 0 !important; align-items: stretch !important; }
-            html.sb-collapsed .sb-item { width: 42px !important; height: 42px !important; justify-content: flex-start !important; padding-left: 11px !important; border-radius: 12px !important; margin: 0 auto !important; }
-            html.sb-collapsed .sb-item svg { width: 20px !important; height: 20px !important; flex-shrink: 0 !important; }
-            html.sb-collapsed .sb-indicator { display: block !important; width: 42px !important; left: 50% !important; margin-left: -21px !important; border-radius: 12px !important; }
 
             /* Centrado de la cuenta / org switcher (solo colapsado) */
-            html.sb-collapsed .sb-account { display: flex !important; justify-content: center !important; align-items: center !important; padding: 0 !important; margin-bottom: 0.6rem !important; }
             html.sb-collapsed .custom-org-switcher { display: flex !important; justify-content: center !important; width: 100% !important; }
             html.sb-collapsed .org-switcher-btn { width: 36px !important; height: 36px !important; justify-content: center !important; padding: 0 !important; border-radius: 10px !important; }
             }
@@ -185,8 +196,6 @@ import { iconInner } from '../lib/icons';
             html[data-theme="dark"] .org-dropdown { background-color: #111823 !important; box-shadow: 0 30px 60px -12px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.1) !important; }
             
             /* Microinteracciones Premium (Linear-style) */
-            .sb-item { transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s !important; }
-            .sb-item:active { transform: scale(0.94) !important; }
             .org-switcher-btn { transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s !important; }
             .org-switcher-btn:active { transform: scale(0.94) !important; }
             .org-list-item { transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s !important; }
@@ -199,7 +208,7 @@ import { iconInner } from '../lib/icons';
     <body data-currency={ORG.moneda || 'MXN'}>
         <div class="app-shell">
             <!-- ── SIDEBAR (componente independiente) ── -->
-            <Sidebar page={page} />
+            <Sidebar page={page} prefs={ME.widgetPrefs?.[SIDEBAR_PREFS_KEY]} canInvite={memberCan(ME, 'equipo')} />
 
             <!-- ── MAIN ── -->
             <div class="app-main">
@@ -221,7 +230,7 @@ import { iconInner } from '../lib/icons';
                     <button class="tb-search" id="cmdkOpen" type="button" aria-label={t(L, 'layout.aria.buscar_cmdk')}>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('search')}></svg>
                         <span class="tb-search-label">{t(L, 'topbar.buscar')}</span>
-                        <kbd class="tb-kbd">⌘K</kbd>
+                        <kbd class="tb-kbd" data-mod-key>⌘K</kbd>
                     </button>
 
                     <div class="tb-right">
@@ -236,64 +245,66 @@ import { iconInner } from '../lib/icons';
                         )}
                         {canCreateAny && (
                             <div class="tb-create-wrap">
-                                <button class="tb-create" id="tbCreate" type="button" aria-haspopup="menu" aria-expanded="false">
+                                <button class="tb-create" id="tbCreate" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="tbCreateMenu">
                                     <svg class="tb-create-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('plus')}></svg>
                                     <span>{t(L, 'layout.crear')}</span>
                                     <svg class="tb-create-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-down')}></svg>
                                 </button>
                                 <div class="tb-create-menu" id="tbCreateMenu" role="menu" hidden>
                                     {canCotizar && (
-                                        <a href="/app/cotizaciones/nueva" class="tb-create-item" role="menuitem">
+                                        <a href="/app/cotizaciones/nueva" class="tb-create-item" role="menuitem" data-key="c">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('file-plus')}></svg>
                                             <span>{t(L, 'layout.crear.cotizacion')}</span><kbd>C</kbd>
                                         </a>
                                     )}
                                     {canCotizar && (
-                                        <a href="/app/facturas/nueva" class="tb-create-item" role="menuitem">
+                                        <a href="/app/facturas/nueva" class="tb-create-item" role="menuitem" data-key="f">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('document')}></svg>
                                             <span>{t(L, 'layout.crear.factura')}</span><kbd>F</kbd>
                                         </a>
                                     )}
                                     {canClientes && (
-                                        <a href="/app/clientes?nuevo=1" class="tb-create-item" role="menuitem">
+                                        <a href="/app/clientes?nuevo=1" class="tb-create-item" role="menuitem" data-key="l">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('user-plus')}></svg>
-                                            <span>{t(L, 'layout.crear.cliente')}</span>
+                                            <span>{t(L, 'layout.crear.cliente')}</span><kbd>L</kbd>
                                         </a>
                                     )}
                                     {canProductos && (
-                                        <a href="/app/productos?nuevo=1" class="tb-create-item" role="menuitem">
+                                        <a href="/app/productos?nuevo=1" class="tb-create-item" role="menuitem" data-key="p">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('package-plus')}></svg>
-                                            <span>{t(L, 'layout.crear.producto')}</span>
+                                            <span>{t(L, 'layout.crear.producto')}</span><kbd>P</kbd>
                                         </a>
                                     )}
-                                    <button type="button" class="tb-create-item" id="tbCreateTarea" role="menuitem">
+                                    <button type="button" class="tb-create-item" id="tbCreateTarea" role="menuitem" data-key="t">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('checklist')}></svg>
-                                        <span>{t(L, 'layout.crear.tarea')}</span>
+                                        <span>{t(L, 'layout.crear.tarea')}</span><kbd>T</kbd>
                                     </button>
                                 </div>
                             </div>
                         )}
                         {appsCtx && <TopbarApps lang={L} ctx={appsCtx} />}
                         <div class="tb-notif-wrap">
-                            <button class="tb-icon tb-activity" id="notifBtn" type="button" title={t(L, 'layout.aria.actividad')} aria-label={t(L, 'topbar.notificaciones')} aria-haspopup="menu" aria-expanded="false">
+                            <button class="tb-icon tb-activity" id="notifBtn" type="button" title={t(L, 'layout.aria.actividad')} aria-label={notifUnread ? `${notifLabel} (${notifUnread >= 10 ? '9+' : notifUnread})` : notifLabel} data-label={notifLabel} aria-haspopup="dialog" aria-expanded="false" aria-controls="notifPanel">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('bell')}></svg>
-                                <span class="tb-notif-dot" id="notifDot" hidden></span>
+                                <span class="tb-notif-count" id="notifCount" hidden={!notifUnread} data-seen={String(notifSeen)} aria-hidden="true">{notifUnread >= 10 ? '9+' : notifUnread}</span>
                             </button>
-                            <div class="notif-panel" id="notifPanel" role="menu" hidden>
+                            <div class="notif-panel" id="notifPanel" role="dialog" aria-label={t(L, 'layout.notif.titulo')} hidden>
                                 <div class="notif-head">
                                     <strong>{t(L, 'layout.notif.titulo')}</strong>
                                     <button type="button" id="notifMarkAll" class="notif-mark">{t(L, 'layout.notif.marcar_leidas')}</button>
                                 </div>
                                 <div class="notif-list" id="notifList"></div>
-                                <a class="notif-foot" href="/app">{t(L, 'layout.notif.ver_todo')}</a>
+                                <a class="notif-foot" href="/app#actividad">{t(L, 'layout.notif.ver_todo')}</a>
                             </div>
                         </div>
                         <button class="tb-icon tb-help" id="helpBtn" type="button" title={t(L, 'layout.aria.ayuda')} aria-label={t(L, 'layout.aria.ayuda')} aria-haspopup="dialog" aria-expanded="false">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chat-help')}></svg>
                         </button>
-                        <button class="tb-icon tb-theme" id="themeBtn" type="button" title={t(L, 'layout.aria.tema')} aria-label={t(L, 'layout.aria.cambiar_tema')}>
-                            <svg class="tb-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('moon')}></svg>
-                            <svg class="tb-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('sun')}></svg>
+                        <button class="tb-icon tb-theme" id="themeBtn" type="button" title={t(L, 'layout.tema')} aria-label={t(L, 'layout.tema')}
+                                data-l-tema={t(L, 'layout.tema')} data-l-light={t(L, 'layout.tema.claro')} data-l-dark={t(L, 'layout.tema.oscuro')} data-l-system={t(L, 'layout.tema.sistema')}>
+                            <svg class="th-ico th-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('sun')}></svg>
+                            <svg class="th-ico th-dark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('moon')}></svg>
+                            <svg class="th-ico th-system" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('monitor')}></svg>
                         </button>
                         <a class:list={['tb-icon', 'tb-gear', { active: page === 'ajustes' }]} href="/app/ajustes" title={t(L, 'topbar.ajustes')} aria-label={t(L, 'topbar.ajustes')}>
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('gear')}></svg>
@@ -331,26 +342,30 @@ import { iconInner } from '../lib/icons';
             </div>
         </div>
 
-        <!-- Drawer de Ayuda (se abre con el icono ? de la topbar) -->
+        <!-- Drawer de Ayuda (icono ? de la topbar). Dos vistas dentro del mismo
+             panel: INICIO (buscador, accesos, artículos, FAQ y la tarjeta de Cord AI)
+             y CHAT. El paso entre ellas es una View Transition: la tarjeta se expande
+             hasta convertirse en el chat (ver `setView()` en initHelp). Sin shader:
+             en la app un WebGL detrás de una tarjeta de 140px era peso puro. -->
         <div class="help-drawer" id="helpDrawer" hidden>
             <div class="help-backdrop" id="helpBackdrop"></div>
-            <aside class="help-panel" role="dialog" aria-modal="true" aria-label={t(L, 'layout.help.titulo')}>
-                <header class="help-head">
-                    <strong>{t(L, 'layout.help.titulo')}</strong>
-                    <button id="helpClose" class="help-x" type="button" aria-label={t(L, 'layout.help.cerrar')}>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('x')}></svg>
-                    </button>
-                </header>
-                <div class="help-regular">
+            <aside class="help-panel" id="helpPanel" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+                <div class="help-home" id="helpHome">
+                    <header class="help-head">
+                        <h2 class="help-title" id="helpTitle">{t(L, 'layout.help.titulo')}</h2>
+                        <button class="help-x" data-help-close type="button" aria-label={t(L, 'layout.help.cerrar')}>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('x')}></svg>
+                        </button>
+                    </header>
                     <div class="help-search-wrap">
-                        <div class="help-search">
+                        <label class="help-search">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('search')}></svg>
-                            <input id="helpSearch" type="search" placeholder={t(L, 'layout.help.buscar')} autocomplete="off" spellcheck="false" />
-                        </div>
+                            <input id="helpSearch" type="search" placeholder={t(L, 'layout.help.buscar')} aria-label={t(L, 'layout.help.buscar')} autocomplete="off" spellcheck="false" />
+                        </label>
                     </div>
-                    <div class="help-body">
-                        <nav class="help-grid">
-                            <button type="button" class="help-grid-btn" data-help-action="shortcuts">
+                    <div class="help-body" id="helpBody">
+                        <nav class="help-grid" id="helpGrid">
+                            <button type="button" class="help-grid-btn help-desk-only" data-help-action="shortcuts">
                                 <span class="help-grid-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('command')}></svg></span>
                                 <span>{t(L, 'layout.help.atajos')}</span>
                                 <svg class="help-grid-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-right')}></svg>
@@ -360,53 +375,63 @@ import { iconInner } from '../lib/icons';
                                 <span>{t(L, 'layout.help.guia_uso')}</span>
                                 <svg class="help-grid-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-right')}></svg>
                             </button>
-                            <a class="help-grid-btn" href="/soporte">
+                            <a class="help-grid-btn" href={L === 'en' ? '/en/support' : '/soporte'}>
                                 <span class="help-grid-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chat-help')}></svg></span>
                                 <span>{t(L, 'layout.help.contactar_soporte')}</span>
                                 <svg class="help-grid-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-right')}></svg>
                             </a>
                         </nav>
-                        <div class="help-faq-head">{t(L, 'layout.help.faq_titulo')}</div>
-                        <div class="help-inset-group help-faq" id="helpFaq"></div>
-                        <div class="help-empty" id="helpEmpty" hidden>{t(L, 'layout.help.sin_resultados')}</div>
-                    </div>
-</div>
-<style is:global>
-.ai-flare { position: absolute; inset: -50%; background: radial-gradient(circle at center, rgba(255,255,255,1) 0%, rgba(255,255,255,0.7) 40%, rgba(255,255,255,0) 70%); opacity: 0; transform: scale(0.5); pointer-events: none; z-index: 10; transition: all 0.7s cubic-bezier(0.2, 1, 0.3, 1); }
-.help-panel.ai-active .ai-flare { opacity: 1; transform: scale(1.5); }
-html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
-</style>
-<footer class="help-ai">
-                    <div class="help-ai-box" id="helpAiBox" aria-disabled="false" onclick="window.openCordAi && window.openCordAi()">
-                        <div class="help-ai-bg" aria-hidden="true">
-                            <CordDynamicBg client:only="react" colors={SUPPORT_PAL} grain={false} />
-                            <div class="ai-flare"></div>
+                        <section class="help-sec" id="helpArticles" hidden>
+                            <h3 class="help-sec-head">{t(L, 'layout.help.articulos')}</h3>
+                            <div class="help-group" id="helpArticleList"></div>
+                        </section>
+                        <section class="help-sec" id="helpFaqSec">
+                            <h3 class="help-sec-head">{t(L, 'layout.help.faq_titulo')}</h3>
+                            <div class="help-group help-faq" id="helpFaq"></div>
+                        </section>
+                        <div class="help-empty" id="helpEmpty" hidden>
+                            <p>{t(L, 'layout.help.sin_resultados')}</p>
+                            <button type="button" class="help-empty-ai" id="helpEmptyAi">{t(L, 'layout.help.preguntar_ia')}</button>
                         </div>
-                        <div class="help-ai-content">
-                            <button type="button" class="help-ai-back" id="helpAiBack" aria-label={t(L, 'layout.help.volver_menu')} onclick="window.closeCordAi && window.closeCordAi(event)">
-                                <svg style="width:16px;height:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-left')}></svg>
-                                {t(L, 'layout.help.atras')}
-                            </button>
-                            <span class="help-ai-badge">
-                                <svg style="width:10px;height:10px;margin-right:2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('cpu')}></svg>
-                                {t(L, 'layout.help.ia_badge')}
+                    </div>
+                    <footer class="help-ai-dock">
+                        <button type="button" class="help-ai-card" id="helpAiOpen">
+                            <span class="help-ai-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('cpu')}></svg>{t(L, 'layout.help.ia_badge')}</span>
+                            <span class="help-ai-card-title">{t(L, 'layout.help.ia_titulo')}</span>
+                            <span class="help-ai-card-sub">{t(L, 'layout.help.ia_sub')}</span>
+                            <span class="help-ai-fake-input">
+                                <span>{t(L, 'layout.help.ia_placeholder')}</span>
+                                <span class="help-ai-fake-send"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-up')}></svg></span>
                             </span>
-                            <p class="help-ai-title">{t(L, 'layout.help.ia_titulo')}</p>
-                            <div class="help-ai-chat" id="helpAiChat">
-                                <div class="chat-history" id="chatHistory">
-                                    <div class="chat-bubble bot">{RT.chatGreeting}</div>
-                                </div>
-                                <div class="chat-quick" id="chatQuick"></div>
-                                <div class="chat-input-row">
-                                    <input type="text" class="chat-real-input" id="chatRealInput" placeholder={t(L, 'layout.help.ia_placeholder')} autocomplete="off" onfocus="window.openCordAi && window.openCordAi()" onclick="window.openCordAi && window.openCordAi()" ontouchstart="window.openCordAi && window.openCordAi()">
-                                    <button type="button" class="chat-send" id="chatSendBtn" aria-label={t(L, 'layout.help.enviar_mensaje')}>
-                                        <svg style="width:20px;height:20px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('send')}></svg>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </footer>
+                        </button>
+                    </footer>
+                </div>
+
+                <section class="help-chat" id="helpChat" hidden aria-labelledby="helpChatTitle">
+                    <header class="help-chat-head">
+                        <button type="button" class="help-chat-back" id="helpAiBack" aria-label={t(L, 'layout.help.volver_menu')}>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-left')}></svg>
+                            <span>{t(L, 'layout.help.atras')}</span>
+                        </button>
+                        <span class="help-chat-title" id="helpChatTitle">
+                            <span class="help-chat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('cpu')}></svg></span>
+                            {t(L, 'layout.help.ia_titulo')}
+                        </span>
+                        <button class="help-x" data-help-close type="button" aria-label={t(L, 'layout.help.cerrar')}>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('x')}></svg>
+                        </button>
+                    </header>
+                    {/* Vacío a propósito: el saludo lo pinta addMsg() en initHelp, el
+                        mismo constructor que el resto de los mensajes (regla 20). */}
+                    <div class="chat-history" id="chatHistory" role="log" aria-live="polite"></div>
+                    <div class="chat-quick" id="chatQuick"></div>
+                    <form class="chat-input-row" id="chatForm">
+                        <input type="text" class="chat-real-input" id="chatRealInput" placeholder={t(L, 'layout.help.ia_placeholder')} aria-label={t(L, 'layout.help.ia_placeholder')} autocomplete="off" enterkeyhint="send" />
+                        <button type="submit" class="chat-send" id="chatSendBtn" aria-label={t(L, 'layout.help.enviar_mensaje')} disabled>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-up')}></svg>
+                        </button>
+                    </form>
+                </section>
             </aside>
         </div>
 
@@ -416,10 +441,10 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
             <div class="cmdk-panel" role="dialog" aria-modal="true" aria-label={t(L, 'layout.cmdk.aria')}>
                 <div class="cmdk-input-row">
                     <svg class="cmdk-search-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('search')}></svg>
-                    <input id="cmdkInput" type="text" placeholder={t(L, 'layout.cmdk.placeholder')} autocomplete="off" spellcheck="false" />
+                    <input id="cmdkInput" type="text" placeholder={t(L, 'layout.cmdk.placeholder')} autocomplete="off" spellcheck="false" role="combobox" aria-expanded="true" aria-controls="cmdkResults" aria-autocomplete="list" aria-label={t(L, 'layout.cmdk.aria')} />
                     <kbd class="cmdk-esc">ESC</kbd>
                 </div>
-                <div class="cmdk-results" id="cmdkResults"></div>
+                <div class="cmdk-results" id="cmdkResults" role="listbox" aria-label={t(L, 'layout.cmdk.aria')}></div>
                 <div class="cmdk-foot">
                     <span><kbd>↑</kbd><kbd>↓</kbd> {t(L, 'layout.cmdk.navegar')}</span>
                     <span><kbd>↵</kbd> {t(L, 'layout.cmdk.abrir')}</span>
@@ -489,16 +514,17 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
             <div class="kbd-help-panel" role="dialog" aria-modal="true" aria-label={t(L, 'layout.kbd.titulo')}>
                 <div class="kbd-help-head"><strong>{t(L, 'layout.kbd.titulo')}</strong><kbd>esc</kbd></div>
                 <div class="kbd-help-body">
-                    <div class="kbd-row"><span>{t(L, 'layout.kbd.buscar_menu')}</span><span><kbd>⌘</kbd><kbd>K</kbd> · <kbd>/</kbd></span></div>
-                    <div class="kbd-row"><span>{t(L, 'layout.kbd.armar_ia')}</span><span><kbd>C</kbd></span></div>
-                    <div class="kbd-row"><span>{t(L, 'layout.kbd.crear_factura')}</span><span><kbd>F</kbd></span></div>
-                    <div class="kbd-row"><span>{t(L, 'layout.kbd.ir_dashboard')}</span><span><kbd>G</kbd> <kbd>D</kbd></span></div>
-                    <div class="kbd-row"><span>{t(L, 'layout.kbd.ir_cotizaciones')}</span><span><kbd>G</kbd> <kbd>C</kbd></span></div>
-                    <div class="kbd-row"><span>{t(L, 'layout.kbd.ir_clientes')}</span><span><kbd>G</kbd> <kbd>L</kbd></span></div>
-                    <div class="kbd-row"><span>{t(L, 'layout.kbd.ir_productos')}</span><span><kbd>G</kbd> <kbd>P</kbd></span></div>
-                    <div class="kbd-row"><span>{t(L, 'layout.kbd.ir_cobranza')}</span><span><kbd>G</kbd> <kbd>B</kbd></span></div>
-                    <div class="kbd-row"><span>{t(L, 'layout.kbd.ir_analitica')}</span><span><kbd>G</kbd> <kbd>A</kbd></span></div>
-                    <div class="kbd-row"><span>{t(L, 'layout.kbd.ir_facturas')}</span><span><kbd>G</kbd> <kbd>F</kbd></span></div>
+                    <div class="kbd-row"><span>{t(L, 'layout.kbd.buscar_menu')}</span><span><kbd data-mod-key>⌘</kbd><kbd>K</kbd> · <kbd>/</kbd></span></div>
+                    {canCotizar && <div class="kbd-row"><span>{t(L, 'layout.kbd.crear_cotizacion')}</span><span><kbd>C</kbd></span></div>}
+                    {canCotizar && <div class="kbd-row"><span>{t(L, 'layout.kbd.crear_factura')}</span><span><kbd>F</kbd></span></div>}
+                    {canClientes && <div class="kbd-row"><span>{t(L, 'layout.kbd.crear_cliente')}</span><span><kbd>L</kbd></span></div>}
+                    {canProductos && <div class="kbd-row"><span>{t(L, 'layout.kbd.crear_producto')}</span><span><kbd>P</kbd></span></div>}
+                    {canCreateAny && <div class="kbd-row"><span>{t(L, 'layout.kbd.crear_tarea')}</span><span><kbd>T</kbd></span></div>}
+                    {/* Navegación: mismas teclas que muestra la sidebar (src/lib/sidebar-nav.ts). */}
+                    {sidebarShortcuts().map((it) => (
+                        <div class="kbd-row"><span>{t(L, 'layout.kbd.ir_a').replace('{x}', t(L, it.label))}</span><span><kbd>G</kbd> <kbd>{it.key!.toUpperCase()}</kbd></span></div>
+                    ))}
+                    <div class="kbd-row"><span>{t(L, 'sidebar.alternar_menu')}</span><span><kbd>[</kbd></span></div>
                     <div class="kbd-row"><span>{t(L, 'layout.kbd.fijar_quitar')}</span><span><kbd>X</kbd></span></div>
                     <div class="kbd-row"><span>{t(L, 'layout.kbd.mostrar_atajos')}</span><span><kbd>?</kbd></span></div>
                 </div>
@@ -583,33 +609,31 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
        fuera de todo selector (el `:root` de arriba cerraba antes) y el parser CSS
        las descartaba junto con la regla `html.sb-collapsed` que venía después. */
     :root {
-        --sb-bg: linear-gradient(180deg, rgba(255,255,255,0.78) 0%, rgba(255,255,255,0.6) 100%);
-        --sb-border: rgba(255,255,255,0.6);
+        /* Material de vidrio del shell: lo leen `.sidebar` (Sidebar.astro) y
+           `.topbar`, así que las dos pills no pueden divergir. `--sb-bg` va al 72%
+           y DEPENDE del blur; `--sb-bg-solid` es el respaldo de `@supports not`. */
+        --sb-bg: rgba(255, 255, 255, 0.72);
+        --sb-bg-solid: #ffffff;
         --sb-shadow:
-            inset 0 1px 1px rgba(255,255,255,0.95),
-            inset 0 0 0 0.5px rgba(255,255,255,0.5),
-            inset 0 -6px 14px rgba(255,255,255,0.18),
-            0 12px 36px -8px rgba(10,25,47,0.14),
-            0 2px 6px rgba(10,25,47,0.06);
-        /* Sin sheen oscuro: el sidebar usa EXACTAMENTE el mismo material glass que la
-           pill de la topbar (mismo --sb-bg + blur + borde + --sb-shadow). El brillo
-           superior lo da el inset highlight de --sb-shadow, igual que la topbar. */
-        --sb-sheen: transparent;
+            0 8px 32px -8px rgba(0,0,0,0.06),
+            0 4px 12px -2px rgba(0,0,0,0.03),
+            inset 0 0 0 1px rgba(255,255,255,0.5),
+            inset 0 1px 1px rgba(255,255,255,0.9);
         --sb-text: var(--color-text-muted);
         --sb-text-strong: var(--color-text);
         --sb-text-active: var(--color-blue-deep);
         --sb-label: #99a2af;
         --sb-divider: var(--color-border);
-        --sb-hover-bg: rgba(10,25,47,0.05);
-        --sb-active-bg: rgba(10,25,47,0.07);
+        /* Hover y activo son DOS tintes distintos: el hover nunca se confunde con
+           "aquí estás". */
+        --sb-hover-bg: rgba(10,25,47,0.04);
+        --sb-active-bg: rgba(10,25,47,0.075);
         --sb-icon-op: 0.62;
-        --sb-indicator-bg: rgba(255,255,255,0.6);
-        --sb-indicator-shadow: inset 0 1px 1px rgba(255,255,255,0.95), inset 0 0 0 0.5px rgba(255,255,255,0.5), 0 4px 12px -4px rgba(10,25,47,0.12);
         --sb-badge-bg: rgba(10,25,47,0.07);
         --sb-badge-text: var(--color-text-muted);
-        --sb-toggle-bg: rgba(10,25,47,0.04);
-        --sb-toggle-shadow: inset 0 0 0 0.5px rgba(10,25,47,0.08);
-        --sb-toggle-hover-bg: rgba(10,25,47,0.08);
+        /* Contador de vencidas: tinte, no rojo sólido (avisa sin alarmar). */
+        --sb-danger-text: #c2410c;
+        --sb-danger-bg: rgba(234,88,12,0.1);
         /* Dropdowns de la sidebar (cuenta, crear) — SÓLIDO opaco (no debe verse el fondo) */
         --sb-menu-bg: linear-gradient(180deg, #ffffff, #fafbfe);
         --sb-menu-solid-bg: #ffffff;
@@ -624,7 +648,7 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
     
     /* Estado colapsado global: afecta la estructura principal */
     html.sb-collapsed {
-        --sidebar-w: 56px;
+        --sidebar-w: 68px;
         --content-max: 1440px;
     }
 
@@ -666,34 +690,25 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
         --card-shadow-hover: 0 1px 0 rgba(255,255,255,0.05) inset, 0 26px 56px -20px rgba(0,0,0,0.65);
 
         /* Sidebar en oscuro → vidrio navy rico (el look anterior, ahora vía variables) */
-        --sb-bg: linear-gradient(180deg, rgba(22,30,44,0.85) 0%, rgba(13,19,29,0.72) 100%);
-        --sb-border: rgba(255,255,255,0.1);
+        --sb-bg: rgba(24, 30, 40, 0.75);
+        --sb-bg-solid: #181e28;
         --sb-shadow:
-            inset 0 1px 0 rgba(255,255,255,0.12),
-            inset 0 0 0 0.5px rgba(255,255,255,0.05),
-            inset 0 -6px 14px rgba(0,0,0,0.2),
-            0 16px 44px -10px rgba(0,0,0,0.55);
-        /* Igual que la topbar oscura: sin sheen extra, solo el material glass compartido. */
-        --sb-sheen: transparent;
+            0 16px 44px -10px rgba(0,0,0,0.55),
+            0 4px 12px -2px rgba(0,0,0,0.25),
+            inset 0 0 0 1px rgba(255,255,255,0.1),
+            inset 0 1px 1px rgba(255,255,255,0.15);
         --sb-text: rgba(255,255,255,0.55);
         --sb-text-strong: rgba(255,255,255,0.92);
         --sb-text-active: #ffffff;
         --sb-label: rgba(255,255,255,0.3);
         --sb-divider: rgba(255,255,255,0.1);
-        --sb-hover-bg: rgba(255,255,255,0.06);
+        --sb-hover-bg: rgba(255,255,255,0.05);
         --sb-active-bg: rgba(255,255,255,0.1);
         --sb-icon-op: 0.7;
-        --sb-indicator-bg: rgba(255,255,255,0.11);
-        --sb-indicator-shadow:
-            inset 0 1px 1px rgba(255,255,255,0.26),
-            inset 0 0 0 0.5px rgba(255,255,255,0.14),
-            inset 0 -4px 9px rgba(0,0,0,0.16),
-            0 4px 14px -6px rgba(0,0,0,0.5);
         --sb-badge-bg: rgba(255,255,255,0.12);
         --sb-badge-text: rgba(255,255,255,0.85);
-        --sb-toggle-bg: rgba(255,255,255,0.045);
-        --sb-toggle-shadow: inset 0 0 0 0.5px rgba(255,255,255,0.09), inset 0 1px 0 rgba(255,255,255,0.06);
-        --sb-toggle-hover-bg: rgba(255,255,255,0.12);
+        --sb-danger-text: #fb923c;
+        --sb-danger-bg: rgba(251,146,60,0.14);
         --sb-menu-bg: linear-gradient(180deg, #1c2535, #111823);
         --sb-menu-solid-bg: #111823;
         --sb-menu-border: rgba(255,255,255,0.12);
@@ -705,21 +720,6 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
         --sb-avatar-text: #ffffff;
     }
     html[data-theme="dark"] body { background: #0b1018; }
-    /* Topbar: en oscuro, vidrio navy translúcido (en claro es blanco) */
-    html[data-theme="dark"] .topbar {
-        background: rgba(24, 30, 40, 0.75);
-        border: none;
-        box-shadow:
-            0 16px 44px -10px rgba(0,0,0,0.55),
-            0 4px 12px -2px rgba(0,0,0,0.25),
-            inset 0 0 0 1px rgba(255,255,255,0.1),
-            inset 0 1px 1px rgba(255,255,255,0.15);
-    }
-    /* Mismo respaldo que en claro: este fondo está al 75% y hereda el
-       backdrop-filter de la regla scopeada, así que sin blur se transparenta. */
-    @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-        html[data-theme="dark"] .topbar { background: #181e28; }
-    }
     /* Buscador y kbd de la topbar */
     html[data-theme="dark"] .tb-kbd, html[data-theme="dark"] .cmdk-esc { background: rgba(255,255,255,0.06); color: var(--color-text-muted); }
     /* Menú "Crear" → vidrio oscuro */
@@ -730,10 +730,11 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
     }
     html[data-theme="dark"] .tb-create-item kbd { background: rgba(255,255,255,0.08); }
     /* Toggle de tema en la topbar */
-    .tb-theme .tb-sun { display: none; }
-    .tb-theme .tb-moon { display: inline-flex; }
-    html[data-theme="dark"] .tb-theme .tb-sun { display: inline-flex; }
-    html[data-theme="dark"] .tb-theme .tb-moon { display: none; }
+    /* El icono muestra el MODO actual (claro / oscuro / sistema). */
+    .tb-theme .th-ico { display: none; }
+    html:not([data-theme-mode="dark"]):not([data-theme-mode="system"]) .tb-theme .th-light,
+    html[data-theme-mode="dark"] .tb-theme .th-dark,
+    html[data-theme-mode="system"] .tb-theme .th-system { display: inline-flex; }
 
     *, *::before, *::after { box-sizing: border-box; }
     html, body {
@@ -910,11 +911,19 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
 
     /* ════════ Notificaciones (campana) ════════ */
     .tb-notif-wrap { position: relative; }
-    .tb-notif-dot {
-        position: absolute; top: 6px; right: 6px; width: 8px; height: 8px; border-radius: 50%;
-        background: var(--color-danger); border: 1.5px solid #fff;
+    /* Contador (no punto): cuántas faltan por leer, con tinte como los de la sidebar. */
+    .tb-notif-count {
+        position: absolute; top: 2px; right: 1px;
+        min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px;
+        display: inline-flex; align-items: center; justify-content: center;
+        font-family: var(--font-sans); font-size: 0.62rem; font-weight: 700; line-height: 1;
+        font-variant-numeric: tabular-nums;
+        color: var(--color-blue-deep);
+        background: color-mix(in srgb, var(--color-blue-deep) 16%, var(--sb-bg-solid));
+        box-shadow: 0 0 0 1.5px var(--sb-bg-solid);
+        pointer-events: none;
     }
-    .tb-notif-dot[hidden] { display: none; }
+    .tb-notif-count[hidden] { display: none; }
     .notif-panel {
         position: absolute; top: calc(100% + 8px); right: 0; z-index: 60; width: 340px;
         background: var(--surface); border: 1px solid var(--color-border); border-radius: 14px;
@@ -949,77 +958,6 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
     .notif-foot { display: block; text-align: center; padding: 10px; border-top: 1px solid var(--color-border); font-size: 0.78rem; font-weight: 600; color: var(--color-blue-deep); text-decoration: none; }
     .notif-foot:hover { background: var(--color-bg-soft); }
     .notif-empty { padding: 2rem 1rem; text-align: center; font-size: 0.82rem; color: var(--color-text-muted); }
-
-    /* ════════ "Fijados" en el sidebar (localStorage, inyectado por JS → global) ════════ */
-    .sb-pins { display: flex; flex-direction: column; gap: 2px; }
-    .sb-pins[hidden] { display: none; }
-    .sb-pins .sb-group-label {
-        font-size: 0.6rem; font-weight: 800; letter-spacing: 1.4px; text-transform: uppercase;
-        color: var(--sb-label); padding: 2px 11px 5px;
-    }
-    @keyframes pin-in { from { opacity: 0; transform: translateY(-4px) scale(0.98); } to { opacity: 1; transform: none; } }
-    .sb-pin-row { position: relative; display: flex; align-items: center; animation: pin-in 0.25s var(--ease-spring); transition: transform 0.2s var(--ease-spring), padding 0.2s var(--ease-spring), opacity 0.2s; }
-    .sb-pin-row .sb-item {
-        flex: 1; display: flex; align-items: center; gap: 11px;
-        padding: 8px 11px; border-radius: 12px;
-        font-size: 0.86rem; font-weight: 500; color: var(--sb-text); text-decoration: none;
-        transition: color 0.25s var(--ease-ios), background 0.25s var(--ease-ios), transform 0.2s var(--ease-ios);
-        position: relative; overflow: hidden;
-    }
-    .sb-pin-row .sb-item::before {
-        content: ''; position: absolute; inset: 0;
-        background: radial-gradient(70px circle at var(--mx, -100px) var(--my, -100px), rgba(59,130,246,0.15), transparent);
-        opacity: 0; transition: opacity 0.4s var(--ease-ios); z-index: 0; pointer-events: none;
-    }
-    html[data-theme="dark"] .sb-pin-row .sb-item::before {
-        background: radial-gradient(70px circle at var(--mx, -100px) var(--my, -100px), rgba(255,255,255,0.12), transparent);
-    }
-    .sb-pin-row .sb-item:hover::before { opacity: 1; }
-    
-    .sb-pin-row .sb-item svg { width: 16px; height: 16px; opacity: var(--sb-icon-op); flex-shrink: 0; position: relative; z-index: 1; transition: transform 0.4s var(--ease-spring), opacity 0.22s var(--ease-ios), filter 0.25s linear; }
-    .sb-pin-row .sb-item:hover svg { transform: scale(1.12) translateY(-0.5px); opacity: 1; }
-    .sb-pin-row .sb-item:active svg { transform: scale(0.92); transition: transform 0.1s; }
-    .sb-pin-row .sb-item-label { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; position: relative; z-index: 1; transition: opacity 0.2s var(--ease-ios); }
-    .sb-pin-row .sb-item:hover { color: var(--sb-text-strong); }
-    
-    .sb-pin-row .sb-item.active { color: var(--sb-text-active); font-weight: 650; }
-    .sb-pin-row .sb-item.active svg { opacity: 1; transform: scale(1.05); }
-
-    .sb-collapsed .sb-pins .sb-group-label { display: none; }
-    .sb-collapsed .sb-pin-row .sb-item { justify-content: center; padding: 0; width: 42px; height: 42px; margin: 0 auto; }
-    .sb-collapsed .sb-pin-row .sb-item-label { display: none; }
-
-    .sb-pin-x {
-        position: absolute; right: 8px; z-index: 2;
-        width: 22px; height: 22px; border-radius: 6px;
-        display: inline-flex; align-items: center; justify-content: center;
-        border: none; cursor: pointer; line-height: 0;
-        background: rgba(10,25,47,0.04); color: var(--color-text-muted);
-        opacity: 0; transform: translateX(4px);
-        transition: opacity 0.2s var(--ease-ios), transform 0.2s var(--ease-spring), color 0.15s, background 0.15s, box-shadow 0.15s;
-    }
-    html[data-theme="dark"] .sb-pin-x { background: rgba(255,255,255,0.06); }
-    .sb-pin-x svg { width: 13px; height: 13px; }
-    
-    .sb-pin-row:hover .sb-pin-x { opacity: 1; transform: translateX(0); }
-    .sb-pin-x:hover { 
-        color: var(--color-danger); 
-        background: rgba(239,68,68,0.12);
-        box-shadow: 0 2px 8px -2px rgba(239,68,68,0.3);
-    }
-    .sb-collapsed .sb-pin-x { display: none; }
-
-    .sb-pin-row.dragging { opacity: 0.3; transform: scale(0.96); }
-    .sb-pin-row.drag-over-top { transform: translateY(14px); padding-top: 14px; margin-top: -14px; }
-    .sb-pin-row.drag-over-bottom { transform: translateY(-14px); padding-bottom: 14px; margin-bottom: -14px; }
-    
-    .sb-pin-row.drag-over-top::before, .sb-pin-row.drag-over-bottom::after {
-        content: ''; position: absolute; left: 0; right: 0; height: 2px;
-        background: var(--color-blue-deep); border-radius: 2px; z-index: 10; pointer-events: none;
-        box-shadow: 0 0 8px var(--color-blue-deep);
-    }
-    .sb-pin-row.drag-over-top::before { top: 5px; }
-    .sb-pin-row.drag-over-bottom::after { bottom: 5px; }
 
     /* Botón de fijar en el page-head */
     .ph-title-row { display: flex; align-items: center; gap: 8px; }
@@ -1167,7 +1105,7 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
     @media (prefers-reduced-motion: reduce) { .skeleton::after { animation: none; } }
 
     /* ════════ Overlay de atajos de teclado ════════ */
-    .kbd-help { position: fixed; inset: 0; z-index: 700; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+    .kbd-help { position: fixed; inset: 0; z-index: 870; display: flex; align-items: center; justify-content: center; padding: 1rem; }
     .kbd-help[hidden] { display: none; }
     .kbd-help-backdrop { position: absolute; inset: 0; background: rgba(10,25,47,0.35); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); animation: cmdk-fade 0.2s ease; }
     .kbd-help-panel { position: relative; width: min(440px, 100%); background: var(--surface); border: 1px solid var(--color-border); border-radius: 16px; box-shadow: 0 40px 100px -24px rgba(10,25,47,0.5); overflow: hidden; animation: cmdk-pop 0.22s var(--ease-spring); }
@@ -1180,265 +1118,308 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
     .kbd-row > span:last-child { display: inline-flex; gap: 4px; align-items: center; color: var(--color-text-muted); }
 
     /* ════════ Drawer de Ayuda ════════ */
-    .help-drawer { position: fixed; inset: 0; z-index: 710; }
+    /* z-index por ENCIMA del Workbench (820) y del widget de onboarding (850):
+       los dos viven abajo a la derecha y tapaban el pie del panel. Debajo de los
+       toasts (900), que deben seguir viéndose. */
+    .help-drawer { position: fixed; inset: 0; z-index: 870; }
     .help-drawer[hidden] { display: none; }
-    .help-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.15); animation: cmdk-fade 0.25s ease; }
-    
+    .help-backdrop { position: absolute; inset: 0; background: rgba(10,25,47,0.18); animation: help-fade 0.3s var(--ease-ios); }
+    @keyframes help-fade { from { opacity: 0; } }
+
+    /* Hoja flotante, el mismo lenguaje que el sidebar y la topbar: separada del
+       borde, radio amplio y sombra compuesta. Superficie SÓLIDA (#f5f5f7, regla 4):
+       el vidrio translúcido de antes dejaba ver la app detrás del texto. */
     .help-panel {
-        position: absolute; top: 0; right: 0; bottom: 0; width: min(420px, 100%);
+        --help-surface: #f5f5f7;
+        --help-card: #ffffff;
+        --help-line: rgba(10,25,47,0.08);
+        --help-fill: rgba(118,118,128,0.12);
+        position: absolute; top: 12px; right: 12px; bottom: 12px;
+        width: min(420px, calc(100vw - 24px));
         display: flex; flex-direction: column; overflow: hidden;
-        /* Subido de 0.85 a 0.97 (ago 2026): a 0.85 se transparentaba el
-           contenido de la app detrás del texto del drawer — se veía sucio/
-           difícil de leer. Se conserva blur+saturate para el efecto vidrio. */
-        background: rgba(242,242,247, 0.97);
-        backdrop-filter: blur(45px) saturate(190%);
-        -webkit-backdrop-filter: blur(45px) saturate(190%);
-        box-shadow: -10px 0 60px -10px rgba(0,0,0,0.12), inset 1px 0 0 0 rgba(255,255,255,0.5);
-        border: none;
-        border-top-left-radius: 20px;
-        border-bottom-left-radius: 20px;
-        animation: help-slide 0.36s var(--ease-spring);
+        background: var(--help-surface);
+        border-radius: 24px;
+        box-shadow:
+            0 40px 90px -30px rgba(10,25,47,0.45),
+            0 12px 30px -12px rgba(10,25,47,0.22),
+            inset 0 0 0 1px rgba(255,255,255,0.7);
+        color: var(--color-text);
+        animation: help-in 0.5s var(--ease-spring);
     }
     html[data-theme="dark"] .help-panel {
-        background: rgba(28,28,30, 0.97);
-        box-shadow: -10px 0 60px -10px rgba(0,0,0,0.6), inset 1px 0 0 0 rgba(255,255,255,0.1);
+        --help-surface: #1c1c1e;
+        --help-card: #2a2a2d;
+        --help-line: rgba(255,255,255,0.08);
+        --help-fill: rgba(118,118,128,0.24);
+        box-shadow: 0 40px 90px -30px rgba(0,0,0,0.8), inset 0 0 0 1px rgba(255,255,255,0.08);
     }
-    /* Al activar el chat con IA: el panel crece y pasa a superficie blanca sólida
-       (antes se quedaba con el fondo gris translúcido + el shader invertido, se
-       veía lavado/gris — ver fix de .help-ai-bg más abajo). */
-    .help-panel.ai-active { width: min(560px, 96vw); background: #ffffff; }
-    html[data-theme="dark"] .help-panel.ai-active { background: #14161c; }
-    @media (max-width: 620px) { .help-panel.ai-active { width: 100%; } }
-    @keyframes help-slide { from { transform: translateX(100%); } to { transform: translateX(0); } }
-    @media (prefers-reduced-motion: reduce) { .help-panel, .help-backdrop { animation: none; } }
-    @media (max-width: 560px) { .help-panel { width: 100%; border-radius: 0; } }
+    /* En el chat el panel crece: una conversación necesita ancho de lectura. */
+    .help-panel.ai-active { width: min(520px, calc(100vw - 24px)); --help-surface: #ffffff; }
+    html[data-theme="dark"] .help-panel.ai-active { --help-surface: #161618; }
 
-    .help-head { display: flex; align-items: center; justify-content: space-between; padding: 20px 20px 14px; flex-shrink: 0; overflow: hidden; transition: all 0.4s var(--ease-spring); }
-    .help-panel.ai-active .help-head { opacity: 0; transform: translateY(-10px) scale(0.98); pointer-events: none; max-height: 0; padding-top: 0; padding-bottom: 0; margin-top: 0; margin-bottom: 0; border: none; }
-    .help-head strong { font-size: 1.3rem; font-weight: 700; letter-spacing: -0.5px; }
-    .help-x { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border: none; background: rgba(118, 118, 128, 0.12); border-radius: 50%; color: var(--color-text-muted); cursor: pointer; transition: transform 0.2s var(--ease-spring), background 0.2s ease, color 0.2s ease; }
-    html[data-theme="dark"] .help-x { background: rgba(118, 118, 128, 0.24); color: rgba(255,255,255,0.8); }
+    @keyframes help-in { from { transform: translateX(calc(100% + 24px)); } }
+    @keyframes help-out { to { transform: translateX(calc(100% + 24px)); } }
+    @keyframes help-fade-out { to { opacity: 0; } }
+    .help-drawer.is-closing .help-panel { animation: help-out 0.32s cubic-bezier(0.4, 0, 1, 1) forwards; }
+    .help-drawer.is-closing .help-backdrop { animation: help-fade-out 0.32s ease forwards; }
+    @media (prefers-reduced-motion: reduce) {
+        .help-panel, .help-backdrop, .help-drawer.is-closing .help-panel, .help-drawer.is-closing .help-backdrop { animation: none; }
+    }
+
+    /* ── Vista INICIO ── */
+    .help-home { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+    .help-home[hidden] { display: none; }
+    .help-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 22px 22px 14px; flex-shrink: 0; }
+    .help-title { margin: 0; font-size: 1.3rem; font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; color: #050505; }
+    html[data-theme="dark"] .help-title { color: #f5f5f7; }
+    .help-x {
+        display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+        width: 30px; height: 30px; border: none; border-radius: 50%;
+        background: var(--help-fill); color: var(--color-text-muted); cursor: pointer;
+        transition: transform 0.2s var(--ease-spring), background 0.2s ease, color 0.2s ease;
+    }
     .help-x svg { width: 14px; height: 14px; }
-    .help-x:hover { background: rgba(118, 118, 128, 0.2); color: var(--color-text); }
-    html[data-theme="dark"] .help-x:hover { background: rgba(118, 118, 128, 0.35); }
+    .help-x:hover { background: rgba(118,118,128,0.2); color: var(--color-text); }
     .help-x:active { transform: scale(0.9); }
+    .help-x:focus-visible, .help-chat-back:focus-visible { outline: 2px solid rgba(10,25,47,0.35); outline-offset: 2px; }
 
-    .help-search-wrap { padding: 4px 20px 16px; flex-shrink: 0; }
-    .help-search { 
-        display: flex; align-items: center; gap: 10px; padding: 12px 16px; 
-        border-radius: 14px; background: rgba(118, 118, 128, 0.12); 
-        transition: background 0.25s, box-shadow 0.25s;
+    .help-search-wrap { padding: 0 22px 16px; flex-shrink: 0; }
+    .help-search {
+        display: flex; align-items: center; gap: 10px; padding: 0 14px; height: 44px;
+        border-radius: 14px; background: var(--help-card); cursor: text;
+        box-shadow: 0 1px 2px rgba(10,25,47,0.04), inset 0 0 0 1px var(--help-line);
+        transition: box-shadow 0.2s ease;
     }
-    html[data-theme="dark"] .help-search { background: rgba(118, 118, 128, 0.24); }
-    .help-search:focus-within { background: rgba(118, 118, 128, 0.16); box-shadow: 0 0 0 2px rgba(10,25,47,0.1); }
-    html[data-theme="dark"] .help-search:focus-within { background: rgba(118, 118, 128, 0.32); box-shadow: 0 0 0 2px rgba(255,255,255,0.1); }
+    .help-search:focus-within { box-shadow: 0 1px 2px rgba(10,25,47,0.04), inset 0 0 0 1px rgba(10,25,47,0.15), 0 0 0 4px rgba(10,25,47,0.06); }
+    html[data-theme="dark"] .help-search:focus-within { box-shadow: inset 0 0 0 1px rgba(255,255,255,0.22), 0 0 0 4px rgba(255,255,255,0.06); }
     .help-search svg { width: 16px; height: 16px; color: var(--color-text-muted); flex-shrink: 0; }
-    .help-search input { flex: 1; border: none; background: none; outline: none; font-family: var(--font-sans); font-size: 1.05rem; color: var(--color-text); }
-    .help-search input::placeholder { color: var(--color-text-muted); font-size: 1.05rem; }
+    .help-search input { flex: 1; min-width: 0; border: none; background: none; outline: none; font-family: var(--font-sans); font-size: 0.95rem; color: var(--color-text); }
+    .help-search input::placeholder { color: var(--color-text-muted); }
+    .help-search input::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; }
 
-    .help-body { 
-        flex: 1 1 0; overflow-y: auto; padding: 4px 20px 0; 
-        display: flex; flex-direction: column; gap: 24px; min-height: 0; 
-        -webkit-overflow-scrolling: touch;
+    .help-body {
+        flex: 1 1 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+        padding: 2px 22px 22px;
+        display: flex; flex-direction: column; gap: 22px;
+        scrollbar-width: none;
+        /* El FAQ se desvanece al pasar bajo la tarjeta de Cord AI en vez de cortarse. */
+        -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 28px), transparent);
+        mask-image: linear-gradient(to bottom, #000 calc(100% - 28px), transparent);
     }
-    .help-body::after { content: ''; display: block; height: 24px; flex-shrink: 0; }
     .help-body::-webkit-scrollbar { display: none; }
-    .help-body { scrollbar-width: none; }
+    /* Sin esto los grupos (overflow:hidden → min-height 0) se ENCOGEN dentro del
+       cuerpo con scroll y la última fila queda recortada en vez de desplazarse. */
+    .help-body > * { flex-shrink: 0; }
 
-    .help-inset-group { 
-        background: var(--surface);
-        border-radius: 12px; overflow: hidden;
-        border: none;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 0 0 0.5px rgba(0,0,0,0.04);
+    /* Grupos tipo Ajustes de iOS: una sola tarjeta con divisores hairline, no tres
+       cajas sueltas (regla 3). */
+    .help-grid, .help-group {
         display: flex; flex-direction: column;
+        background: var(--help-card); border-radius: 16px; overflow: hidden;
+        box-shadow: 0 1px 2px rgba(10,25,47,0.04), inset 0 0 0 1px var(--help-line);
     }
-    html[data-theme="dark"] .help-inset-group { background: rgba(28,28,30, 0.6); box-shadow: 0 0 0 0.5px rgba(255,255,255,0.06); }
-
-    .help-grid { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
-    .help-grid-btn {
-        display: flex; flex-direction: row; align-items: center; gap: 14px;
-        background: rgba(255,255,255, 0.6);
-        border: none; border-radius: 14px; padding: 12px 14px;
-        cursor: pointer; text-decoration: none; text-align: left;
-        box-shadow: inset 0 0 0 1px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.01);
-        transition: transform 0.2s var(--ease-spring), background 0.2s ease;
+    .help-grid-btn, .help-row {
+        position: relative;
+        display: flex; align-items: center; gap: 12px; width: 100%; box-sizing: border-box;
+        min-height: 52px; padding: 10px 14px;
+        border: none; background: transparent; cursor: pointer; text-decoration: none; text-align: left;
         color: var(--color-text); font-family: var(--font-sans); font-size: 0.92rem; font-weight: 500;
+        transition: background 0.15s ease;
     }
-    html[data-theme="dark"] .help-grid-btn { background: rgba(255,255,255, 0.04); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06); }
-    .help-grid-btn:hover { transform: scale(0.98); background: rgba(255,255,255, 0.9); }
-    html[data-theme="dark"] .help-grid-btn:hover { background: rgba(255,255,255, 0.08); }
-    .help-grid-btn:active { transform: scale(0.96); background: #fff; }
-    html[data-theme="dark"] .help-grid-btn:active { background: rgba(255,255,255,0.1); }
-    
+    .help-grid-btn + .help-grid-btn::before, .help-row + .help-row::before {
+        content: ''; position: absolute; top: 0; left: 56px; right: 0; height: 1px; background: var(--help-line);
+    }
+    .help-row + .help-row::before { left: 14px; }
+    .help-grid-btn:hover, .help-row:hover { background: rgba(10,25,47,0.035); }
+    html[data-theme="dark"] .help-grid-btn:hover, html[data-theme="dark"] .help-row:hover { background: rgba(255,255,255,0.05); }
+    .help-grid-btn:active, .help-row:active { background: rgba(10,25,47,0.07); }
+    .help-grid-btn:focus-visible, .help-row:focus-visible, .faq-q:focus-visible { outline: none; box-shadow: inset 0 0 0 2px rgba(10,25,47,0.25); }
     .help-grid-ico {
-        display: flex; align-items: center; justify-content: center;
-        width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
-        background: var(--color-bg-soft); color: var(--color-text-muted);
-        box-shadow: inset 0 0 0 1px var(--color-border); transition: color 0.2s;
+        display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        width: 30px; height: 30px; border-radius: 9px;
+        background: var(--color-bg-soft); color: var(--color-text);
+        box-shadow: inset 0 0 0 1px var(--help-line);
     }
-    html[data-theme="dark"] .help-grid-ico {
-        background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.8);
-        box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
-    }
-    .help-grid-btn:hover .help-grid-ico { color: var(--color-text); }
-    .help-grid-ico svg { width: 18px; height: 18px; }
+    html[data-theme="dark"] .help-grid-ico { background: rgba(255,255,255,0.06); }
+    .help-grid-ico svg { width: 17px; height: 17px; }
+    .help-grid-chev { margin-left: auto; width: 15px; height: 15px; color: var(--color-text-muted); opacity: 0.5; flex-shrink: 0; transition: transform 0.25s var(--ease-spring), opacity 0.2s; }
+    .help-grid-btn:hover .help-grid-chev, .help-row:hover .help-grid-chev { opacity: 0.9; transform: translateX(2px); }
+    .help-grid[hidden], .help-sec[hidden] { display: none; }
+    /* Atajos de teclado no existen en táctil (regla 16). */
+    @media (max-width: 880px) { .help-desk-only { display: none; } .help-grid-btn.help-desk-only + .help-grid-btn::before { display: none; } }
 
-    .help-grid-chev { margin-left: auto; width: 16px; height: 16px; color: var(--color-text-muted); opacity: 0.4; transition: opacity 0.2s, transform 0.2s var(--ease-spring); flex-shrink: 0; }
-    .help-grid-btn:hover .help-grid-chev { opacity: 0.8; transform: translateX(2px); }
+    .help-row-txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .help-row-txt b { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .help-row-txt i { font-style: normal; font-size: 0.76rem; color: var(--color-text-muted); }
 
-    .help-faq-head { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; color: var(--color-text-muted); margin: 0 16px -14px; }
-    
-    .help-faq { display: flex; flex-direction: column; gap: 0; margin-bottom: -10px; }
+    .help-sec { display: flex; flex-direction: column; gap: 8px; }
+    .help-sec-head { margin: 0 4px; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--color-text-muted); }
+
     .faq-item { position: relative; }
     .faq-item[hidden] { display: none; }
-    .faq-item::after {
-        content: ''; position: absolute; bottom: 0; left: 16px; right: 0; height: 0.5px;
-        background: rgba(0,0,0,0.1);
+    .faq-item + .faq-item::before { content: ''; position: absolute; top: 0; left: 14px; right: 0; height: 1px; background: var(--help-line); }
+    .faq-q {
+        display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%;
+        min-height: 50px; padding: 12px 14px; border: none; background: transparent; cursor: pointer;
+        font-family: var(--font-sans); font-size: 0.92rem; font-weight: 500; line-height: 1.35; color: var(--color-text); text-align: left;
+        transition: background 0.15s ease;
     }
-    html[data-theme="dark"] .faq-item::after { background: rgba(255,255,255,0.1); }
-    .faq-item:last-child::after { display: none; }
-    
-    .faq-q { 
-        display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; 
-        padding: 14px 16px; border: none; background: transparent; cursor: pointer; 
-        font-family: var(--font-sans); font-size: 0.95rem; font-weight: 500; color: var(--color-text); text-align: left; 
+    .faq-q:hover { background: rgba(10,25,47,0.035); }
+    html[data-theme="dark"] .faq-q:hover { background: rgba(255,255,255,0.05); }
+    .faq-q .faq-chev { width: 15px; height: 15px; flex-shrink: 0; color: var(--color-text-muted); opacity: 0.7; transition: transform 0.4s var(--ease-spring); }
+    .faq-item.open .faq-chev { transform: rotate(180deg); }
+    .faq-a { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows 0.35s var(--ease-spring), opacity 0.2s ease; }
+    .faq-item.open .faq-a { grid-template-rows: 1fr; opacity: 1; transition: grid-template-rows 0.4s var(--ease-spring), opacity 0.35s ease 0.05s; }
+    .faq-a > div { overflow: hidden; }
+    .faq-a p { margin: 0; padding: 0 14px 14px; font-size: 0.88rem; line-height: 1.55; color: var(--color-text-muted); }
+
+    .help-empty { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 1.6rem 1rem; text-align: center; }
+    .help-empty[hidden] { display: none; }
+    .help-empty p { margin: 0; font-size: 0.9rem; color: var(--color-text-muted); }
+    .help-empty-ai {
+        border: none; border-radius: 999px; padding: 9px 16px; cursor: pointer;
+        background: #0a192f; color: #fff; font-family: var(--font-sans); font-size: 0.84rem; font-weight: 600;
+        transition: transform 0.2s var(--ease-spring);
+    }
+    .help-empty-ai:hover { transform: scale(1.03); }
+    .help-empty-ai:active { transform: scale(0.97); }
+
+    /* ── Tarjeta de Cord AI (pie de la vista inicio) ──
+       Navy de Cord con dos luces estáticas en CSS. Antes había un shader WebGL
+       (CordDynamicBg) montado como isla de React en TODAS las páginas de la app
+       solo para pintar este fondo. */
+    .help-ai-dock { flex-shrink: 0; padding: 0 22px 22px; }
+    .help-ai-card {
+        position: relative; isolation: isolate; overflow: hidden;
+        display: flex; flex-direction: column; align-items: flex-start; gap: 4px; width: 100%;
+        padding: 16px 16px 14px; border: none; border-radius: 20px; cursor: pointer; text-align: left;
+        font-family: var(--font-sans); color: #fff;
+        background:
+            radial-gradient(120% 140% at 100% 0%, rgba(47,109,240,0.38) 0%, rgba(47,109,240,0) 55%),
+            radial-gradient(90% 120% at 0% 100%, rgba(13,148,136,0.28) 0%, rgba(13,148,136,0) 60%),
+            #0a1324;
+        box-shadow: 0 18px 40px -18px rgba(10,25,47,0.7), inset 0 0 0 1px rgba(255,255,255,0.08), inset 0 1px 0 rgba(255,255,255,0.1);
+        transition: transform 0.35s var(--ease-spring), box-shadow 0.35s var(--ease-spring);
+    }
+    .help-ai-card:hover { transform: translateY(-2px); box-shadow: 0 24px 50px -18px rgba(10,25,47,0.75), inset 0 0 0 1px rgba(255,255,255,0.12), inset 0 1px 0 rgba(255,255,255,0.12); }
+    .help-ai-card:active { transform: scale(0.985); }
+    .help-ai-card:focus-visible { outline: 2px solid #6b9bf2; outline-offset: 3px; }
+    .help-ai-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 0.64rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #9cbcf5; }
+    .help-ai-badge svg { width: 12px; height: 12px; }
+    .help-ai-card-title { margin-top: 4px; font-size: 1.02rem; font-weight: 650; letter-spacing: -0.02em; }
+    .help-ai-card-sub { font-size: 0.8rem; line-height: 1.4; color: rgba(255,255,255,0.62); }
+    .help-ai-fake-input {
+        display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%;
+        margin-top: 10px; padding: 0 6px 0 14px; height: 42px; border-radius: 999px;
+        background: rgba(255,255,255,0.07); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1);
+        font-size: 0.86rem; color: rgba(255,255,255,0.55);
+        transition: background 0.2s ease;
+    }
+    .help-ai-fake-input > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .help-ai-card:hover .help-ai-fake-input { background: rgba(255,255,255,0.1); }
+    .help-ai-fake-send {
+        display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        width: 30px; height: 30px; border-radius: 50%; background: #fff; color: #0a1324;
+    }
+    .help-ai-fake-send svg { width: 15px; height: 15px; }
+
+    /* ── Vista CHAT ── */
+    .help-chat { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+    .help-chat[hidden] { display: none; }
+    .help-chat-head { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; padding: 14px 14px 12px 10px; flex-shrink: 0; border-bottom: 1px solid var(--help-line); }
+    .help-chat-head .help-x { justify-self: end; }
+    .help-chat-back {
+        justify-self: start; display: inline-flex; align-items: center; gap: 4px;
+        height: 32px; padding: 0 10px 0 6px; border: none; border-radius: 999px; background: none; cursor: pointer;
+        font-family: var(--font-sans); font-size: 0.84rem; font-weight: 600; color: var(--color-text-muted);
         transition: background 0.15s ease, color 0.15s ease;
     }
-    .faq-q:active { background: rgba(10,25,47,0.06); }
-    html[data-theme="dark"] .faq-q:active { background: rgba(255,255,255,0.08); }
-    
-    .faq-item.open .faq-q { color: var(--color-text); }
-    .faq-q .faq-chev { width: 16px; height: 16px; flex-shrink: 0; color: #99a2af; transition: transform 0.4s var(--ease-spring); }
-    .faq-item.open .faq-chev { transform: rotate(180deg); }
-    
-    .faq-a { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.35s cubic-bezier(0.2, 1, 0.3, 1); opacity: 0; }
-    .faq-item.open .faq-a { grid-template-rows: 1fr; opacity: 1; transition: grid-template-rows 0.4s cubic-bezier(0.2, 1, 0.3, 1), opacity 0.5s ease; }
-    .faq-a > div { overflow: hidden; }
-    .faq-a p { padding: 0 16px 16px; margin: 0; font-size: 0.9rem; line-height: 1.55; color: var(--color-text-muted); transform: translateY(-4px); transition: transform 0.4s cubic-bezier(0.2, 1, 0.3, 1); }
-    .faq-item.open .faq-a p { transform: translateY(0); }
-
-    .help-empty { padding: 2rem 1rem; text-align: center; font-size: 0.95rem; color: var(--color-text-muted); }
-    .help-empty[hidden] { display: none; }
-
-    /* -- AI TRANSITION -- */
-    .help-panel { transition: width 0.35s var(--ease-spring); }
-    
-    .help-regular { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; max-height: 1000px; overflow: hidden; transition: opacity 0.3s ease, transform 0.4s var(--ease-spring), flex 0.4s var(--ease-spring), max-height 0.4s var(--ease-spring), padding 0.4s var(--ease-spring), margin 0.4s var(--ease-spring); }
-    .help-panel.ai-active .help-regular { opacity: 0; transform: translateY(-10px) scale(0.98); pointer-events: none; flex: 0 0 0px; max-height: 0; padding-top: 0; padding-bottom: 0; margin-top: 0; margin-bottom: 0; }
-    
-    .help-ai { padding: 20px; flex-shrink: 0; background: transparent; transition: all 0.4s var(--ease-spring); display: flex; flex-direction: column; }
-    .help-panel.ai-active .help-ai { padding: 20px; flex: 1 1 0; }
-    
-    .help-ai-box { 
-        position: relative; border-radius: 16px; padding: 18px; 
-        background: #020610;
-        border: 1px solid rgba(255,255,255,0.1);
-        box-shadow: 0 10px 30px -10px rgba(0,0,0,0.3);
-        overflow: hidden;
-        transition: all 0.4s var(--ease-spring);
-        display: flex; flex-direction: column;
+    .help-chat-back svg { width: 16px; height: 16px; }
+    .help-chat-back:hover { background: var(--help-fill); color: var(--color-text); }
+    .help-chat-title { display: inline-flex; align-items: center; gap: 8px; font-size: 0.92rem; font-weight: 650; letter-spacing: -0.01em; }
+    .help-chat-ico {
+        display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 8px;
+        background: radial-gradient(120% 120% at 100% 0%, rgba(47,109,240,0.55), rgba(47,109,240,0) 60%), #0a1324; color: #cfe0ff;
     }
-    html[data-theme="dark"] .help-ai-box { box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.05); }
+    .help-chat-ico svg { width: 14px; height: 14px; }
 
-    .help-panel.ai-active .help-ai-box {
-        border-radius: 0; border: none; box-shadow: none; background: transparent;
-        flex: 1 1 0; padding: 0;
+    .chat-history {
+        flex: 1 1 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+        display: flex; flex-direction: column; gap: 14px; padding: 18px 18px 8px;
+        scrollbar-width: none;
     }
-    html[data-theme="dark"] .help-panel.ai-active .help-ai-box { background: transparent; box-shadow: none; }
-
-    .help-ai-bg { position: absolute; inset: 0; z-index: 0; pointer-events: none; transition: opacity 0.5s cubic-bezier(0.2, 1, 0.3, 1); transform-origin: top center; }
-    /* Al expandir el chat el shader se desvanece por completo — deja la superficie
-       blanca sólida del panel (.help-panel.ai-active), nada de invertir/desaturar. */
-    .help-panel.ai-active .help-ai-bg { opacity: 0; }
-    
-    .help-ai-content { position: relative; z-index: 1; flex: 1 1 0; display: flex; flex-direction: column; transition: transform 0.4s var(--ease-spring); }
-    
-    .help-ai-back { display: none; align-items: center; gap: 6px; font-size: 0.8rem; font-weight: 600; color: var(--color-text-muted); background: none; border: none; cursor: pointer; padding: 0; margin-bottom: 16px; transition: color 0.2s; }
-    .help-ai-back:hover { color: var(--color-text); }
-    .help-panel.ai-active .help-ai-back { display: inline-flex; }
-
-    .help-ai-badge, .help-ai-title { transition: all 0.4s cubic-bezier(0.2, 1, 0.3, 1); overflow: hidden; max-height: 40px; margin-bottom: 12px; }
-    .help-panel.ai-active .help-ai-badge, .help-panel.ai-active .help-ai-title { opacity: 0; transform: translateY(-10px); max-height: 0; margin-bottom: 0; pointer-events: none; }
-    
-    .help-ai-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: rgba(148, 187, 233, 0.9); margin-bottom: 12px; }
-    .help-ai-title { margin: 0 0 12px; font-size: 0.95rem; font-weight: 600; color: #ffffff; letter-spacing: -0.2px; }
-    
-    
-    
-    .help-panel:not(.ai-active) .help-ai-chat { display: flex; flex-direction: column; }
-    .help-panel.ai-active .help-ai-chat { display: flex; flex-direction: column; flex: 1 1 0; min-height: 0; }
-    .help-panel.ai-active .help-ai-chat { display: flex; animation: help-fadein 0.4s 0.1s both; }
-    @keyframes help-fadein { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    
-    .chat-history { flex: 1 1 0; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; padding-bottom: 20px; -webkit-overflow-scrolling: touch; }
-    .help-panel:not(.ai-active) .chat-history { display: none; }
     .chat-history::-webkit-scrollbar { display: none; }
-    .chat-history { scrollbar-width: none; }
-
-    /* Preguntas rápidas prefabricadas (estilo Stripe): respuesta instantánea sin
-       llamar a la IA — ahorra tokens en las dudas más comunes. */
-    .chat-quick { display: flex; flex-direction: column; gap: 8px; padding: 2px 0 14px; flex-shrink: 0; transition: opacity 0.25s ease, max-height 0.3s ease; }
-    .help-panel:not(.ai-active) .chat-quick { display: none; }
-    .chat-quick[hidden] { display: none; }
-    .chat-quick-label { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--color-text-muted); margin: 0 2px 2px; }
-    .chat-quick-btn {
-        display: flex; align-items: center; justify-content: space-between; gap: 10px;
-        text-align: left; width: 100%; padding: 11px 14px; border-radius: 14px;
-        border: none; background: rgba(118, 118, 128, 0.1); color: var(--color-text);
-        font-family: var(--font-sans); font-size: 0.85rem; font-weight: 500; line-height: 1.35;
-        cursor: pointer; transition: background 0.2s ease, transform 0.2s var(--ease-spring);
+    /* Regla 20: toda burbuja lleva su autor — dos mensajes seguidos del mismo lado
+       no se distinguen por posición ni color. Un solo constructor (addMsg). */
+    .chat-msg { display: flex; flex-direction: column; gap: 4px; max-width: 86%; animation: chat-in 0.35s var(--ease-spring); }
+    .chat-msg.bot { align-self: flex-start; }
+    .chat-msg.user { align-self: flex-end; align-items: flex-end; }
+    @keyframes chat-in { from { opacity: 0; transform: translateY(6px); } }
+    .chat-author { font-size: 0.7rem; font-weight: 600; color: var(--color-text-muted); padding: 0 4px; }
+    .chat-bubble > div:first-child { white-space: pre-line; }
+    .chat-bubble { padding: 10px 14px; border-radius: 18px; font-size: 0.9rem; line-height: 1.5; font-family: var(--font-sans); overflow-wrap: anywhere; }
+    .chat-msg.bot .chat-bubble { background: var(--help-fill); color: var(--color-text); border-top-left-radius: 6px; }
+    .chat-msg.user .chat-bubble { background: #0a192f; color: #fff; border-top-right-radius: 6px; }
+    html[data-theme="dark"] .chat-msg.user .chat-bubble { background: #e8eef8; color: #0a192f; }
+    .chat-links { display: flex; flex-direction: column; margin-top: 8px; border-top: 1px solid var(--help-line); }
+    .chat-links a {
+        display: flex; align-items: center; justify-content: space-between; gap: 8px;
+        padding: 8px 0 0; font-size: 0.84rem; font-weight: 600; color: var(--color-text); text-decoration: none;
     }
-    .chat-quick-btn:hover { background: rgba(118, 118, 128, 0.18); transform: translateY(-1px); }
-    .chat-quick-btn:active { transform: scale(0.98); }
-    html[data-theme="dark"] .chat-quick-btn { background: rgba(255,255,255,0.06); }
-    html[data-theme="dark"] .chat-quick-btn:hover { background: rgba(255,255,255,0.1); }
-    .chat-quick-btn svg { width: 14px; height: 14px; flex-shrink: 0; color: var(--color-text-muted); opacity: 0.6; }
-    
-    .chat-bubble { padding: 12px 16px; border-radius: 14px; font-size: 0.92rem; line-height: 1.5; max-width: 85%; font-family: var(--font-sans); }
-    .chat-bubble.bot { background: rgba(118, 118, 128, 0.12); color: var(--color-text); align-self: flex-start; border-bottom-left-radius: 4px; }
-    html[data-theme="dark"] .chat-bubble.bot { background: rgba(118, 118, 128, 0.24); }
-    
-    .chat-bubble.user { background: var(--color-text); color: var(--color-bg); align-self: flex-end; border-bottom-right-radius: 4px; box-shadow: 0 4px 12px rgba(10,25,47,0.15); }
-    html[data-theme="dark"] .chat-bubble.user { box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
-
+    .chat-links a + a { padding-top: 6px; }
+    .chat-links a:hover { text-decoration: underline; }
+    .chat-links svg { width: 14px; height: 14px; flex-shrink: 0; opacity: 0.6; }
     .typing-dots { display: inline-flex; gap: 4px; padding: 4px 2px; align-items: center; }
-    .typing-dots span { width: 5px; height: 5px; border-radius: 50%; background: var(--color-text-muted); animation: help-typing 1.4s infinite both; }
-    .typing-dots span:nth-child(1) { animation-delay: 0s; }
+    .typing-dots span { width: 6px; height: 6px; border-radius: 50%; background: var(--color-text-muted); animation: help-typing 1.4s infinite both; }
     .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
     .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
     @keyframes help-typing { 0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; } 40% { transform: scale(1); opacity: 1; } }
-    
-    .help-panel:not(.ai-active) .help-ai-box { cursor: pointer; transition: transform 0.3s var(--ease-spring), box-shadow 0.3s; }
-    .help-panel:not(.ai-active) .help-ai-box:hover { transform: translateY(-4px); box-shadow: 0 16px 40px -10px rgba(0,0,0,0.4); }
-    .help-panel:not(.ai-active) .help-ai-input { cursor: pointer; }
-    
-    .chat-input-row { display: flex; gap: 10px; margin-top: auto; padding-top: 10px; }
-        .help-panel:not(.ai-active) .chat-real-input {
-        font-size: 0.95rem; color: rgba(255,255,255,1); background: rgba(255,255,255,0.06); 
-        border: 1px solid rgba(255,255,255,0.15); border-radius: 12px; padding: 12px 14px; 
-        cursor: text; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); 
-        transition: all 0.4s cubic-bezier(0.2, 1, 0.3, 1); box-shadow: 0 4px 12px rgba(0,0,0,0.2); outline: none; flex: 1; width: 100%; font-family: var(--font-sans);
-    }
-    .help-panel:not(.ai-active) .chat-real-input::placeholder { color: rgba(255,255,255,0.6); font-size: 0.95rem; }
-    html[data-theme="dark"] .help-panel:not(.ai-active) .chat-real-input { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.05); }
+    @media (prefers-reduced-motion: reduce) { .chat-msg { animation: none; } .typing-dots span { animation: none; } }
 
-    .help-panel.ai-active .chat-real-input {
-        flex: 1; width: 100%; padding: 12px 16px; border-radius: 20px; border: none; 
-        background: rgba(118, 118, 128, 0.12); font-family: var(--font-sans); 
-        font-size: 0.95rem; color: var(--color-text); outline: none; 
-        transition: all 0.4s cubic-bezier(0.2, 1, 0.3, 1); box-shadow: none;
+    /* Preguntas sugeridas: respuesta instantánea desde el FAQ. */
+    .chat-quick { display: flex; flex-wrap: wrap; gap: 6px; padding: 4px 18px 12px; flex-shrink: 0; }
+    .chat-quick[hidden] { display: none; }
+    .chat-quick-btn {
+        border: none; border-radius: 999px; padding: 8px 13px; cursor: pointer; text-align: left;
+        background: var(--help-card); color: var(--color-text);
+        box-shadow: inset 0 0 0 1px var(--help-line);
+        font-family: var(--font-sans); font-size: 0.8rem; font-weight: 500; line-height: 1.3;
+        transition: background 0.15s ease, transform 0.2s var(--ease-spring);
     }
-    html[data-theme="dark"] .help-panel.ai-active .chat-real-input { background: rgba(118, 118, 128, 0.24); }
-    .help-panel.ai-active .chat-real-input:focus { background: rgba(118, 118, 128, 0.16); box-shadow: 0 0 0 2px rgba(10,25,47,0.1); }
-    html[data-theme="dark"] .help-panel.ai-active .chat-real-input:focus { background: rgba(118, 118, 128, 0.32); box-shadow: 0 0 0 2px rgba(255,255,255,0.1); }
-    .help-panel.ai-active .chat-real-input::placeholder { color: var(--color-text-muted); font-size: 0.95rem; }
-    
-    .help-panel:not(.ai-active) .chat-send { display: none; }
-    .chat-send { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 50%; background: var(--color-text); color: var(--color-bg); border: none; cursor: pointer; flex-shrink: 0; transition: transform 0.2s var(--ease-spring), opacity 0.2s; opacity: 0.5; }
-    .chat-send.active { opacity: 1; }
-    .chat-send:active { transform: scale(0.9); }
+    .help-panel.ai-active .chat-quick-btn { background: #f5f5f7; box-shadow: none; }
+    html[data-theme="dark"] .help-panel.ai-active .chat-quick-btn { background: rgba(255,255,255,0.07); }
+    .chat-quick-btn:hover { background: #ececf0; }
+    html[data-theme="dark"] .help-panel.ai-active .chat-quick-btn:hover { background: rgba(255,255,255,0.12); }
+    .chat-quick-btn:active { transform: scale(0.97); }
 
-    @media (max-width: 560px) { .help-panel { width: 100%; } }
+    .chat-input-row { display: flex; align-items: center; gap: 8px; margin: 0; padding: 12px 14px 14px; flex-shrink: 0; border-top: 1px solid var(--help-line); }
+    .chat-real-input {
+        flex: 1; min-width: 0; height: 44px; padding: 0 16px; border: none; border-radius: 999px;
+        background: #f5f5f7; font-family: var(--font-sans); font-size: 0.92rem; color: var(--color-text); outline: none;
+        transition: box-shadow 0.2s ease, background 0.2s ease;
+    }
+    html[data-theme="dark"] .chat-real-input { background: rgba(255,255,255,0.07); }
+    .chat-real-input:focus { box-shadow: 0 0 0 1px rgba(10,25,47,0.15), 0 0 0 4px rgba(10,25,47,0.06); background: #fff; }
+    html[data-theme="dark"] .chat-real-input:focus { background: rgba(255,255,255,0.1); box-shadow: 0 0 0 1px rgba(255,255,255,0.2); }
+    .chat-real-input::placeholder { color: var(--color-text-muted); }
+    .chat-send {
+        display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+        width: 40px; height: 40px; border-radius: 50%; border: none; cursor: pointer;
+        background: #0a192f; color: #fff;
+        transition: transform 0.2s var(--ease-spring), opacity 0.2s ease;
+    }
+    html[data-theme="dark"] .chat-send { background: #e8eef8; color: #0a192f; }
+    .chat-send svg { width: 17px; height: 17px; }
+    .chat-send:disabled { opacity: 0.3; cursor: default; }
+    .chat-send:not(:disabled):hover { transform: scale(1.06); }
+    .chat-send:not(:disabled):active { transform: scale(0.92); }
+
+    /* ── Transición inicio ⇄ chat ──
+       Durante el cambio las dos vistas se apilan ancladas a la derecha, cada una a
+       su ancho final (lo fija setView() en initHelp), y el panel recorta. El chat
+       va encima: entra desde la derecha como una pantalla de navegación iOS. */
+    .help-home.is-sliding, .help-chat.is-sliding { position: absolute; top: 0; right: 0; bottom: 0; will-change: transform; }
+    .help-chat.is-sliding { z-index: 3; }
 
     /* ──────────────────────────────────────────────────────────────
        PULIDO MÓVIL GLOBAL (is:global → alcanza inputs de las páginas hijas)
@@ -1447,7 +1428,7 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
         /* iOS hace zoom automático al enfocar un campo con font-size < 16px.
            Forzar 16px en TODOS los controles de la app lo evita (sin tocar desktop). */
         input, select, textarea,
-        .m-input, .task-input, .task-date {
+        .m-input, .tk-add-input {
             font-size: 16px !important;
         }
         /* Áreas táctiles cómodas en los controles tipo píldora/tab. */
@@ -1473,15 +1454,12 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
         margin: 1rem 1rem 0;
         padding: 0.5rem 0.6rem 0.5rem 0.85rem;
         border-radius: 22px; /* iOS Squircle */
-        background: rgba(255, 255, 255, 0.72);
+        /* Mismo material que la sidebar: tokens --sb-* (claro y oscuro). */
+        background: var(--sb-bg);
         backdrop-filter: blur(40px) saturate(1.8);
         -webkit-backdrop-filter: blur(40px) saturate(1.8);
         border: none;
-        box-shadow:
-            0 8px 32px -8px rgba(0,0,0,0.06),
-            0 4px 12px -2px rgba(0,0,0,0.03),
-            inset 0 0 0 1px rgba(255,255,255,0.5),
-            inset 0 1px 1px rgba(255,255,255,0.9);
+        box-shadow: var(--sb-shadow);
         position: sticky; top: 1rem; z-index: 50;
     }
     /* El fondo de arriba está al 72%: DEPENDE del blur para verse sólido.
@@ -1491,7 +1469,7 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
        `not (backdrop-filter: …)` a secas no dispara en un navegador que
        soporta la estándar pero recibió sólo la prefijada. */
     @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-        .topbar { background: #fff; }
+        .topbar { background: var(--sb-bg-solid); }
     }
     .tb-demo {
         font-size: 0.58rem; font-weight: 800; letter-spacing: 1.2px;
@@ -1554,13 +1532,13 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
         background: var(--color-blue-deep); color: #fff;
         font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; white-space: nowrap;
         box-shadow: 0 6px 18px -8px rgba(10,25,47,0.5), inset 0 1px 0 rgba(255,255,255,0.12);
-        transition: transform 0.35s var(--ease-spring), box-shadow 0.35s var(--ease-spring), background 0.2s;
+        transition: background-color 0.12s;
     }
     .tb-create-plus { width: 15px; height: 15px; flex-shrink: 0; }
     .tb-create-caret { width: 12px; height: 12px; opacity: 0.7; flex-shrink: 0; transition: transform 0.25s var(--ease-spring); }
     .tb-create[aria-expanded="true"] .tb-create-caret { transform: rotate(180deg); }
-    .tb-create:hover { transform: translateY(-1px); background: #11233f; box-shadow: 0 10px 24px -8px rgba(10,25,47,0.55), inset 0 1px 0 rgba(255,255,255,0.16); }
-    .tb-create:active { transform: scale(0.97); }
+    .tb-create:hover { background: color-mix(in srgb, var(--color-blue-deep) 86%, #000); }
+    .tb-create:focus-visible { outline: 2px solid var(--color-blue-deep); outline-offset: 2px; }
     .tb-create-menu {
         position: absolute; top: calc(100% + 8px); right: 0; z-index: 60; min-width: 232px;
         padding: 6px; border-radius: 14px;
@@ -1609,32 +1587,18 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
     .tb-icon {
         display: inline-flex; align-items: center; justify-content: center;
         width: 36px; height: 36px; border-radius: 9px; color: var(--color-text-muted);
-        background: transparent; transition: background 0.2s, color 0.2s, transform 0.2s var(--ease-spring); outline: none;
+        background: transparent; transition: background-color 0.12s, color 0.12s; outline: none;
         border: none; cursor: pointer;
     }
-    .tb-icon svg { width: 17px; height: 17px; transition: transform 0.3s var(--ease-spring); }
-    .tb-icon:hover { background: var(--color-bg-soft); color: var(--color-blue-deep); transform: translateY(-1px); }
-    .tb-icon:active { transform: scale(0.94); }
+    /* Iconos quietos (como Linear/Stripe): el hover cambia el fondo, nada se
+       mueve. Antes cada icono subía 1 px, la campana "sonaba", la ayuda se sacudía
+       y el engrane giraba; con la sidebar sobria, la topbar era lo más ruidoso. */
+    .tb-icon svg { width: 17px; height: 17px; }
+    .tb-icon:hover { background: var(--sb-hover-bg); color: var(--color-text); }
+    .tb-icon[aria-expanded="true"] { background: var(--sb-active-bg); color: var(--color-text); }
     .tb-icon:focus-visible { box-shadow: 0 0 0 2px var(--color-blue-deep); }
-    /* El engrane queda marcado cuando estás en cualquier página de Ajustes */
-    .tb-icon.active { background: var(--color-blue-deep); color: #fff; }
-
-    /* Micro-interacciones topbar (notis, ayuda, ajustes) */
-    .tb-gear:hover svg { transform: rotate(60deg); }
-    @keyframes help-wiggle {
-        0%, 100% { transform: rotate(0); }
-        25% { transform: rotate(-12deg) scale(1.05); }
-        75% { transform: rotate(12deg) scale(1.05); }
-    }
-    .tb-help:hover svg { animation: help-wiggle 0.4s var(--ease-spring); }
-    @keyframes bell-ring {
-        0%, 100% { transform: rotate(0); }
-        20% { transform: rotate(14deg) scale(1.05); }
-        40% { transform: rotate(-14deg) scale(1.05); }
-        60% { transform: rotate(7deg) scale(1.05); }
-        80% { transform: rotate(-7deg) scale(1.05); }
-    }
-    .tb-activity:hover svg { animation: bell-ring 0.6s var(--ease-spring); transform-origin: top center; }
+    /* El engrane marcado en Ajustes: mismo tinte de "aquí estás" que la sidebar. */
+    .tb-icon.active { background: var(--sb-active-bg); color: var(--sb-text-active); }
 
     /* ── Píldora de la guía de configuración (estado minimizado del widget) ── */
     .onb-pill {
@@ -1643,10 +1607,10 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
         background: var(--color-bg-soft); border: 1px solid var(--color-border);
         color: var(--color-text); cursor: pointer; font-family: var(--font-sans);
         animation: onb-pill-in 0.4s var(--ease-spring);
-        transition: border-color 0.25s, box-shadow 0.25s, transform 0.25s var(--ease-spring);
+        transition: border-color 0.12s, background-color 0.12s;
     }
     .onb-pill[hidden] { display: none; }
-    .onb-pill:hover { border-color: rgba(10,25,47,0.2); transform: translateY(-1px); box-shadow: 0 6px 16px -10px rgba(10,25,47,0.5); }
+    .onb-pill:hover { border-color: rgba(10,25,47,0.2); background: var(--surface); }
     @keyframes onb-pill-in { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: none; } }
     .onb-pill-ring { position: relative; width: 26px; height: 26px; flex-shrink: 0; }
     .onb-pill-ring svg { width: 26px; height: 26px; transform: rotate(-90deg); }
@@ -1665,6 +1629,10 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
     .page-head {
         padding: 1.6rem 2rem 0;
         animation: app-fadein 0.5s var(--ease-spring) both;
+        /* La animación (transform) crea un contexto de apilamiento propio; sin z-index,
+           el contenido que viene después (el grid de widgets, z-index 1) se pintaba
+           ENCIMA de lo que sale del encabezado: tooltips de Biblioteca/Restablecer/Listo. */
+        position: relative; z-index: 3;
     }
     .ph-inner {
         max-width: var(--content-max); width: 100%;
@@ -1758,17 +1726,23 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
         .tb-search:hover { background: var(--color-bg-soft); box-shadow: none; }
         .tb-search svg { width: 18px; height: 18px; }
         .tb-search-label, .tb-kbd { display: none; }
-        /* Topbar móvil = solo lupa + notificaciones. Crear, engrane, ayuda y guía pasan al drawer. */
+        /* Topbar móvil = lupa, guía (solo el anillo), crear, apps y notificaciones.
+           Engrane, ayuda y tema viven en el drawer. */
         .tb-notif-wrap { display: inline-flex; }
         .tb-gear, .tb-help, .tb-theme { display: none; }
         .tb-create {
             width: 36px; height: 36px; border-radius: 50%; padding: 0; justify-content: center;
         }
         .tb-create span, .tb-create-caret { display: none; }
-        .onb-pill { display: none; }
+        /* La guía minimizada vive en esta píldora: ocultarla en móvil dejaba la guía
+           inalcanzable. Se queda solo el anillo de progreso. */
+        .onb-pill { padding: 3px; gap: 0; }
+        .onb-pill-label { display: none; }
         /* El panel de notificaciones a ancho casi completo */
         .notif-panel { width: min(340px, calc(100vw - 1.5rem)); }
         .ph-pin { display: none; }
+        /* Sin teclado físico no hay atajos que enseñar (regla 16). */
+        .cmdk-kbd { display: none; }
     }
 </style>
 
@@ -1781,7 +1755,10 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
 
 <script>
     import { iconInner, iconSvg } from '../lib/icons';
+    import { normalizeText, tokenize, scoreDoc } from '../lib/help-search';
+    import { wireTopbarMenu } from '../lib/topbar-menu';
     const mobileUi = () => window.matchMedia('(max-width: 880px)').matches;
+    const escAttr = (s: string) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
 
     // ── Salir del entorno de prueba (banner ámbar) ──
     // Limpia la cookie (fuente de verdad server-side) + el espejo en localStorage
@@ -1835,9 +1812,10 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
         };
         const I18N = (window as any).CORD_I18N || {};
         const G = I18N.cmdkGroups || { ir_a: 'Ir a', acciones: 'Acciones', recientes: 'Recientes', cotizaciones: 'Cotizaciones', clientes: 'Clientes', productos: 'Productos' };
-        const NAV: any[] = (I18N.cmdkNav || []).map(([title, href, iconKey, hint, keywords]: any) => ({ group: G.ir_a, title, href, icon: (I as any)[iconKey], hint, keywords }));
+        const KEYS: Record<string, string> = I18N.cmdkKeys || {};
+        const NAV: any[] = (I18N.cmdkNav || []).map(([title, href, iconKey, hint, keywords]: any) => ({ group: G.ir_a, title, href, icon: (I as any)[iconKey], hint, keywords, kbd: mobileUi() ? undefined : KEYS[href] }));
         const ACTIONS: any[] = (I18N.cmdkActions || []).map((a: any) => ({
-            group: G.acciones, title: a.title, href: a.href, icon: (I as any)[a.icon], kbd: a.kbd, hint: a.hint,
+            group: G.acciones, title: a.title, href: a.href, icon: (I as any)[a.icon], kbd: mobileUi() ? undefined : a.kbd, hint: a.hint,
             run: a.runKey === 'quickTask' ? () => (window as any).cordQuickTask?.() : undefined,
         }));
         const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
@@ -1884,15 +1862,17 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
                 getRecents().forEach((r: any) => list.push({ group: G.recientes, title: r.title, href: r.href, icon: r.icon || I.doc }));
             }
             if (ent) {
-                (ent.cotizaciones || []).forEach((c: any) => list.push({ group: G.cotizaciones, title: `${c.folio} · ${c.cliente}`, href: `/app/cotizaciones/${c.id}`, icon: I.doc }));
-                (ent.clientes || []).forEach((c: any) => list.push({ group: G.clientes, title: c.empresa, href: '/app/clientes', icon: I.users }));
-                (ent.productos || []).forEach((p: any) => list.push({ group: G.productos, title: p.sku ? `${p.nombre} · ${p.sku}` : p.nombre, href: '/app/productos', icon: I.box }));
+                (ent.cotizaciones || []).forEach((c: any) => list.push({ group: G.cotizaciones, title: `${c.folio} · ${c.cliente}`, sub: c.sub, href: `/app/cotizaciones/${encodeURIComponent(c.id)}`, icon: I.doc }));
+                (ent.facturas || []).forEach((d: any) => list.push({ group: G.facturas || 'Facturas', title: `${d.folio} · ${d.cliente}`, sub: d.sub, href: `/app/facturas/${encodeURIComponent(d.id)}`, icon: I.receipt }));
+                (ent.clientes || []).forEach((c: any) => list.push({ group: G.clientes, title: c.empresa, href: `/app/clientes/${encodeURIComponent(c.id)}`, icon: I.users }));
+                (ent.productos || []).forEach((p: any) => list.push({ group: G.productos, title: p.sku ? `${p.nombre} · ${p.sku}` : p.nombre, href: `/app/productos/${encodeURIComponent(p.id)}`, icon: I.box }));
             }
             staticMatches(q).forEach((c) => list.push(c));
             return list;
         };
         const paint = (q = '') => {
             if (!items.length) {
+                input.removeAttribute('aria-activedescendant');
                 const noResults = (I18N.cmdkSinResultados || 'Sin resultados para “{q}”').replace('{q}', esc(q));
                 const hint = I18N.cmdkSugerencia || 'Prueba con un folio, cliente, producto o sección.';
                 results.innerHTML = `<div class="cmdk-empty">${iconSvg('search')}<p>${noResults}</p><span>${hint}</span></div>`;
@@ -1904,43 +1884,80 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
                 const right = it.kbd ? `<kbd class="cmdk-kbd">${esc(it.kbd)}</kbd>`
                     : it.hint ? `<span class="cmdk-hint">${esc(it.hint)}</span>`
                     : it.sub ? `<span class="cmdk-hint">${esc(it.sub)}</span>` : '';
-                html += `<button class="cmdk-item ${i === sel ? 'sel' : ''}" data-i="${i}"><span class="cmdk-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${it.icon}</svg></span><span class="cmdk-item-body"><span class="cmdk-item-title">${esc(it.title)}</span></span>${right}</button>`;
+                html += `<button type="button" tabindex="-1" role="option" id="cmdkOpt${i}" aria-selected="${i === sel}" class="cmdk-item ${i === sel ? 'sel' : ''}" data-i="${i}"><span class="cmdk-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${it.icon}</svg></span><span class="cmdk-item-body"><span class="cmdk-item-title">${esc(it.title)}</span></span>${right}</button>`;
             });
             results.innerHTML = html;
+            input.setAttribute('aria-activedescendant', `cmdkOpt${sel}`);
             results.querySelector('.cmdk-item.sel')?.scrollIntoView({ block: 'nearest' });
         };
-        const render = async (q: string) => {
+        // Mover la selección sin redibujar la lista. Redibujar en cada mousemove
+        // re-creaba todos los botones y desplazaba la lista sola cerca del borde.
+        const select = (i: number, scroll: boolean) => {
+            if (!items.length) return;
+            const next = Math.max(0, Math.min(i, items.length - 1));
+            results.querySelector('.cmdk-item.sel')?.classList.remove('sel');
+            results.querySelector('[aria-selected="true"]')?.setAttribute('aria-selected', 'false');
+            sel = next;
+            const el = document.getElementById(`cmdkOpt${sel}`);
+            el?.classList.add('sel');
+            el?.setAttribute('aria-selected', 'true');
+            input.setAttribute('aria-activedescendant', `cmdkOpt${sel}`);
+            if (scroll) el?.scrollIntoView({ block: 'nearest' });
+        };
+        // Cada tecla invalida las búsquedas en vuelo (antes solo las de 2+ letras:
+        // borrar de "acm" a "a" dejaba que la respuesta de "acm" pintara encima) y
+        // la consulta al servidor espera a que se deje de escribir.
+        let searchTimer = 0;
+        const render = (q: string) => {
+            const my = ++seq;
             items = buildItems(q, null); sel = 0; paint(q);
-            if (q.trim().length >= 2) {
-                const my = ++seq;
+            clearTimeout(searchTimer);
+            if (q.trim().length < 2) return;
+            searchTimer = window.setTimeout(async () => {
                 try {
                     const res = await fetch('/api/search?q=' + encodeURIComponent(q.trim()));
                     const data = await res.json();
                     if (my !== seq) return;
                     items = buildItems(q, data); sel = 0; paint(q);
-                } catch { /* ignora */ }
-            }
+                } catch { /* sin red: se quedan los resultados locales */ }
+            }, 140);
         };
         const activate = (i: number) => {
             const it = items[i];
             if (!it) return;
-            if (typeof it.run === 'function') { close(); it.run(); return; }
-            if (it.href) { pushRecent(it); close(); window.location.href = it.href; }
+            if (typeof it.run === 'function') { close(false); it.run(); return; }
+            if (it.href) { pushRecent(it); close(false); window.location.href = it.href; }
         };
-        const open = () => { (cmdk as HTMLElement).hidden = false; document.body.style.overflow = 'hidden'; input.value = ''; render(''); setTimeout(() => input.focus(), 20); };
-        const close = () => { (cmdk as HTMLElement).hidden = true; document.body.style.overflow = ''; };
+        // El foco vuelve a donde estaba al cerrar (botón de búsqueda o la página).
+        let returnFocus: HTMLElement | null = null;
+        const open = () => {
+            returnFocus = document.activeElement as HTMLElement | null;
+            (cmdk as HTMLElement).hidden = false; document.body.style.overflow = 'hidden';
+            input.value = ''; render(''); setTimeout(() => input.focus(), 20);
+        };
+        const close = (restore = true) => {
+            if ((cmdk as HTMLElement).hidden) return;
+            (cmdk as HTMLElement).hidden = true; document.body.style.overflow = '';
+            clearTimeout(searchTimer); seq++;
+            if (restore) returnFocus?.focus?.();
+        };
 
         input.addEventListener('input', () => render(input.value));
         results.addEventListener('click', (e) => { const b = (e.target as HTMLElement).closest('.cmdk-item') as HTMLElement; if (b) activate(parseInt(b.dataset.i!, 10)); });
-        results.addEventListener('mousemove', (e) => { const b = (e.target as HTMLElement).closest('.cmdk-item') as HTMLElement; if (b) { const i = parseInt(b.dataset.i!, 10); if (i !== sel) { sel = i; paint(); } } });
+        results.addEventListener('mousemove', (e) => { const b = (e.target as HTMLElement).closest('.cmdk-item') as HTMLElement; if (b) { const i = parseInt(b.dataset.i!, 10); if (i !== sel) select(i, false); } });
+        // El buscador es lo único enfocable del diálogo: Tab no se escapa a la página de atrás.
+        results.addEventListener('mousedown', (e) => e.preventDefault());
         input.addEventListener('keydown', (e) => {
-            if (e.key === 'ArrowDown') { e.preventDefault(); sel = Math.min(sel + 1, items.length - 1); paint(); }
-            else if (e.key === 'ArrowUp') { e.preventDefault(); sel = Math.max(sel - 1, 0); paint(); }
+            if (e.key === 'ArrowDown') { e.preventDefault(); select(sel + 1, true); }
+            else if (e.key === 'ArrowUp') { e.preventDefault(); select(sel - 1, true); }
+            else if (e.key === 'Home' && e.ctrlKey) { e.preventDefault(); select(0, true); }
+            else if (e.key === 'End' && e.ctrlKey) { e.preventDefault(); select(items.length - 1, true); }
             else if (e.key === 'Enter') { e.preventDefault(); activate(sel); }
+            else if (e.key === 'Tab') { e.preventDefault(); }
         });
 
         document.getElementById('cmdkOpen')?.addEventListener('click', open);
-        document.getElementById('cmdkBackdrop')?.addEventListener('click', close);
+        document.getElementById('cmdkBackdrop')?.addEventListener('click', () => close());
         document.addEventListener('keydown', (e) => {
             if (!mobileUi() && (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); (cmdk as HTMLElement).hidden ? open() : close(); }
             else if (e.key === 'Escape' && !(cmdk as HTMLElement).hidden) { close(); }
@@ -1949,20 +1966,37 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
 
 
     // ── Tema claro / oscuro (persistente, sin flash; el <head> lo aplica al cargar) ──
+    // Tema en tres modos que se recorren en orden: claro → oscuro → sistema.
+    // Dos disparadores: el botón de la topbar (escritorio) y la fila del drawer
+    // (móvil; ahí el de la topbar está oculto y antes no había otro).
+    // "Sistema" sigue en vivo al sistema operativo (p. ej. el modo noche de macOS).
     function initTheme() {
-        const btn = document.getElementById('themeBtn');
-        if (!btn) return;
-        btn.addEventListener('click', () => {
-            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-            if (isDark) { document.documentElement.removeAttribute('data-theme'); try { localStorage.setItem('cord.theme', 'light'); } catch (e) {} }
-            else { document.documentElement.setAttribute('data-theme', 'dark'); try { localStorage.setItem('cord.theme', 'dark'); } catch (e) {} }
-            // Reposiciona el indicador del sidebar por si cambió alguna métrica.
-            window.dispatchEvent(new Event('resize'));
-        });
+        const root = document.documentElement;
+        const MODES = ['light', 'dark', 'system'] as const;
+        type Mode = typeof MODES[number];
+        const btns = ['themeBtn', 'sbTheme'].map((id) => document.getElementById(id)).filter(Boolean) as HTMLElement[];
+        const media = window.matchMedia('(prefers-color-scheme: dark)');
+        const current = (): Mode => {
+            const m = root.getAttribute('data-theme-mode');
+            return m === 'dark' || m === 'system' ? m : 'light';
+        };
+        const apply = (mode: Mode) => {
+            root.setAttribute('data-theme-mode', mode);
+            const dark = mode === 'dark' || (mode === 'system' && media.matches);
+            if (dark) root.setAttribute('data-theme', 'dark'); else root.removeAttribute('data-theme');
+            const tb = document.getElementById('themeBtn');
+            const name = tb?.dataset[`l${mode[0].toUpperCase()}${mode.slice(1)}` as 'lLight'] || mode;
+            const label = `${tb?.dataset.lTema || ''}: ${name}`;
+            btns.forEach((b) => { b.setAttribute('aria-label', label); b.setAttribute('title', label); });
+        };
+        btns.forEach((b) => b.addEventListener('click', () => {
+            const next = MODES[(MODES.indexOf(current()) + 1) % MODES.length];
+            try { localStorage.setItem('cord.theme', next); } catch (e) {}
+            apply(next);
+        }));
+        media.addEventListener('change', () => { if (current() === 'system') apply('system'); });
+        apply(current());
     }
-
-    // ── Indicador deslizante del sidebar (segmented control tipo iOS) ──
-
 
     // ── window.cordWireModal(dlg) — chrome de <dialog class="modal"> (src/styles/modal.css) ──
     // Pinta hairlines en .m-head/.m-foot solo cuando el .m-body de verdad tiene contenido
@@ -2119,43 +2153,34 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
             clearInterval(timer);
             timer = window.setInterval(() => { prog = Math.min(prog + Math.random() * 12, 90); (bar as HTMLElement).style.width = prog + '%'; }, 220);
         };
-        const done = () => { clearInterval(timer); bar.classList.remove('active'); (bar as HTMLElement).style.width = '0'; };
-        document.addEventListener('click', (e) => {
-            const a = (e.target as HTMLElement).closest('a');
-            if (!a) return;
-            const href = a.getAttribute('href');
-            if (!href || href.startsWith('#') || a.target === '_blank' || a.hasAttribute('download')) return;
-            if (e.metaKey || e.ctrlKey || e.shiftKey || (e as MouseEvent).button !== 0) return;
-            try { const u = new URL(a.href); if (u.origin !== location.origin) return; if (u.pathname === location.pathname && u.search === location.search) return; } catch { return; }
-            start();
-        });
+        const done = () => { clearInterval(timer); clearTimeout(safety); bar.classList.remove('active'); (bar as HTMLElement).style.width = '0'; };
+        // Respaldo: si seguimos aquí, la navegación no ocurrió (un mailto:, un
+        // protocolo externo, un "salir sin guardar" cancelado que no se detectó).
+        let safety = 0;
+        const arm = () => { clearTimeout(safety); safety = window.setTimeout(done, 10000); };
+        // Arranca en `beforeunload`, que cubre enlaces, formularios y navegaciones
+        // por script (⌘K, atajos). Antes también arrancaba con cada clic, y si una
+        // página preguntaba "¿salir sin guardar?" y se cancelaba, la barra se
+        // quedaba al 90 % hasta recargar. Se registra al final (después de los
+        // guardas de las páginas) para ver si alguno canceló con preventDefault.
+        window.setTimeout(() => {
+            window.addEventListener('beforeunload', (e) => {
+                if (e.defaultPrevented) return;
+                start(); arm();
+            });
+        }, 0);
         window.addEventListener('pageshow', done);
-        window.addEventListener('beforeunload', start);
     }
 
-    // ── "Fijados" en el sidebar (localStorage) + botón de fijar en el page-head ──
     // ── Utilidades Globales ──
-
-    // Helpers para IA Chat
-    window.openCordAi = function(e) {
-        const panel = document.querySelector('#helpDrawer .help-panel');
-        if (!panel || panel.classList.contains('ai-active')) return;
-        panel.classList.add('ai-active');
-    };
-    window.closeCordAi = function(e) {
-        if (e) e.stopPropagation();
-        const panel = document.querySelector('#helpDrawer .help-panel');
-        if (panel) panel.classList.remove('ai-active');
-    };
 
     function initNotifs() {
         const btn = document.getElementById('notifBtn');
         const panel = document.getElementById('notifPanel');
         const list = document.getElementById('notifList');
-        const dot = document.getElementById('notifDot');
+        const count = document.getElementById('notifCount');
         const markAll = document.getElementById('notifMarkAll');
         if (!btn || !panel || !list) return;
-        const SEEN_KEY = 'cord.notif.seen';
         const ICONS: any = {
             send: iconInner('send'),
             eye: iconInner('eye'),
@@ -2165,48 +2190,60 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
             doc: iconInner('document'),
             chat: iconInner('chat'),
         };
-        const TONE: any = { approved: 'ok', paid: 'ok', viewed: 'warn', counter: 'warn', rejected: 'danger' };
-        let latest = 0;
+        const TONE: any = { approved: 'ok', paid: 'ok', payment: 'ok', viewed: 'warn', counter: 'warn', rejected: 'danger' };
         const esc = (s: string) => String(s).replace(/</g, '&lt;');
-        const getSeen = () => { try { return parseInt(localStorage.getItem(SEEN_KEY) || '0', 10) || 0; } catch { return 0; } };
         const I18N = (window as any).CORD_I18N || {};
-        const paint = (data: any) => {
-            const items = data.items || []; latest = data.latest || 0;
+
+        // "Visto hasta" por miembro, en el servidor (lo trae el SSR). Antes vivía
+        // en localStorage y no seguía al usuario entre dispositivos.
+        let seen = Number(count?.dataset.seen || 0) || 0;
+        const setCount = (n: number) => {
+            if (count) { count.hidden = n <= 0; count.textContent = n >= 10 ? '9+' : String(n); }
+            const label = btn.dataset.label || '';
+            btn.setAttribute('aria-label', n > 0 ? `${label} (${n >= 10 ? '9+' : n})` : label);
+        };
+        const save = (ts: number) => {
+            if (!(ts > seen)) return;
+            seen = ts;
+            fetch('/api/app/notif-seen', {
+                method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ seen: ts }), keepalive: true,
+            }).catch(() => {});
+        };
+        // Migración única desde la marca vieja del navegador.
+        try {
+            const LEGACY = 'cord.notif.seen';
+            const local = parseInt(localStorage.getItem(LEGACY) || '0', 10) || 0;
+            if (!seen && local > 0) save(local);
+            localStorage.removeItem(LEGACY);
+        } catch (e) {}
+
+        const paint = (items: any[], prevSeen: number) => {
             if (!items.length) { list.innerHTML = `<div class="notif-empty">${I18N.notifSinActividad || 'Sin actividad reciente'}</div>`; return; }
-            const seen = getSeen();
             list.innerHTML = items.map((n: any) => {
-                const unread = n.ts > seen ? ' unread' : '';
+                const unread = n.ts > prevSeen ? ' unread' : '';
                 const tone = TONE[n.tipo] ? ' ' + TONE[n.tipo] : '';
                 const icon = ICONS[n.icon] || ICONS.doc;
-                return `<a class="notif-item${unread}" href="${n.href}"><span class="notif-ico${tone}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${icon}</svg></span><span class="notif-body"><span class="notif-title">${esc(n.title)}</span><span class="notif-sub">${esc(n.sub)}</span><span class="notif-when">${esc(n.cuando)}</span></span></a>`;
+                return `<a class="notif-item${unread}" href="${escAttr(n.href)}"><span class="notif-ico${tone}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${icon}</svg></span><span class="notif-body"><span class="notif-title">${esc(n.title)}</span><span class="notif-sub">${esc(n.sub)}</span><span class="notif-when">${esc(n.cuando)}</span></span></a>`;
             }).join('');
         };
-        const closeP = () => { (panel as HTMLElement).hidden = true; btn.setAttribute('aria-expanded', 'false'); };
         const load = async () => {
             list.innerHTML = `<div class="notif-empty">${I18N.notifCargando || 'Cargando…'}</div>`;
             try {
                 const res = await fetch('/api/notificaciones'); const data = await res.json();
-                paint(data);
-                try { localStorage.setItem(SEEN_KEY, String(latest || Date.now())); } catch (e) {}
-                (dot as HTMLElement).hidden = true;
+                const prev = seen;
+                paint(data.items || [], prev);
+                // Abrir la bandeja la marca como vista (se siguen resaltando las nuevas).
+                save(data.latest || Date.now());
+                setCount(0);
             } catch { list.innerHTML = `<div class="notif-empty">${I18N.notifNoCargo || 'No se pudo cargar'}</div>`; }
         };
-        const openP = () => { (panel as HTMLElement).hidden = false; btn.setAttribute('aria-expanded', 'true'); load(); };
-        btn.addEventListener('click', (e) => { e.stopPropagation(); (panel as HTMLElement).hidden ? openP() : closeP(); });
-        document.addEventListener('click', (e) => { if (!(panel as HTMLElement).hidden && !panel.contains(e.target as Node) && !btn.contains(e.target as Node)) closeP(); });
-        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeP(); });
+        wireTopbarMenu(btn, panel as HTMLElement, { id: 'notif', menu: false, onOpen: load });
         markAll?.addEventListener('click', () => {
-            try { localStorage.setItem(SEEN_KEY, String(Date.now())); } catch (e) {}
-            (dot as HTMLElement).hidden = true;
+            save(Date.now());
+            setCount(0);
             list.querySelectorAll('.notif-item.unread').forEach((el) => el.classList.remove('unread'));
         });
-        // Punto rojo si hay actividad más nueva que la última vista.
-        (async () => {
-            try {
-                const res = await fetch('/api/notificaciones'); const data = await res.json();
-                (dot as HTMLElement).hidden = !((data.latest || 0) > getSeen());
-            } catch (e) {}
-        })();
     }
 
     // ── Atajos de teclado globales ──
@@ -2217,7 +2254,9 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
             return;
         }
         document.getElementById('kbdHelpBackdrop')?.addEventListener('click', () => { if (help) (help as HTMLElement).hidden = true; });
-        const ROUTES: any = { d: '/app', c: '/app/cotizaciones', l: '/app/clientes', p: '/app/productos', b: '/app/cobranza', a: '/app/informes', f: '/app/facturas' };
+        // `G` + letra: las rutas salen del propio menú (data-key en cada ítem de
+        // la sidebar, que a su vez viene de src/lib/sidebar-nav.ts).
+        const routeFor = (k: string) => document.querySelector<HTMLAnchorElement>(`.sidebar .sb-item[data-key="${CSS.escape(k)}"]`)?.getAttribute('href');
         const typing = (el: any) => el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable);
         let gPending = false; let gTimer = 0;
         document.addEventListener('keydown', (e) => {
@@ -2229,214 +2268,431 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
             if (help && !(help as HTMLElement).hidden) return; // overlay de ayuda abierto
             if (gPending) {
                 gPending = false; clearTimeout(gTimer);
-                if (ROUTES[k]) { e.preventDefault(); window.location.href = ROUTES[k]; return; }
+                const route = routeFor(k);
+                if (route) { e.preventDefault(); window.location.href = route; return; }
             }
             if (k === 'g') { gPending = true; gTimer = window.setTimeout(() => { gPending = false; }, 1200); return; }
             if (k === '/') { e.preventDefault(); document.getElementById('cmdkOpen')?.click(); return; }
-            if (k === 'c') { e.preventDefault(); window.location.href = '/app/cotizaciones/nueva'; return; }
-            // `f` = crear factura, en paralelo exacto a `c` = crear cotización.
-            // Fijar/quitar la página del menú se mudó a `x`: crear un documento
-            // es una acción primaria y merece la tecla obvia; fijar no.
-            if (k === 'f') { e.preventDefault(); window.location.href = '/app/facturas/nueva'; return; }
+            if (e.key === '[') { e.preventDefault(); (window as any).__cordToggleSidebar?.(); return; }
+            // Crear: la tecla sale del propio menú Crear (data-key), con la misma
+            // letra que `G` + letra usa para ir a esa sección (C/G C, F/G F, L/G L,
+            // P/G P) más T de tarea. Si el permiso esconde la opción, la tecla
+            // tampoco hace nada. Fijar la página quedó en `x`.
+            const createItem = document.querySelector<HTMLElement>(`#tbCreateMenu [data-key="${CSS.escape(k)}"]`);
+            if (createItem) { e.preventDefault(); createItem.click(); return; }
             if (k === 'x') { e.preventDefault(); (window as any).__cordTogglePin?.(); return; }
         });
     }
 
     // ── Drawer de Ayuda (icono ? de la topbar) ──
+    // Dos vistas en el mismo panel (inicio y chat). El chat NO es un modelo: responde
+    // desde el FAQ y los artículos del Centro de ayuda, y cuando no encuentra nada lo
+    // dice y manda a soporte. Nunca ejecuta acciones ni lee datos de la cuenta.
     function initHelp() {
         const btn = document.getElementById('helpBtn');
-        const drawer = document.getElementById('helpDrawer');
-        const backdrop = document.getElementById('helpBackdrop');
-        const closeBtn = document.getElementById('helpClose');
+        const drawer = document.getElementById('helpDrawer') as HTMLElement | null;
+        const panel = document.getElementById('helpPanel') as HTMLElement | null;
+        const home = document.getElementById('helpHome') as HTMLElement | null;
+        const chat = document.getElementById('helpChat') as HTMLElement | null;
         const search = document.getElementById('helpSearch') as HTMLInputElement | null;
+        const grid = document.getElementById('helpGrid') as HTMLElement | null;
         const faqWrap = document.getElementById('helpFaq');
-        const empty = document.getElementById('helpEmpty');
-        if (!btn || !drawer || !faqWrap) return;
+        const faqSec = document.getElementById('helpFaqSec') as HTMLElement | null;
+        const artSec = document.getElementById('helpArticles') as HTMLElement | null;
+        const artList = document.getElementById('helpArticleList');
+        const empty = document.getElementById('helpEmpty') as HTMLElement | null;
+        const history = document.getElementById('chatHistory');
+        const quick = document.getElementById('chatQuick') as HTMLElement | null;
+        const form = document.getElementById('chatForm') as HTMLFormElement | null;
+        const input = document.getElementById('chatRealInput') as HTMLInputElement | null;
+        const send = document.getElementById('chatSendBtn') as HTMLButtonElement | null;
+        if (!btn || !drawer || !panel || !home || !chat || !faqWrap || !history || !form || !input || !send) return;
 
-        const FAQ = ((window as any).CORD_I18N?.faq) || [];
+        const I18N = (window as any).CORD_I18N || {};
+        const FAQ: { q: string; a: string }[] = I18N.faq || [];
+        const isEn = document.documentElement.lang === 'en';
+        const AI_NAME = chat.querySelector('#helpChatTitle')?.textContent?.trim() || 'Cord AI';
+        const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const esc = (s: string) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c] as string));
 
-        // Render del acordeón
-        faqWrap.innerHTML = FAQ.map((f: any, i: number) => `
-            <div class="faq-item" data-faq>
+        // Búsqueda por palabras y sin acentos: src/lib/help-search.ts (la misma que
+        // usa Cord AI en el servidor para elegir qué artículos lee).
+        const norm = normalizeText;
+        const tokens = tokenize;
+        const score = scoreDoc;
+
+        // Artículos del Centro de ayuda: índice estático, cargado al abrir por primera vez.
+        type Art = { title: string; description: string; category: string; keywords?: string; url: string };
+        let arts: Art[] = [];
+        let artsReq: Promise<void> | null = null;
+        const loadArts = () => artsReq ??= fetch('/api/support-search.json')
+            .then((r) => (r.ok ? r.json() : []))
+            .then((list: any[]) => {
+                const lang = isEn ? 'en' : 'es';
+                arts = list.filter((a) => a.lang === lang && a.url)
+                    .map((a) => ({ title: a.title, description: a.description || '', category: a.category || '', keywords: a.keywords || '', url: a.url }));
+            })
+            .catch(() => { artsReq = null; });
+        const findArts = (q: string, min = 0.5, n = 4) => {
+            const tk = tokens(q);
+            return arts.map((a) => ({ a, s: score(tk, a.title, `${a.description} ${a.category} ${a.keywords}`) }))
+                .filter((x) => x.s >= min).sort((x, y) => y.s - x.s).slice(0, n).map((x) => x.a);
+        };
+
+        // ── FAQ (acordeón) ──
+        faqWrap.innerHTML = FAQ.map((f) => `
+            <div class="faq-item">
                 <button type="button" class="faq-q" aria-expanded="false">
-                    <span>${f.q}</span>
-                    ${iconSvg('chevron-down', 'faq-chev', 2.2)}
+                    <span>${esc(f.q)}</span>
+                    ${iconSvg('chevron-down', 'faq-chev', 2)}
                 </button>
-                <div class="faq-a"><div><p>${f.a}</p></div></div>
+                <div class="faq-a"><div><p>${esc(f.a)}</p></div></div>
             </div>`).join('');
-
-        faqWrap.querySelectorAll('.faq-q').forEach((q) => {
-            q.addEventListener('click', () => {
-                const item = q.closest('.faq-item') as HTMLElement;
-                const wasOpen = item.classList.contains('open');
-                faqWrap.querySelectorAll('.faq-item.open').forEach((el) => {
-                    el.classList.remove('open');
-                    el.querySelector('.faq-q')?.setAttribute('aria-expanded', 'false');
-                });
-                if (!wasOpen) { 
-                    item.classList.add('open'); 
-                    q.setAttribute('aria-expanded', 'true'); 
-                    setTimeout(() => {
-                        item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                    }, 300);
-                }
+        faqWrap.addEventListener('click', (e) => {
+            const q = (e.target as HTMLElement).closest('.faq-q');
+            if (!q) return;
+            const item = q.closest('.faq-item') as HTMLElement;
+            const wasOpen = item.classList.contains('open');
+            faqWrap.querySelectorAll('.faq-item.open').forEach((el) => {
+                el.classList.remove('open');
+                el.querySelector('.faq-q')?.setAttribute('aria-expanded', 'false');
             });
+            if (wasOpen) return;
+            item.classList.add('open');
+            q.setAttribute('aria-expanded', 'true');
+            setTimeout(() => item.scrollIntoView({ behavior: reduced() ? 'auto' : 'smooth', block: 'nearest' }), 280);
         });
 
-        // Buscador
-        search?.addEventListener('input', () => {
-            const term = search.value.trim().toLowerCase();
-            let visible = 0;
-            FAQ.forEach((f: any, i: number) => {
-                const item = faqWrap.children[i] as HTMLElement;
+        // ── Buscador: filtra el FAQ y propone artículos ──
+        const runSearch = () => {
+            const term = search?.value.trim() || '';
+            const searching = term.length > 0;
+            if (grid) grid.hidden = searching;
+            const tk = tokens(term);
+            let visibleFaq = 0;
+            FAQ.forEach((f, i) => {
+                const item = faqWrap.children[i] as HTMLElement | undefined;
                 if (!item) return;
-                const match = !term || (f.q + ' ' + f.a).toLowerCase().includes(term);
-                item.hidden = !match;
-                if (match) visible++;
+                const ok = !searching || norm(f.q + ' ' + f.a).includes(norm(term)) || (tk.length > 0 && score(tk, f.q, f.a) >= 0.5);
+                item.hidden = !ok;
+                if (ok) visibleFaq++;
             });
-            if (empty) (empty as HTMLElement).hidden = visible > 0;
-        });
-
-        const open = () => { (drawer as HTMLElement).hidden = false; btn.setAttribute('aria-expanded', 'true'); document.body.style.overflow = 'hidden'; setTimeout(() => search?.focus(), 60); };
-        const close = () => {
-            (drawer as HTMLElement).hidden = true; btn.setAttribute('aria-expanded', 'false'); document.body.style.overflow = '';
-            setTimeout(() => {
-                const p = drawer.querySelector('.help-panel');
-                if (p) p.classList.remove('ai-active');
-                resetChat();
-            }, 350);
+            if (faqSec) faqSec.hidden = visibleFaq === 0;
+            const found = searching && term.length > 1 ? findArts(term, 0.5, 5) : [];
+            if (artSec && artList) {
+                artSec.hidden = found.length === 0;
+                artList.innerHTML = found.map((a) => `
+                    <a class="help-row" href="${esc(a.url)}" target="_blank" rel="noopener">
+                        <span class="help-row-txt"><b>${esc(a.title)}</b><i>${esc(a.category)}</i></span>
+                        ${iconSvg('external', 'help-grid-chev')}
+                    </a>`).join('');
+            }
+            if (empty) empty.hidden = !searching || visibleFaq > 0 || found.length > 0;
         };
+        search?.addEventListener('input', () => { loadArts().then(runSearch); runSearch(); });
 
-        btn.addEventListener('click', () => { (drawer as HTMLElement).hidden ? open() : close(); });
-        closeBtn?.addEventListener('click', close);
-        backdrop?.addEventListener('click', close);
-        document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !(drawer as HTMLElement).hidden) close(); });
-
-        // AI Chat UI Logic
-        const aiChatInput = document.getElementById('chatRealInput');
-        const aiChatSend = document.getElementById('chatSendBtn');
-        const chatHistory = document.getElementById('chatHistory');
-        const chatQuick = document.getElementById('chatQuick');
-
-        aiChatInput?.addEventListener('input', () => {
-            if ((aiChatInput as HTMLInputElement).value.trim()) aiChatSend?.classList.add('active');
-            else aiChatSend?.classList.remove('active');
-        });
-
-        const appendUserMsg = (text: string) => {
-            if (!chatHistory) return;
-            const b = document.createElement('div');
-            b.className = 'chat-bubble user';
-            b.textContent = text;
-            chatHistory.appendChild(b);
-            chatHistory.scrollTop = chatHistory.scrollHeight;
-        };
-
-        const appendBotMsg = (text: string) => {
-            if (!chatHistory) return;
-            const b = document.createElement('div');
-            b.className = 'chat-bubble bot';
-            chatHistory.appendChild(b);
+        // ── Chat ──
+        // Constructor ÚNICO de mensajes (regla 20: cada burbuja lleva su autor).
+        let typing: number | null = null;
+        const addMsg = (role: 'bot' | 'user', text: string, links: Art[] = [], animate = false) => {
+            const msg = document.createElement('div');
+            msg.className = `chat-msg ${role}`;
+            const who = document.createElement('span');
+            who.className = 'chat-author';
+            who.textContent = role === 'user' ? (I18N.chatYou || (isEn ? 'You' : 'Tú')) : AI_NAME;
+            const bubble = document.createElement('div');
+            bubble.className = 'chat-bubble';
+            const p = document.createElement('div');
+            bubble.appendChild(p);
+            msg.append(who, bubble);
+            history.appendChild(msg);
+            const addLinks = () => {
+                if (!links.length) return;
+                const box = document.createElement('div');
+                box.className = 'chat-links';
+                box.innerHTML = links.map((a) => `<a href="${esc(a.url)}" target="_blank" rel="noopener"><span>${esc(a.title)}</span>${iconSvg('external')}</a>`).join('');
+                bubble.appendChild(box);
+            };
+            const toBottom = () => { history.scrollTop = history.scrollHeight; };
+            if (!animate || reduced()) { p.textContent = text; addLinks(); toBottom(); return; }
+            // Escritura progresiva por palabras (no por letra: 3x más rápida y se
+            // lee mejor). Un mensaje nuevo cancela la escritura del anterior.
+            if (typing) clearInterval(typing);
+            const words = text.split(/(\s+)/);
             let i = 0;
-            const typeWriter = setInterval(() => {
-                b.textContent += text.charAt(i);
-                i++;
-                chatHistory.scrollTop = chatHistory.scrollHeight;
-                if (i >= text.length) clearInterval(typeWriter);
-            }, 14);
+            typing = window.setInterval(() => {
+                p.textContent += words.slice(i, i + 2).join('');
+                i += 2;
+                toBottom();
+                if (i >= words.length) { clearInterval(typing!); typing = null; addLinks(); toBottom(); }
+            }, 28);
+        };
+        const showTyping = () => {
+            const msg = document.createElement('div');
+            msg.className = 'chat-msg bot';
+            msg.innerHTML = `<span class="chat-author">${esc(AI_NAME)}</span><div class="chat-bubble"><span class="typing-dots"><span></span><span></span><span></span></span></div>`;
+            history.appendChild(msg);
+            history.scrollTop = history.scrollHeight;
+            return msg;
         };
 
-        const hideQuick = () => { if (chatQuick) (chatQuick as HTMLElement).hidden = true; };
-
-        const CHAT_GREETING = (window as any).CORD_I18N?.chatGreeting || 'Hola, soy Cord AI. Estoy aquí para resolver tus dudas sobre cómo usar la plataforma — cotizaciones, cobranza, facturación y más. ¿En qué te ayudo?';
-        // El chat NO persiste entre sesiones ni acciones: es solo consulta/ayuda,
-        // no ejecuta nada dentro de la app. Se reinicia cada vez que se cierra el drawer.
-        const resetChat = () => {
-            if (chatHistory) chatHistory.innerHTML = `<div class="chat-bubble bot">${CHAT_GREETING}</div>`;
-            if (chatQuick) (chatQuick as HTMLElement).hidden = false;
-            if (aiChatInput) (aiChatInput as HTMLInputElement).value = '';
-            aiChatSend?.classList.remove('active');
+        const answer = (q: string): { text: string; links: Art[] } => {
+            const tk = tokens(q);
+            const best = FAQ.map((f) => ({ f, s: score(tk, f.q, f.a) })).sort((x, y) => y.s - x.s)[0];
+            // Con respuesta del FAQ, solo artículos MUY relevantes como "más sobre esto";
+            // sin ella, los artículos son la respuesta y basta una coincidencia media.
+            if (best && best.s >= 0.5) return { text: best.f.a, links: findArts(q, 0.75, 2) };
+            const links = findArts(q, 0.5, 3);
+            if (links.length) return { text: I18N.chatArticlesIntro || '', links };
+            return { text: I18N.chatNoMatch || '', links: [{ title: I18N.chatSupportLink || 'Soporte', url: isEn ? '/en/support' : '/soporte', description: '', category: '' }] };
         };
 
-        const sendAiMessage = () => {
-            const input = aiChatInput as HTMLInputElement;
-            const text = input.value.trim();
-            if (!text || !chatHistory) return;
-            hideQuick();
-            appendUserMsg(text);
-
+        // Conversación que viaja a Cord AI (solo texto; el servidor la recorta).
+        let turns: { role: 'user' | 'assistant'; text: string }[] = [];
+        let inflight: AbortController | null = null;
+        const ask = async (text: string) => {
+            const q = text.trim();
+            if (!q || inflight) return;
+            if (quick) quick.hidden = true;
+            addMsg('user', q);
             input.value = '';
-            aiChatSend?.classList.remove('active');
-
-            // Mostrar estado "pensando..."
-            const thinkingB = document.createElement('div');
-            thinkingB.className = 'chat-bubble bot thinking';
-            thinkingB.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>';
-            chatHistory.appendChild(thinkingB);
-            chatHistory.scrollTop = chatHistory.scrollHeight;
-
-            setTimeout(() => {
-                thinkingB.remove();
-                const reply = (window as any).CORD_I18N?.chatFallbackReply || "Buena pregunta. En este entorno de demostración Cord AI todavía no puede responder dudas específicas fuera de las preguntas frecuentes — pero es solo para resolver consultas, nunca ejecuta acciones dentro de tu cuenta. Si no encuentras tu respuesta arriba, escríbenos desde el Centro de ayuda.";
-                appendBotMsg(reply);
-            }, 1200);
+            send.disabled = true;
+            const dots = showTyping();
+            const prior = turns.slice();
+            turns.push({ role: 'user', text: q });
+            const ctrl = (inflight = new AbortController());
+            let reply: { text: string; links: Art[] } | null = null;
+            try {
+                const res = await fetch('/api/ayuda/ia', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question: q, history: prior }),
+                    signal: ctrl.signal,
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data?.text) reply = {
+                        text: String(data.text),
+                        links: (data.links || []).map((l: any) => ({ title: String(l.title), url: String(l.url), description: '', category: '' })),
+                    };
+                }
+            } catch {
+                if (ctrl.signal.aborted) return;   // el chat se reinició: nada que pintar
+            }
+            if (ctrl.signal.aborted) return;
+            inflight = null;
+            // Sin respuesta de la IA (caída, tope, sin llave): la búsqueda local
+            // responde igual, desde el FAQ y los artículos.
+            if (!reply) { await loadArts(); reply = answer(q); }
+            dots.remove();
+            turns.push({ role: 'assistant', text: reply.text });
+            addMsg('bot', reply.text, reply.links, true);
+            send.disabled = !input.value.trim();
         };
 
-        aiChatInput?.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') { e.preventDefault(); sendAiMessage(); }
-        });
-        aiChatSend?.addEventListener('click', sendAiMessage);
+        const resetChat = () => {
+            if (typing) { clearInterval(typing); typing = null; }
+            if (inflight) { inflight.abort(); inflight = null; }
+            turns = [];
+            history.innerHTML = '';
+            addMsg('bot', I18N.chatGreeting || '');
+            if (quick) quick.hidden = false;
+            input.value = '';
+            send.disabled = true;
+        };
 
-        // Preguntas rápidas prefabricadas (respuesta instantánea, sin llamar a la IA —
-        // reutiliza el mismo FAQ que alimenta el buscador de ayuda de arriba).
-        if (chatQuick) {
-            chatQuick.innerHTML = FAQ.map((f: any, i: number) => `
-                <button type="button" class="chat-quick-btn" data-quick="${i}">
-                    <span>${f.q}</span>
-                    ${iconSvg('chevron-right')}
-                </button>`).join('');
-            chatQuick.querySelectorAll<HTMLButtonElement>('[data-quick]').forEach((btn) => {
-                btn.addEventListener('click', () => {
-                    const f = FAQ[Number(btn.dataset.quick)];
-                    if (!f) return;
-                    hideQuick();
-                    appendUserMsg(f.q);
-                    setTimeout(() => appendBotMsg(f.a), 260);
-                });
+        if (quick) {
+            quick.innerHTML = FAQ.slice(0, 4).map((f, i) => `<button type="button" class="chat-quick-btn" data-quick="${i}">${esc(f.q)}</button>`).join('');
+            quick.addEventListener('click', (e) => {
+                const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-quick]');
+                const f = b && FAQ[Number(b.dataset.quick)];
+                if (!f) return;
+                quick.hidden = true;
+                addMsg('user', f.q);
+                // Las sugeridas salen del FAQ: respuesta instantánea y gratis. Entran
+                // al historial para que una pregunta de seguimiento tenga contexto.
+                turns.push({ role: 'user', text: f.q }, { role: 'assistant', text: f.a });
+                window.setTimeout(() => addMsg('bot', f.a, findArts(f.q, 0.75, 2), true), reduced() ? 0 : 260);
             });
         }
+        input.addEventListener('input', () => { send.disabled = !input.value.trim(); });
+        form.addEventListener('submit', (e) => { e.preventDefault(); ask(input.value); });
+        resetChat();
 
-        // Enlaces rápidos
-        drawer.querySelectorAll('[data-help-action]').forEach((el) => {
+        // ── Vistas inicio ⇄ chat ──
+        // Navegación tipo iOS, coherente con el "← Atrás" del chat: el chat entra
+        // deslizándose desde la derecha mientras el inicio se corre un poco a la
+        // izquierda y se apaga; de regreso, al revés. El panel anima su ancho a la
+        // vez. Cada vista queda FIJA a su propio ancho final y anclada a la derecha
+        // durante el cambio, así ningún texto se re-acomoda a media animación; el
+        // panel (overflow hidden) es el que recorta. Sin Web Animations o con
+        // movimiento reducido, el cambio es directo.
+        let view: 'home' | 'chat' = 'home';
+        let moving: Animation[] = [];
+        const EASE = 'cubic-bezier(0.32, 0.72, 0, 1)';
+        const DUR = 460;
+        const applyView = (v: 'home' | 'chat') => {
+            view = v;
+            panel.classList.toggle('ai-active', v === 'chat');
+            home.hidden = v === 'chat';
+            chat.hidden = v === 'home';
+        };
+        const cleanup = () => {
+            moving.forEach((a) => a.cancel());
+            moving = [];
+            for (const el of [home, chat]) {
+                el.classList.remove('is-sliding');
+                el.style.width = '';
+                el.style.background = '';
+            }
+            panel.style.backgroundColor = '';
+        };
+        const setView = (v: 'home' | 'chat', after?: () => void) => {
+            if (v === view && !moving.length) { after?.(); return; }
+            cleanup();
+            if (!('animate' in chat) || reduced() || drawer.hidden) {
+                applyView(v);
+                after?.();
+                return;
+            }
+            const toChat = v === 'chat';
+            const surface = () => getComputedStyle(panel).getPropertyValue('--help-surface').trim();
+            const w0 = panel.getBoundingClientRect().width;
+            const s0 = surface();
+            panel.classList.toggle('ai-active', toChat);
+            const w1 = panel.getBoundingClientRect().width;
+            const s1 = surface();
+            view = v;
+            const homeW = toChat ? w0 : w1, chatW = toChat ? w1 : w0;
+            const homeBg = (toChat ? s0 : s1) || '#f5f5f7', chatBg = (toChat ? s1 : s0) || '#ffffff';
+            home.hidden = false;
+            chat.hidden = false;
+            home.classList.add('is-sliding');
+            chat.classList.add('is-sliding');
+            home.style.width = homeW + 'px';
+            chat.style.width = chatW + 'px';
+            home.style.background = homeBg;
+            chat.style.background = chatBg;
+            // La franja que el panel descubre al ensancharse lleva el color de inicio.
+            panel.style.backgroundColor = homeBg;
+            const homeOut = [{ transform: 'translateX(0)', opacity: 1 }, { transform: 'translateX(-22%)', opacity: 0 }];
+            const chatIn = [
+                { transform: 'translateX(100%)', boxShadow: '-24px 0 48px -24px rgba(10,25,47,0)' },
+                { transform: 'translateX(0)', boxShadow: '-24px 0 48px -24px rgba(10,25,47,0.28)' },
+            ];
+            // De regreso se invierten los KEYFRAMES, no la dirección: `direction:
+            // 'reverse'` también invierte la curva y la salida arrancaría lenta.
+            const opts: KeyframeAnimationOptions = { duration: DUR, easing: EASE, fill: 'both' };
+            moving = [
+                panel.animate([{ width: w0 + 'px' }, { width: w1 + 'px' }], { duration: DUR, easing: EASE }),
+                home.animate(toChat ? homeOut : [...homeOut].reverse(), opts),
+                chat.animate(toChat ? chatIn : [...chatIn].reverse(), opts),
+            ];
+            moving[2].finished.then(() => {
+                cleanup();
+                applyView(v);
+                after?.();
+            }).catch(() => {});
+        };
+        const openChat = (prefill?: string) => setView('chat', () => {
+            input.focus({ preventScroll: true });
+            if (prefill) ask(prefill);
+        });
+        document.getElementById('helpAiOpen')?.addEventListener('click', () => openChat());
+        document.getElementById('helpAiBack')?.addEventListener('click', () => setView('home', () => document.getElementById('helpAiOpen')?.focus()));
+        document.getElementById('helpEmptyAi')?.addEventListener('click', () => openChat(search?.value || ''));
+
+        // ── Abrir / cerrar ──
+        let closing: number | null = null;
+        const open = () => {
+            if (closing) { clearTimeout(closing); closing = null; }
+            drawer.classList.remove('is-closing');
+            drawer.hidden = false;
+            btn.setAttribute('aria-expanded', 'true');
+            document.body.style.overflow = 'hidden';
+            loadArts();
+            setTimeout(() => (view === 'chat' ? input : search)?.focus({ preventScroll: true }), 60);
+        };
+        const close = () => {
+            if (drawer.hidden || closing) return;
+            btn.setAttribute('aria-expanded', 'false');
+            document.body.style.overflow = '';
+            const finish = () => {
+                closing = null;
+                drawer.hidden = true;
+                drawer.classList.remove('is-closing');
+                cleanup();
+                // El chat no persiste: es consulta, no historial. Se reinicia al cerrar.
+                applyView('home');
+                resetChat();
+                if (search) { search.value = ''; runSearch(); }
+                (btn as HTMLElement).focus({ preventScroll: true });
+            };
+            if (reduced()) { finish(); return; }
+            drawer.classList.add('is-closing');
+            closing = window.setTimeout(finish, 320);
+        };
+
+        btn.addEventListener('click', () => (drawer.hidden ? open() : close()));
+        drawer.querySelectorAll('[data-help-close]').forEach((b) => b.addEventListener('click', close));
+        document.getElementById('helpBackdrop')?.addEventListener('click', close);
+        document.addEventListener('keydown', (e) => {
+            if (drawer.hidden) return;
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                if (view === 'chat') setView('home', () => document.getElementById('helpAiOpen')?.focus());
+                else close();
+                return;
+            }
+            // Foco atrapado dentro del diálogo (aria-modal): Tab no se escapa a la app.
+            if (e.key !== 'Tab') return;
+            const items = Array.from(panel.querySelectorAll<HTMLElement>('button, a[href], input'))
+                .filter((el) => !el.hasAttribute('disabled') && el.offsetParent !== null);
+            if (!items.length) return;
+            const first = items[0], last = items[items.length - 1];
+            if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+            else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+        });
+
+        // ── Accesos rápidos ──
+        drawer.querySelectorAll<HTMLElement>('[data-help-action]').forEach((el) => {
             el.addEventListener('click', () => {
-                const action = (el as HTMLElement).dataset.helpAction;
+                const action = el.dataset.helpAction;
                 if (action === 'shortcuts') {
                     if (mobileUi()) return;
-                    close(); const h = document.getElementById('kbdHelp'); if (h) (h as HTMLElement).hidden = false;
+                    close();
+                    const h = document.getElementById('kbdHelp');
+                    if (h) h.hidden = false;
+                } else if (action === 'guide') {
+                    close();
+                    // La guía de configuración solo existe mientras el onboarding está
+                    // incompleto; si ya no está montada, la guía es el Centro de ayuda.
+                    const onb = (window as any).__cordOnb;
+                    if (onb && document.getElementById('onbCard')) onb.set({ view: 'card', dismissed: false });
+                    else window.location.href = isEn ? '/en/support' : '/soporte';
                 }
-                else if (action === 'guide') { close(); document.getElementById('onbPill')?.click(); }
             });
         });
     }
 
     // ── Menú "Crear" genérico (botón + popover) — reusado por móvil y desktop ──
     // ── Menú "Crear" de la topbar (desktop) ──
+    let createMenu: ReturnType<typeof wireTopbarMenu> | null = null;
     function initCreateMenu(btnId: string, menuId: string) {
         const btn = document.getElementById(btnId);
         const menu = document.getElementById(menuId);
         if (!btn || !menu) return;
-        const m = menu as HTMLElement;
-        const closeMenu = () => { m.hidden = true; btn.setAttribute('aria-expanded', 'false'); };
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const willOpen = m.hidden;
-            m.hidden = !willOpen;
-            btn.setAttribute('aria-expanded', String(willOpen));
+        createMenu = wireTopbarMenu(btn, menu, { id: 'create' });
+    }
+
+    // ⌘ en Mac; Ctrl en Windows y Linux (antes decía ⌘K para todos).
+    function initModKey() {
+        const nav = navigator as Navigator & { userAgentData?: { platform?: string } };
+        const plat = nav.userAgentData?.platform || navigator.platform || navigator.userAgent;
+        if (/mac|iphone|ipad|ipod/i.test(plat)) return;
+        document.querySelectorAll<HTMLElement>('[data-mod-key]').forEach((el) => {
+            el.textContent = (el.textContent || '').replace('⌘', el.textContent === '⌘' ? 'Ctrl' : 'Ctrl ');
         });
-        document.addEventListener('click', (e) => {
-            if (!m.hidden && !menu.contains(e.target as Node) && !btn.contains(e.target as Node)) closeMenu();
-        });
-        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeMenu(); });
     }
 
     // ── Quick-add de Tarea (modal desde el botón "Crear") ──
@@ -2449,7 +2705,7 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
         const open = () => { (modal as HTMLElement).hidden = false; document.body.style.overflow = 'hidden'; setTimeout(() => titulo.focus(), 30); };
         const close = () => { (modal as HTMLElement).hidden = true; document.body.style.overflow = ''; form.reset(); };
         // Disparadores: botón de la topbar y el menú móvil (si existiera un item de tarea).
-        document.getElementById('tbCreateTarea')?.addEventListener('click', () => { document.getElementById('tbCreateMenu')!.hidden = true; document.getElementById('tbCreate')?.setAttribute('aria-expanded', 'false'); open(); });
+        document.getElementById('tbCreateTarea')?.addEventListener('click', () => { createMenu?.close(); open(); });
         (window as any).cordQuickTask = open;
         document.getElementById('qtaskClose')?.addEventListener('click', close);
         document.getElementById('qtaskBackdrop')?.addEventListener('click', close);
@@ -2459,16 +2715,18 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
             const t = titulo.value.trim();
             if (!t) return;
             try {
-                const res = await fetch('/api/tareas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ titulo: t, due_date: due?.value || null }) });
+                // Sin elegir responsable, la tarea es de quien la escribe.
+                const res = await fetch('/api/tareas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ titulo: t, due_date: due?.value || null, asignar_a_creador: true }) });
                 if (!res.ok) throw new Error();
                 close();
-                if (location.pathname === '/app') location.reload();
-                else (window as any).cordToast?.((window as any).CORD_I18N?.taskCreatedOk || 'Tarea creada', 'ok');
+                // Un tablero de tareas abierto (Inicio o /app/tareas) se refresca solo.
+                document.dispatchEvent(new CustomEvent('cord:tasks-changed'));
+                (window as any).cordToast?.((window as any).CORD_I18N?.taskCreatedOk || 'Tarea creada', 'ok');
             } catch { (window as any).cordToast?.((window as any).CORD_I18N?.taskCreatedErr || 'No se pudo crear la tarea', 'error'); }
         });
     }
 
-    function initApp() { initCmdk(); initTheme(); initToasts(); initConfirm(); initStepUp(); initNavProgress(); initNotifs(); initHelp(); initShortcuts(); initCreateMenu('tbCreate', 'tbCreateMenu'); initQuickTask(); }
+    function initApp() { initCmdk(); initTheme(); initToasts(); initConfirm(); initStepUp(); initNavProgress(); initNotifs(); initHelp(); initShortcuts(); initCreateMenu('tbCreate', 'tbCreateMenu'); initQuickTask(); initModKey(); }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initApp);
     else initApp();
 </script>

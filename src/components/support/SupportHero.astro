@@ -312,7 +312,9 @@ import { iconInner } from '../../lib/icons';
             if (articles.length === 0) {
                 try {
                     const res = await fetch('/api/support-search.json');
-                    articles = await res.json();
+                    // El índice trae los dos idiomas: solo se busca en el de la página.
+                    const lang = document.documentElement.lang === 'en' ? 'en' : 'es';
+                    articles = (await res.json()).filter((a: any) => a.lang === lang);
                 } catch (e) {
                     console.error('Failed to load search index', e);
                 }

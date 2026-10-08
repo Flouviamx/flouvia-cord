@@ -1,0 +1,114 @@
+---
+title: "Portal del cliente"
+seoTitle: "Personaliza el portal que ve tu cliente en Cord"
+description: "Qué ve tu cliente al abrir el link de una cotización y cómo ajustarlo: composición, aviso superior, bienvenida, comentarios y contrapropuestas, y la marca de Cord según tu plan."
+lastUpdated: "2026-10-07"
+reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Permiso Ajustes", "Plan Starter o superior para quitar la marca de Cord"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Portal del cliente</h1>
+  <p class="page-subtitle">El link seguro donde tu cliente revisa, conversa, aprueba y paga. Ajusta qué ve y cómo se ve.</p>
+</header>
+
+El **portal del cliente** es la página que se abre cuando tu cliente pulsa el link de una
+cotización. No necesita cuenta ni contraseña: el link es su acceso. Desde ahí revisa la
+propuesta, comenta, aprueba o rechaza y, cuando corresponde, paga en línea.
+
+## Requisitos
+
+- **Permiso Ajustes** para cambiar la configuración del portal.
+- **Todos los planes** pueden personalizar composición, aviso, bienvenida y comentarios.
+- **Starter o superior** para quitar la marca de Cord.
+- **Profesional o superior** para servir el portal desde tu propio dominio. Consulta
+  [Dominio propio](/docs/cuenta/dominio-propio).
+
+## Qué ve tu cliente
+
+| Elemento | Detalle |
+|---|---|
+| **Encabezado con tu marca** | Tu logo, colores y tipografía de [Identidad](/docs/cuenta/marca). |
+| **Aviso superior** | Una franja con el color de tu marca, si escribiste un aviso. |
+| **Bienvenida** | Tu mensaje de bienvenida, si lo escribiste. |
+| **Partidas** | Cada concepto con cantidad, precio e importe, en la divisa de la cotización. Si el precio negociado es menor que el de lista, el de lista aparece tachado. |
+| **Aprobación parcial** | Mientras la cotización está abierta, cada línea tiene una casilla **Incluir esta línea en tu aprobación**. |
+| **Comentarios por línea y conversación** | Si los comentarios están activos: un botón para comentar cada línea y un chat general con **Contraoferta**. |
+| **Aprobar o rechazar** | **Aprobar cotización** registra nombre del firmante y evidencia técnica; **Rechazar cotización** admite un motivo opcional. |
+| **Pago en línea** | Si tienes un medio de cobro activo y la cotización lo permite. Consulta [Aceptar un pago](/docs/pagos/aceptar). |
+| **Descargar PDF** | El documento de la cotización. |
+| **Contacto** | Accesos para escribirte por WhatsApp, correo o llamarte, según los datos de contacto que capturaste en Ajustes › General. |
+| **Aviso de actividad** | "Quien te envió esta propuesta puede ver cuándo la abres y qué secciones revisas." |
+| **Marca de Cord** | El sello "Verificado por Cord", salvo que tu plan permita quitarlo y lo hayas desactivado. |
+
+{/* MOCKUP: portal del cliente en escritorio con aviso superior, bienvenida, partidas con casillas de aprobación parcial y el chat con Contraoferta */}
+
+<Callout type="info">
+**Tu propia visita no cuenta como vista.** Si abres el link con tu sesión de Cord, ves
+una franja **Vista previa — así lo ve tu cliente**. Cord no registra esa visita como
+actividad del cliente ni dispara avisos de "vista".
+</Callout>
+
+## Personalizar el portal
+
+<Steps>
+1. Abre **Ajustes › Marca y apariencia › Portal del cliente**.
+2. En **Composición**, elige el estilo del encabezado (**Esencial**, **Suave** o
+   **Contraste**), los **Bordes** (Definidos, Suaves o Redondeados) y el **Espaciado**
+   (Amplio o Compacto).
+3. En **Mensajes**, escribe el **Aviso superior** (hasta 200 caracteres; déjalo vacío
+   para ocultarlo) y la **Bienvenida** (hasta 280 caracteres).
+4. En **Interacción**, activa o desactiva **Comentarios y contrapropuestas** y
+   **Mostrar la marca de Cord**.
+5. Revisa la vista previa de la derecha y guarda.
+</Steps>
+
+La vista previa muestra una cotización de ejemplo en **Portal**, **Cotización**, **PDF**
+y **Correo**, en **Escritorio** o **Móvil**, y te deja comparar **Con tus cambios**
+contra **Guardado**. No genera actividad ni envíos.
+
+## Comportamiento y casos límite
+
+- **La composición se comparte.** El estilo de encabezado, bordes y espaciado también se
+  usa en los correos y en las facturas comerciales. El PDF de la cotización tiene su
+  propio diseño en **Ajustes › Cotizaciones › Documento PDF**.
+- **Desactivar comentarios no borra la conversación.** El cliente deja de ver el botón
+  por línea, el chat y la contraoferta, pero los mensajes anteriores se conservan en tu
+  lado.
+- **Cotización cerrada.** Una vez aprobada o rechazada, desaparecen las casillas de
+  aprobación parcial y la opción de comentar líneas.
+- **El logo y los colores** no se editan aquí: vienen de **Identidad**. El enlace
+  **Editar** de la tarjeta **Identidad compartida** te lleva ahí.
+- **Los datos de contacto** que ve el cliente salen de **Ajustes › General**: si dejas
+  vacío el WhatsApp, el correo o el teléfono, ese acceso no aparece.
+
+## Marca de Cord por plan
+
+| Plan | Marca de Cord en el portal |
+|---|---|
+| Gratis | Siempre visible. El interruptor aparece desactivado y te lleva a revisar tu plan. |
+| Starter, Profesional, Scale y Developer | Puedes ocultarla con **Mostrar la marca de Cord**. |
+
+Si bajas a Gratis, la marca vuelve a mostrarse en tus links aunque la hubieras
+desactivado; al recuperar un plan elegible se respeta otra vez tu elección.
+
+## Problemas comunes
+
+**Guardé un aviso y no lo veo.** Abre el link en una ventana nueva y confirma que el
+texto no quedó vacío. Recuerda que el aviso aparece en el link de la cotización.
+
+**El cliente dice que no puede comentar.** Revisa que **Comentarios y contrapropuestas**
+esté activo y que la cotización siga abierta.
+
+**No puedo quitar la marca de Cord.** Necesitas plan Starter o superior; consulta
+[Tu suscripción](/docs/cuenta/suscripcion).
+
+## Páginas relacionadas
+
+- [Personaliza tu marca](/docs/cuenta/marca)
+- [Dominio propio](/docs/cuenta/dominio-propio)
+- [Chat y negociación](/docs/interaccion/chat)
+- [Aprobación y evidencia](/docs/interaccion/firma)
+- [Vista previa y envío](/docs/cotizacion/envio)

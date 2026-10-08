@@ -180,7 +180,9 @@ import { iconInner } from '../../lib/icons';
         if (searchIndex) return searchIndex;
         try {
             const res = await fetch('/api/support-search.json');
-            searchIndex = await res.json();
+            // El índice trae los dos idiomas: solo se busca en el de la página.
+            const lang = document.documentElement.lang === 'en' ? 'en' : 'es';
+            searchIndex = (await res.json()).filter((a) => a.lang === lang);
             return searchIndex;
         } catch (e) {
             console.error("Failed to load search index", e);

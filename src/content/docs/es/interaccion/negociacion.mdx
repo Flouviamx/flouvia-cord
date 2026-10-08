@@ -1,0 +1,159 @@
+---
+title: "Negociación y contraofertas"
+seoTitle: "Contraofertas, aprobación parcial, rechazo y versiones"
+description: "Cómo negocia tu cliente desde el link (contraoferta, aprobación parcial, rechazo con motivo), cómo respondes con Modificar y reenviar, qué pasa si cambias la propuesta mientras la lee, y qué te notifica Cord."
+lastUpdated: "2026-10-07"
+reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Cotización Enviada o Vista", "Opción Comentarios y contrapropuestas activa para la contraoferta", "Permiso Cotizaciones para responder y reenviar"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Negociación y contraofertas</h1>
+  <p class="page-subtitle">El cliente propone, acepta solo una parte o rechaza desde el mismo link. Tú respondes con una versión nueva sin cambiar de link.</p>
+</header>
+
+## Qué es
+
+En Cord la negociación ocurre sobre el documento, no en una cadena de correos. Mientras
+la cotización está *Enviada* o *Vista*, el cliente tiene cuatro formas de responder:
+escribir un mensaje, mandar una **contraoferta**, **aprobar solo algunas líneas** o
+**rechazar** con un motivo. Tu respuesta es otra versión de la misma cotización, que
+llega al mismo link.
+
+## Requisitos
+
+- **Estado:** *Enviada* o *Vista*. Una cotización aprobada, rechazada o vencida ya no admite contraofertas ni firma.
+- **Opción del portal:** la contraoferta y los mensajes requieren **Comentarios y contrapropuestas** activo en **Ajustes › Marca y apariencia › Portal del cliente**. La aprobación parcial y el rechazo siempre están disponibles.
+- **Permiso:** Cotizaciones para responder mensajes y para **Modificar y reenviar**; Aprobaciones para **Marcar aprobada** o **Marcar rechazada**.
+- **Plan:** todos.
+
+## Contraoferta
+
+<Steps>
+1. En la sección **CONVERSACIÓN** del link, el cliente escribe un monto en el campo de propuesta (en la divisa de la cotización) y, si quiere, un mensaje.
+2. Pulsa **Contraoferta**.
+3. La propuesta aparece en la conversación con un estilo distinto, por ejemplo "Propuesta: MXN 42,000.00 — Si lo dejan en este total cerramos esta semana".
+</Steps>
+
+{/* MOCKUP: sección CONVERSACIÓN del link con una burbuja normal del cliente, una burbuja ámbar de contraoferta "Propuesta: MXN 42,000.00 — Si lo dejan en este total cerramos esta semana" rotulada "Tú · ahora", y debajo el campo "Propuesta (opcional)" con el botón "Contraoferta". */}
+
+La contraoferta **no cambia el estado** de la cotización ni sus importes: es un
+mensaje con un monto. Para aceptarla, ajusta los precios y reenvía (ver abajo). Si no
+la aceptas, responde en la conversación.
+
+## Aprobación parcial
+
+Antes de firmar, el cliente puede desmarcar las líneas que no quiere con la casilla
+**Incluir esta línea en tu aprobación**. El link muestra cuántas líneas va a aprobar y
+el nuevo total, calculado con el mismo motor que usa Cord al guardar.
+
+Al firmar una aprobación parcial:
+
+- La cotización pasa a *Aprobada* con el **total recalculado** solo con las líneas incluidas: subtotal, impuestos por línea y retenciones.
+- Las demás quedan marcadas **No incluida** en el link y en el detalle, que muestra "Aprobación parcial — el cliente firmó solo las líneas incluidas".
+- La actividad registra, por ejemplo: "Firmado por "María García" — aprobó 2 de 3 líneas (MXN 31,500.00 de MXN 48,720.00)".
+- Si pediste anticipo, se calcula sobre el total aprobado.
+- La factura incluye solo las líneas aprobadas.
+
+Tiene que quedar al menos una línea incluida: con todas desmarcadas, el botón de
+aprobar se desactiva.
+
+## Rechazo con motivo
+
+<Steps>
+1. Desde la revisión, el cliente pulsa **Rechazar**.
+2. Escribe un **Motivo (opcional — ayuda al vendedor a mejorar)**.
+3. Pulsa **Confirmar rechazo**.
+</Steps>
+
+La cotización pasa a *Rechazada*. La actividad registra "El cliente rechazó:" seguido
+del motivo (o "El cliente rechazó la cotización desde el link" si no escribió nada), y
+el cliente ve "Le notificamos a [tu negocio]". Un rechazo no se deshace: para volver a
+proponer, duplica la cotización.
+
+## Cómo respondes: Modificar y reenviar
+
+Mientras la cotización está *Enviada*, *Vista* o *Vencida*, el detalle muestra
+**Modificar y reenviar (V2)**; el número es la versión que vas a crear.
+
+<Steps>
+1. Pulsa **Modificar y reenviar (V2)**. Se abre el editor con las partidas actuales.
+2. Cambia productos, cantidades, precios negociados, impuestos o **Precios ya incluyen IVA**. El cliente y los términos de pago no se cambian desde aquí ("El cliente no se puede cambiar al editar la cotización").
+3. Pulsa **Generar V2 y reenviar**.
+</Steps>
+
+Al reenviar, Cord:
+
+- guarda la versión nueva y la agrega al **Historial de versiones** del detalle, con su fecha y su total;
+- conserva el **mismo link**;
+- vuelve a mandar el correo al cliente si tiene correo capturado;
+- regresa la cotización a *Enviada*;
+- emite el evento de cotización modificada con el total anterior, para que tus automatizaciones distingan un reenvío igual de uno con descuento.
+
+Reenviar una cotización *Vencida* no le da una vigencia nueva: el proceso diario vuelve
+a vencerla. Para proponerla otra vez con fecha nueva, usa **Duplicar cotización**.
+
+## Si cambias la propuesta mientras el cliente la lee
+
+El link está conectado en tiempo real. Si el cliente lo tiene abierto cuando reenvías:
+
+1. Las líneas cambiadas se actualizan sin recargar, con un destello y el importe anterior durante unos segundos ("antes …").
+2. Aparece **Se actualizó la propuesta** con el botón **Ver cambios**.
+3. El botón de aprobar se **bloquea** hasta que el cliente pulsa **Ver cambios**, que lo lleva a las partidas.
+
+Además, cada firma viaja con la revisión del documento que el cliente tenía en
+pantalla. Si no coincide con la vigente, Cord **rechaza la firma**, regresa al cliente
+al paso de revisión con el aviso encendido y no guarda ninguna aprobación sobre una
+versión que ya no existe.
+
+<Callout type="info">
+Cord detecta los cambios por la revisión del documento, que avanza con cualquier
+escritura sobre la cotización (líneas, cobros, mensajes y eventos). Por eso el aviso
+también puede aparecer después de que alguien escribe en la conversación. Basta con
+pulsar **Ver cambios** para volver a aprobar.
+</Callout>
+
+## Qué te notifica Cord y qué no
+
+| Acción del cliente | Cambia el estado | Aviso por correo, Slack o Teams | Webhook y workflow |
+|---|---|---|---|
+| Mensaje en la conversación | No | No | Sí: "Llega un mensaje en una cotización" |
+| Comentario en una línea | No | No | Sí: "Llega un mensaje en una cotización" |
+| Contraoferta | No | No | Sí: "Llega un mensaje en una cotización", marcado como contraoferta |
+| Aprobación total o parcial | Sí, a *Aprobada* | Sí: **Cotización aprobada** (por correo, activo por default) | Sí: "Se aprueba una cotización" |
+| Rechazo | Sí, a *Rechazada* | Sí: **Cotización rechazada** (por correo, activo por default) | Sí: "Se rechaza una cotización" |
+
+Los mensajes y contraofertas sí aparecen en la campana de la barra superior, que lista
+los movimientos más recientes. Para recibir un aviso fuera de Cord, crea un
+[workflow](/docs/automatizacion/workflows/primer-workflow) con el disparador **Llega un
+mensaje en una cotización**, por ejemplo para avisar a tu canal de Slack. Los avisos
+por correo, Slack y Teams se configuran en [Notificaciones](/docs/gestion/notificaciones).
+
+**Marcar aprobada** y **Marcar rechazada** desde la app cambian el estado y disparan
+el webhook, pero no generan los avisos de Notificaciones, que son para decisiones del
+cliente.
+
+## Límites por plan
+
+La negociación está en todos los planes. En Pro o superior, el detalle de la
+cotización recibe los mensajes del cliente en vivo; en Gratis y Starter, recarga el
+detalle para verlos.
+
+## Problemas comunes
+
+**El cliente no ve el campo de contraoferta.** **Comentarios y contrapropuestas** está desactivado, o la cotización ya no está *Enviada* o *Vista*.
+
+**"Esta cotización ya no admite contraofertas".** Ya se aprobó, rechazó o venció.
+
+**El cliente no puede aprobar después de que reenvié.** Debe pulsar **Ver cambios** primero; si el botón sigue desactivado, revisa que tenga al menos una línea incluida.
+
+**No veo Modificar y reenviar.** La cotización está en borrador (usa **Continuar editando**), ya está aprobada o pagada, o tu rol no tiene el permiso Cotizaciones.
+
+## Relacionadas
+
+- [Lo que ve tu cliente](/docs/interaccion/vista-del-cliente)
+- [Chat y comentarios](/docs/interaccion/chat)
+- [Aprobación y evidencia](/docs/interaccion/firma)
+- [Gestión de cotizaciones](/docs/gestion/cotizaciones)

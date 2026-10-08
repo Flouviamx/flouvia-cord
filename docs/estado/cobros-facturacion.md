@@ -79,6 +79,36 @@ marcado pagado por el webhook). La app de México (MLM) conecta vendedores de ot
 país: se confirmó el mismo día con un vendedor de prueba de Colombia (MCO), así que
 no hace falta una app por país.
 
+## Términos de pago, claves SAT y CFDI a extranjeros — oct 2026
+
+- **Términos de pago:** `contado` o `net<N>` = N días naturales. Se ofrecen `net7`,
+  `net15`, `net30`, `net45`, `net60` y `net90`. Fuente única: `src/lib/payment-terms.ts`
+  (`TERM_CODES`, `termDays`, `normalizeTerm`, `parseTermText` para CSV). En Postgres la
+  misma regla es `cord_term_days(text)` (db/schema.sql): la usan la vista
+  `cuentas_por_cobrar`, la cobranza IA, el correo entrante y los informes. Un plazo nuevo
+  se agrega SOLO a `TERM_CODES` (y a la lista espejo `CORD_TERMINOS` de Elements, que un
+  test compara). La UI usa `<TermPicker>` + `wireTermPicker()`: nunca se lee
+  `.chip.active` a mano. Un código guardado que ya no se ofrece sigue venciendo en su
+  fecha (`termDays('net120') = 120`) pero no se acepta como nuevo.
+- **Claves SAT por producto:** `productos.clave_sat` (c_ClaveProdServ, 8 dígitos) y
+  `productos.clave_unidad_sat` (c_ClaveUnidad). Sin clave de unidad explícita se deduce
+  de `productos.unidad` (`satUnitForUnit`, `src/lib/fiscal/sat-claves.ts`); sin nada, el
+  CFDI usa 01010101 / H87. Cotización → CFDI: `emit.ts` las lee con un `left join` al
+  timbrar. Factura directa: `invoices.ts` las adjunta al guardar el borrador. En ambos
+  rieles quedan congeladas en `line_items_snapshot`. `mexico-items.ts` rechaza una clave
+  con forma inválida antes del PAC. Búsqueda del catálogo: `GET /api/fiscal/catalogo-sat`
+  (proxy de `/v2/catalogs/products|units` de Facturapi con la llave del negocio o la de
+  plataforma; sin llave responde `disponible: false` y se escribe a mano).
+- **CFDI a receptor extranjero:** cliente con `country_code` ≠ MX → `customer` sin
+  `tax_system`, `address.country` en ISO alfa-3 (`toAlpha3`, `countries.ts`), `tax_id` =
+  su identificador fiscal extranjero (NumRegIdTrib, opcional) y uso S01 (también en
+  notas de crédito). Facturapi pone XEXX010101000 cuando el país no es "MEX" (documentado
+  en su guía de clientes). `provider_data.receptor_extranjero` guarda el país. Exportación
+  queda en "01"; el complemento de Comercio Exterior (A1) no se emite.
+- **Despliegue:** `scripts/migrate-catalogo-fiscal.mjs` corre en el `buildCommand` de
+  Vercel antes del build (columnas de `db/catalogo-fiscal.sql` + función y vista extraídas
+  de `db/schema.sql`). Si falla, el despliegue se detiene.
+
 ## Facturación internacional — ago 2026
 
 - México: CFDI 4.0 mediante `MexicoSatProvider` y Facturapi como PAC intercambiable.
@@ -621,7 +651,7 @@ igualas/retainers vía Stripe Subscriptions". Resumen rápido:
 Evolución del cobro simple (1 cotización = 1 PaymentIntent) a **cobros por "rebanadas"**.
 Fuente única de la lógica de reparto/fechas: **`src/lib/cobros.ts`**.
 
-- **Gating por términos de crédito:** una cotización a crédito (`net30`/`net60`) NO se puede
+- **Gating por términos de crédito:** una cotización a crédito (`net<N>`, ver "Términos de pago" abajo) NO se puede
   pagar en línea hasta su fecha de vencimiento (`coalesce(approved_at, created_at) + días del
   término` — el MISMO cálculo canónico que `getCobranza()`/cron de intereses/recordatorios). A
   crédito el link muestra "Pedido confirmado con crédito Net 30 — vence el [fecha]" en vez del

@@ -1,5 +1,6 @@
 import type { FiscalProvider, FiscalCancelRequest, FiscalCancelResponse, FiscalDocumentRequest, FiscalDocumentResponse } from '../index';
 import { mexicoItems } from './mexico-items';
+import { toAlpha3 } from '../../countries';
 
 // Proveedor fiscal de México: timbra CFDI 4.0 vía Facturapi (facturapi.io).
 //
@@ -24,19 +25,52 @@ function authHeader(key: string): string {
 }
 
 /** Receptor en el formato de Facturapi; el mismo para el ingreso y su complemento de pago. */
-function facturapiCustomer(c: FiscalDocumentRequest['recipient']) {
-  const rfc = String(c.taxId || '').toUpperCase().trim();
+function facturapiCustomer(c: FiscalDocumentRequest['recipient']):
+  | { ok: true; customer: Record<string, unknown>; generico: boolean; extranjero: boolean; foreignCountry: string | null }
+  | { ok: false; error: string } {
+  // ── Receptor extranjero ────────────────────────────────────────────────
+  // Un cliente con país distinto de México no tiene RFC: el CFDI lleva el RFC
+  // genérico de extranjeros (XEXX010101000), su residencia fiscal y, si lo
+  // tiene, su número de identificación tributaria (NumRegIdTrib). Facturapi
+  // arma todo eso cuando `address.country` NO es "MEX" (ISO alfa-3) y
+  // `tax_id` trae el número extranjero; `tax_system` solo es obligatorio para
+  // nacionales y no se manda. Antes el RFC genérico de PÚBLICO EN GENERAL
+  // (XAXX) se usaba también aquí y el CFDI declaraba nacional a un cliente de
+  // Madrid o de Austin. Lo comparten la factura y su complemento de pago: el
+  // receptor de un CFDI tipo P tiene que ser el mismo de la factura.
+  const recipientCountry = String(c.address?.countryCode || 'MX').toUpperCase();
+  const extranjero = recipientCountry !== 'MX';
+  const foreignCountry = extranjero ? toAlpha3(recipientCountry) : null;
+  if (extranjero && !foreignCountry) {
+    return { ok: false, error: 'El país del cliente no es válido para el CFDI. Revísalo en su ficha.' };
+  }
+  const rfc = extranjero ? '' : String(c.taxId || '').toUpperCase().trim();
   // RFC genérico = "público en general" (sin RFC real del cliente).
-  const generico = !rfc || rfc === 'XAXX010101000';
-  const customer = {
-    legal_name: String(c.legalName || 'PÚBLICO EN GENERAL').toUpperCase().slice(0, 254),
-    tax_id: generico ? 'XAXX010101000' : rfc,
-    // 616 = Sin obligaciones fiscales (genérico); 601 = Persona Moral (default con RFC).
-    tax_system: c.taxSystem || (generico ? '616' : '601'),
-    address: { zip: String(c.address?.postalCode || '00000') },
-    ...(c.email ? { email: String(c.email) } : {}),
-  };
-  return { customer, generico };
+  const generico = !extranjero && (!rfc || rfc === 'XAXX010101000');
+  // NumRegIdTrib: el identificador fiscal del país del cliente, sin espacios
+  // (el SAT lo valida contra el formato de ese país); hasta 40 caracteres.
+  const foreignTaxId = extranjero ? String(c.taxId || '').replace(/\s/g, '').toUpperCase().slice(0, 40) : '';
+
+  const customer = extranjero
+    ? {
+        legal_name: String(c.legalName || 'CLIENTE EXTRANJERO').toUpperCase().slice(0, 254),
+        ...(foreignTaxId ? { tax_id: foreignTaxId } : {}),
+        address: {
+          country: foreignCountry,
+          ...(c.address?.postalCode ? { zip: String(c.address.postalCode).slice(0, 20) } : {}),
+          ...(c.address?.city ? { city: String(c.address.city).slice(0, 100) } : {}),
+        },
+        ...(c.email ? { email: String(c.email) } : {}),
+      }
+    : {
+        legal_name: String(c.legalName || 'PÚBLICO EN GENERAL').toUpperCase().slice(0, 254),
+        tax_id: generico ? 'XAXX010101000' : rfc,
+        // 616 = Sin obligaciones fiscales (genérico); 601 = Persona Moral (default con RFC).
+        tax_system: c.taxSystem || (generico ? '616' : '601'),
+        address: { zip: String(c.address?.postalCode || '00000') },
+        ...(c.email ? { email: String(c.email) } : {}),
+      };
+  return { ok: true, customer, generico, extranjero, foreignCountry };
 }
 
 export interface PaymentComplementRequest {
@@ -70,6 +104,8 @@ export class MexicoSatProvider implements FiscalProvider {
       return { success: false, provider: 'facturapi', documentId: input.externalId,
         error: 'No hay una credencial de timbrado configurada para emitir el complemento de pago.' };
     }
+    const receptor = facturapiCustomer(input.recipient);
+    if (!receptor.ok) return { success: false, provider: 'facturapi', documentId: input.externalId, error: receptor.error };
     const headers = { 'Content-Type': 'application/json', Authorization: authHeader(apiKey) };
     try {
       const summaryRes = await fetch(
@@ -90,7 +126,7 @@ export class MexicoSatProvider implements FiscalProvider {
       const sendDate = Number.isFinite(paidAt.getTime()) && paidAt.getTime() < Date.now() - 60_000;
       const body = {
         type: 'P',
-        customer: facturapiCustomer(input.recipient).customer,
+        customer: receptor.customer,
         complements: [{
           type: 'pago',
           data: [{
@@ -148,7 +184,9 @@ export class MexicoSatProvider implements FiscalProvider {
       };
     }
 
-    const { customer, generico } = facturapiCustomer(request.recipient);
+    const receptor = facturapiCustomer(request.recipient);
+    if (!receptor.ok) return { success: false, provider: 'facturapi', documentId: request.documentId, error: receptor.error };
+    const { customer, generico, extranjero, foreignCountry } = receptor;
 
     const isCreditNote = ['cfdi_egreso', 'credit_note'].includes(request.documentType || '');
     if (isCreditNote && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(request.relatedFiscalId || '')) {
@@ -162,9 +200,11 @@ export class MexicoSatProvider implements FiscalProvider {
         error: error instanceof Error ? error.message : 'El desglose fiscal no es válido.' };
     }
 
-    // Uso del CFDI: "público en general" (RFC genérico) EXIGE S01 (sin efectos
-    // fiscales); con RFC real se usa el uso configurado o G03 por defecto.
-    const cfdiUse = generico ? 'S01' : (request.cfdi?.use || 'G03');
+    // Uso del CFDI: con RFC genérico —público en general o extranjero— el SAT
+    // EXIGE S01 (sin efectos fiscales): ese receptor no deduce en México. Con
+    // RFC real se usa el uso configurado o G03 por defecto.
+    const sinEfectos = generico || extranjero;
+    const cfdiUse = sinEfectos ? 'S01' : (request.cfdi?.use || 'G03');
     // Divisa y tipo de cambio del comprobante. Facturapi asume MXN cuando no se
     // manda `currency`: un CFDI de una venta en USD se timbraba con los importes
     // en dólares pero etiquetados como pesos. El SAT exige `exchange` (TipoCambio)
@@ -190,7 +230,7 @@ export class MexicoSatProvider implements FiscalProvider {
       ...(currency !== 'MXN' && Number.isFinite(exchange) && exchange > 0
         ? { exchange }
         : {}),
-      use: isCreditNote && !generico ? 'G02' : cfdiUse,
+      use: isCreditNote && !sinEfectos ? 'G02' : cfdiUse,
       payment_form: request.cfdi?.paymentForm || '03', // 03 = Transferencia electrónica
       payment_method: request.cfdi?.paymentMethod || 'PUE',
       // Facturapi documenta esta llave como la protección oficial contra
@@ -257,6 +297,8 @@ export class MexicoSatProvider implements FiscalProvider {
           // conciliación: es lo que el comprobante declaró ante el SAT.
           payment_method: body.payment_method,
           payment_form: body.payment_form,
+          // Auditoría: con qué residencia fiscal se timbró a un extranjero.
+          ...(extranjero ? { receptor_extranjero: foreignCountry } : {}),
         },
       };
     } catch (err: any) {

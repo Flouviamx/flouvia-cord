@@ -1,6 +1,10 @@
 ---
 title: "Integraciones y automatización"
 description: "Qué camino tomar para conectar Cord con otro sistema: workflows sin código, HubSpot administrado, Zapier y Make, o la API con webhooks."
+lastUpdated: "2026-10-07"
+reviewedBy: "Ingeniería de Cord"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Una llave de API o una conexión OAuth"]
 ---
 
 <header class="content-header">
@@ -29,12 +33,12 @@ La sincronización la administra Cord: clientes con Empresas y Contactos en los 
 
 ## Zapier y Make
 
-Ambas plataformas hablan con la API pública de Cord y se conectan por **OAuth 2.0**: la persona autoriza en una pantalla de Cord y no hay llaves que crear ni pegar. Cada autorización se materializa como una credencial de vida corta que Cord renueva con un refresh token, y aparece en **Ajustes › Modo desarrollador › API** como **Conexión autorizada**.
+Ambas plataformas hablan con la API pública de Cord y se conectan por **OAuth 2.0**: la persona autoriza en una pantalla de Cord y no hay llaves que crear ni pegar. Cada autorización se materializa como una credencial de vida corta que Cord renueva con un refresh token, y aparece en la pestaña **API** del [Cord Workbench](/docs/desarrolladores/herramientas/workbench) como **Conexión autorizada**.
 
 - **Eventos hacia ellas:** una suscripción de webhook creada con la credencial de esa conexión. Se crean y se borran solas cuando prendes o apagas el Zap o el escenario.
 - **Acciones hacia Cord:** los endpoints de `/api/v1` con esa misma credencial.
 
-Los clientes OAuth de Cord se registran por Cord (hoy: Zapier y Make); no hay registro abierto de aplicaciones de terceros. Para un servidor propio, usa una llave secreta.
+Cord registra los clientes OAuth a pedido; no hay registro de autoservicio. Hoy hay clientes registrados para Zapier y Make, además del complemento de Cord para Gmail, que es de la propia Cord. Si construyes una app que otros negocios van a conectar, sigue [OAuth para apps](/docs/desarrolladores/herramientas/oauth). Para un servidor propio, usa una llave secreta.
 
 ## n8n
 

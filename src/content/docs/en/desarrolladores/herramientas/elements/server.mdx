@@ -1,126 +1,98 @@
 ---
-title: "Server SDK (@flouviahq/node)"
-description: "Call the Cord API and verify webhooks from your backend with @flouviahq/node: Node, Bun, Deno, Cloudflare Workers and Vercel."
+title: "Server proxy"
+seoTitle: "Server proxy for Cord Elements (createElementsProxy)"
+description: "Use Cord Elements without a publishable key: your backend serves proxyUrl mode with createElementsProxy from @flouviahq/node, with a restricted key and only from your origin."
+lastUpdated: "2026-10-07"
+reviewedBy: "Cord engineering"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["@flouviahq/node 1.0.0 or later", "A Cord secret or restricted key on your server"]
 ---
 
 <header class="content-header">
-  <h1 class="page-title">Server SDK</h1>
-  <p class="page-subtitle">@flouviahq/node: the Cord API and webhook verification from your backend, with your Secret Key.</p>
+  <h1 class="page-title">Server proxy</h1>
+  <p class="page-subtitle">The browser talks to your backend and your backend talks to Cord: no key ever reaches the page.</p>
 </header>
 
-Cord Elements lives in the browser; `@flouviahq/node` lives on your server. It is a separate package with no dependencies that runs on Node 20+, Bun, Deno, Cloudflare Workers and Vercel. It replaces the old `@flouviahq/elements/server`, which still works but no longer gets changes.
+Cord Elements works in two ways: with a publishable key (`pk_`) straight to Cord, or with `proxyUrl`, where your own backend serves the requests and calls Cord with a server key. Use the proxy when you want the Builder to read your client directory, email the quote or set negotiated prices: things a `pk_` key can never do.
+
+The proxy lives in [`@flouviahq/node`](/en/docs/desarrolladores/herramientas/sdks), the server SDK. That package replaces the old `@flouviahq/elements/server`, which still works but no longer receives changes.
+
+## Mount it
 
 ```bash
 npm install @flouviahq/node
 ```
 
 ```ts
-import { Cord } from '@flouviahq/node';
-
-const cord = new Cord(process.env.CORD_SECRET_KEY!); // sk_live_…, sk_test_… or a restricted rk_…
-
-const quote = await cord.quotes.create({
-  cliente: { empresa: 'Acme', email: 'purchasing@acme.com' },
-  items: [{ descripcion: 'Installation', cantidad: 1, precio_unitario: 12500, tax_rate: 0.16 }],
-  base_currency: 'MXN',
-});
-console.log(quote.folio, quote.link_publico);
-```
-
-<Callout type="warning">
-A Secret Key lives only on your server. The SDK refuses to run in a browser and the API rejects an `sk_` arriving from one.
-</Callout>
-
-## Resources
-
-`cord.quotes`, `cord.clients`, `cord.products`, `cord.invoices`, `cord.collections`, `cord.events`, `cord.tasks`, `cord.webhookEndpoints`, `cord.elements` and `cord.me`. Lists are walked in full with `listAll()`:
-
-```ts
-for await (const invoice of cord.invoices.listAll({ estado: 'open' })) {
-  // walks every page
-}
-```
-
-## Retries without duplicates
-
-Every operation that creates or changes something carries an `Idempotency-Key`, the same on every retry: a network drop never creates two quotes or records two payments. Retries (network, 429, 5xx) honor `Retry-After`. To tie the operation to your own identifier:
-
-```ts
-await cord.invoices.recordPayment(id, { monto: 5000, moneda: 'MXN' }, { idempotencyKey: `payment-${yourId}` });
-```
-
-Errors are `CordError` with `status`, `code`, `requestId` and `docUrl`.
-
-## API version
-
-The SDK sends `Cord-Version` with the version it was built with, so a Cord update never changes what you read. To pin another: `new Cord(sk, { apiVersion: '2026-10-01' })`. More in [API versions](/en/docs/desarrolladores/esenciales/versiones).
-
-## Webhooks
-
-```ts
-import { constructEvent } from '@flouviahq/node';
-
-export async function POST(req: Request) {
-  const event = await constructEvent(await req.text(), req.headers, process.env.CORD_WEBHOOK_SECRET!);
-  if (event.event === 'invoice.paid') {
-    event.data.saldo; // TypeScript knows it's an invoice
-  }
-  return new Response('ok');
-}
-```
-
-- Use the **raw** body, never a parsed one.
-- It requires `X-Cord-Signature-V1` with a timestamp and 5 minutes of tolerance: an old event replayed is rejected.
-- During a secret rotation two signatures arrive; one matching is enough.
-- Deduplicate by `event.id`: a retry carries the same id.
-
-## Proxy for Cord Elements
-
-If you'd rather not use a publishable key in the browser, your backend acts as the intermediary:
-
-```ts
-// app/api/cord/[...path]/route.ts
+// app/api/cord/[...path]/route.ts (Next.js App Router)
 import { createElementsProxy } from '@flouviahq/node';
 
 const proxy = createElementsProxy({
   secretKey: process.env.CORD_SECRET_KEY!,
-  authorizeClients: async (req) => !!(await getSession(req)),
+  authorizeClients: async (req) => Boolean(await getSession(req)),
 });
+
 export const GET = proxy;
 export const POST = proxy;
 ```
 
 ```tsx
-<CordProvider proxyUrl="/api/cord">…</CordProvider>
+<CordProvider proxyUrl="/api/cord">
+  <CordBuilder />
+</CordProvider>
 ```
 
-The proxy only serves the configuration, the catalog, quote creation and, if you authorize it, the client directory; only from your origin, and it sanitizes the quote the same way a publishable key does.
+`getSession` is your own session function. `createElementsProxy` returns a `(Request) => Promise<Response>` handler, so it works the same in Next.js, Astro, Remix, Hono, Bun or Cloudflare Workers. `cord init` creates it for you in a Next.js project.
 
-### Give the proxy a restricted key
+## What it serves
 
-The proxy doesn't need a Secret Key with every permission. Create a **restricted key** (`rk_`) in Developers › API with only this:
+| Browser request | Calls Cord | Condition |
+|---|---|---|
+| `GET {proxyUrl}/elements/config` | `GET /api/v1/elements/config` | Always. |
+| `GET {proxyUrl}/productos` | `GET /api/v1/productos` | Always. |
+| `POST {proxyUrl}/cotizaciones` | `POST /api/v1/cotizaciones` | Always, with the body sanitized. |
+| `POST {proxyUrl}/elements/ai-draft` | `POST /api/v1/elements/ai-draft` | Always. The AI stream is forwarded as is; files up to 4 MB. |
+| `GET {proxyUrl}/clientes` | `GET /api/v1/clientes?limit=200` | Only if `authorizeClients` returns `true`. Otherwise `403` with `code: "clients_require_proxy"`. |
+
+Any other route or method returns `404`. The proxy doesn't retry: the browser already retries on its own.
+
+## Options
+
+| Option | Detail |
+|---|---|
+| `secretKey` | **Required.** An `sk_` or `rk_` key. |
+| `allowedOrigins` | Origins allowed to use the proxy. By default, only the request's own origin: a proxy open to any site is the same as publishing your key. |
+| `authorizeClients(request)` | Authorizes reading the client directory. Without it, it's never read. |
+| `authorizeSellerFields(request)` | Authorizes seller fields on creation: `cliente_id`, `send` (email it), `fiscal_currency`, and on each line `precio_negociado` and `costo_unitario`. Without it, they're dropped and the quote is created as a draft, just like with a `pk_` key. |
+| `baseUrl` | Cord's origin. Default `https://cordhq.app`. |
+| `fetch` | For tests. |
+
+```ts
+const proxy = createElementsProxy({
+  secretKey: process.env.CORD_PROXY_KEY!,
+  allowedOrigins: ['https://portal.yourcompany.com'],
+  authorizeClients: async (req) => (await getSession(req))?.role === 'seller',
+  authorizeSellerFields: async (req) => (await getSession(req))?.role === 'seller',
+});
+```
+
+The proxy forwards the browser's `Idempotency-Key` (the Builder sends one per submission attempt), and returns Cord's errors with their `code`, `request_id` and `doc_url`.
+
+## Give the proxy a restricted key
+
+The proxy doesn't need a Secret Key with every permission. Create a **restricted key** (`rk_`) in **Developers › API** with only this:
 
 | Resource | Level | What for |
 |---|---|---|
-| `elements` | write | Configuration and AI line drafting |
+| `elements` | write | Configuration and AI line filling |
 | `productos` | read | The Builder's catalog |
 | `cotizaciones` | write | Creating the quote |
 | `clientes` | read | Only if you use `authorizeClients` |
 
-If your server is compromised, that key can't read invoices, collections or webhooks. You can also pin your server's IPs and give it an expiry. `createElementsProxy` accepts an `rk_` just like an `sk_`.
+{/* MOCKUP: Workbench "Create restricted key" dialog with the resources elements (write), productos (read), cotizaciones (write) and clientes (read), and the rest set to "none". */}
 
-## Request log
+If your server is compromised, that key can't read invoices, collections or webhooks. You can also pin your server's IPs and set an expiration. See [Authentication](/en/docs/desarrolladores/esenciales/autenticacion#restricted-keys).
 
-Every API call is recorded in **Developers › Logs**: method, path, status, duration, IP and key. Look up a `CordError`'s `requestId` there to see what Cord received.
+## Debugging
 
-## Test mode
-
-With an `sk_test_` you can trigger what a third party does in production, through the same code as production:
-
-```ts
-await cord.testHelpers.fiscal.setNextOutcome('pac_caido');
-await cord.testHelpers.quotes.view(quoteId);
-await cord.testHelpers.webhooks.trigger('invoice.paid');
-```
-
-To receive webhooks on your machine, use the [CLI](/en/docs/desarrolladores/herramientas/cli): `cord listen --forward-to localhost:3000/api/webhooks`.
+Every call from the proxy to Cord shows up in the Workbench's **Developers › Logs** with its `request_id`, method, route, status, duration and IP. The same `request_id` reaches the browser in the `Cord-Request-Id` header and in an error's body.

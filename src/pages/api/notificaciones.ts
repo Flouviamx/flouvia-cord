@@ -1,28 +1,31 @@
-// GET /api/notificaciones — feed de actividad reciente de la org (campana de la topbar).
-// Reusa la tabla `eventos` (mismo origen que el feed del dashboard) y devuelve los
-// últimos movimientos con un texto legible + ruta para abrir la cotización.
+// GET /api/notificaciones — bandeja de la campana de la topbar.
+// Qué cuenta como notificación vive en src/lib/notificaciones.ts (solo lo que
+// hizo el cliente o el dinero que entró, cotizaciones y facturas juntas). Aquí
+// solo se le da texto legible y la ruta para abrir el documento.
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { sql, getActiveOrgId, withOrgTx } from '../../lib/db';
+import { getActiveOrgId } from '../../lib/db';
 import { currentLocale } from '../../lib/context';
 import { t } from '../../i18n/app';
 import { fmtDate, intlLocale } from '../../lib/fmt-server';
+import { listNotificaciones } from '../../lib/notificaciones';
 
-// Tipos de evento → clave de texto e ícono (el front mapea el icon a un SVG).
+// Tipo de evento → clave de texto e ícono (el front mapea el icon a un SVG).
 // El label sale del diccionario: esta campana vive en la topbar de todas las
 // páginas y se quedaba en español con la cuenta en inglés.
-const META: Record<string, { key: Parameters<typeof t>[1]; icon: string }> = {
-    sent:     { key: 'notif.tipo.sent',     icon: 'send'  },
+type Key = Parameters<typeof t>[1];
+const META_COT: Record<string, { key: Key; icon: string }> = {
     viewed:   { key: 'notif.tipo.viewed',   icon: 'eye'   },
     approved: { key: 'notif.tipo.approved', icon: 'check' },
     rejected: { key: 'notif.tipo.rejected', icon: 'x'     },
-    paid:     { key: 'notif.tipo.paid',     icon: 'card'  },
-    invoiced: { key: 'notif.tipo.invoiced', icon: 'doc'   },
-    comment:  { key: 'notif.tipo.comment',  icon: 'chat'  },
     counter:  { key: 'notif.tipo.counter',  icon: 'chat'  },
-    reply:    { key: 'notif.tipo.reply',    icon: 'chat'  },
-    email:    { key: 'notif.tipo.email',    icon: 'send'  },
+    paid:     { key: 'notif.tipo.paid',     icon: 'card'  },
+};
+const META_FAC: Record<string, { key: Key; icon: string }> = {
+    viewed:   { key: 'notif.fac.viewed',  icon: 'eye'  },
+    payment:  { key: 'notif.fac.payment', icon: 'card' },
+    paid:     { key: 'notif.fac.paid',    icon: 'card' },
 };
 
 /**
@@ -48,27 +51,27 @@ export const GET: APIRoute = async () => {
     try {
         const L = currentLocale();
         const orgId = await getActiveOrgId();
-        const [rows] = await withOrgTx(orgId, sql`
-            select e.id, e.tipo, e.detalle, e.created_at, c.folio, c.id as cotizacion_id,
-                   cl.empresa as cliente
-            from eventos e
-            join cotizaciones c on c.id = e.cotizacion_id
-            left join clientes cl on cl.id = c.cliente_id
-            where e.org_id = ${orgId}
-            order by e.created_at desc limit 15`);
+        const rows = await listNotificaciones(orgId);
 
         const items = rows.map((e) => {
-            const meta = META[e.tipo as string];
-            const title = meta ? t(L, meta.key) : ((e.detalle as string) || t(L, 'notif.tipo.otro'));
+            const factura = e.origen === 'factura';
+            const meta = (factura ? META_FAC : META_COT)[e.tipo];
+            // Un `comment` externo puede ser el mensaje del cliente o una nota del
+            // sistema sobre su pago ("el intento de pago no se completó"): el texto
+            // real dice cuál, una etiqueta fija mentiría en uno de los dos casos.
+            const detalle = (e.detalle || '').replace(/\s+/g, ' ').trim();
+            const title = e.tipo === 'comment' && detalle
+                ? (detalle.length > 90 ? detalle.slice(0, 89) + '…' : detalle)
+                : meta ? t(L, meta.key) : (detalle || t(L, 'notif.tipo.otro'));
             return {
-                id: e.id as string,
-                tipo: e.tipo as string,
-                icon: meta?.icon ?? 'doc',
+                id: e.id,
+                tipo: e.tipo,
+                icon: e.tipo === 'comment' ? 'chat' : meta?.icon ?? 'doc',
                 title,
-                sub: `${e.folio} · ${(e.cliente as string) || t(L, 'notif.sin_cliente')}`,
-                cuando: relative(e.created_at as string),
-                ts: new Date(e.created_at as string).getTime(),
-                href: `/app/cotizaciones/${e.cotizacion_id}`,
+                sub: `${e.folio || '—'} · ${e.cliente || t(L, 'notif.sin_cliente')}`,
+                cuando: relative(e.created_at),
+                ts: new Date(e.created_at).getTime(),
+                href: factura ? `/app/facturas/${e.ref_id}` : `/app/cotizaciones/${e.ref_id}`,
             };
         });
 

@@ -58,8 +58,6 @@ const groups = groupedOperations();
           <Tabs>
             <TabItem label="curl"><Code code={code.curl} lang="bash" /></TabItem>
             {code.node && <TabItem label="Node"><Code code={code.node} lang="ts" /></TabItem>}
-            {code.python && <TabItem label="Python"><Code code={code.python} lang="python" /></TabItem>}
-            {code.php && <TabItem label="PHP"><Code code={code.php} lang="php" /></TabItem>}
           </Tabs>
 
           {response.length > 0 && (

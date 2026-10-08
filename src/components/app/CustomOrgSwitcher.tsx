@@ -354,6 +354,9 @@ export default function CustomOrgSwitcher({ orgLogoUrl = '', user, activeOrg, lo
           animation: pulse 1.5s infinite ease-in-out;
         }
 
+        /* Colapsado = rail de escritorio. En móvil el drawer es siempre ancho y
+           el estado persistido no debe esconder el nombre de la organización. */
+        @media (min-width: 881px) {
         .sb-collapsed .org-text,
         .sb-collapsed .chevron-icon {
           opacity: 0;
@@ -376,6 +379,7 @@ export default function CustomOrgSwitcher({ orgLogoUrl = '', user, activeOrg, lo
           width: 36px;
           height: 36px;
           border-radius: 10px;
+        }
         }
 
         .org-switcher-btn {

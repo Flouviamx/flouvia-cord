@@ -1,5 +1,104 @@
 # Historial — App interna: features y UX
 
+## 2026-10-08 — Tareas con dueño, fecha del negocio y recordatorio real
+
+Audit previo: el widget se llamaba "Tareas y recordatorios" y Cord no mandaba un solo
+recordatorio (regla 15); "vencida" se decidía con la hora del servidor y la fecha se
+mostraba como medianoche UTC, así que en América una tarea de hoy salía vencida por la noche
+y su fecha un día antes; completar o borrar quitaba la fila aunque el servidor respondiera
+error (`fetch` no lanza con un 4xx); agregar recargaba la página; el widget topaba en 12 sin
+ningún lugar para ver el resto; nadie era responsable de nada.
+
+- `tareas` gana `notas`, `prioridad` (`normal` | `alta`), `asignado_a`, `creado_por`,
+  `completed_at`, `completed_by` y `recordada_el`. Migración aditiva en
+  `db/tareas-seguimiento.sql`, encadenada al build de Vercel (`scripts/migrate-tareas.mjs`,
+  mismo patrón que `brand-profile`) para que las columnas existan antes que el código.
+- `src/lib/tasks.ts`: reglas puras sobre el DÍA CIVIL del negocio (grupos vencidas / hoy /
+  mañana / esta semana / después / sin fecha y atajos Hoy, Mañana, Lunes). Las fechas `date`
+  se leen con `to_char`, nunca como `Date`.
+- Acciones (`src/lib/actions/tasks.ts`): el responsable se valida como miembro ACTIVO de la
+  organización; editar es parcial y reprogramar limpia `recordada_el`; completar guarda quién y
+  cuándo, reabrir lo limpia. El quick-add y la cuenta de una sola persona asignan a quien
+  escribe (`asignar_a_creador`); la API y el MCP no cambian su contrato.
+- UI: `TaskBoard.astro` (widget del Inicio y `/app/tareas`) con capturador de atajos de fecha,
+  prioridad y responsable; grupos por urgencia; completar con "Deshacer"; menú de posponer,
+  asignarme, editar y eliminar (con confirmación). Todo cambio pide el fragmento
+  `/app/tareas/lista`, que renderiza el mismo `TaskList.astro` que el SSR.
+- Sidebar: "Tareas" con `G T` y badge de lo tuyo o sin dueño que vence hoy o antes.
+- Recordatorio: `GET /api/cron/tareas`, cada hora desde `cord-crons.yml` (el plan de Vercel
+  solo admite crons diarios y una hora UTC fija no es "la mañana" en todos los países). Desde
+  las 8:00 de la zona del negocio, un correo por responsable (o por quien creó la tarea, o el
+  dueño) con lo de hoy y lo vencido. Dedup por `recordada_el`, reclamado antes de mandar y
+  liberado si el envío falla. Opt-out en Ajustes › Notificaciones (`task_due`, encendido si la
+  organización nunca lo guardó).
+- Lo prueban `test/tasks.test.ts` (reglas puras y correo) y `test/tareas-db.test.ts`
+  (migración real dos veces, acciones, lista, aislamiento y cron con su dedup).
+
+## 2026-10-07 — Topbar: campana como bandeja, ⌘K más útil, tema en tres modos
+
+- `eventos.actor` (`vendedor` | `externo` | null histórico) lo decide un DEFAULT con el
+  `app.user_id` que withOrgTx ya fija: ninguna inserción cambió y el código se puede desplegar
+  antes o después de la migración (la lectura usa `to_jsonb(e)->>'actor'`). Dos sentencias
+  para no rellenar el historial como "externo". Sin la columna, la campana solo muestra
+  vistas, contraofertas y pagos; con ella, también aprobaciones, rechazos y comentarios del
+  cliente. Lo prueba `test/notificaciones-db.test.ts` con la sección real del schema.
+- Campana: cotizaciones y facturas juntas, contador en el SSR (ya no se pedía la lista en cada
+  carga), "visto hasta" por miembro en el servidor (migra el de localStorage).
+- Topbar sin animaciones de juguete; ⌘K con facturas, contexto y atajos; Crear con teclas
+  C/F/L/P/T; tema claro/oscuro/sistema.
+
+## 2026-10-07 — Topbar: bugs de ⌘K, menús, tema móvil y barra de progreso
+
+- ⌘K: borrar letras dejaba que una respuesta atrasada pintara resultados de la consulta
+  anterior; cada mousemove redibujaba la lista y la desplazaba; clientes y productos
+  llevaban a la lista general en vez de su ficha; el foco se escapaba con Tab y no volvía al
+  cerrar. Ahora: debounce de 140 ms, descarte por secuencia, selección sin redibujar,
+  combobox/listbox y foco atrapado.
+- Crear, Notificaciones y Apps podían quedar abiertos a la vez; ahora comparten
+  `src/lib/topbar-menu.ts` (uno a la vez y teclado de menú).
+- La barra de progreso se quedaba al 90 % si un "¿salir sin guardar?" se cancelaba; ahora
+  arranca solo en `beforeunload` no cancelado, con respaldo de 10 s.
+- En móvil no había forma de cambiar el tema ni de reabrir la guía minimizada.
+- Detalles: ⌘K decía ⌘ en Windows/Linux, aro blanco del punto de la campana en oscuro,
+  "Ver toda la actividad" iba al tope del Inicio, `href` de notificaciones sin escapar.
+- La campana con acciones del propio vendedor y sin facturas se resolvió el mismo día con
+  `eventos.actor` (entrada de arriba), sin depender del orden entre migración y despliegue.
+
+## 2026-10-07 — Navegación sin parpadeo, invitar al equipo y toggle animado
+
+- Se evaluó `<ClientRouter />` para mantener viva la sidebar y se descartó por ahora: con
+  navegación SPA los scripts de cada página corren una sola vez, así que había que migrar
+  73 scripts de 44 páginas, 26 componentes y 77 inicializaciones a `astro:page-load`
+  (incluidos el editor, KYC y pagos). En su lugar: View Transitions entre documentos +
+  prefetch de Astro solo en la sidebar. La sidebar no se funde y el scroll del menú se
+  conserva. Verificado en Chromium (`pagereveal` con `viewTransition`).
+- "Invitar al equipo" en el pie, solo donde de verdad invita (permiso `equipo`, planes con
+  más de un asiento); abre el modal existente vía `?invitar=1`.
+- Botón de colapsar con icono animado (vista previa con resorte + chevron que confirma).
+- El avatar de la cuenta quedaba pegado a la línea en el rail colapsado por una regla
+  `padding: 0 !important` vieja en AppLayout; se retiró.
+
+## 2026-10-07 — Sidebar con densidad de herramienta (Linear / Stripe)
+
+- Estructura en `src/lib/sidebar-nav.ts`, fuente única del menú, los atajos `G` + letra
+  (antes un mapa aparte en AppLayout que la sidebar no mostraba) y el panel de atajos.
+- Grupos renombrados: "Mi dinero" → Ingresos; "Inteligencia" se parte en Análisis y
+  Automatización; "Equipo" (apuntaba a `/app/desempeno`, y chocaba con Ajustes › Equipo)
+  → Desempeño; "Cobranza con IA" pasa a sub-página de Cobranza (Agente IA).
+- El hover ya no mueve el indicador del activo; se retiran el indicador por JS, su sondeo
+  cada 20 ms y la animación de entrada que corría en cada navegación. Filas de 30 px.
+- Contadores: Cotizaciones = vistas sin responder (antes todo lo enviado o visto);
+  vencidas en tinte, no rojo sólido.
+- Fijados y grupos plegados pasan de localStorage a `org_members.widget_prefs` vía
+  `PUT /api/app/sidebar-prefs`, se pintan en el SSR (antes empujaban el menú en cada carga),
+  heredan el icono de su sección y se migran solos desde el navegador.
+- Pie: el logo de Cord sale; entra un medidor de cotizaciones activas con "Mejorar plan"
+  (solo planes con tope, `getPlanUsage()`, el mismo de Ajustes › Plan). `[` colapsa.
+- Rail colapsado con tooltip propio (etiqueta · contador · atajo) en vez del `title` nativo.
+- Móvil: drawer sólido con un solo scroll; la X de los fijados siempre visible.
+- Verificado renderizando el componente real con el Container API de Astro y el CSS/JS
+  compilados en Chromium (claro, oscuro, colapsado, inglés y móvil).
+
 ## 2026-10-04 — Ajustes con tarjetas compartidas
 
 - Se reemplaza, a petición de André, el formato plano de Ajustes por un sistema
@@ -2343,3 +2442,42 @@ Estado y archivos del contrato: [personalización de marca](../estado/personaliz
 - Integrados los cambios remotos de marketing antes del despliegue para
   conservar el trabajo ya publicado. Eliminada la traducción huérfana del botón
   SSO sustituido por el pie de guardado compartido.
+
+## 2026-10-07 — Alta de cliente y de producto para cualquier país y giro
+
+Auditoría de `ClientModal.astro` y `ProductModal.astro`, y lo que se corrigió:
+
+- **Textos traducidos que nunca se leían.** Ambos modales leían `dataset.nuevo`
+  para un atributo `data-i18n-nuevo` (cuyo nombre en `dataset` es `i18nNuevo`),
+  así que una cuenta en inglés veía títulos, errores y estados en español.
+- **Dinero con divisa fija** (regla 21): "(MXN)" en precio, costo y límite de
+  crédito; "$1,000" y `es-MX` en la vista previa del descuento; "$" fijo en los
+  niveles de volumen. Ahora sale de `orgs.moneda` y de `money-client.ts`.
+- **Teléfono sin lada.** El placeholder sugería "55 1234 5678" y WhatsApp exige
+  E.164 (`toE164()` no inventa la lada), así que esos clientes no recibían
+  avisos. Selector de lada por país y guardado `+52 55 1234 5678`
+  (`src/lib/party-format.ts`).
+- **País del cliente al frente.** Define el nombre y un ejemplo del
+  identificador fiscal, una verificación blanda de su formato (aconseja, nunca
+  bloquea: RFC, EIN, BN, CPF/CNPJ, NIF/NIE/CIF, VAT, SIREN, NIT, CUIT, RUT,
+  RUC), el nombre del código postal y de la subdivisión, y un selector de
+  estado/provincia donde hay catálogo (MX, US, CA, BR, ES). Un valor guardado
+  fuera del catálogo se conserva (regla 28).
+- **CFDI solo cuando aplica.** El bloque de régimen/uso aparece si el EMISOR es
+  mexicano y el cliente también, y filtra las claves por tipo de RFC (12 moral,
+  13 física) sin borrar la ya elegida.
+- **`step="1000"` en el límite de crédito** hacía que el navegador rechazara
+  "1500" al guardar; y el botón de guardar quedaba deshabilitado en "Creando…"
+  al reabrir el modal en el editor de cotizaciones.
+- **Producto:** tipo de venta (bien, servicio, suscripción) que propone
+  unidades —no se guarda; se deduce de la unidad—, descripción multilínea,
+  SKU de hasta 64 caracteres y **impuesto sugerido por producto**
+  (`productos.tax_rate`, `null` = el default de la org). Se valida contra el
+  catálogo de la organización al guardar y lo consumen los editores de
+  cotización y factura al agregar el producto o un kit; la línea sigue tomando
+  su propio snapshot (regla 23). Expuesto como `taxRate` en `/api/v1/productos`.
+
+Pendiente fuera de este cambio: términos de pago más allá de contado/net30/net60
+(el contrato vive en ~20 sitios, incluida la API pública y Elements), claves
+SAT de producto y unidad para el CFDI (hoy siempre `01010101`/`H87`) y el CFDI
+a un receptor extranjero (`XEXX010101000` + residencia fiscal).

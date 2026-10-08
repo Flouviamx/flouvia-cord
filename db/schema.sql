@@ -110,7 +110,7 @@ create table clientes (
   email             text,
   telefono          text,
   rfc               text,
-  terminos_default  text        not null default 'contado',  -- 'contado' | 'net30' | 'net60'
+  terminos_default  text        not null default 'contado',  -- 'contado' | 'net<N>' (src/lib/payment-terms.ts)
   limite_credito    numeric,
   created_at        timestamptz default now()
 );
@@ -134,7 +134,7 @@ create table cotizaciones (
   fx_rate       numeric     not null default 1,     -- Tipo de cambio aplicado
   fx_rate_source text       not null default 'spot',-- 'spot' | 'buffer' | 'forward'
   fx_locked_until timestamptz,                      -- Fecha de expiración de cobertura
-  terminos      text        not null default 'contado', -- 'contado' | 'net30' | 'net60'
+  terminos      text        not null default 'contado', -- 'contado' | 'net<N>' (src/lib/payment-terms.ts)
   vigencia      date,                                 -- fecha de expiración
   public_token  text        not null unique default encode(gen_random_bytes(16), 'hex'), -- /q/{token}
   notas         text,
@@ -301,7 +301,7 @@ create index if not exists idx_audit_org on audit_log(org_id, created_at desc);
 -- ── Superpoderes de configuración (jun 2026) ────────────────────────────────
 -- Defaults de cotización (los usa el editor /nueva y el POST de cotizaciones).
 alter table orgs add column if not exists vigencia_default_dias int not null default 30; -- días de vigencia por default
-alter table orgs add column if not exists terminos_default text not null default 'contado'; -- contado | net30 | net60
+alter table orgs add column if not exists terminos_default text not null default 'contado'; -- contado | net<N> (src/lib/payment-terms.ts)
 -- Retenciones e impuestos avanzados (servicios / CFDI) + leyenda legal del PDF.
 alter table orgs add column if not exists retencion_isr_pct numeric not null default 0; -- % retención de ISR
 alter table orgs add column if not exists retencion_iva_pct numeric not null default 0; -- % retención de IVA
@@ -3609,6 +3609,24 @@ alter table documentos_fiscales add column if not exists retenciones_snapshot js
 alter table eventos add column if not exists documento_id uuid references documentos_fiscales(id) on delete cascade;
 create index if not exists idx_eventos_documento on eventos(documento_id, created_at desc);
 
+-- ── Autor de cada evento (oct 2026) ─────────────────────────────────────────
+-- La campana de la topbar mostraba TODO el timeline: "Cotización enviada" o
+-- "Borrador actualizado" encendían el aviso con las acciones del propio
+-- vendedor (regla 19: una señal sin actor es un bug esperando a ocurrir).
+--   'vendedor' = la escribió una sesión de usuario (app.user_id no vacío)
+--   'externo'  = sin sesión: el cliente en /q o /i, un webhook de pago, un cron
+--   null       = histórico, anterior a esta columna
+-- El DEFAULT lo decide Postgres con el contexto que withOrgTx ya fija, así que
+-- ninguna inserción cambia y el código puede desplegarse antes o después de esta
+-- migración. Son DOS sentencias a propósito: un `add column ... default` habría
+-- rellenado el historial evaluando el default AHORA (sin sesión → 'externo') y
+-- todo lo viejo, incluidas las acciones del vendedor, aparecería como del cliente.
+alter table eventos add column if not exists actor text;
+alter table eventos alter column actor set default (
+  case when coalesce(current_setting('app.user_id', true), '') <> '' then 'vendedor' else 'externo' end
+);
+-- ── fin autor de eventos ──
+
 -- Las tareas del CRM tampoco podían colgar de una factura.
 alter table tareas add column if not exists documento_id uuid references documentos_fiscales(id) on delete set null;
 create index if not exists idx_tareas_documento on tareas(documento_id) where documento_id is not null;
@@ -3668,6 +3686,20 @@ create index if not exists idx_planes_documento    on planes_pago_negociados(doc
 create index if not exists idx_promesas_documento  on promesas_pago(documento_id)           where documento_id is not null;
 create index if not exists idx_intereses_documento on intereses_moratorios(documento_id)    where documento_id is not null;
 
+-- Días de un término de pago. Misma regla que `termDays()` de
+-- src/lib/payment-terms.ts: 'net<N>' = N días naturales; cualquier otra cosa
+-- (contado, null, un código desconocido) = 0. Antes cada consulta tenía su
+-- propio `case` con los días de net30 y net60 escritos a mano, así que un
+-- plazo nuevo vencía el mismo día en la cartera y la cobranza lo perseguía
+-- como vencido. `immutable`: se puede usar en índices y el planificador lo
+-- pliega.
+create or replace function cord_term_days(p_terminos text)
+returns integer
+language sql immutable parallel safe
+as $$
+  select coalesce(substring(lower(trim(p_terminos)) from '^net([0-9]{1,3})$')::integer, 0)
+$$;
+
 -- Vista única de cuentas por cobrar. Une los dos rieles con UNA forma común
 -- para que el agente de cobranza, el cron de intereses y los informes consulten
 -- un solo lugar en vez de duplicar la aritmética del vencimiento — que en
@@ -3711,11 +3743,9 @@ create or replace view cuentas_por_cobrar as
     c.total - coalesce((select sum(cc.monto) from cotizacion_cobros cc
                where cc.cotizacion_id = c.id and cc.status = 'pagado'), 0)  as saldo,
     (coalesce(c.approved_at, c.created_at)
-      + make_interval(days => case coalesce(c.terminos, 'contado')
-          when 'net30' then 30 when 'net60' then 60 else 0 end))::date      as vence,
+      + make_interval(days => cord_term_days(c.terminos)))::date        as vence,
     (current_date - (coalesce(c.approved_at, c.created_at)
-      + make_interval(days => case coalesce(c.terminos, 'contado')
-          when 'net30' then 30 when 'net60' then 60 else 0 end))::date)     as dias_vencido,
+      + make_interval(days => cord_term_days(c.terminos)))::date)       as dias_vencido,
     c.public_token                               as token,
     c.id                                         as cotizacion_id
   from cotizaciones c
@@ -6034,3 +6064,82 @@ do $$ begin
   end if;
 end $$;
 -- END cli-logins
+
+-- ── Impuesto predeterminado por producto (oct 2026) ─────────────────────────
+-- Un negocio que vende servicios gravados y productos exentos (o a tasa
+-- reducida) tenía que corregir el impuesto de cada línea a mano en cada
+-- cotización: al agregar un producto la línea nacía con la tasa default de la
+-- organización. `tax_rate` es la tasa SUGERIDA al agregarlo (fracción, como
+-- `cotizacion_items.tax_rate`); la línea sigue tomando su propio snapshot al
+-- capturar (regla 23), así que editar el producto no reescribe documentos ya
+-- enviados. `null` = la tasa predeterminada de la organización. El servidor la
+-- valida contra el catálogo `impuestos` al guardar (actions/products.ts).
+alter table productos add column if not exists tax_rate numeric
+  check (tax_rate is null or (tax_rate >= 0 and tax_rate <= 1));
+
+-- ── Claves SAT por producto (oct 2026) ──────────────────────────────────────
+-- Todo CFDI salía con 01010101 ("No existe en el catálogo") y H87 (pieza),
+-- también una hora de consultoría o una licencia. `clave_sat` es
+-- c_ClaveProdServ (8 dígitos) y `clave_unidad_sat` c_ClaveUnidad (1 a 3
+-- alfanuméricos). `null` = sin clasificar: el CFDI usa los defaults del SAT y,
+-- para la unidad, la deducida de `unidad` (src/lib/fiscal/sat-claves.ts). Se
+-- leen al timbrar y quedan congeladas en `line_items_snapshot`.
+alter table productos add column if not exists clave_sat text
+  check (clave_sat is null or clave_sat ~ '^[0-9]{8}$');
+alter table productos add column if not exists clave_unidad_sat text
+  check (clave_unidad_sat is null or clave_unidad_sat ~ '^[A-Z0-9]{1,3}$');
+
+-- BEGIN informes-guardados
+-- Informes guardados (oct 2026): una configuración del explorador de informes
+-- (agrupar por + métricas) con nombre, compartida por la organización. Si tiene
+-- frecuencia, el cron /api/cron/informes-programados se la manda por correo a
+-- quien la guardó: el destinatario no es libre, así nadie usa Cord para mandar
+-- correo a terceros. `ultimo_envio_at` avanza ANTES de enviar (mismo patrón que
+-- las recurrencias): un fallo a medio camino no repite el envío.
+create table if not exists informes_guardados (
+  id               uuid primary key default gen_random_uuid(),
+  org_id           uuid not null references orgs(id) on delete cascade,
+  nombre           text not null check (char_length(nombre) between 1 and 80),
+  config           jsonb not null,
+  frecuencia       text not null default 'ninguna' check (frecuencia in ('ninguna', 'semanal', 'mensual')),
+  creado_por       uuid references users(id) on delete set null,
+  ultimo_envio_at  timestamptz,
+  created_at       timestamptz not null default now(),
+  updated_at       timestamptz not null default now()
+);
+create index if not exists idx_informes_guardados_org on informes_guardados(org_id, created_at desc);
+create index if not exists idx_informes_guardados_programados on informes_guardados(frecuencia, ultimo_envio_at) where frecuencia <> 'ninguna';
+
+alter table informes_guardados enable row level security;
+alter table informes_guardados force row level security;
+drop policy if exists rls_informes_guardados on informes_guardados;
+create policy rls_informes_guardados on informes_guardados
+  using (org_id = nullif(current_setting('app.org_id', true), '')::uuid)
+  with check (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
+-- El cron solo DESCUBRE qué informes tocan (lectura cross-org, regla 30); el
+-- trabajo de cada uno vuelve a withOrgTx con su org_id.
+drop policy if exists system_informes_guardados on informes_guardados;
+create policy system_informes_guardados on informes_guardados
+  for select using (current_setting('app.scope', true) = 'system');
+
+do $$ begin
+  if exists (select 1 from pg_roles where rolname = 'cord_app') then
+    grant select, insert, update, delete on informes_guardados to cord_app;
+  end if;
+end $$;
+-- END informes-guardados
+
+-- ── Tareas con dueño, prioridad y recordatorio real (oct 2026) ──────────────
+-- Espejo de db/tareas-seguimiento.sql, que corre en cada build antes de servir.
+alter table tareas add column if not exists notas text;
+alter table tareas add column if not exists prioridad text not null default 'normal';
+alter table tareas add column if not exists asignado_a uuid references users(id) on delete set null;
+alter table tareas add column if not exists creado_por uuid references users(id) on delete set null;
+alter table tareas add column if not exists completed_at timestamptz;
+alter table tareas add column if not exists completed_by uuid references users(id) on delete set null;
+alter table tareas add column if not exists recordada_el date;
+alter table tareas drop constraint if exists tareas_prioridad_check;
+alter table tareas add constraint tareas_prioridad_check check (prioridad in ('normal', 'alta'));
+create index if not exists idx_tareas_asignado on tareas(org_id, asignado_a, due_date) where done = false;
+create index if not exists idx_tareas_completadas on tareas(org_id, completed_at desc) where done = true;
+-- END tareas-seguimiento

@@ -1,6 +1,10 @@
 ---
 title: "Cord Webhooks"
 description: "Construye integraciones en tiempo real reaccionando a eventos que ocurren en Cord — entrega durable con reintentos, identidad de evento y rotación de secreto sin downtime."
+lastUpdated: "2026-10-07"
+reviewedBy: "Ingeniería de Cord"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Un endpoint HTTPS público que responda en menos de 5 segundos", "Modo desarrollador activo para administrar endpoints desde el Workbench"]
 ---
 
 <header class="content-header">
@@ -44,15 +48,14 @@ Cada entrega es un `POST` con `Content-Type: application/json` y este cuerpo:
   "event": "quote.paid",
   "created_at": "2026-07-27T18:32:04.000Z",
   "data": {
-    "id": "b3f1...",
+    "id": "b3f1c2d4-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
     "folio": "COT-0148",
     "status": "paid",
     "moneda": "MXN",
     "total": 45200.00,
     "cliente": "Distribuidora El Zarco",
-    "cliente_id": "9a1c...",
-    "link_publico": "https://cordhq.app/q/6f2a...",
-    "mensaje": "Solo presente en el evento de prueba ping"
+    "cliente_id": "9a1c3e5f-7b2d-4f6a-8c0e-1d3b5f7a9c2e",
+    "link_publico": "https://cordhq.app/q/6f2a9c4e1b7d3f8a0c5e2b9d4f1a6c3e"
   }
 }
 ```
@@ -61,8 +64,8 @@ Cada entrega es un `POST` con `Content-Type: application/json` y este cuerpo:
 
 ## Firmas y seguridad
 
-Cord firma cada entrega con dos headers. Usa `constructEvent` de `@flouviahq/node` (ver la
-[guía del SDK de servidor](/docs/desarrolladores/herramientas/elements/server)) para no tener que
+Cord firma cada entrega con dos headers. Usa `constructEvent` de `@flouviahq/node` (ver el
+[SDK de Node](/docs/desarrolladores/herramientas/sdks#webhooks-constructevent)) para no tener que
 implementar la verificación a mano. Exige `X-Cord-Signature-V1` con timestamp, compara en
 tiempo constante y rechaza una entrega de hace más de 5 minutos:
 
@@ -76,10 +79,14 @@ const event = await constructEvent(
 );
 ```
 
-Si prefieres verificar a mano:
+Cada entrega lleva estos headers:
 
 | Header | Contenido | Notas |
 |---|---|---|
+| `Content-Type` | `application/json` | |
+| `User-Agent` | `Cord-Webhooks/1.0` | |
+| `X-Cord-Event` | `quote.paid`, `ping`… | El tipo de evento, igual al campo `event` del body. Útil para enrutar sin parsear. |
+| `X-Cord-Timestamp` | segundos unix | El mismo `t` de `X-Cord-Signature-V1`: el momento en que se firmó este intento. |
 | `X-Cord-Signature-V1` | `t=<unix>,v1=<hmac_sha256(secret, "<t>.<body>")>` | **Recomendado.** Incluye timestamp — protección real contra replay. Puede traer **dos** `v1=` durante una rotación de secreto (ver abajo); acepta si cualquiera cuadra. |
 | `X-Cord-Signature` | `sha256=<hmac_sha256(secret, body)>` | Legacy, sin timestamp. Se sigue enviando en cada entrega por compatibilidad; usa V1 si puedes. |
 | `X-Cord-Event-Id` | `evt_…` | Igual al campo `id` del body. |
@@ -87,10 +94,87 @@ Si prefieres verificar a mano:
 | `X-Cord-Attempt` | número | 1-indexado. |
 | `Idempotency-Key` | `evt_…` | Repite `X-Cord-Event-Id` — varios frameworks de servidor lo leen de ahí directo. |
 
+## Verificar la firma a mano
+
+Si no usas el SDK, este es el algoritmo completo. Es lo mismo que hace `constructEvent`:
+
+1. Lee el cuerpo **crudo**, exactamente como llegó. Un JSON parseado y vuelto a serializar no cuadra.
+2. Del header `X-Cord-Signature-V1` toma `t` y **todos** los valores `v1` (durante una rotación llegan dos).
+3. Rechaza la entrega si `t` se aleja más de 300 segundos de tu reloj: es un reenvío.
+4. Calcula `HMAC-SHA256(secreto, "<t>.<cuerpo crudo>")` en hexadecimal.
+5. Acepta si coincide con **cualquiera** de los `v1`, comparando en tiempo constante.
+
+```js
+import { createHmac, timingSafeEqual } from 'node:crypto';
+
+export function verifyCordSignature(rawBody, header, secret, toleranceSec = 300) {
+  if (!header) return false;
+  let t = null;
+  const firmas = [];
+  for (const part of header.split(',')) {
+    const i = part.indexOf('=');
+    if (i < 0) continue;
+    const k = part.slice(0, i).trim();
+    const v = part.slice(i + 1).trim();
+    if (k === 't' && /^\d+$/.test(v)) t = Number(v);
+    else if (k === 'v1' && /^[0-9a-f]{64}$/i.test(v)) firmas.push(Buffer.from(v, 'hex'));
+  }
+  if (t === null || firmas.length === 0) return false;
+  if (Math.abs(Math.floor(Date.now() / 1000) - t) > toleranceSec) return false;
+  const esperada = createHmac('sha256', secret).update(`${t}.`).update(rawBody).digest();
+  return firmas.some((f) => f.length === esperada.length && timingSafeEqual(f, esperada));
+}
+```
+
+Con Express, pide el cuerpo crudo solo en esa ruta:
+
+```js
+import express from 'express';
+import { verifyCordSignature } from './verify-cord.js';
+
+const app = express();
+
+app.post('/webhooks/cord', express.raw({ type: 'application/json' }), (req, res) => {
+  if (!verifyCordSignature(req.body, req.get('X-Cord-Signature-V1'), process.env.CORD_WEBHOOK_SECRET)) {
+    return res.sendStatus(400);
+  }
+  const event = JSON.parse(req.body);
+  // Deduplica por event.id antes de aplicar efectos.
+  res.sendStatus(200);
+});
+
+app.listen(3000);
+```
+
 <Callout type="warning">
 Nunca compares las firmas con `===` a mano en producción — usa una comparación de tiempo
 constante (el SDK ya lo hace). Un `!==` normal puede filtrar información por *timing attack*.
 </Callout>
+
+## El evento de prueba `ping`
+
+El botón **Probar** de un endpoint en el Workbench manda una entrega con `event: "ping"` por el mismo camino que un evento real (firma, headers y log). Usa datos de ejemplo con la forma de una cotización y un campo `mensaje`:
+
+```json
+{
+  "id": "evt_0b7e3d9a1c5f2e8b4a6d0c9f3e1b7a5d",
+  "event": "ping",
+  "created_at": "2026-10-07T17:12:09.441Z",
+  "data": {
+    "id": "00000000-0000-0000-0000-000000000000",
+    "folio": "COT-PRUEBA",
+    "status": "sent",
+    "moneda": "MXN",
+    "total": 12500,
+    "cliente": "Cliente de prueba S.A. de C.V.",
+    "cliente_id": null,
+    "link_publico": "https://cordhq.app/q/demo",
+    "mensaje": "Esta es una entrega de prueba enviada desde Ajustes › Developers."
+  }
+}
+```
+
+Una prueba se intenta **una sola vez**: si falla, no entra al calendario de reintentos. `ping` no queda en el historial de eventos ni dispara Workflows. Responde `2xx` y descártala. Para probar con cualquiera de los 41 eventos reales, usa el [simulador de webhooks](/docs/desarrolladores/empezar/pruebas#disparar-un-webhook) o `cord trigger` del [CLI](/docs/desarrolladores/herramientas/cli).
 
 ## Identidad del evento e idempotencia
 
@@ -117,7 +201,11 @@ Cord encola cada evento **antes** de intentar entregarlo — si tu endpoint est�
 | 8 | ~10 h |
 | 9–11 | ~1 día |
 
-(Con jitter de ±20% para que muchos endpoints caídos al mismo tiempo no reciban el reintento exactamente en el mismo segundo.) Cualquier respuesta que no sea `2xx`, un timeout, o un error de red cuenta como fallo y programa el siguiente intento. Un `3xx` (redirect) **nunca se sigue** — se trata como fallo; si tu endpoint cambió de URL, actualízala en el Workbench en vez de dejar un redirect.
+(Con jitter de ±20% para que muchos endpoints caídos al mismo tiempo no reciban el reintento exactamente en el mismo segundo.) Cualquier respuesta que no sea `2xx`, un error de red o no responder en **5 segundos** cuenta como fallo y programa el siguiente intento. Responde rápido y procesa después: guarda el evento y contesta `200` antes de hacer trabajo pesado. Un `3xx` (redirect) **nunca se sigue** — se trata como fallo; si tu endpoint cambió de URL, actualízala en el Workbench en vez de dejar un redirect.
+
+<Callout type="warning" title="Los tiempos de la tabla son mínimos">
+El primer intento sale en el momento del evento. Los reintentos los ejecuta un barrido del motor de entrega que hoy corre **una vez al día**, así que un reintento puede llegar hasta un día después del tiempo que marca la tabla. Si tu endpoint estuvo caído, no esperes el siguiente reintento: recupera lo que te perdiste con el [historial de eventos](#historial-de-eventos-por-api).
+</Callout>
 
 La entrega es **al menos una vez** (*at-least-once*), no exactamente una vez — de ahí la importancia de deduplicar por `id` (ver arriba).
 
@@ -138,11 +226,13 @@ Puedes rotar el secreto de un endpoint sin perder ni una entrega. En el Workbenc
 
 Durante la ventana, Cord firma cada entrega con **ambos** secretos a la vez:
 
-```
+```text
 X-Cord-Signature-V1: t=1732650000,v1=<hmac con el secreto NUEVO>,v1=<hmac con el secreto VIEJO>
 ```
 
-Esto significa que puedes actualizar tu `CORD_WEBHOOK_SECRET` en cualquier momento dentro de la ventana — antes o después de rotar en Cord — sin que ninguna entrega se rechace. El SDK ya acepta cualquiera de los dos `v1=` que cuadre. Si verificas a mano y solo lees el primer `v1=` que encuentres, sigues funcionando igual (es el más nuevo). Al cerrarse la ventana, Cord deja de mandar el secreto viejo.
+El orden es fijo: el `v1=` del secreto **nuevo** va primero y el del secreto **viejo** al final. Así puedes actualizar tu `CORD_WEBHOOK_SECRET` en cualquier momento dentro de la ventana sin que ninguna entrega se rechace, siempre que tu verificación compare **todos** los `v1=` del header. El SDK ya acepta cualquiera de los dos que cuadre. Si verificas a mano, no te quedes con un solo valor: leer solo el primero exige que ya tengas el secreto nuevo, y un parser que guarda el último `v1=` (por ejemplo, uno que arma un mapa clave-valor) durante la ventana solo valida con el secreto viejo, así que falla en cuanto cambias al nuevo antes de que la ventana cierre.
+
+La firma legacy `X-Cord-Signature` solo admite un valor, así que durante la ventana se calcula con el secreto **viejo**; al cerrarse pasa a firmarse con el nuevo. Al cerrarse la ventana, Cord deja de firmar con el secreto viejo en los dos headers.
 
 ## Catálogo de eventos
 
@@ -199,18 +289,18 @@ cotización — y traen una forma de `data` DISTINTA:
 
 ```json
 {
-  "id": "evt_...",
+  "id": "evt_7c3e9a1f5b2d8e4a0c6f3b9d1e7a5c2f",
   "event": "invoice.paid",
   "created_at": "2026-08-20T14:00:00.000Z",
   "data": {
-    "id": "d4a1...",
+    "id": "d4a1b3c5-7e9f-4a2b-8c4d-6e8f0a2b4c6d",
     "object": "invoice",
     "numero": "FAC-0032",
-    "folio_fiscal": "3f2a...-uuid-cfdi",
+    "folio_fiscal": "3F2A9C1E-7B4D-4E6A-8C2F-1D5B9E3A7C40",
     "estado": "paid",
-    "estado_fiscal": "stamped",
+    "estado_fiscal": "issued",
     "pais": "MX",
-    "tipo": "factura",
+    "tipo": "cfdi_40",
     "moneda": "MXN",
     "total": 12500.00,
     "pagado": 12500.00,
@@ -218,16 +308,20 @@ cotización — y traen una forma de `data` DISTINTA:
     "vence": "2026-08-30",
     "cliente": "Distribuidora El Zarco",
     "cotizacion_id": null,
-    "link_publico": "https://cordhq.app/i/9c1f..."
+    "link_publico": "https://cordhq.app/i/9c1f4e7a2b5d8c0f3a6e9b2d5f8a1c4e"
   }
 }
 ```
 
+`estado` es el ciclo de vida de la factura (`draft`, `open`, `paid`, `void` o
+`uncollectible`). `estado_fiscal` es el registro ante el proveedor fiscal: `pending`, `issued`,
+`cancelled` o `error`. `tipo` es el tipo de documento: `cfdi_40`, `cfdi_egreso`, `proforma`,
+`commercial_invoice`, `commercial_credit_note`, `verifactu_invoice` o `verifactu_credit_note`.
+
 Nota el link público: `/i/{token}` para una factura de Cord Invoicing, contra `/q/{token}`
-para una cotización. Si usas el Server SDK en TypeScript, hoy `CordWebhookEvent` solo tipa la
-unión discriminada de los eventos `quote.*`/`payment.*` — para los siete eventos `invoice.*`
-de Cord Invoicing, tipa el `data` manualmente contra la forma de arriba hasta que el SDK lo
-cubra.
+para una cotización. Si usas `@flouviahq/node` en TypeScript, `constructEvent` devuelve
+`CordWebhookEvent`, una unión discriminada por `event` que ya tipa los 41 eventos del catálogo,
+incluidos los siete `invoice.*` de Cord Invoicing con la forma de arriba.
 </Callout>
 
 ### Forma de `data` en clientes, productos, tareas y promesas
@@ -270,24 +364,31 @@ curl "https://cordhq.app/api/v1/events?type=quote.approved&limit=50" \
 {
   "data": [
     {
-      "id": "6b0e...",
+      "id": "6b0e2f4a-8c1d-4e3b-9a5f-7d2c0e8b1a46",
       "type": "quote.approved",
       "object": "quote",
-      "object_id": "b3f1...",
-      "data": { "id": "b3f1...", "folio": "COT-0148", "status": "approved", "moneda": "MXN", "total": 45200 },
+      "object_id": "b3f1c2d4-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
+      "data": { "id": "b3f1c2d4-5e6f-4a7b-8c9d-0e1f2a3b4c5d", "folio": "COT-0148", "status": "approved", "moneda": "MXN", "total": 45200 },
       "actor": "client",
       "created_at": "2026-09-14T18:32:04.123Z"
     }
   ],
-  "meta": { "next_cursor": "MjAyNi0wOS0x..." }
+  "meta": { "next_cursor": "MjAyNi0wOS0xNFQxODozMjowNC4xMjMwMDBafDZiMGUyZjRhLThjMWQtNGUzYi05YTVmLTdkMmMwZThiMWE0Ng" }
 }
 ```
 
 - Filtros opcionales: `type` (un evento del catálogo) y `object_id`.
 - `next_cursor` es un token opaco: repite la petición con `?cursor=<next_cursor>`. Viene `null` cuando no hay más.
-- `actor` indica quién originó el evento: `user:<id>`, `api:<llave>`, `mcp:<llave>`, `client` (el cliente en el link público) o `system`.
+- `actor` indica quién originó el evento: `user:<id>`, `api:<llave>`, `mcp:<llave>`, `client` (el cliente en el link público), `workflow:<id>`, `system` y otros. Ver la [lista completa](/docs/desarrolladores/funciones/eventos#quién-originó-el-evento-actor).
+- El `id` del historial es un UUID del registro, distinto del `evt_…` del webhook.
 - A diferencia del webhook, `data` **no** incluye `link_publico`: el link es una credencial y no se guarda en el historial.
 
 ## Log de entregas y retención
 
+{/* MOCKUP: pestaña Webhooks del Workbench con un endpoint expandido: log de entregas con columnas evento, intento, status, duración y fecha; una fila fallida (500) seleccionada mostrando la respuesta del servidor y el botón Reintentar. */}
+
 En la pestaña Webhooks del Workbench, cada endpoint tiene un log expandible con el resultado de cada intento (status, duración, respuesta de tu servidor) y un botón "Reintentar" por fila. La pestaña **Eventos** del Workbench muestra lo mismo desde otro ángulo: un evento lógico con todas sus entregas agrupadas, en vez de un log por endpoint. El log se conserva **30 días**; los eventos que llegaron a fallar del todo se conservan **90 días** (para que "Reintentar" siga funcionando más tiempo en ese caso). No uses el log de Cord como almacenamiento de largo plazo de lo que se envió — guarda tú lo que necesites conservar en tu propio sistema al procesarlo.
+
+<Callout type="info">
+Consultar el log de entregas, **Reintentar** una entrega y **Reactivar y reintentar** un endpoint requieren el plan Profesional o superior. Crear endpoints, recibir eventos, **Probar**, **Rotar secreto** y **Reactivar** están en todos los planes.
+</Callout>

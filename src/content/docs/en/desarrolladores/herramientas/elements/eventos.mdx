@@ -1,6 +1,10 @@
 ---
 title: "Elements Events"
 description: "Learn how to listen to client actions inside the iframe to build dynamic experiences."
+lastUpdated: "2026-10-07"
+reviewedBy: "Cord engineering"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["@flouviahq/elements 2.0.0 or later", "Allowed domains in Settings › Embeddable quote builder to receive data in events"]
 ---
 
 <header class="content-header">
@@ -53,7 +57,7 @@ All events have the `cord:` prefix to avoid naming collisions with other librari
 
 ## Read-only mode
 
-If your organization has no allowed domains in Settings › Elements, or the host page is not on that list, the quote renders **read-only**: it doesn't offer approve, sign, pay or chat, and its button opens the quote's public link in a new tab. In that mode events arrive **without `detail`**: a page that isn't on your list doesn't receive who signed, amounts or the payment URL.
+If your organization has no allowed domains in **Settings › Embeddable quote builder**, or the host page is not on that list, the quote renders **read-only**: it doesn't offer approve, sign, pay or chat, and its button opens the quote's public link in a new tab. In that mode events arrive **without `detail`**: a page that isn't on your list doesn't receive who signed, amounts or the payment URL.
 
 ## Debug bar
 

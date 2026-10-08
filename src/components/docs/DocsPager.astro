@@ -1,0 +1,134 @@
+---
+// Anterior / Siguiente al final del artículo, en el orden de lectura de DOCS_NAV.
+// Al cruzar a otra sección, la etiqueta pequeña dice a cuál.
+import { docHref, findItem, prevNext, type DocsLang, type FlatNavItem } from '../../lib/docs-nav';
+import { iconInner } from '../../lib/icons';
+
+interface Props {
+  slug: string;
+  lang: DocsLang;
+}
+
+const { slug, lang } = Astro.props;
+const { prev, next } = prevNext(slug);
+
+const currentSection = findItem(slug)?.section;
+// Dentro de la sección, el contexto es el grupo; al cruzar a otra, es la sección.
+const context = (entry: FlatNavItem) =>
+  entry.section !== currentSection ? entry.section.tab[lang] : entry.group.heading?.[lang] ?? entry.section.tab[lang];
+// "Resumen" a secas no dice nada al saltar de sección: se usa el nombre del grupo.
+const title = (entry: FlatNavItem) =>
+  entry.section !== currentSection && entry.group.heading && entry.slug === entry.group.items[0]?.slug
+    ? entry.group.heading[lang]
+    : entry.label[lang];
+const t = lang === 'es' ? { prev: 'Anterior', next: 'Siguiente', nav: 'Más guías' } : { prev: 'Previous', next: 'Next', nav: 'More guides' };
+---
+
+{(prev || next) && (
+  <nav class="dn-pager" aria-label={t.nav}>
+    {prev ? (
+      <a class="dn-pager-link dn-pager-prev" href={docHref(prev.slug, lang)} rel="prev">
+        <span class="dn-pager-kicker">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-left')}></svg>
+          <span class="dn-pager-meta">{t.prev}<span class="dn-pager-context"> · {context(prev)}</span></span>
+        </span>
+        <span class="dn-pager-title">{title(prev)}</span>
+      </a>
+    ) : <span class="dn-pager-spacer" aria-hidden="true"></span>}
+    {next ? (
+      <a class="dn-pager-link dn-pager-next" href={docHref(next.slug, lang)} rel="next">
+        <span class="dn-pager-kicker">
+          <span class="dn-pager-meta">{t.next}<span class="dn-pager-context"> · {context(next)}</span></span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-right')}></svg>
+        </span>
+        <span class="dn-pager-title">{title(next)}</span>
+      </a>
+    ) : null}
+  </nav>
+)}
+
+<style>
+  .dn-pager {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    margin: 56px 0 8px;
+    clear: both;
+  }
+  .dn-pager-link {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+    padding: 18px 22px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 20px;
+    background: #ffffff;
+    color: #050505;
+    text-decoration: none;
+    transition: border-color 0.2s, box-shadow 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .dn-pager-link:hover {
+    border-color: rgba(0, 0, 0, 0.14);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03), 0 8px 24px rgba(0, 0, 0, 0.05);
+  }
+  .dn-pager-link:focus-visible {
+    outline: 3px solid rgba(0, 113, 227, 0.45);
+    outline-offset: 3px;
+  }
+  .dn-pager-next {
+    grid-column: 2;
+    align-items: flex-end;
+    text-align: right;
+  }
+  .dn-pager-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    max-width: 100%;
+    font-size: 12px;
+    font-weight: 500;
+    color: #6b7280;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .dn-pager-kicker svg {
+    flex-shrink: 0;
+  }
+  .dn-pager-meta {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .dn-pager-context {
+    color: #8792a2;
+  }
+  .dn-pager-title {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.35;
+    color: #050505;
+  }
+  @media (max-width: 640px) {
+    .dn-pager {
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+    .dn-pager-next {
+      grid-column: 1;
+    }
+    .dn-pager-spacer {
+      display: none;
+    }
+    .dn-pager-link {
+      min-height: 44px;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .dn-pager-link {
+      transition: none;
+    }
+  }
+</style>
