@@ -42,6 +42,15 @@ export interface FiscalLineItem {
   unitKey?: string;
   /** Causa legal de exención/no sujeción. ES: 'E1'..'E6' o inversión del sujeto pasivo. */
   exemptionReason?: string;
+  /**
+   * Descuento de DOCUMENTO repartido a esta línea, antes de impuestos, en la
+   * divisa del documento. `subtotal` ya es la base NETA (después del descuento):
+   * el importe bruto de la línea es `subtotal + discount`. Ausente = sin
+   * descuento. Lo consumen el PDF (importe bruto y renglón de descuento), el
+   * CFDI (`Descuento` por concepto) y la factura electrónica europea
+   * (AllowanceCharge).
+   */
+  discount?: number;
 }
 
 export interface FiscalRetencion {

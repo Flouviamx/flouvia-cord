@@ -10,8 +10,10 @@
 //   node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/migrate-facturacion.mjs
 //
 // Dos fuentes, ninguna copiada a mano:
-//   - db/facturacion-oct-2026.sql, espejo literal de db/schema.sql (lo verifica
-//     test/migrate-facturacion.test.ts);
+//   - los archivos de db/deploy/ en orden de nombre (`AAAA-MM-DD-tema.sql`),
+//     cada uno espejo literal de db/schema.sql (lo verifica
+//     test/migrate-facturacion.test.ts). Un cambio de esquema nuevo agrega SU
+//     archivo: dos frentes de trabajo no editan el mismo;
 //   - la sección de Verifactu, extraída del propio db/schema.sql.
 //
 // No ejecuta a ciegas. `alter table … add column if not exists` y
@@ -21,7 +23,7 @@
 // —columna, restricción con la misma definición, política, trigger, RLS— se
 // salta.
 import { neon } from '@neondatabase/serverless';
-import { readFile } from 'node:fs/promises';
+import { readdir, readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -198,13 +200,24 @@ export async function applyStatements(statements, query) {
     return { ejecutadas, saltadas };
 }
 
-/** Las dos fuentes, en orden: lo de impuestos y facturas, y después Verifactu. */
+/** Los archivos de db/deploy/, en orden de nombre. */
+export async function archivosDeploy(base = new URL('..', import.meta.url)) {
+    const dir = new URL('db/deploy/', base);
+    return (await readdir(dir)).filter((f) => f.endsWith('.sql')).sort().map((f) => new URL(f, dir));
+}
+
+/**
+ * Las fuentes, en orden: los archivos de db/deploy/ y después Verifactu. La
+ * sección de Verifactu va al final porque sus funciones leen columnas que
+ * agregan los archivos (p. ej. `cord_serie_en_uso` lee `fiscal_metadata`).
+ */
 export async function cargarSentencias(base = new URL('..', import.meta.url)) {
-    const [propio, schema] = await Promise.all([
-        readFile(new URL('db/facturacion-oct-2026.sql', base), 'utf8'),
+    const archivos = await archivosDeploy(base);
+    const [propios, schema] = await Promise.all([
+        Promise.all(archivos.map((f) => readFile(f, 'utf8'))),
         readFile(new URL('db/schema.sql', base), 'utf8'),
     ]);
-    return [...splitStatements(propio), ...splitStatements(extractVerifactu(schema))];
+    return [...propios.flatMap((t) => splitStatements(t)), ...splitStatements(extractVerifactu(schema))];
 }
 
 async function main() {

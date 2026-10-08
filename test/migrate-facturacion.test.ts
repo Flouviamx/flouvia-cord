@@ -4,6 +4,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { PGlite } from '@electric-sql/pglite';
+import { readdirSync } from 'node:fs';
 import { applyStatements, cargarSentencias, extractVerifactu, splitStatements } from '../scripts/migrate-facturacion.mjs';
 
 const read = (path: string) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
@@ -40,11 +41,16 @@ describe('migración de despliegue de facturación', () => {
         expect(steps.indexOf('node scripts/migrate-facturacion.mjs')).toBe(steps.indexOf('npm run build') - 1);
     });
 
-    it('cada sentencia propia es espejo literal de db/schema.sql', () => {
+    it('cada sentencia de db/deploy/ es espejo literal de db/schema.sql', () => {
         const schema = squash(read('db/schema.sql'));
-        const propias = splitStatements(read('db/facturacion-oct-2026.sql'));
-        expect(propias.length).toBeGreaterThan(20);
-        for (const s of propias) expect(schema, s).toContain(squash(s));
+        const archivos = readdirSync(new URL('../db/deploy/', import.meta.url)).filter((f) => f.endsWith('.sql'));
+        expect(archivos.length).toBeGreaterThan(0);
+        for (const f of archivos) {
+            expect(f, 'nombre AAAA-MM-DD-tema.sql: el orden de aplicación es el orden de nombre').toMatch(/^\d{4}-\d{2}-\d{2}-[a-z0-9-]+\.sql$/);
+            const propias = splitStatements(read(`db/deploy/${f}`));
+            expect(propias.length, f).toBeGreaterThan(0);
+            for (const s of propias) expect(schema, `${f}: ${s}`).toContain(squash(s));
+        }
     });
 
     it('el divisor respeta cuerpos $$ y comentarios', () => {

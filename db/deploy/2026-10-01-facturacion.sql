@@ -1,5 +1,6 @@
 -- Migración aditiva e idempotente de facturación (oct 2026). Corre en cada
--- despliegue (vercel.json → scripts/migrate-facturacion.mjs) ANTES del build,
+-- despliegue (vercel.json → scripts/migrate-facturacion.mjs, que lee todos los
+-- archivos de db/deploy/ en orden de nombre) ANTES del build,
 -- para que el código que lee estas columnas y funciones nunca llegue a
 -- producción sin ellas. Cada sentencia es espejo LITERAL de db/schema.sql (lo
 -- verifica test/migrate-facturacion.test.ts); la sección de Verifactu no se

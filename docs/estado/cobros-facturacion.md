@@ -1002,7 +1002,7 @@ Contratos que quedaron vigentes tras auditar Cord Invoicing en los 12 mercados.
   intracomunitaria (E5), Exenta art. 20 (E1) e Inversión del sujeto pasivo (S2),
   una sola vez (`migraciones_datos`): lo que el negocio borre no vuelve.
 - **Migración de despliegue** (`scripts/migrate-facturacion.mjs`, en el
-  `buildCommand` antes del build): espejo de `db/facturacion-oct-2026.sql` más
+  `buildCommand` antes del build): espejo de los archivos de `db/deploy/` (uno por cambio, en orden de nombre) más
   la sección de Verifactu extraída de `db/schema.sql`. Salta lo que ya existe
   —columna, restricción con la misma definición, política, trigger, RLS— para
   no tomar candados en cada despliegue. Lo verifica
