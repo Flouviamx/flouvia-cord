@@ -549,10 +549,31 @@ al pipeline y resúmenes de series a las gráficas ampliadas. Los títulos conse
 `kpi-num` y `kpi-sub`. Los acentos de categoría se reservan para los datos de las
 gráficas; no modifican el encabezado de las tarjetas.
 
-Durante la edición, Biblioteca muestra vistas previas inertes de todos los widgets
-disponibles, búsqueda y estado En pantalla/Agregar. Ocultar un widget abre esta
-biblioteca para recuperarlo. Las vistas previas no duplican IDs ni atributos de
-los controladores de la página.
+Edición (oct 2026): **Personalizar** (`.widget-edit-btn.is-customize`, icono
+`sliders`, superficie blanca con hairline, foco visible solo con teclado) entra al
+modo edición; ahí aparecen tres botones circulares de icono con tooltip propio
+(`data-tip`): **Biblioteca** (`grid-plus`, con contador de widgets para agregar),
+**Restablecer** y **Listo**. El foco vuelve a Personalizar al salir solo si se salió
+con teclado. El tooltip sale del `.page-head`, que lleva `position: relative;
+z-index: 3` porque su animación (`transform`) crea un contexto de apilamiento y,
+sin eso, el grid (`z-index: 1`) lo tapaba.
+
+La **Biblioteca de widgets** es una tarjeta flotante anclada al botón en
+escritorio y una hoja inferior en móvil (`src/lib/widget-library.ts`). No es modal:
+se sigue ordenando con ella abierta; Escape o un clic fuera la cierran y el foco
+vuelve al botón. Se mueve a `<body>` al montar para que ningún ancestro con
+`transform` u `overflow` la ancle o la recorte. Trae búsqueda ("Buscar widgets…"),
+categorías con conteo (Todos, Para agregar y los grupos KPIs, Pipeline, Finanzas,
+Rankings, Actividad, Otros), resumen "{n} para agregar · {m} en pantalla" y tarjetas
+con miniatura nítida (`src/lib/widget-preview.ts`, dibujada con los datos del
+widget, sin clonar DOM) y estado Agregar / En pantalla. Ocultar un widget lo deja
+ahí para recuperarlo.
+
+Cada widget declara su alcance con `ScopeTag`: **Hoy** (foto del momento),
+**Rango** (sigue el selector de fechas) o **Histórico** (todo el historial).
+
+El grid usa `align-items: stretch`: las tarjetas de una fila comparten alto. Con
+`start` una tarjeta corta junto a una gráfica alta dejaba un hueco (oct 2026).
 
 Configuración de equipo usa `cord.equipo.v1`; sus diálogos e invitación quedan
 fuera del grid. Desempeño usa `cord.desempeno.v1`, con cuatro indicadores de detalle
@@ -564,8 +585,9 @@ La biblioteca de componentes comienza en `src/components/app/widgets/README.md`.
 y desgloses ampliados. Lo consumen los cuatro indicadores de Desempeño y el
 ticket promedio de Inicio. El README mantiene el alcance de la migración.
 
-El catálogo de `widgets/README.md` incluye 13 widgets opcionales, desactivados por
-defecto. Los siete informes consumen `WidgetCard`; `ChartWidget`, `WidgetHeader`
+El catálogo de `widgets/README.md` incluye los widgets opcionales, desactivados por
+defecto. Los siete informes de widgets consumen `WidgetCard` (los informes tabla y el
+explorador usan `TablaReport.astro`, no el grid); `ChartWidget`, `WidgetHeader`
 y `ListWidget` centralizan las familias migradas. La biblioteca filtra Todos/Para
-agregar; sus previews se ajustan al contenido y las gráficas ocultas usan una
+agregar/grupo; sus previews se ajustan al contenido y las gráficas ocultas usan una
 miniatura estática de los mismos datos. Los gates no se confunden con opcionales.

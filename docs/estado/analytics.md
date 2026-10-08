@@ -161,6 +161,13 @@ invoice_created → invoice_finalized → invoice_sent → invoice_viewed → in
   (`cycle: mensual|anual|ventas`), ambos con `paywall_id` y `required_plan`.
   Los emite `PlanUpsell.astro`, el contenido único de todo bloqueo por plan: es
   el tramo del embudo de la suscripción ANTES del checkout.
+- `report_viewed` (cliente, `/app/informes`): `report_id`, `kind`
+  (`widgets|tabla|explorador`), `saved` y, en el explorador, `dim` y
+  `metric_count`. Se emite desde el navegador al cargar el informe (regla 19:
+  el prefetch del selector no es una vista). `report_saved` (cliente, al guardar
+  un informe personalizado): `dim`, `metric_count`, `frecuencia`
+  (`ninguna|semanal|mensual`) e `is_new`. Juntos responden qué informes se usan
+  y cuántos se vuelven rutina.
 - `team_member_invited`, `team_member_accepted`, `invite_viewed` (`/unirse/[token]`).
 - `sso_login`.
 - PostHog autocaptura `utm_*` en `$pageview` y persiste `$initial_utm_*` tras el

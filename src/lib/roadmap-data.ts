@@ -859,6 +859,45 @@ Workflows, the API (\`POST /api/v1/tareas\`) and the MCP server create tasks; ea
         status: 'live',
         api: true
     },
+    {
+        id: '23',
+        slug: 'informes-y-analitica',
+        title: {
+            es: 'Informes estilo Shopify e informes personalizados',
+            en: 'Shopify-style reports and custom reports'
+        },
+        shortDesc: {
+            es: 'Quince informes con comparativa contra el periodo anterior y CSV, un explorador para armar el tuyo, informes guardados que llegan por correo y un Inicio que se acomoda a tu forma de trabajar.',
+            en: 'Fifteen reports with a previous-period comparison and CSV, an explorer to build your own, saved reports delivered by email, and a Home that adapts to how you work.'
+        },
+        content: {
+            es: `## Las respuestas de tu negocio, sin hoja de cálculo de por medio
+Cuánto vendiste, a quién, qué producto deja margen, quién del equipo cierra y cuánto entró de verdad: cada pregunta tiene su informe, en la divisa de tu negocio y en tu zona horaria.
+
+### Qué incluye
+- **Quince informes en siete grupos:** Resumen, Ventas, Clientes, Productos, Finanzas, Equipo y Personalizados, con un buscador para saltar entre ellos.
+- **Informes tabla:** ventas en el tiempo, por cliente, por producto y por vendedor, pagos recibidos, impuestos facturados y recompra por cohorte. Cada uno con KPIs contra el periodo anterior, gráfica, tabla ordenable con totales y Exportar CSV listo para Excel o Google Sheets.
+- **Informe personalizado:** agrupa por cliente, producto, vendedor, estado, mes, semana, día, país, nivel de cliente o divisa, y elige hasta seis métricas. La configuración viaja en el link, así que se comparte copiándolo.
+- **Informes guardados y por correo:** guarda el que armaste con nombre, compártelo con tu equipo y recíbelo cada lunes o el día 1 de cada mes con el CSV adjunto.
+- **Del total al detalle:** una barra de cliente o producto abre su ficha; una de mes o semana abre ese periodo.
+- **Todo en la divisa de tu negocio:** las ventas en otras divisas se convierten con la tasa congelada al cotizar o, si no la hay, con la del día; lo que no se puede convertir se aparta y se avisa, nunca se suma como si fuera tu moneda.
+- **Un Inicio a tu medida:** KPIs con variación contra el periodo anterior, una etiqueta que dice si cada widget sigue el rango o es una foto de hoy, y una biblioteca flotante para agregar, ordenar y ocultar widgets.`,
+            en: `## Your business's answers, without a spreadsheet in between
+How much you sold, to whom, which product leaves margin, who on the team closes, and how much actually came in: every question has its report, in your business's currency and time zone.
+
+### What it includes
+- **Fifteen reports in seven groups:** Overview, Sales, Clients, Products, Finance, Team and Custom, with a search box to jump between them.
+- **Table reports:** sales over time, by client, by product and by team member, payments received, invoiced taxes and repeat purchase by cohort. Each one with KPIs against the previous period, a chart, a sortable table with totals and Export CSV ready for Excel or Google Sheets.
+- **Custom report:** group by client, product, team member, status, month, week, day, country, client tier or currency, and pick up to six metrics. The setup travels in the link, so you share it by copying it.
+- **Saved and emailed reports:** save the one you built with a name, share it with your team, and get it every Monday or on the 1st of each month with the CSV attached.
+- **From total to detail:** a client or product bar opens its record; a month or week bar opens that period.
+- **Everything in your business's currency:** sales in other currencies are converted at the rate frozen when quoting or, if there is none, at the day's rate; anything that can't be converted is set aside and flagged, never added as if it were your currency.
+- **A Home that fits you:** KPIs with change against the previous period, a tag that says whether each widget follows the range or is a snapshot of today, and a floating library to add, reorder and hide widgets.`
+        },
+        area: 'finanzas',
+        status: 'live',
+        api: false
+    },
 {
     "id": "20",
     "slug": "confiabilidad-operativa",
@@ -1072,6 +1111,16 @@ const roadmapEnhancements = {
         scope: { es: 'Tareas con responsable, prioridad, notas y fecha en el día civil del negocio; página propia con filtros y completadas, contador en el menú lateral y recordatorio diario por correo con opción de apagarlo.', en: 'Tasks with owner, priority, notes and a due date on the business\'s calendar day; their own page with filters and completed tasks, a sidebar counter and a daily email reminder that can be turned off.' },
         boundaries: { es: 'El recordatorio es un correo por persona al día, sin aviso por Slack ni Teams. La API crea tareas, pero asignarlas, completarlas y borrarlas se hace en la app. Eliminar una tarea no se puede deshacer.', en: 'The reminder is one email per person per day, with no Slack or Teams alert. The API creates tasks, but assigning, completing and deleting them happens in the app. Deleting a task cannot be undone.' },
         related: ['seguimiento-vivo', 'notificaciones', 'integraciones-y-flujos']
+    },
+    'informes-y-analitica': {
+        family: 'platform', market: { es: '12 mercados soportados', en: '12 supported markets' },
+        workflow: {
+            es: ['Elige un informe en el selector o arma uno propio con Agrupar por y las métricas que necesitas.', 'Compara contra el periodo anterior, ordena la tabla, baja al detalle desde la gráfica y exporta el CSV.', 'Guarda el informe para tu equipo y, si quieres, recíbelo cada semana o cada mes por correo.'],
+            en: ['Pick a report in the selector or build your own with Group by and the metrics you need.', 'Compare against the previous period, sort the table, drill down from the chart and export the CSV.', 'Save the report for your team and, if you want, get it by email every week or month.']
+        },
+        scope: { es: 'Quince informes, explorador con diez dimensiones y diez métricas, hasta 50 informes guardados por organización, envío semanal o mensual a quien lo guardó, CSV con importes como número y la divisa en su columna, e Inicio con widgets personalizables por persona.', en: 'Fifteen reports, an explorer with ten dimensions and ten metrics, up to 50 saved reports per organization, weekly or monthly delivery to whoever saved it, CSV with amounts as numbers and the currency in its own column, and a Home with widgets customizable per person.' },
+        boundaries: { es: 'Los informes leen lo que ya está en Cord: no importan datos de otros sistemas. El envío por correo llega solo a quien guardó el informe y deja de llegar si pierde el permiso de Informes. Finanzas, Flujo de caja y Cobranza requieren plan Profesional o superior.', en: 'Reports read what is already in Cord: they do not import data from other systems. Email delivery goes only to whoever saved the report and stops if they lose the Reports permission. Finance, Cash flow and Collections require the Professional plan or higher.' },
+        related: ['multi-divisa-fx', 'seguimiento-vivo', 'tareas-y-seguimiento']
     },
     'notificaciones': {
         family: 'quotes', market: { es: 'Correo, Slack y Teams', en: 'Email, Slack and Teams' },
