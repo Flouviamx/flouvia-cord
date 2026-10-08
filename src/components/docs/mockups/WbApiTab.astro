@@ -33,12 +33,14 @@ interface Props {
     mode: 'test' | 'live';
     plan: string;
     limite: number;
+    /** Hoja a media altura: la tabla usa siempre el acomodo angosto de dos filas. */
+    compact?: boolean;
 }
-const { lang, rows, mode, plan, limite } = Astro.props;
+const { lang, rows, mode, plan, limite, compact = false } = Astro.props;
 const strip = (s: string) => s.replace(/<[^>]+>/g, '');
 const activas = rows.filter((r) => !r.revocada && r.type !== 'oauth').length;
 ---
-<div class="wbapi">
+<div class:list={['wbapi', { 'is-compact': compact }]}>
     <div class="wbapi-head">
         <div class="wbapi-titles">
             <span class="wbapi-title">{dmT(lang, 'set.api.claves_titulo')}</span>
@@ -142,4 +144,14 @@ const activas = rows.filter((r) => !r.revocada && r.type !== 'oauth').length;
         .wbapi-token, .wbapi-tr > .wbapi-muted:nth-child(2) { grid-column: 1 / -1; }
         .wbapi-tr > .wbapi-muted:nth-child(5) { display: none; }
     }
+    /* Hoja a media altura (compact): mismo acomodo angosto sin depender del ancho. */
+    .wbapi.is-compact .wbapi-head { flex-direction: column; align-items: stretch; }
+    .wbapi.is-compact .wbapi-actions { justify-content: flex-start; }
+    .wbapi.is-compact .wbapi-th { display: none; }
+    .wbapi.is-compact .wbapi-tr { grid-template-columns: minmax(0, 1fr) auto; gap: 6px 10px; padding: 11px 12px; }
+    .wbapi.is-compact .wbapi-name { grid-column: 1; grid-row: 1; }
+    .wbapi.is-compact .wbapi-act { grid-column: 2; grid-row: 1; }
+    .wbapi.is-compact .wbapi-token, .wbapi.is-compact .wbapi-tr > .wbapi-muted:nth-child(2) { grid-column: 1 / -1; }
+    .wbapi.is-compact .wbapi-tr > .wbapi-muted:nth-child(5) { display: none; }
+    .wbapi.is-compact .wbapi-opt { display: none; }
 </style>
