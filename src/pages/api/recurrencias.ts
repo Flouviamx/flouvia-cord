@@ -16,6 +16,7 @@ import { requireEntitlement } from '../../lib/org-entitlements';
 import { currentUserId } from '../../lib/context';
 import { createRecurrencia, type Cadencia } from '../../lib/fiscal/recurrencias';
 import { recurrenceDay } from '../../lib/fiscal/recurrence-calendar';
+import { descuentoDesdeJson } from '../../lib/descuentos';
 import { normalizeCurrency } from '../../lib/currency';
 
 const CADENCIAS = new Set(['mensual', 'trimestral', 'anual']);
@@ -50,13 +51,19 @@ export const POST: APIRoute = async ({ request }) => {
     // líneas se copian del snapshot inmutable, que es exactamente lo que se
     // facturó — no del catálogo, que pudo cambiar de precio desde entonces.
     let lineasBase = Array.isArray(body.lineas) ? body.lineas : [];
+    // Descuento manual de la plantilla (sin cupón). Al repetir una factura se
+    // toma el suyo; si salió de un cupón se repite como descuento manual: lo
+    // decide quien repite la factura, no el código.
+    let descuentoBase: { tipo: 'porcentaje' | 'monto'; valor: number } | null =
+        body.descuento && typeof body.descuento === 'object' ? body.descuento : null;
     let clienteId = String(body.clienteId ?? '');
     let currency = body.currency;
     let nombre = String(body.nombre ?? '').trim().slice(0, 120);
 
     if (UUID_RE.test(String(body.fromDocumentoId ?? ''))) {
         const [[doc]] = await withOrgTx(orgId, sql`
-            select d.cliente_id, d.currency, d.line_items_snapshot, d.invoice_number, cl.empresa
+            select d.cliente_id, d.currency, d.line_items_snapshot, d.invoice_number, cl.empresa,
+                   d.descuento, d.descuento_total
               from documentos_fiscales d
               left join clientes cl on cl.id = d.cliente_id and cl.org_id = d.org_id
              where d.id = ${String(body.fromDocumentoId)} and d.org_id = ${orgId} and d.credit_note_of is null
@@ -71,11 +78,21 @@ export const POST: APIRoute = async ({ request }) => {
         // suyo. Se traduce explícitamente en vez de confiar en que coincidan:
         // con nombres distintos, copiar el objeto tal cual produce líneas con
         // cantidad 0 y precio 0 sin que nada falle.
+        // Con descuento de documento, el precio que se repite es el BRUTO
+        // (base + su parte del descuento) y el descuento viaja aparte: repetir
+        // el precio neto y además el descuento lo aplicaría dos veces.
+        const origen = descuentoDesdeJson(doc.descuento);
+        const totalDescuento = Number(doc.descuento_total) || 0;
+        descuentoBase = origen && totalDescuento > 0
+            ? { tipo: origen.tipo, valor: origen.tipo === 'monto' ? totalDescuento : origen.valor }
+            : null;
         lineasBase = (Array.isArray(doc.line_items_snapshot) ? doc.line_items_snapshot : [])
             .map((l: any) => ({
                 descripcion: String(l.description ?? l.descripcion ?? ''),
                 cantidad: Number(l.quantity ?? l.cantidad) || 1,
-                precioUnitario: Number(l.unitPrice ?? l.precioUnitario) || 0,
+                precioUnitario: descuentoBase && Number(l.discount) > 0 && Number(l.quantity) > 0
+                    ? Math.round((Number(l.subtotal) + Number(l.discount)) / Number(l.quantity) * 1e6) / 1e6
+                    : Number(l.unitPrice ?? l.precioUnitario) || 0,
                 taxRate: l.taxRate ?? l.tax_rate ?? null,
                 // España: la causa de exención congelada del concepto (E2…).
                 // Sin ella cada factura repetida derivaba otra en Verifactu,
@@ -101,6 +118,7 @@ export const POST: APIRoute = async ({ request }) => {
         primeraEmision: body.primeraEmision ? String(body.primeraEmision) : null,
         endDate: body.endDate ? String(body.endDate) : null,
         autopay: false,   // el cobro automático llega con el método guardado del cliente
+        descuento: descuentoBase,
     }, currentUserId());
 
     if (!result.ok) return json({ error: result.error }, 400);

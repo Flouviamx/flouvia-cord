@@ -132,6 +132,9 @@ export async function quoteDetail(q: Quote, orgId: string) {
             precio_lista: it.precioLista,
             precio_negociado: it.precioNegociado,
         })),
+        descuento: q.descuento
+            ? { tipo: q.descuento.tipo, valor: q.descuento.valor, cupon: q.descuento.codigo ?? null, monto: q.descuentoTotal ?? 0, moneda: q.baseCurrency ?? null }
+            : null,
         eventos: q.eventos.map((e) => ({ tipo: e.tipo, detalle: e.detalle, cuando: e.cuando })),
     };
 }
@@ -175,11 +178,15 @@ export function invoiceDetail(f: any) {
         nota_credito_de: f.notaCreditoDe,
         emisor: f.emisor,
         receptor: f.receptor,
+        descuento: f.descuentoTotal > 0
+            ? { tipo: f.descuento?.tipo ?? 'monto', valor: f.descuento?.valor ?? f.descuentoTotal, cupon: f.descuento?.codigo ?? null, monto: f.descuentoTotal, moneda: f.currency }
+            : null,
         conceptos: (f.lineas ?? []).map((l: any) => ({
             descripcion: l.descripcion,
             cantidad: l.cantidad,
             precio_unitario: l.precioUnitario,
             subtotal: l.subtotal,
+            descuento: l.descuento ?? 0,
             impuesto: l.impuesto,
             total: l.total,
         })),

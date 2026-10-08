@@ -26,7 +26,7 @@ export const POST: APIRoute = async ({ request }) => {
         });
         return json(result);
     } catch (e) {
-        if (e instanceof QuoteError) return json({ error: e.message }, e.status);
+        if (e instanceof QuoteError) return json({ error: e.message, ...(e.code ? { code: e.code } : {}) }, e.status);
         throw e;
     }
 };

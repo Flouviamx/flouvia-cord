@@ -19,7 +19,16 @@ export function creditNoteBreakdown(doc: Record<string, unknown>, amount: number
       || line.quantity <= 0 || line.subtotal < 0 || line.taxRate < 0 || line.taxRate > 1) throw new Error('El desglose original no es válido.');
     const subtotal = money(line.subtotal * ratio);
     const taxAmount = money(subtotal * line.taxRate);
-    return { ...line, unitPrice: Math.round(subtotal / line.quantity * 1e6) / 1e6, subtotal, taxAmount, total: money(subtotal + taxAmount) };
+    // El descuento de documento que traía la línea se acredita en la misma
+    // proporción: la nota conserva la forma de la factura (bruto − descuento =
+    // base), y el CFDI de egreso lo declara igual que el de ingreso.
+    const discount = Number(line.discount) > 0 ? money(Number(line.discount) * ratio) : 0;
+    const { discount: _sinDescuento, ...rest } = line;
+    return {
+      ...rest,
+      unitPrice: Math.round(subtotal / line.quantity * 1e6) / 1e6, subtotal, taxAmount, total: money(subtotal + taxAmount),
+      ...(discount > 0 ? { discount } : {}),
+    };
   });
   const subtotal = money(lines.reduce((sum, line) => sum + line.subtotal, 0));
   const taxes = money(lines.reduce((sum, line) => sum + line.taxAmount, 0));

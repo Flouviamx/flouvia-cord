@@ -5,6 +5,7 @@
 
 import { calculateDocumentTotals, retencionBase, type RetencionBase } from '../../packages/elements/src/engine';
 import { currencyDecimals } from './currency';
+import { descuentoParaMotor, type DescuentoDef } from './descuentos';
 
 export type QuoteStatus =
     | 'draft' | 'sent' | 'viewed' | 'approved' | 'rejected' | 'expired' | 'paid' | 'invoiced';
@@ -72,6 +73,14 @@ export interface Quote {
     taxRateFallback?: number;
     /** Retenciones congeladas al crear el documento. Se restan del total. */
     retenciones?: { nombre: string; tipo: string; tasa: number; base: number; monto: number; baseTipo?: RetencionBase }[];
+    /**
+     * Descuento de documento (definición, no importe). Se vuelve a aplicar sobre
+     * las líneas vigentes: en una aprobación parcial, un porcentaje rebaja lo
+     * aprobado y un monto se topa en su bruto.
+     */
+    descuento?: DescuentoDef | null;
+    /** Importe del descuento guardado (`cotizaciones.descuento`), antes de impuestos. */
+    descuentoTotal?: number;
 }
 
 export const STATUS_META: Record<QuoteStatus, { label: string; color: string; bg: string }> = {
@@ -123,11 +132,22 @@ const documentTotals = (q: Quote) => {
         })),
         // Redondeo por línea en la divisa de la cotización: el mismo criterio con
         // el que se guardó y con el que se factura (ver RoundingOptions).
-        { ivaIncluido: !!q.iva_incluido, retenciones, roundLines: currencyDecimals(q.baseCurrency || 'MXN') },
+        {
+            ivaIncluido: !!q.iva_incluido, retenciones, roundLines: currencyDecimals(q.baseCurrency || 'MXN'),
+            descuento: descuentoParaMotor(q.descuento),
+        },
     );
 };
 
+/** Base NETA: ya descontado el descuento de documento. */
 export const quoteSubtotal = (q: Quote) => documentTotals(q).subtotal;
+/** Descuento de documento, antes de impuestos (0 sin descuento). */
+export const quoteDescuento = (q: Quote) => documentTotals(q).descuentoTotal;
+/** Subtotal antes del descuento: lo que se imprime arriba del renglón de descuento. */
+export const quoteSubtotalBruto = (q: Quote) => {
+    const t = documentTotals(q);
+    return t.subtotal + t.descuentoTotal;
+};
 export const quoteIva = (q: Quote) => documentTotals(q).impuestos;
 export const quoteTotal = (q: Quote) => documentTotals(q).total;
 /** Desglose por tasa — lo que imprime el resumen cuando hay más de una. */

@@ -29,4 +29,15 @@ describe('cotización creada con una pk_', () => {
             items: [{ producto_id: undefined, descripcion: 'Tornillo', cantidad: 2, precio_unitario: 10, tax_rate: 0.16 }],
         });
     });
+
+    it('un descuento solo entra como código de cupón, que el servidor valida', () => {
+        const r = publishableQuoteInput({
+            descuento: { tipo: 'porcentaje', valor: 90 },
+            cupon: 'bienvenida10',
+            items: [{ descripcion: 'Tornillo', cantidad: 1, precio_unitario: 10 }],
+        });
+        expect(r.descuento).toBeUndefined();
+        expect(r.cupon).toBe('bienvenida10');
+        expect('cupon' in publishableQuoteInput({ descuento: { tipo: 'monto', valor: 5 }, items: [] })).toBe(false);
+    });
 });

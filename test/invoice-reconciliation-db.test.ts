@@ -52,7 +52,8 @@ beforeAll(async () => {
       issuer_snapshot jsonb default '{}', recipient_snapshot jsonb default '{}', line_items_snapshot jsonb,
       due_date date, public_token text, provider text, notes text, created_by uuid,
       schema_version text, provider_data jsonb, updated_at timestamptz default now(),
-      stripe_payment_intent_id text, mp_preference_id text
+      stripe_payment_intent_id text, mp_preference_id text,
+      descuento_total numeric not null default 0, descuento jsonb
     );
     create table documento_pagos (
       id uuid primary key default gen_random_uuid(), org_id uuid not null, documento_id uuid not null,
