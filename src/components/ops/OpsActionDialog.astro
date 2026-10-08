@@ -7,7 +7,7 @@
     <label id="ops-dialog-reason-wrap" hidden>Motivo interno
       <textarea id="ops-dialog-reason" maxlength="500" placeholder="Opcional. Quedará registrado en la auditoría."></textarea>
     </label>
-    <label id="ops-dialog-confirm-wrap" hidden>Escribe <strong id="ops-dialog-confirm-label"></strong> para confirmar
+    <label id="ops-dialog-confirm-wrap" hidden><span>Escribe <strong id="ops-dialog-confirm-label"></strong> para confirmar</span>
       <input id="ops-dialog-confirmation" autocomplete="off" />
     </label>
     <div id="ops-dialog-error" class="ops-inline-error" hidden></div>
@@ -78,9 +78,11 @@
       if (response.status === 428) reauth.hidden = false;
       if (!response.ok) throw new Error(data.error || 'No se pudo completar la acción');
       dialog.close();
-      toast.textContent = data.affected === undefined ? 'Acción completada' : `Acción completada. ${data.affected} registros afectados.`;
+      toast.textContent = typeof data.message === 'string' ? data.message
+        : data.affected === undefined ? 'Acción completada' : `Acción completada. ${data.affected} registros afectados.`;
       toast.hidden = false;
-      window.setTimeout(() => window.location.reload(), 650);
+      // Un resultado con texto (código del endpoint, destinatario) se deja leer.
+      window.setTimeout(() => window.location.reload(), typeof data.message === 'string' ? 2200 : 650);
     } catch (error: any) {
       errorBox.textContent = error?.message || 'No se pudo completar la acción';
       errorBox.hidden = false;

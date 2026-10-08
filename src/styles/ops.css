@@ -556,7 +556,9 @@ a.ops-metric-link:hover { background: var(--ops-surface-2); }
 .ops-range a[aria-current="true"] { background: var(--ops-surface); color: var(--ops-ink); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08), 0 0 0 0.5px var(--ops-line); }
 
 /* ── Tablas y listas ───────────────────────────────────────────────────── */
-.ops-table-wrap { overflow: auto; }
+/* position: un .ops-sr-only (absoluto) en un <th> escapaba del recorte y
+   desbordaba la página en móvil. */
+.ops-table-wrap { position: relative; overflow: auto; }
 .ops-table { width: 100%; border-collapse: collapse; white-space: nowrap; }
 .ops-table caption { text-align: left; }
 .ops-table th {
@@ -767,7 +769,7 @@ a.ops-attention-row:hover { background: var(--ops-surface-2); }
 
 /* ── Detalle ───────────────────────────────────────────────────────────── */
 .ops-detail-hero { display: flex; justify-content: space-between; align-items: center; gap: 24px; padding: 22px 24px; }
-.ops-detail-identity { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.ops-detail-identity { display: flex; align-items: flex-start; gap: 14px; min-width: 0; }
 .ops-detail-identity .ops-avatar { width: 48px; height: 48px; font-size: 17px; }
 .ops-detail-identity h2 { margin: 0; font-size: 19px; font-weight: 650; letter-spacing: -0.025em; color: var(--ops-ink); }
 .ops-detail-identity p { margin: 4px 0 0; color: var(--ops-faint); font-size: 12.5px; }
@@ -1139,3 +1141,109 @@ a.ops-attention-row:hover { background: var(--ops-surface-2); }
   .ops-command-item small { display: none; }
   .ops-command-close { display: inline-flex; align-items: center; }
 }
+
+/* ── Ficha de organización: etiquetas, procesador y bitácora (fase 3) ──── */
+.ops-tags { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 10px; }
+.ops-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 24px;
+  padding: 0 4px 0 9px;
+  border-radius: 999px;
+  background: var(--ops-fill);
+  color: var(--ops-text);
+  font-size: 11.5px;
+  font-weight: 560;
+}
+.ops-tag-remove {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ops-faint);
+  cursor: pointer;
+}
+.ops-tag-remove:hover { background: var(--ops-fill-2); color: var(--ops-text); }
+.ops-tag-remove:focus-visible { outline: 2px solid var(--ops-focus); outline-offset: 1px; }
+.ops-tag-remove svg { width: 12px; height: 12px; }
+.ops-tag-form { display: inline-flex; align-items: center; gap: 2px; }
+.ops-tag-form input {
+  width: 104px;
+  min-height: 26px;
+  padding: 0 10px;
+  border: 1px dashed var(--ops-line-strong);
+  border-radius: 999px;
+  background: transparent;
+  font-size: 11.5px;
+  outline: 0;
+}
+.ops-tag-form input:focus { border-style: solid; border-color: var(--ops-focus); background: var(--ops-surface); }
+.ops-ext-links { display: inline-flex; flex-wrap: wrap; gap: 4px 14px; }
+.ops-ext-links .ops-link { display: inline-flex; align-items: center; gap: 3px; }
+.ops-ext-links svg { width: 13px; height: 13px; }
+.ops-fields { display: flex; flex-wrap: wrap; gap: 4px; }
+.ops-fields code {
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: var(--ops-fill);
+  font-family: var(--ops-mono);
+  font-size: 11px;
+}
+.ops-fields.red code { background: var(--ops-red-bg); color: var(--ops-red); }
+.ops-stack { margin-top: 12px; }
+.ops-note-form { display: grid; gap: 10px; padding: 16px 20px; border-bottom: 1px solid var(--ops-line); }
+.ops-note-form .ops-textarea { min-height: 76px; }
+.ops-note-form-foot { display: flex; align-items: center; justify-content: flex-end; gap: 12px; }
+.ops-note-form-foot .ops-inline-error { margin: 0 auto 0 0; }
+.ops-log-row {
+  display: grid;
+  grid-template-columns: 8px minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--ops-line);
+  font-size: 12.5px;
+}
+.ops-log-row:last-child { border: 0; }
+.ops-log-row strong { font-weight: 600; }
+.ops-log-row time { color: var(--ops-faint); font-variant-numeric: tabular-nums; }
+.ops-log-row.note { grid-template-columns: 28px minmax(0, 1fr) auto; align-items: start; background: var(--ops-surface-2); }
+.ops-log-icon { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 8px; background: var(--ops-fill); color: var(--ops-muted); }
+.ops-log-icon svg { width: 15px; height: 15px; }
+.ops-log-body { margin: 2px 0 0; font-size: 13px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
+@media (max-width: 880px) {
+  .ops-tag { min-height: 44px; padding-left: 12px; }
+  .ops-tag-remove { width: 44px; height: 44px; }
+  .ops-tag-form input { min-height: 44px; width: 140px; }
+  .ops-ext-links .ops-link { min-height: 44px; }
+}
+
+/* ── Ingresos ──────────────────────────────────────────────────────────── */
+.ops-revenue-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+.ops-revenue-card { display: grid; gap: 8px; align-content: start; padding: 20px 22px; }
+.ops-revenue-card > header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.ops-revenue-card > header small { color: var(--ops-faint); font-size: 12px; }
+.ops-revenue-mrr { display: flex; align-items: baseline; gap: 8px; margin-top: 6px; font-size: 30px; font-weight: 650; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+.ops-revenue-mrr small { color: var(--ops-faint); font-size: 12px; font-weight: 600; letter-spacing: 0; }
+.ops-revenue-card .ops-inline-warning { margin: 4px 0 0; }
+.ops-revenue-card .ops-dist { padding: 10px 0 0; }
+.ops-url-cell { white-space: normal; min-width: 200px; max-width: 360px; overflow-wrap: anywhere; line-height: 1.4; }
+@media (max-width: 880px) {
+  /* Las migas completas no caben junto a la búsqueda y la sesión: en móvil
+     queda solo la sección (en una ficha, el regreso a su lista). El título
+     de la página ya dice dónde estás. */
+  .ops-crumbs > :not(:nth-child(3)) { display: none; }
+  .ops-crumbs > :nth-child(3) { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 44px; }
+  .ops-list-row.two { grid-template-columns: minmax(0, 1fr); gap: 6px; }
+  .ops-list-row.two > time, .ops-list-row.two > .ops-badge { justify-self: start; text-align: left; }
+  .ops-note-form .ops-textarea { min-height: 104px; }
+}
+
+/* Filas de dinero y recuperación: la fecha límite o el motivo de una falla
+   están al final del subtítulo; recortarlo escondía justo ese dato. */
+.ops-list.wrap-sub .ops-sub { white-space: normal; overflow-wrap: anywhere; line-height: 1.45; }
+.ops-list-caption { padding: 11px 20px; border-bottom: 1px solid var(--ops-line); color: var(--ops-faint); font-size: 11.5px; font-weight: 600; }

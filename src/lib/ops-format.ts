@@ -29,7 +29,44 @@ export const OPS_AUDIT_LABELS: Record<string, string> = {
   'ops.status_incident_created': 'Incidente público creado',
   'ops.status_incident_updated': 'Incidente público actualizado',
   'ops.status_incident_status_changed': 'Estado de incidente actualizado',
+  'ops.org_note_added': 'Nota interna agregada',
+  'ops.org_note_deleted': 'Nota interna borrada',
+  'ops.org_tag_added': 'Etiqueta agregada',
+  'ops.org_tag_removed': 'Etiqueta quitada',
+  'ops.redeliver_webhook': 'Webhook re-entregado',
+  'ops.retry_workflow_run': 'Workflow reintentado',
+  'ops.resend_invoice': 'Factura reenviada al cliente',
 };
+
+/** Estado de un depósito, un reembolso o una disputa, en palabras y con tono de badge. */
+export const OPS_MONEY_STATUS: Record<string, [string, string]> = {
+  paid: ['Depositado', 'green'], pending: ['Pendiente', ''], in_transit: ['En tránsito', 'blue'],
+  canceled: ['Cancelado', ''], failed: ['Falló', 'red'], succeeded: ['Reembolsado', 'green'],
+  requires_action: ['Requiere acción', 'amber'],
+  needs_response: ['Responder', 'red'], warning_needs_response: ['Responder (aviso)', 'amber'],
+  under_review: ['En revisión', 'blue'], warning_under_review: ['En revisión (aviso)', 'blue'],
+  won: ['Ganada', 'green'], lost: ['Perdida', 'red'], charge_refunded: ['Reembolsada', ''], warning_closed: ['Aviso cerrado', ''],
+};
+/**
+ * Un DÍA civil (columna `date`), sin hora ni zona. Pasarlo por opsDate() lo
+ * leía como medianoche UTC y en la zona de México caía el día anterior.
+ */
+export function opsDay(value: unknown, empty = '—'): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(value instanceof Date ? value.toISOString() : String(value ?? ''));
+  if (!m) return empty;
+  return new Intl.DateTimeFormat('es-MX', { dateStyle: 'medium', timeZone: 'UTC' }).format(new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])));
+}
+
+/** Motivo de una disputa, en palabras. */
+export const OPS_DISPUTE_REASONS: Record<string, string> = {
+  fraudulent: 'Fraude', product_not_received: 'Producto no recibido', product_unacceptable: 'Producto no aceptable',
+  duplicate: 'Cargo duplicado', subscription_canceled: 'Suscripción cancelada', credit_not_processed: 'Reembolso no procesado',
+  unrecognized: 'Cargo no reconocido', general: 'General', customer_initiated: 'Iniciada por el cliente',
+  incorrect_account_details: 'Datos de cuenta incorrectos', insufficient_funds: 'Fondos insuficientes',
+  bank_cannot_process: 'El banco no pudo procesarlo', debit_not_authorized: 'Cargo no autorizado',
+};
+export const opsDisputeReason = (value: unknown) => value ? OPS_DISPUTE_REASONS[String(value)] ?? String(value).replace(/_/g, ' ') : 'Sin motivo';
+export const opsMoneyStatus = (value: unknown): [string, string] => OPS_MONEY_STATUS[String(value)] ?? [String(value || '—'), ''];
 
 /** Importe con SU divisa (regla 21). Sin divisa no se inventa un símbolo. */
 export function opsMoney(value: unknown, currency: unknown, compact = false): string {

@@ -42,8 +42,8 @@ debe coincidir tanto con la allowlist compilada como con una fila activa en
 Rutas principales:
 
 - General: `/ops` (resumen) y `/ops/activity` (actividad).
-- Negocio: `/ops/organizations`, `/ops/users`, `/ops/invoices`,
-  `/ops/workflows` y `/ops/integrations`.
+- Negocio: `/ops/organizations`, `/ops/users`, `/ops/revenue`, `/ops/invoices`,
+  `/ops/workflows`, `/ops/integrations` y `/ops/webhooks`.
 - Plataforma: `/ops/usage`, `/ops/status`, `/ops/security` y `/ops/database`.
 
 Incluyen fichas de usuario, organización y tabla. Las acciones reales permiten
@@ -62,7 +62,8 @@ botones y la API le responde 403.
 
 Las políticas del carril `ops` son por comando: SELECT donde Ops lee y UPDATE solo
 donde revoca (`api_keys`, `webhooks`, `oauth_grants`). Ops no puede insertar filas
-dentro de una organización.
+dentro de una organización. La única escritura propia son sus tablas `ops_*`
+(notas y etiquetas internas, fase 3), con INSERT y DELETE solo en el carril `ops`.
 
 `/ops/status` muestra las sondas de disponibilidad y permite redactar en
 español e inglés un incidente público real. El formulario acepta el estado
@@ -164,8 +165,8 @@ animación respeta `prefers-reduced-motion`; los avatares usan centrado geométr
   y sin tokens ni datos de pago. Los resultados se pintan con `textContent`:
   un nombre de organización lo escribe su dueño.
 - **Atajos (solo escritorio, regla 16).** `g` + letra navega (`r` Resumen,
-  `a` Actividad, `o` Organizaciones, `u` Usuarios, `f` Facturas, `w` Workflows,
-  `i` Integraciones, `c` Uso y costos, `d` Disponibilidad, `s` Seguridad,
+  `a` Actividad, `o` Organizaciones, `u` Usuarios, `m` Ingresos, `f` Facturas,
+  `w` Workflows, `i` Integraciones, `h` Webhooks, `c` Uso y costos, `d` Disponibilidad, `s` Seguridad,
   `b` Base de datos), `j`/`k` recorren las filas de una tabla marcada con
   `data-ops-rows` y `?` muestra la ayuda. Bajo 880 px no hay atajos ni `<kbd>`;
   la paleta se abre con el botón de la barra superior.
@@ -196,6 +197,56 @@ completas.
   reintroduzcas `OFFSET` profundo ni `COUNT(*)` por página.
 - La búsqueda de usuarios y organizaciones depende de `pg_trgm` y de los índices
   declarados en `db/schema.sql`.
+
+## Centro de mando y recuperación
+
+Fase 3 (oct 2026). La ficha de una organización responde sin salir de Ops qué
+paga, si puede cobrar, qué falló y qué se le prometió.
+
+- **Suscripción de Cord.** Plan PAGADO (`cord_effective_plan`, regla 17) junto al
+  guardado cuando difieren, estado, ciclo, renovación o fin si pidió cancelar,
+  último cobro con su divisa y los comprobantes de `suscripcion_facturas`. Enlaces
+  al panel del procesador (cliente, suscripción, factura, cuenta conectada) solo
+  si el id tiene el prefijo correcto (`stripeDashboardUrl()`).
+- **Cuenta de cobros.** Cobros y depósitos habilitados, restricción y requisitos
+  vencidos, pendientes y en verificación de `orgs.stripe_requirements`, sin el id
+  de la persona en el proveedor. Depósitos, reembolsos y disputas recientes (las
+  abiertas primero, con su fecha límite de evidencia).
+- **Recuperación** (`/api/ops/recovery`, solo `admin`): reintentar una ejecución
+  de workflow fallida, re-entregar un webhook y reenviar una factura emitida al
+  cliente. Ops no tiene su propia versión de ninguna: llama a la función de la
+  app (`retryWorkflowRun`, `redeliver`, `notifyInvoiceIssued`) en el carril de la
+  organización, así que valen sus mismas reglas. Reenviar una factura se confirma
+  escribiendo su número y sale en el idioma, formato y divisa del negocio. Cada
+  intento escribe `ops_audit_log` con su resultado; en el historial del negocio
+  aparece "Soporte de Cord", nunca el correo del operador. "Re-entregar" solo se
+  ofrece si el evento original sigue retenido.
+- **Bitácora interna.** Notas (`ops_org_notes`) y etiquetas (`ops_org_tags`) de
+  Cord sobre el negocio, mezcladas en orden con las acciones de Ops. Las escribe
+  cualquier operador; una nota ajena solo la borra un `admin`, y nunca se edita.
+  Tienen RLS forzada con políticas exclusivas del carril `ops`: el negocio no lee
+  lo que Cord anota de él (`test/ops-fase3-schema.test.ts`).
+
+`/ops/revenue` agrupa el MRR y el ARR a precio de lista por divisa de la
+plataforma (`summarizeRevenue()`), sin sumar divisas entre sí, y lista quién
+cancela al cierre del periodo y quién tiene un plan de pago sin cobro que lo
+respalde. No hay curva de altas ni bajas: Cord no guarda cuándo empezó o terminó
+cada suscripción.
+
+`/ops/webhooks` muestra las entregas de las últimas 24 horas (sin las de prueba),
+el p95 del receptor, la cola, los endpoints con racha de fallos o apagados, los
+mensajes que agotaron reintentos y los eventos del procesador atorados o con
+error (`stripe_events`). Nunca lee cuerpos, payloads ni secretos.
+
+Las políticas de lectura de `cobro_reembolsos`, `cobro_disputas`,
+`webhook_events` y `suscripcion_facturas`, y las tablas de notas, viven en
+`db/migrations/2026-10-08-ops-fase3.sql`, que corre en cada build
+(`scripts/migrate-ops-fase3.mjs` en el `buildCommand`).
+
+Pendiente de fases siguientes: monitor de crons (no existe tabla de ejecuciones),
+alertas configurables, inspectores de rate limit, logs de API, OAuth/MCP/CLI,
+extender prueba o regalar plan (acciones de facturación que requieren decidir su
+contrato) y "ver como" de solo lectura.
 
 ## Limpieza pre-lanzamiento
 

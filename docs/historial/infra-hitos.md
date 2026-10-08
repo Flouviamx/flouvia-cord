@@ -7,6 +7,19 @@
 
 ---
 
+**Cord Ops: centro de mando y recuperación (8 oct 2026)** — tercera fase del
+rediseño. La ficha de organización suma suscripción con plan pagado real,
+cuenta de cobros con requisitos, depósitos, reembolsos y disputas, reintentos
+de workflows y webhooks, reenvío de facturas y una bitácora interna con notas y
+etiquetas. Páginas nuevas `/ops/revenue` (MRR por divisa, cancelaciones, cuentas
+en riesgo) y `/ops/webhooks` (entregas, cola, eventos del procesador). Decisión
+de diseño: la recuperación reutiliza la función de la app en el carril de la
+organización en vez de ampliar las políticas de Ops; la única escritura propia
+de Ops son sus tablas `ops_*`, y `security:ops` lo verifica. Se verificó contra
+un Postgres 16 local con el rol `cord_app` (RLS aplicando de verdad). De paso se
+corrigió un desborde horizontal en móvil: un `.ops-sr-only` absoluto en un
+`<th>` escapaba del recorte de `.ops-table-wrap`.
+
 **Cord Ops: herramientas de operador (8 oct 2026)** — segunda fase del rediseño.
 Búsqueda global con ⌘K (organizaciones, personas, folios, facturas e IDs) y
 atajos de teclado solo en escritorio. Filtros cerrados en organizaciones y
