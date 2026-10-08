@@ -62,6 +62,9 @@ describe('documentos comerciales y fiscales', () => {
   });
   it('separa folios de proforma, crédito comercial y CFDI', () => {
     expect(new Set(['proforma', 'commercial_credit_note', 'cfdi_40', 'cfdi_egreso'].map(t => documentPrefix(t, 'F'))).size).toBe(4);
+    // Serie propia: sus notas de crédito comerciales tampoco comparten número con otra organización.
+    expect(documentPrefix('commercial_credit_note', 'INV', 'INV')).toBe('NCC');
+    expect(documentPrefix('commercial_credit_note', 'FR2', 'INV')).toBe('NCC-FR2');
   });
 });
 

@@ -4241,10 +4241,46 @@ as $$
 $$;
 revoke all on function cord_verifactu_multiples_ot(uuid) from public;
 
+-- ── Serie de facturación por identificador fiscal (oct 2026) ────────────────
+-- Cada organización numera con su propia secuencia ("F2026-000001"). Dos
+-- organizaciones de Cord con el MISMO NIF (dos marcas de una misma sociedad)
+-- y la misma serie emitían el mismo número: para la AEAT el IDFactura es NIF +
+-- número + fecha, así que la segunda factura chocaba con la primera (3000,
+-- duplicado) y, fuera de España, el mismo emisor tenía dos facturas con el
+-- mismo número. La numeración correlativa es POR EMISOR, no por organización
+-- de Cord. Esta función responde solo eso —¿otra organización con este
+-- identificador ya usa esta serie?—, sin devolver datos de la otra, y solo
+-- para la organización en contexto (regla 30).
+create or replace function cord_serie_en_uso(p_org uuid, p_tax_id text, p_prefix text, p_default_prefix text)
+returns boolean
+language sql stable security definer
+set search_path = public, pg_temp
+as $$
+  with n as (
+    select regexp_replace(upper(regexp_replace(coalesce(p_tax_id, ''), '[^A-Za-z0-9]', '', 'g')), '^ES(?=[0-9A-Z]{9}$)', '') as tax,
+           upper(coalesce(nullif(trim(p_prefix), ''), p_default_prefix)) as pre,
+           (select upper(coalesce(country_code, 'MX')) from orgs where id = p_org) as pais
+  )
+  select exists (
+    select 1
+      from orgs o, n
+     where p_org = nullif(current_setting('app.org_id', true), '')::uuid
+       and length(n.tax) >= 4
+       and o.id <> p_org
+       and o.sandbox_of is null
+       and o.is_demo is not true
+       and upper(coalesce(o.country_code, 'MX')) = n.pais
+       and regexp_replace(upper(regexp_replace(coalesce(nullif(o.fiscal_metadata->>'tax_id', ''), o.rfc, ''), '[^A-Za-z0-9]', '', 'g')), '^ES(?=[0-9A-Z]{9}$)', '') = n.tax
+       and upper(coalesce(nullif(trim(o.fiscal_metadata->>'invoice_prefix'), ''), p_default_prefix)) = n.pre
+  )
+$$;
+revoke all on function cord_serie_en_uso(uuid, text, text, text) from public;
+
 do $$
 begin
   if exists (select 1 from pg_roles where rolname = 'cord_app') then
     grant execute on function cord_verifactu_multiples_ot(uuid) to cord_app;
+    grant execute on function cord_serie_en_uso(uuid, text, text, text) to cord_app;
     grant select, insert, update on verifactu_envio_estado to cord_app;
   end if;
 end

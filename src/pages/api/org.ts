@@ -30,6 +30,7 @@ import { listOfferedCurrencies } from '../../lib/currency';
 import { isValidTimeZone } from '../../lib/timezones';
 import { validateLateInterestRate } from '../../lib/late-interest-policy';
 import { normalizeTerm } from '../../lib/payment-terms';
+import { serieCompartida, serieCompartidaMensaje } from '../../lib/fiscal/serie';
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
 
@@ -312,6 +313,23 @@ export const PATCH: APIRoute = async ({ request }) => {
     // La franquicia es un régimen de Francia y Alemania: al salir de esos
     // países (o en cualquier otro) no puede seguir imprimiendo su mención.
     if (countryCode !== 'FR' && countryCode !== 'DE') delete currentFiscalMetadata.vat_regime;
+
+    // Una serie por emisor: si otra organización con el mismo identificador
+    // fiscal ya numera con esta serie, se dice al guardar y no al emitir.
+    if ((body.fiscal_invoice_prefix !== undefined || body.fiscal_tax_id !== undefined || body.rfc !== undefined)
+        && !actual.sandbox_of && countryCode !== 'MX') {
+        const defaultPrefix = getCountryProfile(countryCode).invoicePrefix;
+        const enUso = await serieCompartida(orgId, {
+            country: countryCode,
+            taxId: String(currentFiscalMetadata.tax_id || rfc || ''),
+            prefix: String(currentFiscalMetadata.invoice_prefix || ''),
+            defaultPrefix,
+        });
+        if (enUso) {
+            const serie = String(currentFiscalMetadata.invoice_prefix || defaultPrefix);
+            return json({ error: serieCompartidaMensaje(serie), code: 'invoice_series_in_use', field: 'fiscal_invoice_prefix' }, 409);
+        }
+    }
 
     // ── El país de una cuenta de cobros es INMUTABLE ────────────────────────
     //

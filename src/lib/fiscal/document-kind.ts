@@ -39,9 +39,13 @@ export async function documentTypeForOrg(orgId: string, country: string, mode?: 
 
 // Series distintas evitan colisiones con el índice único org/país/folio y
 // mantienen visualmente separados los documentos comerciales de los fiscales.
-export function documentPrefix(type: string, fiscalPrefix: string): string {
+export function documentPrefix(type: string, fiscalPrefix: string, defaultPrefix?: string): string {
   if (type === 'proforma') return 'PRO';
-  if (type === 'commercial_credit_note') return 'NCC';
+  // Con una serie propia, sus notas de crédito también son suyas: dos
+  // organizaciones con el mismo identificador fiscal (que ya no pueden
+  // compartir serie, ver fiscal/serie.ts) emitían ambas "NCC-000001". Con la
+  // serie por defecto del país se conserva "NCC", que es la que ya existe.
+  if (type === 'commercial_credit_note') return defaultPrefix && fiscalPrefix !== defaultPrefix ? `NCC-${fiscalPrefix}` : 'NCC';
   if (type === 'cfdi_egreso' || type === 'verifactu_credit_note') return `NC-${fiscalPrefix}`;
   return fiscalPrefix;
 }

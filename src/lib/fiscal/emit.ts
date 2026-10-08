@@ -20,6 +20,7 @@ import type {
   FiscalLineItem,
 } from './index';
 import { resolveLineSatKeys } from './sat-claves';
+import { serieCompartida, serieCompartidaMensaje } from './serie';
 
 export interface EmitResult {
   emitted: boolean;
@@ -481,7 +482,18 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string, do
   const prefix = documentPrefix(docType, cleanPrefix(
     fiscalMetadata.invoice_prefix || (country === 'MX' ? head.serie_folio : ''),
     profile.invoicePrefix,
-  ));
+  ), profile.invoicePrefix);
+  // Una serie por EMISOR, no por organización: si otra organización con el
+  // mismo identificador fiscal ya numera con esta serie, se para antes de
+  // reservar un número que repetiría el suyo (fiscal/serie.ts).
+  if (!head.sandbox_of && docType !== 'proforma' && await serieCompartida(orgId, {
+    country,
+    taxId: fiscalMetadata.tax_id || (head.org_tax_id as string | null),
+    prefix: fiscalMetadata.invoice_prefix,
+    defaultPrefix: profile.invoicePrefix,
+  })) {
+    return { emitted: false, status: 'error', error: serieCompartidaMensaje(cleanPrefix(fiscalMetadata.invoice_prefix, profile.invoicePrefix)) };
+  }
   const idempotencyKey = `quote:${cotizacionId}:invoice:v1`;
   const issuedAt = new Date().toISOString();
   // Serie + ejercicio: `invoice_sequences` numeraba indefinidamente sin año ni
