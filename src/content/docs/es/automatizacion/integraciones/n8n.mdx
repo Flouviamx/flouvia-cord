@@ -2,7 +2,7 @@
 title: "n8n"
 seoTitle: "Conectar Cord con n8n"
 description: "Cómo conectar n8n con Cord con el nodo n8n-nodes-cord o con el nodo HTTP Request: requisitos, credencial con llave de API, los 41 eventos del disparador, las operaciones del nodo, qué viaja en cada dirección, cuota de API por plan, cómo desconectar y problemas comunes."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-08"
 reviewedBy: "Producto y operaciones de Cord"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -99,7 +99,7 @@ Si cambias los eventos de un **Cord Trigger** ya activo, el nodo filtra los que 
 
 | Recurso | Operación | Campos |
 |---|---|---|
-| **Client** | Create | **Company** (obligatorio). Opcionales: Contact, Email, Phone, Tax ID, Country Code y Payment Terms (Upfront, Net 30 o Net 60). |
+| **Client** | Create | **Company** (obligatorio). Opcionales: Contact, Email, Phone, Tax ID, Country Code y Payment Terms (Upfront o Net 7, 15, 30, 45, 60 o 90; los plazos 7, 15, 45 y 90 desde la versión 1.2.0 del nodo). |
 | **Client** | Update | **Client ID** y los campos que quieras cambiar. |
 | **Client** | Get | **Client ID**. |
 | **Client** | Search | Texto o correo a buscar. |

@@ -78,21 +78,27 @@ de lista no cambia y puedes ajustar el precio de cualquier línea a mano.
 
 ### Comercial
 
-- **Empresa** (obligatorio): el nombre del cliente. También es el nombre del receptor en su factura; escríbelo como aparece en sus documentos fiscales.
+- **Nombre o razón social** (obligatorio): el nombre del cliente, sea una empresa o una persona. También es el nombre del receptor en su factura; escríbelo como aparece en sus documentos fiscales.
 - **Contacto:** la persona que decide.
 - **Correo:** a dónde se envía el link al mandar la cotización desde Cord.
-- **Teléfono**, **Límite de crédito** y **Términos de pago** (Contado, Net 15, Net 30, Net 60 u otro plazo: Net 7, Net 45 o Net 90) que se proponen al cotizarle.
+- **Teléfono** con lada internacional (se elige junto al número y sigue al país del cliente), **Límite de crédito** y **Términos de pago** (Contado, Net 15, Net 30, Net 60 u otro plazo: Net 7, Net 45 o Net 90) que se proponen al cotizarle.
 
 ### Fiscal
 
-- **Identificador fiscal:** la etiqueta se adapta al país del cliente: **RFC** en México, NIF/CIF en España, EIN/Tax ID en Estados Unidos, etc. Cord lo guarda en mayúsculas y sin espacios al inicio o al final; no valida su estructura.
-- **Dirección:** país, código postal, dirección, ciudad y estado o provincia, en la sección **Dirección**.
+- **País** e **identificador fiscal:** la etiqueta del identificador se adapta al país del cliente: **RFC** en México, NIF/CIF en España, EIN/Tax ID en Estados Unidos, etc. En los 12 mercados de Cord también se revisa su formato (en México, forma, fecha y dígito verificador del RFC): si no cuadra, verás un aviso, pero puedes guardarlo igual. Se guarda en mayúsculas.
+- **Dirección:** dirección, ciudad, estado o provincia y código postal, en la sección **Dirección**; los nombres de los campos siguen al país.
 
-Si el cliente es mexicano (o no le asignas país y tu negocio está en México), aparece
-**Datos fiscales para CFDI (México)** con dos campos del CFDI 4.0:
+Si tu negocio factura en México y el cliente es mexicano, aparece **Datos fiscales para
+CFDI (México)** con dos campos del CFDI 4.0, filtrados según el tipo de RFC (12
+caracteres, persona moral; 13, persona física):
 
 - **Régimen fiscal**, por ejemplo *601 - General de Ley Personas Morales*.
 - **Uso del CFDI**, por ejemplo *G03 - Gastos en general*, que es el que se usa si lo dejas vacío.
+
+Si tu negocio factura en México y el cliente es de otro país, esa sección no aparece: su
+CFDI se timbra como a un residente en el extranjero (RFC genérico XEXX010101000, su país
+como residencia fiscal, su identificador fiscal como número de registro tributario y uso
+S01). La ficha te lo indica con un aviso.
 
 ## Comportamiento y casos límite
 
@@ -117,7 +123,7 @@ Si el cliente es mexicano (o no le asignas país y tu negocio está en México),
 
 **El descuento del nivel no se aplicó.** Solo baja productos de catálogo; las líneas libres no tienen precio de lista.
 
-**El CFDI salió a "público en general".** El cliente no tenía RFC capturado al timbrar.
+**El CFDI salió a "público en general".** El cliente es mexicano y no tenía RFC capturado al timbrar. Si en realidad es extranjero, elige su país en la ficha: su próximo CFDI saldrá como a un residente en el extranjero.
 
 ## Relacionadas
 

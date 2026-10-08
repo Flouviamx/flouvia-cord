@@ -9,7 +9,7 @@ Cord's autonomous collections is an AI agent that chases your overdue receivable
 
 ### When it acts
 
-The agent only writes when a quote's credit terms have **actually lapsed**. The due date is calculated from approval plus the days of the term (cash, Net 30, or Net 60), with a few days of grace before the first reminder. It never bothers a client who is up to date.
+The agent only writes when a quote's credit terms have **actually lapsed**. The due date is calculated from approval plus the days of the term (due on receipt or Net 7, 15, 30, 45, 60, or 90), with a few days of grace before the first reminder. It never bothers a client who is up to date.
 
 ### What it does
 

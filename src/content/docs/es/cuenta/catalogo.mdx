@@ -2,7 +2,7 @@
 title: "Importa tu catálogo"
 seoTitle: "Catálogo de Cord: productos, kits, volumen e importación CSV"
 description: "Da de alta productos y servicios, arma kits, configura precios por volumen e importa productos y clientes desde un archivo CSV con mapeo de columnas y vista previa."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-08"
 reviewedBy: "Producto y operaciones de Cord"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -30,25 +30,46 @@ Vive en **Productos**, en el menú lateral, con dos pestañas: **Catálogo** y *
 <Steps>
 1. En **Productos**, pulsa **+ Nuevo producto** (o **Crear › Producto** en la barra
    superior).
-2. Captura el **Nombre** (obligatorio) y, si quieres, el **SKU**, la **Unidad** (pieza,
-   servicio, hora, m², kg...) y una **Descripción**.
-3. Escribe el **Precio de venta**, antes de impuestos, en la divisa de tu cuenta.
-4. Opcional: en **¿Cuánto te cuesta?** captura tu costo. Cord te muestra cuánto ganas o
+2. Elige qué vendes: **Producto**, **Servicio** o **Suscripción o licencia**. Solo
+   cambia las unidades que se te sugieren (pieza y caja, hora y proyecto, mes y
+   licencia); no limita nada más.
+3. Captura el **Nombre** (obligatorio) y, si quieres, el **SKU**, la **Unidad** y una
+   **Descripción**. La unidad es texto libre: elige una sugerencia o escribe la tuya.
+4. Escribe el **Precio de venta**, antes de impuestos, en la divisa de tu cuenta.
+5. Opcional: en **Tu costo** captura lo que te cuesta. Cord te muestra cuánto ganas o
    pierdes por unidad y calcula el margen al cotizar. Tu cliente nunca ve el costo.
-5. Opcional: agrega **Precios por volumen** (ver abajo).
-6. Elige el **Estado** (Activo o Inactivo) y pulsa **Guardar producto**.
+6. Opcional: en **Impuesto** elige la tasa con la que este producto entra a una
+   cotización o factura (aparece si tu catálogo de impuestos tiene más de una tasa).
+7. Solo en México, opcional: asigna sus **claves del SAT** (ver abajo).
+8. Opcional: agrega **Precios por volumen** (ver abajo).
+9. Elige el **Estado** (Activo o Inactivo) y pulsa **Guardar producto**.
 </Steps>
 
 Un producto **inactivo** deja de ofrecerse al cotizar, pero conserva su historial y sus
 cotizaciones anteriores.
 
 <Callout type="info">
-**El impuesto no vive en el producto.** Cord calcula los impuestos por **línea de la
-cotización**: el mismo producto puede venderse gravado en una venta y exento en otra. Al
-agregar la partida eliges la tasa del catálogo fiscal de tu cuenta
-(**Ajustes › Cotizaciones › Impuestos**), con el nombre del impuesto de tu país. Consulta
+**El impuesto del producto es una sugerencia.** Cord calcula los impuestos por **línea de
+la cotización**: al agregar el producto, la línea entra con la tasa que le asignaste
+(o con tu tasa predeterminada si no le asignaste una, o si esa tasa ya no está en tu
+catálogo de **Ajustes › Cotizaciones › Impuestos**), y puedes cambiarla en la línea. Cambiar
+la tasa del producto después no altera cotizaciones ni facturas ya enviadas. Consulta
 [Productos y descuentos](/docs/cotizacion/productos).
 </Callout>
+
+## Claves del SAT (México)
+
+Si tu negocio factura en México, cada producto tiene la sección **Facturación electrónica
+(SAT)**:
+
+- **Clave de producto o servicio:** escribe una palabra ("software", "consultoría") y
+  elige la clave del catálogo del SAT, o escribe sus 8 dígitos.
+- **Clave de unidad:** se deduce de la unidad del producto ("hora" → `HUR`, "mes" →
+  `MON`, "kg" → `KGM`). Escribe otra solo si tu contador te pide una distinta.
+
+Las facturas toman estas claves al timbrar. Un producto sin clave de producto, o una línea
+libre, se timbra con las claves genéricas `01010101` y `H87`. Más detalle en
+[Facturación](/docs/pagos/facturacion).
 
 ## Precios por volumen
 

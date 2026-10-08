@@ -8,15 +8,17 @@ Set the client up correctly and Cord bills the sale in the right currency; the s
 
 ### Common to any country: set the client's country
 
-When you add the client, select their country in the **Country** field on their profile (not "inherit from issuer"). Cord uses that value, together with the tax ID you capture, to apply the correct treatment to the invoice.
+When you add the client, choose their country in the **Country** field at the top of their profile. It comes preselected with your business's country: change it if the client is based elsewhere. Cord uses that value, together with the tax ID you capture, to apply the correct treatment to the invoice; it also adjusts the tax ID's name, the phone's country code and the address format.
 
-### Mexico: service exports
+### Mexico: CFDI to a foreign resident
 
-Selling services or software licenses to a customer outside Mexico requires a service export CFDI:
+If your business is in Mexico and the client's country is another one, Cord stamps the CFDI to a **foreign resident** without any extra setup:
 
-1. In the client's tax ID field, use the SAT's generic international RFC: `XEXX010101000`. Cord doesn't have a separate field for your client's home-country Tax ID — today this single field is what's used.
-2. In **CFDI Usage** on the client's profile, select **S01 (No tax effects)**, since the foreign recipient doesn't deduct taxes with the SAT.
-3. When creating the quote or invoice, set its **currency** to the right one (for example, USD) and select the **Exempt** rate on the line item's tax if your accountant confirms that sale qualifies for the 0% export rate.
+1. In the client's profile, choose their **Country** and enter **their home-country tax number** in the tax ID field (EIN in the United States, NIF in Spain, VAT number in the United Kingdom…). Don't type an RFC: they don't have one.
+2. When stamping, Cord uses the SAT generic foreign RFC (`XEXX010101000`), declares the **tax residence** of the country in the profile, sends their tax number as the **foreign tax registration number** and sets the use to **S01 (No tax effects)**. The tax regime and CFDI use in the profile don't apply to a foreign client.
+3. When creating the quote or invoice, choose its **currency** (for example, USD) and the tax rate of each line. That's your call with your accountant: exported services usually go at 0%.
+
+Cord doesn't issue the **Foreign Trade complement** (Comercio Exterior), which the definitive export of goods (key A1) requires. Services and licenses don't need it.
 
 ### Spain: a client inside or outside the European Union
 

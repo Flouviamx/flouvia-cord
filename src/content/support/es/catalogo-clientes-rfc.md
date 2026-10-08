@@ -12,7 +12,7 @@ Al dar de alta un cliente, el campo de identificador fiscal se guarda tal como l
 
 ### Importación masiva por CSV
 
-Si vienes de otro sistema, usa la importación por lote desde tu directorio de **Clientes**. Cada fila acepta: nombre de la empresa, contacto, correo, teléfono, identificador fiscal, términos de pago (contado, 30 o 60 días) y límite de crédito. Si un cliente ya existe (mismo identificador fiscal o mismo nombre de empresa), la importación actualiza esa fila en lugar de duplicarla.
+Si vienes de otro sistema, usa la importación por lote desde tu directorio de **Clientes**. Cada fila acepta: nombre de la empresa, contacto, correo, teléfono, identificador fiscal, términos de pago (contado o un plazo de 7, 15, 30, 45, 60 o 90 días; acepta "Net 45" o "45 días") y límite de crédito. Si un cliente ya existe (mismo identificador fiscal o mismo nombre de empresa), la importación actualiza esa fila en lugar de duplicarla.
 
 <Callout type="info">
 Como la importación no valida el identificador fiscal ni el código postal contra ningún catálogo oficial, la calidad del dato depende de tu archivo de origen: cópialo directamente de la CSF (o el documento fiscal equivalente en tu país) de cada cliente para evitar rechazos al facturar.

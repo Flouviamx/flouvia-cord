@@ -9,7 +9,7 @@ La cobranza autónoma de Cord es un agente de Inteligencia Artificial que persig
 
 ### Cuándo actúa
 
-El agente solo escribe cuando el crédito de una cotización **realmente venció**. La fecha de vencimiento se calcula desde la aprobación más los días del término (contado, Net 30 o Net 60), con unos días de gracia antes del primer recordatorio. A un cliente al corriente nunca lo molesta.
+El agente solo escribe cuando el crédito de una cotización **realmente venció**. La fecha de vencimiento se calcula desde la aprobación más los días del término (contado o Net 7, 15, 30, 45, 60 o 90), con unos días de gracia antes del primer recordatorio. A un cliente al corriente nunca lo molesta.
 
 ### Qué hace
 

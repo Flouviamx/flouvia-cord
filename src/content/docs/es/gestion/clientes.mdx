@@ -22,14 +22,15 @@ descuento sugerido, el vencimiento y la exposición de crédito.
 ## Crear un cliente
 
 Abre **Clientes > Nuevo cliente**. El único campo obligatorio para guardar es el
-nombre de la empresa; completa los demás antes de enviar una cotización que deba
-cobrarse o facturarse.
+**nombre o razón social** (sirve para una empresa o para una persona); completa los
+demás antes de enviar una cotización que deba cobrarse o facturarse.
 
 | Grupo | Campos | Efecto |
 |---|---|---|
-| Contacto | persona, correo y teléfono | Destinatario de cotizaciones, facturas y seguimiento. |
-| Identidad fiscal | RFC o identificador local, régimen, uso de CFDI y código postal | Datos del receptor usados al preparar el documento fiscal. |
-| Dirección | país, líneas de dirección, ciudad y región | Dirección del receptor y contexto fiscal por país. |
+| Identidad | nombre o razón social, país e identificador fiscal | El país decide cómo se llama el identificador (RFC, EIN, NIF, CNPJ…) y Cord revisa su formato en los mercados que ofrece; si no cuadra te avisa, pero puedes guardarlo igual. |
+| Contacto | persona, correo y teléfono con lada | El teléfono se guarda con lada internacional (`+52 55 1234 5678`), que es lo que necesita el envío por WhatsApp. |
+| Dirección | líneas de dirección, ciudad, estado o provincia y código postal | Los nombres siguen al país (código ZIP, CEP…); México, Estados Unidos, Canadá, Brasil y España tienen lista de estados o provincias. |
+| Datos fiscales para CFDI | régimen y uso de CFDI | Solo si tu negocio factura en México y el cliente es mexicano; las opciones se filtran por tipo de RFC (persona física o moral). |
 | Condiciones | chips Contado, Net 15, Net 30 y Net 60, u **Otro plazo** (Net 7, Net 45 o Net 90) | Vencimiento predeterminado al crear operaciones para el cliente. |
 | Crédito | límite mayor o igual a cero | Referencia para mostrar exposición y alertar cuando el saldo lo supera. |
 | Nivel de precio | Estándar, Plata, Oro o Distribuidor | Clasificación comercial y descuento sugerido. |
@@ -46,13 +47,16 @@ la exposición excede ese límite.
 
 ## País del cliente
 
-El país del cliente puede quedar vacío. En ese caso hereda el país del emisor. Si el
-receptor opera en otro país, selecciónalo explícitamente: Cord admite países de
-receptor fuera de los 12 mercados donde se vende la plataforma.
+Un cliente nuevo nace con el país de tu negocio; cámbialo si el receptor opera en otro.
+Cord admite países de receptor fuera de los 12 mercados donde se vende la plataforma
+(los frecuentes aparecen primero en la lista). Un cliente guardado antes sin país sigue
+heredando el de tu negocio hasta que lo edites.
 
-Cambiar el país modifica la etiqueta esperada para el identificador fiscal, pero no
-convierte por sí solo una factura comercial en una presentación fiscal ante la
-autoridad del receptor.
+Cambiar el país modifica el nombre y el formato esperado del identificador fiscal, la lada
+y los campos de la dirección, pero no convierte por sí solo una factura comercial en una
+presentación fiscal ante la autoridad del receptor. Si tu negocio está en México y el
+cliente no, su CFDI se timbra como a un residente en el extranjero: ver
+[Facturación](/docs/pagos/facturacion).
 
 ## Importar clientes por CSV
 
