@@ -50,6 +50,10 @@ grant execute on function cord_resolve_integracion(text, text) to cord_app;
 grant execute on function cord_ops_alert_metrics() to cord_app;
 -- Mejor acceso sin cobro vigente (cortesía de Ops o promoción de The Cord Build).
 grant execute on function cord_access_grant(uuid) to cord_app;
+-- "Ver como" de Cord Ops: canje, resolución y salida de una vista de solo lectura.
+grant execute on function cord_ops_view_redeem(text, text, int) to cord_app;
+grant execute on function cord_ops_view_resolve(text) to cord_app;
+grant execute on function cord_ops_view_end(text) to cord_app;
 
 -- Revert operativo (ejecutar solo si la ventana falla): cambiar DATABASE_URL
 -- al rol dueño anterior. No se elimina cord_app ni se desactiva RLS.

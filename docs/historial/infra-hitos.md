@@ -616,3 +616,15 @@ corrigió drift del índice histórico (Astro 6/Clerk/B2B) y del documento de ru
    in-memory por instancia (para escala multi-réplica usar Upstash Redis); y 5 vulnerabilidades de
    `npm audit` de bajo riesgo (esbuild dev-Windows / path-to-regexp build-time) cuyo fix exige
    downgrade breaking de `@astrojs/vercel`.
+
+✅ **Cord Ops: monitoreo, cortesías y "ver como" (oct 2026)** — tres tandas sobre la fase 3:
+   monitor de crons contra el horario declarado, inspector de API/OAuth/CLI y alertas
+   configurables con catálogo cerrado (fase 4); cortesías de plan que dan acceso sin
+   disfrazarse de pago, con Stripe solo donde aplica (fase 5: mover el cobro o cupón del 100 %
+   sobre el base; revocar regresa a la fecha ya pagada); y "ver como" en solo lectura (fase 6)
+   con un traspaso de un solo uso hacia una cookie propia del apex, nunca una sesión del
+   negocio. Decisión: la vista corre con la identidad del OPERADOR y la org fijada por la
+   vista, no con la del dueño — reusar la del dueño le atribuía todo al cliente (auditoría,
+   sesiones visibles en sus Ajustes, actividad del equipo, step-up recién cumplido). Al
+   salir de una cortesía de días gratis, el webhook ya no reporta un `subscription_upgraded`
+   falso, y las superficies de Ops muestran el plan efectivo en lugar de `orgs.plan`.

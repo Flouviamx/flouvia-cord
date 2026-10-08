@@ -1,5 +1,6 @@
 export const prerender = false;
 
+import { currentOpsView } from '../../../../lib/context';
 import type { APIRoute } from 'astro';
 import { sql, getActiveOrgId, withOrgTx } from '../../../../lib/db';
 import { requirePerm } from '../../../../lib/queries';
@@ -66,7 +67,8 @@ export const GET: APIRoute = async ({ request }) => {
 
     try {
         let personas = await listPersonas(orgId);
-        if (personas.length === 0) personas = await reconcilePersons(orgId, accountId);
+        // Una vista de Cord Ops es de solo lectura: no reconstruye la proyección.
+        if (personas.length === 0 && !currentOpsView()) personas = await reconcilePersons(orgId, accountId);
         return json({ ok: true, personas });
     } catch (e: any) {
         return json({ error: translateStripeError(e) }, 400);

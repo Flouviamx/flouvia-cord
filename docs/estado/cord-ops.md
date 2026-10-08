@@ -164,8 +164,9 @@ animación respeta `prefers-reduced-motion`; los avatares usan centrado geométr
   y sin tokens ni datos de pago. Los resultados se pintan con `textContent`:
   un nombre de organización lo escribe su dueño.
 - **Atajos (solo escritorio, regla 16).** `g` + letra navega (`r` Resumen,
-  `a` Actividad, `o` Organizaciones, `u` Usuarios, `f` Facturas, `w` Workflows,
-  `i` Integraciones, `c` Uso y costos, `d` Disponibilidad, `s` Seguridad,
+  `a` Actividad, `o` Organizaciones, `u` Usuarios, `m` Ingresos, `f` Facturas,
+  `w` Workflows, `i` Integraciones, `h` Webhooks, `e` API y accesos, `c` Uso y
+  costos, `d` Disponibilidad, `p` Crons, `l` Alertas, `s` Seguridad,
   `b` Base de datos), `j`/`k` recorren las filas de una tabla marcada con
   `data-ops-rows` y `?` muestra la ayuda. Bajo 880 px no hay atajos ni `<kbd>`;
   la paleta se abre con el botón de la barra superior.
@@ -180,6 +181,56 @@ animación respeta `prefers-reduced-motion`; los avatares usan centrado geométr
   solo para `admin`, tiene tope de 10,000 filas y escribe `ops.list_exported` en
   la misma transacción que la lectura. `src/lib/ops-csv.ts` neutraliza fórmulas
   (`= + - @`, tab y CR) y agrega BOM para Excel.
+
+## Monitoreo, cortesías y "ver como" (oct 2026)
+
+- **Crons (`/ops/crons`).** Compara el horario declarado (`vercel.json` y
+  `scripts/cron-schedule.mjs`) contra `cron_runs`: falló, se colgó, no corrió
+  en su periodo (con 3 h de gracia) o no tiene horario. Un cron que no reclama
+  su periodo se marca "sin bitácora", nunca "correcto". `src/lib/ops-crons.ts`.
+- **API y accesos (`/ops/developers`).** Tráfico de 24 h de la API pública y
+  MCP, 5xx y 429, clientes y permisos OAuth y accesos de `cord login`. Nunca
+  selecciona hashes ni secretos. `src/lib/ops-developers.ts`.
+- **Alertas (`/ops/alerts`).** Catálogo cerrado de métricas
+  (`cord_ops_alert_metrics()`, solo agregados); por regla se enciende, se apaga
+  o se mueve el umbral. `/api/cron/ops-alertas` avisa una vez por transición y
+  solo marca `notified_firing` si el aviso salió por algún canal.
+- **Plan efectivo.** Listas, uso, búsqueda e inicio muestran
+  `cord_effective_plan()` (pago o cortesía), no `orgs.plan`, que es solo la
+  proyección del último pago. Se calcula para las filas visibles; filtrar por
+  plan sí lo evalúa sobre el universo.
+- **Cortesías.** Días gratis o plan regalado desde la ficha
+  (`src/lib/ops-grants.ts`, tabla `ops_plan_grants`). Dan acceso con
+  `cord_access_grant()` y nunca escriben evidencia de pago (regla 17). A quien
+  paga: días gratis mueven su próximo cobro (`trial_end`, sin prorrateo) y un
+  plan igual al suyo es un cupón del 100 % solo sobre el producto base. Todo lo
+  demás es solo acceso. Con una suscripción viva el excedente se sigue
+  cobrando; sin ella lo incluido es tope duro. Revocar devuelve el cobro a la
+  fecha ya pagada (`original_period_end`) y quita solo el descuento propio.
+  Solo admin, autenticación reciente, confirmación por nombre y revisión en
+  dos pasos.
+- **Ver como.** Abre la app del negocio como la ve su dueño, en solo lectura y
+  30 minutos (`src/lib/ops-view.ts`, tabla `ops_view_sessions`). Ops emite un
+  enlace de un solo uso (90 s) que el apex canjea en `/ops-vista/entrar` por
+  una cookie PROPIA de vista: no es una sesión de la app, el operador no se
+  vuelve miembro y nunca toma la identidad del dueño. El middleware corre la
+  vista con la identidad del operador y la org de la vista, rechaza con 403
+  toda escritura y las lecturas con efectos (sincronizar con un proveedor,
+  presencia, OAuth, exportar, cuenta personal), salta los gates personales
+  (2FA, asiento, legal, onboarding) y apaga la analítica del negocio. La ruta
+  se evalúa decodificada y normalizada: codificarla no esquiva la lista. El
+  link público (`/q`, `/i` y sus APIs) abierto desde la vista se lee pero no
+  escribe: ni el latido que lo marcaría como visto por el cliente (regla 19),
+  ni aprobar, comentar o pagar. Solo admin, autenticación reciente y un motivo;
+  crear, canjear y salir quedan en `ops_audit_log`. Bajar de rol, desactivar o
+  suspender al operador corta sus vistas abiertas. La ficha lista quién vio y
+  permite terminarlas; la salida (`/ops-vista/salir`) regresa a la ficha.
+
+Las migraciones de Ops (`db/migrations/2026-10-08-ops-fase3.sql` a `fase6.sql`)
+corren en cada build con `scripts/migrate-ops.mjs` y son espejo literal de su
+bloque en `db/schema.sql`. El contrato lo verifica `npm run security:ops`.
+
+## Escala
 
 Objetivo: operar con más de 10,000 usuarios y organizaciones sin cargar colecciones
 completas.

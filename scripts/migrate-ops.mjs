@@ -5,6 +5,8 @@
 //   fase 4 — lectura de cron_runs; reglas y estado de alertas; métricas.
 //   fase 5 — cortesías de Ops (ops_plan_grants) y cord_access_grant() en el
 //            plan efectivo.
+//   fase 6 — "ver como": vistas de solo lectura (ops_view_sessions) y sus
+//            funciones de canje, resolución y salida.
 // Cada archivo es idempotente y es espejo literal de su bloque en db/schema.sql.
 // Nunca imprime la cadena de conexión ni datos de organizaciones.
 //   node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/migrate-ops.mjs
@@ -13,7 +15,7 @@ import { neon } from '@neondatabase/serverless';
 
 const connection = process.env.DATABASE_URL_UNPOOLED || process.env.DATABASE_URL;
 if (!connection) throw new Error('DATABASE_URL is required');
-export const OPS_MIGRATIONS = ['2026-10-08-ops-fase3.sql', '2026-10-08-ops-fase4.sql', '2026-10-08-ops-fase5.sql'];
+export const OPS_MIGRATIONS = ['2026-10-08-ops-fase3.sql', '2026-10-08-ops-fase4.sql', '2026-10-08-ops-fase5.sql', '2026-10-08-ops-fase6.sql'];
 const schema = readFileSync(new URL('../db/schema.sql', import.meta.url), 'utf8');
 const sources = OPS_MIGRATIONS.map((name) => {
     const source = readFileSync(new URL(`../db/migrations/${name}`, import.meta.url), 'utf8');

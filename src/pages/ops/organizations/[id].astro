@@ -60,15 +60,16 @@ const r = await withOpsTx(
   opsDeliveryPage('failed', id, 8, 0),
   sql`select id, plan, kind, mechanism, starts_at, expires_at, status, reason, operator_email, stripe_coupon_id, revoked_at, revoked_by, created_at
       from ops_plan_grants where org_id = ${id} order by created_at desc limit 6`,
+  sql`select id, operator_email, reason, created_at, handoff_expires_at, redeemed_at, expires_at, ended_at, ended_by
+      from ops_view_sessions where org_id = ${id} order by created_at desc limit 6`,
 );
 const [orgRows, members, quotes, clients, products, keys, webhooks, sso, audit, feed, invoices, workflows, integrations, collected, commerceRows, closed,
-  billingRows, payouts, refunds, disputes, subInvoices, notes, tags, failedRuns, failedDeliveries, grants] = r as any[];
+  billingRows, payouts, refunds, disputes, subInvoices, notes, tags, failedRuns, failedDeliveries, grants, views] = r as any[];
 if (!orgRows.length) return Astro.redirect('/ops/organizations');
 const org: any = orgRows[0];
 const commerce: any = commerceRows[0] || {};
 const endpoint = `/api/ops/organizations/${id}`;
 const isAdmin = Astro.locals.opsOperator?.role === 'admin';
-const plan = org.plan || 'free';
 const fullName = (m: any) => [m.first_name, m.last_name].filter(Boolean).join(' ') || m.email || 'Invitación pendiente';
 const billing: any = billingRows[0] || {};
 const requirements = opsConnectRequirements(billing.stripe_requirements);
@@ -95,6 +96,15 @@ const sameDay = (a: unknown, b: unknown) => !!a && !!b && Math.abs(new Date(Stri
 const activeGrant = grants.find((g: any) => g.status === 'active' && new Date(g.expires_at) > new Date());
 const grantHistory = grants.filter((g: any) => g !== activeGrant);
 const grantState = (g: any): [string, string] => g.status === 'revoked' ? ['Revocada', 'red'] : g.status === 'expired' || new Date(g.expires_at) <= new Date() ? ['Vencida', ''] : ['Vigente', 'green'];
+// Estado de una vista de "ver como": el enlace caduca a los 90 s si nadie lo
+// abre; abierta, dura hasta su vencimiento o hasta que alguien la termina.
+const viewState = (v: any): [string, string] => {
+  const now = Date.now();
+  if (v.ended_at) return [`Terminada${v.ended_by ? ` · ${v.ended_by}` : ''}`, ''];
+  if (!v.redeemed_at) return new Date(v.handoff_expires_at).getTime() > now ? ['Enlace sin abrir', 'amber'] : ['Enlace sin usar', ''];
+  return new Date(v.expires_at).getTime() > now ? ['Abierta', 'green'] : ['Vencida', ''];
+};
+const openViews = views.filter((v: any) => viewState(v)[1] === 'green' || viewState(v)[1] === 'amber');
 const resendable = (d: any) => d.invoice_number && d.lifecycle !== 'draft' && d.lifecycle !== 'void';
 ---
 <OpsLayout title={`${org.nombre} | Cord Ops`}><OpsShell active="organizations" eyebrow="Organización" title={org.nombre} subtitle={`${org.owner_email || 'Sin propietario'} · ${org.country_code} · ${org.moneda}`}>
@@ -102,7 +112,7 @@ const resendable = (d: any) => d.invoice_number && d.lifecycle !== 'draft' && d.
 
   <section class="ops-card">
     <div class="ops-detail-hero">
-      <div class="ops-detail-identity"><span class="ops-avatar square">{org.nombre.charAt(0).toUpperCase()}</span><div><h2>{org.nombre}</h2><p>Plan {plan} · {opsSubscription(org.subscription_status).toLowerCase()} · {org.sandbox_of ? 'Sandbox' : org.is_demo ? 'Demo' : 'Producción'} · última actividad {opsAgo(org.last_event, 'nunca').toLowerCase()}</p>
+      <div class="ops-detail-identity"><span class="ops-avatar square">{org.nombre.charAt(0).toUpperCase()}</span><div><h2>{org.nombre}</h2><p>{planName(effectivePlan)}{activeGrant && effectivePlan !== paidPlan ? ' (cortesía)' : ''} · {opsSubscription(org.subscription_status).toLowerCase()} · {org.sandbox_of ? 'Sandbox' : org.is_demo ? 'Demo' : 'Producción'} · última actividad {opsAgo(org.last_event, 'nunca').toLowerCase()}</p>
         <div class="ops-tags" aria-label="Etiquetas internas">
           {tags.map((t: any) => <span class="ops-tag">{t.tag}<button type="button" class="ops-tag-remove" data-ops-tag-remove={t.tag} aria-label={`Quitar etiqueta ${t.tag}`}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('x')}></svg></button></span>)}
           <form class="ops-tag-form" data-ops-tag-form><label class="ops-sr-only" for="ops-tag-input">Nueva etiqueta</label><input id="ops-tag-input" name="tag" maxlength="24" autocomplete="off" placeholder="Etiqueta" pattern="[a-zA-Z0-9][a-zA-Z0-9 \-]{0,23}" /><button type="submit" class="ops-button ghost sm">Agregar</button></form>
@@ -207,6 +217,23 @@ const resendable = (d: any) => d.invoice_number && d.lifecycle !== 'draft' && d.
         <p class="ops-inline-error" data-ops-grant-error hidden></p>
         <div class="ops-grant-actions"><button type="submit" class="ops-button secondary sm" data-ops-grant-step="review">Revisar</button><button type="button" class="ops-button sm" data-ops-grant-step="confirm" hidden>Dar cortesía</button></div>
       </form>}
+    </div>
+  </section>
+
+  <section class="ops-section" id="ver-como">
+    <header class="ops-section-header"><div><h2>Ver como</h2><p>Abre la app de este negocio como la ve su dueño, en solo lectura y por 30 minutos. Entras con tu identidad, no con la suya: nada se puede guardar ni enviar, no se mide en su analítica y queda en la bitácora.</p></div>
+      {isAdmin && openViews.length > 0 && <button type="button" class="ops-button danger-soft sm" data-ops-view-end data-endpoint={`/api/ops/organizations/${org.id}/view`}>Terminar vistas abiertas</button>}
+    </header>
+    <div class="ops-grid-2 even ops-grant-grid">
+      <div class="ops-card ops-list wrap-sub">
+        {views.map((v: any) => { const [label, tone] = viewState(v); return <div class="ops-list-row two"><div><strong>{v.operator_email}</strong><span class="ops-sub">{opsDate(v.created_at)} · {v.reason}</span></div><span class:list={['ops-badge', tone]}>{label}</span></div>; })}
+        {views.length === 0 && <div class="ops-empty">Nadie ha visto esta organización desde Ops.</div>}
+      </div>
+      {isAdmin ? <form class="ops-card ops-card-pad ops-grant-form" data-ops-view-form data-endpoint={`/api/ops/organizations/${org.id}/view`}>
+        <label class="ops-field"><span>Motivo</span><input class="ops-input" name="reason" maxlength="300" minlength="3" required placeholder="Ticket, conversación o lo que vas a revisar" /></label>
+        <p class="ops-inline-error" data-ops-view-error hidden></p>
+        <div class="ops-grant-actions"><button type="submit" class="ops-button sm">Abrir la app en solo lectura</button></div>
+      </form> : <div class="ops-card ops-card-pad ops-muted">Solo un operador admin puede abrir una vista.</div>}
     </div>
   </section>
 
@@ -418,6 +445,32 @@ const resendable = (d: any) => d.invoice_number && d.lifecycle !== 'draft' && d.
       catch (error: any) { grantError.textContent = error.message; grantError.hidden = false; confirmBtn.disabled = false; }
     });
   }
+
+  const viewForm = document.querySelector<HTMLFormElement>('[data-ops-view-form]');
+  if (viewForm) {
+    const viewError = viewForm.querySelector<HTMLElement>('[data-ops-view-error]')!;
+    viewForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const button = viewForm.querySelector<HTMLButtonElement>('button[type="submit"]')!;
+      button.disabled = true; viewError.hidden = true;
+      try {
+        const res = await fetch(viewForm.dataset.endpoint || '', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reason: String(new FormData(viewForm).get('reason') || '') }) });
+        const data = await res.json().catch(() => ({}));
+        if (res.status === 428) { window.location.href = `/ops/login?next=${encodeURIComponent(window.location.pathname)}`; return; }
+        if (!res.ok || !data.url) throw new Error(data.error || 'No se pudo abrir la vista.');
+        window.location.assign(data.url);
+      } catch (error: any) { viewError.textContent = error.message; viewError.hidden = false; button.disabled = false; }
+    });
+  }
+  const viewEnd = document.querySelector<HTMLButtonElement>('[data-ops-view-end]');
+  viewEnd?.addEventListener('click', async () => {
+    viewEnd.disabled = true;
+    try {
+      const res = await fetch(viewEnd.dataset.endpoint || '', { method: 'DELETE' });
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'No se pudieron terminar.');
+      location.reload();
+    } catch (error: any) { viewEnd.disabled = false; window.alert(error.message); }
+  });
 
   document.addEventListener('click', async (event) => {
     const target = event.target as HTMLElement;

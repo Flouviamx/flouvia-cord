@@ -41,7 +41,7 @@ try {
     sql`select u.id, u.email, u.first_name, u.last_name, u.created_at, u.suspended_at, u.email_verified_at,
                (select max(last_used_at) from sessions s where s.user_id = u.id) last_seen
         from users u order by u.created_at desc limit 6`,
-    sql`select o.id, o.nombre, coalesce(o.plan, 'free') plan, o.country_code, o.created_at, u.email owner_email,
+    sql`select o.id, o.nombre, cord_effective_plan(o.id) plan, o.country_code, o.created_at, u.email owner_email,
                (select count(*)::int from cotizaciones q where q.org_id = o.id) quotes
         from orgs o left join users u on u.id = o.owner_id order by o.created_at desc limit 6`,
     sql`select id, nombre, stripe_disabled_reason from orgs
