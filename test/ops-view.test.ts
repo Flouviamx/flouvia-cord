@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isOpsViewToken, newOpsViewToken, opsViewAllows, opsViewHash } from '../src/lib/ops-view';
+import { isOpsViewPublicLink, isOpsViewToken, newOpsViewToken, opsViewAllows, opsViewHash } from '../src/lib/ops-view';
 
 describe('"ver como" de Cord Ops: solo lectura', () => {
     it('rechaza toda escritura, en la app y en la API', () => {
@@ -42,5 +42,27 @@ describe('"ver como" de Cord Ops: solo lectura', () => {
         expect(isOpsViewToken('x'.repeat(64))).toBe(false);
         expect(opsViewHash(token)).not.toBe(token);
         expect(opsViewHash(token)).toMatch(/^[a-f0-9]{64}$/);
+    });
+});
+
+describe('"ver como": la lista no se esquiva codificando la ruta', () => {
+    it('decodifica, normaliza y rechaza codificaciones raras', () => {
+        expect(opsViewAllows('GET', '/api/%69ntegraciones/hojas/callback')).toBe(false);
+        expect(opsViewAllows('GET', '/app/%73alir')).toBe(false);
+        expect(opsViewAllows('GET', '/api/org/%65xport')).toBe(false);
+        expect(opsViewAllows('GET', '/API/Org/Export')).toBe(false);
+        expect(opsViewAllows('GET', '//api//billing/handoff')).toBe(false);
+        expect(opsViewAllows('GET', '/api/%2569ntegraciones/x')).toBe(false);
+        expect(opsViewAllows('GET', '/app/%E0%A4%A')).toBe(false);
+        expect(opsViewAllows('GET', '/api/billing/connect/persons')).toBe(false);
+    });
+
+    it('reconoce el link público para quitarle la escritura', () => {
+        expect(isOpsViewPublicLink('/q/abc')).toBe(true);
+        expect(isOpsViewPublicLink('/api/q/abc')).toBe(true);
+        expect(isOpsViewPublicLink('/i/abc')).toBe(true);
+        expect(isOpsViewPublicLink('/api/i/abc/mp-preference')).toBe(true);
+        expect(isOpsViewPublicLink('/app/q')).toBe(false);
+        expect(isOpsViewPublicLink('/quote')).toBe(false);
     });
 });

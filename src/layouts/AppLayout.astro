@@ -121,7 +121,11 @@ const { title, page, heading, crumbs = [] } = Astro.props;
 const opsView = currentOpsView();
 // La vista de Cord Ops ("ver como") ignora el entorno de prueba: ve la org real.
 const isTestEnv = !opsView && Astro.cookies.get('cord_test_mode')?.value === '1';
-const opsViewUntil = opsView ? new Intl.DateTimeFormat(L === 'en' ? 'en-US' : 'es-MX', { timeStyle: 'short', timeZone: ORG.zonaHoraria || undefined }).format(opsView.expiresAt) : '';
+const opsViewUntil = (() => {
+    if (!opsView) return '';
+    const fmt = (timeZone?: string) => new Intl.DateTimeFormat(L === 'en' ? 'en-US' : 'es-MX', { timeStyle: 'short', timeZone }).format(opsView.expiresAt);
+    try { return fmt(ORG.zonaHoraria || undefined); } catch { return fmt(); }
+})();
 import { iconInner } from '../lib/icons';
 ---
 

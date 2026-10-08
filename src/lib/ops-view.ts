@@ -54,18 +54,40 @@ export function opsViewCookieOptions(expires: Date) {
 const BLOCKED_GET: RegExp[] = [
     /^\/api\/(auth|account|cli|oauth|test-mode|keys|mcp|sso|onboarding|setup|dev)(\/|$|\.)/,
     /^\/api\/billing\/(handoff|portal|subscribe|pagar|cancelar|methods|mercadopago)(\/|$|\.)/,
-    /^\/api\/billing\/connect\/(status|capture|onboarding|link)(\/|$)/,
+    // `persons` reconstruye su proyección desde el proveedor cuando está vacía.
+    /^\/api\/billing\/connect\/(status|capture|onboarding|link|persons)(\/|$)/,
     /^\/api\/integraciones\//,
     /^\/api\/cobros\/[^/]+\/reembolso$/,
     /^\/api\/cotizaciones\/[^/]+\/stream$/,
     /\/(export|exportar|descargar|download)(\/|$|\.)/,
     /^\/app\/salir(\/|$)/,
 ];
+/**
+ * La ruta como la va a resolver el router: decodificada, en minúsculas y sin
+ * barras repetidas. Sin esto, `/api/%69ntegraciones/…` esquivaba la lista y
+ * llegaba igual al handler. Una codificación inválida o doble se rechaza.
+ */
+function normalizePath(pathname: string): string | null {
+    let decoded: string;
+    try { decoded = decodeURIComponent(pathname); } catch { return null; }
+    if (decoded.includes('%')) return null;
+    return decoded.toLowerCase().replace(/\/{2,}/g, '/');
+}
+
 export function opsViewAllows(method: string, pathname: string): boolean {
     const m = method.toUpperCase();
     if (m !== 'GET' && m !== 'HEAD') return false;
-    return !BLOCKED_GET.some((re) => re.test(pathname));
+    const path = normalizePath(pathname);
+    if (path === null) return false;
+    return !BLOCKED_GET.some((re) => re.test(path));
 }
+
+/**
+ * El link público del negocio (`/q`, `/i` y sus APIs) abierto desde una vista:
+ * se puede LEER, pero nada que escriba — ni el latido que lo marcaría como
+ * visto por el cliente (regla 19), ni aprobar, comentar o pagar.
+ */
+export const isOpsViewPublicLink = (pathname: string) => /^\/(api\/)?(q|i)\//.test(pathname);
 
 export interface ResolvedOpsView { id: string; orgId: string; operatorId: string; operatorEmail: string; expiresAt: Date }
 

@@ -57,7 +57,8 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
             }),
         );
         if (!inserted.length) throw new Error('vista no creada');
-        // El token viaja en el fragmento-libre de la URL solo una vez y caduca en 90 s.
+        // El token va en la query del enlace: un solo uso, 90 s, y /ops-vista/entrar
+        // responde con Referrer-Policy no-referrer y lo cambia por otro en la cookie.
         return json({ ok: true, url: `${opsViewAppOrigin()}${OPS_VIEW_ENTER_PATH}?t=${token}` });
     } catch (error) {
         log.error('no se pudo iniciar una vista de Ops', { route: 'ops/view', orgId, err: error });

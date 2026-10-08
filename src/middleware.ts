@@ -299,7 +299,7 @@ import { strictLimitResponse, strictRateLimit } from './lib/ratelimit';
 import { log } from './lib/log';
 import { isTwoFactorRecoveryApi } from './lib/two-factor-gate';
 import { apiPreflight } from './lib/api-cors';
-import { OPS_VIEW_COOKIE, opsViewAllows, opsViewCookieDeleteOptions, resolveOpsView, type ResolvedOpsView } from './lib/ops-view';
+import { OPS_VIEW_COOKIE, isOpsViewPublicLink, opsViewAllows, opsViewCookieDeleteOptions, resolveOpsView, type ResolvedOpsView } from './lib/ops-view';
 
 const mainHandler = async (context: any, next: any) => {
     const path = context.url.pathname;
@@ -393,7 +393,8 @@ const mainHandler = async (context: any, next: any) => {
     // handler. Una cookie vencida o terminada se borra y no da nada.
     let opsView: ResolvedOpsView | null = null;
     const viewToken = cookieBlind ? undefined : context.cookies.get(OPS_VIEW_COOKIE)?.value;
-    if (viewToken && (isApp || (isApi && !isPublicApi && !isOpsApi))) {
+    const viewPublicLink = isOpsViewPublicLink(path);
+    if (viewToken && (isApp || (isApi && !isPublicApi && !isOpsApi) || viewPublicLink)) {
         try { opsView = await resolveOpsView(viewToken); }
         catch (error) {
             log.error('no se pudo resolver una vista de Ops', { route: 'ops-view', err: error });
@@ -402,6 +403,15 @@ const mainHandler = async (context: any, next: any) => {
             });
         }
         if (!opsView) context.cookies.delete(OPS_VIEW_COOKIE, opsViewCookieDeleteOptions());
+    }
+    if (opsView && viewPublicLink) {
+        // El link público sigue siendo público: la vista no le presta identidad,
+        // solo le quita la escritura.
+        if (method !== 'GET' && method !== 'HEAD') return new Response(JSON.stringify({
+            error: 'Vista de solo lectura de Cord Ops: no se puede cambiar nada.',
+            code: 'ops_view_read_only',
+        }), { status: 403, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+        opsView = null;
     }
     if (opsView) {
         if (!opsViewAllows(method, path)) {

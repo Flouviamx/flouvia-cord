@@ -217,10 +217,14 @@ animación respeta `prefers-reduced-motion`; los avatares usan centrado geométr
   vista con la identidad del operador y la org de la vista, rechaza con 403
   toda escritura y las lecturas con efectos (sincronizar con un proveedor,
   presencia, OAuth, exportar, cuenta personal), salta los gates personales
-  (2FA, asiento, legal, onboarding) y apaga la analítica del negocio. Solo
-  admin, autenticación reciente y un motivo que queda en la bitácora; la ficha
-  lista quién vio y permite terminar las vistas abiertas. La salida
-  (`/ops-vista/salir`) regresa a la ficha.
+  (2FA, asiento, legal, onboarding) y apaga la analítica del negocio. La ruta
+  se evalúa decodificada y normalizada: codificarla no esquiva la lista. El
+  link público (`/q`, `/i` y sus APIs) abierto desde la vista se lee pero no
+  escribe: ni el latido que lo marcaría como visto por el cliente (regla 19),
+  ni aprobar, comentar o pagar. Solo admin, autenticación reciente y un motivo;
+  crear, canjear y salir quedan en `ops_audit_log`. Bajar de rol, desactivar o
+  suspender al operador corta sus vistas abiertas. La ficha lista quién vio y
+  permite terminarlas; la salida (`/ops-vista/salir`) regresa a la ficha.
 
 Las migraciones de Ops (`db/migrations/2026-10-08-ops-fase3.sql` a `fase6.sql`)
 corren en cada build con `scripts/migrate-ops.mjs` y son espejo literal de su

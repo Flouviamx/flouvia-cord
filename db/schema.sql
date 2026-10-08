@@ -6542,27 +6542,38 @@ end $$;
 
 -- 2. Canje. Marcar "usado" y leer van en el MISMO update: dos pestañas con el
 --    mismo enlace no pueden canjearlo dos veces. La vista dura lo que se fijó
---    al crearla, contado desde el canje y nunca más allá de su tope.
+--    al crearla, contado desde el canje y nunca más allá de su tope. Solo un
+--    admin activo canjea, y el canje y la salida quedan en ops_audit_log.
 create or replace function cord_ops_view_redeem(p_handoff_hash text, p_session_hash text, p_ttl_minutes int)
 returns table (id uuid, org_id uuid, operator_email text, expires_at timestamptz)
 language sql volatile security definer
 set search_path = public, pg_temp
 as $$
-  update ops_view_sessions v
-     set redeemed_at = now(),
-         session_hash = p_session_hash,
-         expires_at = least(v.expires_at, now() + make_interval(mins => greatest(1, least(p_ttl_minutes, 60))))
-   where v.handoff_hash = p_handoff_hash
-     and v.redeemed_at is null
-     and v.ended_at is null
-     and v.handoff_expires_at > now()
-     and p_session_hash ~ '^[a-f0-9]{64}$'
-  returning v.id, v.org_id, v.operator_email, v.expires_at;
+  with redeemed as (
+    update ops_view_sessions v
+       set redeemed_at = now(),
+           session_hash = p_session_hash,
+           expires_at = least(v.expires_at, now() + make_interval(mins => greatest(1, least(p_ttl_minutes, 60))))
+     where v.handoff_hash = p_handoff_hash
+       and v.redeemed_at is null
+       and v.ended_at is null
+       and v.handoff_expires_at > now()
+       and p_session_hash ~ '^[a-f0-9]{64}$'
+       and exists (select 1 from ops_operators o join users u on u.id = o.user_id
+                    where o.user_id = v.operator_id and o.active and o.role = 'admin' and u.suspended_at is null)
+    returning v.id, v.org_id, v.operator_id, v.operator_email, v.expires_at
+  ), audited as (
+    insert into ops_audit_log (actor_operator_id, actor_email, action, target_type, target_id, result, metadata)
+    select r.operator_id, r.operator_email, 'ops.view_as_redeemed', 'organization', r.org_id::text, 'success',
+           jsonb_build_object('view', r.id)
+      from redeemed r
+  )
+  select r.id, r.org_id, r.operator_email, r.expires_at from redeemed r;
 $$;
 
 -- 3. Resolver la cookie de vista en cada request: solo una vista canjeada,
---    vigente y no terminada. El operador debe seguir en ops_operators: quitarlo
---    de ahí corta sus vistas abiertas. La app corre la vista con la identidad
+--    vigente y no terminada, de un operador que SIGUE siendo admin activo y sin
+--    suspender: bajarlo de rol, desactivarlo o suspenderlo corta sus vistas. La app corre la vista con la identidad
 --    del OPERADOR (sin membresía), nunca con la del dueño del negocio.
 create or replace function cord_ops_view_resolve(p_session_hash text)
 returns table (id uuid, org_id uuid, operator_id uuid, operator_email text, expires_at timestamptz)
@@ -6571,7 +6582,8 @@ set search_path = public, pg_temp
 as $$
   select v.id, v.org_id, v.operator_id, v.operator_email, v.expires_at
     from ops_view_sessions v
-    join ops_operators o on o.user_id = v.operator_id
+    join ops_operators o on o.user_id = v.operator_id and o.active and o.role = 'admin'
+    join users u on u.id = o.user_id and u.suspended_at is null
    where v.session_hash = p_session_hash
      and v.redeemed_at is not null
      and v.ended_at is null
@@ -6585,8 +6597,15 @@ returns void
 language sql volatile security definer
 set search_path = public, pg_temp
 as $$
-  update ops_view_sessions set ended_at = now(), ended_by = 'operador'
-   where session_hash = p_session_hash and ended_at is null;
+  with ended as (
+    update ops_view_sessions set ended_at = now(), ended_by = 'operador'
+     where session_hash = p_session_hash and ended_at is null
+    returning id, org_id, operator_id, operator_email
+  )
+  insert into ops_audit_log (actor_operator_id, actor_email, action, target_type, target_id, result, metadata)
+  select e.operator_id, e.operator_email, 'ops.view_as_ended', 'organization', e.org_id::text, 'success',
+         jsonb_build_object('view', e.id, 'desde', 'app')
+    from ended e;
 $$;
 
 revoke all on function cord_ops_view_redeem(text, text, int) from public;
