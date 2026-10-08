@@ -56,7 +56,7 @@ const filtered = hasActiveFilters({ ...filters }, { sort: 'recent' }) || !!filte
       <tbody>
         {organizations.map((org) => <tr>
           <td><div class="ops-identity"><span class="ops-avatar square">{org.nombre.charAt(0).toUpperCase()}</span><div><a href={`/ops/organizations/${org.id}`}>{org.nombre}</a><span class="ops-sub">{org.owner_email || 'Sin propietario'} · {org.country_code} · alta {opsDate(org.created_at).split(',')[0]}</span></div></div></td>
-          <td><span class="ops-badge blue">{PLAN_LABEL[org.plan || 'free'] || org.plan}</span><span class="ops-sub">{opsSubscription(org.subscription_status)}</span></td>
+          <td><span class="ops-badge blue">{PLAN_LABEL[org.plan || 'free'] || org.plan}</span><span class="ops-sub">{org.courtesy ? 'Cortesía · ' : ''}{opsSubscription(org.subscription_status)}</span></td>
           <td>{opsNumber(org.members)}<span class="ops-sub">miembros</span></td>
           <td>{opsNumber(org.clients)} clientes<span class="ops-sub">{opsNumber(org.quotes)} cotizaciones · {opsNumber(org.quotes_30d)} en 30 días</span></td>
           <td class="num">{opsMoney(org.closed_value, org.moneda)}</td>

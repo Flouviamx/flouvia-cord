@@ -6,7 +6,7 @@ import { parseSettingsRevision } from './settings-history';
 
 import { resolveBrandProfile } from './brand-profile';
 import { sql, getActiveOrgId, resolvePublicQuote, resolvePublicInvoice, withOrgTx, withUserTx, type DbRow } from './db';
-import { currentUserId, currentOrgIdOverride, currentLocale, currentTimeZone, setRequestCurrency, setRequestLocale, setRequestFormatLocale, setRequestTimeZone } from './context';
+import { currentUserId, currentOrgIdOverride, currentOpsView, currentLocale, currentTimeZone, setRequestCurrency, setRequestLocale, setRequestFormatLocale, setRequestTimeZone } from './context';
 import { t as i18nT } from '../i18n/app';
 import { dispatchQuoteEvent } from './webhooks';
 import { notifyQuoteEvent } from './notify';
@@ -3536,6 +3536,9 @@ export async function getSeatUsage(): Promise<{ usados: number; limite: number; 
 }
 
 export async function getMyMembership(): Promise<Membership> {
+    // "Ver como" de Cord Ops: se ve lo que ve el dueño. Es lectura pura: el
+    // middleware ya rechazó toda escritura antes de llegar a un handler.
+    if (currentOpsView()) return { rol: 'owner', permisos: {}, esOwner: true, widgetPrefs: {} };
     const userId = currentUserId();
     // FAIL-CLOSED sin sesión. El único carril legítimo sin userId es M2M
     // (API key), donde currentOrgIdOverride() está seteado y la llave ya es dueña

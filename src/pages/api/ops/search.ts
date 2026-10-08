@@ -32,7 +32,7 @@ export const GET: APIRoute = async ({ url, locals }) => {
 
     try {
         const [orgs, users, quotes, invoices] = await withOpsTx(
-            sql`select o.id, o.nombre, o.country_code, coalesce(o.plan, 'free') plan, u.email owner_email
+            sql`select o.id, o.nombre, o.country_code, cord_effective_plan(o.id) plan, u.email owner_email
                 from orgs o left join users u on u.id = o.owner_id
                 where (${exact}::uuid is not null and o.id = ${exact}::uuid)
                    or (${exact}::uuid is null and lower(o.nombre) like ${contains})

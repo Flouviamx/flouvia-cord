@@ -13,7 +13,9 @@ function orgClause(f: OrgFilters): Clause {
   const parts: string[] = [];
   const p = (value: unknown) => { params.push(value); return `$${params.length}`; };
   if (f.q) { const v = p(`%${escapeLike(f.q)}%`); parts.push(`(lower(o.nombre) like lower(${v}) or lower(coalesce(owner.email,'')) like lower(${v}))`); }
-  if (f.plan) parts.push(`coalesce(o.plan,'free') = ${p(f.plan)}`);
+  // Acceso EFECTIVO (pago o cortesía), el mismo que aplica la app; `orgs.plan`
+  // solo es la proyección del último pago y en una cortesía dice Gratis.
+  if (f.plan) parts.push(`cord_effective_plan(o.id) = ${p(f.plan)}`);
   if (f.country) parts.push(`o.country_code = ${p(f.country)}`);
   if (f.subscription === 'none') parts.push(`o.subscription_status is null`);
   else if (f.subscription) parts.push(`o.subscription_status = ${p(f.subscription)}`);
@@ -112,7 +114,7 @@ function orgsPageSql(f: OrgFilters, limit: number, offset: number) {
   const n = c.params.length;
   return sql.query(`
     with page_orgs as (
-      select o.id,o.nombre,o.plan,o.country_code,o.moneda,o.created_at,o.subscription_status,
+      select o.id,o.nombre,o.country_code,o.moneda,o.created_at,o.subscription_status,
              o.stripe_charges_enabled,o.onboarded_at,o.owner_id,owner.email owner_email
       from orgs o left join users owner on owner.id=o.owner_id
       ${c.where}
@@ -150,6 +152,9 @@ function orgsPageSql(f: OrgFilters, limit: number, offset: number) {
       from domain_events e where e.org_id in (select id from page_orgs) group by e.org_id
     )
     select po.*,
+           -- Solo para las filas visibles: acceso efectivo y cortesía vigente.
+           cord_effective_plan(po.id) plan,
+           exists(select 1 from ops_plan_grants g where g.org_id=po.id and g.status='active' and g.expires_at>now()) courtesy,
            (lower(coalesce(po.owner_email,'')) = any($${n + 3}::text[])
              or coalesce(ms.protected_member,false)) protected,
            coalesce(ms.members,0) members,coalesce(cs.clients,0) clients,

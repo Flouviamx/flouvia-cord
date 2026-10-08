@@ -68,6 +68,12 @@ interface ReqCtx {
     // app.scope='ops'. Es un carril distinto del de cron a propósito: Ops es de
     // solo lectura sobre datos de cliente, el de sistema también escribe.
     opsScope?: boolean;
+    // "Ver como" de Cord Ops (src/lib/ops-view.ts): la app de ESTA organización
+    // en solo lectura, con la identidad del operador y sin membresía. Lo marca
+    // el middleware después de resolver la cookie de vista; getActiveOrgId()
+    // devuelve su org y getMyMembership() lee como dueño. Toda escritura ya se
+    // rechazó antes de llegar aquí.
+    opsView?: { id: string; orgId: string; operatorEmail: string; expiresAt: Date } | null;
     // Quién ejecuta fuera de una sesión: `api:<keyId>`, `mcp:<keyId>`, `workflow:<id>`.
     actor?: string;
     // Profundidad de la cadena de workflows que originó esta ejecución.
@@ -88,6 +94,11 @@ export function currentActor(): string {
     if (store?.userId) return `user:${store.userId}`;
     if (store?.cronScope) return 'system:cron';
     return 'system';
+}
+
+/** La vista de solo lectura de Cord Ops de este request, o null. */
+export function currentOpsView(): ReqCtx['opsView'] {
+    return reqContext.getStore()?.opsView ?? null;
 }
 
 /** userId de la sesión actual, o null si no hay sesión. */

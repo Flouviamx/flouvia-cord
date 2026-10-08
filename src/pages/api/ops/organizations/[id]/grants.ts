@@ -146,7 +146,7 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
         // 2. Stripe, solo donde aplica. Llaves de idempotencia del id de la
         //    cortesía: un reintento no crea un segundo cupón ni mueve dos veces.
         if (decision.mechanism !== 'acceso' && subscription) {
-            const metadata = { 'metadata[ops_grant_id]': grantId, 'metadata[ops_operator_id]': operator.userId, 'metadata[ops_action]': req.kind };
+            const metadata = { 'metadata[ops_grant_id]': grantId, 'metadata[ops_operator_id]': operator.userId, 'metadata[ops_action]': req.kind, 'metadata[ops_plan]': decision.plan };
             let couponId: string | null = null;
             try {
                 if (decision.mechanism === 'trial') {

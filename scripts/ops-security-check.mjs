@@ -57,7 +57,7 @@ if (!/claimOpsTotpStep/.test(login)) fail('totp-un-uso', 'el TOTP de Ops debe re
 // 3. Toda ruta de API de Ops que muta exige operador, y las de administración
 //    exigen rol admin. Las de login son la excepción por definición.
 const LOGIN_ROUTES = new Set(['src/pages/api/ops/auth.ts', 'src/pages/api/ops/passkey-options.ts', 'src/pages/api/ops/passkey-verify.ts']);
-const ADMIN_ROUTES = ['src/pages/api/ops/users/[id].ts', 'src/pages/api/ops/organizations/[id].ts', 'src/pages/api/ops/security.ts', 'src/pages/api/ops/status-incidents.ts', 'src/pages/api/ops/recovery.ts', 'src/pages/api/ops/alerts.ts', 'src/pages/api/ops/organizations/[id]/grants.ts'];
+const ADMIN_ROUTES = ['src/pages/api/ops/users/[id].ts', 'src/pages/api/ops/organizations/[id].ts', 'src/pages/api/ops/security.ts', 'src/pages/api/ops/status-incidents.ts', 'src/pages/api/ops/recovery.ts', 'src/pages/api/ops/alerts.ts', 'src/pages/api/ops/organizations/[id]/grants.ts', 'src/pages/api/ops/organizations/[id]/view.ts'];
 for (const file of opsApi) {
     if (LOGIN_ROUTES.has(file)) continue;
     const src = read(file);
@@ -76,6 +76,7 @@ const fresh = [
     'src/pages/api/ops/passkeys/register.ts',
     'src/pages/api/ops/passkeys/[id].ts',
     'src/pages/api/ops/organizations/[id]/grants.ts',
+    'src/pages/api/ops/organizations/[id]/view.ts',
 ];
 for (const file of fresh) {
     if (!/requireFreshOpsAuth\(/.test(read(file))) fail('auth-reciente', `${file} no exige requireFreshOpsAuth()`);
@@ -228,6 +229,26 @@ const fase5 = read('db/migrations/2026-10-08-ops-fase5.sql');
 if (!schema.includes(fase5.trim())) fail('schema', 'schema.sql y db/migrations/2026-10-08-ops-fase5.sql divergen');
 if (!read('scripts/migrate-ops.mjs').includes("'2026-10-08-ops-fase5.sql'")) fail('schema', 'migrate-ops.mjs no aplica la migración ops-fase5');
 if (!/overageAllowed:\s*accessSource === 'paid' \|\| \(accessSource === 'grant' && liveSubscription\)/.test(read('src/lib/org-entitlements.ts'))) fail('cortesias', 'el excedente solo se cobra con una suscripción viva: pagada, o con cortesía encima');
+
+// 15. "Ver como" (fase 6). La vista es una cookie PROPIA y de solo lectura:
+//     nunca abre una sesión de la app (createSession / cord_session), el
+//     middleware rechaza toda escritura antes de cualquier handler, la vista
+//     no se mide en la analítica del negocio y su tabla es espejo del schema.
+const viewLib = read('src/lib/ops-view.ts');
+const viewEnter = read('src/pages/ops-vista/entrar.ts').replace(/^\s*\/\/.*$/gm, '');
+const middleware = read('src/middleware.ts');
+if (/createSession\(|setSessionCookies\(|cord_active_org/.test(viewEnter)) fail('ver-como', 'el canje de la vista abre o toca una sesión de la app; debe ser una cookie propia');
+if (!/if \(m !== 'GET' && m !== 'HEAD'\) return false;/.test(viewLib)) fail('ver-como', 'opsViewAllows() debe rechazar todo lo que no sea GET/HEAD');
+if (!/if \(!opsViewAllows\(method, path\)\)/.test(middleware)) fail('ver-como', 'el middleware no aplica opsViewAllows() a la vista');
+if (!/httpOnly: true/.test(viewLib) || !/sameSite: 'strict'/.test(viewLib)) fail('ver-como', 'la cookie de vista debe ser httpOnly y SameSite=strict');
+if (!/!opsView && <CordAnalytics/.test(read('src/layouts/AppLayout.astro'))) fail('ver-como', 'la vista no debe medirse en la analítica del negocio (CordAnalytics)');
+if (!/currentOpsView\(\)\) return false;/.test(read('src/lib/posthog-server.ts'))) fail('ver-como', 'trackServer() debe callar durante una vista');
+const fase6 = read('db/migrations/2026-10-08-ops-fase6.sql');
+if (!schema.includes(fase6.trim())) fail('schema', 'schema.sql y db/migrations/2026-10-08-ops-fase6.sql divergen');
+if (!read('scripts/migrate-ops.mjs').includes("'2026-10-08-ops-fase6.sql'")) fail('schema', 'migrate-ops.mjs no aplica la migración ops-fase6');
+for (const fn of ['cord_ops_view_redeem', 'cord_ops_view_resolve', 'cord_ops_view_end']) {
+    if (!new RegExp(`revoke all on function ${fn}\\(`).test(fase6)) fail('ver-como', `${fn}() debe revocarse de public`);
+}
 
 if (failures.length) {
     console.error(`security:ops — ${failures.length} violaciones del contrato de Cord Ops\n`);

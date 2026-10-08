@@ -14,7 +14,7 @@ import { estadosPorProveedor } from '../lib/integraciones/conexiones';
 import { connectedOAuthApps } from '../lib/oauth-provider';
 // Autenticación propia (Custom Auth Fase 2+)
 import { memberCan, memberCanWriteTasks } from '../lib/permissions';
-import { currentLocale, currentUserId } from '../lib/context';
+import { currentLocale, currentOpsView, currentUserId } from '../lib/context';
 import { t, getAppRuntimeI18n } from '../i18n/app';
 import CookieConsent from '../components/CookieConsent.astro';
 import PrivacySafeAnalytics from '../components/PrivacySafeAnalytics.astro';
@@ -118,7 +118,10 @@ const { title, page, heading, crumbs = [] } = Astro.props;
 // Entorno de PRUEBA (cookie leída server-side — misma señal que usa el
 // middleware/getActiveOrgId para resolver la org sandbox). Pinta el banner
 // ámbar tipo Stripe para que el modo de prueba sea inconfundible.
-const isTestEnv = Astro.cookies.get('cord_test_mode')?.value === '1';
+const opsView = currentOpsView();
+// La vista de Cord Ops ("ver como") ignora el entorno de prueba: ve la org real.
+const isTestEnv = !opsView && Astro.cookies.get('cord_test_mode')?.value === '1';
+const opsViewUntil = opsView ? new Intl.DateTimeFormat(L === 'en' ? 'en-US' : 'es-MX', { timeStyle: 'short', timeZone: ORG.zonaHoraria || undefined }).format(opsView.expiresAt) : '';
 import { iconInner } from '../lib/icons';
 ---
 
@@ -140,7 +143,7 @@ import { iconInner } from '../lib/icons';
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Cord" />
 
-        <CordAnalytics
+        {!opsView && <CordAnalytics
             orgId={ORG.id || ""}
             isSandbox={!!ORG.sandboxOf}
             isDemo={!!ORG.isDemo}
@@ -151,7 +154,7 @@ import { iconInner } from '../lib/icons';
             plan={ORG.plan_raw || "free"}
             role={ME.rol || ""}
             orgCreatedAt={ORG.createdAt || null}
-        />
+        />}
 
         <title>{title}</title>
         <script is:inline>
@@ -217,6 +220,15 @@ import { iconInner } from '../lib/icons';
 
             <!-- ── MAIN ── -->
             <div class="app-main">
+                {opsView && (
+                    <div class="ops-view-banner" role="status">
+                        <span class="test-banner-badge">{t(L, 'layout.opsview.badge')}</span>
+                        <span class="test-banner-desc">{t(L, 'layout.opsview.desc').split('{org}').join(ORG.nombre || '').split('{hora}').join(opsViewUntil)}</span>
+                        <form class="test-banner-actions" method="post" action="/ops-vista/salir">
+                            <button class="ops-view-exit" type="submit">{t(L, 'layout.opsview.exit')}</button>
+                        </form>
+                    </div>
+                )}
                 {isTestEnv && (
                     <div class="test-banner" role="status">
                         <span class="test-banner-badge">{t(L, 'layout.test.badge')}</span>
@@ -542,8 +554,8 @@ import { iconInner } from '../lib/icons';
         {!setup.complete && <OnboardingWidget progress={setup} />}
         {canDev && <DevWorkbench locale={L} currentPlan={ORG.plan_raw} />}
 
-        <PrivacySafeAnalytics />
-        <CookieConsent lang={L} />
+        {!opsView && <PrivacySafeAnalytics />}
+        {!opsView && <CookieConsent lang={L} />}
     </body>
 </html>
 
@@ -1495,7 +1507,25 @@ import { iconInner } from '../lib/icons';
         color: #ffffff;
         position: sticky; top: 0.55rem; z-index: 60;
     }
-    .test-banner + .topbar { margin-top: 0.75rem; top: 3.6rem; }
+    .test-banner + .topbar, .ops-view-banner + .topbar { margin-top: 0.75rem; top: 3.6rem; }
+    /* Vista de solo lectura de Cord Ops: navy, para no confundirse con prueba. */
+    .ops-view-banner {
+        display: flex; align-items: center; gap: 0.55rem;
+        margin: 0.85rem 1rem 0; padding: 0.6rem 0.7rem 0.6rem 0.85rem;
+        border-radius: 14px; background: #0a192f; color: #ffffff;
+        box-shadow: 0 1px 2px rgba(10,25,47,0.18), inset 0 1px 0 rgba(255,255,255,0.08);
+        position: sticky; top: 0.55rem; z-index: 60;
+    }
+    html[data-theme="dark"] .ops-view-banner { background: #1e3a5f; }
+    .ops-view-exit {
+        flex-shrink: 0; cursor: pointer; font-family: inherit;
+        font-size: 0.78rem; font-weight: 600; color: #0a192f;
+        background: #ffffff; border: none; border-radius: 999px; padding: 6px 14px;
+        transition: transform 0.18s var(--ease-ios), opacity 0.18s;
+    }
+    .ops-view-exit:hover { opacity: 0.92; }
+    .ops-view-exit:active { transform: scale(0.96); }
+    .ops-view-exit:focus-visible { outline: 2px solid #ffffff; outline-offset: 2px; }
     .test-banner-badge {
         font-size: 0.82rem; font-weight: 600; letter-spacing: -0.005em;
         white-space: nowrap;

@@ -5,18 +5,18 @@ import type { PlanId } from './precios';
 
 const planFor = (value: string): PlanId => Object.prototype.hasOwnProperty.call(INCLUDED, value) ? value as PlanId : 'free';
 
-function quotaCase(dimension: 'ia' | 'api' | 'cfdi'): string {
+function quotaCase(dimension: 'ia' | 'api' | 'cfdi', planExpr: string): string {
   const branches = Object.entries(INCLUDED).map(([plan, limits]) => {
     const limit = limits[dimension];
     return `when '${plan}' then ${limit === null ? 'null' : Number(limit)}`;
   });
-  return `(case coalesce(o.plan,'free') ${branches.join(' ')} else ${INCLUDED.free[dimension]} end)`;
+  return `(case ${planExpr} ${branches.join(' ')} else ${INCLUDED.free[dimension]} end)`;
 }
 
 export async function getOpsUsagePage(period: string, selectedOrg: string, query: string, page: number) {
   const [rows] = await withOpsTx(sql.query(`
     with page_orgs as (
-      select o.id,o.nombre,coalesce(o.plan,'free') plan,o.subscription_status,
+      select o.id,o.nombre,o.subscription_status,
              count(*) over()::int total_count
       from orgs o left join users owner on owner.id=o.owner_id
       where ($1='' or o.id=nullif($1,'')::uuid)
@@ -50,7 +50,7 @@ export async function getOpsUsagePage(period: string, selectedOrg: string, query
       from cotizacion_cobros c where c.paid_at>=now()-interval '30 days'
         and c.org_id in (select id from page_orgs) group by c.org_id
     )
-    select po.*,coalesce(up.ia,0)::int ia,coalesce(up.cfdi,0)::int cfdi,
+    select po.*,cord_effective_plan(po.id) plan,coalesce(up.ia,0)::int ia,coalesce(up.cfdi,0)::int cfdi,
            coalesce(up.api,0)::int api,coalesce(up.usuarios,0)::int usuarios,
            coalesce(a.api_24h,0) api_24h,coalesce(a.api_errors_24h,0) api_errors_24h,
            coalesce(a.api_latency_24h,0) api_latency_24h,
@@ -69,9 +69,11 @@ export async function getOpsUsagePage(period: string, selectedOrg: string, query
 }
 
 export async function getOpsUsageAlerts(period: string, selectedOrg: string, query: string) {
-  const iaLimit = quotaCase('ia');
-  const apiLimit = quotaCase('api');
-  const cfdiLimit = quotaCase('cfdi');
+  // El acceso efectivo (pago o cortesía) se calcula una vez por organización y
+  // solo para las que registran consumo: sin consumo no hay alerta posible.
+  const iaLimit = quotaCase('ia', 'ep.plan');
+  const apiLimit = quotaCase('api', 'ep.plan');
+  const cfdiLimit = quotaCase('cfdi', 'ep.plan');
   const [rows] = await withOpsTx(sql.query(`
     with api_stats as (
       select org_id,count(*)::int requests,count(*) filter (where status>=400)::int errors
@@ -80,7 +82,7 @@ export async function getOpsUsageAlerts(period: string, selectedOrg: string, que
       select org_id,count(*)::int deliveries,count(*) filter (where not ok)::int failures
       from webhook_deliveries where created_at>=now()-interval '24 hours' group by org_id
     )
-    select o.id,o.nombre,coalesce(o.plan,'free') plan,
+    select o.id,o.nombre,ep.plan,
            coalesce(up.ia,0)::int ia,coalesce(up.api,0)::int api,coalesce(up.cfdi,0)::int cfdi,
            coalesce(a.requests,0) api_24h,coalesce(a.errors,0) api_errors_24h,
            coalesce(w.deliveries,0) webhook_24h,coalesce(w.failures,0) webhook_failures_24h
@@ -89,7 +91,9 @@ export async function getOpsUsageAlerts(period: string, selectedOrg: string, que
     left join uso_periodo up on up.org_id=o.id and up.periodo=$1
     left join api_stats a on a.org_id=o.id
     left join webhook_stats w on w.org_id=o.id
-    where ($2='' or o.id=nullif($2,'')::uuid)
+    cross join lateral (select cord_effective_plan(o.id) plan offset 0) ep -- offset 0: que no se aplane y repita la llamada en cada referencia
+    where (up.org_id is not null or a.org_id is not null or w.org_id is not null)
+      and ($2='' or o.id=nullif($2,'')::uuid)
       and ($3='' or lower(o.nombre) like lower($4) or lower(coalesce(owner.email,'')) like lower($4))
       and (
         (${iaLimit} is not null and coalesce(up.ia,0)>=greatest(1,${iaLimit}*.8))

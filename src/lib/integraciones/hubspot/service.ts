@@ -1,3 +1,4 @@
+import { currentOpsView } from '../../context';
 import { sql, withOrgTx } from '../../db';
 import { log } from '../../log';
 import { type ActionContext, type ActionOutcome, auditAction, done } from '../../actions/outcome';
@@ -75,7 +76,8 @@ export async function hubspotStatus(orgId: string, withPipelines: boolean) {
           from integracion_sync where org_id = ${orgId} and conexion_id = ${conexion.id}`);
     const ajustes = sanitizeAjustes(conexion.ajustes);
     let pipelines: Awaited<ReturnType<typeof listDealPipelines>> | null = null;
-    if (withPipelines && conexion.estado === 'activa') {
+    // Una vista de Cord Ops no llama al proveedor: podría renovar su token.
+    if (withPipelines && conexion.estado === 'activa' && !currentOpsView()) {
         try {
             pipelines = await listDealPipelines({ orgId, conexionId: conexion.id });
         } catch {

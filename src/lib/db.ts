@@ -9,7 +9,7 @@
 import { neon, neonConfig, type NeonQueryPromise } from '@neondatabase/serverless';
 import { withConnectRetry } from './db-fetch';
 import { createHash } from 'node:crypto';
-import { currentUserId, currentOrgIdOverride, currentActiveOrgId, memoizedOrgId, memoizeOrgId, isTestModeRequest, isCronScope, isOpsScope, setRequestCurrency, setRequestLocale, setRequestFormatLocale, setRequestTimeZone } from './context';
+import { currentUserId, currentOrgIdOverride, currentOpsView, currentActiveOrgId, memoizedOrgId, memoizeOrgId, isTestModeRequest, isCronScope, isOpsScope, setRequestCurrency, setRequestLocale, setRequestFormatLocale, setRequestTimeZone } from './context';
 import { getCountryProfile } from './countries';
 import { log } from './log';
 
@@ -80,6 +80,11 @@ export async function getActiveOrgId(): Promise<string> {
     //    (las llaves sk_test_ ya llegan aquí con la org sandbox resuelta).
     const orgOverride = currentOrgIdOverride();
     if (orgOverride) return orgOverride;
+
+    // 0.05) "Ver como" de Cord Ops: la org la fijó el canje de la vista. Nunca
+    //       se resuelve por membresía (el operador no la tiene) ni por sandbox.
+    const view = currentOpsView();
+    if (view) return view.orgId;
 
     // 0.1) Memo por-request: la resolución es idéntica durante todo el request
     //      (misma sesión/org activa). Un render de dashboard llama esto ~8-9 veces;

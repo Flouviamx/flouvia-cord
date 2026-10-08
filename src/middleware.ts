@@ -299,6 +299,7 @@ import { strictLimitResponse, strictRateLimit } from './lib/ratelimit';
 import { log } from './lib/log';
 import { isTwoFactorRecoveryApi } from './lib/two-factor-gate';
 import { apiPreflight } from './lib/api-cors';
+import { OPS_VIEW_COOKIE, opsViewAllows, opsViewCookieDeleteOptions, resolveOpsView, type ResolvedOpsView } from './lib/ops-view';
 
 const mainHandler = async (context: any, next: any) => {
     const path = context.url.pathname;
@@ -384,6 +385,35 @@ const mainHandler = async (context: any, next: any) => {
     const isOpsApi = path === "/api/ops" || path.startsWith("/api/ops/");
     const isOpsLoginPage = path === "/ops/login";
     const isPublicOpsApi = OPS_PUBLIC_API_EXACT.includes(path);
+
+    // "Ver como" de Cord Ops (src/lib/ops-view.ts): una cookie PROPIA, nunca la
+    // sesión del negocio. Solo aplica a /app y a las APIs internas; ahí pisa la
+    // sesión normal con la identidad del operador y la org de la vista, y toda
+    // escritura —o lectura con efectos— se rechaza aquí, antes de cualquier
+    // handler. Una cookie vencida o terminada se borra y no da nada.
+    let opsView: ResolvedOpsView | null = null;
+    const viewToken = cookieBlind ? undefined : context.cookies.get(OPS_VIEW_COOKIE)?.value;
+    if (viewToken && (isApp || (isApi && !isPublicApi && !isOpsApi))) {
+        try { opsView = await resolveOpsView(viewToken); }
+        catch (error) {
+            log.error('no se pudo resolver una vista de Ops', { route: 'ops-view', err: error });
+            return new Response(JSON.stringify({ error: 'No pudimos verificar el acceso. Intenta de nuevo.' }), {
+                status: 503, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
+            });
+        }
+        if (!opsView) context.cookies.delete(OPS_VIEW_COOKIE, opsViewCookieDeleteOptions());
+    }
+    if (opsView) {
+        if (!opsViewAllows(method, path)) {
+            if (isApi || method !== 'GET') return new Response(JSON.stringify({
+                error: 'Vista de solo lectura de Cord Ops: no se puede cambiar nada.',
+                code: 'ops_view_read_only',
+            }), { status: 403, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+            return context.redirect('/app');
+        }
+        userId = opsView.operatorId;
+        validatedSessionId = null;
+    }
 
     // Facturación de la suscripción: superficie propia en billing.cordhq.app.
     // `/billing/entrar` es su ÚNICA puerta sin sesión — canjea el token de
@@ -543,7 +573,7 @@ const mainHandler = async (context: any, next: any) => {
     // switcher) hace que getActiveOrgId() resuelva la org SANDBOX espejo. Solo
     // aplica al carril de SESIÓN (app + APIs internas): las rutas públicas y el
     // carril de API key (sk_test_) tienen su propia resolución.
-    const testMode = !cookieBlind && context.cookies.get("cord_test_mode")?.value === "1";
+    const testMode = !cookieBlind && !opsView && context.cookies.get("cord_test_mode")?.value === "1";
 
     // Idioma: este es solo el VALOR INICIAL, adivinado del header Accept-Language.
     // Dentro de /app y de las APIs internas lo pisa el idioma de la ORGANIZACIÓN
@@ -565,7 +595,8 @@ const mainHandler = async (context: any, next: any) => {
     // Exponer el userId Y la org activa a las queries (db.ts →
     // getActiveOrgId) durante todo el render/handler de este request, vía
     // AsyncLocalStorage.
-    const response = await reqContext.run({ userId: userId ?? null, sessionId: validatedSessionId, activeOrgId: orgId ?? null, testMode, locale, opsScope: opsOperatorValidado }, async () => {
+    const response = await reqContext.run({ userId: userId ?? null, sessionId: validatedSessionId, activeOrgId: opsView ? null : (orgId ?? null), testMode, locale, opsScope: opsOperatorValidado,
+        opsView: opsView ? { id: opsView.id, orgId: opsView.orgId, operatorEmail: opsView.operatorEmail, expiresAt: opsView.expiresAt } : null }, async () => {
         // PRIMERO de todo: idioma, divisa y zona horaria de la ORGANIZACIÓN, que
         // pisan la adivinanza por Accept-Language de arriba. Va antes que
         // cualquier otra cosa dentro del scope porque hasta las respuestas de
@@ -612,7 +643,9 @@ const mainHandler = async (context: any, next: any) => {
 
         // El confinamiento por 2FA también protege llamadas directas a APIs de
         // negocio. Las excepciones solo permiten completar la verificación.
-        if (userId && isApi && !isPublicApi && !isOpsApi && !isTwoFactorRecoveryApi(path, method)) {
+        // Una vista de Ops no es la sesión de nadie del negocio: sus gates
+        // personales (2FA, asiento, aceptación legal, onboarding) no aplican.
+        if (userId && !opsView && isApi && !isPublicApi && !isOpsApi && !isTwoFactorRecoveryApi(path, method)) {
             try {
                 const gates = securityGates ?? await getAppGates(userId, { strictSecurity: true });
                 if (gates.needs2fa) {
@@ -633,7 +666,7 @@ const mainHandler = async (context: any, next: any) => {
         // Un downgrade conserva miembros y datos, pero no puede seguir otorgando
         // asientos premium. El owner siempre conserva acceso para recuperar el
         // pago; los miembros fuera del cupo quedan confinados a su propia cuenta.
-        if (userId && (isApp || (isApi && !isPublicApi && !isOpsApi))) {
+        if (userId && !opsView && (isApp || (isApi && !isPublicApi && !isOpsApi))) {
             const selfServiceApi = path.startsWith('/api/account/') || path === '/api/account' || path === '/api/auth/logout';
             const selfServicePage = path === '/app/aceptacion-legal' ||
                 ['/app/ajustes/cuenta', '/app/ajustes/datos', '/app/ajustes/plan']
@@ -666,7 +699,7 @@ const mainHandler = async (context: any, next: any) => {
         // aterrizaba en Planes sin explicar qué se estaba bloqueando ni ofrecer
         // el paywall persuasivo; el usuario solo veía "me mandó a Planes".
         // Gates de entrada a /app, resueltos en una sola query (getAppGates).
-        if (isApp && userId) {
+        if (isApp && userId && !opsView) {
             const securityGatePaths = ['/app/ajustes/cuenta', '/app/ajustes/seguridad'];
             const onSecurityGatePath = securityGatePaths.some((p) => path === p || path.startsWith(p + '/'));
             const legalExemptPaths = ['/app/aceptacion-legal', '/app/ajustes/cuenta', '/app/ajustes/datos', '/app/ajustes/plan'];

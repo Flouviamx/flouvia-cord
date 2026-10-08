@@ -1224,7 +1224,7 @@ async function syncSubscription(sub: any) {
     // downgrade en PostHog sin una segunda query.
     const orgId = await orgForBilling(sub?.id, typeof sub?.customer === 'string' ? sub.customer : sub?.customer?.id);
     if (!orgId) return;
-    const [rows] = await withOrgTx(orgId, sql`select id, plan as prev_plan, stripe_subscription_id, (sandbox_of is not null) as is_sandbox, is_demo
+    const [rows] = await withOrgTx(orgId, sql`select id, plan as prev_plan, subscription_status as prev_status, stripe_subscription_id, (sandbox_of is not null) as is_sandbox, is_demo
         from orgs where id = ${orgId} limit 1`);
     if (!rows.length) return;
     if (rows[0].stripe_subscription_id && rows[0].stripe_subscription_id !== sub?.id) {
@@ -1278,7 +1278,13 @@ async function syncSubscription(sub: any) {
 
     // Solo dispara cuando el plan efectivo REALMENTE cambió (no en cada renovación
     // mensual que reconfirma el mismo plan).
-    if (grantsPlan && plan !== prevPlan) {
+    // Los días gratis de Cord Ops ponen la suscripción en `trialing` (plan
+    // pagado = Gratis) sin que cambie su plan; al volver a `active` no hubo
+    // upgrade, solo se reanudó el cobro del mismo plan. Si cambió de plan
+    // durante esos días, el evento sí sale.
+    const resumedFromOpsTrial = rows[0].prev_status === 'trialing' && sub?.metadata?.ops_action === 'dias' && !!sub?.metadata?.ops_grant_id
+        && sub?.metadata?.ops_plan === plan;
+    if (grantsPlan && plan !== prevPlan && !resumedFromOpsTrial) {
         const upgraded = (PLAN_RANK[plan] ?? 0) > (PLAN_RANK[prevPlan] ?? 0);
         await trackServer(upgraded ? 'subscription_upgraded' : 'subscription_downgraded', orgId, {
             from_plan: prevPlan,
