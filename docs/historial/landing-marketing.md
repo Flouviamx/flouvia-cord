@@ -7,6 +7,41 @@
 
 ---
 
+**docs.cordhq.app reescrito contra el código: veracidad, navegación, contenido y mockups (7-8 oct 2026)** —
+• **Auditoría:** siete agentes leyeron las 104 páginas por idioma contra el código. Hallaron
+  afirmaciones falsas que tocaban dinero (ejemplos de tarifa 10x abajo en `pagos/condiciones`,
+  "SPEI cero comisiones", tabla de cuotas por plan equivocada, intereses moratorios descritos
+  como activos cuando `late-interest-policy.ts` los apaga), funciones inexistentes (descuento
+  global, notas por partida, validación de RFC, sello en el PDF, recordatorios de tareas), IDs de
+  ejemplo estilo Stripe que la API rechaza con 404 y SDKs de Python/PHP sin publicar ofrecidos en
+  la referencia, más callouts internos de QA ("pendientes de verificación") publicados al cliente.
+• **Fase 1 — veracidad:** todo lo anterior corregido en ES y EN, verificando cada punto en código
+  antes de editar. Cifras de tarifa calculadas con `computeFee()`. `ERRORS_DOC_URL` y los enlaces
+  del roadmap ganan el prefijo `/docs` (el de inglés daba 404). `api-schema.ts` corregido y
+  `openapi.json` regenerado.
+• **Fase 2 — navegación y diseño:** el sidebar dejó de ser ~400 líneas de markup con 142 ternarios
+  de idioma; ahora sale de `src/lib/docs-nav.ts` junto con pestañas (nueva: Automatizar), migas,
+  anterior/siguiente y JSON-LD. Nuevo `npm run security:docs` en `test:payments`. Pulido medido:
+  anclas tapadas por el header, color de los callouts, copiar código, "Copiar para IA" en Markdown,
+  búsqueda con teclado, TOC fiable, header móvil de 102 px con objetivos de 44 px, tokens
+  `--docs-*`, regla 31. 97 enlaces con `?lang=` o de EN a ES corregidos; índice de búsqueda en
+  texto plano (-13%) con la referencia de la API.
+• **Fase 3 — contenido:** 14 páginas nuevas (crear cuenta, portal del cliente, dominio propio,
+  negociación, vista del cliente, aprobaciones internas, depósitos, recordatorios, cuotas, inicio
+  rápido, SDK de Node, configuración asistida, Elements headless y fiscal); todas las páginas con
+  la estructura completa y frontmatter (fecha, planes, mercados, revisión). 118 páginas por idioma.
+• **Fase 4 — mockups:** kit `src/components/docs/mockups/` (marco `DocsMockup`, primitivas `dm-*`
+  alimentadas por `STATUS_META`, `SIDEBAR_NAV` y el diccionario real) y 51 mockups que calcan la
+  app, sustituyendo los 2 anteriores hechos con `style=""` en el MDX.
+• **Lo que la auditoría encontró en el producto** (no en las docs) quedó como backlog en
+  `docs/estado/hallazgos-auditoria-docs.md`; los dos `origin` sin declarar en crons de cobranza
+  son P0.
+• **Decisión:** funciones construidas pero no probadas en producción se documentan con un Callout
+  de "función nueva" en vez de ocultarse o venderse como disponibles. Contrato vigente en
+  `docs/estado/docs-publicas.md`.
+
+---
+
 **Desarrolladores: sin pasos ni rejilla de detalles; mockups 1:1 (5 oct 2026)** —
 • Se retiraron "Empieza en tres pasos" y la rejilla de detalles (`TrustGrid.astro`) de
   `/desarrolladores/*`, con sus datos (`steps`, `trust`) y el JSON-LD `HowTo`, que sin la
