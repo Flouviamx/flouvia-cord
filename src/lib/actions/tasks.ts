@@ -6,6 +6,7 @@ import { dispatchEvent } from '../webhooks';
 import { taskEventData } from '../event-payloads';
 import { TASK_NOTES_MAX, TASK_TITLE_MAX, isIsoDay, isTaskPriority } from '../tasks';
 import { localClock } from '../task-reminders';
+import { currencyDecimals } from '../currency';
 import { type ActionContext, type ActionOutcome, done, isUuid } from './outcome';
 
 export { TASK_PERMISSIONS } from '../tasks';
@@ -96,9 +97,22 @@ export function civilDayIn(zona: string | null, instant: Date): string {
     return localClock(zona, instant).day;
 }
 
-/** "Responder contracargo 1500 MXN" / "Respond to chargeback 1500 MXN". El importe viaja con su divisa (regla 21). */
-export function systemTaskTitle(kind: SystemTaskKind, locale: AppLocale, importe: string): string {
-    return t(locale, `tareas.auto.${kind}`).replace('{importe}', importe).slice(0, TASK_TITLE_MAX);
+/**
+ * "Responder contracargo de $1,500.00 MXN" / "Respond to the $1,500.00 MXN chargeback".
+ * El importe viaja con su divisa y sus decimales reales (regla 21): un
+ * contracargo en yenes no inventa centavos.
+ */
+export function systemTaskTitle(kind: SystemTaskKind, locale: AppLocale, amount: number, currency: string): string {
+    const code = currency.toUpperCase();
+    const decimals = currencyDecimals(code);
+    let value: string;
+    try {
+        value = new Intl.NumberFormat(locale === 'en' ? 'en-US' : 'es-MX', {
+            style: 'currency', currency: code, currencyDisplay: 'narrowSymbol',
+            minimumFractionDigits: decimals, maximumFractionDigits: decimals,
+        }).format(amount);
+    } catch { value = String(amount); }
+    return t(locale, `tareas.auto.${kind}`).replace('{importe}', `${value} ${code}`).slice(0, TASK_TITLE_MAX);
 }
 
 export interface SystemTaskInput {
@@ -115,12 +129,23 @@ export interface SystemTaskInput {
  * El INSERT de una tarea automática, para ir DENTRO de la transacción que la
  * origina. Devuelve la fila (`returning *`) para pasársela a `emitTaskCreated`
  * DESPUÉS de que la transacción confirmó.
+ *
+ * `unlessEvent`: no la crea si ese evento de dominio ya se emitió (mismo
+ * `type` y `data.referencia`). Un aviso del procesador que se reentrega —
+ * porque la primera entrega falló después de emitir — no duplica la tarea.
  */
-export function systemTaskInsert(orgId: string, input: SystemTaskInput) {
+export function systemTaskInsert(orgId: string, input: SystemTaskInput, opts: { unlessEvent?: { type: string; referencia: string } } = {}) {
     const due = input.due_date && isIsoDay(input.due_date) ? input.due_date : null;
+    const guard = opts.unlessEvent ?? null;
     return sql`insert into tareas (org_id, cotizacion_id, documento_id, titulo, due_date, prioridad, asignado_a, creado_por)
-               values (${orgId}, ${input.cotizacion_id ?? null}, ${input.documento_id ?? null}, ${input.titulo.slice(0, TASK_TITLE_MAX)},
-                       ${due}, ${input.prioridad ?? 'normal'}, ${input.asignado_a ?? null}, ${input.creado_por ?? null})
+               select ${orgId}::uuid, ${input.cotizacion_id ?? null}::uuid, ${input.documento_id ?? null}::uuid,
+                      ${input.titulo.slice(0, TASK_TITLE_MAX)}, ${due}::date, ${input.prioridad ?? 'normal'},
+                      ${input.asignado_a ?? null}::uuid, ${input.creado_por ?? null}::uuid
+                where ${guard === null} or not exists (
+                      select 1 from domain_events
+                       where org_id = ${orgId} and type = ${guard?.type ?? ''}
+                         and data->>'referencia' = ${guard?.referencia ?? ''}
+                         and created_at > now() - interval '180 days')
                returning *`;
 }
 

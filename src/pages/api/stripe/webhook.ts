@@ -684,11 +684,11 @@ async function recordDisputeEvent(dispute: any, account: string | undefined, eve
         ...(taskProfile
             // Con plazo de evidencia y dinero en disputa: prioridad alta.
             ? [systemTaskInsert(orgId, {
-                titulo: systemTaskTitle('contracargo', taskProfile.locale, `${fromMinorUnits(amount, currency)} ${currency}`),
+                titulo: systemTaskTitle('contracargo', taskProfile.locale, fromMinorUnits(amount, currency), currency),
                 due_date: dueAt ? civilDayIn(taskProfile.zona, new Date(dueAt)) : null,
                 prioridad: 'alta',
                 cotizacion_id: (cobro?.cotizacion_id as string | undefined) ?? null,
-            })]
+            }, { unlessEvent: { type: 'dispute.created', referencia: disputeId } })]
             : []),
     );
     // Como cualquier otra tarea: webhooks y workflows ven `task.created`.

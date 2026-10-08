@@ -76,6 +76,7 @@ beforeAll(async () => {
           id uuid default gen_random_uuid() primary key, org_id uuid not null, cotizacion_id uuid references cotizaciones(id),
           titulo text not null, due_date date, done boolean not null default false, created_at timestamptz default now());
         alter table tareas add column documento_id uuid references documentos_fiscales(id);
+        create table domain_events (id uuid default gen_random_uuid() primary key, org_id uuid, type text, data jsonb, created_at timestamptz default now());
         insert into users values ('${ANA}'), ('${BETO}'), ('${EXTRA}');
         insert into orgs (id, nombre, zona_horaria, idioma, owner_id) values
           ('${ORG}', 'Gama', '${ZONA}', 'es-MX', '${ANA}'), ('${OTRA}', 'Otra', 'UTC', 'es-MX', '${EXTRA}');
@@ -190,16 +191,25 @@ describe('vínculos y tareas automáticas', () => {
         expect(perfil).toEqual({ locale: 'en', zona: ZONA });
         const [[row]] = await m.db.transaction(async (tx: any) => {
             const q = systemTaskInsert(ORG, {
-                titulo: systemTaskTitle('contracargo', perfil.locale, '1500 MXN'),
+                titulo: systemTaskTitle('contracargo', perfil.locale, 1500, 'MXN'),
                 due_date: '2026-10-09', prioridad: 'alta', cotizacion_id: COT,
             }) as unknown as { text: string; values: unknown[] };
             return [(await tx.query(q.text, q.values)).rows];
         });
         emitTaskCreated(ORG, row);
-        expect(row).toMatchObject({ titulo: 'Respond to chargeback 1500 MXN', prioridad: 'alta', cotizacion_id: COT });
-        expect(m.events).toEqual([expect.objectContaining({ type: 'task.created', data: expect.objectContaining({ id: row.id, titulo: 'Respond to chargeback 1500 MXN' }) })]);
-        expect(systemTaskTitle('reembolso_spei', 'es', '200 MXN')).toBe('Transferir reembolso SPEI por 200 MXN');
-        expect(systemTaskTitle('reembolso_spei', 'en', '200 MXN')).toBe('Send SPEI refund of 200 MXN');
+        expect(row).toMatchObject({ titulo: 'Respond to the $1,500.00 MXN chargeback', prioridad: 'alta', cotizacion_id: COT });
+        expect(m.events).toEqual([expect.objectContaining({ type: 'task.created', data: expect.objectContaining({ id: row.id, titulo: 'Respond to the $1,500.00 MXN chargeback' }) })]);
+        // Una reentrega del mismo aviso (el evento ya se emitió) no duplica la tarea.
+        await m.db.query(`insert into domain_events (org_id, type, data) values ($1, 'dispute.created', '{"referencia":"dp_1"}')`, [ORG]);
+        const guarded = systemTaskInsert(ORG, { titulo: 'x' }, { unlessEvent: { type: 'dispute.created', referencia: 'dp_1' } }) as unknown as { text: string; values: unknown[] };
+        const fresh = systemTaskInsert(ORG, { titulo: 'y' }, { unlessEvent: { type: 'dispute.created', referencia: 'dp_2' } }) as unknown as { text: string; values: unknown[] };
+        expect((await m.db.query(guarded.text, guarded.values)).rows).toEqual([]);
+        expect((await m.db.query(fresh.text, fresh.values)).rows).toHaveLength(1);
+        await m.db.query('delete from domain_events');
+        expect(systemTaskTitle('reembolso_spei', 'es', 3500, 'mxn')).toBe('Transferir reembolso SPEI por $3,500.00 MXN');
+        expect(systemTaskTitle('reembolso_spei', 'en', 3500, 'MXN')).toBe('Send the $3,500.00 MXN SPEI refund');
+        // Sin decimales inventados en una divisa que no los tiene.
+        expect(systemTaskTitle('contracargo', 'es', 12000, 'JPY')).toBe('Responder contracargo de ¥12,000 JPY');
     });
 
     it('las rutas de dinero ya no insertan tareas a mano', () => {

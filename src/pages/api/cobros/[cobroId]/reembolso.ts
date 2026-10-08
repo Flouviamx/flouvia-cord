@@ -115,7 +115,7 @@ export const POST: APIRoute = async ({ request, params }) => {
             // Dinero que el negocio debe: prioridad alta y a cargo de quien lo pidió.
             // Mismo INSERT que toda tarea automática, título en el idioma de la org.
             systemTaskInsert(orgId, {
-                titulo: systemTaskTitle('reembolso_spei', locale, `${fromMinorUnits(parsed.data.amountCents, refundCurrency)} ${refundCurrency}`),
+                titulo: systemTaskTitle('reembolso_spei', locale, fromMinorUnits(parsed.data.amountCents, refundCurrency), refundCurrency),
                 prioridad: 'alta',
                 cotizacion_id: cobro.cotizacion_id as string,
                 asignado_a: currentUserId(),
