@@ -2,14 +2,19 @@
 // Mockup: Ajustes › Notificaciones (/app/ajustes/notificaciones). Calca de
 // src/pages/app/ajustes/notificaciones.astro dentro de SettingsShell: miga
 // "Configuración / Notificaciones", encabezado de la categoría con sus pestañas
-// (Notificaciones · Correo), la matriz de 7 eventos × 3 canales (Correo, Slack,
-// Teams) y la sección avanzada "Canal de Slack" con el webhook y el flujo de Teams.
-// Eventos, descripciones y canales salen del diccionario real (set.notif.*). La
-// celda de Slack y Teams de "Alguien se unió al equipo" no es una casilla: es "—"
-// con el aviso "No aplica a este evento", igual que en la app.
+// (Notificaciones · Correo), la matriz de 8 eventos × 3 canales (Correo, Slack,
+// Teams) y la sección avanzada "Canal de Slack" con el webhook de Slack y Teams.
+// Eventos, descripciones y canales salen del diccionario real (set.notif.*).
+// Como en la app (sinCanal), las celdas de Slack y Teams de "Alguien se unió al
+// equipo" y de "Recordatorio de tareas" no son casillas: son "—" con el aviso
+// "No aplica a este evento". El recordatorio de tareas sale encendido en Correo
+// aunque la organización no lo haya guardado (mismo default que on()).
+// Teams aparece conectado con Microsoft (#ventas · Materiales del Valle), el mismo
+// estado que dibuja DmIntegrations; por eso la app muestra el enlace a
+// Integraciones en lugar del campo del flujo de Power Automate.
 import DocsMockup from './DocsMockup.astro';
 import DmIcon from './DmIcon.astro';
-import { dmT, pick, type DmLang } from './format';
+import { dmT, pick, DEMO, type DmLang } from './format';
 
 interface Props {
     lang: DmLang;
@@ -17,29 +22,30 @@ interface Props {
 }
 const { lang } = Astro.props;
 
-const EVENTOS = ['viewed', 'approved', 'rejected', 'paid', 'expiring', 'overdue', 'team_join'] as const;
+const EVENTOS = ['viewed', 'approved', 'rejected', 'paid', 'expiring', 'overdue', 'team_join', 'task_due'] as const;
 const CANALES = ['email', 'slack', 'teams'] as const;
 // Preferencias guardadas de la organización (orgs.notif_prefs).
 const ON: Record<string, string[]> = {
     viewed: [],
     approved: ['email', 'slack'],
     rejected: ['email'],
-    paid: ['email', 'slack'],
+    paid: ['email', 'slack', 'teams'],
     expiring: [],
     overdue: [],
     team_join: [],
+    task_due: ['email'],
 };
-const sinCanal = (ev: string, c: string) => c !== 'email' && ev === 'team_join';
+const sinCanal = (ev: string, c: string) => c !== 'email' && (ev === 'team_join' || ev === 'task_due');
 
 const DATA = {
     es: {
-        caption: 'Ajustes › Notificaciones: la matriz de 7 eventos por Correo, Slack y Teams, con Cotización aprobada, Cotización rechazada y Pago recibido marcadas en Correo (aprobada y pago también en Slack); las celdas de Slack y Teams de "Alguien se unió al equipo" muestran "No aplica a este evento". Debajo, la sección Canal de Slack con el webhook de Slack y el flujo de Teams.',
+        caption: `Ajustes › Notificaciones: la matriz de 8 eventos por Correo, Slack y Teams, con Cotización aprobada, Cotización rechazada, Pago recibido y Recordatorio de tareas marcadas en Correo (aprobada y pago también en Slack, y pago en Teams); las celdas de Slack y Teams de "Alguien se unió al equipo" y "Recordatorio de tareas" muestran "—" con el aviso "No aplica a este evento". Debajo, la sección Canal de Slack con el webhook de Slack y Microsoft Teams conectado a #ventas · ${DEMO.org}.`,
         desc: 'Qué eventos te avisan y por qué canal (correo, Slack…).',
         tabs: ['Notificaciones', 'Correo'],
         hint: 'Canales externos · configura solo los que use tu equipo.',
     },
     en: {
-        caption: 'Settings › Notifications: the 7-event matrix across Email, Slack and Teams, with Quote approved, Quote rejected and Payment received checked under Email (approved and payment also under Slack); the Slack and Teams cells for "Someone joined the team" show "Not available for this event". Below, the Slack channel section with the Slack webhook and the Teams flow.',
+        caption: `Settings › Notifications: the 8-event matrix across Email, Slack and Teams, with Quote approved, Quote rejected, Payment received and Task reminder checked under Email (approved and payment also under Slack, and payment under Teams); the Slack and Teams cells for "Someone joined the team" and "Task reminder" show "—" with the notice "Not available for this event". Below, the Slack channel section with the Slack webhook and Microsoft Teams connected to #ventas · ${DEMO.org}.`,
         desc: 'Which events notify you and through which channel (email, Slack…).',
         tabs: ['Notifications', 'Email'],
         hint: 'External channels · configure only those your team uses.',
@@ -48,7 +54,7 @@ const DATA = {
 const d = pick(DATA, lang);
 const caption = Astro.props.caption ?? d.caption;
 ---
-<DocsMockup lang={lang} variant="app" chrome="full" sidebar="rail" active="ajustes" height={990} caption={caption} class="dm-nm-figure">
+<DocsMockup lang={lang} variant="app" chrome="full" sidebar="rail" active="ajustes" height={1075} caption={caption} class="dm-nm-figure">
     <div class="dm-nm">
         <div class="dm-nm-crumbs"><DmIcon name="chevron-left" stroke={2.2} />{dmT(lang, 'settings.configuracion')}<i>/</i><b>{d.tabs[0]}</b></div>
         <div class="dm-nm-heading">
@@ -73,7 +79,7 @@ const caption = Astro.props.caption ?? d.caption;
                         </span>
                         {CANALES.map((c) =>
                             sinCanal(ev, c) ? (
-                                <span class="dm-nm-na">—{c === 'teams' && <span class="dm-nm-tip">{dmT(lang, 'set.notif.sin_canal')}</span>}</span>
+                                <span class="dm-nm-na">—{c === 'teams' && ev === 'team_join' && <span class="dm-nm-tip">{dmT(lang, 'set.notif.sin_canal')}</span>}</span>
                             ) : (
                                 <span class="dm-nm-cell"><span class:list={['dm-nm-box', { 'is-on': ON[ev].includes(c) }]}>{ON[ev].includes(c) && <DmIcon name="check" stroke={3.2} />}</span></span>
                             )
@@ -95,9 +101,8 @@ const caption = Astro.props.caption ?? d.caption;
                 <span class="dm-nm-hint">{dmT(lang, 'set.notif.slack_hint')}</span>
             </div>
             <div class="dm-nm-field">
-                <span class="dm-nm-label">{dmT(lang, 'set.notif.teams_webhook')}</span>
-                <span class="dm-nm-input is-ph dm-mono">https://prod-00.westus.logic.azure.com:443/workflows/...</span>
-                <span class="dm-nm-hint">{dmT(lang, 'set.notif.teams_hint')}</span>
+                <span class="dm-nm-label">Microsoft Teams</span>
+                <span class="dm-nm-hint dm-nm-conn">{dmT(lang, 'set.integ.slack.conectado_a')} <b>#ventas</b> · {DEMO.org}. <u>{dmT(lang, 'set.notif.teams_administrar')}</u></span>
             </div>
         </div>
     </div>
@@ -149,9 +154,12 @@ const caption = Astro.props.caption ?? d.caption;
     .dm-nm-input { display: block; height: 32px; line-height: 32px; padding: 0 11px; border-radius: 9px; background: var(--dm-canvas); font-size: 10.5px; color: var(--dm-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .dm-nm-input.is-ph { color: #aab2bf; }
     .dm-nm-hint { font-size: 9.5px; line-height: 1.5; color: var(--dm-muted); }
+    .dm-nm-conn { font-size: 10.5px; }
+    .dm-nm-conn b { font-weight: 600; color: var(--dm-text); }
+    .dm-nm-conn u { text-decoration: underline; text-underline-offset: 2px; color: var(--dm-navy); font-weight: 600; }
 
     @container dm (max-width: 520px) {
-        .dm-nm-figure .dm-stage { height: auto; max-height: 1180px; }
+        .dm-nm-figure .dm-stage { height: auto; max-height: 1430px; }
         .dm-nm-row { grid-template-columns: minmax(0, 1fr) 40px 40px 40px; }
         .dm-nm-block { padding: 14px 12px 10px; }
     }
