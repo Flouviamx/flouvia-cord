@@ -274,7 +274,12 @@ APIs de cobros (ago 2026)
                            `/app/cotizaciones/[id]/editar` solo redirige a
                            `?version=`. La aritmética vive en `src/lib/editor/core.ts`
                            (probada en test/editor-core.test.ts); el CSS, todo en
-                           `src/styles/editor.css` llaveado por `[data-editor]`.
+                           `src/styles/editor.css` llaveado por `[data-editor]`
+                           (y `[data-editor-bar]` para las barras fijas, que el
+                           script mueve a <body>). Pasos: cliente, líneas,
+                           condiciones; vista previa, autoguardado de borradores
+                           (PATCH update_draft) y copia local de lo nuevo
+                           (`cord.editor.<kind>.new`, 7 días).
 /app/cotizaciones/[id]   → detalle + timeline + ACCIONES REALES (enviar, aprobar,
                            rechazar, pago, facturar, copiar link, eliminar borrador,
                            DUPLICAR → POST /api/cotizaciones/[id]/duplicate,

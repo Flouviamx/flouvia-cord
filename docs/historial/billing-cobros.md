@@ -1694,3 +1694,49 @@ octubre `meterInvoiceEmission` reserva la dimensión `documento`, que el CHECK d
 `usage_reservations` no aceptaba, así que toda emisión de un documento comercial
 fallaba con "No pudimos verificar ni registrar tu consumo". El CHECK ya la
 incluye; hay que correr `npm run db:migrate` para que aplique en Neon.
+
+## 2026-10-08 — Fase 3: jerarquía y flujo del editor de documentos
+
+- **Tres pasos y un resumen que solo resume.** Vigencia, anticipo,
+  recurrencia, vencimiento, tipo de documento y divisa pasaron a un paso 3
+  "Condiciones". El resumen lateral queda con totales, términos ("Net 30 ·
+  vence el 7 nov") y la acción principal; antes el botón de enviar quedaba
+  bajo la configuración y salía de la pantalla en una laptop.
+- **Buscador de clientes** por empresa, contacto, correo y RFC en lugar del
+  `<select>` nativo; el `<select>` oculto sigue siendo la fuente de datos.
+- **Líneas**: reordenar arrastrando (escritorio) o con Alt+flechas, duplicar,
+  deshacer al quitar (6 s), y "40 tubo" / "tubo x40" agrega 40 desde el
+  buscador. Si lo escrito ya nombra un producto ("Foco 100 W"), el número es
+  parte del nombre. La fila se adapta al ANCHO DE LA COLUMNA (container query):
+  completa, con la lista bajo el nombre, o apilada con etiquetas.
+- **Vista previa** del documento con la marca del negocio, armada desde el
+  estado actual sin guardar.
+- **Autoguardado**: un borrador existente se guarda solo 2.5 s después del
+  último cambio, con indicador. Un documento nuevo NO se crea solo (cuenta
+  contra el plan): se guarda una copia local y al volver se ofrece recuperarla.
+- **Atajos**: ⌘Enter envía o emite, ⌘S guarda y `/` va al catálogo (dentro del
+  editor manda sobre la paleta global; ⌘K la sigue abriendo).
+- **Móvil**: barra fija con el total y la acción principal, que se retira
+  cuando el resumen está a la vista. Vive en `<body>`: la animación de entrada
+  de la página deja un `transform` en un ancestro y eso anclaba el
+  `position: fixed` al contenido.
+- **Campos blancos** en tema claro: sobre el fondo gris de la app, un campo
+  `#f5f5f7` no se distinguía de la página.
+
+Correcciones de la revisión de la fase 2:
+
+- `parseAmount("0,125")` daba 125 y `"1,234,567"` daba 1234.567: una cantidad
+  en kilos se guardaba mil veces mayor sin error.
+- El costo guardado no viajaba al reabrir: un reenvío lo reemplazaba con el del
+  catálogo de hoy o con 0, y con costo 0 la aprobación por margen mínimo no se
+  evaluaba.
+- Un precio que coincide con el automático del cliente vuelve a ser automático
+  al reabrir; un producto ya inactivo conserva su vínculo en vez de volverse
+  línea libre; el precio vacío en una línea de catálogo se marca.
+- El JSON de arranque se escapa (`</script>` en un nombre rompía el editor).
+- `dateOnly()` en las fechas que faltaban (evento `quote.expiring`,
+  cotizaciones estancadas, promesas de pago); `venceDia()` delega en él.
+- El vencimiento por defecto de la factura se calcula en la zona del negocio.
+- Una tasa guardada que ya no está en el catálogo se muestra tal cual.
+- Escape cierra el menú de kits; ⌘Enter no envía con el confirm abierto.
+

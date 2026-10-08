@@ -171,12 +171,12 @@ const primaryLabel = isQuote ? (isVersion ? T.sendVersion : mode === 'draft' ? T
                 </div>
 
                 <div class="lines-head" id="deLinesHead" data-cols={cols} hidden>
-                    <span></span>
-                    <span>{T.thConcept}</span><span class="lh-num">{T.thQty}</span><span class="lh-num">{T.thList}</span><span class="lh-num">{T.thPrice}</span>
-                    {P.boot.multiTax && <span>{P.boot.taxLabel}</span>}
-                    <span class="lh-num">{T.thAmount}</span>
-                    {isQuote && <span class="lh-margen" title={T.thMarginHelp}>{T.thMargin}</span>}
-                    <span></span>
+                    <span data-h="grip"></span>
+                    <span data-h="name">{T.thConcept}</span><span class="lh-num" data-h="qty">{T.thQty}</span><span class="lh-num" data-h="list">{T.thList}</span><span class="lh-num" data-h="price">{T.thPrice}</span>
+                    {P.boot.multiTax && <span data-h="tax">{P.boot.taxLabel}</span>}
+                    <span class="lh-num" data-h="amount">{T.thAmount}</span>
+                    {isQuote && <span class="lh-margen" data-h="margin" title={T.thMarginHelp}>{T.thMargin}</span>}
+                    <span data-h="actions"></span>
                 </div>
                 <div id="deLines" class="lines" data-cols={cols} role="list"></div>
 
@@ -367,13 +367,18 @@ const primaryLabel = isQuote ? (isVersion ? T.sendVersion : mode === 'draft' ? T
                     </div>
                 </div>
                 <p class="sum-note">{isQuote ? (isVersion ? T.noteVersion : mode === 'draft' ? T.noteQuoteDraft : T.noteQuoteNew) : (reserved ? T.noteInvoiceFixTpl.replace('{folio}', reserved) : T.noteInvoice)}</p>
-                <p class="sum-kbd"><kbd>⌘</kbd><kbd>Enter</kbd> {isQuote ? T.kbdSend : T.kbdIssue}{(isQuote && !isVersion) || !isQuote ? <> · <kbd>⌘</kbd><kbd>S</kbd> {T.kbdSave}</> : null}</p>
+                <p class="sum-kbd">
+                    <span><kbd>⌘</kbd><kbd>Enter</kbd> {isQuote ? T.kbdSend : T.kbdIssue}</span>
+                    {((isQuote && !isVersion) || !isQuote) && <span><kbd>⌘</kbd><kbd>S</kbd> {T.kbdSave}</span>}
+                </p>
             </section>
         </aside>
     </div>
 
-    <!-- Móvil: el total y la acción principal siempre a la vista -->
-    <div class="de-mobilebar" aria-hidden="true">
+    <!-- Móvil: el total y la acción principal siempre a la vista. El script
+         mueve esta barra y la de deshacer a <body>: un ancestro con transform
+         ancla un position: fixed a sí mismo en vez de a la ventana. -->
+    <div class="de-mobilebar" data-editor-bar aria-hidden="true">
         <div class="de-mobilebar-total">
             <span>{T.total}</span>
             <strong class="editorial" id="deMobileTotal">—</strong>
@@ -431,7 +436,7 @@ const primaryLabel = isQuote ? (isVersion ? T.sendVersion : mode === 'draft' ? T
         </dialog>
     )}
 
-    <div class="de-undo" id="deUndo" role="status" aria-live="polite" hidden>
+    <div class="de-undo" id="deUndo" data-editor-bar role="status" aria-live="polite" hidden>
         <span id="deUndoText"></span>
         <button type="button" id="deUndoBtn">{T.undo}</button>
     </div>

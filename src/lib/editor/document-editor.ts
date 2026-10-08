@@ -1203,11 +1203,18 @@ export function mountDocumentEditor(root: HTMLElement, boot: EditorBoot) {
             if (!draftBtn) return;
             e.preventDefault();
             draftBtn.click();
-        } else if (e.key === '/' && !mod && !e.altKey && !typing(document.activeElement)) {
-            e.preventDefault();
-            $search?.focus();
         }
     });
+    // `/` abre la paleta de comandos en el resto de la app. Dentro del editor
+    // la búsqueda útil es la del catálogo (⌘K sigue abriendo la paleta), así
+    // que se atiende en captura y no llega al atajo global.
+    window.addEventListener('keydown', (e) => {
+        if (e.key !== '/' || e.metaKey || e.ctrlKey || e.altKey || !$search || isMobile()) return;
+        if (typing(e.target as Element) || document.querySelector('dialog[open]') || document.querySelector('#cordConfirm:not([hidden]), #cmdk:not([hidden])')) return;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        $search.focus();
+    }, true);
 
     // Móvil: la barra fija replica la acción principal.
     root.querySelector('[data-proxy-primary]')?.addEventListener('click', () => {
@@ -1364,7 +1371,9 @@ export function mountDocumentEditor(root: HTMLElement, boot: EditorBoot) {
         if (!saved || !Array.isArray(saved.lines) || !saved.lines.length) return;
         if (Date.now() - Number(saved.ts) > 7 * 86400000) { clearLocal(); return; }
         const fecha = new Intl.DateTimeFormat(T.intl, { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }).format(new Date(saved.ts));
-        const ok = await (window as any).cordConfirm?.({
+        const confirm = (window as any).cordConfirm;
+        if (typeof confirm !== 'function') return; // sin pregunta, la copia se conserva
+        const ok = await confirm({
             title: T.restoreTitle,
             body: tpl(T.restoreBodyTpl, { n: saved.lines.length, lineas: saved.lines.length === 1 ? T.line : T.lines, fecha }),
             confirmText: T.restore, cancelText: T.discard,
@@ -1409,7 +1418,18 @@ export function mountDocumentEditor(root: HTMLElement, boot: EditorBoot) {
     if (!boot.doc.id && boot.doc.clienteId) $client?.dispatchEvent(new Event('change'));
     dirty = false;
     clearTimeout(autosaveTimer);
-    offerLocalRestore();
+    // La pregunta usa cordConfirm, que el layout instala en su propio módulo,
+    // DESPUÉS de este (regla 13): se espera a que exista, sin depender de en qué
+    // momento del parseo corrió cada módulo.
+    const whenConfirm = (tries = 0) => {
+        if (typeof (window as any).cordConfirm === 'function') offerLocalRestore();
+        else if (tries < 40) setTimeout(() => whenConfirm(tries + 1), 50);
+    };
+    whenConfirm();
+    // Las barras fijas viven en <body>: dentro del contenido, un ancestro con
+    // transform (la animación de entrada de la página) las anclaba a él y la
+    // barra móvil quedaba al final del documento en vez de abajo de la ventana.
+    root.querySelectorAll<HTMLElement>('[data-editor-bar]').forEach((el) => document.body.appendChild(el));
 }
 
 // Pequeño helper para el `<script>` del componente.
