@@ -366,7 +366,18 @@
                                 "type": "null"
                               }
                             ],
-                            "description": "Términos de pago: contado o net<N> (N días de crédito: 7, 15, 30, 45, 60 o 90)."
+                            "description": "Etiqueta legible del plazo en el idioma de la cuenta (\"Contado\", \"Net 45\"); para comparar usa terminos_codigo."
+                          },
+                          "terminos_codigo": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ],
+                            "description": "Código estable del plazo: contado o net<N> (net7, net15, net30, net45, net60, net90)."
                           },
                           "vigencia": {
                             "anyOf": [
@@ -403,6 +414,7 @@
                           "total",
                           "moneda",
                           "terminos",
+                          "terminos_codigo",
                           "vigencia",
                           "creada",
                           "link_publico"
@@ -948,7 +960,18 @@
                               "type": "null"
                             }
                           ],
-                          "description": "Términos de pago: contado o net<N> (N días de crédito: 7, 15, 30, 45, 60 o 90)."
+                          "description": "Etiqueta legible del plazo en el idioma de la cuenta (\"Contado\", \"Net 45\"); para comparar usa terminos_codigo."
+                        },
+                        "terminos_codigo": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ],
+                          "description": "Código estable del plazo: contado o net<N> (net7, net15, net30, net45, net60, net90)."
                         },
                         "vigencia": {
                           "anyOf": [
@@ -1115,6 +1138,7 @@
                         "total",
                         "moneda",
                         "terminos",
+                        "terminos_codigo",
                         "vigencia",
                         "creada",
                         "link_publico",

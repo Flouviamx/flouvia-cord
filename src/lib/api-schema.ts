@@ -17,7 +17,9 @@ const open = <T extends z.ZodRawShape>(shape: T) => z.looseObject(shape);
 
 export const Quote = open({
     id, folio: z.string(), cliente: z.string().nullable(), status: z.string(), total: money, moneda: currency,
-    terminos: z.string().nullable(), vigencia: date, creada: date,
+    terminos: z.string().nullable().describe('Etiqueta legible del plazo en el idioma de la cuenta ("Contado", "Net 45"); para comparar usa terminos_codigo.'),
+    terminos_codigo: z.string().nullable(),
+    vigencia: date, creada: date,
     link_publico: z.string().describe('Link público absoluto de la cotización.'),
 });
 
@@ -342,6 +344,7 @@ export const FIELD_DOCS: Record<string, string> = {
     telefono: 'Teléfono con lada internacional.',
     terminos: 'Términos de pago: contado o net<N> (N días de crédito: 7, 15, 30, 45, 60 o 90).',
     terminosCode: 'Código de términos de pago: contado o net<N> (net7, net15, net30, net45, net60, net90).',
+    terminos_codigo: 'Código estable del plazo: contado o net<N> (net7, net15, net30, net45, net60, net90).',
     terminos_default: 'Términos de pago por defecto.',
     texto: 'Texto libre del pedido.',
     tipo: 'Tipo.',

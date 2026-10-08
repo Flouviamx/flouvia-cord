@@ -1,0 +1,419 @@
+---
+// PlanUpsell — el CONTENIDO único de todo bloqueo por plan. Lo montan dos
+// envolturas y ninguna redibuja precios por su cuenta:
+//   · PlanGate: la página bloqueada. El panel flota sobre una vista previa
+//     desenfocada de la propia página y la navegación sigue viva.
+//   · PlanPaywallModal: el upsell contextual (asientos, llaves de API, webhooks).
+//
+// Decisiones (auditoría oct 2026, sobre el modal anterior de dos tarjetas):
+//   · Un plan recomendado con UN botón primario. Dos CTA navy idénticos
+//     repartían la atención entre "lo que desbloquea esto" y un plan que la
+//     super-incluye; el segundo peldaño queda como fila secundaria.
+//   · El título habla del resultado y el plan va en una etiqueta. "Es una
+//     función de plan superior" describe la restricción, no lo que se gana.
+//   · El precio anual dice cuánto se cobra y cada cuánto. Antes el interruptor
+//     cambiaba $590 por $492 "/ mes" sin decir que el cobro es anual.
+//   · Lo que desbloquea ESTA función, no los bullets genéricos del plan.
+import { PLANES, precioAnualMensualizado, precioAnualTotal } from '../../lib/precios';
+import { PLANES_EN } from '../../lib/precios.en';
+import { getActiveOrgId } from '../../lib/db';
+import { platformCurrencyForOrg } from '../../lib/billing';
+import { planMoney, planCycleLabel } from '../../lib/plan-money';
+import { PLAN_RANK, type PlanId } from '../../lib/entitlements';
+import { iconInner, type IconName } from '../../lib/icons';
+import { t, type AppStringKey } from '../../i18n/app';
+
+/** Funciones con su propio "lo que desbloqueas". Sin `feature`, el bloque no
+ *  se dibuja: mejor ninguna lista que una genérica que no habla de la función. */
+export type PaywallFeature =
+    | 'cobranza' | 'cobranza_ia' | 'recurrentes' | 'sso' | 'auditoria' | 'agentes'
+    | 'informe_finanzas' | 'informe_flujo' | 'informe_cobranza';
+const FEATURE_ICONS: Record<PaywallFeature, IconName[]> = {
+    cobranza: ['checklist', 'calendar-check', 'chat'],
+    cobranza_ia: ['mail', 'calendar-clock', 'chart-line'],
+    recurrentes: ['refresh', 'send', 'calendar'],
+    sso: ['key', 'user-check', 'shield'],
+    auditoria: ['history', 'lock', 'undo'],
+    agentes: ['plug', 'sliders', 'key'],
+    informe_finanzas: ['chart-line', 'refresh', 'percent'],
+    informe_flujo: ['calendar', 'trending-up', 'alert-circle'],
+    informe_cobranza: ['clock', 'calendar-check', 'chart'],
+};
+
+interface Props {
+    id: string;
+    title: string;
+    desc: string;
+    requiredPlan: PlanId;
+    locale?: 'es' | 'en';
+    feature?: PaywallFeature;
+    /** `page` = la página está bloqueada; `contextual` = upsell dentro de una
+     *  pantalla que sí funciona. Solo cambia la medición y el botón de cerrar. */
+    surface: 'page' | 'contextual';
+}
+const { id, title, desc, requiredPlan, locale = 'es', feature, surface } = Astro.props;
+const L = locale;
+const tf = (key: AppStringKey, vars: Record<string, string>) =>
+    Object.entries(vars).reduce((s, [k, v]) => s.split(`{${k}}`).join(v), t(L, key));
+
+// La divisa se resuelve AQUÍ y no como prop: este panel se monta en una docena
+// de pantallas y un constructor por call-site es cómo una termina pintando
+// pesos con símbolo de dólar (regla 21).
+const CUR = await platformCurrencyForOrg(await getActiveOrgId());
+const money = (n: number) => planMoney(n, CUR, L);
+const perMonth = planCycleLabel(CUR, 'mensual', L);
+
+// PLANES va en orden ascendente: el primero que alcanza el rank requerido ES el
+// más barato que desbloquea la función. Como máximo, el siguiente peldaño.
+const catalogue = L === 'en' ? PLANES_EN : PLANES;
+const [main, next] = catalogue
+    .filter((p) => p.id !== 'free' && PLAN_RANK[p.id] >= PLAN_RANK[requiredPlan])
+    .slice(0, 2);
+const requiredName = catalogue.find((p) => p.id === requiredPlan)?.nombre ?? main?.nombre ?? '';
+
+const priceOf = (mensual: number) => ({
+    monthly: money(mensual),
+    annual: money(precioAnualMensualizado(mensual)),
+    annualTotal: tf('pw.cobro_anual', { total: `${money(precioAnualTotal(mensual))} ${CUR}` }),
+});
+const mainPrice = main && !main.custom ? priceOf(main.precio[CUR] ?? 0) : null;
+const nextPrice = next && !next.custom ? priceOf(next.precio[CUR] ?? 0) : null;
+
+const bullets = feature
+    ? FEATURE_ICONS[feature].map((icon, i) => ({ icon, text: t(L, `pw.f.${feature}.b${i + 1}` as AppStringKey) }))
+    : [];
+const titleId = `${id}Title`;
+const descId = `${id}Desc`;
+---
+
+<div class="pu" data-pu data-pu-id={id} data-pu-plan={requiredPlan} data-pu-surface={surface}>
+    <header class="pu-head">
+        <span class="pu-badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('lock')}></svg>
+            {tf('pw.disponible_en', { plan: requiredName })}
+        </span>
+        {surface === 'contextual' && (
+            <button type="button" class="pu-close" data-ppm-close aria-label={t(L, 'pw.cerrar')}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('x')}></svg>
+            </button>
+        )}
+    </header>
+
+    <h2 class="pu-title" id={titleId}>{title}</h2>
+    <p class="pu-desc" id={descId}>{desc}</p>
+
+    {bullets.length > 0 && (
+        <section class="pu-gains" aria-label={t(L, 'pw.desbloqueas')}>
+            <span class="pu-eyebrow" aria-hidden="true">{t(L, 'pw.desbloqueas')}</span>
+            <ul>
+                {bullets.map((b) => (
+                    <li>
+                        <span class="pu-gain-ico">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner(b.icon)}></svg>
+                        </span>
+                        <span>{b.text}</span>
+                    </li>
+                ))}
+            </ul>
+        </section>
+    )}
+
+    {main && (
+        <section class="pu-plan" aria-label={main.nombre}>
+            <div class="pu-plan-top">
+                <div class="pu-plan-id">
+                    <span class="pu-plan-name">{main.nombre}</span>
+                    <span class="pu-plan-tag">{main.tagline}</span>
+                </div>
+                {mainPrice && (
+                    <fieldset class="pu-cycle">
+                        <legend class="pu-sr">{t(L, 'pw.ciclo')}</legend>
+                        <label>
+                            <input type="radio" name={`${id}-cycle`} value="mensual" checked data-pu-cycle />
+                            <span>{t(L, 'pw.mensual')}</span>
+                        </label>
+                        <label>
+                            <input type="radio" name={`${id}-cycle`} value="anual" data-pu-cycle />
+                            <span>{t(L, 'pw.anual')} <i class="pu-save">{t(L, 'pw.ahorro')}</i></span>
+                        </label>
+                    </fieldset>
+                )}
+            </div>
+
+            {mainPrice ? (
+                <div class="pu-price" data-pu-price data-monthly={mainPrice.monthly} data-annual={mainPrice.annual}>
+                    <span class="editorial pu-amount" data-pu-amount>{mainPrice.monthly}</span>
+                    <span class="pu-per">{perMonth}</span>
+                </div>
+            ) : (
+                <div class="pu-price"><span class="editorial pu-amount">{t(L, 'pw.a_medida')}</span></div>
+            )}
+            {mainPrice && (
+                <p class="pu-billing" data-pu-billing data-monthly={t(L, 'pw.cobro_mensual')} data-annual={mainPrice.annualTotal}>{t(L, 'pw.cobro_mensual')}</p>
+            )}
+
+            {main.custom ? (
+                <a class="pu-cta" href={main.ctaHref} data-pu-cta={main.id} data-pu-cta-sales>
+                    {t(L, 'pw.ventas')}
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-right')}></svg>
+                </a>
+            ) : (
+                <a class="pu-cta" href={`/app/checkout?plan=${main.id}&cycle=mensual`} data-pu-cta={main.id} data-pu-cta-base={`/app/checkout?plan=${main.id}`}>
+                    {tf('pw.continuar', { plan: main.nombre })}
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-right')}></svg>
+                </a>
+            )}
+        </section>
+    )}
+
+    {next && (
+        <div class="pu-next">
+            <span class="pu-next-lead">{t(L, 'pw.o_tambien')}</span>
+            <div class="pu-next-row">
+                <div class="pu-next-id">
+                    <strong>{next.nombre}</strong>
+                    {nextPrice ? (
+                        <span class="pu-next-price" data-pu-price data-monthly={nextPrice.monthly} data-annual={nextPrice.annual}>
+                            <span class="editorial" data-pu-amount>{nextPrice.monthly}</span> {perMonth}
+                        </span>
+                    ) : (
+                        <span class="pu-next-price">{t(L, 'pw.a_medida')}</span>
+                    )}
+                    <small>{next.tagline}</small>
+                </div>
+                {next.custom ? (
+                    <a class="pu-next-cta" href={next.ctaHref} data-pu-cta={next.id} data-pu-cta-sales>{t(L, 'pw.ventas')}</a>
+                ) : (
+                    <a class="pu-next-cta" href={`/app/checkout?plan=${next.id}&cycle=mensual`} data-pu-cta={next.id} data-pu-cta-base={`/app/checkout?plan=${next.id}`}>{tf('pw.elegir', { plan: next.nombre })}</a>
+                )}
+            </div>
+        </div>
+    )}
+
+    <footer class="pu-foot">
+        <span class="pu-trust">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('shield')}></svg>
+            {t(L, 'pw.cancela')}
+        </span>
+        <a href={`/app/ajustes/plan?plan=${requiredPlan}`} class="pu-compare">{t(L, 'pw.comparar')}</a>
+    </footer>
+</div>
+
+<script>
+    // Un solo cableado para las dos envolturas. Regla 13: se difiere a
+    // DOMContentLoaded para no depender del orden de los módulos de la página.
+    // Bolsas literales a propósito: `security:analytics` valida cada propiedad
+    // contra el catálogo, y un spread la vuelve opaca.
+    function trackView(root: HTMLElement, surface: 'page' | 'contextual') {
+        const w = window as any;
+        w.cordTrack?.('paywall_viewed', {
+            paywall_id: root.dataset.puId || '', required_plan: root.dataset.puPlan || '', surface,
+        });
+    }
+    function trackCta(root: HTMLElement, plan: string, cycle: 'mensual' | 'anual' | 'ventas') {
+        const w = window as any;
+        w.cordTrack?.('paywall_cta_clicked', {
+            paywall_id: root.dataset.puId || '', required_plan: root.dataset.puPlan || '', plan, cycle,
+        });
+    }
+
+    function initPlanUpsells() {
+        document.querySelectorAll<HTMLElement>('[data-pu]').forEach((root) => {
+            if (root.dataset.puReady === '1') return;
+            root.dataset.puReady = '1';
+
+            const cycleOf = () =>
+                root.querySelector<HTMLInputElement>('[data-pu-cycle]:checked')?.value === 'anual' ? 'anual' : 'mensual';
+
+            root.querySelectorAll<HTMLInputElement>('[data-pu-cycle]').forEach((radio) => {
+                radio.addEventListener('change', () => {
+                    const cycle = cycleOf();
+                    const key = cycle === 'anual' ? 'annual' : 'monthly';
+                    root.querySelectorAll<HTMLElement>('[data-pu-price]').forEach((price) => {
+                        const amount = price.querySelector<HTMLElement>('[data-pu-amount]');
+                        const v = price.dataset[key];
+                        if (amount && v) amount.textContent = v;
+                    });
+                    const billing = root.querySelector<HTMLElement>('[data-pu-billing]');
+                    if (billing) billing.textContent = billing.dataset[key] || '';
+                    root.querySelectorAll<HTMLAnchorElement>('[data-pu-cta-base]').forEach((cta) => {
+                        cta.href = `${cta.dataset.puCtaBase}&cycle=${cycle}`;
+                    });
+                });
+            });
+
+            root.querySelectorAll<HTMLAnchorElement>('[data-pu-cta]').forEach((cta) => {
+                cta.addEventListener('click', () => {
+                    trackCta(root, cta.dataset.puCta || '', cta.hasAttribute('data-pu-cta-sales') ? 'ventas' : cycleOf());
+                });
+            });
+
+            // Una página bloqueada se ve al cargar; un upsell contextual cuenta
+            // al abrirse (lo emite PlanPaywallModal con `cord:paywall-open`).
+            if (root.dataset.puSurface === 'page') trackView(root, 'page');
+            else root.addEventListener('cord:paywall-open', () => trackView(root, 'contextual'));
+        });
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initPlanUpsells);
+    else initPlanUpsells();
+</script>
+
+<style>
+    .pu {
+        --pu-ink: #fff;
+        display: flex; flex-direction: column; gap: 0;
+        color: var(--color-text);
+    }
+    :global(html[data-theme="dark"]) .pu { --pu-ink: #0b1018; }
+
+    .pu-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.1rem; }
+    .pu-badge {
+        display: inline-flex; align-items: center; gap: 6px;
+        font-size: 0.7rem; font-weight: 650; letter-spacing: 0.01em;
+        color: var(--color-blue-deep);
+        background: color-mix(in srgb, var(--color-blue-deep) 7%, transparent);
+        box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-blue-deep) 12%, transparent);
+        border-radius: 999px; padding: 5px 11px 5px 9px;
+    }
+    .pu-badge svg { width: 13px; height: 13px; }
+    .pu-close {
+        width: 32px; height: 32px; flex-shrink: 0; border-radius: 999px; border: none; cursor: pointer;
+        display: inline-flex; align-items: center; justify-content: center;
+        color: var(--color-text-muted); background: var(--color-bg-soft);
+        box-shadow: inset 0 0 0 1px var(--color-border);
+        transition: background 0.2s, color 0.2s, transform 0.2s var(--ease-spring);
+    }
+    .pu-close svg { width: 16px; height: 16px; }
+    .pu-close:hover { background: var(--row-hover); color: var(--color-text); }
+    .pu-close:active { transform: scale(0.92); }
+    .pu-close:focus-visible { outline: 2px solid var(--color-blue-deep); outline-offset: 2px; }
+
+    .pu-title {
+        margin: 0; font-size: 1.42rem; font-weight: 700; line-height: 1.15; letter-spacing: -0.035em;
+        color: var(--color-text); text-wrap: balance;
+    }
+    .pu-desc {
+        margin: 0.55rem 0 0; font-size: 0.88rem; line-height: 1.55; color: var(--color-text-muted);
+        text-wrap: pretty; max-width: 52ch;
+    }
+
+    .pu-gains { margin-top: 1.35rem; }
+    .pu-eyebrow {
+        display: block; margin-bottom: 0.7rem;
+        font-size: 0.62rem; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase;
+        color: var(--color-text-muted);
+    }
+    .pu-gains ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.7rem; }
+    .pu-gains li { display: flex; align-items: center; gap: 0.75rem; font-size: 0.85rem; line-height: 1.4; color: var(--color-text); }
+    .pu-gain-ico {
+        width: 30px; height: 30px; flex-shrink: 0; border-radius: 9px;
+        display: inline-flex; align-items: center; justify-content: center;
+        color: var(--color-blue-deep); background: var(--color-bg-soft);
+        box-shadow: inset 0 0 0 1px var(--color-border);
+    }
+    .pu-gain-ico svg { width: 16px; height: 16px; }
+
+    .pu-plan {
+        margin-top: 1.4rem; padding: 1.15rem 1.15rem 1.1rem;
+        border-radius: 18px; background: var(--surface-2);
+        box-shadow: inset 0 0 0 1px var(--color-border);
+        display: flex; flex-direction: column;
+    }
+    .pu-plan-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+    .pu-plan-id { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .pu-plan-name { font-size: 0.95rem; font-weight: 650; letter-spacing: -0.01em; }
+    .pu-plan-tag { font-size: 0.74rem; color: var(--color-text-muted); }
+
+    .pu-cycle {
+        margin: 0; padding: 3px; border: none; display: inline-flex; gap: 2px;
+        border-radius: 999px; background: var(--color-bg-soft);
+        box-shadow: inset 0 0 0 1px var(--color-border);
+    }
+    .pu-cycle label { position: relative; cursor: pointer; }
+    .pu-cycle input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+    .pu-cycle label > span {
+        display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+        font-size: 0.74rem; font-weight: 600; color: var(--color-text-muted);
+        padding: 6px 12px; border-radius: 999px;
+        transition: background 0.25s var(--ease-ios), color 0.2s, box-shadow 0.25s;
+    }
+    .pu-cycle input:checked + span {
+        color: var(--color-text); background: var(--surface);
+        box-shadow: 0 1px 2px rgba(10,25,47,0.12), 0 1px 6px rgba(10,25,47,0.06);
+    }
+    .pu-cycle input:focus-visible + span { outline: 2px solid var(--color-blue-deep); outline-offset: 1px; }
+    .pu-save {
+        font-style: normal; font-size: 0.6rem; font-weight: 750; letter-spacing: 0.02em;
+        color: #047857; background: rgba(16,185,129,0.13);
+        border-radius: 999px; padding: 2px 6px;
+    }
+    :global(html[data-theme="dark"]) .pu-save { color: #34d399; background: rgba(52,211,153,0.14); }
+
+    .pu-price { display: flex; align-items: baseline; gap: 6px; margin-top: 1rem; }
+    .pu-amount { font-size: 2.3rem; line-height: 1; color: var(--color-text); }
+    .pu-per { font-size: 0.78rem; color: var(--color-text-muted); font-weight: 500; }
+    .pu-billing { margin: 0.4rem 0 0; font-size: 0.74rem; color: var(--color-text-muted); }
+
+    .pu-cta {
+        margin-top: 1.05rem; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+        font-family: var(--font-sans); font-size: 0.9rem; font-weight: 650; text-decoration: none;
+        color: var(--pu-ink); background: var(--color-blue-deep);
+        border-radius: 999px; padding: 13px 20px;
+        box-shadow: 0 10px 24px -12px rgba(10,25,47,0.6), inset 0 1px 0 rgba(255,255,255,0.12);
+        transition: transform 0.3s var(--ease-spring), box-shadow 0.3s var(--ease-ios);
+    }
+    .pu-cta svg { width: 16px; height: 16px; transition: transform 0.3s var(--ease-spring); }
+    .pu-cta:hover { transform: translateY(-1px) scale(1.01); box-shadow: 0 14px 30px -12px rgba(10,25,47,0.65), inset 0 1px 0 rgba(255,255,255,0.12); }
+    .pu-cta:hover svg { transform: translateX(2px); }
+    .pu-cta:active { transform: scale(0.98); }
+    .pu-cta:focus-visible { outline: 2px solid var(--color-blue-deep); outline-offset: 3px; }
+
+    .pu-next { margin-top: 1rem; display: flex; flex-direction: column; gap: 0.45rem; }
+    .pu-next-lead { font-size: 0.7rem; color: var(--color-text-muted); }
+    .pu-next-row {
+        display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+        padding: 0.8rem 0.95rem; border-radius: 14px;
+        box-shadow: inset 0 0 0 1px var(--color-border);
+    }
+    .pu-next-id { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 0.55rem; row-gap: 2px; min-width: 0; }
+    .pu-next-id strong { font-size: 0.85rem; font-weight: 650; }
+    .pu-next-price { font-size: 0.78rem; color: var(--color-text-muted); }
+    .pu-next-price .editorial { color: var(--color-text); }
+    .pu-next-id small { flex-basis: 100%; font-size: 0.72rem; color: var(--color-text-muted); }
+    .pu-next-cta {
+        flex-shrink: 0; font-size: 0.78rem; font-weight: 650; text-decoration: none; white-space: nowrap;
+        color: var(--color-text); background: var(--surface);
+        box-shadow: inset 0 0 0 1px var(--color-border), 0 1px 2px rgba(10,25,47,0.06);
+        border-radius: 999px; padding: 8px 14px;
+        transition: background 0.2s, transform 0.25s var(--ease-spring);
+    }
+    .pu-next-cta:hover { background: var(--row-hover); }
+    .pu-next-cta:active { transform: scale(0.97); }
+    .pu-next-cta:focus-visible { outline: 2px solid var(--color-blue-deep); outline-offset: 2px; }
+
+    .pu-foot {
+        margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--color-border);
+        display: flex; align-items: center; justify-content: space-between; gap: 0.75rem 1rem; flex-wrap: wrap;
+    }
+    .pu-trust { display: inline-flex; align-items: center; gap: 6px; font-size: 0.74rem; color: var(--color-text-muted); }
+    .pu-trust svg { width: 14px; height: 14px; color: var(--color-ok); }
+    .pu-compare { font-size: 0.76rem; font-weight: 600; color: var(--color-text); text-decoration: none; }
+    .pu-compare:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+    .pu-sr {
+        position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+        overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+    }
+
+    @media (max-width: 560px) {
+        .pu-title { font-size: 1.25rem; }
+        .pu-plan-top { flex-direction: column; }
+        .pu-cycle { align-self: stretch; }
+        .pu-cycle label { flex: 1 1 auto; }
+        .pu-cycle label > span { justify-content: center; width: 100%; min-height: 36px; }
+        .pu-amount { font-size: 2rem; }
+        .pu-cta { min-height: 48px; }
+        .pu-next-row { flex-direction: column; align-items: stretch; }
+        .pu-next-cta { text-align: center; padding: 11px 14px; }
+    }
+</style>

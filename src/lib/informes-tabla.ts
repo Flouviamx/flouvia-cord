@@ -16,8 +16,8 @@ export type TablaCol = { key: string; label: string; format: ColFormat };
 export type TablaRow = Record<string, string | number | null> & { _href?: string | null };
 export type TablaKpi = { key: string; label: string; format: ColFormat; value: number | null; prev: number | null };
 export type TablaChart =
-    | { kind: 'bar' | 'line'; label: string; format: ColFormat; items: { label: string; value: number }[] }
-    | { kind: 'hbar'; label: string; format: ColFormat; items: { label: string; value: number }[] };
+    | { kind: 'bar' | 'line'; label: string; format: ColFormat; items: { label: string; value: number; href?: string }[] }
+    | { kind: 'hbar'; label: string; format: ColFormat; items: { label: string; value: number; href?: string }[] };
 export type TablaReport = {
     kpis: TablaKpi[];
     chart: TablaChart | null;
@@ -262,7 +262,7 @@ export async function getVentasCliente(r: Rango): Promise<TablaReport> {
                 { key: 'ticket', label: 'inf.t.ticket', format: 'money', value: cur.ticket, prev: prev?.ticket ?? null },
                 { key: 'recurrencia', label: 'inf.t.recurrencia', format: 'pct', value: cur.recurrencia, prev: prev?.recurrencia ?? null },
             ],
-            chart: { kind: 'hbar', label: 'inf.t.vendido', format: 'money', items: out.filter((x) => num(x.vendido) > 0).slice(0, 8).map((x) => ({ label: String(x.cliente), value: num(x.vendido) })) },
+            chart: { kind: 'hbar', label: 'inf.t.vendido', format: 'money', items: out.filter((x) => num(x.vendido) > 0).slice(0, 8).map((x) => ({ label: String(x.cliente), value: num(x.vendido), href: x._href ?? undefined })) },
             columns: [
                 { key: 'cliente', label: 'inf.t.cliente', format: 'text' },
                 { key: 'cotizaciones', label: 'inf.t.cotizaciones', format: 'number' },
@@ -356,7 +356,7 @@ export async function getVentasProducto(r: Rango): Promise<TablaReport> {
                 { key: 'margen', label: 'inf.t.margen', format: 'money', value: cur.margen, prev: prev?.margen ?? null },
                 { key: 'margen_pct', label: 'inf.t.margen_pct', format: 'pct', value: cur.margenPct, prev: prev?.margenPct ?? null },
             ],
-            chart: { kind: 'hbar', label: 'inf.t.vendido', format: 'money', items: out.filter((x) => num(x.vendido) > 0).slice(0, 8).map((x) => ({ label: String(x.producto), value: num(x.vendido) })) },
+            chart: { kind: 'hbar', label: 'inf.t.vendido', format: 'money', items: out.filter((x) => num(x.vendido) > 0).slice(0, 8).map((x) => ({ label: String(x.producto), value: num(x.vendido), href: x._href ?? undefined })) },
             columns: [
                 { key: 'producto', label: 'inf.t.producto', format: 'text' },
                 { key: 'sku', label: 'inf.t.sku', format: 'text' },
@@ -593,7 +593,7 @@ export async function getVentasVendedor(r: Rango): Promise<TablaReport> {
                    coalesce(sum(c.total * ${fx}) filter (where ${ganada}), 0) as vendido,
                    avg(extract(epoch from (c.approved_at - c.created_at)) / 86400) filter (where ${ganada} and c.approved_at is not null) as dias
               from org_members m
-              left join cotizaciones c on c.creado_por = m.user_id and c.org_id = ${orgId}
+              left join cotizaciones c on c.creado_por = m.user_id::text and c.org_id = ${orgId}
              where m.org_id = ${orgId} and m.estado = 'activo' and m.user_id is not null
              group by m.user_id, coalesce(m.nombre, m.email, 'Sin nombre')
              order by vendido desc, enviadas desc`);

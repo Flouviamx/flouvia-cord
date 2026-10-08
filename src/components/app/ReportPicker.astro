@@ -2,8 +2,10 @@
 import { REPORTS, REPORT_GROUPS, reportLabel, type ReportId } from '../../lib/informes';
 import { t } from '../../i18n/app';
 
-interface Props { current: ReportId; locale: 'es' | 'en'; allowed: ReportId[]; }
-const { current, locale, allowed } = Astro.props;
+interface Props { current: ReportId; locale: 'es' | 'en'; allowed: ReportId[]; saved?: { id: string; nombre: string }[]; currentSaved?: string | null }
+const { current, locale, allowed, saved = [], currentSaved = null } = Astro.props;
+const canExplore = allowed.includes('explorar');
+const activeSaved = currentSaved ? saved.find((item) => item.id === currentSaved) ?? null : null;
 const visible = REPORTS.filter((report) => allowed.includes(report.id));
 const active = REPORTS.find((report) => report.id === current) ?? REPORTS[0];
 const label = (id: typeof active) => reportLabel(id, locale);
@@ -23,14 +25,17 @@ const iconPaths: Record<string, string> = {
     tax: iconInner('percent'),
     cohort: iconInner('grid'),
     team: iconInner('user-check'),
+    // Explorador e informes guardados (fase 5).
+    explore: iconInner('search-insight'),
+    pin: iconInner('pin'),
 };
 import { iconInner } from '../../lib/icons';
 ---
 
 <div class="report-picker" data-report-picker>
     <button class="report-picker-trigger" type="button" data-report-trigger aria-haspopup="dialog" aria-expanded="false">
-        <svg viewBox="0 0 24 24" aria-hidden="true" set:html={iconPaths[active.icon]}></svg>
-        <span>{label(active)}</span>
+        <svg viewBox="0 0 24 24" aria-hidden="true" set:html={iconPaths[activeSaved ? 'pin' : active.icon]}></svg>
+        <span>{activeSaved?.nombre ?? label(active)}</span>
         <svg class="report-picker-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-down')}></svg>
     </button>
     <div class="report-picker-panel" data-report-panel hidden role="dialog" aria-label={locale === 'en' ? 'Choose report' : 'Elegir informe'}>
@@ -43,13 +48,23 @@ import { iconInner } from '../../lib/icons';
                 <section class="report-picker-group" data-report-group>
                     <span class="report-picker-group-label">{t(locale, `inf.grupo.${group}` as any)}</span>
                     {visible.filter((report) => report.group === group).map((report) => (
-                        <a href={`/app/informes?r=${report.id}`} class:list={['report-picker-option', { 'is-active': report.id === current }]} data-report-option data-search={`${report.label} ${report.labelEn}`.toLowerCase()}>
+                        <a href={`/app/informes?r=${report.id}`} class:list={['report-picker-option', { 'is-active': report.id === current && !currentSaved }]} data-report-option data-search={`${report.label} ${report.labelEn}`.toLowerCase()}>
                             <svg viewBox="0 0 24 24" aria-hidden="true" set:html={iconPaths[report.icon]}></svg>
                             <span class="report-picker-copy">
                                 <strong>{label(report)}</strong>
                                 <small>{report.scope === 'snapshot' ? (locale === 'en' ? 'As of today' : 'Al día de hoy') : (locale === 'en' ? 'Date range' : 'Por rango de fechas')}</small>
                             </span>
-                            {report.id === current && <svg class="report-picker-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('check')}></svg>}
+                            {report.id === current && !currentSaved && <svg class="report-picker-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('check')}></svg>}
+                        </a>
+                    ))}
+                    {group === 'personalizados' && canExplore && saved.map((item) => (
+                        <a href={`/app/informes?r=explorar&guardado=${item.id}`} class:list={['report-picker-option', { 'is-active': item.id === currentSaved }]} data-report-option data-search={item.nombre.toLowerCase()}>
+                            <svg viewBox="0 0 24 24" aria-hidden="true" set:html={iconPaths.pin}></svg>
+                            <span class="report-picker-copy">
+                                <strong>{item.nombre}</strong>
+                                <small>{locale === 'en' ? 'Saved report' : 'Informe guardado'}</small>
+                            </span>
+                            {item.id === currentSaved && <svg class="report-picker-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('check')}></svg>}
                         </a>
                     ))}
                 </section>

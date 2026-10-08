@@ -32,7 +32,18 @@ async function main() {
     ]);
     const { fn, view } = extractStatements(schema);
     // Orden: columnas → función → vista (la vista usa la función).
+    // `alter table … add column if not exists` toma ACCESS EXCLUSIVE aunque la
+    // columna ya exista: en cada deploy se encolaría detrás de cualquier
+    // transacción larga sobre `productos`. Una columna ya presente se salta.
     for (const statement of columns.split(/;\s*\n/).map((s) => s.replace(/^\s*--.*$/gm, '').trim()).filter(Boolean)) {
+        const m = /^alter table (\w+) add column if not exists (\w+)/i.exec(statement);
+        if (m) {
+            const present = await sql.query(
+                'select 1 from information_schema.columns where table_schema = current_schema() and table_name = $1 and column_name = $2',
+                [m[1], m[2]],
+            );
+            if (present.length) continue;
+        }
         await sql.query(statement);
     }
     await sql.query(fn);

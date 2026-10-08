@@ -205,13 +205,11 @@ import { iconInner } from '../../../lib/icons';
     {hasPerm && !hasAccess && entitlementCheck && (
         <PlanGate
             id="facturaNuevaPlanModal"
-            title={L === 'en' ? 'Cord Invoicing is not in your plan' : 'Cord Invoicing no está en tu plan'}
-            desc={L === 'en'
-                ? 'Issuing invoices requires the Starter plan or above.'
-                : 'Emitir facturas requiere el plan Starter o superior.'}
+            title={t(L, 'fact.plan_titulo')}
+            desc={t(L, 'fact.plan_desc')}
             requiredPlan={entitlementCheck.requiredPlan}
             locale={L === 'en' ? 'en' : 'es'}
-            returnHref="/app/facturas" />
+            preview="facturas" />
     )}
 
     {hasAccess && (

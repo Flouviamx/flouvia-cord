@@ -111,6 +111,9 @@ export async function quoteListItem(q: Quote, orgId: string) {
         total: q.total,
         moneda: q.baseCurrency ?? null,
         terminos: q.terminos,
+        // Código estable del plazo (contado, net30…): la etiqueta `terminos` se
+        // traduce al idioma de la cuenta y no sirve para comparar.
+        terminos_codigo: q.terminosCode ?? null,
         vigencia: q.vigencia,
         creada: q.creada,
         link_publico: await publicDocumentUrl(orgId, 'q', q.token),

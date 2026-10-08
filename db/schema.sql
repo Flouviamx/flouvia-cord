@@ -5920,3 +5920,43 @@ alter table productos add column if not exists clave_sat text
   check (clave_sat is null or clave_sat ~ '^[0-9]{8}$');
 alter table productos add column if not exists clave_unidad_sat text
   check (clave_unidad_sat is null or clave_unidad_sat ~ '^[A-Z0-9]{1,3}$');
+
+-- BEGIN informes-guardados
+-- Informes guardados (oct 2026): una configuración del explorador de informes
+-- (agrupar por + métricas) con nombre, compartida por la organización. Si tiene
+-- frecuencia, el cron /api/cron/informes-programados se la manda por correo a
+-- quien la guardó: el destinatario no es libre, así nadie usa Cord para mandar
+-- correo a terceros. `ultimo_envio_at` avanza ANTES de enviar (mismo patrón que
+-- las recurrencias): un fallo a medio camino no repite el envío.
+create table if not exists informes_guardados (
+  id               uuid primary key default gen_random_uuid(),
+  org_id           uuid not null references orgs(id) on delete cascade,
+  nombre           text not null check (char_length(nombre) between 1 and 80),
+  config           jsonb not null,
+  frecuencia       text not null default 'ninguna' check (frecuencia in ('ninguna', 'semanal', 'mensual')),
+  creado_por       uuid references users(id) on delete set null,
+  ultimo_envio_at  timestamptz,
+  created_at       timestamptz not null default now(),
+  updated_at       timestamptz not null default now()
+);
+create index if not exists idx_informes_guardados_org on informes_guardados(org_id, created_at desc);
+create index if not exists idx_informes_guardados_programados on informes_guardados(frecuencia, ultimo_envio_at) where frecuencia <> 'ninguna';
+
+alter table informes_guardados enable row level security;
+alter table informes_guardados force row level security;
+drop policy if exists rls_informes_guardados on informes_guardados;
+create policy rls_informes_guardados on informes_guardados
+  using (org_id = nullif(current_setting('app.org_id', true), '')::uuid)
+  with check (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
+-- El cron solo DESCUBRE qué informes tocan (lectura cross-org, regla 30); el
+-- trabajo de cada uno vuelve a withOrgTx con su org_id.
+drop policy if exists system_informes_guardados on informes_guardados;
+create policy system_informes_guardados on informes_guardados
+  for select using (current_setting('app.scope', true) = 'system');
+
+do $$ begin
+  if exists (select 1 from pg_roles where rolname = 'cord_app') then
+    grant select, insert, update, delete on informes_guardados to cord_app;
+  end if;
+end $$;
+-- END informes-guardados
