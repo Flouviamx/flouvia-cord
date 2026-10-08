@@ -86,7 +86,7 @@ const sameDay = (a: unknown, b: unknown) => !!a && !!b && Math.abs(new Date(Stri
 const resendable = (d: any) => d.invoice_number && d.lifecycle !== 'draft' && d.lifecycle !== 'void';
 ---
 <OpsLayout title={`${org.nombre} | Cord Ops`}><OpsShell active="organizations" eyebrow="Organización" title={org.nombre} subtitle={`${org.owner_email || 'Sin propietario'} · ${org.country_code} · ${org.moneda}`}>
-  <div class="ops-links"><a class="ops-back" href="/ops/organizations">Organizaciones</a><a class="ops-link" href={`/ops/activity?org=${org.id}`}>Toda su actividad</a><a class="ops-link" href={`/ops/usage?org=${org.id}`}>Uso y costos</a></div>
+  <div class="ops-links"><a class="ops-back" href="/ops/organizations">Organizaciones</a><a class="ops-link" href={`/ops/activity?org=${org.id}`}>Toda su actividad</a><a class="ops-link" href={`/ops/usage?org=${org.id}`}>Uso y costos</a><a class="ops-link" href={`/ops/developers?org=${org.id}`}>API y accesos</a></div>
 
   <section class="ops-card">
     <div class="ops-detail-hero">

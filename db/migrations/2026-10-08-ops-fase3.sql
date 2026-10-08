@@ -1,6 +1,6 @@
 -- BEGIN ops-fase3
 -- 2026-10-08: Cord Ops fase 3 — ficha de organización como centro de mando.
--- Aditiva e idempotente: corre en cada build (scripts/migrate-ops-fase3.mjs,
+-- Aditiva e idempotente: corre en cada build (scripts/migrate-ops.mjs,
 -- encadenado en el buildCommand de vercel.json) porque el código de esta fase
 -- lee estas tablas en producción.
 --

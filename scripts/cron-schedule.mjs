@@ -29,6 +29,7 @@ export const EN_CADA_CORRIDA = new Map([
     ['/api/cron/tareas', 'decide él mismo en qué zonas ya son las 8:00; dedup en tareas.recordada_el y org_members.tareas_avisadas_el'],
     ['/api/cron/webhooks', 'reintentos del outbox; reclama filas con lease y skip locked'],
     ['/api/cron/verifactu-submit', 'la remisión a la AEAT debe ser lo más inmediata posible; reclamo por hora'],
+    ['/api/cron/ops-alertas', 'alertas de Cord Ops; reclamo por hora y aviso solo al cambiar de estado (ops_alert_state)'],
 ]);
 
 /** Programados en vercel.json que GitHub no llama, con el motivo. */

@@ -1,18 +1,23 @@
-// Cord Ops fase 3 (2026-10-08): lectura de Ops sobre reembolsos, disputas,
-// outbox de webhooks y facturas de suscripción, más notas y etiquetas internas.
-// Aditiva e idempotente: corre en cada build desde el buildCommand de
-// vercel.json, porque el código de la fase lee estas tablas en producción.
+// Migraciones aditivas de Cord Ops que corren en cada build (buildCommand de
+// vercel.json), en orden, porque el código de Ops las lee en producción:
+//   fase 3 — lectura sobre reembolsos, disputas, outbox y facturas de
+//            suscripción; notas y etiquetas internas.
+//   fase 4 — lectura de cron_runs; reglas y estado de alertas; métricas.
+// Cada archivo es idempotente y es espejo literal de su bloque en db/schema.sql.
 // Nunca imprime la cadena de conexión ni datos de organizaciones.
-//   node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/migrate-ops-fase3.mjs
+//   node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/migrate-ops.mjs
 import { readFileSync } from 'node:fs';
 import { neon } from '@neondatabase/serverless';
 
 const connection = process.env.DATABASE_URL_UNPOOLED || process.env.DATABASE_URL;
 if (!connection) throw new Error('DATABASE_URL is required');
-const source = readFileSync(new URL('../db/migrations/2026-10-08-ops-fase3.sql', import.meta.url), 'utf8');
-if (!readFileSync(new URL('../db/schema.sql', import.meta.url), 'utf8').includes(source.trim())) {
-    throw new Error('schema.sql y db/migrations/2026-10-08-ops-fase3.sql divergen');
-}
+export const OPS_MIGRATIONS = ['2026-10-08-ops-fase3.sql', '2026-10-08-ops-fase4.sql'];
+const schema = readFileSync(new URL('../db/schema.sql', import.meta.url), 'utf8');
+const sources = OPS_MIGRATIONS.map((name) => {
+    const source = readFileSync(new URL(`../db/migrations/${name}`, import.meta.url), 'utf8');
+    if (!schema.includes(source.trim())) throw new Error(`schema.sql y db/migrations/${name} divergen`);
+    return { name, source };
+});
 
 // Separa sentencias respetando bloques $$…$$, comillas y comentarios: el
 // driver HTTP corre una sentencia por llamada.
@@ -34,7 +39,7 @@ function split(src) {
 }
 
 const sql = neon(connection);
-const statements = split(source);
+const statements = sources.flatMap(({ source }) => split(source));
 // Un bloqueo ocupado (55P03) no es un error del cambio: se reintenta antes de
 // tumbar el despliegue. Cualquier otro código falla al primer intento.
 for (let attempt = 1; ; attempt++) {
@@ -43,14 +48,14 @@ for (let attempt = 1; ; attempt++) {
             sql`select set_config('lock_timeout','5s',true), set_config('statement_timeout','30s',true)`,
             ...statements.map((s) => sql.query(s, [])),
         ]);
-        console.log('ops-fase3 migration applied');
+        console.log(`ops migrations applied (${OPS_MIGRATIONS.join(', ')})`);
         break;
     } catch (error) {
         if (error?.code === '55P03' && attempt < 4) {
             await new Promise((r) => setTimeout(r, attempt * 3000));
             continue;
         }
-        console.error(`ops-fase3 migration failed (${/^[0-9A-Z]{5}$/.test(error?.code || '') ? error.code : 'sin código'}); database credentials and query details omitted.`);
+        console.error(`ops migrations failed (${/^[0-9A-Z]{5}$/.test(error?.code || '') ? error.code : 'sin código'}); database credentials and query details omitted.`);
         process.exitCode = 1;
         break;
     }

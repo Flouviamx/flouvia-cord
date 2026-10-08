@@ -21,7 +21,7 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { authApiKey, checkApiKeyRateLimit, meterApiUsage, logApiRequest } from '../../lib/apikey';
+import { authApiKey, checkApiKeyRateLimit, meterApiUsage, logApiRequest, shouldLogRateLimited } from '../../lib/apikey';
 import { reqContext } from '../../lib/context';
 import { handle, RpcError, routeLabel, posthogMcp } from '../../lib/mcp/rpc';
 
@@ -47,7 +47,10 @@ export const POST: APIRoute = async ({ request }) => {
     if (auth instanceof Response) return auth;
 
     const limited = await checkApiKeyRateLimit(auth);
-    if (limited) return limited;
+    if (limited) {
+        if (shouldLogRateLimited(auth.keyId)) void logApiRequest(auth, request, 429, 0, '/mcp/rate-limited');
+        return limited;
+    }
 
     const t0 = Date.now();
 

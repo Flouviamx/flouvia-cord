@@ -1,0 +1,81 @@
+---
+import OpsLayout from '../../layouts/OpsLayout.astro';
+import OpsShell from '../../components/ops/OpsShell.astro';
+import { withOpsTx } from '../../lib/db';
+import { opsAgo, opsNumber } from '../../lib/ops-format';
+import { evaluateOpsAlerts, opsAlertMetricValues, opsAlertRules, opsAlertStates, opsAlertValue } from '../../lib/ops-alerts';
+import { opsCronProblemCount, opsCronRuns, type OpsCronRun } from '../../lib/ops-crons';
+
+if (!Astro.locals.opsOperator) return Astro.redirect('/ops/login');
+const isAdmin = Astro.locals.opsOperator.role === 'admin';
+
+let rows: ReturnType<typeof evaluateOpsAlerts> = [];
+let states: any[] = [];
+let error = false;
+try {
+  const [metricRows, rules, st, runs] = await withOpsTx(opsAlertMetricValues(), opsAlertRules(), opsAlertStates(), opsCronRuns());
+  states = st as any[];
+  const values = new Map<string, number>((metricRows as any[]).map((r) => [String(r.metric), Number(r.value)]));
+  const now = new Date();
+  values.set('crons_problem', opsCronProblemCount(runs as OpsCronRun[], now));
+  rows = evaluateOpsAlerts(values, rules as any[], states, now);
+} catch (cause) { error = true; console.error('[ops/alerts]', cause); }
+
+const firing = rows.filter((r) => r.firing);
+const lastCheck = states.reduce<Date | null>((acc, s) => { const d = new Date(s.checked_at); return !acc || d > acc ? d : acc; }, null);
+const stateFor = (id: string) => states.find((s) => s.metric === id);
+---
+<OpsLayout title="Alertas | Cord Ops"><OpsShell active="alerts" title="Alertas" subtitle="Qué vigila Cord Ops por su cuenta y desde qué valor avisa al equipo.">
+  {error && <div class="ops-inline-error">No se pudieron cargar las alertas.</div>}
+
+  <section class="ops-card ops-metrics cols-3">
+    <div class="ops-metric"><span>Disparadas ahora</span><strong>{opsNumber(firing.length)}</strong><small>Con los valores de este momento</small></div>
+    <div class="ops-metric"><span>Encendidas</span><strong>{opsNumber(rows.filter((r) => r.enabled).length)}</strong><small>de {opsNumber(rows.length)} métricas</small></div>
+    <div class="ops-metric"><span>Última evaluación</span><strong>{lastCheck ? opsAgo(lastCheck) : 'Nunca'}</strong><small>El aviso sale al dispararse y al resolverse, por correo a los operadores activos y al Slack de Ops si está configurado</small></div>
+  </section>
+
+  <section class="ops-section">
+    <header class="ops-section-header"><div><h2>Reglas</h2><p>{isAdmin ? 'Cambia el umbral o apaga una métrica; se guarda al confirmar.' : 'Solo un admin puede cambiar las reglas.'}</p></div></header>
+    <div class="ops-card ops-alert-rules">
+      {rows.map((r) => { const st = stateFor(r.metric.id); return <form class:list={['ops-alert-rule', { firing: r.firing, off: !r.enabled }]} data-ops-alert-form data-metric={r.metric.id}>
+        <div class="ops-alert-rule-main">
+          <div><strong>{r.metric.label}</strong>{r.firing ? <span class="ops-badge red">Disparada{st?.since ? ` ${opsAgo(st.since).toLowerCase()}` : ''}</span> : !r.enabled ? <span class="ops-badge">Apagada</span> : <span class="ops-badge green">En orden</span>}</div>
+          <p>{r.metric.description} <a href={r.metric.href}>Ver</a></p>
+        </div>
+        <div class="ops-alert-rule-value"><span>Ahora</span><strong>{opsAlertValue(r.metric, r.value)}</strong></div>
+        <label class="ops-alert-rule-threshold"><span>Avisa desde</span><input class="ops-input" name="threshold" inputmode="decimal" value={String(r.threshold)} disabled={!isAdmin} aria-label={`Umbral de ${r.metric.label}`} />{r.metric.unit === 'pct' && <em>%</em>}</label>
+        <label class="ops-alert-rule-toggle"><input type="checkbox" name="enabled" checked={r.enabled} disabled={!isAdmin} /><span>Encendida</span></label>
+        {isAdmin && <button type="submit" class="ops-button secondary sm">Guardar</button>}
+        {r.updatedBy && <small class="ops-alert-rule-by">Último cambio: {r.updatedBy}</small>}
+      </form>; })}
+    </div>
+    <p class="ops-inline-note ops-section">Las métricas son un catálogo cerrado: una regla solo enciende, apaga o mueve el umbral de una métrica existente. Una métrica nueva se agrega en código (src/lib/ops-alerts.ts y la función cord_ops_alert_metrics).</p>
+  </section>
+  <div class="ops-toast" data-ops-alert-toast role="status" hidden></div>
+</OpsShell></OpsLayout>
+<script>
+  const toast = document.querySelector<HTMLElement>('[data-ops-alert-toast]');
+  const say = (text: string) => { if (!toast) return; toast.textContent = text; toast.hidden = false; window.setTimeout(() => { toast.hidden = true; }, 3200); };
+  document.querySelectorAll<HTMLFormElement>('[data-ops-alert-form]').forEach((form) => {
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const button = form.querySelector<HTMLButtonElement>('button[type=submit]');
+      if (button) button.disabled = true;
+      const data = new FormData(form);
+      try {
+        const res = await fetch('/api/ops/alerts', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ metric: form.dataset.metric, threshold: data.get('threshold'), enabled: data.get('enabled') === 'on' }),
+        });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(body.error || 'No se pudo guardar.');
+        say(body.message || 'Guardado.');
+        window.setTimeout(() => window.location.reload(), 900);
+      } catch (error: any) {
+        say(error.message);
+        if (button) button.disabled = false;
+      }
+    });
+  });
+</script>
