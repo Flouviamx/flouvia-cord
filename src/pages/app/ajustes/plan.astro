@@ -59,6 +59,13 @@ import { iconInner } from '../../../lib/icons';
         </div>
     )}
 
+    {BILL.grant && (
+        <div class="plan-grant-note">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('calendar')}></svg>
+            <span>{tf('set.plan.cortesia', { plan: PLANES.find((p) => p.id === BILL.grant!.plan)?.nombre ?? BILL.grant.plan, fecha: BILL.grant.hasta })} {BILL.grant.tope ? t(L, 'set.plan.cortesia_tope') : t(L, 'set.plan.cortesia_excedente')}</span>
+        </div>
+    )}
+
     <SettingsSection icon="card" class="s-block">
         <Fragment slot="heading">{t(L, 'set.plan.suscripcion_actual')}</Fragment>
         <div class="plan-row">
@@ -264,6 +271,15 @@ import { iconInner } from '../../../lib/icons';
     .plan-test-note b { color: #92400e; }
     html[data-theme="dark"] .plan-test-note { background: rgba(245,158,11,0.12); color: #fbbf24; }
     html[data-theme="dark"] .plan-test-note b { color: #fcd34d; }
+    .plan-grant-note {
+        display: flex; align-items: flex-start; gap: 0.65rem;
+        padding: 0.85rem 1.1rem; margin-bottom: 1.4rem;
+        background: rgba(37,99,235,0.07); border: 1px solid rgba(37,99,235,0.2);
+        border-radius: 14px; color: var(--color-text); font-size: 0.83rem; line-height: 1.5;
+    }
+    .plan-grant-note svg { width: 17px; height: 17px; flex-shrink: 0; margin-top: 1px; color: #2563eb; }
+    html[data-theme="dark"] .plan-grant-note { background: rgba(96,165,250,0.1); border-color: rgba(96,165,250,0.25); }
+    html[data-theme="dark"] .plan-grant-note svg { color: #93c5fd; }
     .plan-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; padding: 1.1rem 0.4rem; border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); }
     .plan-meta { display: flex; flex-direction: column; gap: 4px; }
     .plan-name { font-size: 1.05rem; font-weight: 700; display: flex; align-items: center; gap: 9px; }

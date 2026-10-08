@@ -804,6 +804,11 @@ export async function getBillingUsage() {
         cycle: (o?.billing_cycle as string) ?? null,
         periodFin: o?.current_period_end ? fmtDate(o.current_period_end) : null,
         canManage: !!o?.can_manage_billing,
+        // Cortesía de Cord (no es pago, regla 17): el negocio debe saber hasta
+        // cuándo tiene el plan y si lo incluido es tope duro.
+        grant: context.accessSource === 'grant' && context.grant
+            ? { plan: context.grant.plan, hasta: fmtDate(context.grant.expiresAt), tope: !context.overageAllowed }
+            : null,
         ia: dim(Number(row.ia) || 0, inc.ia),
         cfdi: dim(Number(row.cfdi) || 0, inc.cfdi),
         api: dim(Number(row.api) || 0, inc.api),

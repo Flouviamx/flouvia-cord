@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addMonthsUtc, GRANT_MARGIN_DAYS, parseGrantRequest, planGrant, type GrantSubject } from '../src/lib/ops-grants';
+import { addMonthsUtc, GRANT_COUPON_MARGIN_DAYS, GRANT_MARGIN_DAYS, parseGrantRequest, planGrant, type GrantSubject } from '../src/lib/ops-grants';
 
 const NOW = new Date('2026-10-08T12:00:00Z');
 const PERIOD_END = new Date('2026-10-26T00:00:00Z');
@@ -20,6 +20,8 @@ describe('cortesías de Ops', () => {
         expect(r.trialEnd).toEqual(new Date(PERIOD_END.getTime() + 14 * DAY));
         // La cortesía cubre el periodo sin cobro más el margen para la primera factura real.
         expect(r.expiresAt).toEqual(new Date(r.trialEnd!.getTime() + GRANT_MARGIN_DAYS * DAY));
+        // Para revocar sin cobrar de más: el fin del periodo que ya pagó.
+        expect(r.originalPeriodEnd).toEqual(PERIOD_END);
     });
 
     it('días gratis a quien no paga: solo acceso, sin tocar el procesador', () => {
@@ -32,7 +34,7 @@ describe('cortesías de Ops', () => {
     it('regalar su mismo plan mensual: cupón sobre el base, N meses desde su próximo cobro', () => {
         const r = planGrant(req('plan', 3, 'pro'), paying(), NOW);
         expect(r).toMatchObject({ ok: true, mechanism: 'cupon', plan: 'pro', couponMonths: 3 });
-        if (r.ok) expect(r.expiresAt).toEqual(new Date(addMonthsUtc(PERIOD_END, 3).getTime() + GRANT_MARGIN_DAYS * DAY));
+        if (r.ok) expect(r.expiresAt).toEqual(new Date(addMonthsUtc(PERIOD_END, 3).getTime() + GRANT_COUPON_MARGIN_DAYS * DAY));
     });
 
     it('nunca un cupón sobre un anual: regalaría el año completo', () => {
@@ -52,6 +54,7 @@ describe('cortesías de Ops', () => {
         expect(planGrant(req('dias', 7), paying({ subscription: sub({ hasSchedule: true }) }), NOW)).toMatchObject({ ok: false });
         expect(planGrant(req('dias', 7), paying({ subscription: sub({ cancelAtPeriodEnd: true }) }), NOW)).toMatchObject({ ok: false });
         expect(planGrant(req('dias', 7), paying({ subscription: sub({ status: 'trialing' }) }), NOW)).toMatchObject({ ok: false });
+        expect(planGrant(req('dias', 7), paying({ subscription: sub({ hasPendingChange: true }) }), NOW)).toMatchObject({ ok: false });
     });
 
     it('una cortesía a la vez, y nunca a una sandbox', () => {

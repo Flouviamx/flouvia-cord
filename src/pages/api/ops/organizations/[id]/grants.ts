@@ -15,6 +15,7 @@ import { PLAN_PRICES, PRICE_TO_PLAN, stripe } from '../../../../../lib/billing';
 import { hasPaidBillingEvidence, normalizePlan } from '../../../../../lib/entitlements';
 import { trustedIp } from '../../../../../lib/ip';
 import { log } from '../../../../../lib/log';
+import { sendOpsAlert } from '../../../../../lib/ops-alert';
 import { opsAuditQuery, requireFreshOpsAuth } from '../../../../../lib/ops-auth';
 import { parseGrantRequest, planGrant, type GrantSubject } from '../../../../../lib/ops-grants';
 import { strictRateLimit } from '../../../../../lib/ratelimit';
@@ -69,6 +70,7 @@ async function readSubscription(id: string): Promise<NonNullable<GrantSubject['s
         hasSchedule: !!sub.schedule,
         hasDiscounts: Array.isArray(sub.discounts) ? sub.discounts.length > 0 : !!sub.discount,
         cancelAtPeriodEnd: !!sub.cancel_at_period_end,
+        hasPendingChange: !!sub.pending_update || !!sub.pause_collection,
     };
 }
 
@@ -117,6 +119,11 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
         });
         if (!decision.ok) return json({ error: decision.error }, 409);
         if (dryRun) return json({ ok: true, mechanism: decision.mechanism, plan: decision.plan, expiresAt: decision.expiresAt, summary: decision.summary });
+        // Lo que se confirma es lo que se revisó: si la suscripción cambió
+        // entre los dos pasos (pagó, canceló, cambió de plan), se revisa otra vez.
+        if (body?.expect && (body.expect.mechanism !== decision.mechanism || body.expect.plan !== decision.plan)) {
+            return json({ error: 'Su suscripción cambió desde que revisaste. Revisa otra vez antes de confirmar.' }, 409);
+        }
 
         // 1. Reservar la cortesía y auditar, en la misma transacción. Una
         //    vencida que siguiera marcada como activa se cierra primero (el
@@ -127,9 +134,10 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
         });
         const [, inserted] = await withOpsTx(
             sql`update ops_plan_grants set status = 'expired' where org_id = ${orgId} and status = 'active' and expires_at <= now()`,
-            sql`insert into ops_plan_grants (org_id, plan, kind, mechanism, expires_at, reason, operator_id, operator_email, stripe_subscription_id)
+            sql`insert into ops_plan_grants (org_id, plan, kind, mechanism, expires_at, reason, operator_id, operator_email, stripe_subscription_id, original_period_end)
                 values (${orgId}, ${decision.plan}, ${req.kind}, ${decision.mechanism}, ${decision.expiresAt}, ${req.reason},
-                        ${operator.userId}, ${operator.email}, ${decision.mechanism === 'acceso' ? null : subscription?.id ?? null})
+                        ${operator.userId}, ${operator.email}, ${decision.mechanism === 'acceso' ? null : subscription?.id ?? null},
+                        ${decision.originalPeriodEnd ?? null})
                 returning id`,
             audit('ops.plan_grant_created', { kind: req.kind, amount: req.amount, plan: decision.plan, mechanism: decision.mechanism, reason: req.reason }),
         );
@@ -163,6 +171,7 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
                     // con un cupón y SIN acceso. La cortesía queda vigente.
                     await withOpsTx(audit('ops.plan_grant_failed', { grant: grantId, mechanism: decision.mechanism, ambiguous: true }, 'failure'))
                         .catch((err) => log.error('auditoría de cortesía no escrita', { route: 'ops/grants', err }));
+                    await sendOpsAlert('Cortesía sin confirmar en el procesador', `Organización ${orgId}; cortesía ${grantId} (${decision.mechanism}). Revisa la suscripción ${subscription.id}: si no cambió, revoca la cortesía.`);
                     return json({ error: 'No se pudo confirmar si el procesador aplicó el cambio. La cortesía queda vigente para no dejarlo sin acceso; revisa su suscripción en el procesador y, si no cambió, revócala.' }, 502);
                 }
                 // Rechazo definitivo: nada se aplicó (el cupón huérfano, si se
@@ -215,7 +224,8 @@ export const PATCH: APIRoute = async ({ params, request, locals }) => {
     try {
         const [orgs, grants] = await withOpsTx(
             sql`select nombre from orgs where id = ${orgId}`,
-            sql`select id, mechanism, stripe_subscription_id, stripe_coupon_id from ops_plan_grants where id = ${grantId} and org_id = ${orgId} and status = 'active'`,
+            sql`select id, mechanism, stripe_subscription_id, stripe_coupon_id, original_period_end from ops_plan_grants
+                where id = ${grantId} and org_id = ${orgId} and status = 'active' and expires_at > now()`,
         );
         if (!orgs.length) return json({ error: 'Organización no encontrada' }, 404);
         if (body?.confirmation !== orgs[0].nombre) return json({ error: 'La confirmación no coincide con el nombre de la organización' }, 400);
@@ -236,9 +246,14 @@ export const PATCH: APIRoute = async ({ params, request, locals }) => {
                     if (Number((error as { stripeStatus?: number })?.stripeStatus) !== 404) throw error;
                 }
                 const live = sub && !['canceled', 'incomplete_expired'].includes(String(sub.status));
-                if (live && grant.mechanism === 'trial' && sub.status === 'trialing') {
-                    // Terminar el periodo sin cobro: Stripe factura el periodo nuevo AHORA.
-                    await stripe(subPath, { trial_end: 'now', proration_behavior: 'none' }, 'POST', { version: STRIPE_VERSION, idempotencyKey: `ops-grant:${grantId}:revoke` });
+                if (live && grant.mechanism === 'trial' && sub.status === 'trialing' && sub.metadata?.ops_grant_id === grantId) {
+                    // El cobro vuelve a la fecha que YA había pagado, nunca antes:
+                    // terminar la prueba "ahora" cobraba un periodo nuevo y
+                    // perdía lo ya pagado (en un anual, meses enteros). Si esa
+                    // fecha ya pasó, se cobra ahora: es lo que debía desde entonces.
+                    const original = grant.original_period_end ? new Date(grant.original_period_end) : null;
+                    const backTo = original && original.getTime() > Date.now() + 60_000 ? unix(original) : 'now';
+                    await stripe(subPath, { trial_end: backTo, proration_behavior: 'none' }, 'POST', { version: STRIPE_VERSION, idempotencyKey: `ops-grant:${grantId}:revoke` });
                     undone = 'trial';
                 } else if (live && grant.mechanism === 'cupon') {
                     // Quitar SOLO el descuento de esta cortesía; los demás se conservan.
@@ -265,7 +280,7 @@ export const PATCH: APIRoute = async ({ params, request, locals }) => {
                 metadata: { grant: grantId, mechanism: grant.mechanism, undone }, ip: trustedIp(request), userAgent: request.headers.get('user-agent') || 'desconocido',
             }),
         );
-        return json({ success: true, message: undone === 'trial' ? 'Cortesía revocada. El procesador cobra el periodo nuevo ahora.'
+        return json({ success: true, message: undone === 'trial' ? 'Cortesía revocada. Su cobro vuelve a la fecha que ya tenía pagada (o se cobra ahora si ya pasó).'
             : undone === 'cupon' ? 'Cortesía revocada. Su próxima mensualidad se cobra completa.'
             : grant.mechanism === 'acceso' ? 'Cortesía revocada.'
             : 'Cortesía revocada. En el procesador ya no había nada que deshacer (la prueba terminó, el cupón ya no estaba o la suscripción se canceló).' });

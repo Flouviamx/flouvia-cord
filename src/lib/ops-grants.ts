@@ -12,8 +12,9 @@
 //   - todo lo demás (Gratis, anual, regalar un plan superior) → solo acceso,
 //     sin tocar Stripe. Un cupón sobre un anual regalaría el año completo, y
 //     crear una suscripción para alguien sin tarjeta termina en cobranza.
-// Mientras el plan efectivo venga de una cortesía, lo incluido es tope duro y
-// nada va al medidor (org-entitlements `overageAllowed`).
+// Con una suscripción viva debajo, el excedente se sigue midiendo y cobrando a
+// las tarifas de SU plan; solo una cortesía a quien no tiene suscripción
+// (Gratis) deja lo incluido como tope duro (org-entitlements `overageAllowed`).
 //
 // Este archivo decide; no llama a Stripe ni a la base. La ruta ejecuta.
 import { PLAN_RANK, type PlanId } from './entitlements';
@@ -31,6 +32,14 @@ export const GRANT_MAX_MONTHS = 12;
  * margen, ese rato el negocio caería a Gratis.
  */
 export const GRANT_MARGIN_DAYS = 3;
+/**
+ * Margen del cupón: Stripe fija cada cobro contra el día ANCLA original de la
+ * suscripción (un ancla 31 cobra el 31 aunque el periodo previo cerrara el
+ * 28), así que el fin del último mes regalado puede caer días después de lo
+ * que da sumar meses. Un margen largo no regala nada: al volver a pagar, el
+ * acceso ya sale del pago.
+ */
+export const GRANT_COUPON_MARGIN_DAYS = 10;
 
 export interface GrantRequest {
   kind: 'dias' | 'plan';
@@ -56,6 +65,8 @@ export interface GrantSubject {
     hasSchedule: boolean;
     hasDiscounts: boolean;
     cancelAtPeriodEnd: boolean;
+    /** Un cambio de plan con pago pendiente (`pending_update`) o el cobro pausado. */
+    hasPendingChange?: boolean;
   };
   activeGrant: boolean;
 }
@@ -68,6 +79,8 @@ export type GrantPlanResult =
       plan: GrantPlan;
       expiresAt: Date;
       trialEnd?: Date;
+      /** Fin del periodo ya pagado antes de mover el cobro (para revocar sin cobrar de más). */
+      originalPeriodEnd?: Date;
       couponMonths?: number;
       /** Qué va a pasar, en una frase, para confirmar antes de ejecutar. */
       summary: string;
@@ -106,6 +119,7 @@ export function planGrant(req: GrantRequest, s: GrantSubject, now = new Date()):
   const sub = s.subscription;
   const live = sub && sub.status === 'active' && s.paying && s.paidPlan !== 'free' ? sub : null;
   if (sub && sub.status === 'trialing') return { ok: false, error: 'Su suscripción ya está en un periodo sin cobro. Espera a que termine o revócalo primero.' };
+  if (live?.hasPendingChange) return { ok: false, error: 'Tiene un cambio pendiente de pago o el cobro pausado en el procesador. Resuélvelo primero.' };
 
   if (req.kind === 'dias') {
     if (live) {
@@ -115,9 +129,9 @@ export function planGrant(req: GrantRequest, s: GrantSubject, now = new Date()):
       const trialEnd = new Date(live.periodEnd.getTime() + req.amount * DAY);
       const plan = s.paidPlan as GrantPlan;
       return {
-        ok: true, mechanism: 'trial', plan, trialEnd,
+        ok: true, mechanism: 'trial', plan, trialEnd, originalPeriodEnd: live.periodEnd,
         expiresAt: new Date(trialEnd.getTime() + GRANT_MARGIN_DAYS * DAY),
-        summary: `Su próximo cobro pasa del ${fmt(live.periodEnd)} al ${fmt(trialEnd)} en el procesador, sin prorrateo. Conserva ${label(plan)} sin excedentes cobrables hasta entonces.`,
+        summary: `Su próximo cobro pasa del ${fmt(live.periodEnd)} al ${fmt(trialEnd)} en el procesador, sin prorrateo. Conserva ${label(plan)}; sus excedentes se siguen cobrando. Si se revoca, el cobro vuelve al ${fmt(live.periodEnd)}.`,
       };
     }
     if (!req.plan) return { ok: false, error: 'No paga hoy: elige qué plan le das durante esos días.' };
@@ -140,13 +154,13 @@ export function planGrant(req: GrantRequest, s: GrantSubject, now = new Date()):
       const lastFree = addMonthsUtc(live.periodEnd, req.amount);
       return {
         ok: true, mechanism: 'cupon', plan, couponMonths: req.amount,
-        expiresAt: new Date(lastFree.getTime() + GRANT_MARGIN_DAYS * DAY),
+        expiresAt: new Date(lastFree.getTime() + GRANT_COUPON_MARGIN_DAYS * DAY),
         summary: `Sus próximas ${req.amount === 1 ? 'mensualidad sale' : `${req.amount} mensualidades salen`} en $0 con un cupón del 100 % solo sobre el plan base; los excedentes se siguen cobrando. Vuelve a pagar normal desde el ${fmt(lastFree)}.`,
       };
     }
     // Regalar un plan SUPERIOR a quien paga: se le sigue cobrando el suyo.
     const expiresAt = addMonthsUtc(now, req.amount);
-    return { ok: true, mechanism: 'acceso', plan, expiresAt, summary: `Tendrá ${label(plan)} hasta el ${fmt(expiresAt)} y se le sigue cobrando ${label(s.paidPlan)}. Sin excedentes cobrables mientras dure.` };
+    return { ok: true, mechanism: 'acceso', plan, expiresAt, summary: `Tendrá ${label(plan)} hasta el ${fmt(expiresAt)} y se le sigue cobrando ${label(s.paidPlan)}. Lo que use más allá de lo incluido en ${label(plan)} se cobra como excedente a las tarifas de ${label(s.paidPlan)}.` };
   }
   const expiresAt = addMonthsUtc(now, req.amount);
   return { ok: true, mechanism: 'acceso', plan, expiresAt, summary: `Tendrá ${label(plan)} hasta el ${fmt(expiresAt)}, sin tocar el procesador ni pedir tarjeta. Lo incluido es su tope: no hay excedentes.` };

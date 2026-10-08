@@ -25,6 +25,10 @@ create table if not exists ops_plan_grants (
   operator_email          text        not null,
   stripe_subscription_id  text,
   stripe_coupon_id        text,
+  -- Fin de periodo que ya había pagado antes de mover su cobro (mecanismo
+  -- trial): revocar regresa el cobro AQUÍ, nunca antes. Sin esto, revocar
+  -- cobraba de inmediato un periodo nuevo y perdía lo ya pagado.
+  original_period_end     timestamptz,
   created_at              timestamptz not null default now(),
   revoked_at              timestamptz,
   revoked_by              text,
@@ -59,21 +63,21 @@ end $$;
 --    cord_effective_plan() y getEntitlementContext(), así las dos fuentes de
 --    verdad no divergen (antes la promoción daba Scale en SQL y Gratis en TS).
 create or replace function cord_access_grant(p_org uuid)
-returns table (plan text, expires_at timestamptz, source text)
+returns table (plan text, expires_at timestamptz, source text, mechanism text)
 language sql stable security definer
 set search_path = public, pg_temp
 as $$
   with billing as (select coalesce(sandbox_of, id) as id from orgs where id = p_org),
   grants as (
-    select g.plan, g.expires_at, 'ops'::text as source
+    select g.plan, g.expires_at, 'ops'::text as source, g.mechanism
       from ops_plan_grants g join billing b on g.org_id = b.id
      where g.status = 'active' and g.starts_at <= now() and g.expires_at > now()
     union all
-    select 'scale', e.expires_at, 'build'
+    select 'scale', e.expires_at, 'build', 'promo'
       from build_scale_entitlements e join billing b on e.org_id = b.id
      where e.status = 'active' and e.starts_at <= now() and e.expires_at > now()
   )
-  select plan, expires_at, source from grants
+  select plan, expires_at, source, mechanism from grants
   order by case plan when 'developer' then 4 when 'scale' then 3 when 'pro' then 2 when 'starter' then 1 else 0 end desc,
            expires_at desc
   limit 1

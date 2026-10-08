@@ -223,10 +223,11 @@ if (!/strictRateLimit\(/.test(grantsApi)) fail('cortesias', 'la ruta de cortesí
 if (!/idempotencyKey: `ops-grant:\$\{grantId\}/.test(grantsApi)) fail('cortesias', 'las llamadas al procesador usan llaves de idempotencia derivadas del id de la cortesía');
 if (grantsApi.indexOf('insert into ops_plan_grants') > grantsApi.indexOf("'/v1/coupons'")) fail('cortesias', 'la cortesía se reserva ANTES de llamar al procesador');
 if (!/applies_to\[products\]/.test(grantsApi)) fail('cortesias', 'el cupón aplica solo al producto base: los excedentes se siguen cobrando');
+if (!/original_period_end/.test(grantsApi)) fail('cortesias', 'revocar días gratis devuelve el cobro a su fecha original (original_period_end), nunca cobra antes');
 const fase5 = read('db/migrations/2026-10-08-ops-fase5.sql');
 if (!schema.includes(fase5.trim())) fail('schema', 'schema.sql y db/migrations/2026-10-08-ops-fase5.sql divergen');
 if (!read('scripts/migrate-ops.mjs').includes("'2026-10-08-ops-fase5.sql'")) fail('schema', 'migrate-ops.mjs no aplica la migración ops-fase5');
-if (!/overageAllowed:\s*accessSource === 'paid'/.test(read('src/lib/org-entitlements.ts'))) fail('cortesias', 'el excedente solo se cobra cuando el plan efectivo lo respalda un pago');
+if (!/overageAllowed:\s*accessSource === 'paid' \|\| \(accessSource === 'grant' && liveSubscription\)/.test(read('src/lib/org-entitlements.ts'))) fail('cortesias', 'el excedente solo se cobra con una suscripción viva: pagada, o con cortesía encima');
 
 if (failures.length) {
     console.error(`security:ops — ${failures.length} violaciones del contrato de Cord Ops\n`);

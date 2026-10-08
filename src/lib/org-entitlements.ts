@@ -40,13 +40,16 @@ export interface EntitlementContext {
      * Acceso sin cobro vigente: cortesía de Ops o promoción de The Cord Build
      * (`cord_access_grant`). Da acceso, nunca es evidencia de pago.
      */
-    grant: { plan: PlanId; source: 'ops' | 'build'; expiresAt: Date } | null;
+    grant: { plan: PlanId; source: 'ops' | 'build'; mechanism: string; expiresAt: Date } | null;
     /** De dónde sale el plan efectivo. */
     accessSource: 'paid' | 'grant' | 'free';
     /**
-     * Si el consumo sobre lo incluido se puede cobrar como excedente. Solo
-     * cuando el plan efectivo lo respalda un PAGO: con una cortesía no hay a
-     * quién cobrarle, así que lo incluido es tope duro y nada va al medidor.
+     * Si el consumo sobre lo incluido se puede cobrar como excedente: cuando
+     * hay una suscripción VIVA a la que cobrárselo (pagada, o con cortesía
+     * encima: cobro movido, cupón solo sobre el base, plan superior regalado).
+     * Sin suscripción viva —cortesía a quien está en Gratis— no hay a quién
+     * cobrarle: lo incluido es tope duro y nada va al medidor. Quitarle el
+     * excedente a quien paga empeoraba su servicio justo con un regalo.
      */
     overageAllowed: boolean;
 }
@@ -74,7 +77,7 @@ async function readBillingRow(orgId: string): Promise<any | null> {
 function toGrant(row: any): EntitlementContext['grant'] {
     const expiresAt = asDate(row?.expires_at);
     if (!row || !expiresAt) return null;
-    return { plan: normalizePlan(row.plan), source: row.source === 'build' ? 'build' : 'ops', expiresAt };
+    return { plan: normalizePlan(row.plan), source: row.source === 'build' ? 'build' : 'ops', mechanism: String(row.mechanism || 'acceso'), expiresAt };
 }
 
 export async function getEntitlementContext(orgId: string, now = new Date()): Promise<EntitlementContext> {
@@ -84,7 +87,7 @@ export async function getEntitlementContext(orgId: string, now = new Date()): Pr
     // sube y el llamador falla cerrado, igual que con la fila de orgs.
     const [[requested], [grantRow]] = await withOrgTx(orgId,
         billingRowSql(orgId),
-        sql`select plan, expires_at, source from cord_access_grant(${orgId})`);
+        sql`select plan, expires_at, source, mechanism from cord_access_grant(${orgId})`);
     if (!requested) throw new Error(`Organización ${orgId} no encontrada`);
 
     const billingOrgId = requested.sandbox_of ? String(requested.sandbox_of) : orgId;
@@ -129,6 +132,7 @@ export async function getEntitlementContext(orgId: string, now = new Date()): Pr
     const paidPlan: PlanId = paidAccess ? storedPlan : 'free';
     const grantPlan: PlanId = grant && grant.expiresAt.getTime() > now.getTime() ? grant.plan : 'free';
     const effectivePlan: PlanId = PLAN_RANK[grantPlan] > PLAN_RANK[paidPlan] ? grantPlan : paidPlan;
+    const liveSubscription = !!stripeSubscriptionId && !!stripeCustomerId && (status === 'active' || status === 'trialing');
     const accessSource: EntitlementContext['accessSource'] = effectivePlan === 'free' ? 'free'
         : PLAN_RANK[paidPlan] >= PLAN_RANK[effectivePlan] ? 'paid' : 'grant';
 
@@ -148,7 +152,7 @@ export async function getEntitlementContext(orgId: string, now = new Date()): Pr
         accessReason,
         grant,
         accessSource,
-        overageAllowed: accessSource === 'paid',
+        overageAllowed: accessSource === 'paid' || (accessSource === 'grant' && liveSubscription),
     };
 }
 

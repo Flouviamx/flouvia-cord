@@ -182,11 +182,11 @@ const resendable = (d: any) => d.invoice_number && d.lifecycle !== 'draft' && d.
   </div>
 
   <section class="ops-section" id="cortesias">
-    <header class="ops-section-header"><div><h2>Cortesías</h2><p>Días gratis o plan regalado. Dan acceso, no cuentan como pago, y mientras duran lo incluido es su tope: no hay excedentes.</p></div></header>
+    <header class="ops-section-header"><div><h2>Cortesías</h2><p>Días gratis o plan regalado. Dan acceso y no cuentan como pago. Con suscripción, sus excedentes se siguen cobrando; sin ella, lo incluido es su tope.</p></div></header>
     <div class="ops-grid-2 even ops-grant-grid">
       <div class="ops-card ops-list wrap-sub">
         {activeGrant ? <div class="ops-list-row two ops-grant-active"><div><strong>{planName(activeGrant.plan)} hasta el {opsDate(activeGrant.expires_at)}</strong><span class="ops-sub">{OPS_GRANT_MECHANISM[activeGrant.mechanism]} · {activeGrant.reason} · {activeGrant.operator_email}</span></div>
-          {isAdmin ? <button class="ops-button danger-soft sm" data-ops-action="revoke_grant" data-endpoint={`/api/ops/organizations/${org.id}/grants`} data-target-id={activeGrant.id} data-confirm={org.nombre} data-danger="true" data-title="Revocar cortesía" data-description={activeGrant.mechanism === 'trial' ? 'Termina el periodo sin cobro en el procesador: le cobra el periodo nuevo AHORA con su tarjeta guardada, y pierde el acceso de cortesía.' : activeGrant.mechanism === 'cupon' ? 'Quita el cupón de su suscripción: la próxima mensualidad se cobra completa, y pierde el acceso de cortesía.' : 'Pierde de inmediato el acceso que le daba la cortesía. No toca el procesador.'}>Revocar</button> : <span class="ops-badge green">Vigente</span>}
+          {isAdmin ? <button class="ops-button danger-soft sm" data-ops-action="revoke_grant" data-endpoint={`/api/ops/organizations/${org.id}/grants`} data-target-id={activeGrant.id} data-confirm={org.nombre} data-danger="true" data-title="Revocar cortesía" data-description={activeGrant.mechanism === 'trial' ? 'Su cobro vuelve a la fecha que ya tenía pagada antes de la cortesía (si esa fecha ya pasó, se le cobra ahora con su tarjeta guardada), y pierde el acceso de cortesía.' : activeGrant.mechanism === 'cupon' ? 'Quita el cupón de su suscripción: la próxima mensualidad se cobra completa, y pierde el acceso de cortesía.' : 'Pierde de inmediato el acceso que le daba la cortesía. No toca el procesador.'}>Revocar</button> : <span class="ops-badge green">Vigente</span>}
         </div> : <div class="ops-empty">Sin cortesía vigente.</div>}
         {grantHistory.map((g: any) => { const [label, tone] = grantState(g); return <div class="ops-list-row two"><div><strong>{planName(g.plan)} · {g.kind === 'dias' ? 'días gratis' : 'plan regalado'}</strong><span class="ops-sub">{opsDate(g.created_at)} → {opsDate(g.expires_at)} · {OPS_GRANT_MECHANISM[g.mechanism]} · {g.reason}{g.revoked_by && ` · revocó ${g.revoked_by}`}</span></div><span class:list={['ops-badge', tone]}>{label}</span></div>; })}
       </div>
@@ -380,7 +380,9 @@ const resendable = (d: any) => d.invoice_number && d.lifecycle !== 'draft' && d.
       const data = new FormData(grantForm);
       return { kind: data.get('kind'), amount: Number(data.get('amount')), plan: data.get('plan'), reason: String(data.get('reason') || ''), confirmation: String(data.get('confirmation') || '') };
     };
-    const reset = () => { review.hidden = true; confirmBtn.hidden = true; reviewBtn.hidden = false; grantError.hidden = true; };
+    // Lo que mostró "Revisar": al confirmar, el servidor verifica que siga igual.
+    let reviewed: { mechanism: string; plan: string } | null = null;
+    const reset = () => { review.hidden = true; confirmBtn.hidden = true; reviewBtn.hidden = false; grantError.hidden = true; reviewed = null; };
     grantForm.addEventListener('input', (event) => { if ((event.target as HTMLInputElement).name !== 'confirmation') reset(); });
     grantForm.querySelectorAll<HTMLInputElement>('input[name="kind"]').forEach((radio) => radio.addEventListener('change', () => {
       const dias = radio.value === 'dias' && radio.checked;
@@ -390,7 +392,7 @@ const resendable = (d: any) => d.invoice_number && d.lifecycle !== 'draft' && d.
       amountLabel.textContent = dias ? `Días (1 a ${max})` : `Meses (1 a ${max})`;
     }));
     const call = async (dryRun: boolean) => {
-      const res = await fetch(grantForm.dataset.endpoint || '', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...payload(), dryRun }) });
+      const res = await fetch(grantForm.dataset.endpoint || '', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...payload(), dryRun, expect: dryRun ? undefined : reviewed }) });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         if (res.status === 428) window.location.href = `/ops/login?next=${encodeURIComponent(window.location.pathname)}`;
@@ -403,6 +405,7 @@ const resendable = (d: any) => d.invoice_number && d.lifecycle !== 'draft' && d.
       reviewBtn.disabled = true; grantError.hidden = true;
       try {
         const data = await call(true);
+        reviewed = { mechanism: data.mechanism, plan: data.plan };
         summary.textContent = data.summary;
         review.hidden = false; confirmBtn.hidden = false; reviewBtn.hidden = true;
         grantForm.querySelector<HTMLInputElement>('input[name="confirmation"]')?.focus();

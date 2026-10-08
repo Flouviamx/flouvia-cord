@@ -25,10 +25,24 @@ describe('acceso efectivo con cortesías', () => {
         expect(c).toMatchObject({ effectivePlan: 'starter', accessSource: 'paid', overageAllowed: true, grant: null });
     });
 
-    it('una cortesía superior sube el plan, pero el excedente no se cobra', async () => {
-        m.org = paid; m.grant = { plan: 'pro', expires_at: '2026-12-01T00:00:00Z', source: 'ops' };
+    it('una cortesía superior a quien paga sube el plan y conserva el excedente (hay suscripción a la que cobrarlo)', async () => {
+        m.org = paid; m.grant = { plan: 'pro', expires_at: '2026-12-01T00:00:00Z', source: 'ops', mechanism: 'acceso' };
         const c = await getEntitlementContext(ORG, NOW);
-        expect(c).toMatchObject({ effectivePlan: 'pro', accessSource: 'grant', overageAllowed: false, paidAccess: true });
+        expect(c).toMatchObject({ effectivePlan: 'pro', accessSource: 'grant', overageAllowed: true, paidAccess: true });
+    });
+
+    it('una cortesía a quien no tiene suscripción: lo incluido es tope duro', async () => {
+        m.org = { ...paid, plan: 'free', subscription_status: null, stripe_subscription_id: null, stripe_customer_id: null };
+        m.grant = { plan: 'pro', expires_at: '2026-12-01T00:00:00Z', source: 'ops', mechanism: 'acceso' };
+        const c = await getEntitlementContext(ORG, NOW);
+        expect(c).toMatchObject({ effectivePlan: 'pro', accessSource: 'grant', overageAllowed: false });
+    });
+
+    it('con el pago atrasado, la cortesía da acceso pero no excedente', async () => {
+        m.org = { ...paid, subscription_status: 'past_due' };
+        m.grant = { plan: 'starter', expires_at: '2026-12-01T00:00:00Z', source: 'ops', mechanism: 'acceso' };
+        const c = await getEntitlementContext(ORG, NOW);
+        expect(c).toMatchObject({ effectivePlan: 'starter', accessSource: 'grant', overageAllowed: false });
     });
 
     it('una cortesía inferior al pago no cambia nada', async () => {
@@ -42,7 +56,8 @@ describe('acceso efectivo con cortesías', () => {
         m.org = { ...paid, subscription_status: 'trialing' };
         m.grant = { plan: 'starter', expires_at: '2026-11-20T00:00:00Z', source: 'ops' };
         const c = await getEntitlementContext(ORG, NOW);
-        expect(c).toMatchObject({ effectivePlan: 'starter', paidAccess: false, accessSource: 'grant', overageAllowed: false });
+        // La suscripción sigue viva (en prueba): el excedente se sigue midiendo.
+        expect(c).toMatchObject({ effectivePlan: 'starter', paidAccess: false, accessSource: 'grant', overageAllowed: true });
     });
 
     it('la promoción de The Cord Build ya no diverge del SQL: da Scale', async () => {
