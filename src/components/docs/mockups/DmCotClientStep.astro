@@ -1,0 +1,115 @@
+---
+// Mockup: paso "¿A quién le cotizas?" con el selector de cliente abierto.
+//
+// Calca de nueva.astro: el <select id="clientSelect"> lista "— Selecciona un
+// cliente —", los clientes como "Empresa — Contacto" y al final
+// "+ Crear nuevo cliente…"; a su lado los chips de términos (Contado / Net 30
+// / Net 60). Al elegir a Constructora GAMA se preseleccionan sus términos
+// (Net 30) y aparece la nota de su nivel de precio (nivelDescuentoNoteTpl),
+// que ya bajó los precios negociados del paso 2 un 10%.
+//
+// La lista abierta se dibuja en flujo, encima de la nota, para que el lector
+// vea las dos cosas a la vez: en el navegador el menú flotaría sobre ella.
+import DocsMockup from './DocsMockup.astro';
+import DmIcon from './DmIcon.astro';
+import CotEdLines, { type CotLine } from './CotEdLines.astro';
+import './dm-cot-editor.css';
+import { getEditorRuntimeI18n } from '../../../i18n/app';
+import { dmT, pick, tpl, DEMO, type DmLang } from './format';
+
+interface Props {
+    lang: DmLang;
+    /** Pie de figura; por defecto describe el estado dibujado. */
+    caption?: string;
+}
+const { lang } = Astro.props;
+const RT = getEditorRuntimeI18n(lang);
+const SELECTED = 'Constructora GAMA — Luis Pérez';
+const CLIENTES = [
+    `${DEMO.cliente} — ${DEMO.contacto}`,
+    'Aceros del Norte — Patricia Ruiz',
+    'Constructora Apex — Jorge Salinas',
+    SELECTED,
+];
+
+const DATA: { es: { caption: string; lines: CotLine[] }; en: { caption: string; lines: CotLine[] } } = {
+    es: {
+        caption: 'Paso ¿A quién le cotizas? con el selector de cliente abierto: — Selecciona un cliente —, cuatro clientes con Constructora GAMA — Luis Pérez elegido y + Crear nuevo cliente… al final. Net 30 quedó activo y la nota dice que el nivel del cliente aplicó −10% a los precios de lista.',
+        lines: [
+            { name: 'Cemento gris CPC 30R', unit: 'saco 50 kg', qty: 300, lista: 245, nego: 220.5, costo: 165 },
+            { name: 'Block hueco 15 × 20 × 40', unit: 'pieza', qty: 1500, lista: 14.5, nego: 13.05, costo: 9.8 },
+        ],
+    },
+    en: {
+        caption: '"Who are you quoting?" step with the client selector open: — Select a client —, four clients with Constructora GAMA — Luis Pérez chosen, and + Create new client… at the end. Net 30 is active and the note says the client tier applied −10% to list prices.',
+        lines: [
+            { name: 'Gray cement CPC 30R', unit: '50 kg bag', qty: 300, lista: 245, nego: 220.5, costo: 165 },
+            { name: 'Hollow block 15 × 20 × 40', unit: 'piece', qty: 1500, lista: 14.5, nego: 13.05, costo: 9.8 },
+        ],
+    },
+};
+const d = pick(DATA, lang);
+const caption = Astro.props.caption ?? d.caption;
+const TERMS = ['contado', 'net30', 'net60'] as const;
+---
+<DocsMockup lang={lang} variant="app" chrome="topbar" title={dmT(lang, 'ed.title_nueva')} crumbs={[dmT(lang, 'ed.crumb_cotizaciones')]} height={700} caption={caption} class="dm-cot-cs-figure">
+    <span slot="actions" class="dm-ced-draft">{dmT(lang, 'ed.borrador')}</span>
+    <div class="dm-ced dm-cot-cs">
+        <div class="dm-ced-step">
+            <span class="dm-ced-num">1</span>
+            <span class="dm-ced-step-text">
+                <span class="dm-ced-step-title">{dmT(lang, 'ed.paso1_titulo')}</span>
+                <span class="dm-ced-step-hint">{dmT(lang, 'ed.paso1_hint')}</span>
+            </span>
+        </div>
+        <div class="dm-cot-cs-row">
+            <div class="dm-cot-cs-selwrap">
+                <span class="dm-ced-select is-focus"><span class="dm-ced-select-text">{SELECTED}</span></span>
+                <div class="dm-cot-cs-menu">
+                    <span class="dm-cot-cs-opt is-disabled">{dmT(lang, 'ed.selecciona_cliente')}</span>
+                    {CLIENTES.map((c) => (
+                        <span class:list={['dm-cot-cs-opt', { 'is-sel': c === SELECTED }]}>
+                            <span class="dm-cot-cs-check">{c === SELECTED && <DmIcon name="check" stroke={2.4} />}</span>
+                            <span class="dm-ellipsis">{c}</span>
+                        </span>
+                    ))}
+                    <span class="dm-cot-cs-sep"></span>
+                    <span class="dm-cot-cs-opt is-action"><span class="dm-cot-cs-check"></span>{dmT(lang, 'ed.crear_cliente')}</span>
+                </div>
+            </div>
+            <span class="dm-ced-chips">{TERMS.map((c) => <span class:list={['dm-ced-chip', { 'is-on': c === 'net30' }]}>{dmT(lang, `ed.term_${c}`)}</span>)}</span>
+        </div>
+        <div class="dm-cot-cs-note">{tpl(RT.nivelDescuentoNoteTpl, { d: 10 })}</div>
+
+        <div class="dm-ced-step dm-cot-cs-step2">
+            <span class="dm-ced-num">2</span>
+            <span class="dm-ced-step-text">
+                <span class="dm-ced-step-title">{dmT(lang, 'ed.paso2_titulo')}</span>
+                <span class="dm-ced-step-hint" set:html={dmT(lang, 'ed.paso2_hint')} />
+            </span>
+        </div>
+        <CotEdLines lang={lang} lines={d.lines} showTax={false} marginMin={20} />
+    </div>
+</DocsMockup>
+
+<style is:global>
+    .dm-cot-cs-figure .dm-content, .dm-cot-cs-figure .dm-page-head { padding-right: calc(4px + var(--dm-bleed)); }
+    .dm-cot-cs { padding-top: 6px; }
+    .dm-cot-cs-row { display: flex; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+    .dm-cot-cs-selwrap { width: 290px; max-width: 100%; display: flex; flex-direction: column; gap: 5px; }
+    .dm-cot-cs-row > .dm-ced-chips { padding-top: 3px; }
+    .dm-cot-cs-menu { display: flex; flex-direction: column; padding: 5px; border-radius: 10px; background: #fff; border: 1px solid var(--dm-border); box-shadow: 0 2px 4px rgba(10, 25, 47, 0.05), 0 22px 44px -18px rgba(10, 25, 47, 0.32); }
+    .dm-cot-cs-opt { display: flex; align-items: center; gap: 6px; height: 29px; padding: 0 9px 0 5px; border-radius: 6px; font-size: 12px; color: var(--dm-text); white-space: nowrap; min-width: 0; }
+    .dm-cot-cs-opt.is-disabled { padding-left: 25px; color: #a3abb8; }
+    .dm-cot-cs-opt.is-sel { background: var(--dm-navy); color: #fff; }
+    .dm-cot-cs-opt.is-action { font-weight: 600; color: var(--dm-navy); }
+    .dm-cot-cs-check { width: 14px; flex-shrink: 0; display: grid; place-items: center; }
+    .dm-cot-cs-check .dm-ico { width: 12px; height: 12px; }
+    .dm-cot-cs-sep { height: 1px; margin: 4px 6px; background: var(--dm-border); }
+    .dm-cot-cs-note { margin-top: 10px; font-size: 11.5px; font-weight: 500; color: #059669; }
+    .dm-cot-cs-step2 { margin-top: 26px; }
+    @container dm (max-width: 560px) {
+        .dm-cot-cs-figure .dm-stage { height: auto; }
+        .dm-cot-cs-selwrap { width: 100%; }
+    }
+</style>
