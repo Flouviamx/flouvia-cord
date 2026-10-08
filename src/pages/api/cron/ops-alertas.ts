@@ -69,7 +69,7 @@ async function run(): Promise<Response> {
                 <p style="font-size:16px;font-weight:600;margin:0 0 16px;">${esc(subject)}</p>
                 ${fired.map((r) => `<p style="font-size:14px;line-height:1.55;margin:0 0 10px;"><strong>${esc(r.metric.label)}</strong>: ${esc(opsAlertValue(r.metric, r.value))} (umbral ${esc(opsAlertValue(r.metric, r.threshold))}).<br><span style="color:#6B7280;">${esc(r.metric.description)}</span><br><a href="https://ops.cordhq.app${r.metric.href}" style="color:#2563EB;">Abrir en Cord Ops</a></p>`).join('')}
                 ${resolved.map((r) => `<p style="font-size:14px;line-height:1.55;margin:0 0 10px;color:#374151;">Resuelta: ${esc(r.metric.label)}.</p>`).join('')}
-                <p style="font-size:12px;color:#9CA3AF;margin-top:28px;">Las reglas se ajustan en Cord Ops › Alertas.</p>
+                <p style="font-size:12px;color:#6B7280;margin-top:28px;">Las reglas se ajustan en Cord Ops › Alertas.</p>
             </div>`;
             for (const op of operators) {
                 const to = String(op.email || '');

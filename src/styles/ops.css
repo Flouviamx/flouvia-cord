@@ -1294,3 +1294,9 @@ a.ops-attention-row:hover { background: var(--ops-surface-2); }
   /* Con tres métricas en dos columnas, la tercera ocupa la fila: sin celda vacía. */
   .ops-metrics.cols-3 .ops-metric:nth-child(3):last-child { grid-column: 1 / -1; border-right: 0; }
 }
+/* `.ops-inline-*` fija su margen después de `.ops-section`: con las dos
+   clases, el aviso quedaba pegado a la tarjeta de arriba. */
+.ops-inline-warning.ops-section, .ops-inline-note.ops-section { margin-top: 32px; }
+@media (max-width: 880px) {
+  .ops-alert-rule-main a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 6px; }
+}

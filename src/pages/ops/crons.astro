@@ -45,7 +45,7 @@ const stripLabel: Record<string, string> = { ok: 'correcto', error: 'falló', ru
   <section class="ops-section">
     <header class="ops-section-header"><div><h2>Todos los crons</h2><p>Horarios en UTC. La tira muestra los últimos periodos, del más viejo al más reciente; un periodo cuenta como "no corrió" {OPS_CRON_GRACE_HOURS} h después de su hora, porque el reloj de respaldo corre a horas variables.</p></div></header>
     <div class="ops-card ops-table-wrap">
-      <table class="ops-table" data-ops-rows>
+      <table class="ops-table">
         <thead><tr><th>Cron</th><th>Estado</th><th>Últimos periodos</th><th>Última corrida</th><th class="num">Duración</th><th>Resultado</th></tr></thead>
         <tbody>
           {statuses.map((s) => { const [label, tone] = OPS_CRON_HEALTH[s.health]; return <tr>
