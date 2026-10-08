@@ -1,5 +1,5 @@
 ---
-title: "Añadir términos de crédito (Net 30/60)"
+title: "Añadir términos de crédito (Net 7 a Net 90)"
 description: "Guía para vender a crédito comercial y cómo se cobra al vencer el plazo."
 category: "Cotizaciones"
 order: 3

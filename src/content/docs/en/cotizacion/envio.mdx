@@ -122,7 +122,9 @@ From the detail of a *Sent*, *Viewed*, or *Expired* quote, **Modify and resend**
 the next version number, for example "Modify and resend (V2)") opens the same editor in
 new-version mode (the old `/app/cotizaciones/[id]/editar` route only redirects there).
 A new version changes lines and prices; the client, currency, and terms stay as they
-were sent, and the AI block doesn't appear. The summary is tagged **Version N** and the
+were sent, and the AI block doesn't appear. When you send it, the validity restarts
+from that day with the same length the quote was sent with (if it was 30 days, it
+expires in 30 days), so an *Expired* quote goes back to *Sent* with a new date. The summary is tagged **Version N** and the
 main button is **Send new version**: your client sees the new version at the same link
 and the previous one stays in the history.
 

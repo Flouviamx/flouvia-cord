@@ -116,16 +116,16 @@
     enlace de captura dice "duran 10 minutos" (son 30 y 15); la pantalla de
     Verifactu dice "las facturas ya se encadenan" con `VERIFACTU_AEAT_ENABLED`
     apagado; estados de disputa en inglés crudo del procesador.
-26. **Menores de UI**: botón de borrar línea en `nueva.astro` muestra el texto
-    `' + iconSvg('x', …) + '` dentro de un template literal; "10:42 a.m.." con punto
+26. **Menores de UI**: "10:42 a.m.." con punto
     doble en "Prueba sin publicar" (`wf.probar_con_evento` + es-MX); la paleta usa
     `sparkle` para IA (el estándar es `cpu`); "Descargar comprobante" oculta el
     sello al imprimir (`.q-actions-area`); presencia pública muestra el correo del
-    vendedor si no tiene nombre; reenviar una cotización vencida no extiende la
-    vigencia (el cron la vuelve a vencer); el snapshot de versión guarda
+    vendedor si no tiene nombre; el snapshot de versión guarda
     `notas = null`; líneas armadas con IA no reciben el descuento de nivel; el
-    importador de productos adivina "costo" como precio de lista; campos del
-    editor con el mismo gris que el lienzo (`--editor-field` = `--app-canvas`).
+    importador de productos adivina "costo" como precio de lista. (Resueltos con
+    el editor unificado, oct 2026: el icono del botón de quitar línea, la vigencia
+    que no se extendía al reenviar y los campos del editor del mismo gris que el
+    lienzo.)
 
 ## P3 — paquetes y documentación interna desactualizada
 

@@ -1,5 +1,5 @@
 ---
-title: "Add credit terms (Net 30/60)"
+title: "Add credit terms (Net 7 to Net 90)"
 description: "How to sell on trade credit and how payment is collected once the term lapses."
 category: "Quotes"
 order: 3

@@ -103,9 +103,9 @@ Mientras una cotización está *Enviada*, *Vista* o *Vencida*, **Modificar y ree
 pulsar **Enviar nueva versión**, crea una versión nueva sobre el mismo link (la ruta
 anterior `/app/cotizaciones/[id]/editar` solo redirige a ese editor):
 
-- puedes cambiar productos, cantidades, precios, impuestos de cada línea y **Precios ya incluyen IVA**; el cliente, la divisa y las condiciones (términos, vigencia, anticipo, iguala y nota) se quedan como se enviaron;
+- puedes cambiar productos, cantidades, precios, impuestos de cada línea y **Precios ya incluyen IVA**; el cliente, la divisa y las condiciones (términos, duración de la vigencia, anticipo, iguala y nota) se quedan como se enviaron;
 - si tu organización usa [aprobaciones internas](/docs/cotizacion/aprobaciones-internas), la versión se revisa contra los topes antes de enviarse;
-- la cotización vuelve a *Enviada* y el cliente recibe otra vez el correo si tiene correo capturado;
+- la cotización vuelve a *Enviada*, su vigencia vuelve a correr desde ese día con la misma duración con que se envió (si era de 30 días, vence en 30 días) y el cliente recibe otra vez el correo si tiene correo capturado. Así se revive una cotización *Vencida*;
 - la insignia junto al nombre del cliente muestra la versión vigente (V1, V2, V3…);
 - **Historial de versiones** en el detalle lista cada versión con su fecha y su total.
 
@@ -114,7 +114,7 @@ aprobar (ver [Negociación y contraofertas](/docs/interaccion/negociacion)).
 
 ### Cuando la versión no basta
 
-Para cambiar algo que **Modificar y reenviar** no permite (cliente, divisa o términos),
+Para cambiar algo que **Modificar y reenviar** no permite (cliente, divisa, términos u otra duración de vigencia),
 duplica la cotización, ajústala y envía el nuevo link. Después, en la original
 (mientras siga *Enviada* o *Vista*), usa **Marcar rechazada** para sacarla del pipeline.
 Cord no tiene un estado "Cancelada": *Rechazada* indica que ese link ya no sigue.

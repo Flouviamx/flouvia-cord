@@ -103,9 +103,9 @@ same quote editor as **New version of COT-0149** and, when you click **Send new
 version**, creates a new version on the same link (the old
 `/app/cotizaciones/[id]/editar` route only redirects to that editor):
 
-- you can change products, quantities, prices, each line's tax, and **Prices include VAT**; the client, currency, and terms (payment terms, validity, deposit, retainer, and note) stay as they were sent;
+- you can change products, quantities, prices, each line's tax, and **Prices include VAT**; the client, currency, and terms (payment terms, validity length, deposit, retainer, and note) stay as they were sent;
 - if your organization uses [internal approvals](/en/docs/cotizacion/aprobaciones-internas), the version is checked against the caps before it's sent;
-- the quote goes back to *Sent* and the client gets the email again if they have an email on file;
+- the quote goes back to *Sent*, its validity restarts from that day with the same length it was sent with (if it was 30 days, it expires in 30 days), and the client gets the email again if they have an email on file. That's how an *Expired* quote comes back;
 - the badge next to the client's name shows the current version (V1, V2, V3…);
 - **Version history** on the detail lists each version with its date and total.
 
@@ -114,7 +114,7 @@ approving (see [Negotiation and counteroffers](/en/docs/interaccion/negociacion)
 
 ### When a version isn't enough
 
-To change something **Modify and resend** doesn't allow (client, currency, or terms),
+To change something **Modify and resend** doesn't allow (client, currency, terms, or a different validity length),
 duplicate the quote, adjust it, and send the new link. Then, on the original (while
 it's still *Sent* or *Viewed*), use **Mark rejected** to take it out of the pipeline.
 Cord has no "Canceled" status: *Rejected* signals that link is no longer active.

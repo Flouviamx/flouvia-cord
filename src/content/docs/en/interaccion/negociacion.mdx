@@ -87,11 +87,13 @@ When you resend, Cord:
 - saves the new version and adds it to the detail's **Version history**, with its date and total;
 - keeps the **same link**;
 - emails the client again if they have an email on file;
-- moves the quote back to *Sent*;
+- moves the quote back to *Sent* and restarts its validity from today;
 - emits the quote-modified event with the previous total, so your automations can tell an unchanged resend from one with a discount.
 
-Resending an *Expired* quote doesn't give it a new validity date: the daily process
-expires it again. To propose it again with a new date, use **Duplicate quote**.
+Every new version restarts the validity from the day you send it, with the same length
+the quote was sent with (if it was 30 days, it expires in 30 days). That's how an
+*Expired* quote comes back: it returns to *Sent* with a new date. For a different
+length, client, currency, or terms, use **Duplicate quote**.
 
 ## If you change the proposal while the client reads it
 

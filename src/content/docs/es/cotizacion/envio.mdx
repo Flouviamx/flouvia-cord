@@ -123,7 +123,9 @@ reenviar** (con el número de la versión siguiente, por ejemplo "Modificar y re
 (V2)") abre el mismo editor en modo versión nueva (la ruta anterior
 `/app/cotizaciones/[id]/editar` solo redirige ahí). En una versión nueva cambian las
 líneas y los precios; el cliente, la divisa y las condiciones se quedan como se
-enviaron, y no aparece el bloque de IA. El resumen se etiqueta **Versión N** y el botón
+enviaron, y no aparece el bloque de IA. Al enviarla, la vigencia vuelve a correr desde
+ese día con la misma duración con que se envió la cotización (si era de 30 días, vence
+en 30 días), así que una cotización *Vencida* regresa a *Enviada* con fecha nueva. El resumen se etiqueta **Versión N** y el botón
 principal es **Enviar nueva versión**: tu cliente verá la nueva versión en el mismo link
 y la anterior queda en el historial.
 

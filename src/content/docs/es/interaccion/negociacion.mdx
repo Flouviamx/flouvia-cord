@@ -89,11 +89,13 @@ Al reenviar, Cord:
 - guarda la versión nueva y la agrega al **Historial de versiones** del detalle, con su fecha y su total;
 - conserva el **mismo link**;
 - vuelve a mandar el correo al cliente si tiene correo capturado;
-- regresa la cotización a *Enviada*;
+- regresa la cotización a *Enviada* y vuelve a correr su vigencia desde hoy;
 - emite el evento de cotización modificada con el total anterior, para que tus automatizaciones distingan un reenvío igual de uno con descuento.
 
-Reenviar una cotización *Vencida* no le da una vigencia nueva: el proceso diario vuelve
-a vencerla. Para proponerla otra vez con fecha nueva, usa **Duplicar cotización**.
+Cada versión nueva vuelve a correr la vigencia desde el día en que la envías, con la
+misma duración con que se envió la cotización (si era de 30 días, vence en 30 días).
+Así se revive una cotización *Vencida*: regresa a *Enviada* con fecha nueva. Para otra
+duración, otro cliente, otra divisa u otras condiciones, usa **Duplicar cotización**.
 
 ## Si cambias la propuesta mientras el cliente la lee
 
