@@ -1,0 +1,277 @@
+---
+// Mockup: Cord dentro de una herramienta de automatización de terceros.
+//
+//   tool="make" · escenario de Make: Cord › Watch Events → Cord › Get a Client
+//                 → Google Sheets › Add a Row, con el panel "Create a webhook"
+//                 del disparador (conexión de Cord y evento elegido).
+//   tool="n8n"  · flujo de n8n: Cord Trigger → IF → Cord (create: task), con la
+//                 credencial "Cord API" abierta.
+//
+// Representación sobria y reconocible de cada editor, sin calcar su interfaz
+// pixel a pixel: lo que importa es lo que aporta Cord. Los nombres de módulos,
+// nodos, campos y eventos son los REALES de integrations/make/app.mjs e
+// integrations/n8n (CordTrigger.node.ts, Cord.node.ts, CordApi.credentials.ts);
+// esas herramientas se usan en inglés, así que sus textos no se traducen.
+import DocsMockup from './DocsMockup.astro';
+import DmIcon from './DmIcon.astro';
+import { favicon, pick, DEMO, type DmLang } from './format';
+
+interface Props {
+    lang: DmLang;
+    tool: 'make' | 'n8n';
+    caption?: string;
+}
+const { lang, tool } = Astro.props;
+const L = lang;
+const CORD_ICON = '/favicon-192x192.png';
+const SHEETS_ICON = 'https://www.gstatic.com/images/branding/product/2x/sheets_64dp.png';
+
+const DATA = {
+    es: {
+        make: `Escenario de Make con tres módulos en cadena: Cord › Watch Events, Cord › Get a Client y Google Sheets › Add a Row. Abierto, el webhook del disparador con la conexión "Cord (${DEMO.org})" y el evento "Quotes: Quote approved".`,
+        n8n: 'Flujo de n8n: Cord Trigger escucha quote.approved y payment.partial, un nodo IF filtra y el nodo Cord crea una tarea. Abierta, la credencial "Cord API" con la llave de API enmascarada y la prueba de conexión correcta.',
+        makeName: 'Cotización aprobada → hoja de pedidos',
+        n8nName: 'Pedido cuando se aprueba',
+    },
+    en: {
+        make: `Make scenario with three chained modules: Cord › Watch Events, Cord › Get a Client and Google Sheets › Add a Row. Open, the trigger's webhook with the "Cord (${DEMO.org})" connection and the "Quotes: Quote approved" event.`,
+        n8n: 'n8n workflow: Cord Trigger listens for quote.approved and payment.partial, an IF node filters and the Cord node creates a task. Open, the "Cord API" credential with the API key masked and a successful connection test.',
+        makeName: 'Approved quote → orders sheet',
+        n8nName: 'Order when approved',
+    },
+};
+const d = pick(DATA, L);
+const caption = Astro.props.caption ?? d[tool];
+const MAKE_MODULES = [
+    { app: 'Cord', mod: 'Watch Events', n: 1, icon: CORD_ICON, bg: '#0a192f', trigger: true },
+    { app: 'Cord', mod: 'Get a Client', n: 2, icon: CORD_ICON, bg: '#0a192f' },
+    { app: 'Google Sheets', mod: 'Add a Row', n: 3, icon: SHEETS_ICON, bg: '#ffffff' },
+];
+---
+{tool === 'make' ? (
+    <DocsMockup lang={L} variant="browser" url="us1.make.com/1180244/scenarios/4821103/edit" height={610} caption={caption} class="dm-xf-figure dm-xf-make">
+        <div class="dm-xf">
+            <div class="dm-xf-bar">
+                <span class="dm-xf-back"><DmIcon name="arrow-left" /></span>
+                <img class="dm-xf-brand" src={favicon('make.com', 64)} alt="" width="18" height="18" loading="lazy" decoding="async" />
+                <span class="dm-xf-name">{d.makeName}</span>
+            </div>
+            <div class="dm-xf-canvas dm-xf-canvas-make">
+                <div class="dm-xf-chain">
+                    {MAKE_MODULES.map((m, i) => (
+                        <Fragment>
+                            {i > 0 && <span class="dm-xf-dots"><i></i><i></i><i></i><i></i><i></i></span>}
+                            <span class="dm-xf-mod">
+                                <span class="dm-xf-circle" style={`--dm-xf-bg:${m.bg}`}>
+                                    <img src={m.icon} alt="" width="34" height="34" loading="lazy" decoding="async" />
+                                    <span class="dm-xf-num">{m.n}</span>
+                                    {m.trigger && <span class="dm-xf-instant"><DmIcon name="bolt" stroke={2} /></span>}
+                                </span>
+                                <span class="dm-xf-mod-app">{m.app}</span>
+                                <span class="dm-xf-mod-name">{m.mod}</span>
+                            </span>
+                        </Fragment>
+                    ))}
+                </div>
+                <div class="dm-xf-panel">
+                    <div class="dm-xf-panel-head">
+                        <span class="dm-xf-circle is-sm" style="--dm-xf-bg:#0a192f"><img src={CORD_ICON} alt="" width="20" height="20" loading="lazy" decoding="async" /></span>
+                        <span class="dm-xf-panel-titles"><span class="dm-xf-panel-title">Create a webhook</span><span class="dm-xf-muted">Cord · Watch Events</span></span>
+                    </div>
+                    <div class="dm-xf-fields">
+                        <span class="dm-xf-field">
+                            <span class="dm-xf-label">Webhook name</span>
+                            <span class="dm-xf-input">Cord events</span>
+                        </span>
+                        <span class="dm-xf-field">
+                            <span class="dm-xf-label">Connection</span>
+                            <span class="dm-xf-row">
+                                <span class="dm-xf-input dm-select">Cord ({DEMO.org})</span>
+                                <span class="dm-xf-add">Add</span>
+                            </span>
+                        </span>
+                        <span class="dm-xf-field">
+                            <span class="dm-xf-label">Events</span>
+                            <span class="dm-xf-input dm-select"><span class="dm-xf-tag">Quotes: Quote approved</span></span>
+                        </span>
+                    </div>
+                    <div class="dm-xf-panel-foot">
+                        <span class="dm-xf-btn is-ghost">Close</span>
+                        <span class="dm-xf-btn is-make">Save</span>
+                    </div>
+                </div>
+            </div>
+            <div class="dm-xf-toolbar">
+                <span class="dm-xf-run"><DmIcon name="play" /></span>
+                <span class="dm-xf-muted">Run once</span>
+                <span class="dm-xf-sep"></span>
+                <span class="dm-xf-switch is-on"></span>
+                <span class="dm-xf-muted">Immediately as data arrives</span>
+            </div>
+        </div>
+    </DocsMockup>
+) : (
+    <DocsMockup lang={L} variant="browser" url="n8n.materialesdelvalle.com/workflow/12" height={560} caption={caption} class="dm-xf-figure dm-xf-n8n">
+        <div class="dm-xf">
+            <div class="dm-xf-bar">
+                <img class="dm-xf-brand" src={favicon('n8n.io', 64)} alt="" width="18" height="18" loading="lazy" decoding="async" />
+                <span class="dm-xf-name">{d.n8nName}</span>
+                <span class="dm-xf-active"><span class="dm-xf-muted">Active</span><span class="dm-xf-switch is-on is-n8n"></span></span>
+            </div>
+            <div class="dm-xf-canvas dm-xf-canvas-n8n">
+                <div class="dm-xf-flow">
+                    <span class="dm-xf-node is-trigger">
+                        <span class="dm-xf-box"><img src={CORD_ICON} alt="" width="30" height="30" loading="lazy" decoding="async" /><span class="dm-xf-bolt"><DmIcon name="bolt" stroke={2} /></span></span>
+                        <span class="dm-xf-node-name">Cord Trigger</span>
+                        <span class="dm-xf-node-sub">quote.approved, payment.partial</span>
+                    </span>
+                    <span class="dm-xf-wire"></span>
+                    <span class="dm-xf-node">
+                        <span class="dm-xf-box is-if"><DmIcon name="decision" /></span>
+                        <span class="dm-xf-node-name">IF</span>
+                        <span class="dm-xf-ports"><span>true</span><span>false</span></span>
+                    </span>
+                    <span class="dm-xf-wire"></span>
+                    <span class="dm-xf-node">
+                        <span class="dm-xf-box"><img src={CORD_ICON} alt="" width="30" height="30" loading="lazy" decoding="async" /></span>
+                        <span class="dm-xf-node-name">Cord</span>
+                        <span class="dm-xf-node-sub">create: task</span>
+                    </span>
+                </div>
+                <div class="dm-xf-cred">
+                    <div class="dm-xf-cred-head">
+                        <span class="dm-xf-box is-sm"><img src={CORD_ICON} alt="" width="20" height="20" loading="lazy" decoding="async" /></span>
+                        <span class="dm-xf-panel-titles"><span class="dm-xf-panel-title">Cord API</span><span class="dm-xf-muted">Cord API account</span></span>
+                        <span class="dm-xf-btn is-n8n">Save</span>
+                    </div>
+                    <div class="dm-xf-cred-body">
+                        <span class="dm-xf-cred-tabs"><span class="is-on">Connection</span><span>Sharing</span><span>Details</span></span>
+                        <span class="dm-xf-cred-main">
+                            <span class="dm-xf-ok"><DmIcon name="check-circle" />Connection tested successfully</span>
+                            <span class="dm-xf-field">
+                                <span class="dm-xf-label">API Key <i>*</i></span>
+                                <span class="dm-xf-input dm-xf-mask">••••••••••••••••••••••••</span>
+                            </span>
+                            <span class="dm-xf-hint">Secret key from Cord (sk_live_ or sk_test_). Create it in Settings, Developer mode, API tab. Publishable keys (pk_) do not work here.</span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </DocsMockup>
+)}
+
+<style is:global>
+    .dm-xf-figure .dm-browser-page { background: #fff; }
+    .dm-xf { flex: 1 0 auto; display: flex; flex-direction: column; min-width: 0; }
+    .dm-xf-bar { display: flex; align-items: center; gap: 9px; height: 44px; padding: 0 14px; border-bottom: 1px solid var(--dm-border); background: #fff; }
+    .dm-xf-back { color: var(--dm-muted); }
+    .dm-xf-back .dm-ico { width: 14px; height: 14px; }
+    .dm-xf .dm-xf-brand { display: block; width: 18px; height: 18px; margin: 0; border-radius: 4px; }
+    .dm-xf-name { font-size: 12.5px; font-weight: 600; color: var(--dm-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+    .dm-xf-muted { font-size: 10.5px; color: var(--dm-muted); white-space: nowrap; }
+    .dm-xf-active { margin-left: auto; display: inline-flex; align-items: center; gap: 7px; }
+    .dm-xf-switch { position: relative; width: 28px; height: 16px; border-radius: 999px; background: #c9ced6; flex-shrink: 0; }
+    .dm-xf-switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2); }
+    .dm-xf-switch.is-on { background: #6d00cc; }
+    .dm-xf-switch.is-on.is-n8n { background: #13a571; }
+    .dm-xf-switch.is-on::after { left: 14px; }
+
+    .dm-xf-canvas { position: relative; flex: 1 0 auto; min-height: 430px; overflow: hidden; }
+    .dm-xf-canvas-make { background: #f6f6f9; }
+    .dm-xf-canvas-n8n { background-color: #f5f5f5; background-image: radial-gradient(rgba(0, 0, 0, 0.12) 1px, transparent 1px); background-size: 18px 18px; }
+    .dm-xf img { display: block; max-width: none; margin: 0; }
+
+    /* Make: módulos circulares unidos por puntos. */
+    .dm-xf-chain { display: flex; align-items: flex-start; justify-content: center; gap: 4px; padding: 44px 16px 0; }
+    .dm-xf-mod { display: flex; flex-direction: column; align-items: center; gap: 2px; width: 104px; text-align: center; }
+    .dm-xf-circle { position: relative; width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center; background: var(--dm-xf-bg); box-shadow: 0 0 0 1px rgba(10, 25, 47, 0.08), 0 10px 22px -12px rgba(10, 25, 47, 0.4); margin-bottom: 6px; }
+    .dm-xf-circle img { width: 34px; height: 34px; border-radius: 8px; }
+    .dm-xf-circle.is-sm { width: 32px; height: 32px; margin: 0; box-shadow: none; }
+    .dm-xf-circle.is-sm img { width: 20px; height: 20px; border-radius: 5px; }
+    .dm-xf-num { position: absolute; top: -2px; right: -4px; min-width: 18px; height: 18px; padding: 0 4px; border-radius: 999px; display: grid; place-items: center; background: #fff; color: var(--dm-text); font-size: 9.5px; font-weight: 700; box-shadow: 0 0 0 1px rgba(10, 25, 47, 0.12); }
+    .dm-xf-instant { position: absolute; bottom: -2px; left: -4px; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; background: #6d00cc; color: #fff; box-shadow: 0 0 0 2px #f6f6f9; }
+    .dm-xf-instant .dm-ico { width: 11px; height: 11px; }
+    .dm-xf-mod-app { font-size: 11.5px; font-weight: 700; color: var(--dm-text); }
+    .dm-xf-mod-name { font-size: 10.5px; color: var(--dm-muted); }
+    .dm-xf-dots { display: flex; gap: 5px; margin-top: 30px; }
+    .dm-xf-dots i { width: 4px; height: 4px; border-radius: 50%; background: #b9bfca; }
+
+    .dm-xf-panel {
+        position: absolute; left: calc(50% - var(--dm-bleed) / 2); top: 158px; transform: translateX(-62%); width: 300px; z-index: 2;
+        background: #fff; border-radius: 14px; border: 1px solid var(--dm-border); box-shadow: var(--dm-shadow-float); overflow: hidden;
+    }
+    .dm-xf-panel-head { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--dm-border); }
+    .dm-xf-panel-titles { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; }
+    .dm-xf-panel-title { font-size: 12.5px; font-weight: 700; color: var(--dm-text); }
+    .dm-xf-fields { display: flex; flex-direction: column; gap: 11px; padding: 13px 14px 14px; }
+    .dm-xf-field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+    .dm-xf-label { font-size: 10.5px; font-weight: 600; color: var(--dm-text); }
+    .dm-xf-label i { font-style: normal; color: #ef4444; }
+    .dm-xf-input { display: flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border-radius: 7px; border: 1px solid #d5dae2; background: #fff; font-size: 11px; color: var(--dm-text); white-space: nowrap; overflow: hidden; min-width: 0; flex: none; }
+    .dm-xf-row .dm-xf-input { flex: 1; }
+    .dm-xf-row { display: flex; gap: 6px; }
+    .dm-xf-add { flex-shrink: 0; display: grid; place-items: center; padding: 0 12px; border-radius: 7px; font-size: 11px; font-weight: 600; color: #6d00cc; border: 1px solid rgba(109, 0, 204, 0.35); }
+    .dm-xf-tag { padding: 2px 7px; border-radius: 5px; background: #f1e8fb; color: #5a0aa8; font-size: 10.5px; font-weight: 600; }
+    .dm-xf-panel-foot { display: flex; justify-content: flex-end; gap: 8px; padding: 10px 14px; background: #fafafc; border-top: 1px solid var(--dm-border); }
+    .dm-xf-btn { display: inline-flex; align-items: center; justify-content: center; height: 28px; padding: 0 14px; border-radius: 7px; font-size: 11px; font-weight: 600; color: var(--dm-text); white-space: nowrap; }
+    .dm-xf-btn.is-ghost { box-shadow: inset 0 0 0 1px #d5dae2; }
+    .dm-xf-btn.is-make { color: #fff; background: #6d00cc; }
+    .dm-xf-btn.is-n8n { color: #fff; background: #ea4b71; }
+    .dm-xf-toolbar { display: flex; align-items: center; gap: 9px; height: 46px; padding: 0 14px; border-top: 1px solid var(--dm-border); background: #fff; }
+    .dm-xf-run { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: #6d00cc; color: #fff; }
+    .dm-xf-run .dm-ico { width: 13px; height: 13px; }
+    .dm-xf-sep { width: 1px; height: 18px; background: var(--dm-border); margin: 0 4px; }
+
+    /* n8n: nodos cuadrados con cables. */
+    .dm-xf-flow { display: flex; align-items: flex-start; gap: 0; padding: 40px 20px 0; }
+    .dm-xf-node { display: flex; flex-direction: column; align-items: center; gap: 2px; width: 120px; text-align: center; flex-shrink: 0; }
+    .dm-xf-box { position: relative; width: 60px; height: 60px; display: grid; place-items: center; border-radius: 10px; background: #fff; border: 1.5px solid #c3c9d5; margin-bottom: 7px; }
+    .dm-xf-node.is-trigger .dm-xf-box { border-radius: 30px 10px 10px 30px; }
+    .dm-xf-box img { width: 30px; height: 30px; border-radius: 7px; }
+    .dm-xf-box.is-if { color: #2e8a63; }
+    .dm-xf-box.is-if .dm-ico { width: 24px; height: 24px; }
+    .dm-xf-box.is-sm { width: 32px; height: 32px; margin: 0; border-radius: 8px; }
+    .dm-xf-box.is-sm img { width: 20px; height: 20px; border-radius: 5px; }
+    .dm-xf-bolt { position: absolute; left: -9px; top: 50%; transform: translateY(-50%); color: #ff6d5a; }
+    .dm-xf-bolt .dm-ico { width: 13px; height: 13px; }
+    .dm-xf-node-name { font-size: 11.5px; font-weight: 600; color: var(--dm-text); }
+    .dm-xf-node-sub { max-width: 116px; font-size: 9.5px; color: var(--dm-muted); line-height: 1.35; }
+    .dm-xf-ports { display: flex; gap: 10px; font-size: 9px; color: var(--dm-faint); }
+    .dm-xf-wire { position: relative; flex: 1; min-width: 16px; height: 1.5px; margin-top: 30px; background: #9aa3b2; margin-left: -30px; margin-right: -30px; }
+    .dm-xf-wire::after { content: ''; position: absolute; right: -1px; top: -3px; border: 3.5px solid transparent; border-left: 5px solid #9aa3b2; border-right: 0; }
+
+    .dm-xf-cred {
+        position: absolute; right: calc(var(--dm-bleed) + 16px); bottom: 18px; width: 380px; z-index: 2;
+        background: #fff; border-radius: 10px; border: 1px solid #d5dae2; box-shadow: var(--dm-shadow-float); overflow: hidden;
+    }
+    .dm-xf-cred-head { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--dm-border); }
+    .dm-xf-cred-body { display: flex; }
+    .dm-xf-cred-tabs { display: flex; flex-direction: column; gap: 2px; width: 92px; flex-shrink: 0; padding: 10px 6px; border-right: 1px solid var(--dm-border); }
+    .dm-xf-cred-tabs span { padding: 5px 8px; border-radius: 5px; font-size: 10.5px; color: var(--dm-muted); }
+    .dm-xf-cred-tabs .is-on { background: #f2f3f6; color: var(--dm-text); font-weight: 600; }
+    .dm-xf-cred-main { display: flex; flex-direction: column; gap: 10px; padding: 12px 14px 14px; min-width: 0; flex: 1; }
+    .dm-xf-ok { display: flex; align-items: center; gap: 6px; padding: 7px 9px; border-radius: 6px; background: #e8f7ef; color: #146c43; font-size: 10.5px; font-weight: 600; }
+    .dm-xf-ok .dm-ico { width: 13px; height: 13px; }
+    .dm-xf-mask { letter-spacing: 0.08em; color: #6b7280; }
+    .dm-xf-hint { font-size: 9.5px; line-height: 1.45; color: var(--dm-muted); }
+
+    @container dm (max-width: 560px) {
+        .dm-xf-chain { flex-direction: column; align-items: flex-start; gap: 0; padding: 22px 16px 0 34px; }
+        .dm-xf-dots { flex-direction: column; margin: 4px 0 6px 22px; gap: 4px; }
+        .dm-xf-mod { flex-direction: row; width: auto; gap: 10px; text-align: left; }
+        .dm-xf-mod .dm-xf-circle { width: 48px; height: 48px; margin: 0; }
+        .dm-xf-mod .dm-xf-circle img { width: 26px; height: 26px; }
+        .dm-xf-mod-app::after { content: ' ›'; color: var(--dm-faint); }
+        .dm-xf-panel, .dm-xf-cred { position: relative; left: auto; right: auto; top: auto; bottom: auto; width: auto; transform: none; margin: 16px 8px 12px; }
+        .dm-xf-canvas { min-height: 0; }
+        .dm-xf-toolbar .dm-xf-muted:last-child { display: none; }
+        .dm-xf-flow { flex-direction: column; align-items: center; padding-top: 18px; }
+        .dm-xf-wire { width: 1.5px; min-width: 0; height: 18px; flex: none; margin: 0 0 8px; }
+        .dm-xf-wire::after { right: -3px; top: auto; bottom: -2px; border: 3.5px solid transparent; border-top: 5px solid #9aa3b2; border-bottom: 0; }
+        .dm-xf-node { width: auto; }
+        .dm-xf-ports { display: none; }
+        .dm-xf-cred-tabs { display: none; }
+        .dm-xf-figure .dm-stage { height: 640px; }
+    }
+</style>
