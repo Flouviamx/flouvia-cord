@@ -1,0 +1,69 @@
+---
+// Tabla de líneas del editor de cotizaciones para los mockups de docs.
+// Calca de render() en src/pages/app/cotizaciones/nueva.astro: nombre con la
+// unidad (y el precio sugerido si lo hay), cantidad, Lista tachada, Negociado
+// en verde cuando baja de la lista, impuesto (solo si la cuenta tiene varias
+// tasas), importe y margen en rojo cuando queda bajo el mínimo de Aprobaciones.
+//
+// No empieza con "Dm": no se registra como etiqueta del MDX; es una pieza
+// interna de DmCotAiBlock, DmCotLines y DmCotClientStep.
+import './dm-cot-editor.css';
+import DmIcon from './DmIcon.astro';
+import DmMoney from './DmMoney.astro';
+import { dmT, type DmLang } from './format';
+
+export interface CotLine {
+    name: string;
+    unit: string;
+    qty: number;
+    lista: number;
+    /** Precio negociado; si falta, se cobra el de lista. */
+    nego?: number;
+    /** Etiqueta del impuesto de la línea ("IVA 16%"). */
+    tax?: string;
+    /** Costo unitario; sin costo el margen es "—". */
+    costo?: number;
+    /** Texto extra bajo el nombre (precio sugerido). Se pinta como el botón punteado de la app. */
+    hint?: string;
+    added?: boolean;
+}
+interface Props {
+    lang: DmLang;
+    lines: CotLine[];
+    currency?: string;
+    showTax?: boolean;
+    /** Margen mínimo de Ajustes › Aprobaciones (0 = sin tope). */
+    marginMin?: number;
+    taxLabel?: string;
+}
+const { lang, lines, currency = 'MXN', showTax = true, marginMin = 0, taxLabel = 'IVA' } = Astro.props;
+const loc = lang === 'en' ? 'en-US' : 'es-MX';
+const num = (n: number) => n.toLocaleString(loc, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+---
+<div class:list={['dm-ced-lines', { 'no-tax': !showTax }]}>
+    <div class="dm-ced-lh">
+        <span>{dmT(lang, 'ed.th_producto')}</span><span>{dmT(lang, 'ed.th_cant')}</span><span>{dmT(lang, 'ed.th_lista')}</span><span>{dmT(lang, 'ed.th_negociado')}</span>
+        {showTax && <span>{taxLabel}</span>}
+        <span class="is-right">{dmT(lang, 'ed.th_importe')}</span><span class="is-center">{dmT(lang, 'ed.th_margen')}<span class="dm-ced-lh-i">?</span></span><span></span>
+    </div>
+    {lines.map((l) => {
+        const precio = l.nego ?? l.lista;
+        const m = l.costo && precio > 0 ? ((precio - l.costo) / precio) * 100 : null;
+        const low = m !== null && marginMin > 0 && m < marginMin;
+        return (
+            <div class:list={['dm-ced-lr', { 'is-added': l.added }]}>
+                <span class="dm-ced-name">
+                    <span class="dm-ced-name-main">{l.name}</span>
+                    <small>{l.unit}{l.hint && <> · <span class="dm-ced-hintp">{l.hint}</span></>}</small>
+                </span>
+                <span class="dm-ced-in dm-ced-qty">{l.qty.toLocaleString(loc)}</span>
+                <span class="dm-ced-lista"><DmMoney amount={l.lista} currency={currency} lang={lang} /></span>
+                <span class:list={['dm-ced-in dm-ced-nego', { 'is-deal': l.nego !== undefined && l.nego < l.lista }]}>{num(precio)}<span class="dm-cur">{currency}</span></span>
+                {showTax && <span class="dm-ced-tax">{l.tax}</span>}
+                <span class="dm-ced-imp"><DmMoney amount={precio * l.qty} currency={currency} lang={lang} /></span>
+                <span class:list={['dm-ced-mg', { 'is-low': low, 'is-na': m === null }]}>{m === null ? '—' : `${Math.round(m)}%`}</span>
+                <span class="dm-ced-del"><DmIcon name="x" /></span>
+            </div>
+        );
+    })}
+</div>
