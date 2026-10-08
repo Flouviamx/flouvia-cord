@@ -1,0 +1,88 @@
+/* ============================================================================
+   Esqueleto de los modales de la app para los mockups de docs (dm-mod-*).
+   Calca de src/styles/modal.css (<dialog class="modal modal-lg">) y del
+   encabezado por secciones que comparten ClientModal.astro y
+   ProductModal.astro (.cm-sec / .pm-sec), a escala de screenshot: el modal
+   real mide 700 px y aquí vive en un panel de ~600 px, así que cada medida va
+   a ~0.86 de la original.
+
+   Lo consumen DmClientModal y DmProductModal. Hoja global a propósito
+   (regla 11): cada componente tiene su propio scope de Astro y los dos
+   comparten estas clases. Lo propio de cada modal va en su componente con
+   prefijo dm-clm-* / dm-prm-*.
+   ============================================================================ */
+
+.dm-mod { display: flex; flex-direction: column; text-align: left; }
+
+/* ── Encabezado: avatar, título, subtítulo y cerrar ─────────────────────── */
+.dm-mod-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 19px 22px 12px; border-bottom: 1px solid transparent; }
+/* Con el cuerpo desplazado la app dibuja el hairline (data-top="1"). */
+.dm-mod-head.is-scrolled { border-bottom-color: var(--dm-border); }
+.dm-mod-headline { display: flex; align-items: center; gap: 11px; min-width: 0; }
+.dm-mod-avatar { flex: 0 0 auto; width: 35px; height: 35px; border-radius: 10.5px; display: grid; place-items: center; background: var(--dm-canvas); color: var(--dm-navy); font-size: 12px; font-weight: 700; letter-spacing: -0.02em; }
+.dm-mod-avatar.is-filled { background: var(--dm-navy); color: #fff; }
+.dm-mod-avatar .dm-ico { width: 16px; height: 16px; }
+.dm-mod-titles { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.dm-mod-title { font-size: 15px; font-weight: 700; letter-spacing: -0.02em; color: var(--dm-text); line-height: 1.2; }
+.dm-mod-sub { font-size: 10.5px; line-height: 1.4; color: var(--dm-muted); }
+.dm-mod-close { flex: 0 0 auto; width: 26px; height: 26px; border-radius: 999px; display: grid; place-items: center; background: var(--dm-canvas); color: var(--dm-muted); }
+.dm-mod-close .dm-ico { width: 12px; height: 12px; }
+
+/* ── Cuerpo por secciones con hairline ──────────────────────────────────── */
+.dm-mod-body { display: flex; flex-direction: column; gap: 15px; padding: 2px 22px 16px; }
+.dm-mod-body.is-clipped { height: var(--dm-mod-body-h, 420px); overflow: hidden; }
+.dm-mod-sec { display: flex; flex-direction: column; gap: 12px; padding-top: 15px; border-top: 1px solid var(--dm-border); }
+.dm-mod-sec:first-child { border-top: 0; padding-top: 3px; }
+.dm-mod-sec.is-flush { border-top: 0; padding-top: 0; }
+.dm-mod-sec-h { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.dm-mod-sec-i { flex: 0 0 auto; width: 23px; height: 23px; border-radius: 7px; display: grid; place-items: center; background: var(--dm-canvas); color: var(--dm-navy); }
+.dm-mod-sec-i .dm-ico { width: 13px; height: 13px; }
+.dm-mod-sec-t { font-size: 12px; font-weight: 700; letter-spacing: -0.01em; color: var(--dm-text); }
+
+/* ── Campos (calca de .m-field / .m-input) ──────────────────────────────── */
+.dm-mod-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 13px; align-items: start; }
+.dm-mod-row3 { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 0.8fr); gap: 13px; }
+.dm-mod-field { position: relative; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.dm-mod-label { font-size: 8.5px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--dm-label); line-height: 1.3; }
+.dm-mod-label i { font-style: normal; font-size: 9px; font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--dm-muted); }
+.dm-mod-input { position: relative; display: flex; align-items: center; gap: 8px; min-height: 34px; padding: 0 11px; border-radius: 9px; background: var(--dm-canvas); border: 1.5px solid transparent; font-size: 12px; font-weight: 500; color: var(--dm-text); white-space: nowrap; overflow: hidden; min-width: 0; }
+.dm-mod-input > .dm-mod-v { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.dm-mod-input.is-ph { color: #aab2bf; }
+.dm-mod-input.is-mono { font-variant-numeric: tabular-nums; letter-spacing: 0.03em; }
+.dm-mod-input.is-focus { background: #fff; border-color: var(--dm-navy); box-shadow: 0 0 0 3px rgba(10, 25, 47, 0.08); }
+/* <select> nativo: la flecha del sistema a la derecha. */
+.dm-mod-input.is-select::after { content: ''; flex-shrink: 0; margin-left: auto; width: 6px; height: 6px; border-right: 1.6px solid var(--dm-text); border-bottom: 1.6px solid var(--dm-text); transform: translateY(-2px) rotate(45deg); }
+.dm-mod-textarea { align-items: flex-start; min-height: 58px; padding-top: 9px; padding-bottom: 9px; white-space: normal; line-height: 1.5; }
+/* Sufijo de divisa a la derecha (.cm-affix-t / .pm-affix-t) */
+.dm-mod-affix { flex-shrink: 0; margin-left: auto; font-size: 9px; font-weight: 700; letter-spacing: 0.05em; color: var(--dm-muted); }
+.dm-mod-caret { flex-shrink: 0; width: 1.5px; height: 15px; margin-left: -6px; background: var(--dm-navy); }
+.dm-mod-hint { font-size: 10px; line-height: 1.5; color: var(--dm-muted); text-wrap: pretty; }
+.dm-mod-hint b { font-weight: 600; color: var(--dm-text); }
+
+/* ── Chips (.modal .chip) ───────────────────────────────────────────────── */
+.dm-mod-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.dm-mod-chip { display: inline-flex; align-items: center; gap: 5px; padding: 6px 13px; border-radius: 100px; background: var(--dm-canvas); border: 1px solid var(--dm-border); font-size: 10.5px; font-weight: 600; color: var(--dm-muted); white-space: nowrap; line-height: 1.25; }
+.dm-mod-chip .dm-ico { width: 12px; height: 12px; }
+.dm-mod-chip.is-on { background: var(--dm-navy); border-color: var(--dm-navy); color: #fff; box-shadow: 0 4px 14px -6px rgba(10, 25, 47, 0.45); }
+/* "Otro plazo" de TermPicker: chip con chevron (el <select> va encima). */
+.dm-mod-chip.is-more .dm-ico { width: 10px; height: 10px; opacity: 0.7; }
+
+/* ── Pie: Eliminar a la izquierda, Cancelar y Guardar a la derecha ─────── */
+.dm-mod-foot { display: flex; align-items: center; gap: 8px; padding: 12px 22px 18px; border-top: 1px solid transparent; }
+/* Con más contenido abajo la app dibuja el hairline (data-bottom="1"). */
+.dm-mod-foot.is-more { border-top-color: var(--dm-border); }
+.dm-mod-delete { font-size: 11.5px; font-weight: 600; color: var(--dm-danger); padding: 0 4px; white-space: nowrap; }
+.dm-mod-spacer { flex: 1; }
+.dm-mod-cancel, .dm-mod-save { font-size: 11.5px; font-weight: 600; border-radius: 8px; padding: 8px 14px; white-space: nowrap; }
+.dm-mod-cancel { color: var(--dm-text); background: var(--dm-canvas); border: 1px solid var(--dm-border); }
+.dm-mod-save { color: #fff; background: var(--dm-navy); box-shadow: 0 6px 18px -8px rgba(10, 25, 47, 0.5); }
+
+/* ── Panel angosto (la app: @media max-width 600px) ─────────────────────── */
+@container dm (max-width: 520px) {
+  .dm-mod-head { padding: 15px 15px 10px; }
+  .dm-mod-sub { display: none; }
+  .dm-mod-body { padding: 2px 15px 14px; gap: 13px; }
+  .dm-mod-row, .dm-mod-row3 { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .dm-mod-foot { padding: 10px 15px 15px; }
+  .dm-mod-cancel, .dm-mod-save { padding: 8px 11px; }
+}

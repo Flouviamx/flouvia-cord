@@ -99,6 +99,8 @@ doesn't appear: their CFDI is stamped to a foreign resident (generic RFC XEXX010
 their country as tax residence, their tax ID as the foreign tax registration number, and
 use S01). The profile shows a notice about it.
 
+<DmClientModal lang="en" escenario="extranjero" />
+
 ## Behavior and edge cases
 
 - **Incomplete tax data:** the quote is still commercially valid. In Mexico, without an RFC the CFDI is issued to "público en general" (the general public); with an RFC but no regime, Cord uses 601. Check RFC, postal code, and regime against the client's tax certificate before stamping.

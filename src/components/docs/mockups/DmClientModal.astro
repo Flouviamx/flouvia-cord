@@ -1,0 +1,323 @@
+---
+// Mockup: el modal "Editar cliente" (ClientModal.astro), compartido por
+// Clientes y el editor de cotizaciones. Calca de su markup: encabezado con las
+// iniciales del cliente, y las secciones Identidad, Contacto, Dirección,
+// Condiciones comerciales y, si aplica, Datos fiscales para CFDI (México).
+//
+// Todo lo que depende del país sale de las mismas funciones que usa el modal:
+// el nombre del identificador fiscal (getCountryProfile), su verificación
+// ("Formato válido", checkTaxId), la lada (CALLING_CODES), cómo se llaman el
+// código postal y el estado (postalLabel / regionLabel), la bandera (flagSrc) y
+// los chips de términos (COMMON_TERM_CODES + "Otro plazo" de TermPicker). Si
+// el modal cambia una etiqueta, el mockup cambia con él.
+//
+// Escenarios:
+// - mx: negocio mexicano con cliente mexicano (persona física, RFC de 13
+//   caracteres con dígito verificador válido), así que se ve la sección CFDI con
+//   régimen 612 y uso G01, que el modal deja elegir para una persona física.
+// - extranjero: el mismo negocio con un cliente de Estados Unidos. La sección
+//   CFDI desaparece y en Identidad aparece el aviso del globo
+//   (cmod.cfdi_extranjero_hint). El cuerpo se recorta a la altura de una
+//   pantalla de laptop, como lo ve quien abre el modal (el cuerpo desplaza;
+//   encabezado y pie quedan fijos, con el hairline del pie encendido).
+//
+// La vista previa del descuento: la app formatea con la divisa del negocio; aquí
+// lleva además su código (regla 21), igual que DmKitModal.
+import './dm-app-modal.css';
+import DocsMockup from './DocsMockup.astro';
+import DmIcon from './DmIcon.astro';
+import { dmT, dmMoney, initials, pick, tpl, type DmLang } from './format';
+import { checkTaxId, CALLING_CODES, postalLabel, regionLabel } from '../../../lib/party-format';
+import { countryName, getCountryProfile, subdivisionsFor } from '../../../lib/countries';
+import { flagSrc } from '../../../lib/flags';
+import { COMMON_TERM_CODES, TERM_CODES, termLabel, type TermCode } from '../../../lib/payment-terms';
+import { REGIMENES_FISCALES, USOS_CFDI } from '../../../lib/sat';
+
+interface Props {
+    lang: DmLang;
+    /** mx: cliente mexicano con datos CFDI · extranjero: cliente de EE. UU. (sin CFDI, con el aviso del globo). */
+    escenario?: 'mx' | 'extranjero';
+    caption?: string;
+}
+const { lang, escenario = 'mx' } = Astro.props;
+const CUR = 'MXN'; // divisa del negocio (Materiales del Valle, México): sufijo del límite de crédito
+
+type Escena = {
+    country: 'MX' | 'US';
+    empresa: string;
+    taxId: string;
+    contacto: string;
+    email: string;
+    phone: string;
+    dir1: string;
+    dir2: string;
+    ciudad: string;
+    cp: string;
+    term: TermCode;
+    limite: string;
+    nivel: 'estandar' | 'plata' | 'oro' | 'distribuidor';
+    descuento: number;
+    regimen?: string;
+    uso?: string;
+};
+
+const ESCENAS: Record<'mx' | 'extranjero', { es: Escena; en: Escena }> = {
+    mx: {
+        es: {
+            country: 'MX', empresa: 'Ferretería Hernández', taxId: 'HERL850614J78',
+            contacto: 'Lucía Hernández', email: 'compras@ferrehernandez.mx', phone: '33 3615 2200',
+            dir1: 'Av. Juárez 638', dir2: 'Zona Centro', ciudad: 'Guadalajara', cp: '44100',
+            term: 'net30', limite: '250000', nivel: 'oro', descuento: 10, regimen: '612', uso: 'G01',
+        },
+        en: {
+            country: 'MX', empresa: 'Ferretería Hernández', taxId: 'HERL850614J78',
+            contacto: 'Lucía Hernández', email: 'compras@ferrehernandez.mx', phone: '33 3615 2200',
+            dir1: 'Av. Juárez 638', dir2: 'Zona Centro', ciudad: 'Guadalajara', cp: '44100',
+            term: 'net30', limite: '250000', nivel: 'oro', descuento: 10, regimen: '612', uso: 'G01',
+        },
+    },
+    extranjero: {
+        es: {
+            country: 'US', empresa: 'Northwind Traders', taxId: '12-3456789',
+            contacto: 'Megan Brooks', email: 'ap@northwindtraders.com', phone: '512 555 0147',
+            dir1: '100 Congress Ave', dir2: 'Suite 2000', ciudad: 'Austin', cp: '78701',
+            term: 'net45', limite: '400000', nivel: 'distribuidor', descuento: 15,
+        },
+        en: {
+            country: 'US', empresa: 'Northwind Traders', taxId: '12-3456789',
+            contacto: 'Megan Brooks', email: 'ap@northwindtraders.com', phone: '512 555 0147',
+            dir1: '100 Congress Ave', dir2: 'Suite 2000', ciudad: 'Austin', cp: '78701',
+            term: 'net45', limite: '400000', nivel: 'distribuidor', descuento: 15,
+        },
+    },
+};
+const d = pick(ESCENAS[escenario], lang);
+const isMx = d.country === 'MX';
+
+// Lo que depende del país, con las funciones del modal real.
+const pais = countryName(d.country, lang);
+const taxLabel = getCountryProfile(d.country, lang).taxIdLabel;
+const taxOk = checkTaxId(d.country, d.taxId) === 'valid';
+const lada = `+${CALLING_CODES[d.country]}`;
+const regionLbl = regionLabel(d.country, lang);
+const cpLbl = postalLabel(d.country, lang);
+// México se escribe por nombre (STRIPE_MX_STATES); EE. UU. como "Texas (TX)".
+const region = isMx ? 'Jalisco' : (() => {
+    const s = (subdivisionsFor('US') ?? []).find((x) => x.code === 'TX');
+    return s ? `${s.name} (${s.code})` : 'TX';
+})();
+
+// Términos: chips comunes + "Otro plazo", que muestra el plazo elegido si no es común.
+const termInMore = !COMMON_TERM_CODES.includes(d.term) && (TERM_CODES as readonly string[]).includes(d.term);
+
+const TIERS = [
+    { v: 'estandar', key: 'cmod.nivel_estandar' },
+    { v: 'plata', key: 'cmod.nivel_plata' },
+    { v: 'oro', key: 'cmod.nivel_oro' },
+    { v: 'distribuidor', key: 'cmod.nivel_distribuidor' },
+] as const;
+const tierLabel = dmT(lang, TIERS.find((x) => x.v === d.nivel)!.key);
+const antes = dmMoney(1000, CUR, lang);
+const despues = dmMoney(1000 * (1 - d.descuento / 100), CUR, lang);
+
+const regimen = REGIMENES_FISCALES.find((r) => r.codigo === d.regimen)?.nombre ?? '';
+const uso = USOS_CFDI.find((u) => u.codigo === d.uso)?.nombre ?? '';
+const cfdiHint = tpl(dmT(lang, 'cmod.cfdi_extranjero_hint'), { pais });
+
+const label = (s: string) => s.replace(/\s*\*$/, '');
+const limiteTxt = new Intl.NumberFormat(lang === 'en' ? 'en-US' : 'es-MX').format(Number(d.limite));
+const termTxt = termLabel(d.term, lang);
+
+const CAPTIONS = {
+    mx: {
+        es: `Modal Editar cliente de ${d.empresa}. Identidad: país ${pais} y RFC ${d.taxId} con el aviso Formato válido. Contacto: ${d.contacto}, ${d.email} y teléfono ${lada} ${d.phone}. Dirección: ${d.dir1}, ${d.ciudad}, ${region}, ${cpLbl.toLowerCase()} ${d.cp}. Condiciones comerciales: términos ${termTxt} activo entre Contado, Net 15, Net 60 y Otro plazo, límite de crédito de ${limiteTxt} ${CUR}, nivel ${tierLabel} y descuento de ${d.descuento}% con la vista previa ${antes} → ${despues}. Datos fiscales para CFDI (México): régimen ${regimen} y uso ${uso}. Al pie, Eliminar, Cancelar y Guardar cliente.`,
+        en: `Edit client modal for ${d.empresa}. Identity: country ${pais} and RFC ${d.taxId} marked Valid format. Contact: ${d.contacto}, ${d.email} and phone ${lada} ${d.phone}. Address: ${d.dir1}, ${d.ciudad}, ${region}, postal code ${d.cp}. Commercial terms: ${termTxt} active among Due on receipt, Net 15, Net 60 and Other term, a ${limiteTxt} ${CUR} credit limit, the ${tierLabel} tier and a ${d.descuento}% discount previewed as ${antes} → ${despues}. Tax details for CFDI (Mexico): regime ${regimen} and use ${uso}. At the bottom, Delete, Cancel and Save client.`,
+    },
+    extranjero: {
+        es: `Modal Editar cliente de ${d.empresa}, un cliente de ${pais} de un negocio que factura en México: el identificador se llama ${taxLabel} y ${d.taxId} aparece con Formato válido; debajo, el aviso de cliente en el extranjero: su CFDI se timbra con el RFC genérico XEXX010101000, residencia fiscal en ${pais} y uso S01. La lada cambió a ${lada} y la dirección usa los campos de su país: ${d.ciudad}, ${regionLbl} ${region} y ${cpLbl} ${d.cp}. La sección Datos fiscales para CFDI no aparece; el límite de crédito sigue en ${CUR}, la divisa del negocio.`,
+        en: `Edit client modal for ${d.empresa}, a client in the ${pais} of a business that invoices in Mexico: the tax ID is labeled ${taxLabel} and ${d.taxId} shows Valid format; below it, the client-abroad notice: their CFDI is stamped with the generic RFC XEXX010101000, tax residence in the ${pais} and use S01. The calling code switched to ${lada} and the address uses that country's fields: ${d.ciudad}, ${regionLbl} ${region} and ${cpLbl} ${d.cp}. The Tax details for CFDI section doesn't appear; the credit limit stays in ${CUR}, the business currency.`,
+    },
+};
+const caption = Astro.props.caption ?? pick(CAPTIONS[escenario], lang);
+const clipped = escenario === 'extranjero';
+---
+<DocsMockup lang={lang} variant="panel" panelWidth={600} caption={caption} class={clipped ? 'dm-clm-figure dm-clm-is-clipped' : 'dm-clm-figure'}>
+    <div class="dm-mod dm-clm">
+        <div class="dm-mod-head">
+            <div class="dm-mod-headline">
+                <span class="dm-mod-avatar is-filled">{initials(d.empresa)}</span>
+                <span class="dm-mod-titles">
+                    <span class="dm-mod-title">{dmT(lang, 'cmod.editar_titulo')}</span>
+                    <span class="dm-mod-sub">{dmT(lang, 'cmod.sub')}</span>
+                </span>
+            </div>
+            <span class="dm-mod-close"><DmIcon name="x" stroke={2} /></span>
+        </div>
+
+        <div class:list={['dm-mod-body', { 'is-clipped': clipped }]}>
+            <div class="dm-mod-sec">
+                <div class="dm-mod-sec-h"><span class="dm-mod-sec-i"><DmIcon name="id" /></span><span class="dm-mod-sec-t">{dmT(lang, 'cmod.sec_identidad')}</span></div>
+                <div class="dm-mod-field">
+                    <span class="dm-mod-label">{dmT(lang, 'cmod.empresa')}</span>
+                    <span class="dm-mod-input"><span class="dm-mod-v">{d.empresa}</span></span>
+                </div>
+                <div class="dm-mod-row">
+                    <div class="dm-mod-field">
+                        <span class="dm-mod-label">{dmT(lang, 'cmod.pais')}</span>
+                        <span class="dm-mod-input is-select dm-clm-flagsel">
+                            <img class="dm-clm-flag" src={flagSrc(d.country)} alt="" width="16" height="16" loading="lazy" />
+                            <span class="dm-mod-v">{pais}</span>
+                        </span>
+                        <span class="dm-mod-hint">{dmT(lang, 'cmod.pais_hint')}</span>
+                    </div>
+                    <div class="dm-mod-field">
+                        <span class="dm-mod-label">{taxLabel}</span>
+                        <span class="dm-mod-input is-mono"><span class="dm-mod-v">{d.taxId}</span></span>
+                        {taxOk && <span class="dm-clm-check"><DmIcon name="check-circle" /><span>{dmT(lang, 'cmod.taxid_ok')}</span></span>}
+                    </div>
+                </div>
+                {!isMx && (
+                    <div class="dm-clm-note"><DmIcon name="globe" /><span>{cfdiHint}</span></div>
+                )}
+            </div>
+
+            <div class="dm-mod-sec">
+                <div class="dm-mod-sec-h"><span class="dm-mod-sec-i"><DmIcon name="user" /></span><span class="dm-mod-sec-t">{dmT(lang, 'cmod.sec_contacto')}</span></div>
+                <div class="dm-mod-row">
+                    <div class="dm-mod-field">
+                        <span class="dm-mod-label">{dmT(lang, 'cmod.contacto')}</span>
+                        <span class="dm-mod-input"><span class="dm-mod-v">{d.contacto}</span></span>
+                    </div>
+                    <div class="dm-mod-field">
+                        <span class="dm-mod-label">{dmT(lang, 'cmod.correo')}</span>
+                        <span class="dm-mod-input"><span class="dm-mod-v">{d.email}</span></span>
+                    </div>
+                </div>
+                <div class="dm-mod-field">
+                    <span class="dm-mod-label">{dmT(lang, 'cmod.telefono')}</span>
+                    <span class="dm-clm-phone">
+                        <span class="dm-clm-cc">{lada}<DmIcon name="chevron-down" /></span>
+                        <span class="dm-mod-input is-mono"><span class="dm-mod-v">{d.phone}</span></span>
+                    </span>
+                    <span class="dm-mod-hint">{dmT(lang, 'cmod.telefono_hint')}</span>
+                </div>
+            </div>
+
+            <div class="dm-mod-sec">
+                <div class="dm-mod-sec-h"><span class="dm-mod-sec-i"><DmIcon name="map" /></span><span class="dm-mod-sec-t">{dmT(lang, 'cmod.direccion_summary')}</span></div>
+                <div class="dm-mod-field">
+                    <span class="dm-mod-label">{dmT(lang, 'cmod.direccion1')}</span>
+                    <span class="dm-mod-input"><span class="dm-mod-v">{d.dir1}</span></span>
+                </div>
+                <div class="dm-mod-field">
+                    <span class="dm-mod-label">{dmT(lang, 'cmod.direccion2')}</span>
+                    <span class="dm-mod-input"><span class="dm-mod-v">{d.dir2}</span></span>
+                </div>
+                <div class="dm-mod-row3">
+                    <div class="dm-mod-field">
+                        <span class="dm-mod-label">{dmT(lang, 'cmod.ciudad')}</span>
+                        <span class="dm-mod-input"><span class="dm-mod-v">{d.ciudad}</span></span>
+                    </div>
+                    <div class="dm-mod-field">
+                        <span class="dm-mod-label">{regionLbl}</span>
+                        <span class="dm-mod-input is-select"><span class="dm-mod-v">{region}</span></span>
+                    </div>
+                    <div class="dm-mod-field">
+                        <span class="dm-mod-label">{cpLbl}</span>
+                        <span class="dm-mod-input is-mono"><span class="dm-mod-v">{d.cp}</span></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dm-mod-sec">
+                <div class="dm-mod-sec-h"><span class="dm-mod-sec-i"><DmIcon name="wallet" /></span><span class="dm-mod-sec-t">{dmT(lang, 'cmod.sec_comercial')}</span></div>
+                <div class="dm-mod-row">
+                    <div class="dm-mod-field">
+                        <span class="dm-mod-label">{dmT(lang, 'cmod.terminos_pago')}</span>
+                        <span class="dm-mod-chips">
+                            {COMMON_TERM_CODES.map((c) => <span class:list={['dm-mod-chip', { 'is-on': c === d.term }]}>{termLabel(c, lang)}</span>)}
+                            <span class:list={['dm-mod-chip', 'is-more', { 'is-on': termInMore }]}>{termInMore ? termTxt : dmT(lang, 'terms.otro')}<DmIcon name="chevron-down" /></span>
+                        </span>
+                    </div>
+                    <div class="dm-mod-field">
+                        <span class="dm-mod-label">{label(dmT(lang, 'cmod.limite_credito'))} <i>{dmT(lang, 'cmod.opcional')}</i></span>
+                        <span class="dm-mod-input is-mono"><span class="dm-mod-v">{d.limite}</span><span class="dm-mod-affix">{CUR}</span></span>
+                    </div>
+                </div>
+                <div class="dm-mod-field">
+                    <span class="dm-mod-label">{dmT(lang, 'cmod.nivel_precio')}</span>
+                    <span class="dm-mod-chips">
+                        {TIERS.map((x) => <span class:list={['dm-mod-chip', { 'is-on': x.v === d.nivel }]}>{dmT(lang, x.key)}</span>)}
+                    </span>
+                </div>
+                <div class="dm-mod-field">
+                    <span class="dm-mod-label">{dmT(lang, 'cmod.descuento_auto')}</span>
+                    <span class="dm-clm-disc">
+                        <span class="dm-mod-input is-mono dm-clm-disc-in"><span class="dm-mod-v">{d.descuento}</span><span class="dm-clm-pct">%</span></span>
+                        <span class="dm-clm-disc-prev">{antes} → <b>{despues}</b></span>
+                    </span>
+                    <span class="dm-mod-hint">{dmT(lang, 'cmod.descuento_hint')}</span>
+                </div>
+            </div>
+
+            {isMx && (
+                <div class="dm-mod-sec">
+                    <div class="dm-mod-sec-h"><span class="dm-mod-sec-i"><DmIcon name="document" /></span><span class="dm-mod-sec-t">{dmT(lang, 'cmod.fiscal_summary')}</span></div>
+                    <span class="dm-mod-hint">{dmT(lang, 'cmod.fiscal_hint')}</span>
+                    <div class="dm-mod-row">
+                        <div class="dm-mod-field">
+                            <span class="dm-mod-label">{dmT(lang, 'cmod.regimen_fiscal')}</span>
+                            <span class="dm-mod-input is-select"><span class="dm-mod-v">{regimen}</span></span>
+                        </div>
+                        <div class="dm-mod-field">
+                            <span class="dm-mod-label">{dmT(lang, 'cmod.uso_cfdi')}</span>
+                            <span class="dm-mod-input is-select"><span class="dm-mod-v">{uso}</span></span>
+                        </div>
+                    </div>
+                    <span class="dm-mod-hint">{dmT(lang, 'cmod.fiscal_cp_hint')}</span>
+                </div>
+            )}
+        </div>
+
+        <div class:list={['dm-mod-foot', { 'is-more': clipped }]}>
+            <span class="dm-mod-delete">{dmT(lang, 'cmod.eliminar')}</span>
+            <span class="dm-mod-spacer"></span>
+            <span class="dm-mod-cancel">{dmT(lang, 'cmod.cancelar')}</span>
+            <span class="dm-mod-save">{dmT(lang, 'cmod.guardar_cliente')}</span>
+        </div>
+    </div>
+</DocsMockup>
+
+<style is:global>
+    .dm-clm-figure .dm-v-panel { padding: 30px 28px; }
+    .dm-clm-figure.dm-clm-is-clipped .dm-mod-body { --dm-mod-body-h: 905px; }
+
+    /* País con bandera circular (.cm-flagsel) */
+    .dm-clm-flag { flex-shrink: 0; width: 16px; height: 16px; border-radius: 50%; box-shadow: 0 0 0 0.5px rgba(10, 25, 47, 0.12); }
+
+    /* Verificación del identificador fiscal (.cm-check[data-state="valid"]) */
+    .dm-clm-check { display: inline-flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 500; line-height: 1.4; color: #059669; }
+    .dm-clm-check .dm-ico { width: 12px; height: 12px; }
+
+    /* Aviso con icono (.cm-note): cliente en el extranjero */
+    .dm-clm-note { display: flex; align-items: flex-start; gap: 8px; padding: 9px 11px; border-radius: 9px; background: var(--dm-canvas); font-size: 10.5px; line-height: 1.55; color: var(--dm-muted); text-wrap: pretty; }
+    .dm-clm-note .dm-ico { flex-shrink: 0; width: 13px; height: 13px; margin-top: 2px; color: var(--dm-navy); }
+
+    /* Teléfono con selector de lada (.cm-phone / .cm-cc) */
+    .dm-clm-phone { display: flex; gap: 7px; min-width: 0; }
+    .dm-clm-phone > .dm-mod-input { flex: 1 1 auto; }
+    .dm-clm-cc { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 5px; min-width: 66px; padding: 0 10px; border-radius: 9px; background: var(--dm-canvas); font-size: 12px; font-weight: 600; color: var(--dm-text); font-variant-numeric: tabular-nums; }
+    .dm-clm-cc .dm-ico { width: 11px; height: 11px; color: var(--dm-muted); }
+
+    /* Descuento con sufijo % y vista previa (.disc-row) */
+    .dm-clm-disc { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .dm-clm-disc-in { flex: 0 0 104px; }
+    .dm-clm-pct { flex-shrink: 0; margin-left: auto; font-size: 12px; color: var(--dm-muted); }
+    .dm-clm-disc-prev { font-size: 11px; font-weight: 500; color: #059669; font-variant-numeric: tabular-nums; }
+    .dm-clm-disc-prev b { font-weight: 700; }
+
+    @container dm (max-width: 520px) {
+        .dm-clm-figure .dm-v-panel { padding: 18px 12px; }
+        .dm-clm-figure.dm-clm-is-clipped .dm-mod-body { --dm-mod-body-h: 1270px; }
+    }
+</style>
