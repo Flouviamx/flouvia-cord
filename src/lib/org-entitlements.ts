@@ -36,6 +36,19 @@ export interface EntitlementContext {
     stripeCustomerId: string | null;
     paidAccess: boolean;
     accessReason: 'free' | 'active' | 'missing_subscription' | 'inactive_status' | 'expired_period' | 'unpaid_period' | 'insufficient_paid_plan';
+    /**
+     * Acceso sin cobro vigente: cortesía de Ops o promoción de The Cord Build
+     * (`cord_access_grant`). Da acceso, nunca es evidencia de pago.
+     */
+    grant: { plan: PlanId; source: 'ops' | 'build'; expiresAt: Date } | null;
+    /** De dónde sale el plan efectivo. */
+    accessSource: 'paid' | 'grant' | 'free';
+    /**
+     * Si el consumo sobre lo incluido se puede cobrar como excedente. Solo
+     * cuando el plan efectivo lo respalda un PAGO: con una cortesía no hay a
+     * quién cobrarle, así que lo incluido es tope duro y nada va al medidor.
+     */
+    overageAllowed: boolean;
 }
 
 function asDate(value: unknown): Date | null {
@@ -54,6 +67,15 @@ async function readBillingRow(orgId: string): Promise<any | null> {
          where id = ${orgId}
          limit 1`);
     return row ?? null;
+}
+
+async function readAccessGrant(orgId: string): Promise<EntitlementContext['grant']> {
+    // security definer: resuelve la org padre de una sandbox y lee la tabla de
+    // cortesías, que el carril de la organización no ve.
+    const [[row]] = await withOrgTx(orgId, sql`select plan, expires_at, source from cord_access_grant(${orgId})`);
+    const expiresAt = asDate(row?.expires_at);
+    if (!row || !expiresAt) return null;
+    return { plan: normalizePlan(row.plan), source: row.source === 'build' ? 'build' : 'ops', expiresAt };
 }
 
 export async function getEntitlementContext(orgId: string, now = new Date()): Promise<EntitlementContext> {
@@ -98,12 +120,21 @@ export async function getEntitlementContext(orgId: string, now = new Date()): Pr
         }
     }
 
+    // Sin la cortesía no se puede decidir el plan: si la lectura falla, el
+    // error sube y el llamador falla cerrado, igual que con la fila de orgs.
+    const grant = await readAccessGrant(billingOrgId);
+    const paidPlan: PlanId = paidAccess ? storedPlan : 'free';
+    const grantPlan: PlanId = grant && grant.expiresAt.getTime() > now.getTime() ? grant.plan : 'free';
+    const effectivePlan: PlanId = PLAN_RANK[grantPlan] > PLAN_RANK[paidPlan] ? grantPlan : paidPlan;
+    const accessSource: EntitlementContext['accessSource'] = effectivePlan === 'free' ? 'free'
+        : PLAN_RANK[paidPlan] >= PLAN_RANK[effectivePlan] ? 'paid' : 'grant';
+
     return {
         requestedOrgId: orgId,
         billingOrgId,
         isSandbox: billingOrgId !== orgId,
         storedPlan,
-        effectivePlan: paidAccess ? storedPlan : 'free',
+        effectivePlan,
         subscriptionStatus: status,
         currentPeriodEnd,
         billingPaidThrough,
@@ -112,6 +143,9 @@ export async function getEntitlementContext(orgId: string, now = new Date()): Pr
         stripeCustomerId,
         paidAccess,
         accessReason,
+        grant,
+        accessSource,
+        overageAllowed: accessSource === 'paid',
     };
 }
 

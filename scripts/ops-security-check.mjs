@@ -57,7 +57,7 @@ if (!/claimOpsTotpStep/.test(login)) fail('totp-un-uso', 'el TOTP de Ops debe re
 // 3. Toda ruta de API de Ops que muta exige operador, y las de administración
 //    exigen rol admin. Las de login son la excepción por definición.
 const LOGIN_ROUTES = new Set(['src/pages/api/ops/auth.ts', 'src/pages/api/ops/passkey-options.ts', 'src/pages/api/ops/passkey-verify.ts']);
-const ADMIN_ROUTES = ['src/pages/api/ops/users/[id].ts', 'src/pages/api/ops/organizations/[id].ts', 'src/pages/api/ops/security.ts', 'src/pages/api/ops/status-incidents.ts', 'src/pages/api/ops/recovery.ts', 'src/pages/api/ops/alerts.ts'];
+const ADMIN_ROUTES = ['src/pages/api/ops/users/[id].ts', 'src/pages/api/ops/organizations/[id].ts', 'src/pages/api/ops/security.ts', 'src/pages/api/ops/status-incidents.ts', 'src/pages/api/ops/recovery.ts', 'src/pages/api/ops/alerts.ts', 'src/pages/api/ops/organizations/[id]/grants.ts'];
 for (const file of opsApi) {
     if (LOGIN_ROUTES.has(file)) continue;
     const src = read(file);
@@ -75,6 +75,7 @@ const fresh = [
     'src/pages/api/ops/passkeys/register-options.ts',
     'src/pages/api/ops/passkeys/register.ts',
     'src/pages/api/ops/passkeys/[id].ts',
+    'src/pages/api/ops/organizations/[id]/grants.ts',
 ];
 for (const file of fresh) {
     if (!/requireFreshOpsAuth\(/.test(read(file))) fail('auth-reciente', `${file} no exige requireFreshOpsAuth()`);
@@ -150,7 +151,10 @@ if (block < 0 || blockEnd < 0) {
     const ownTables = /foreach t in array array\[('ops_[a-z_]+'(?:,\s*'ops_[a-z_]+')*)\] loop\s+if not exists \(select 1 from pg_policies[^)]*policyname = t \|\| '_select'\)/.exec(ownWrite);
     for (const stmt of schema.slice(blockEnd).match(/create policy[^;]*;/gi) || []) {
         if (!/'ops'/.test(stmt) || /\bfor (select|update)\b/i.test(stmt)) continue;
-        const inOwnBlock = ownTables && /\bfor (insert|delete)\b/i.test(stmt) && ownWrite.includes(stmt);
+        // Escritura propia: tablas ops_* del bloque fase 3 (formato iterado) o
+        // una política literal `on ops_<tabla>` (cortesías, fase 5).
+        const ownLiteral = /\bon ops_[a-z_]+\b/i.test(stmt) && /\bfor (insert|delete)\b/i.test(stmt);
+        const inOwnBlock = (ownTables && /\bfor (insert|delete)\b/i.test(stmt) && ownWrite.includes(stmt)) || ownLiteral;
         if (!inOwnBlock) fail('schema', `política posterior al endurecimiento otorga \`ops\` sin limitarla a SELECT o UPDATE: ${stmt.slice(0, 80)}`);
     }
     if (f3 < 0 || f3End < 0) {
@@ -208,6 +212,21 @@ if (/returns table \([^)]*org_id/.test(fase4)) fail('alertas', 'cord_ops_alert_m
 if (!read('scripts/migrate-ops.mjs').includes("'2026-10-08-ops-fase4.sql'")) fail('schema', 'migrate-ops.mjs no aplica la migración ops-fase4');
 const alertCron = read('src/pages/api/cron/ops-alertas.ts');
 if (!/assertCronAuth\(/.test(alertCron) || !/runCronOnce\(/.test(alertCron)) fail('alertas', 'el cron de alertas valida CRON_SECRET y reclama su periodo en cron_runs');
+
+// 14. Cortesías (fase 5). Un regalo da ACCESO y nunca se disfraza de pago:
+//     la ruta no escribe columnas de evidencia de pago en orgs, reserva la
+//     cortesía antes de llamar al procesador con llaves de idempotencia
+//     derivadas de ella, y su tabla y función son espejo del schema.
+const grantsApi = read('src/pages/api/ops/organizations/[id]/grants.ts');
+if (/billing_paid_through\s*=|billing_paid_plan\s*=|update orgs\b/i.test(grantsApi)) fail('cortesias', 'la ruta de cortesías escribe evidencia de pago en orgs: un regalo no es un pago (regla 17)');
+if (!/strictRateLimit\(/.test(grantsApi)) fail('cortesias', 'la ruta de cortesías necesita strictRateLimit');
+if (!/idempotencyKey: `ops-grant:\$\{grantId\}/.test(grantsApi)) fail('cortesias', 'las llamadas al procesador usan llaves de idempotencia derivadas del id de la cortesía');
+if (grantsApi.indexOf('insert into ops_plan_grants') > grantsApi.indexOf("'/v1/coupons'")) fail('cortesias', 'la cortesía se reserva ANTES de llamar al procesador');
+if (!/applies_to\[products\]/.test(grantsApi)) fail('cortesias', 'el cupón aplica solo al producto base: los excedentes se siguen cobrando');
+const fase5 = read('db/migrations/2026-10-08-ops-fase5.sql');
+if (!schema.includes(fase5.trim())) fail('schema', 'schema.sql y db/migrations/2026-10-08-ops-fase5.sql divergen');
+if (!read('scripts/migrate-ops.mjs').includes("'2026-10-08-ops-fase5.sql'")) fail('schema', 'migrate-ops.mjs no aplica la migración ops-fase5');
+if (!/overageAllowed:\s*accessSource === 'paid'/.test(read('src/lib/org-entitlements.ts'))) fail('cortesias', 'el excedente solo se cobra cuando el plan efectivo lo respalda un pago');
 
 if (failures.length) {
     console.error(`security:ops — ${failures.length} violaciones del contrato de Cord Ops\n`);

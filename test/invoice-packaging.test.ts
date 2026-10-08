@@ -1,10 +1,10 @@
 import { PGlite } from '@electric-sql/pglite';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-const m = vi.hoisted(() => ({ tx: vi.fn(), plan: 'free', flush: vi.fn() }));
+const m = vi.hoisted(() => ({ tx: vi.fn(), plan: 'free', flush: vi.fn(), overage: true }));
 vi.mock('../src/lib/db', () => ({ withOrgTx: m.tx, withSystemTx: vi.fn(),
   sql: (s: TemplateStringsArray, ...values: unknown[]) => ({ text: s.reduce((out, p, i) => out + (i ? `$${i}` : '') + p, ''), values }) }));
 vi.mock('../src/lib/org-entitlements', () => ({ getEffectivePlan: async () => m.plan,
-  getEntitlementContext: async (id: string) => ({ effectivePlan: m.plan, billingOrgId: id, isSandbox: false, stripeCustomerId: 'cus_test' }) }));
+  getEntitlementContext: async (id: string) => ({ effectivePlan: m.plan, billingOrgId: id, isSandbox: false, stripeCustomerId: 'cus_test', overageAllowed: m.overage }) }));
 vi.mock('../src/lib/billing', async (original) => ({ ...await original<any>(), flushUsageReservation: m.flush }));
 import { INCLUDED, reserveUsage, cancelUsage, syncSeatUsage } from '../src/lib/billing';
 import { meterInvoiceEmission } from '../src/lib/fiscal/issuance-usage';
@@ -144,6 +144,17 @@ describe('cuota real con SQL', () => {
     });
     expect((await q('select meter_status from usage_reservations where meter_value>0')).rows[0].meter_status).toBe('pending');
     expect(await usage('cfdi')).toBe(31);
+  });
+  it('con una cortesía (sin pago que la respalde) lo incluido es tope duro y nada va al medidor', async () => {
+    m.plan = 'starter'; m.overage = false;
+    try {
+      const included = INCLUDED.starter.cfdi as number;
+      expect((await reserveUsage(org, 'timbrado', included)).ok).toBe(true);
+      expect((await reserveUsage(org, 'timbrado', 1)).ok).toBe(false);
+      expect((await q("select count(*)::int as n from usage_reservations where meter_value>0")).rows[0].n).toBe(0);
+      await q(`insert into org_members select $1,'activo' from generate_series(1,20)`, [org]);
+      expect(await syncSeatUsage(org)).toBeNull();
+    } finally { m.overage = true; }
   });
   it('un intento pendiente que luego falla no provoca un excedente falso', async () => {
     m.plan = 'starter'; await reserveUsage(org, 'timbrado', 29);
