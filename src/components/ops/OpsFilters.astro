@@ -39,9 +39,9 @@ const { action, q, placeholder, fields, active, exportHref, resultLabel } = Astr
     </label>
   ))}
   <button class="ops-button secondary sm" type="submit" data-ops-filters-submit>Aplicar</button>
-  {(active || q) && <a class="ops-button ghost sm" href={action}>Limpiar</a>}
   <span class="ops-filters-end">
     {resultLabel && <span class="ops-filters-count">{resultLabel}</span>}
+    {(active || q) && <a class="ops-button ghost sm" href={action}>Limpiar</a>}
     {exportHref && (
       <a class="ops-button secondary sm" href={exportHref} download>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('download')} />
@@ -50,8 +50,90 @@ const { action, q, placeholder, fields, active, exportHref, resultLabel } = Astr
     )}
   </span>
 </form>
+<div class="ops-views" data-ops-views={action} hidden={!(active || q) ? true : undefined}>
+  <span class="ops-views-label">Vistas</span>
+  <div class="ops-views-list" data-ops-views-list></div>
+  {(active || q) && <button class="ops-button ghost sm" type="button" data-ops-view-save>Guardar esta vista</button>}
+  <form class="ops-views-form" data-ops-view-form hidden>
+    <input class="ops-input" maxlength="40" placeholder="Nombre de la vista" aria-label="Nombre de la vista" required />
+    <button class="ops-button sm" type="submit">Guardar</button>
+    <button class="ops-button ghost sm" type="button" data-ops-view-cancel>Cancelar</button>
+  </form>
+</div>
 
 <script>
+  // Vistas guardadas: combinaciones de filtros con nombre, por operador y por
+  // navegador (localStorage). Es una comodidad personal, no un dato compartido:
+  // si el almacenamiento no está disponible, la barra funciona igual sin ellas.
+  type View = { name: string; query: string };
+  const MAX_VIEWS = 12;
+  document.querySelectorAll<HTMLElement>('[data-ops-views]').forEach((box) => {
+    const path = box.dataset.opsViews || window.location.pathname;
+    const key = `cord-ops-views:${path}`;
+    const list = box.querySelector<HTMLElement>('[data-ops-views-list]')!;
+    const saveButton = box.querySelector<HTMLButtonElement>('[data-ops-view-save]');
+    const form = box.querySelector<HTMLFormElement>('[data-ops-view-form]')!;
+    const nameInput = form.querySelector('input')!;
+    const read = (): View[] => {
+      try { const raw = JSON.parse(localStorage.getItem(key) || '[]'); return Array.isArray(raw) ? raw.filter((v) => v && typeof v.name === 'string' && typeof v.query === 'string') : []; }
+      catch { return []; }
+    };
+    const write = (views: View[]) => { try { localStorage.setItem(key, JSON.stringify(views.slice(0, MAX_VIEWS))); } catch {} };
+    const current = new URLSearchParams(window.location.search);
+    current.delete('page');
+    const currentQuery = current.toString();
+
+    function render() {
+      const views = read();
+      list.textContent = '';
+      for (const view of views) {
+        const item = document.createElement('span');
+        item.className = 'ops-view';
+        const link = document.createElement('a');
+        link.className = 'ops-chip';
+        link.href = `${path}${view.query ? `?${view.query}` : ''}`;
+        link.textContent = view.name;
+        if (view.query === currentQuery) link.setAttribute('aria-current', 'true');
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.className = 'ops-view-remove';
+        remove.setAttribute('aria-label', `Quitar la vista ${view.name}`);
+        remove.textContent = '×';
+        remove.addEventListener('click', () => { write(read().filter((v) => !(v.name === view.name && v.query === view.query))); render(); });
+        item.append(link, remove);
+        list.append(item);
+      }
+      box.hidden = views.length === 0 && !saveButton;
+      if (saveButton) saveButton.hidden = views.some((v) => v.query === currentQuery);
+    }
+
+    saveButton?.addEventListener('click', () => {
+      saveButton.hidden = true;
+      form.hidden = false;
+      nameInput.value = '';
+      nameInput.focus();
+    });
+    const closeForm = () => { form.hidden = true; render(); };
+    form.querySelector('[data-ops-view-cancel]')?.addEventListener('click', closeForm);
+    nameInput.addEventListener('keydown', (event) => { if (event.key === 'Escape') { event.preventDefault(); closeForm(); } });
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const name = nameInput.value.trim().slice(0, 40);
+      if (!name) return;
+      write([{ name, query: currentQuery }, ...read().filter((v) => v.name !== name)]);
+      closeForm();
+    });
+    render();
+  });
+
+  // Antes de enviar se deshabilitan los campos vacíos para no ensuciar la URL.
+  // Si el navegador restaura esta página desde su caché al volver atrás, los
+  // campos regresarían deshabilitados: se reactivan siempre al mostrarse.
+  window.addEventListener('pageshow', () => {
+    document.querySelectorAll<HTMLFormElement>('[data-ops-filters]').forEach((form) => {
+      form.querySelectorAll<HTMLInputElement | HTMLSelectElement>('input, select').forEach((el) => { el.disabled = false; });
+    });
+  });
   document.querySelectorAll<HTMLFormElement>('[data-ops-filters]').forEach((form) => {
     form.querySelector<HTMLElement>('[data-ops-filters-submit]')?.setAttribute('hidden', '');
     form.querySelectorAll('select').forEach((select) => select.addEventListener('change', () => {

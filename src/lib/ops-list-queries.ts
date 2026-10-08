@@ -1,5 +1,5 @@
 import { sql, withOpsTx } from './db';
-import { OPS_PAGE_SIZE, opsPageOffset } from './ops-pagination';
+import { OPS_PAGE_SIZE, escapeLike, opsPageOffset } from './ops-pagination';
 import type { OrgFilters, UserFilters } from './ops-filters';
 import { OPS_ALLOWED_EMAILS } from './ops-auth';
 
@@ -12,7 +12,7 @@ function orgClause(f: OrgFilters): Clause {
   const params: unknown[] = [];
   const parts: string[] = [];
   const p = (value: unknown) => { params.push(value); return `$${params.length}`; };
-  if (f.q) { const v = p(`%${f.q}%`); parts.push(`(lower(o.nombre) like lower(${v}) or lower(coalesce(owner.email,'')) like lower(${v}))`); }
+  if (f.q) { const v = p(`%${escapeLike(f.q)}%`); parts.push(`(lower(o.nombre) like lower(${v}) or lower(coalesce(owner.email,'')) like lower(${v}))`); }
   if (f.plan) parts.push(`coalesce(o.plan,'free') = ${p(f.plan)}`);
   if (f.country) parts.push(`o.country_code = ${p(f.country)}`);
   if (f.subscription === 'none') parts.push(`o.subscription_status is null`);
@@ -32,7 +32,7 @@ function userClause(f: UserFilters): Clause {
   const parts: string[] = [];
   const p = (value: unknown) => { params.push(value); return `$${params.length}`; };
   if (f.q) {
-    const v = p(`%${f.q}%`);
+    const v = p(`%${escapeLike(f.q)}%`);
     parts.push(`(lower(u.email) like lower(${v}) or lower(coalesce(u.first_name,'') || ' ' || coalesce(u.last_name,'')) like lower(${v}))`);
   }
   if (f.state === 'active') parts.push(`u.suspended_at is null and (u.locked_until is null or u.locked_until <= now())`);
@@ -190,5 +190,6 @@ export async function getOpsOrganizationsPage(filters: OrgFilters, page: number)
 /** Tope de filas de una exportación: una hoja, no un respaldo de la base. */
 export const OPS_EXPORT_LIMIT = 10_000;
 
-export const opsOrganizationsExportSql = (filters: OrgFilters) => orgsPageSql(filters, OPS_EXPORT_LIMIT, 0);
-export const opsUsersExportSql = (filters: UserFilters) => usersPageSql(filters, OPS_EXPORT_LIMIT, 0);
+// Se pide una fila de más: si llega, la exportación quedó recortada y se dice.
+export const opsOrganizationsExportSql = (filters: OrgFilters) => orgsPageSql(filters, OPS_EXPORT_LIMIT + 1, 0);
+export const opsUsersExportSql = (filters: UserFilters) => usersPageSql(filters, OPS_EXPORT_LIMIT + 1, 0);

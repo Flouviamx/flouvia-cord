@@ -36,7 +36,7 @@ const filtered = hasActiveFilters({ ...filters }, { sort: 'recent' }) || !!filte
         action="/ops/users"
         q={filters.q}
         placeholder="Correo o nombre"
-        active={hasActiveFilters({ ...filters }, { sort: 'recent' })}
+        active={hasActiveFilters({ ...filters }, { sort: 'recent' }) || filters.sort !== 'recent'}
         resultLabel={`${opsNumber(total)} resultados`}
         exportHref={operator.role === 'admin' ? `/api/ops/export?type=users${query ? `&${query}` : ''}` : undefined}
         fields={[

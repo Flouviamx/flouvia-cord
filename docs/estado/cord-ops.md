@@ -155,11 +155,38 @@ animación respeta `prefers-reduced-motion`; los avatares usan centrado geométr
   periodo viaja en `?range=7d|30d|90d` (`src/lib/ops-range.ts`).
 - `/ops/status` dibuja 90 días por componente; un día sin muestras es gris.
 
+## Herramientas de operador
+
+- **Búsqueda global (⌘K o `/`).** `OpsCommand.astro` navega, ejecuta acciones y
+  consulta `/api/ops/search`. Esa ruta busca organizaciones, personas, folios de
+  cotización y números de factura (prefijo, con índices `text_pattern_ops`), y
+  resuelve exacto un UUID pegado. Va en `withOpsTx`, con 5 resultados por grupo
+  y sin tokens ni datos de pago. Los resultados se pintan con `textContent`:
+  un nombre de organización lo escribe su dueño.
+- **Atajos (solo escritorio, regla 16).** `g` + letra navega (`r` Resumen,
+  `a` Actividad, `o` Organizaciones, `u` Usuarios, `f` Facturas, `w` Workflows,
+  `i` Integraciones, `c` Uso y costos, `d` Disponibilidad, `s` Seguridad,
+  `b` Base de datos), `j`/`k` recorren las filas de una tabla marcada con
+  `data-ops-rows` y `?` muestra la ayuda. Bajo 880 px no hay atajos ni `<kbd>`;
+  la paleta se abre con el botón de la barra superior.
+- **Filtros.** Organizaciones (plan, país, suscripción, cobros en línea, orden)
+  y usuarios (estado, MFA, orden). `src/lib/ops-filters.ts` es el parser único:
+  todo valor sale de una lista cerrada y viaja como parámetro. Las métricas de
+  la cabecera son del filtro completo, no de la página visible.
+- **Vistas guardadas.** Combinaciones de filtros con nombre, por operador y por
+  navegador (`localStorage`). Son una comodidad personal: no se comparten y la
+  barra funciona igual si el almacenamiento no está disponible.
+- **Exportar CSV.** `/api/ops/export` usa el mismo parser que la pantalla, es
+  solo para `admin`, tiene tope de 10,000 filas y escribe `ops.list_exported` en
+  la misma transacción que la lectura. `src/lib/ops-csv.ts` neutraliza fórmulas
+  (`= + - @`, tab y CR) y agrega BOM para Excel.
+
 Objetivo: operar con más de 10,000 usuarios y organizaciones sin cargar colecciones
 completas.
 
 - Usuarios, organizaciones, consumo y auditoría son páginas SSR de 50 filas con
-  filtros GET compartibles.
+  filtros GET compartibles. Los totales de cabecera se calculan con el filtro en
+  una consulta aparte, sin `count(*) over()` por fila.
 - `ops-list-queries.ts` agrega estadísticas solo para los ids visibles.
 - `/ops/usage` calcula totales globales por separado, busca organizaciones en
   servidor y limita el inbox a las 50 cuentas de mayor riesgo.

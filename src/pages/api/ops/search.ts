@@ -7,7 +7,7 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { sql, withOpsTx } from '../../../lib/db';
 import { log } from '../../../lib/log';
-import { normalizeOpsSearch } from '../../../lib/ops-pagination';
+import { escapeLike, normalizeOpsSearch } from '../../../lib/ops-pagination';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const PER_GROUP = 5;
@@ -26,7 +26,7 @@ export const GET: APIRoute = async ({ url, locals }) => {
 
     const exact = UUID.test(q) ? q.toLowerCase() : null;
     // `%` y `_` del operador se escapan: buscan el carácter, no un comodín.
-    const escaped = q.toLowerCase().replace(/[\\%_]/g, (c) => `\\${c}`);
+    const escaped = escapeLike(q.toLowerCase());
     const contains = `%${escaped}%`;
     const prefix = `${escaped}%`;
 

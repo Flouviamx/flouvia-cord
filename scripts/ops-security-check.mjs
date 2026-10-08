@@ -106,7 +106,20 @@ if (!/withOpsTx\(/.test(explorer)) fail('explorador', 'la tabla se lee fuera de 
 if (!/opsAuditQuery\(/.test(explorer) || /logOpsAudit\(/.test(explorer)) fail('explorador', 'la vista debe auditarse dentro de la misma transacción');
 if (!/role\s*!==\s*'admin'/.test(explorer)) fail('explorador', 'el explorador de filas debe ser solo para admin');
 
-// 9. Schema: bitácora de solo agregar y políticas de Ops por comando. Ninguna
+// 9. Exportación y búsqueda (fase 2). Exportar es sacar datos de Ops a un
+//    archivo: solo admin, auditado en la misma transacción que la lectura y con
+//    celdas neutralizadas contra fórmulas. La búsqueda exige operador y viaja
+//    en el carril de Ops.
+const exporter = read('src/pages/api/ops/export.ts');
+if (!/role\s*!==\s*'admin'/.test(exporter)) fail('exportacion', 'la exportación CSV debe ser solo para admin');
+if (!/withOpsTx\(/.test(exporter) || !/opsAuditQuery\(/.test(exporter)) fail('exportacion', 'la exportación debe auditarse en la misma transacción que la lectura');
+if (!/toCsv\(/.test(exporter)) fail('exportacion', 'la exportación debe pasar por toCsv() (neutraliza fórmulas)');
+if (!/\^\[=\+\\-@\\t\\r\]/.test(read('src/lib/ops-csv.ts'))) fail('exportacion', 'ops-csv.ts perdió la neutralización de fórmulas (= + - @ tab CR)');
+const search = read('src/pages/api/ops/search.ts');
+if (!/locals\.opsOperator/.test(search) || !/withOpsTx\(/.test(search)) fail('busqueda', 'la búsqueda global exige operador y el carril withOpsTx');
+if (/innerHTML/.test(read('src/components/ops/OpsCommand.astro'))) fail('busqueda', 'la paleta pinta resultados con innerHTML: un nombre de organización lo escribe su dueño');
+
+// 10. Schema: bitácora de solo agregar y políticas de Ops por comando. Ninguna
 //    redefinición posterior al bloque de endurecimiento puede deshacerlo.
 const schema = read('db/schema.sql');
 const block = schema.indexOf('-- BEGIN ops-hardening');
