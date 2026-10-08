@@ -4,7 +4,7 @@
 // API key). Aquí vive el cálculo server-side de subtotal/IVA, el folio, el flujo
 // de aprobación por umbrales y los eventos/auditoría — para no divergir.
 
-import { sql, logAudit, withOrgTx } from './db';
+import { sql, logAudit, withOrgTx, type DbQuery } from './db';
 import { notifyQuoteSent } from './email';
 import { dispatchEvent, dispatchQuoteEvent } from './webhooks';
 import { clientEventData } from './event-payloads';
@@ -17,25 +17,10 @@ import { trackServer } from './posthog-server';
 import { sanitizeItem, calculateDocumentTotals } from '../../packages/elements/src/engine';
 import { listOfferedCurrencies, normalizeCurrency } from './currency';
 import { taxCatalogFor, TaxCatalogUnavailableError } from './impuestos-db';
-import { intlLocale } from './fmt-server';
+import { unknownTaxRate, unknownTaxRateMessage } from './impuestos';
+import { approvalMotivo, evaluateApproval, policyFromOrg, totalInPolicyCurrency } from './quote-approval';
+import { cancelUsage, reserveUsage } from './billing';
 import { validateFiscalReceptor, type FiscalReceptor, type FiscalReceptorInput } from '../../packages/elements/src/fiscal/receptor';
-
-// El motivo de aprobación lo lee el aprobador: el tope y el total van con la
-// divisa real de la cotización, no con un '$' que puede significar otra cosa.
-const money0 = (n: number, currency: string) => {
-    const code = normalizeCurrency(currency);
-    // El locale sale del request: quien aprueba lee el motivo en el idioma de su
-    // organización, con sus separadores. Un 'es-MX' fijo le escribía "1.000,00"
-    // a un aprobador en Londres.
-    const locale = intlLocale();
-    try {
-        return new Intl.NumberFormat(locale, {
-            style: 'currency', currency: code, maximumFractionDigits: 0,
-        }).format(Math.round(n));
-    } catch {
-        return new Intl.NumberFormat(locale).format(Math.round(n));
-    }
-};
 
 // Máximo de líneas por cotización — evita que un POST con miles de items dispare
 // miles de INSERT secuenciales (DoS + latencia).
@@ -96,6 +81,16 @@ export interface CreateQuoteResult {
     needsApproval: boolean;
     motivo: string | null;
     email?: { sent: boolean; skipped?: string };
+}
+
+/**
+ * Días de vigencia acotados a [1, 365]. Sin tope, un valor negativo creaba una
+ * cotización ya vencida y uno enorme hacía reventar `toISOString()` con un 500.
+ */
+export function vigenciaDias(raw: unknown): number {
+    const n = Math.round(Number(raw));
+    if (!Number.isFinite(n) || n < 1) return 30;
+    return Math.min(n, 365);
 }
 
 export class QuoteError extends Error {
@@ -217,7 +212,7 @@ async function resolveOrCreateCliente(orgId: string, input: NewQuoteInput): Prom
 export async function createCotizacion(
     orgId: string,
     input: NewQuoteInput,
-    opts: { origin: string; ip: string; actor?: string },
+    opts: { origin: string; ip: string; actor?: string; duplicateOf?: { id: string; folio: string } },
 ): Promise<CreateQuoteResult> {
     try {
         await assertResourceCapacity(orgId, 'active_quotes');
@@ -250,6 +245,8 @@ export async function createCotizacion(
         throw error;
     }
     const fallbackRate = catalogo.defaultRate;
+    const tasaDesconocida = unknownTaxRate(catalogo, rawItems.map((it) => it?.tax_rate));
+    if (tasaDesconocida !== null) throw new QuoteError(unknownTaxRateMessage(tasaDesconocida), 400, 'unknown_tax_rate');
     const itemsConImpuesto = items.map((it, i) => ({
         ...it,
         tax_rate: catalogo.resolve(rawItems[i]?.tax_rate, fallbackRate),
@@ -275,50 +272,6 @@ export async function createCotizacion(
         throw new QuoteError('Esa divisa no está disponible para cotizar.', 400, 'unsupported_currency');
     }
 
-    const [maxRows] = await withOrgTx(orgId, sql`
-        select coalesce(max(nullif(regexp_replace(folio, '\\D', '', 'g'), '')::int), 0) as maxn
-        from cotizaciones where org_id = ${orgId}`);
-    const { maxn } = maxRows[0];
-    const folio = `${org.quote_prefix}-${String(Number(maxn) + 1).padStart(4, '0')}`;
-
-    // Flujo de aprobación: ¿el descuento, monto o margen rebasan los topes?
-    let maxDescPct = 0;
-    let minMargenPct = Infinity;
-    let hayLineasConCosto = false;
-    for (const it of items) {
-        const lista = Number(it.precio_unitario) || 0;
-        const nego = it.precio_negociado;
-        if (nego !== null && nego !== undefined && lista > 0 && Number(nego) < lista) {
-            maxDescPct = Math.max(maxDescPct, (1 - Number(nego) / lista) * 100);
-        }
-        const costo = Number(it.costo_unitario) || 0;
-        const precioFinal = (nego !== null && nego !== undefined) ? Number(nego) : lista;
-        if (costo > 0 && precioFinal > 0) {
-            hayLineasConCosto = true;
-            minMargenPct = Math.min(minMargenPct, (precioFinal - costo) / precioFinal * 100);
-        }
-    }
-    if (!hayLineasConCosto) minMargenPct = Infinity;
-
-    const aprobDesc = approvalsEnabled ? Number(org.aprob_descuento_max) || 0 : 0;
-    const aprobMonto = approvalsEnabled ? Number(org.aprob_monto_max) || 0 : 0;
-    const aprobMargen = approvalsEnabled ? Number(org.aprob_margen_min) || 0 : 0;
-    const needsApproval = !!input.send && (
-        (aprobDesc > 0 && maxDescPct > aprobDesc) ||
-        (aprobMonto > 0 && total > aprobMonto) ||
-        (aprobMargen > 0 && hayLineasConCosto && minMargenPct < aprobMargen)
-    );
-    let aprobEstado: string | null = null;
-    let aprobMotivo: string | null = null;
-    if (needsApproval) {
-        const reasons: string[] = [];
-        if (aprobDesc > 0 && maxDescPct > aprobDesc) reasons.push(`descuento ${Math.round(maxDescPct)}% supera el ${aprobDesc}% permitido`);
-        if (aprobMonto > 0 && total > aprobMonto) reasons.push(`total ${money0(total, baseCurrency)} supera el tope de ${money0(aprobMonto, baseCurrency)}`);
-        if (aprobMargen > 0 && hayLineasConCosto && minMargenPct < aprobMargen) reasons.push(`margen bruto ${Math.round(minMargenPct)}% está por debajo del mínimo de ${aprobMargen}%`);
-        aprobEstado = 'pendiente';
-        aprobMotivo = reasons.join(' y ');
-    }
-
     // Iguala recurrente: solo tiene sentido con términos de contado (se autoriza y
     // cobra desde el alta) y es EXCLUYENTE con anticipo/cuotas (modelos de pago único).
     const esRecurrente = !!input.es_recurrente;
@@ -330,11 +283,8 @@ export async function createCotizacion(
     const anticipoPct = esRecurrente ? null
         : (Number.isFinite(anticipoPctRaw) && anticipoPctRaw >= 1 && anticipoPctRaw <= 99
             ? Math.round(anticipoPctRaw * 100) / 100 : null);
-    const dias = Number(input.vigencia_dias) || 30;
+    const dias = vigenciaDias(input.vigencia_dias);
     const vigencia = new Date(); vigencia.setDate(vigencia.getDate() + dias);
-    const clienteId = await resolveOrCreateCliente(orgId, input);
-    const status = needsApproval ? 'draft' : (input.send ? 'sent' : 'draft');
-    const sentAt = (!needsApproval && input.send) ? new Date().toISOString() : null;
 
     // Multi-divisa con cobertura: si la moneda en que se vende difiere de la
     // contable, se congela la tasa (spot + buffer) por 30 días para proteger el
@@ -343,6 +293,8 @@ export async function createCotizacion(
     //
     // Si no hay tasa real, la cotización NO se crea: guardar un fx_rate = 1
     // inventado significaba facturar meses después con el número equivocado.
+    // Va ANTES de la aprobación: el tope de monto está en la divisa del negocio
+    // y el total se compara convertido con esta misma tasa.
     let fxRate = 1;
     let fxSource = 'same';
     let fxLockedUntil: string | null = null;
@@ -361,59 +313,115 @@ export async function createCotizacion(
         }
     }
 
+    // Flujo de aprobación: ¿el descuento, monto o margen rebasan los topes?
+    // Misma evaluación que enviar un borrador o reenviar una versión
+    // (lib/quote-approval.ts): antes solo existía aquí y se saltaba al enviar.
+    const policy = approvalsEnabled ? policyFromOrg(org) : null;
+    const verdict = evaluateApproval(
+        items,
+        policy ? totalInPolicyCurrency(total, policy.currency, { baseCurrency, fiscalCurrency, fxRate }) : null,
+        policy,
+    );
+    const needsApproval = !!input.send && verdict.needed;
+    const aprobEstado: string | null = needsApproval ? 'pendiente' : null;
+    const aprobMotivo: string | null = needsApproval && policy
+        ? approvalMotivo(verdict, policy.currency)
+        : null;
+
+    const clienteId = await resolveOrCreateCliente(orgId, input);
+    const status = needsApproval ? 'draft' : (input.send ? 'sent' : 'draft');
+    const sentAt = (!needsApproval && input.send) ? new Date().toISOString() : null;
+    const sendNow = !!input.send && !needsApproval;
+
+    // Regla 17: un envío consume el medidor ANTES del efecto. Crear con
+    // "Enviar" no lo reservaba (solo lo hacía la acción `send`), así que el plan
+    // Gratis enviaba sin tope desde el editor y desde /api/v1.
+    let envioReservation: string | undefined;
+    if (sendNow) {
+        const usage = await reserveUsage(orgId, 'envios', 1);
+        if (!usage.ok) {
+            const unavailable = /verificar|registrar/i.test(usage.reason || '');
+            throw new QuoteError(
+                usage.reason || 'Tu plan no tiene envíos disponibles este mes.',
+                unavailable ? 503 : 402,
+                unavailable ? 'usage_verification_unavailable' : 'plan_limit_reached',
+            );
+        }
+        envioReservation = usage.id;
+    }
+
     // Quién la creó (user_id de la sesión) — null en creación vía API key
     // (M2M, sin sesión de usuario); ver "Desempeño por vendedor" en historial.md.
     const creadoPor = currentUserId();
+    const productosPropios = await productosDeOrg(orgId, itemsConImpuesto.map((it: any) => it.producto_id));
+    const cotId = crypto.randomUUID();
+    const prefix = String(org.quote_prefix || 'COT');
 
-    let cot: any;
-    try {
-        [[cot]] = await withOrgTx(orgId, sql`
+    // Encabezado, líneas, versión y eventos en UNA transacción. Antes eran una
+    // transacción por línea: si fallaba la línea 7 quedaba una cotización a
+    // medias que contaba contra el límite del plan, y el reintento creaba otra.
+    //
+    // El folio se calcula DENTRO de esa transacción, detrás de un advisory lock
+    // por organización: con `max()+1` en una consulta aparte, dos altas
+    // simultáneas (dos pestañas, la API y la UI) obtenían el mismo folio. El
+    // número se toma de los dígitos FINALES tras el guion, no de todos los
+    // dígitos del folio: con un prefijo como "Q2026" el folio siguiente a
+    // "Q2026-0001" salía "Q2026-20260002".
+    const writes: DbQuery[] = [];
+    writes.push(sql`select pg_advisory_xact_lock(hashtextextended(${`quote-folio:${orgId}`}, 0))`);
+    writes.push(sql`
             insert into cotizaciones
-                (org_id, cliente_id, folio, status, subtotal, iva, total, terminos, vigencia, notas, sent_at, aprob_estado, aprob_motivo,
+                (id, org_id, cliente_id, folio, status, subtotal, iva, total, terminos, vigencia, notas, sent_at, aprob_estado, aprob_motivo,
                  moneda, base_currency, fiscal_currency, fx_rate, fx_rate_source, fx_locked_until, iva_incluido, anticipo_pct, es_recurrente, creado_por,
                  retencion_total, retenciones_snapshot)
             values
-                (${orgId}, ${clienteId}, ${folio}, ${status}, ${realSubtotal}, ${iva}, ${total},
+                (${cotId}, ${orgId}, ${clienteId},
+                 ${prefix} || '-' || lpad((
+                     select coalesce(max(substring(folio from '-([0-9]{1,9})$')::bigint), 0) + 1
+                       from cotizaciones where org_id = ${orgId}
+                 )::text, 4, '0'),
+                 ${status}, ${realSubtotal}, ${iva}, ${total},
                  ${terminos}, ${vigencia.toISOString()}, ${input.notas || null}, ${sentAt}, ${aprobEstado}, ${aprobMotivo},
                  ${baseCurrency}, ${baseCurrency}, ${fiscalCurrency}, ${fxRate}, ${fxSource}, ${fxLockedUntil}, ${iva_incluido}, ${anticipoPct}, ${esRecurrente}, ${creadoPor},
                  ${retencionTotal}, ${retencionesSnapshot}::jsonb)
-            returning id, public_token`);
+            returning id, public_token, folio`);
+    itemsConImpuesto.forEach((it: any, orden: number) => writes.push(sql`
+            insert into cotizacion_items
+                (cotizacion_id, producto_id, descripcion, cantidad, precio_unitario, precio_negociado, costo_unitario, orden, tax_rate)
+            values
+                (${cotId}, ${it.producto_id && productosPropios.has(it.producto_id) ? it.producto_id : null}, ${it.descripcion}, ${Number(it.cantidad) || 1},
+                 ${Number(it.precio_unitario) || 0},
+                 ${it.precio_negociado === null || it.precio_negociado === undefined ? null : Number(it.precio_negociado)},
+                 ${Number(it.costo_unitario) || 0},
+                 ${orden}, ${it.tax_rate})`));
+    writes.push(sql`
+            insert into cotizacion_versiones
+                (cotizacion_id, org_id, version, subtotal, iva, total, items, notas, iva_incluido)
+            values
+                (${cotId}, ${orgId}, 1, ${realSubtotal}, ${iva}, ${total}, ${JSON.stringify(itemsConImpuesto)}, ${input.notas || null}, ${iva_incluido})`);
+    writes.push(sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
+            values (${orgId}, ${cotId}, 'created', ${opts.duplicateOf ? 'Duplicada de ' + opts.duplicateOf.folio : 'Borrador creado'})`);
+    if (sendNow) {
+        writes.push(sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
+            values (${orgId}, ${cotId}, 'sent', 'Cotización enviada — link generado')`);
+    }
+    if (needsApproval) {
+        writes.push(sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
+            values (${orgId}, ${cotId}, 'comment', ${'Solicitud de aprobación: ' + aprobMotivo})`);
+    }
+
+    let cot: any;
+    try {
+        const results = await withOrgTx(orgId, ...writes);
+        cot = results[1][0];
     } catch (error) {
+        if (envioReservation) await cancelUsage(orgId, envioReservation);
         const limit = parsedResourceLimit(error);
         if (limit) throw new QuoteError(`Tu plan permite ${limit.limit} cotizaciones activas. Cierra una o sube de plan para continuar.`, 402);
         throw error;
     }
+    const folio = String(cot.folio);
 
-    const productosPropios = await productosDeOrg(orgId, itemsConImpuesto.map((it: any) => it.producto_id));
-    let orden = 0;
-    for (const it of itemsConImpuesto) {
-        await withOrgTx(orgId, sql`
-            insert into cotizacion_items
-                (cotizacion_id, producto_id, descripcion, cantidad, precio_unitario, precio_negociado, costo_unitario, orden, tax_rate)
-            values
-                (${cot.id}, ${it.producto_id && productosPropios.has(it.producto_id) ? it.producto_id : null}, ${it.descripcion}, ${Number(it.cantidad) || 1},
-                 ${Number(it.precio_unitario) || 0},
-                 ${it.precio_negociado === null || it.precio_negociado === undefined ? null : Number(it.precio_negociado)},
-                 ${Number(it.costo_unitario) || 0},
-                 ${orden++}, ${it.tax_rate})`);
-    }
-
-    await withOrgTx(orgId, sql`
-        insert into cotizacion_versiones
-            (cotizacion_id, org_id, version, subtotal, iva, total, items, notas, iva_incluido)
-        values
-            (${cot.id}, ${orgId}, 1, ${realSubtotal}, ${iva}, ${total}, ${JSON.stringify(itemsConImpuesto)}, ${input.notas || null}, ${iva_incluido})`);
-
-    await withOrgTx(orgId, sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
-              values (${orgId}, ${cot.id}, 'created', 'Borrador creado')`);
-    if (input.send && !needsApproval) {
-        await withOrgTx(orgId, sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
-                  values (${orgId}, ${cot.id}, 'sent', 'Cotización enviada — link generado')`);
-    }
-    if (needsApproval) {
-        await withOrgTx(orgId, sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
-                  values (${orgId}, ${cot.id}, 'comment', ${'Solicitud de aprobación: ' + aprobMotivo})`);
-    }
     await logAudit(orgId, {
         accion: needsApproval ? 'cotizacion.aprobacion_solicitada' : (input.send ? 'cotizacion.enviada' : 'cotizacion.creada'),
         entidad: 'cotizacion', entidad_id: cot.id as string,
@@ -432,7 +440,8 @@ export async function createCotizacion(
         await dispatchQuoteEvent(orgId, cot.id as string, 'quote.sent');
     }
 
-    const source = opts.actor?.startsWith('api:') ? 'api'
+    const source = opts.duplicateOf ? 'duplicate'
+        : opts.actor?.startsWith('api:') ? 'api'
         : opts.actor?.startsWith('mcp:') ? 'mcp'
         : 'manual';
     after(trackServer('quote_created', orgId, {
@@ -444,6 +453,7 @@ export async function createCotizacion(
         status,
         item_count: items.length,
         sent_on_create: !!input.send && !needsApproval,
+        ...(opts.duplicateOf ? { source_quote_id: opts.duplicateOf.id } : {}),
     }, !!org.sandbox_of, !!org.is_demo));
     if (input.send && !needsApproval) {
         after(trackServer('quote_sent', orgId, {
@@ -451,7 +461,8 @@ export async function createCotizacion(
             quote_id: cot.id,
             total,
             currency: baseCurrency,
-            source,
+            // Un duplicado nace en borrador: este evento nunca lleva 'duplicate'.
+            source: source === 'duplicate' ? 'manual' : source,
             send_type: 'initial',
         }, !!org.sandbox_of, !!org.is_demo));
     }

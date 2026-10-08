@@ -104,3 +104,30 @@ export function defaultCountryTaxPct(countryCode: string): number {
     const preset = taxPresetsFor(countryCode).find((p) => p.esDefault);
     return preset ? preset.tasa : 0;
 }
+
+/**
+ * Primera tasa propuesta que NO está en el catálogo del negocio, o `null` si
+ * todas lo están (o vienen vacías y caen al default a propósito).
+ *
+ * `catalogo.resolve()` sustituye en silencio una tasa desconocida por la
+ * predeterminada: correcto como red de seguridad, pero el usuario no se
+ * enteraba — capturaba una línea al 8% y el documento salía al 16%. Los
+ * endpoints que guardan una cotización o factura responden 400 con esta tasa
+ * en vez de cambiarla.
+ */
+export function unknownTaxRate(
+    catalogo: { resolve(proposed: unknown, fallback: number): number },
+    proposed: unknown[],
+): number | null {
+    for (const p of proposed) {
+        if (p === null || p === undefined || p === '') continue;
+        if (Number.isNaN(catalogo.resolve(p, Number.NaN))) return Number(p);
+    }
+    return null;
+}
+
+/** Mensaje para el dueño del negocio cuando una tasa no está en su catálogo. */
+export function unknownTaxRateMessage(rate: number): string {
+    const pct = Number.isFinite(rate) ? `${Math.round(rate * 10000) / 100}%` : String(rate);
+    return `La tasa de impuesto ${pct} no está en tu catálogo. Elige una de las tasas configuradas en Ajustes.`;
+}

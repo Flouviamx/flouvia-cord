@@ -1,6 +1,12 @@
 import type { FiscalProvider, FiscalCancelRequest, FiscalCancelResponse, FiscalDocumentRequest, FiscalDocumentResponse } from '../index';
 import { mexicoItems } from './mexico-items';
 
+// Un rechazo de Cord ANTES de llamar al PAC: la petición nunca salió, así que
+// se sabe con certeza que no existe un CFDI. Antes devolvía el id del documento
+// como si fuera del proveedor y anular/editar lo trataban como "entrega
+// incierta": la factura quedaba atorada para siempre con el folio asignado.
+const LOCAL_REJECTION = { delivery_uncertain: false, local_validation: true } as const;
+
 // Proveedor fiscal de México: timbra CFDI 4.0 vía Facturapi (facturapi.io).
 //
 // Gated por env: si FACTURAPI_KEY está seteada (sk_test_… o sk_live_…), crea la
@@ -65,14 +71,16 @@ export class MexicoSatProvider implements FiscalProvider {
 
     const isCreditNote = ['cfdi_egreso', 'credit_note'].includes(request.documentType || '');
     if (isCreditNote && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(request.relatedFiscalId || '')) {
-      return { success: false, provider: 'facturapi', documentId: request.documentId,
-        error: 'La nota de crédito necesita el folio fiscal de la factura original.' };
+      return { success: false, provider: 'facturapi', documentId: 'err_local_' + request.documentId,
+        error: 'La nota de crédito necesita el folio fiscal de la factura original.',
+        rawProviderData: LOCAL_REJECTION };
     }
     let items;
     try { items = mexicoItems(request); }
     catch (error) {
-      return { success: false, provider: 'facturapi', documentId: request.documentId,
-        error: error instanceof Error ? error.message : 'El desglose fiscal no es válido.' };
+      return { success: false, provider: 'facturapi', documentId: 'err_local_' + request.documentId,
+        error: error instanceof Error ? error.message : 'El desglose fiscal no es válido.',
+        rawProviderData: LOCAL_REJECTION };
     }
 
     // Uso del CFDI: "público en general" (RFC genérico) EXIGE S01 (sin efectos
@@ -128,7 +136,14 @@ export class MexicoSatProvider implements FiscalProvider {
           success: false,
           provider: 'facturapi',
           documentId: 'err_mx_' + request.quoteId,
-          error: data?.message || `Facturapi ${res.status}`,
+          // El mensaje del PAC sí es accionable ("el RFC del receptor no es
+          // válido"); sin él, un texto neutro en vez de "Facturapi 502"
+          // (regla 14: la UI describe estados, no proveedores).
+          error: typeof data?.message === 'string' && data.message.trim()
+            ? data.message
+            : res.status >= 500
+              ? 'El servicio de timbrado no respondió. Reintenta en unos minutos.'
+              : 'No se pudo timbrar el documento. Revisa los datos fiscales del cliente y reintenta.',
           rawProviderData: {
             ...providerPayload,
             // Un 5xx puede ocurrir después de que el PAC aceptó el documento.
@@ -166,7 +181,9 @@ export class MexicoSatProvider implements FiscalProvider {
         success: false,
         provider: 'facturapi',
         documentId: 'err_mx_' + request.quoteId,
-        error: err?.message || 'fallo de red con Facturapi',
+        error: err?.name === 'TimeoutError'
+          ? 'El servicio de timbrado tardó demasiado en responder. Reintenta: no se duplicará la factura.'
+          : 'No hubo conexión con el servicio de timbrado. Reintenta: no se duplicará la factura.',
         // La petición pudo haber llegado al PAC aunque Cord no recibiera la
         // respuesta. El siguiente intento conserva la misma llave oficial de
         // idempotencia, por lo que no crea otro CFDI.

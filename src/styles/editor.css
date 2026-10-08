@@ -444,6 +444,9 @@
     box-shadow: 0 0 0 0.5px rgba(255, 255, 255, 0.08), 0 8px 24px -6px rgba(0, 0, 0, 0.35);
     z-index: 200; animation: toast-in 0.4s var(--ease-spring);
 }
+/* `display:flex` de arriba le gana al `hidden` del navegador: sin esta regla
+   el aviso nunca se ocultaba. */
+[data-editor] .toast[hidden] { display: none; }
 @keyframes toast-in {
     from { opacity: 0; transform: translate(-50%, 12px) scale(0.95); }
     to { opacity: 1; transform: translate(-50%, 0) scale(1); }

@@ -6,13 +6,17 @@ import { after } from '../after';
 import { cancelUsage, reserveUsage } from '../billing';
 import { requireEntitlement } from '../org-entitlements';
 import { emitFiscalDocument } from '../fiscal/emit';
-import { MAX_ITEMS, QuoteError, assertClienteDeOrg, productosDeOrg } from '../cotizaciones';
+import { MAX_ITEMS, QuoteError, assertClienteDeOrg, productosDeOrg, vigenciaDias } from '../cotizaciones';
 import { materializeAnticipoCobros } from '../cobros';
 import { sanitizeItem, calculateDocumentTotals } from '../../../packages/elements/src/engine';
 import { taxCatalogFor, TaxCatalogUnavailableError } from '../impuestos-db';
+import { unknownTaxRate, unknownTaxRateMessage } from '../impuestos';
 import { trackServer } from '../posthog-server';
 import { normalizeCurrency } from '../currency';
 import { FXService, FXUnavailableError } from '../fx/FXService';
+import {
+    approvalMotivo, approvalPolicyFor, evaluateApproval, notWorseThanApproved, totalInPolicyCurrency,
+} from '../quote-approval';
 import { type ActionContext, type ActionOutcome, auditAction, done, fromResponse } from './outcome';
 
 export type { ActionContext, ActionOutcome };
@@ -86,6 +90,14 @@ export async function runQuoteAction(ctx: ActionContext, id: string, input: Reco
         if (rows[0].aprob_estado !== 'pendiente') return done(409, { error: 'No hay una solicitud de aprobación pendiente' });
         const now = new Date().toISOString();
         if (input.action === 'approve_request') {
+            // Aprobar la solicitud ENVÍA la cotización: consume el envío como
+            // cualquier otro y manda el correo. Antes la marcaba "enviada",
+            // escribía el evento y el webhook, y el cliente nunca recibía nada.
+            const envioUsage = await reserveUsage(orgId, 'envios', 1);
+            if (!envioUsage.ok) {
+                const unavailable = /verificar|registrar/i.test(envioUsage.reason || '');
+                return done(unavailable ? 503 : 402, { error: envioUsage.reason, code: unavailable ? 'usage_verification_unavailable' : 'plan_limit_reached' });
+            }
             const [decided] = await withOrgTx(orgId, sql`
                 with upd as (
                     update cotizaciones set aprob_estado = 'aprobada', status = 'sent', sent_at = coalesce(sent_at, ${now})
@@ -95,8 +107,16 @@ export async function runQuoteAction(ctx: ActionContext, id: string, input: Reco
                 insert into eventos (org_id, cotizacion_id, tipo, detalle)
                 select ${orgId}, id, 'sent', 'Aprobada por gerencia y enviada al cliente' from upd
                 returning cotizacion_id`);
-            if (!decided.length) return done(409, { error: 'No hay una solicitud de aprobación pendiente' });
+            if (!decided.length) {
+                if (envioUsage.id) await cancelUsage(orgId, envioUsage.id);
+                return done(409, { error: 'No hay una solicitud de aprobación pendiente' });
+            }
             await audit('cotizacion.aprobacion_aprobada', rows[0].folio as string);
+            const email = await notifyQuoteSent(orgId, id, ctx.origin);
+            if (email.sent) {
+                await withOrgTx(orgId, sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
+                          values (${orgId}, ${id}, 'email', 'Correo enviado al cliente')`);
+            }
             after(dispatchQuoteEvent(orgId, id, 'quote.approval_decided', { decision: 'approved' }));
             after(dispatchQuoteEvent(orgId, id, 'quote.sent'));
             after(trackServer('quote_sent', orgId, {
@@ -107,7 +127,7 @@ export async function runQuoteAction(ctx: ActionContext, id: string, input: Reco
                 source: 'approval_flow',
                 send_type: 'initial',
             }, !!rows[0].is_sandbox, !!rows[0].is_demo));
-            return done(200, { ok: true, status: 'sent' });
+            return done(200, { ok: true, status: 'sent', email });
         }
         const [rejected] = await withOrgTx(orgId, sql`
             with upd as (
@@ -127,7 +147,7 @@ export async function runQuoteAction(ctx: ActionContext, id: string, input: Reco
     const action = ACTIONS[input.action];
     if (!action) return done(400, { error: 'Acción no válida' });
 
-    const [rows] = await withOrgTx(orgId, sql`select id, status, version, base_currency, fiscal_currency, fx_rate, total
+    const [rows] = await withOrgTx(orgId, sql`select id, status, version, base_currency, fiscal_currency, fx_rate, total, aprob_estado
                              from cotizaciones where id = ${id} and org_id = ${orgId}`);
     if (!rows.length) return done(404, { error: 'Cotización no encontrada' });
 
@@ -135,6 +155,54 @@ export async function runQuoteAction(ctx: ActionContext, id: string, input: Reco
     if (!action.from.includes(actual)) {
         return done(409, { error: `No se puede pasar de "${actual}" con esta acción` });
     }
+
+    const lostRace = () => done(409, { error: 'La cotización cambió mientras se procesaba. Recarga e intenta de nuevo.' });
+
+    // Aprobación interna (lib/quote-approval.ts): la misma evaluación que al
+    // crear. Sin esto, un borrador "pendiente de aprobación" se reabría en el
+    // editor y Enviar lo mandaba al cliente; una V2 tampoco se revisaba.
+    const sending = input.action === 'send' || input.action === 'resend';
+    const policy = sending ? await approvalPolicyFor(orgId) : null;
+    const aprobEstado = (rows[0].aprob_estado as string | null) ?? null;
+    let sale = {
+        baseCurrency: String(rows[0].base_currency || ''),
+        fiscalCurrency: String(rows[0].fiscal_currency || rows[0].base_currency || ''),
+        fxRate: Number(rows[0].fx_rate),
+    };
+    const storedVerdict = async () => {
+        const [stored] = await withOrgTx(orgId, sql`
+            select ci.precio_unitario, ci.precio_negociado, ci.costo_unitario
+              from cotizacion_items ci join cotizaciones c on c.id = ci.cotizacion_id
+             where ci.cotizacion_id = ${id} and c.org_id = ${orgId}`);
+        return evaluateApproval(stored, totalInPolicyCurrency(Number(rows[0].total) || 0, policy!.currency, sale), policy);
+    };
+    // El estado se revalida DENTRO de la transacción que reescribe la
+    // cotización: entre la lectura de arriba y la escritura, el cliente pudo
+    // aprobarla y el vendedor habría pisado líneas y totales de una
+    // cotización ya aprobada. Si el estado cambió, la división entre cero
+    // aborta la transacción completa.
+    const stateGuard: DbQuery[] = [];
+    stateGuard.push(
+        sql`select id from cotizaciones where id = ${id} and org_id = ${orgId} for update`,
+        sql`select 1 / (select count(*)::int from cotizaciones
+                         where id = ${id} and org_id = ${orgId} and status = any(${action.from}::text[])) as guard`,
+    );
+    const isStale = (error: unknown) => String((error as any)?.code) === '22012' || /division by zero/i.test(String((error as any)?.message));
+    const requestApproval = async (motivo: string, extraWrites: DbQuery[] = []) => {
+        try {
+            await withOrgTx(orgId, ...stateGuard, ...extraWrites,
+                sql`update cotizaciones set aprob_estado = 'pendiente', aprob_motivo = ${motivo}
+                     where id = ${id} and org_id = ${orgId}`,
+                sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
+                    values (${orgId}, ${id}, 'comment', ${'Solicitud de aprobación: ' + motivo})`);
+        } catch (error) {
+            if (isStale(error)) return lostRace();
+            throw error;
+        }
+        await audit('cotizacion.aprobacion_solicitada', motivo);
+        after(dispatchQuoteEvent(orgId, id, 'quote.approval_requested', { motivo }));
+        return done(200, { ok: true, status: 'draft', needsApproval: true, motivo });
+    };
 
     if (['resend', 'update_draft', 'send'].includes(input.action) && Array.isArray(input.items)) {
         if (input.items.length > MAX_ITEMS) return done(400, { error: `Demasiadas líneas (máximo ${MAX_ITEMS}).` });
@@ -148,6 +216,8 @@ export async function runQuoteAction(ctx: ActionContext, id: string, input: Reco
             if (error instanceof TaxCatalogUnavailableError) return done(503, { error: error.message, code: 'tax_catalog_unavailable' });
             throw error;
         }
+        const tasaDesconocida = unknownTaxRate(catalogo, rawItems.map((raw: any) => raw?.tax_rate));
+        if (tasaDesconocida !== null) return done(400, { error: unknownTaxRateMessage(tasaDesconocida), code: 'unknown_tax_rate' });
         const items = rawItems.map((raw: any, i: number) => ({
             ...sanitizeItem(raw),
             tax_rate: catalogo.resolve(rawItems[i]?.tax_rate, catalogo.defaultRate),
@@ -174,9 +244,13 @@ export async function runQuoteAction(ctx: ActionContext, id: string, input: Reco
                     throw error;
                 }
             }
-            const vigDias = Number(input.vigencia_dias) || 30;
+            // Mismas reglas que al crear: términos de una lista cerrada y
+            // vigencia acotada. Antes cualquier texto se guardaba como término
+            // y una vigencia negativa dejaba la cotización ya vencida.
+            const vigDias = vigenciaDias(input.vigencia_dias);
             const esRecurrente = !!input.es_recurrente;
-            const terminos = esRecurrente ? 'contado' : (input.terminos || 'contado');
+            const terminos = esRecurrente ? 'contado'
+                : (['contado', 'net30', 'net60'].includes(String(input.terminos)) ? String(input.terminos) : 'contado');
             const antRaw = Number(input.anticipo_pct);
             const anticipoPct = esRecurrente ? null
                 : (Number.isFinite(antRaw) && antRaw >= 1 && antRaw <= 99 ? Math.round(antRaw * 100) / 100 : null);
@@ -209,6 +283,7 @@ export async function runQuoteAction(ctx: ActionContext, id: string, input: Reco
                     throw error;
                 }
             }
+            sale = { baseCurrency, fiscalCurrency, fxRate };
 
             writes.push(sql`update cotizaciones set
                         cliente_id = ${input.cliente_id || null},
@@ -227,11 +302,11 @@ export async function runQuoteAction(ctx: ActionContext, id: string, input: Reco
                         retenciones_snapshot = ${retencionesSnapshot}::jsonb,
                         version = ${nextVersion}, iva_incluido = ${iva_incluido},
                         anticipo_pct = ${anticipoPct}, es_recurrente = ${esRecurrente}
-                      where id = ${id}`);
+                      where id = ${id} and org_id = ${orgId}`);
         } else {
             writes.push(sql`update cotizaciones set subtotal = ${realSubtotal}, iva = ${iva}, total = ${total},
                         retencion_total = ${retencionTotal}, retenciones_snapshot = ${retencionesSnapshot}::jsonb,
-                        version = ${nextVersion}, iva_incluido = ${iva_incluido} where id = ${id}`);
+                        version = ${nextVersion}, iva_incluido = ${iva_incluido} where id = ${id} and org_id = ${orgId}`);
         }
 
         const productosPropios = await productosDeOrg(orgId, items.map((it: any) => it.producto_id));
@@ -248,7 +323,41 @@ export async function runQuoteAction(ctx: ActionContext, id: string, input: Reco
         } else {
             writes.push(sql`update cotizacion_versiones set subtotal = ${realSubtotal}, iva = ${iva}, total = ${total}, items = ${JSON.stringify(items)}, iva_incluido = ${iva_incluido} where cotizacion_id = ${id} and version = ${nextVersion}`);
         }
-        await withOrgTx(orgId, ...writes);
+        if (policy) {
+            const verdict = evaluateApproval(items, totalInPolicyCurrency(total, policy.currency, sale), policy);
+            if (verdict.needed && input.action === 'send') {
+                // El borrador se guarda con lo que el vendedor capturó y queda
+                // esperando a gerencia, igual que al crear con "Enviar".
+                return requestApproval(approvalMotivo(verdict, policy.currency), writes);
+            }
+            if (verdict.needed && input.action === 'resend'
+                && !(aprobEstado === 'aprobada' && notWorseThanApproved(verdict, await storedVerdict()))) {
+                return done(409, {
+                    error: `Esta versión necesita aprobación: ${approvalMotivo(verdict, policy.currency)}. Ajústala o pide a quien aprueba que la revise.`,
+                    code: 'approval_required',
+                });
+            }
+        }
+        if (input.action === 'send' && aprobEstado === 'pendiente') {
+            // Ya no rebasa ningún tope (o el plan dejó de incluir aprobaciones):
+            // la solicitud anterior deja de aplicar.
+            writes.push(sql`update cotizaciones set aprob_estado = null, aprob_motivo = null where id = ${id} and org_id = ${orgId}`);
+        }
+        try {
+            await withOrgTx(orgId, ...stateGuard, ...writes);
+        } catch (error) {
+            if (isStale(error)) return lostRace();
+            throw error;
+        }
+    } else if (input.action === 'send') {
+        // Envío sin líneas nuevas (API, MCP, Slack): se evalúa lo guardado.
+        if (aprobEstado === 'pendiente' && policy) {
+            return done(409, { error: 'Esta cotización espera aprobación. Quien aprueba la enviará al decidir.', code: 'approval_pending' });
+        }
+        if (policy) {
+            const verdict = await storedVerdict();
+            if (verdict.needed) return requestApproval(approvalMotivo(verdict, policy.currency));
+        }
     }
 
     const now = new Date().toISOString();
@@ -283,7 +392,6 @@ export async function runQuoteAction(ctx: ActionContext, id: string, input: Reco
         }
     }
 
-    const lostRace = () => done(409, { error: 'La cotización cambió mientras se procesaba. Recarga e intenta de nuevo.' });
 
     if (action.to === 'sent') {
         let reservationId: string | undefined;

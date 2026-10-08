@@ -431,7 +431,9 @@ import { iconInner } from '../../../lib/icons';
     // HTML del sub-texto del nombre (unidad + nota de volumen + precio sugerido).
     const nameNote = (l, idx) => {
         const vm = volMin(l);
-        let html = l.unidad + (vm ? ` · <b class="lr-volnote">${tpl(T.volNoteTpl, { min: vm })}</b>` : '');
+        // Todo texto de catálogo, de Shopify o de la IA (que lee PDFs de
+        // terceros) entra escapado: una descripción con `<` o `"` es dato, no HTML.
+        let html = escapeHtml(l.unidad) + (vm ? ` · <b class="lr-volnote">${tpl(T.volNoteTpl, { min: vm })}</b>` : '');
         html += pricingNoteHtml(l, idx);
         html += existenciasNote(l);
         if (l.b2b && !l.negoTouched) html += ` · <b class="lr-b2b">${T.precioB2B}</b>`;
@@ -627,8 +629,8 @@ import { iconInner } from '../../../lib/icons';
 
             // Si es línea libre, el nombre es editable.
             const nameHtml = l.id
-                ? `<span class="lr-name">${l.nombre}<small>${nameNote(l, idx)}</small></span>`
-                : `<input type="text" class="lr-input lr-desc-input" value="${l.nombre}" data-idx="${idx}" data-field="nombre" placeholder="${T.descLineaPh}" />`;
+                ? `<span class="lr-name">${escapeHtml(l.nombre)}<small>${nameNote(l, idx)}</small></span>`
+                : `<input type="text" class="lr-input lr-desc-input" value="${escapeHtml(l.nombre)}" data-idx="${idx}" data-field="nombre" placeholder="${escapeHtml(T.descLineaPh)}" />`;
 
             row.innerHTML = `
                 ${nameHtml}
@@ -701,9 +703,9 @@ import { iconInner } from '../../../lib/icons';
             $prodDrop.innerHTML = `<div class="prod-empty">${T.sinCoincidencias}<br/><small>${T.sinCoincidenciasHint}</small></div>`;
         } else {
             $prodDrop.innerHTML = prodResults.map((p, i) => `
-                <button type="button" class="prod-item ${i === prodActive ? 'is-active' : ''}" data-pid="${p.id}" role="option">
-                    <span class="prod-item-name">${p.nombre}${p.sku ? `<small>${p.sku}</small>` : ''}${p.existencias === null || p.existencias === undefined ? '' : `<small class="prod-stock ${p.existencias <= 0 ? 'is-out' : ''}">${p.existencias <= 0 ? T.agotado : tpl(T.enExistenciaTpl, { n: p.existencias })}</small>`}</span>
-                    <span class="prod-item-price editorial">${fmt(p.precio)} <small>/ ${p.unidad}</small></span>
+                <button type="button" class="prod-item ${i === prodActive ? 'is-active' : ''}" data-pid="${escapeHtml(p.id)}" role="option">
+                    <span class="prod-item-name">${escapeHtml(p.nombre)}${p.sku ? `<small>${escapeHtml(p.sku)}</small>` : ''}${p.existencias === null || p.existencias === undefined ? '' : `<small class="prod-stock ${p.existencias <= 0 ? 'is-out' : ''}">${p.existencias <= 0 ? T.agotado : tpl(T.enExistenciaTpl, { n: p.existencias })}</small>`}</span>
+                    <span class="prod-item-price editorial">${fmt(p.precio)} <small>/ ${escapeHtml(p.unidad)}</small></span>
                 </button>`).join('');
         }
         $prodDrop.hidden = false;
@@ -1047,7 +1049,18 @@ import { iconInner } from '../../../lib/icons';
         };
     }
 
+    // Un solo guardado a la vez. Antes solo se deshabilitaba el botón pulsado:
+    // Enviar y luego "Guardar borrador" (o ⌘Enter) durante la petición creaban
+    // dos cotizaciones con dos folios.
+    let saving = false;
+    const actionButtons = () => ['btnSend', 'btnDraft'].map((id) => document.getElementById(id)).filter(Boolean);
+    const lockActions = (on) => actionButtons().forEach((b) => { b.disabled = on; b.style.opacity = on ? '0.7' : '1'; });
+    // Una respuesta que no es JSON (413, 502 de la plataforma) no puede
+    // terminar en un "Unexpected token" en pantalla.
+    const readJson = async (res) => { try { return await res.json(); } catch { return {}; } };
+
     async function save(send, btn) {
+        if (saving) return;
         if (!lines.length) {
             showToast(T.agregaAlMenosUno, 2600);
             if ($prodInput) $prodInput.focus();
@@ -1071,7 +1084,8 @@ import { iconInner } from '../../../lib/icons';
             return;
         }
         const original = btn.innerHTML;
-        btn.disabled = true; btn.style.opacity = '0.7';
+        saving = true;
+        lockActions(true);
         showToast(send ? T.enviando : T.guardando);
 
         try {
@@ -1084,9 +1098,12 @@ import { iconInner } from '../../../lib/icons';
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload),
                 });
-                const data = await res.json();
+                const data = await readJson(res);
                 if (!res.ok) throw new Error(data.error || T.errorGuardar);
-                showToast(send ? T.enviadaExito : T.borradorGuardado);
+                // Si rebasa un tope de aprobación, el borrador queda esperando a
+                // gerencia: decir "enviada" sería mentirle al vendedor.
+                if (data.needsApproval) showToast(tpl(T.aprobacionSolicitadaTpl, { folio: draftQuote.folio || '' }));
+                else showToast(send ? T.enviadaExito : T.borradorGuardado);
                 setTimeout(() => { window.location.href = `/app/cotizaciones/${draftQuote.id}`; }, 1100);
             } else {
                 // Normal creation
@@ -1096,14 +1113,16 @@ import { iconInner } from '../../../lib/icons';
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload),
                 });
-                const data = await res.json();
+                const data = await readJson(res);
                 if (!res.ok) throw new Error(data.error || T.errorGuardar);
                 if (data.needsApproval) showToast(tpl(T.aprobacionSolicitadaTpl, { folio: data.folio }));
                 else showToast(send ? tpl(T.enviadaFolioTpl, { folio: data.folio }) : tpl(T.borradorFolioGuardadoTpl, { folio: data.folio }));
                 setTimeout(() => { window.location.href = `/app/cotizaciones/${data.id}`; }, 1100);
             }
         } catch (err) {
-            btn.disabled = false; btn.style.opacity = '1'; btn.innerHTML = original;
+            saving = false;
+            lockActions(false);
+            btn.innerHTML = original;
             showToast(err.message || T.errorRed, 2600);
         }
     }
@@ -1820,6 +1839,9 @@ import { iconInner } from '../../../lib/icons';
         z-index: 200;
         animation: toast-in 0.4s var(--ease-spring);
     }
+    /* `display:flex` le gana al `hidden` del navegador: sin esta regla el aviso
+       ("Cotización enviada") se veía desde que cargaba la página. */
+    .toast[hidden] { display: none; }
     @keyframes toast-in { from { opacity: 0; transform: translate(-50%, 12px) scale(0.95); } to { opacity: 1; transform: translate(-50%, 0) scale(1); } }
     .toast-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--color-ok); box-shadow: 0 0 6px rgba(16,185,129,0.5); }
 

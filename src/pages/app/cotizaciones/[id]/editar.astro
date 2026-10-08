@@ -38,6 +38,11 @@ const [productos, CLIENTES, ORG, q, IMPUESTOS] = await Promise.all([
 if (!q || (q.status !== 'sent' && q.status !== 'viewed' && q.status !== 'expired' && q.status !== 'draft')) {
     return Astro.redirect(`/app/cotizaciones/${id}`);
 }
+// Un borrador se edita en el editor completo. Esta pantalla solo arma una
+// versión nueva de una cotización ya enviada: su guardado manda líneas y nada
+// más, y sobre un borrador eso borraba cliente, notas, términos, anticipo y
+// vigencia.
+if (q.status === 'draft') return Astro.redirect(`/app/cotizaciones/nueva?draft=${q.id}`);
 
 const catalogo = productos.filter(p => p.activo);
 const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b) => a - b);
@@ -180,7 +185,10 @@ import { iconInner } from '../../../../lib/icons';
         nombre: it.descripcion,
         unidad: it.unidad,
         lista: it.precioLista,
-        costo: 0, // No tenemos el costo guardado en el render inicial de mock, pero es tolerable para visualización
+        // Costo del catálogo, como en el editor principal. Con 0 fijo, cada V2
+        // borraba el costo guardado: se perdía el margen y, con él, el tope de
+        // margen mínimo que dispara la aprobación de gerencia.
+        costo: (it.producto_id && catalogo.find((p) => p.id === it.producto_id)?.costo) || 0,
         negociado: it.precioNegociado,
         cantidad: it.cantidad,
         // La tasa viaja con la línea. Sin esto, crear una V2 reseteaba cada
@@ -285,7 +293,7 @@ import { iconInner } from '../../../../lib/icons';
             const row = document.createElement('div');
             row.className = 'line-row';
             
-            const nameHtml = `<input type="text" class="lr-input lr-desc-input" value="${l.nombre}" data-idx="${idx}" data-field="nombre" placeholder="${T.descLineaPh}" />`;
+            const nameHtml = `<input type="text" class="lr-input lr-desc-input" value="${escapeHtml(l.nombre)}" data-idx="${idx}" data-field="nombre" placeholder="${escapeHtml(T.descLineaPh || '')}" />`;
 
             row.innerHTML = `
                 ${nameHtml}
@@ -534,6 +542,7 @@ import { iconInner } from '../../../../lib/icons';
     .btn-draft { font-family: var(--font-sans); font-size: 0.85rem; font-weight: 500; color: var(--color-text); background: var(--surface); border: 1px solid var(--color-border); border-radius: 8px; padding: 9px; cursor: pointer; transition: background 0.2s; }
     .sum-note { font-size: 0.75rem; color: var(--color-text-muted); margin: 0.4rem 0 0; line-height: 1.4; text-align: center; }
     .toast { position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; background: var(--color-text); color: #fff; font-size: 0.85rem; font-weight: 500; padding: 10px 16px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 200; }
+    .toast[hidden] { display: none; }
     .toast-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--color-ok); }
 
     @media (max-width: 980px) {

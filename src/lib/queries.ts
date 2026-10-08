@@ -1875,6 +1875,10 @@ export async function getFacturaDetalle(id: string) {
             subtotal: num(l.subtotal),
             impuesto: num(l.taxAmount),
             total: num(l.total),
+            // La tasa EXACTA con la que se capturó. Derivarla como
+            // impuesto/subtotal de importes redondeados daba 0.0801 en vez de
+            // 0.08, que ya no coincide con ninguna tasa del catálogo.
+            taxRate: l.taxRate === null || l.taxRate === undefined ? null : num(l.taxRate),
         })),
         anuladaEn: r.voided_at ? fmtDate(r.voided_at as string) : null,
         motivoAnulacion: (r.void_reason as string) || null,

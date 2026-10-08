@@ -78,8 +78,9 @@ describe('nota de crédito desde su creación hasta la emisión', () => {
   });
   it('bloquea el editor de ingreso para una nota de crédito', async () => {
     m.tx.mockResolvedValueOnce([[doc({ lifecycle: 'draft', invoice_number: null, credit_note_of: 'original' })]]);
-    const result = await updateInvoiceDraft('org-a', 'doc-a', { clienteId: 'client-a', items: [{ descripcion: 'Otro', cantidad: 1, precioUnitario: 10 }] });
-    expect(result.ok).toBe(false); expect(m.tx).toHaveBeenCalledTimes(1);
+    // UUID real: un id mal formado ya se rechaza antes de leer el documento.
+    const result = await updateInvoiceDraft('org-a', 'doc-a', { clienteId: '11111111-1111-4111-8111-111111111111', items: [{ descripcion: 'Otro', cantidad: 1, precioUnitario: 10 }] });
+    expect(result.ok).toBe(false); expect(result.error).toMatch(/nota de crédito/); expect(m.tx).toHaveBeenCalledTimes(1);
   });
   it('envía el UUID relacionado leído dentro de la organización', async () => {
     const uuid = '39c85a3f-275b-4341-b259-e8971d9f8a94';

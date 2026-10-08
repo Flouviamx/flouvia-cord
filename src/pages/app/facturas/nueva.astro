@@ -154,7 +154,7 @@ const BOOT = {
         lista: l.precioUnitario,
         negociado: null,
         cantidad: l.cantidad,
-        taxRate: l.subtotal > 0 ? l.impuesto / l.subtotal : DEFAULT_TAX_RATE,
+        taxRate: l.taxRate ?? (l.subtotal > 0 ? l.impuesto / l.subtotal : DEFAULT_TAX_RATE),
     })),
     i18n: {
         sinResultados: L === 'en' ? 'No products match' : 'Ningún producto coincide',
@@ -509,6 +509,8 @@ import { iconInner } from '../../../lib/icons';
     import { iconSvg } from '../../../lib/icons';
     import { createMoney } from '../../../lib/money-client';
     import { calculateDocumentTotals } from '../../../../packages/elements/src/engine';
+    import { roundDocumentTotals } from '../../../lib/document-rounding';
+    import { currencyDecimals } from '../../../lib/currency';
 
     const raiz = document.querySelector('[data-editor="invoice"]') as HTMLElement | null;
     const bootEl = document.getElementById('edBoot');
@@ -575,7 +577,7 @@ import { iconInner } from '../../../lib/icons';
         // ── Render ──────────────────────────────────────────────────────────
         const taxSelect = (l: Linea, i: number) => {
             const opts = (BOOT.taxOptions || []).map((o: any) =>
-                `<option value="${o.rate}"${Math.abs(o.rate - l.taxRate) < 1e-9 ? ' selected' : ''}>${o.label}</option>`).join('');
+                `<option value="${o.rate}"${Math.abs(o.rate - l.taxRate) < 1e-9 ? ' selected' : ''}>${escapeHtml(o.label)}</option>`).join('');
             return `<select class="lr-tax${l.taxRate === 0 ? ' is-exento' : ''}" data-i="${i}" aria-label="${T.concepto}">${opts}</select>`;
         };
 
@@ -614,7 +616,7 @@ import { iconInner } from '../../../lib/icons';
         let ultimoTotal = 0;
 
         const recalc = () => {
-            const totals = calculateDocumentTotals(
+            const crudos = calculateDocumentTotals(
                 lines.map((l) => ({
                     descripcion: l.nombre,
                     cantidad: l.cantidad,
@@ -624,13 +626,18 @@ import { iconInner } from '../../../lib/icons';
                 })),
                 { ivaIncluido: ivaIncluidoEl.checked, retenciones: BOOT.retenciones },
             );
+            // Lo mismo que guarda el servidor (fiscal/invoices.ts): el documento
+            // es la suma de sus líneas ya redondeadas. Mostrar el total crudo
+            // redondeado aparte difería por centavos de la factura emitida.
+            const fiscalMx = BOOT.orgCountry === 'MX' && ($('documentMode') as HTMLSelectElement | null)?.value === 'fiscal';
+            const totals = roundDocumentTotals(crudos, fiscalMx ? 2 : currencyDecimals(currency));
             ultimoTotal = totals.total;
 
             $('sumSubtotal')!.textContent = fmt(totals.subtotal);
             $('sumTotal')!.textContent = fmt(totals.total);
             // Desglose por tasa: una línea por tipo. Con una sola tasa se ve
             // igual que antes; con varias es la única forma de cuadrar.
-            const filasImpuesto = totals.porTasa
+            const filasImpuesto = totals.byRate
                 .filter((t: any) => t.impuesto > 0)
                 .map((t: any) => `<div class="sum-line sum-tax"><span>${escapeHtml(BOOT.taxLabel)} ${Math.round(t.tasa * 10000) / 100}%</span><span class="editorial">${fmt(t.impuesto)}</span></div>`);
             // Una retención se RESTA. Se dibuja con el signo a la vista porque
@@ -648,6 +655,8 @@ import { iconInner } from '../../../lib/icons';
         };
 
         ivaIncluidoEl.addEventListener('change', recalc);
+        // El CFDI redondea a centavos y el resto a los decimales de su divisa.
+        $('documentMode')?.addEventListener('change', recalc);
 
         // ── Edición in-place de la fila (no re-render: no pierde el foco) ────
         $lines.addEventListener('input', (e) => {
@@ -857,6 +866,9 @@ import { iconInner } from '../../../lib/icons';
             opt.textContent = c.contacto ? `${c.empresa} — ${c.contacto}` : (c.empresa || '');
             opt.dataset.desc = String(Number(c.descuento_pct) || 0);
             opt.dataset.term = c.terminos || 'contado';
+            // Sin esto, un cliente recién creado con correo aparecía "sin correo"
+            // y "Emitir y enviar" se negaba a mandarle su factura.
+            opt.dataset.email = String(c.email || '').trim();
             $client.insertBefore(opt, $client.querySelector('option[value="__NEW__"]'));
             $client.value = id;
             $client.dispatchEvent(new Event('change'));
@@ -1025,6 +1037,15 @@ import { iconInner } from '../../../lib/icons';
         };
 
         let activeDraftId: string | null = BOOT.draftId;
+        // Una sola operación a la vez: "Guardar y salir" en vuelo dejaba
+        // `activeDraftId` en null, y Emitir (o ⌘Enter) hacía un segundo POST
+        // que creaba otro borrador.
+        let busy = false;
+        const lockActions = (on: boolean) => ['btnIssue', 'btnIssueOnly', 'btnDraft', 'issueOk']
+            .forEach((id) => { const b = $(id) as HTMLButtonElement | null; if (b) b.disabled = on; });
+        // Una respuesta que no es JSON (413, 502 de la plataforma) no puede
+        // terminar en un "Unexpected token" en pantalla.
+        const readJson = async (res: Response) => { try { return await res.json(); } catch { return {}; } };
         const persistirBorrador = async () => {
             const res = activeDraftId
                 ? await fetch(`/api/facturas/${activeDraftId}`, {
@@ -1037,7 +1058,7 @@ import { iconInner } from '../../../lib/icons';
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload()),
                 });
-            const d = await res.json();
+            const d = await readJson(res);
             if (!res.ok) throw new Error(d.error || T.errorGenerico);
             activeDraftId = d.id || activeDraftId;
             if (!activeDraftId) throw new Error(T.errorGenerico);
@@ -1055,6 +1076,7 @@ import { iconInner } from '../../../lib/icons';
         const issueDialog = $('issueConfirm') as HTMLDialogElement;
         let pendingSend = true;
         const abrirEmision = (sendEmail: boolean) => {
+            if (busy || issueDialog.open) return;
             if (!validar()) return;
             const email = clientEmail();
             if (sendEmail && !email) { toast(T.sinCorreo, 4200); return; }
@@ -1071,24 +1093,26 @@ import { iconInner } from '../../../lib/icons';
 
         $('btnIssue')!.addEventListener('click', () => abrirEmision(true));
         $('btnIssueOnly')!.addEventListener('click', () => abrirEmision(false));
-        $('btnDraft')!.addEventListener('click', async (e) => {
-            if (!validar()) return;
-            const btn = e.currentTarget as HTMLButtonElement;
-            btn.disabled = true;
+        $('btnDraft')!.addEventListener('click', async () => {
+            if (busy || !validar()) return;
+            busy = true;
+            lockActions(true);
             toast(T.guardando, 6000);
             try {
                 await persistirBorrador();
                 toast(T.guardado, 900);
                 window.setTimeout(() => { window.location.href = '/app/facturas'; }, 450);
             } catch (err) {
-                btn.disabled = false;
+                busy = false;
+                lockActions(false);
                 toast(err instanceof Error ? err.message : T.errorGenerico, 3200);
             }
         });
 
-        $('issueOk')!.addEventListener('click', async (e) => {
-            const btn = e.currentTarget as HTMLButtonElement;
-            btn.disabled = true;
+        $('issueOk')!.addEventListener('click', async () => {
+            if (busy) return;
+            busy = true;
+            lockActions(true);
             toast(T.emitiendo, 12000);
             try {
                 const id = await persistirBorrador();
@@ -1097,13 +1121,14 @@ import { iconInner } from '../../../lib/icons';
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ action: pendingSend ? 'finalize_and_send' : 'finalize' }),
                 });
-                const d = await res.json();
+                const d = await readJson(res);
                 if (!res.ok) throw new Error(d.error || T.errorGenerico);
                 toast(T.emitida, 1200);
                 const delivery = d.sent === false ? '?delivery=failed' : '';
                 window.setTimeout(() => { window.location.href = `/app/facturas/${id}${delivery}`; }, 500);
             } catch (err) {
-                btn.disabled = false;
+                busy = false;
+                lockActions(false);
                 toast(err instanceof Error ? err.message : T.errorGenerico, 4200);
             }
         });

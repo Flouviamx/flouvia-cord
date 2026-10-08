@@ -239,15 +239,23 @@ type ProductoCatalogo = { id: string; nombre: string; unidad: string; precio: nu
 
 // La IA sugiere el producto; el precio y los datos salen SIEMPRE del catálogo.
 // Un precio que el cliente menciona solo cuenta como negociado si es menor al de lista.
+// La salida del modelo es una propuesta, no un dato de confianza: se acota a
+// rangos con sentido comercial antes de llegar al editor.
+const MAX_CANTIDAD = 1_000_000;
+const MAX_PRECIO = 1_000_000_000;
+
 export function lineaDesdeIa(it: any, byId: Map<string, ProductoCatalogo>): LineaIa {
-    const cantidad = Math.max(1, Math.round(Number(it?.cantidad) || 1));
+    // Tres decimales, no entero: el prompt pide decimales para kg, m² u horas,
+    // y redondear "medio kilo" a 1 facturaba el doble.
+    const raw = Number(it?.cantidad);
+    const cantidad = Number.isFinite(raw) && raw > 0 ? Math.min(MAX_CANTIDAD, Math.round(raw * 1000) / 1000 || 1) : 1;
     const p = it?.producto_id ? byId.get(String(it.producto_id)) : null;
     if (p) {
         const sug = Number(it.precio_sugerido) || 0;
         const negociado = sug > 0 && sug < p.precio ? sug : null;
         return { id: p.id, nombre: p.nombre, unidad: p.unidad, lista: p.precio, negociado, cantidad };
     }
-    const precio = Number(it?.precio_sugerido) > 0 ? Number(it.precio_sugerido) : 0;
+    const precio = Number(it?.precio_sugerido) > 0 ? Math.min(MAX_PRECIO, Number(it.precio_sugerido)) : 0;
     return { id: null, nombre: String(it?.descripcion || '').trim().slice(0, 500) || 'Concepto', unidad: 'pieza', lista: precio, negociado: null, cantidad };
 }
 

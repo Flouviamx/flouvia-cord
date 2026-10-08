@@ -113,7 +113,9 @@ async function finalize(orgId: string, id: string, request: Request) {
 
     const result = await finalizeInvoice(orgId, id);
     if (!result.emitted) {
-        return json({ error: result.error || 'No se pudo emitir la factura', fiscal: result }, result.httpStatus || 502);
+        // Solo el mensaje: el resultado completo llevaba identificadores
+        // internos del proveedor que no le sirven al usuario (regla 14).
+        return json({ error: result.error || 'No se pudo emitir la factura', status: result.status }, result.httpStatus || 502);
     }
     await logAudit(orgId, {
         accion: 'factura.emitida', entidad: 'factura', entidad_id: id,
@@ -195,7 +197,7 @@ async function duplicate(orgId: string, id: string, request: Request) {
             descripcion: linea.descripcion,
             cantidad: linea.cantidad,
             precioUnitario: linea.precioUnitario,
-            taxRate: linea.subtotal > 0 ? linea.impuesto / linea.subtotal : 0,
+            taxRate: linea.taxRate ?? (linea.subtotal > 0 ? linea.impuesto / linea.subtotal : 0),
         })),
     });
     if (!result.ok) return json({ error: result.error || 'No se pudo duplicar la factura.' }, 400);

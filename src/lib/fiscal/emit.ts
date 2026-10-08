@@ -7,7 +7,8 @@ import { documentTypeForOrg, documentPrefix } from './document-kind';
 import { sql, withOrgTx, withSystemTx } from '../db';
 import { decryptSecret } from '../crypto-secret';
 import { getCountryProfile } from '../countries';
-import { normalizeCurrency, toMinorUnits } from '../currency';
+import { currencyDecimals, normalizeCurrency, toMinorUnits } from '../currency';
+import { roundDocumentTotals, roundTo } from '../document-rounding';
 import { dueDateFor, isoDay } from '../cobros';
 import { FiscalFactory } from './FiscalFactory';
 import { partiesFrom } from './parties';
@@ -33,6 +34,16 @@ export interface EmitResult {
 }
 
 export const money = (value: number) => Math.round((value + Number.EPSILON) * 100) / 100;
+
+/**
+ * Decimales con los que se redondea un documento. El CFDI se valida a
+ * centavos (mexico-items.ts); el resto usa los de su divisa: JPY y CLP no
+ * tienen decimales y redondearlos "a centavos" dejaba saldos de −0.19 que la
+ * factura nunca terminaba de cobrar.
+ */
+export function documentDecimals(docType: string, currency: string): number {
+  return docType === 'cfdi_40' ? 2 : currencyDecimals(currency);
+}
 
 export function cleanPrefix(value: unknown, fallback: string): string {
   const cleaned = String(value || '').toUpperCase().replace(/[^A-Z0-9-]/g, '').slice(0, 12);
@@ -311,7 +322,7 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string, do
           o.fiscal_metadata, o.serie_folio,
           o.facturapi_live_key, o.facturapi_live_key_enc, o.sandbox_of,
           c.folio as quote_folio, c.subtotal, c.iva, c.total,
-          c.cliente_id, c.terminos as quote_terminos, c.created_at as quote_created,
+          c.cliente_id, c.terminos as quote_terminos, c.created_at as quote_created, c.approved_at as quote_approved,
           c.base_currency, c.fiscal_currency, c.fx_rate, c.fx_rate_source, c.fx_locked_until,
           c.iva_incluido, c.retencion_total, c.retenciones_snapshot,
           o.moneda as org_moneda,
@@ -383,20 +394,6 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string, do
     throw error;
   }
 
-  const lines: FiscalLineItem[] = totals.lineas.map((l) => ({
-    description: String(l.descripcion || 'Concepto').slice(0, 500),
-    quantity: l.cantidad,
-    unitPrice: money(l.cantidad ? l.base / l.cantidad : l.base),
-    taxRate: l.tax_rate,
-    subtotal: money(l.base),
-    taxAmount: money(l.impuesto),
-    total: money(l.total),
-  }));
-  const subtotal = money(totals.subtotal);
-  const taxes = money(totals.impuestos);
-  const total = money(totals.total);
-  const retencionTotal = money(totals.retencionTotal);
-
   const fiscalMetadata = metadata(head.fiscal_metadata);
   const { issuer, recipient } = partiesFrom(head, country);
   // ── Divisa del comprobante ────────────────────────────────────────────────
@@ -415,6 +412,13 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string, do
     (head.fiscal_currency as string) || (head.org_moneda as string) || profile.currency,
     currency,
   );
+  // El documento es la SUMA de sus líneas ya redondeadas (document-rounding.ts),
+  // igual que la factura independiente: redondear el total crudo aparte dejaba
+  // CFDI de varias líneas descuadrados por centavos, que el PAC rechazaba con
+  // el folio ya quemado.
+  const rounded = roundDocumentTotals(totals, documentDecimals(docType, currency));
+  const lines: FiscalLineItem[] = rounded.lines;
+  const { subtotal, taxes, total, retencionTotal } = rounded;
   const storedRate = Number(head.fx_rate);
   const fxRate = currency === ledgerCurrency
     ? 1
@@ -428,7 +432,7 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string, do
       error: `Esta cotización está en ${currency} y tu contabilidad en ${ledgerCurrency}, pero no tiene un tipo de cambio válido. Vuelve a guardarla para recalcularlo.`,
     };
   }
-  const ledgerTotal = money(total * fxRate);
+  const ledgerTotal = roundTo(total * fxRate, currencyDecimals(ledgerCurrency));
 
   // CFDI: el TipoCambio del SAT es siempre "moneda del comprobante → MXN". Si el
   // comprobante no va en pesos y la contabilidad de la organización tampoco, no
@@ -464,8 +468,13 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string, do
   // cotización (contado/net30/net60) porque es el dato que ya pactaron las
   // partes, pero a partir de aquí vive en la factura: el aging y los
   // recordatorios leen `due_date`, no vuelven a derivarlo de la cotización.
+  //
+  // El plazo corre desde que el cliente APROBÓ (mismo criterio que cobros.ts),
+  // no desde que se creó la cotización: una cotización de enero aprobada en
+  // marzo con Net 30 nacía con 30 días de mora y disparaba recordatorios,
+  // intereses y la cobranza con IA el mismo día de la factura.
   const dueDate = isoDay(dueDateFor(
-    (head.quote_created as string) || issuedAt,
+    (head.quote_approved as string) || issuedAt,
     (head.quote_terminos as string) || null,
   ));
   const publicToken = newInvoiceToken();
@@ -503,7 +512,7 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string, do
                  ${docType === 'cfdi_40' ? 'facturapi' : 'cord'},
                  ${folioPrefix} || '-' || lpad(sequence_value::text, 6, '0'),
                  ${currency}, ${ledgerCurrency}, ${fxRate}, ${ledgerTotal},
-                 ${subtotal}, ${taxes}, ${total}, ${retencionTotal}, ${JSON.stringify(totals.retenciones)}::jsonb,
+                 ${subtotal}, ${taxes}, ${total}, ${retencionTotal}, ${JSON.stringify(rounded.retenciones)}::jsonb,
                  'draft', ${dueDate}::date, 0, ${total}, ${publicToken},
                  ${JSON.stringify(issuer)}, ${JSON.stringify(recipient)}, ${JSON.stringify(lines)},
                  ${idempotencyKey}, 'cord.invoice.v1', ${JSON.stringify(isPartial ? { aprobacion_parcial: true, lineas_facturadas: approvedItems.length, lineas_totales: allItems.length } : {})}::jsonb, now()

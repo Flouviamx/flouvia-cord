@@ -1614,3 +1614,47 @@ medido). Intereses moratorios (`late_interest`) se queda en Scale y sigue
 suspendido; la viñeta de Scale pasa a "Aprobaciones de descuento y margen".
 Se actualizaron precios, comparativa, FAQ, página de producto, caso de uso de
 agencias, blog y la documentación pública ES/EN.
+
+## 2026-10-08 — Fase 1 del audit de los editores de cotización y factura
+
+Auditoría de "crear cotización" y "crear factura" (backend, editor y diseño).
+Esta fase cierra lo que tocaba dinero, ley o datos; el rediseño del editor queda
+para las fases siguientes.
+
+- **CFDI descuadrado por centavos.** El total del documento salía de redondear
+  la suma cruda y cada línea se redondeaba aparte: 10 conceptos de $10.01 al 16%
+  daban IVA 16.02 en el total y 16.00 en las líneas, y `mexico-items.ts`
+  (tolerancia de 1 centavo) rechazaba el timbrado. Ahora el documento es la suma
+  de sus líneas ya redondeadas (`src/lib/document-rounding.ts`), en factura
+  independiente, factura desde cotización y el resumen del editor. Los decimales
+  salen de la divisa (JPY/CLP sin decimales); el CFDI sigue a centavos.
+- **Factura atorada tras un error.** Un rechazo local devolvía el id del
+  documento como si fuera del proveedor y el folio ya asignado bloqueaba editar,
+  anular y borrar. Un error con certeza de no haber creado comprobante
+  (`isRetryableIssuanceError`) ahora se corrige y reintenta con el mismo folio y
+  una llave de idempotencia nueva; la entrega incierta sigue reintentándose tal cual.
+- **Aprobaciones que se saltaban.** Los topes solo se evaluaban al crear. Enviar
+  un borrador pendiente, enviar con líneas nuevas o reenviar una V2 con más
+  descuento ya no lo esquivan (`src/lib/quote-approval.ts`). Una V2 que no
+  empeora lo ya aprobado no vuelve a pedir permiso. El tope de monto se compara en
+  la divisa del negocio, convertido con la tasa congelada de la cotización.
+  Aprobar la solicitud ahora sí manda el correo y consume el envío.
+- **Medidor de envíos.** Crear con "Enviar" no reservaba `envios` (regla 17).
+- **Alta de cotización atómica.** Encabezado, líneas, versión y eventos en una
+  transacción; el folio se calcula dentro de ella bajo un advisory lock por
+  organización y con los dígitos finales tras el guion (un prefijo "Q2026"
+  producía "Q2026-20260002").
+- **Duplicar cotización** pasa por `createCotizacion`: antes perdía divisa,
+  `iva_incluido`, tasa por línea, costo, anticipo y retenciones, y no revisaba
+  permiso ni límite de plan.
+- **Validación de servidor.** Tasa de impuesto fuera del catálogo → 400 (antes
+  se sustituía en silencio por la default); términos en lista cerrada y vigencia
+  acotada en PATCH; estado revalidado dentro de la transacción que reescribe
+  líneas (TOCTOU con el cliente aprobando); UUID de cliente, fecha de calendario y
+  divisa ofrecida en facturas; `ai-draft` exige permiso de cotizar y conserva
+  cantidades decimales; el vencimiento de la factura que nace de una cotización
+  corre desde la aprobación.
+- **Editor.** Escapado de nombres de catálogo y de líneas de la IA (XSS),
+  guardado de un solo vuelo (doble clic creaba dos folios), avisos que de verdad
+  se ocultan, y un borrador ya no se abre en la pantalla de versiones (que borraba
+  cliente, notas y términos).
