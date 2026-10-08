@@ -4,20 +4,24 @@
 // Orden HAC/1177/2024, art. 15.3: la declaración debe estar "disponible de
 // manera legible e individualizada dentro del propio sistema informático" y
 // facilitarse al usuario en un formato electrónico de uso generalizado. Esta
-// página es pública (la enlazan Ajustes › Fiscal, el pie de la sección de
-// Verifactu y el contrato) y se imprime o guarda como PDF desde el navegador.
+// página es pública (la enlaza Ajustes › Fiscal) y se imprime o guarda como
+// PDF desde el navegador.
 //
-// Se construye desde la misma identidad que viaja en cada registro
-// (src/lib/fiscal/verifactu/declaracion.ts): lo declarado y lo enviado a la
-// AEAT no pueden divergir.
+// Mismo diseño que Términos y Aviso de Privacidad (legal-page, índice lateral,
+// secciones numeradas), pero el contenido no es un snapshot publicado: se
+// construye en vivo desde la misma identidad que viaja en cada registro
+// (src/lib/fiscal/verifactu/declaracion.ts), para que lo declarado y lo
+// enviado a la AEAT no puedan divergir.
 import Layout from '../../layouts/Layout.astro';
 import Nav from '../../components/landing/Nav.astro';
 import Footer from '../../components/landing/Footer.astro';
+import PageAnims from '../../components/landing/PageAnims.astro';
 import { declaracionResponsableONull, DECLARACION_TITULO } from '../../lib/fiscal/verifactu/declaracion';
 
 export const prerender = false;
 
 const decl = declaracionResponsableONull();
+const anchor = (clave: string) => `ap-${clave.replace('.', '')}`;
 ---
 
 <Layout
@@ -27,151 +31,381 @@ const decl = declaracionResponsableONull();
 >
     <Nav />
 
-    <main class="dr">
-        <article class="dr-doc" lang="es">
-            {decl ? (
-                <>
-                    <header class="dr-head">
-                        <p class="dr-kicker">{decl.nombreSistema} · versión {decl.version}</p>
-                        <h1>{decl.titulo}</h1>
-                    </header>
+    <PageAnims />
 
-                    <ol class="dr-list">
-                        {decl.apartados.map((a) => (
-                            <li class="dr-item">
-                                <p class="dr-label"><span class="dr-key">{a.clave})</span> {a.texto}</p>
-                                {a.valor.map((v) => <p class="dr-value">{v}</p>)}
-                            </li>
+    <main class="legal-page js-anim" lang="es">
+        <div class="legal-header">
+            <h1 class="editorial masked-title">Declaración responsable</h1>
+            <div class="reveal">
+                <p class="last-updated">
+                    {decl
+                        ? `${decl.nombreSistema} versión ${decl.version} · Suscrita el ${decl.fechaTexto}`
+                        : 'Verifactu todavía no está disponible en Cord'}
+                </p>
+            </div>
+        </div>
+
+        {decl ? (
+            <div class="legal-grid reveal">
+                <aside class="toc-sidebar">
+                    <span class="toc-eyebrow">CONTENIDO</span>
+                    <ul class="toc-list">
+                        {decl.apartados.map((a, i) => (
+                            <li><a href={`#${anchor(a.clave)}`} class={i === 0 ? 'toc-link active' : 'toc-link'}>{a.clave}) {a.corto}</a></li>
                         ))}
-                    </ol>
+                        <li><a href="#anexo" class="toc-link">Anexo</a></li>
+                    </ul>
+                </aside>
 
-                    <h2 class="dr-annex">ANEXO</h2>
-                    <ol class="dr-list">
-                        {decl.anexo.map((a) => (
-                            <li class="dr-item">
-                                <p class="dr-label"><span class="dr-key">{a.clave})</span> {a.texto}</p>
-                                {a.valor.map((v) => <p class="dr-value">{v}</p>)}
-                            </li>
-                        ))}
-                    </ol>
-
-                    <div class="dr-actions">
-                        <button type="button" class="dr-print" id="drPrint">Imprimir o guardar como PDF</button>
+                <div class="legal-content">
+                    <div class="intro-box">
+                        <p>Declaración responsable que el Reglamento aprobado por el Real Decreto 1007/2023 (artículo 13) y la Orden HAC/1177/2024 (artículo 15) exigen al productor de un sistema informático de facturación. Corresponde a la versión {decl.version} de {decl.nombreSistema}.</p>
                     </div>
-                </>
-            ) : (
-                <header class="dr-head">
-                    <h1>{DECLARACION_TITULO}</h1>
-                    <p class="dr-pending">El registro de facturas ante la Agencia Tributaria (Verifactu) todavía no está disponible en Cord. Su declaración responsable se publicará aquí antes de que lo esté.</p>
-                </header>
-            )}
-        </article>
+
+                    <p class="dr-title">{decl.titulo}</p>
+
+                    {decl.apartados.map((a) => (
+                        <section class="dr-section">
+                            <h2 id={anchor(a.clave)} class="editorial"><span class="num">{a.clave}</span> {a.corto}</h2>
+                            <p class="dr-label">{a.texto}</p>
+                            {a.valor.map((v) => <p class="dr-value">{v}</p>)}
+                        </section>
+                    ))}
+
+                    <h2 id="anexo" class="editorial"><span class="num">2</span> Anexo</h2>
+                    {decl.anexo.map((a) => (
+                        <section class="dr-section">
+                            <h3 class="dr-sub"><span class="dr-key">{a.clave})</span> {a.corto}</h3>
+                            <p class="dr-label">{a.texto}</p>
+                            {a.valor.length > 1
+                                ? <ul>{a.valor.map((v) => <li>{v}</li>)}</ul>
+                                : a.valor.map((v) => <p class="dr-value">{v}</p>)}
+                        </section>
+                    ))}
+
+                    <p class="dr-print-row"><a href="#" id="drPrint">Imprimir o guardar como PDF</a></p>
+                </div>
+            </div>
+        ) : (
+            <div class="legal-grid legal-grid--single reveal">
+                <div class="legal-content">
+                    <div class="intro-box">
+                        <p>El registro de facturas ante la Agencia Tributaria (Verifactu) todavía no está disponible en Cord. La {DECLARACION_TITULO.toLowerCase()} se publicará aquí antes de que lo esté.</p>
+                    </div>
+                </div>
+            </div>
+        )}
     </main>
 
     <Footer />
 </Layout>
 
+<!-- Scrollspy del índice: el mismo que Términos y Aviso de Privacidad -->
 <script>
-    document.getElementById('drPrint')?.addEventListener('click', () => window.print());
+    document.addEventListener('DOMContentLoaded', () => {
+        const sections = document.querySelectorAll('.legal-content h2[id]');
+        const navLinks = document.querySelectorAll('.toc-link');
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+                if (!entry.isIntersecting) return;
+                const id = entry.target.getAttribute('id');
+                navLinks.forEach((link) => {
+                    link.classList.toggle('active', link.getAttribute('href') === `#${id}`);
+                });
+            });
+        }, { root: null, rootMargin: '-100px 0px -60% 0px', threshold: 0 });
+        sections.forEach((section) => observer.observe(section));
+
+        document.getElementById('drPrint')?.addEventListener('click', (event) => {
+            event.preventDefault();
+            window.print();
+        });
+    });
 </script>
 
-<style>
-    .dr {
-        background: #f5f5f7;
-        padding: 140px 16px 96px;
+<style is:global>
+    ::selection {
+        background-color: var(--color-blue-deep);
+        color: #ffffff;
     }
-    .dr-doc {
-        max-width: 760px;
-        margin: 0 auto;
-        background: #fff;
-        border-radius: 32px;
-        padding: 56px clamp(24px, 6vw, 64px);
-        box-shadow: 0 1px 2px rgba(10, 25, 47, 0.04), 0 12px 40px rgba(10, 25, 47, 0.06);
+
+    html {
+        scroll-behavior: smooth;
     }
-    .dr-head { margin-bottom: 40px; }
-    .dr-kicker {
-        font-size: 13px;
-        color: #6b7280;
-        margin: 0 0 12px;
-    }
-    .dr-head h1 {
-        font-size: clamp(22px, 3vw, 30px);
-        line-height: 1.1;
-        letter-spacing: -0.04em;
-        color: #050505;
-        margin: 0;
-        text-wrap: balance;
-    }
-    .dr-pending {
-        margin-top: 20px;
-        font-size: 15px;
-        line-height: 1.6;
-        color: #4b5563;
-    }
-    .dr-list {
-        list-style: none;
-        margin: 0;
-        padding: 0;
-    }
-    .dr-item {
-        padding: 20px 0;
-        border-top: 1px solid #eef0f3;
-    }
-    .dr-item:first-child { border-top: 0; padding-top: 0; }
-    .dr-label {
-        margin: 0 0 8px;
-        font-size: 14px;
-        line-height: 1.55;
-        color: #4b5563;
-    }
-    .dr-key {
-        font-weight: 600;
-        color: #050505;
-        font-variant-numeric: tabular-nums;
-    }
-    .dr-value {
-        margin: 6px 0 0;
-        font-size: 15px;
-        line-height: 1.6;
-        color: #050505;
-        font-weight: 500;
-        overflow-wrap: anywhere;
-    }
-    .dr-annex {
-        margin: 48px 0 20px;
-        font-size: 13px;
-        letter-spacing: 0.12em;
-        color: #6b7280;
-        font-weight: 600;
-    }
-    .dr-actions { margin-top: 40px; }
-    .dr-print {
-        appearance: none;
-        border: 0;
-        border-radius: 999px;
-        background: #0a192f;
-        color: #fff;
-        font: inherit;
-        font-size: 14px;
-        font-weight: 600;
-        padding: 12px 22px;
-        cursor: pointer;
-        transition: transform 0.15s ease;
-    }
-    .dr-print:hover { transform: scale(1.02); }
-    .dr-print:active { transform: scale(0.98); }
-    .dr-print:focus-visible { outline: 2px solid #0a192f; outline-offset: 3px; }
 
     @media print {
-        .dr { background: #fff; padding: 0; }
-        .dr-doc { box-shadow: none; border-radius: 0; padding: 0; max-width: none; }
-        .dr-actions { display: none; }
+        /* La declaración se imprime sola: sin la navegación ni el pie del sitio. */
+        body:has(.legal-page) nav, body:has(.legal-page) footer { display: none !important; }
     }
 </style>
 
-<style is:global>
+<style>
+    /* Mismo sistema visual que src/pages/terminos.astro y privacidad.astro. */
+    .legal-page {
+        padding: 12rem 2rem 9rem;
+        min-height: 100vh;
+        background-color: var(--color-bg);
+        font-family: var(--font-sans), sans-serif;
+    }
+
+    .legal-header {
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+
+    .editorial {
+        font-family: var(--font-sans), sans-serif;
+        font-weight: 600;
+        letter-spacing: -0.03em;
+        font-variant-numeric: tabular-nums;
+        font-feature-settings: "tnum" on;
+    }
+
+    h1.editorial {
+        font-size: clamp(2.5rem, 5vw, 4rem);
+        margin-bottom: 1.5rem;
+        color: var(--color-blue-deep);
+        line-height: 1.1;
+        letter-spacing: -0.04em;
+        text-wrap: balance;
+    }
+
+    .last-updated {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: var(--color-text-muted);
+        margin-bottom: 4rem;
+    }
+
+    .legal-grid {
+        display: grid;
+        grid-template-columns: 240px 1fr;
+        gap: 5rem;
+        max-width: 1000px;
+        margin: 0 auto;
+        align-items: start;
+    }
+
+    .legal-grid--single {
+        grid-template-columns: 1fr;
+    }
+
+    .toc-sidebar {
+        position: sticky;
+        top: 120px;
+    }
+
+    .toc-eyebrow {
+        display: block;
+        font-size: 0.65rem;
+        font-weight: 800;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        color: #888;
+        margin-bottom: 1.5rem;
+    }
+
+    .toc-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        border-left: 1px solid var(--color-border);
+    }
+
+    .toc-link {
+        display: block;
+        padding: 0.5rem 0 0.5rem 1.25rem;
+        color: var(--color-text-muted);
+        font-size: 0.9rem;
+        text-decoration: none;
+        position: relative;
+        transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+                    color 0.3s ease,
+                    border-color 0.3s ease;
+        margin-left: -1px;
+        border-left: 2px solid transparent;
+        transform: translateX(0);
+    }
+
+    .toc-link:hover {
+        color: var(--color-text);
+        transform: translateX(3px);
+    }
+
+    .toc-link.active {
+        color: var(--color-blue-deep);
+        font-weight: 600;
+        border-left: 2px solid var(--color-blue-deep);
+        transform: translateX(3px);
+    }
+
+    .legal-content {
+        color: var(--color-text);
+        line-height: 1.75;
+        font-size: 1.05rem;
+        min-width: 0;
+    }
+
+    .intro-box {
+        background-color: var(--color-bg-soft);
+        border: 1px solid var(--color-border);
+        border-radius: 12px;
+        padding: 2rem;
+        margin-bottom: 3rem;
+        transition: box-shadow 0.4s var(--ease-smooth), transform 0.4s var(--ease-smooth);
+    }
+
+    .intro-box:hover {
+        box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05);
+        transform: translateY(-2px);
+    }
+
+    .intro-box p {
+        margin: 0;
+        color: var(--color-text);
+    }
+
+    /* Título literal que exige el art. 15.1 de la Orden. */
+    .dr-title {
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        color: var(--color-blue-deep);
+        margin-bottom: 0;
+    }
+
+    .legal-content h2.editorial {
+        font-size: 1.5rem;
+        margin-top: 5rem;
+        margin-bottom: 1.5rem;
+        color: var(--color-blue-deep);
+        border-bottom: 1px solid var(--color-border);
+        padding-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        transition: color 0.3s ease;
+        scroll-margin-top: 120px;
+    }
+
+    .dr-section:first-of-type h2.editorial {
+        margin-top: 2.5rem;
+    }
+
+    .legal-content h2.editorial .num {
+        font-style: normal;
+        font-weight: 300;
+        color: var(--color-text-muted);
+        opacity: 0.4;
+        font-size: 1.25rem;
+        transition: opacity 0.4s ease, color 0.4s ease;
+    }
+
+    .legal-content h2.editorial:hover .num {
+        opacity: 0.8;
+        color: var(--color-blue-deep);
+    }
+
+    .dr-sub {
+        font-size: 1.05rem;
+        font-weight: 600;
+        color: var(--color-blue-deep);
+        margin: 2.5rem 0 0.75rem;
+        letter-spacing: -0.01em;
+    }
+
+    .dr-key {
+        color: var(--color-text-muted);
+        font-weight: 400;
+        font-variant-numeric: tabular-nums;
+    }
+
+    /* El texto explicativo precede a cada dato (art. 15.1). */
+    .legal-content .dr-label {
+        font-size: 0.95rem;
+        color: var(--color-text-muted);
+        margin-bottom: 0.75rem;
+    }
+
+    .legal-content .dr-value {
+        color: var(--color-text);
+        font-weight: 500;
+        margin-bottom: 1rem;
+        overflow-wrap: anywhere;
+    }
+
+    .legal-content p {
+        margin-bottom: 1.5rem;
+        color: rgba(5, 5, 5, 0.85);
+    }
+
+    .legal-content ul {
+        margin-bottom: 2rem;
+        padding-left: 1.5rem;
+        list-style-type: none;
+    }
+
+    .legal-content li {
+        margin-bottom: 1rem;
+        position: relative;
+        color: rgba(5, 5, 5, 0.85);
+        overflow-wrap: anywhere;
+    }
+
+    .legal-content li::before {
+        content: "";
+        position: absolute;
+        left: -1.25rem;
+        top: 0.6rem;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background-color: var(--color-blue-deep);
+        opacity: 0.4;
+        transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+
+    .legal-content li:hover::before {
+        opacity: 0.8;
+        transform: scale(1.2);
+    }
+
+    .dr-print-row {
+        margin-top: 4rem;
+    }
+
+    .legal-content .dr-print-row a {
+        color: var(--color-blue-deep);
+        text-decoration: none;
+        font-weight: 500;
+        background-image: linear-gradient(var(--color-blue-deep), var(--color-blue-deep));
+        background-size: 0% 1px;
+        background-position: 0 100%;
+        background-repeat: no-repeat;
+        transition: background-size 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .legal-content .dr-print-row a:hover {
+        background-size: 100% 1px;
+    }
+
+    @media (max-width: 860px) {
+        .legal-page {
+            padding: 9rem 1rem 6rem;
+        }
+        .legal-grid {
+            grid-template-columns: 1fr;
+        }
+        .toc-sidebar {
+            display: none;
+        }
+    }
+
     @media print {
-        /* La declaración se imprime sola: sin la navegación ni el pie del sitio. */
-        body:has(.dr) nav, body:has(.dr) footer { display: none !important; }
+        .legal-page { padding: 0; min-height: 0; }
+        .legal-grid { grid-template-columns: 1fr; gap: 0; }
+        .toc-sidebar, .dr-print-row { display: none; }
+        .legal-content h2.editorial { margin-top: 2rem; }
+        .intro-box { break-inside: avoid; }
     }
 </style>

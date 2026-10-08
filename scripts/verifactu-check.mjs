@@ -260,6 +260,14 @@ const sifOtro = { ...sifNif, nif: undefined, nombreRazon: 'Flouvia SA de CV', id
         assert.match(ap('1.k').texto, /artículo 29\.2\.j\) de la Ley 58\/2003/);
         assert.deepEqual(ap('1.l').valor, ['Fecha: 1 de octubre de 2026.', 'Lugar: Ciudad de México, México.']);
         assert.deepEqual(ap('1.j').valor, ['Av. Reforma 1', '06600 Ciudad de México', 'México']);
+        assert.match(ap('1.h').texto, /^Razón social de la entidad productora/, 'un RFC de 12 caracteres es una persona moral');
+        // Persona productora (nota i del modelo de la AEAT): cambian los textos.
+        process.env.VERIFACTU_SIF_PRODUCTOR = 'persona';
+        const declPersona = declaracionResponsable();
+        const apP = (k) => declPersona.apartados.find((a) => a.clave === k);
+        assert.match(apP('1.h').texto, /^Nombre y apellidos de la persona productora/);
+        for (const k of ['1.i', '1.j', '1.k', '1.l']) assert.ok(!/entidad productora/.test(apP(k).texto), `${k} habla de la persona productora`);
+        delete process.env.VERIFACTU_SIF_PRODUCTOR;
         const fechaOk = process.env.VERIFACTU_DECLARACION_FECHA;
         process.env.VERIFACTU_DECLARACION_FECHA = '2999-01-01';
         assert.throws(() => requireSifIdentity(), SifNotConfiguredError, 'una declaración no se suscribe en el futuro');
