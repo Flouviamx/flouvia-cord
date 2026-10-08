@@ -1,0 +1,227 @@
+---
+// Mockup: el Cord Workbench abierto a media altura sobre la app, en la pestaña
+// Resumen. Calca de la rama `tab === 'resumen'` de src/pages/app/wb/[tab].astro:
+// "Tu integración" con el selector de periodo, la gráfica de peticiones
+// (correctas vs. con error) con su leyenda y latencia promedio, la distribución
+// de errores con las rutas que más fallan, las entregas de eventos, la
+// actividad reciente y, a la derecha, Salud + Recursos para desarrolladores.
+// Las rutas se guardan sin el prefijo /api (apikey.ts), igual que aquí.
+import DocsMockup from './DocsMockup.astro';
+import DmIcon from './DmIcon.astro';
+import WbPanel from './WbPanel.astro';
+import WbBackdrop from './WbBackdrop.astro';
+import { dmT, pick, type DmLang } from './format';
+
+interface Props {
+    lang: DmLang;
+    caption?: string;
+}
+const { lang } = Astro.props;
+const nf = (n: number) => new Intl.NumberFormat(lang === 'en' ? 'en-US' : 'es-MX').format(n);
+
+// 14 días (25 sep → 8 oct). ok + err por día; el total del periodo sale de aquí.
+const SERIE = [
+    [262, 3], [298, 5], [151, 1], [96, 0], [318, 9], [344, 6], [371, 4],
+    [356, 12], [402, 8], [188, 2], [121, 1], [433, 14], [468, 9], [412, 7],
+].map(([ok, err], i) => {
+    const d = new Date(Date.UTC(2026, 8, 25 + i));
+    return { ok, err, label: `${d.getUTCDate()}/${d.getUTCMonth() + 1}` };
+});
+const totalOk = SERIE.reduce((s, x) => s + x.ok, 0);
+const totalErr = SERIE.reduce((s, x) => s + x.err, 0);
+const maxSerie = Math.max(...SERIE.map((x) => x.ok + x.err));
+const pct = (n: number, max: number) => (n <= 0 || max <= 0 ? 0 : Math.max(3, Math.round((n / max) * 100)));
+const C4 = 71, C5 = totalErr - 71;
+const ENT_OK = 1284, ENT_ERR = 6;
+
+const DATA = {
+    es: {
+        caption: `El Workbench abierto a media altura sobre Cotizaciones, en la pestaña Resumen: ${nf(totalOk + totalErr)} peticiones a la API en 14 días con 142 ms de latencia promedio, ${nf(totalErr)} con error (las rutas que más fallan arriba), ${nf(ENT_OK)} entregas de webhook y la integración sin alertas activas.`,
+        recent: [
+            { m: 'POST', path: '/v1/cotizaciones', st: 201, ms: 184, when: '8 oct, 11:42' },
+            { m: 'GET', path: '/v1/clientes/cli_8f2a41', st: 200, ms: 61, when: '8 oct, 11:42' },
+            { m: 'POST', path: '/v1/elements/fill', st: 422, ms: 96, when: '8 oct, 11:39' },
+            { m: 'GET', path: '/v1/productos?limit=50', st: 200, ms: 112, when: '8 oct, 11:37' },
+            { m: 'PATCH', path: '/v1/cotizaciones/COT-0148', st: 200, ms: 143, when: '8 oct, 11:31' },
+        ],
+    },
+    en: {
+        caption: `The Workbench open at half height over Quotes, on the Overview tab: ${nf(totalOk + totalErr)} API requests in 14 days at a 142 ms average latency, ${nf(totalErr)} failed (with the most failing routes), ${nf(ENT_OK)} webhook deliveries and no active alerts on the integration.`,
+        recent: [
+            { m: 'POST', path: '/v1/cotizaciones', st: 201, ms: 184, when: 'Oct 8, 11:42' },
+            { m: 'GET', path: '/v1/clientes/cli_8f2a41', st: 200, ms: 61, when: 'Oct 8, 11:42' },
+            { m: 'POST', path: '/v1/elements/fill', st: 422, ms: 96, when: 'Oct 8, 11:39' },
+            { m: 'GET', path: '/v1/productos?limit=50', st: 200, ms: 112, when: 'Oct 8, 11:37' },
+            { m: 'PATCH', path: '/v1/cotizaciones/COT-0148', st: 200, ms: 143, when: 'Oct 8, 11:31' },
+        ],
+    },
+};
+const d = pick(DATA, lang);
+const caption = Astro.props.caption ?? d.caption;
+const TOP = [
+    { ruta: '/v1/elements/fill', n: 38 },
+    { ruta: '/v1/cotizaciones', n: 21 },
+    { ruta: '/v1/clientes/:id', n: 12 },
+];
+const RANGES = ['24h', '7d', '14d'] as const;
+const strip = (s: string) => s.replace(/\s*[→↗]$/, '');
+---
+<DocsMockup lang={lang} variant="app" chrome="full" sidebar="rail" active="cotizaciones" title={dmT(lang, 'cot.heading')} badges={{ seguimiento: 1 }} caption={caption} class="dm-wb-figure dm-wbov-figure">
+    <WbBackdrop lang={lang} />
+
+    <WbPanel slot="overlay" lang={lang} tab="resumen" class="dm-wb-sheet">
+        <div class="wbov">
+            <div class="wbov-main">
+                <div class="wbov-head">
+                    <span class="wbm-sec-title">{dmT(lang, 'wb.resumen.integracion')}</span>
+                    <span class="wbm-seg">{RANGES.map((r) => <span class:list={{ 'is-on': r === '14d' }}>{dmT(lang, `wb.rango.${r}`)}</span>)}</span>
+                </div>
+
+                <div class="wbm-card">
+                    <span class="wbm-lbl">{dmT(lang, 'wb.resumen.peticiones')}</span>
+                    <span class="wbm-big">{nf(totalOk + totalErr)}</span>
+                    <div class="wbov-chart">
+                        {SERIE.map((s) => {
+                            const tot = s.ok + s.err;
+                            return (
+                                <span class="wbov-col">
+                                    <span class="wbov-bar" style={`height:${pct(tot, maxSerie)}%`}>
+                                        <i style={`height:${tot ? Math.max(s.err ? 4 : 0, Math.round((s.err / tot) * 100)) : 0}%`}></i>
+                                    </span>
+                                </span>
+                            );
+                        })}
+                    </div>
+                    <div class="wbov-axis"><span>{SERIE[0].label}</span><span>{SERIE[SERIE.length - 1].label}</span></div>
+                    <div class="wbov-legend">
+                        <span><i class="ok"></i>{dmT(lang, 'wb.resumen.exito')} <b>{nf(totalOk)}</b></span>
+                        <span><i class="err"></i>{dmT(lang, 'wb.resumen.error')} <b>{nf(totalErr)}</b></span>
+                        <span class="wbov-legend-r">{dmT(lang, 'wb.resumen.latencia_prom')} <b>142<em>ms</em></b></span>
+                    </div>
+                </div>
+
+                <div class="wbov-duo">
+                    <div class="wbm-card">
+                        <span class="wbm-lbl">{dmT(lang, 'wb.resumen.dist_errores')}</span>
+                        <div class="wbov-dist">
+                            <div class="wbov-dist-row"><span>4xx</span><span class="wbov-track"><i class="warn" style={`width:${pct(C4, C4 + C5)}%`}></i></span><b>{nf(C4)}</b></div>
+                            <div class="wbov-dist-row"><span>5xx</span><span class="wbov-track"><i class="bad" style={`width:${pct(C5, C4 + C5)}%`}></i></span><b>{nf(C5)}</b></div>
+                        </div>
+                        <div class="wbov-top">
+                            <span class="wbov-top-lbl">{dmT(lang, 'wb.resumen.top_rutas')}</span>
+                            {TOP.map((r) => <div class="wbov-top-row"><span class="wbm-mono">{r.ruta}</span><b>{r.n}</b></div>)}
+                        </div>
+                    </div>
+                    <div class="wbm-card">
+                        <span class="wbm-lbl">{dmT(lang, 'wb.resumen.entregas')}</span>
+                        <div class="wbov-dist">
+                            <div class="wbov-dist-row"><span>{dmT(lang, 'wb.resumen.entregadas')}</span><span class="wbov-track"><i class="ok" style={`width:${pct(ENT_OK, ENT_OK + ENT_ERR)}%`}></i></span><b>{nf(ENT_OK)}</b></div>
+                            <div class="wbov-dist-row"><span>{dmT(lang, 'wb.resumen.fallidas')}</span><span class="wbov-track"><i class="bad" style={`width:${pct(ENT_ERR, ENT_OK + ENT_ERR)}%`}></i></span><b>{nf(ENT_ERR)}</b></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="wbm-card">
+                    <div class="wbov-head wbov-head-in">
+                        <span class="wbm-lbl">{dmT(lang, 'wb.resumen.actividad_reciente')}</span>
+                        <span class="wbm-link">{dmT(lang, 'wb.resumen.ver_registros')}</span>
+                    </div>
+                    {d.recent.map((r) => (
+                        <div class="wbov-act">
+                            <span class:list={['wbm-m', r.m.toLowerCase()]}>{r.m}</span>
+                            <span class="wbm-path">{r.path}</span>
+                            <span class:list={['wbm-st', r.st >= 400 ? 'bad' : 'ok']}>{r.st}</span>
+                            <span class="wbm-lat dm-hide-narrow">{r.ms}ms</span>
+                            <span class="wbm-when dm-hide-narrow">{r.when}</span>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            <div class="wbov-side">
+                <span class="wbm-sec-title">{dmT(lang, 'wb.salud.titulo')}</span>
+                <div class="wbov-health">
+                    <DmIcon name="check-circle" />
+                    <b>{dmT(lang, 'wb.salud.ok')}</b>
+                    <i>{dmT(lang, 'wb.salud.ok_sub')}</i>
+                </div>
+                <div class="wbm-kv">
+                    <div class="wbm-kv-row"><span>{dmT(lang, 'wb.salud.endpoints_activos')}</span><b>2<em>/2</em></b></div>
+                    <div class="wbm-kv-row"><span>{dmT(lang, 'wb.salud.pendientes')}</span><b>0</b></div>
+                </div>
+                <span class="wbm-sec-title wbov-sp">{dmT(lang, 'wb.recursos.titulo')}</span>
+                <div class="wbov-res">
+                    <span>{dmT(lang, 'wb.recursos.docs')}<DmIcon name="arrow-up-right" /></span>
+                    <span>{dmT(lang, 'wb.recursos.openapi')}<DmIcon name="arrow-up-right" /></span>
+                    <span>{dmT(lang, 'wb.recursos.llms')}<DmIcon name="arrow-up-right" /></span>
+                    <span>{strip(dmT(lang, 'wb.recursos.mcp'))}<DmIcon name="arrow-right" /></span>
+                </div>
+            </div>
+        </div>
+    </WbPanel>
+</DocsMockup>
+
+<style is:global>
+    /* ── Resumen (= .wb-ov) ── */
+    .wbov { display: grid; grid-template-columns: minmax(0, 1fr) 176px; gap: 14px; align-items: start; }
+    .wbov-main { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+    .wbov-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .wbov-head-in { margin-bottom: 6px; }
+    .wbov .wbm-big { display: block; margin: 2px 0 10px; }
+    .wbov-chart { display: flex; align-items: flex-end; gap: 4px; height: 64px; }
+    .wbov-col { flex: 1; min-width: 0; height: 100%; display: flex; align-items: flex-end; justify-content: center; }
+    .wbov-bar { width: 100%; max-width: 20px; min-height: 2px; display: flex; flex-direction: column; background: #6b9bf2; border-radius: 3px 3px 0 0; overflow: hidden; }
+    .wbov-bar i { display: block; width: 100%; background: #ef4444; }
+    .wbov-axis { display: flex; justify-content: space-between; margin-top: 5px; font-size: 9.5px; color: rgba(255, 255, 255, 0.35); }
+    .wbov-legend { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 10px; padding-top: 9px; border-top: 1px solid var(--wbm-border); font-size: 10.5px; color: var(--wbm-muted); }
+    .wbov-legend span { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+    .wbov-legend i { width: 8px; height: 8px; border-radius: 2px; }
+    .wbov-legend i.ok { background: #6b9bf2; }
+    .wbov-legend i.err { background: #ef4444; }
+    .wbov-legend b { color: #fff; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .wbov-legend em { font-style: normal; font-weight: 500; color: var(--wbm-muted); margin-left: 1px; }
+    .wbov-legend-r { margin-left: auto; }
+    .wbov-duo { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .wbov-dist { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+    .wbov-dist-row { display: grid; grid-template-columns: 62px minmax(0, 1fr) auto; align-items: center; gap: 9px; font-size: 10.5px; color: var(--wbm-muted); }
+    .wbov-dist-row > span:first-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .wbov-dist-row b { color: #fff; font-weight: 600; font-variant-numeric: tabular-nums; font-size: 11px; }
+    .wbov-track { height: 7px; border-radius: 100px; background: rgba(255, 255, 255, 0.08); overflow: hidden; }
+    .wbov-track i { display: block; height: 100%; border-radius: 100px; }
+    .wbov-track i.ok { background: #10b981; }
+    .wbov-track i.warn { background: #f59e0b; }
+    .wbov-track i.bad { background: #ef4444; }
+    .wbov-top { margin-top: 9px; padding-top: 8px; border-top: 1px solid var(--wbm-border); }
+    .wbov-top-lbl { display: block; font-size: 8.5px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: rgba(255, 255, 255, 0.35); margin-bottom: 4px; }
+    .wbov-top-row { display: flex; justify-content: space-between; gap: 8px; padding: 2px 0; font-size: 10.5px; }
+    .wbov-top-row span { color: var(--wbm-muted); font-size: 10px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .wbov-top-row b { color: #fff; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .wbov-act { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto auto auto; align-items: center; gap: 9px; padding: 7px 2px; border-bottom: 1px solid var(--wbm-border); }
+    .wbov-act:last-child { border-bottom: 0; }
+    .wbov-side { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+    .wbov-sp { margin-top: 8px; }
+    .wbov-health { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px; padding: 16px 12px; border-radius: 12px; background: var(--wbm-surface); border: 1px solid var(--wbm-border); }
+    .wbov-health .dm-ico { width: 28px; height: 28px; color: #10b981; margin-bottom: 2px; }
+    .wbov-health b { font-size: 12px; font-weight: 600; color: #fff; }
+    .wbov-health i { font-style: normal; font-size: 10.5px; color: var(--wbm-muted); line-height: 1.45; }
+    .wbov-res { display: flex; flex-direction: column; }
+    .wbov-res span { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--wbm-border); font-size: 11px; color: var(--wbm-muted); }
+    .wbov-res span:last-child { border-bottom: 0; }
+    .wbov-res .dm-ico { width: 11px; height: 11px; color: rgba(255, 255, 255, 0.3); }
+
+    @container dm (max-width: 600px) {
+        .wbov { grid-template-columns: minmax(0, 1fr); }
+        .wbov-side { order: -1; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px 12px; }
+        .wbov-side > .wbm-sec-title, .wbov-side > .wbov-res, .wbov-side > .wbov-sp { display: none; }
+        .wbov-health { flex-direction: row; text-align: left; padding: 10px 12px; gap: 8px; }
+        .wbov-health .dm-ico { width: 20px; height: 20px; margin: 0; }
+        .wbov-health i { display: none; }
+    }
+    @container dm (max-width: 520px) {
+        .wbov-head { flex-direction: column; align-items: flex-start; gap: 8px; }
+        .wbov-head-in { flex-direction: row; align-items: center; }
+        .wbov-duo { grid-template-columns: minmax(0, 1fr); }
+        .wbov-legend-r { margin-left: 0; }
+        .wbov-act { grid-template-columns: 40px minmax(0, 1fr) auto; }
+    }
+</style>
