@@ -1,0 +1,248 @@
+---
+// Mockup: la parte de abajo del link público (/q/[token]) con la conversación,
+// desplazada como la ve el cliente. Calca de src/components/q/QuoteCard.astro:
+// burbujas .q-msg (Tú a la derecha en navy, el negocio a la izquierda, la
+// contraoferta en ámbar), el compositor con "Propuesta en MXN (opcional)" +
+// Contraoferta, y el hilo por partida (.qi-thread) con "Comentar sobre esta línea...".
+// Toda burbuja lleva autor y hora (regla 20): "Tú" para el cliente, el nombre del
+// negocio para sus respuestas.
+//
+//   view="counter": negociación — contraoferta sobre COT-0149 de Materiales del Valle.
+//   view="line":    chat — hilo abierto en una partida y la conversación general.
+import DocsMockup from './DocsMockup.astro';
+import DmIcon from './DmIcon.astro';
+import DmMoney from './DmMoney.astro';
+import { dmT, dmMoney, pick, DEMO, type DmLang } from './format';
+import { Q149, SELLER, dmNum, lineAmount, q149Subtotal, q149Total } from './dm-gestion';
+import { getQuoteCardRuntimeI18n } from '../../../i18n/app';
+
+interface Props {
+    lang: DmLang;
+    view?: 'counter' | 'line';
+    caption?: string;
+}
+const { lang, view = 'counter' } = Astro.props;
+const RT = getQuoteCardRuntimeI18n(lang);
+const isLine = view === 'line';
+
+// Cotización del hilo por partida: un integrador de TI que cotiza servidores.
+const NODO = {
+    org: 'Nodo Sistemas',
+    initial: 'N',
+    brand: '#23406b',
+    folio: 'COT-0212',
+    token: 'p9Wd3sKa',
+    lines: [
+        { es: 'Servidor Dell PowerEdge R750', en: 'Dell PowerEdge R750 server', qty: 2, unit: { es: 'pza', en: 'pc' }, price: 148500 },
+        { es: 'Licencia Windows Server 2022 Standard', en: 'Windows Server 2022 Standard license', qty: 2, unit: { es: 'licencia', en: 'license' }, price: 21800 },
+        { es: 'Instalación y configuración en sitio', en: 'On-site installation and setup', qty: 1, unit: { es: 'servicio', en: 'service' }, price: 12500 },
+    ],
+};
+const nodoSub = NODO.lines.reduce((s, l) => s + l.qty * l.price, 0);
+const nodoTotal = nodoSub * 1.16;
+
+const PROPUESTA = 42000;
+const counterText = (msg: string) => `${RT.propuestaLabel.replace('${monto}', dmMoney(PROPUESTA, 'MXN', lang))} — ${msg}`;
+
+const DATA = {
+    es: {
+        captionCounter: `Conversación del link de ${Q149.folio}: el cliente preguntó por el flete, ${DEMO.org} respondió y el cliente mandó una contraoferta en ámbar, "Propuesta: ${dmMoney(PROPUESTA, 'MXN', 'es')} — Si lo dejan en este total cerramos esta semana", rotulada "Tú · ahora"; debajo, el campo de propuesta y el botón Contraoferta.`,
+        captionLine: `Link de ${NODO.folio} de ${NODO.org} con la partida "Servidor Dell PowerEdge R750" abierta: el cliente pregunta "¿Me lo cambias por el modelo de 16 GB?" (Tú · hace 5 min) y ${NODO.org} responde "Sí, te actualizo la versión hoy" (ahora); debajo, la conversación general con dos mensajes.`,
+        counter: [
+            { mine: true, text: '¿El flete a Querétaro incluye la descarga en obra?', when: 'ayer, 16:58', kind: 'msg' },
+            { mine: false, text: 'Sí, con montacargas. Lo dejamos al pie de la obra.', when: 'ayer, 17:20', kind: 'msg' },
+            { mine: true, text: counterText('Si lo dejan en este total cerramos esta semana'), when: 'ahora', kind: 'counter' },
+        ],
+        lineThread: [
+            { mine: true, text: '¿Me lo cambias por el modelo de 16 GB?', when: 'hace 5 min' },
+            { mine: false, text: 'Sí, te actualizo la versión hoy.', when: 'ahora' },
+        ],
+        general: [
+            { mine: true, text: '¿Pueden entregar antes del 20 de octubre?', when: 'ayer, 13:05' },
+            { mine: false, text: 'Sí. Con el anticipo confirmado entregamos el 17 en su oficina.', when: 'ayer, 13:40' },
+        ],
+    },
+    en: {
+        captionCounter: `Conversation on the ${Q149.folio} link: the client asked about delivery, ${DEMO.org} replied, and the client sent an amber counteroffer, "Proposal: ${dmMoney(PROPUESTA, 'MXN', 'en')} — If you can do this total we'll close this week", labeled "You · now"; below, the proposal field and the Counteroffer button.`,
+        captionLine: `The ${NODO.folio} link from ${NODO.org} with the "Dell PowerEdge R750 server" line open: the client asks "Can you switch this to the 16 GB model?" (You · 5 min ago) and ${NODO.org} replies "Yes, I'll update the version today" (now); below, the general conversation with two messages.`,
+        counter: [
+            { mine: true, text: 'Does delivery to Querétaro include unloading on site?', when: 'yesterday, 4:58 PM', kind: 'msg' },
+            { mine: false, text: 'Yes, with a forklift. We leave it at the site entrance.', when: 'yesterday, 5:20 PM', kind: 'msg' },
+            { mine: true, text: counterText("If you can do this total we'll close this week"), when: 'now', kind: 'counter' },
+        ],
+        lineThread: [
+            { mine: true, text: 'Can you switch this to the 16 GB model?', when: '5 min ago' },
+            { mine: false, text: "Yes, I'll update the version today.", when: 'now' },
+        ],
+        general: [
+            { mine: true, text: 'Can you deliver before October 20?', when: 'yesterday, 1:05 PM' },
+            { mine: false, text: 'Yes. Once the deposit clears we deliver on the 17th at your office.', when: 'yesterday, 1:40 PM' },
+        ],
+    },
+};
+const d = pick(DATA, lang);
+const caption = Astro.props.caption ?? (isLine ? d.captionLine : d.captionCounter);
+const org = isLine ? NODO.org : DEMO.org;
+const brand = isLine ? NODO.brand : DEMO.brand;
+const lines = isLine ? NODO.lines : Q149.lines;
+const sub = isLine ? nodoSub : q149Subtotal();
+const tot = isLine ? nodoTotal : q149Total();
+const general = isLine ? d.general.map((m) => ({ ...m, kind: 'msg' })) : d.counter;
+---
+<DocsMockup lang={lang} variant="browser" url={`cordhq.app/q/${isLine ? NODO.token : Q149.token}`} brand={brand} height={isLine ? 860 : 760} caption={caption} class:list={['dm-qt-figure', isLine ? 'dm-qt-is-line' : 'dm-qt-is-counter']}>
+    <div class="dm-qt">
+        <div class="dm-qt-card">
+            <div class="dm-qt-ihead">
+                <span>{dmT(lang, 'q.th_concepto')}</span>
+                <span class="dm-qt-c">{dmT(lang, 'q.th_cant')}</span>
+                <span class="dm-qt-r">{dmT(lang, 'q.th_importe')}</span>
+            </div>
+            {lines.map((l, i) => {
+                const open = isLine && i === 0;
+                const count = isLine ? (i === 0 ? '2' : '') : (i === 2 ? '2' : '');
+                return (
+                    <div class:list={['dm-qt-rowwrap', { 'is-open': open }]}>
+                        <div class="dm-qt-row">
+                            <span class="dm-qt-name">
+                                <span class="dm-qt-pick"><DmIcon name="check" stroke={3} /></span>
+                                <span class="dm-qt-name-text">{l[lang]}<span class:list={['dm-qt-chatbtn', { 'is-on': open }]}><DmIcon name="chat" stroke={2.2} />{count}</span></span>
+                            </span>
+                            <span class="dm-qt-c dm-qt-qty">{dmNum(l.qty, lang)} {l.unit[lang]}</span>
+                            <DmMoney amount={lineAmount(l)} lang={lang} class="dm-qt-r dm-qt-amt" />
+                        </div>
+                        {open && (
+                            <div class="dm-qt-linethread">
+                                {d.lineThread.map((m) => (
+                                    <div class:list={['dm-qt-lmsg', m.mine ? 'is-mine' : 'is-theirs']}>
+                                        <span>{m.text}</span>
+                                        <span class="dm-qt-meta"><b>{m.mine ? dmT(lang, 'q.chat_tu') : org}</b>{m.when}</span>
+                                    </div>
+                                ))}
+                                <div class="dm-qt-lreply">
+                                    <span class="dm-qt-linput">{dmT(lang, 'q.comentar_linea_placeholder')}</span>
+                                    <span class="dm-qt-lsend">{dmT(lang, 'q.enviar')}</span>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                );
+            })}
+            <div class="dm-qt-totals">
+                <div class="dm-qt-trow"><span>{dmT(lang, 'q.subtotal')}</span><DmMoney amount={sub} lang={lang} /></div>
+                <div class="dm-qt-trow"><span>IVA 16%</span><DmMoney amount={tot - sub} lang={lang} /></div>
+                <div class="dm-qt-trow dm-qt-grand"><span>{dmT(lang, 'q.total')}</span><DmMoney amount={tot} lang={lang} /></div>
+            </div>
+
+            <div class="dm-qt-trust">
+                <span class="dm-qt-live"><i></i>{isLine ? RT.equipoEnLinea : RT.vendedorEnLinea.replace('{nombre}', SELLER)}</span>
+                <span class="dm-qt-secure"><DmIcon name="lock" />{dmT(lang, 'q.cifrado_firma')}</span>
+            </div>
+            <span class="dm-qt-cta"><DmIcon name="check" stroke={2.5} />{dmT(lang, 'q.aprobar_cotizacion')}</span>
+
+            <div class="dm-qt-chat">
+                <span class="dm-qt-eyebrow">{dmT(lang, 'q.conversacion')}</span>
+                <div class="dm-qt-thread">
+                    {general.map((m) => (
+                        <div class:list={['dm-qt-msg', m.mine ? 'is-mine' : 'is-theirs', { 'is-counter': m.kind === 'counter' }]}>
+                            <span>{m.text}</span>
+                            <span class="dm-qt-meta"><b>{m.mine ? dmT(lang, 'q.chat_tu') : org}</b>{m.when}</span>
+                        </div>
+                    ))}
+                </div>
+                <div class="dm-qt-compose">
+                    <div class="dm-qt-compose-row">
+                        <span class="dm-qt-ph">{dmT(lang, 'q.escribe_mensaje')}</span>
+                        <span class="dm-qt-send"><DmIcon name="send" stroke={2.2} /></span>
+                    </div>
+                    <div class="dm-qt-extras">
+                        <span class="dm-qt-prop">{dmT(lang, 'q.propuesta_placeholder')}</span>
+                        <span class="dm-qt-counterbtn"><DmIcon name="trending-up" stroke={2.4} />{dmT(lang, 'q.contraoferta')}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</DocsMockup>
+
+<style is:global>
+    /* Página desplazada: la tarjeta empieza arriba del borde, así que no tiene esquinas superiores. */
+    .dm-qt { padding: 0 18px; display: flex; justify-content: center; }
+    .dm-qt-card {
+        width: 100%;
+        max-width: 540px;
+        background: #fff;
+        border-radius: 0 0 24px 24px;
+        padding: 18px 28px 26px;
+        box-shadow: 0 0 0 1px rgba(10, 25, 47, 0.06), 0 20px 60px -20px rgba(10, 25, 47, 0.12);
+        clip-path: inset(0 -80px -80px -80px);
+        display: flex;
+        flex-direction: column;
+        color: #111;
+    }
+    .dm-qt-eyebrow { font-size: 8px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: #6b7280; }
+    .dm-qt-ihead, .dm-qt-row { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 0.8fr) minmax(0, 1.1fr); gap: 12px; align-items: center; }
+    .dm-qt-ihead { padding-bottom: 9px; border-bottom: 1px solid rgba(10, 25, 47, 0.07); font-size: 8px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: #6b7280; }
+    .dm-qt-c { text-align: center; }
+    .dm-qt-r { text-align: right; justify-self: end; }
+    .dm-qt-rowwrap { border-bottom: 1px solid rgba(10, 25, 47, 0.045); }
+    .dm-qt-row { padding: 11px 0; font-size: 12px; }
+    .dm-qt-name { display: flex; align-items: center; gap: 8px; font-weight: 600; min-width: 0; }
+    .dm-qt-name-text { min-width: 0; line-height: 1.35; }
+    .dm-qt-pick { width: 16px; height: 16px; border-radius: 5px; flex-shrink: 0; display: grid; place-items: center; background: var(--dm-navy); color: #fff; }
+    .dm-qt-pick .dm-ico { width: 10px; height: 10px; }
+    .dm-qt-chatbtn { display: inline-flex; align-items: center; gap: 3px; margin-left: 7px; vertical-align: 1px; padding: 3px 5px; border-radius: 6px; background: rgba(10, 25, 47, 0.04); color: #6b7280; font-size: 9.5px; font-weight: 600; }
+    .dm-qt-chatbtn.is-on { background: rgba(10, 25, 47, 0.09); color: #111; }
+    .dm-qt-chatbtn .dm-ico { width: 11px; height: 11px; }
+    .dm-qt-qty { color: #6b7280; font-size: 11px; }
+    .dm-qt-amt { font-size: 12px; }
+    .dm-qt-linethread { margin: -4px 0 12px; padding: 11px; border-radius: 10px; background: #fafafa; border: 1px solid rgba(10, 25, 47, 0.05); display: flex; flex-direction: column; gap: 7px; }
+    .dm-qt-lmsg { display: flex; flex-direction: column; gap: 2px; max-width: 86%; padding: 7px 10px; border-radius: 10px; font-size: 11.5px; line-height: 1.4; }
+    .dm-qt-lmsg.is-mine { align-self: flex-end; background: var(--dm-navy); color: #fff; border-bottom-right-radius: 4px; }
+    .dm-qt-lmsg.is-theirs { align-self: flex-start; background: #fff; border: 1px solid rgba(10, 25, 47, 0.08); border-bottom-left-radius: 4px; }
+    .dm-qt-meta { display: flex; gap: 5px; font-size: 9px; opacity: 0.68; }
+    .dm-qt-meta b { font-weight: 700; }
+    .dm-qt-lreply { display: flex; gap: 6px; margin-top: 2px; }
+    .dm-qt-linput { flex: 1; min-width: 0; padding: 7px 10px; border-radius: 9px; background: #fff; border: 1.5px solid rgba(10, 25, 47, 0.12); font-size: 11px; color: #6b7280; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dm-qt-lsend { display: flex; align-items: center; padding: 0 12px; border-radius: 8px; border: 1px solid rgba(10, 25, 47, 0.1); font-size: 11px; font-weight: 600; color: #374151; }
+
+    .dm-qt-totals { display: flex; flex-direction: column; align-items: flex-end; gap: 7px; padding: 14px 0 20px; }
+    .dm-qt-trow { display: flex; justify-content: space-between; gap: 40px; min-width: 210px; font-size: 11.5px; color: #6b7280; }
+    .dm-qt-trow .dm-money { color: #6b7280; }
+    .dm-qt-grand { padding-top: 8px; border-top: 1px solid rgba(10, 25, 47, 0.07); color: #111; font-weight: 700; }
+    .dm-qt-grand .dm-money { font-size: 15px; color: #111; }
+    .dm-qt-trust { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+    .dm-qt-live { display: inline-flex; align-items: center; gap: 7px; font-size: 11px; font-weight: 600; color: #065f46; }
+    .dm-qt-live i { width: 7px; height: 7px; border-radius: 50%; background: #10b981; box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.16); }
+    .dm-qt-secure { display: inline-flex; align-items: center; gap: 5px; font-size: 10.5px; color: #6b7280; }
+    .dm-qt-secure .dm-ico { width: 12px; height: 12px; }
+    .dm-qt-cta { display: flex; align-items: center; justify-content: center; gap: 8px; height: 44px; border-radius: 13px; background: var(--dm-brand); color: #fff; font-size: 13px; font-weight: 600; box-shadow: 0 10px 28px -10px rgba(10, 25, 47, 0.42); margin-bottom: 22px; }
+    .dm-qt-cta .dm-ico { width: 15px; height: 15px; }
+
+    .dm-qt-chat { display: flex; flex-direction: column; gap: 9px; }
+    .dm-qt-thread { display: flex; flex-direction: column; gap: 7px; }
+    .dm-qt-msg { display: flex; flex-direction: column; gap: 3px; max-width: 80%; padding: 9px 12px; font-size: 12px; line-height: 1.45; }
+    .dm-qt-msg.is-theirs { align-self: flex-start; background: #f3f4f6; border-radius: 14px 14px 14px 3px; }
+    .dm-qt-msg.is-mine { align-self: flex-end; background: var(--dm-navy); color: #fff; border-radius: 14px 14px 3px 14px; }
+    .dm-qt-msg.is-counter { background: rgba(245, 158, 11, 0.09); border: 1px solid rgba(245, 158, 11, 0.28); color: #111; }
+    .dm-qt-compose { margin-top: 3px; background: #f9fafb; border: 1px solid rgba(10, 25, 47, 0.07); border-radius: 14px; overflow: hidden; }
+    .dm-qt-compose-row { display: flex; align-items: center; gap: 8px; padding: 10px 10px 8px 12px; }
+    .dm-qt-ph { flex: 1; font-size: 12px; color: #6b7280; }
+    .dm-qt-send { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--dm-brand); color: #fff; flex-shrink: 0; }
+    .dm-qt-send .dm-ico { width: 13px; height: 13px; }
+    .dm-qt-extras { display: flex; align-items: center; gap: 8px; padding: 8px 10px 9px 12px; border-top: 1px solid rgba(10, 25, 47, 0.055); }
+    .dm-qt-prop { flex: 0 1 180px; min-width: 0; padding: 5px 9px; border-radius: 8px; background: #fff; border: 1px solid rgba(10, 25, 47, 0.09); font-size: 11px; color: #6b7280; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dm-qt-counterbtn { display: inline-flex; align-items: center; gap: 5px; padding: 5px 11px; border-radius: 999px; border: 1px solid var(--dm-brand); color: var(--dm-brand); font-size: 11px; font-weight: 600; white-space: nowrap; }
+    .dm-qt-counterbtn .dm-ico { width: 10px; height: 10px; }
+
+    @container dm (max-width: 520px) {
+        .dm-qt-figure .dm-stage { height: auto; max-height: 980px; }
+        .dm-qt { padding: 0 8px; }
+        .dm-qt-card { padding: 14px 15px 20px; }
+        .dm-qt-ihead { display: none; }
+        .dm-qt-row { grid-template-columns: auto auto; justify-content: space-between; row-gap: 5px; }
+        .dm-qt-name { grid-column: 1 / -1; }
+        .dm-qt-qty { text-align: left; }
+        .dm-qt-trow { min-width: 0; width: 100%; }
+        .dm-qt-msg { max-width: 90%; }
+    }
+</style>
