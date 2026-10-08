@@ -1340,7 +1340,11 @@ async function syncPaidBillingInvoice(invoice: any) {
     // del precio base anual, ni una pagada puede extender esa evidencia.
     if (!baseLines.length && amountPaid <= 0) return;
     if (baseLines.length && (amountPaid <= 0 || !paidThroughSeconds || !paidPlan)) {
-        await sendOpsAlert('Factura de plan sin pago cobrable', `Organización ${orgId}; factura ${String(invoice?.id || '')}; amount_paid=${amountPaid}`);
+        // Una cortesía de Cord Ops que mueve el cobro o pone un cupón del 100 %
+        // produce justo estas facturas en $0: se esperan y no se avisan.
+        const [grantRows] = await withOrgTx(orgId, sql`select mechanism from cord_access_grant(${orgId}) where source = 'ops'`);
+        const expected = ['cupon', 'trial'].includes(String(grantRows[0]?.mechanism || ''));
+        if (!expected) await sendOpsAlert('Factura de plan sin pago cobrable', `Organización ${orgId}; factura ${String(invoice?.id || '')}; amount_paid=${amountPaid}`);
         await retrieveAndSyncSubscription(subId);
         return;
     }

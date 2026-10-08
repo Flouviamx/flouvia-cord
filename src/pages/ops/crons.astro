@@ -1,0 +1,66 @@
+---
+import OpsLayout from '../../layouts/OpsLayout.astro';
+import OpsShell from '../../components/ops/OpsShell.astro';
+import { withOpsTx } from '../../lib/db';
+import { opsAgo, opsDate, opsNumber } from '../../lib/ops-format';
+import { OPS_CRON_GRACE_HOURS, OPS_CRON_HEALTH, opsCadenceLabel, opsCronDefs, opsCronIsProblem, opsCronRecordingSince, opsCronResult, opsCronRuns, opsCronStatus, type OpsCronRun } from '../../lib/ops-crons';
+
+if (!Astro.locals.opsOperator) return Astro.redirect('/ops/login');
+
+let runs: OpsCronRun[] = [];
+let error = false;
+try {
+  const [r] = await withOpsTx(opsCronRuns());
+  runs = r as OpsCronRun[];
+} catch (cause) { error = true; console.error('[ops/crons]', cause); }
+
+const now = new Date();
+const since = opsCronRecordingSince(runs);
+const statuses = opsCronDefs().map((def) => opsCronStatus(def, runs, now, since));
+// Primero lo que necesita atención, luego lo pendiente, luego lo sano.
+const ORDER = ['error', 'stuck', 'missed', 'unscheduled', 'pending', 'ok', 'untracked', 'manual'];
+statuses.sort((a, b) => ORDER.indexOf(a.health) - ORDER.indexOf(b.health) || a.endpoint.localeCompare(b.endpoint));
+const problems = statuses.filter(opsCronIsProblem);
+const tracked = statuses.filter((s) => s.last);
+const runs24 = runs.filter((r) => now.getTime() - new Date(r.started_at).getTime() < 86_400_000);
+const duration = (r: OpsCronRun) => r.finished_at ? Math.max(0, new Date(r.finished_at).getTime() - new Date(r.started_at).getTime()) : null;
+const seconds = (ms: number | null) => ms === null ? '—' : ms < 1000 ? `${ms} ms` : `${(ms / 1000).toFixed(ms < 10_000 ? 1 : 0)} s`;
+const name = (endpoint: string) => endpoint.replace('/api/cron/', '');
+const stripLabel: Record<string, string> = { ok: 'correcto', error: 'falló', running: 'en curso', missing: 'no corrió', none: 'sin dato' };
+---
+<OpsLayout title="Crons | Cord Ops"><OpsShell active="crons" title="Crons" subtitle="Lo que debía correr según el horario declarado, contra lo que de verdad corrió.">
+  {error && <div class="ops-inline-error">No se pudo leer la bitácora de los crons.</div>}
+
+  <section class="ops-card ops-metrics">
+    <div class="ops-metric"><span>Crons</span><strong>{opsNumber(statuses.length)}</strong><small>{opsNumber(statuses.filter((s) => s.tracked).length)} reclaman su periodo en la bitácora</small></div>
+    <div class="ops-metric"><span>Requieren atención</span><strong>{opsNumber(problems.length)}</strong><small>Fallaron, se colgaron o no corrieron</small></div>
+    <div class="ops-metric"><span>Corridas 24 h</span><strong>{opsNumber(runs24.length)}</strong><small>{opsNumber(runs24.filter((r) => r.estado === 'error').length)} con error</small></div>
+    <div class="ops-metric"><span>Última corrida</span><strong>{tracked.length ? opsAgo(tracked.map((s) => new Date(s.last!.started_at)).sort((a, b) => b.getTime() - a.getTime())[0]) : '—'}</strong><small>De cualquier cron registrado</small></div>
+  </section>
+
+  {problems.length > 0 && <div class="ops-inline-warning ops-section">
+    {problems.map((s) => name(s.endpoint)).join(', ')} {problems.length === 1 ? 'necesita' : 'necesitan'} atención. La corrida siguiente reintenta sola un periodo en error; para repetirlo antes, usa "Run workflow" en Cord crons de GitHub con ese endpoint.
+  </div>}
+
+  <section class="ops-section">
+    <header class="ops-section-header"><div><h2>Todos los crons</h2><p>Horarios en UTC. La tira muestra los últimos periodos, del más viejo al más reciente; un periodo cuenta como "no corrió" {OPS_CRON_GRACE_HOURS} h después de su hora, porque el reloj de respaldo corre a horas variables.</p></div></header>
+    <div class="ops-card ops-table-wrap">
+      <table class="ops-table">
+        <thead><tr><th>Cron</th><th>Estado</th><th>Últimos periodos</th><th>Última corrida</th><th class="num">Duración</th><th>Resultado</th></tr></thead>
+        <tbody>
+          {statuses.map((s) => { const [label, tone] = OPS_CRON_HEALTH[s.health]; return <tr>
+            <td><strong class="ops-code">{name(s.endpoint)}</strong><span class="ops-sub">{opsCadenceLabel(s.cadence)}</span></td>
+            <td><span class:list={['ops-badge', tone]}>{label}</span>{s.last && s.last.intentos > 1 && <span class="ops-sub">{opsNumber(s.last.intentos)} intentos</span>}</td>
+            <td>{s.history.length
+              ? <span class="ops-cron-strip" role="img" aria-label={s.history.map((h) => `${h.periodo}: ${stripLabel[h.estado]}`).join(', ')}>{s.history.map((h) => <i class={h.estado}></i>)}</span>
+              : <span class="ops-muted">{s.health === 'unscheduled' ? 'Nunca corre' : s.health === 'manual' ? 'Solo a mano' : s.cadence.kind === 'external' ? 'Ver Disponibilidad' : 'No registra corridas'}</span>}</td>
+            <td>{s.last ? <span title={opsDate(s.last.started_at)}>{opsAgo(s.last.started_at)}</span> : <span class="ops-muted">—</span>}{s.last && <span class="ops-sub ops-code">{s.last.periodo}</span>}</td>
+            <td class="num">{s.last ? seconds(duration(s.last)) : '—'}</td>
+            <td><span class="ops-wrap">{s.last ? opsCronResult(s.last.resultado) : (s.note || '—')}</span></td>
+          </tr>; })}
+        </tbody>
+      </table>
+    </div>
+    <p class="ops-inline-note ops-section">"Sin bitácora" es un cron que no reclama su periodo en <span class="ops-code">cron_runs</span> (corre con su propio candado por fila), así que aquí no se puede saber si corrió. Uno que sí lo reclama y no aparece en la bitácora cuenta como "No corrió". "Sin horario" es una ruta de cron que ningún reloj llama.</p>
+  </section>
+</OpsShell></OpsLayout>

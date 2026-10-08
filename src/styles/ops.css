@@ -1247,3 +1247,77 @@ a.ops-attention-row:hover { background: var(--ops-surface-2); }
    están al final del subtítulo; recortarlo escondía justo ese dato. */
 .ops-list.wrap-sub .ops-sub { white-space: normal; overflow-wrap: anywhere; line-height: 1.45; }
 .ops-list-caption { padding: 11px 20px; border-bottom: 1px solid var(--ops-line); color: var(--ops-faint); font-size: 11.5px; font-weight: 600; }
+
+/* ── Crons ─────────────────────────────────────────────────────────────── */
+.ops-cron-strip { display: inline-flex; gap: 3px; align-items: center; }
+.ops-cron-strip i { width: 9px; height: 22px; border-radius: 3px; background: var(--ops-fill-2); }
+.ops-cron-strip i.ok { background: var(--ops-green-dot); }
+.ops-cron-strip i.error { background: var(--ops-red-dot); }
+/* "No corrió" se distingue de "falló" sin depender del color: hueco con borde. */
+.ops-cron-strip i.missing { background: transparent; box-shadow: inset 0 0 0 1.5px var(--ops-red-dot); }
+.ops-cron-strip i.running { background: var(--ops-blue); }
+
+/* ── Alertas ───────────────────────────────────────────────────────────── */
+.ops-alert-rules { display: grid; }
+.ops-alert-rule {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 96px 160px auto auto;
+  gap: 18px;
+  align-items: center;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--ops-line);
+}
+.ops-alert-rule:last-child { border: 0; }
+.ops-alert-rule.firing { box-shadow: inset 3px 0 0 var(--ops-red-dot); }
+.ops-alert-rule.off .ops-alert-rule-main strong, .ops-alert-rule.off .ops-alert-rule-value strong { color: var(--ops-faint); }
+.ops-alert-rule-main > div { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.ops-alert-rule-main strong { font-size: 13.5px; font-weight: 620; }
+.ops-alert-rule-main p { margin: 4px 0 0; color: var(--ops-faint); font-size: 12px; line-height: 1.45; }
+.ops-alert-rule-main a { color: var(--ops-blue); text-decoration: none; font-weight: 560; }
+.ops-alert-rule-value span, .ops-alert-rule-threshold > span { display: block; color: var(--ops-faint); font-size: 11px; }
+.ops-alert-rule-value strong { display: block; margin-top: 3px; font-size: 18px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.ops-alert-rule-threshold { position: relative; display: grid; gap: 4px; }
+.ops-alert-rule-threshold .ops-input { min-height: 36px; padding-right: 28px; font-variant-numeric: tabular-nums; }
+.ops-alert-rule-threshold em { position: absolute; right: 11px; bottom: 9px; color: var(--ops-faint); font-style: normal; font-size: 12.5px; }
+.ops-alert-rule-toggle { display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--ops-muted); cursor: pointer; }
+.ops-alert-rule-toggle input { width: 16px; height: 16px; accent-color: var(--ops-ink); }
+.ops-alert-rule-by { grid-column: 1 / -1; margin-top: -8px; color: var(--ops-faint); font-size: 11px; }
+@media (max-width: 880px) {
+  .ops-alert-rule { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
+  .ops-alert-rule-main { grid-column: 1 / -1; }
+  .ops-alert-rule-threshold .ops-input { min-height: 44px; }
+  .ops-alert-rule-toggle { min-height: 44px; }
+  .ops-alert-rule-toggle input { width: 20px; height: 20px; }
+  .ops-alert-rule .ops-button { grid-column: 1 / -1; }
+}
+@media (max-width: 760px) {
+  /* Con tres métricas en dos columnas, la tercera ocupa la fila: sin celda vacía. */
+  .ops-metrics.cols-3 .ops-metric:nth-child(3):last-child { grid-column: 1 / -1; border-right: 0; }
+}
+/* `.ops-inline-*` fija su margen después de `.ops-section`: con las dos
+   clases, el aviso quedaba pegado a la tarjeta de arriba. */
+.ops-inline-warning.ops-section, .ops-inline-note.ops-section { margin-top: 32px; }
+@media (max-width: 880px) {
+  .ops-alert-rule-main a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 6px; }
+}
+
+/* ── Cortesías ─────────────────────────────────────────────────────────── */
+.ops-grant-active { box-shadow: inset 3px 0 0 var(--ops-green-dot); }
+.ops-grant-form { display: grid; gap: 14px; align-content: start; }
+.ops-grant-kinds { display: inline-flex; gap: 4px; padding: 3px; border-radius: 999px; background: var(--ops-fill); justify-self: start; }
+.ops-grant-kinds label { position: relative; cursor: pointer; }
+.ops-grant-kinds input { position: absolute; opacity: 0; inset: 0; cursor: pointer; }
+.ops-grant-kinds span { display: inline-flex; align-items: center; min-height: 30px; padding: 0 14px; border-radius: 999px; font-size: 12.5px; font-weight: 580; color: var(--ops-muted); }
+.ops-grant-kinds input:checked + span { background: var(--ops-surface); color: var(--ops-text); box-shadow: var(--ops-shadow); }
+.ops-grant-kinds input:focus-visible + span { outline: 2px solid var(--ops-focus); outline-offset: 1px; }
+.ops-grant-grid { align-items: start; }
+.ops-grant-fields { display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: 12px; align-items: start; }
+.ops-grant-fields .ops-input, .ops-grant-fields .ops-select { height: 40px; }
+.ops-grant-review { display: grid; gap: 12px; padding: 14px; border-radius: var(--ops-radius-sm); background: var(--ops-blue-bg); }
+.ops-grant-review p { margin: 0; color: var(--ops-text); font-size: 13px; line-height: 1.5; }
+.ops-grant-form .ops-inline-error { margin: 0; }
+.ops-grant-actions { display: flex; justify-content: flex-end; gap: 8px; }
+@media (max-width: 880px) {
+  .ops-grant-kinds span { min-height: 44px; }
+  .ops-grant-fields { grid-template-columns: minmax(0, 1fr); }
+}

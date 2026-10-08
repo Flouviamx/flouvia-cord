@@ -12,7 +12,7 @@
 
 import { createHash } from 'node:crypto';
 import type { APIRoute } from 'astro';
-import { sql, resolveSandboxOrgId, logAudit } from './db';
+import { sql, resolveSandboxOrgId, logAudit, withOrgTx } from './db';
 import { trustedIp } from './ip';
 import { restrictedKeyAllows, ipAllowed, type KeyPermissions } from './api-key-policy';
 import { reqContext } from './context';
@@ -274,7 +274,13 @@ async function runApiRoute(
     if (!resolved.ok) return { res: jsonError(resolved.error, 'invalid_api_version', 400), version: null };
     const version = resolved.version;
     const limited = await checkApiKeyRateLimit(auth);
-    if (limited) return { res: limited, version };
+    if (limited) {
+        // Sin esta fila el rechazo por rate limit era invisible: salía antes de
+        // la bitácora. Una por llave por minuto basta para verlo (el resto del
+        // minuto también se rechaza) y no convierte un abuso en carga de escritura.
+        if (shouldLogRateLimited(auth.keyId)) void logApiRequest(auth, ctx.request, 429, 0);
+        return { res: limited, version };
+    }
     const t0 = Date.now();
     const res = await runIdempotent(auth, ctx.request, async () => {
         const meteringError = await meterApiUsage(auth);
@@ -285,6 +291,18 @@ async function runApiRoute(
     // Bitácora del request (best-effort: nunca frena ni rompe la respuesta).
     void logApiRequest(auth, ctx.request, res.status, Date.now() - t0);
     return { res, version };
+}
+
+const rateLimitedLogged = new Map<string, number>();
+/** Una fila de 429 por llave por minuto y por instancia (ver runApiRoute). */
+export function shouldLogRateLimited(keyId: string, now = Date.now()): boolean {
+    const last = rateLimitedLogged.get(keyId) ?? 0;
+    if (now - last < 60_000) return false;
+    rateLimitedLogged.set(keyId, now);
+    if (rateLimitedLogged.size > 5_000) {
+        for (const [key, at] of rateLimitedLogged) if (now - at >= 60_000) rateLimitedLogged.delete(key);
+    }
+    return true;
 }
 
 // Rate limit por LLAVE: las pk_ (frontend) son más restringidas para evitar
@@ -325,8 +343,11 @@ export async function logApiRequest(auth: ApiAuth, request: Request, status: num
         const url = new URL(request.url);
         const ruta = routeOverride || (url.pathname.replace(/^\/api/, '') || '/');
         const ip = trustedIp(request);
-        await sql`
+        // En el carril de la organización (regla 30): `api_requests` tiene RLS
+        // forzada, y con el rol `cord_app` un insert sin app.org_id lo rechaza
+        // la política — en silencio, porque este registro se traga el error.
+        await withOrgTx(auth.orgId, sql`
             insert into api_requests (org_id, key_id, metodo, ruta, status, duracion_ms, mode, ip)
-            values (${auth.orgId}, ${auth.keyId}, ${request.method}, ${ruta}, ${status}, ${ms}, ${auth.mode}, ${ip})`;
+            values (${auth.orgId}, ${auth.keyId}, ${request.method}, ${ruta}, ${status}, ${ms}, ${auth.mode}, ${ip})`);
     } catch { /* no-op */ }
 }

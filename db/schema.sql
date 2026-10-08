@@ -6144,7 +6144,7 @@ alter table org_members add column if not exists tareas_avisadas_el date;
 
 -- BEGIN ops-fase3
 -- 2026-10-08: Cord Ops fase 3 — ficha de organización como centro de mando.
--- Aditiva e idempotente: corre en cada build (scripts/migrate-ops-fase3.mjs,
+-- Aditiva e idempotente: corre en cada build (scripts/migrate-ops.mjs,
 -- encadenado en el buildCommand de vercel.json) porque el código de esta fase
 -- lee estas tablas en producción.
 --
@@ -6247,3 +6247,244 @@ do $$ begin
   end if;
 end $$;
 -- END cron-runs
+
+-- BEGIN ops-fase4
+-- 2026-10-08: Cord Ops — monitor de crons y alertas configurables.
+-- Aditiva e idempotente: corre en cada build (scripts/migrate-ops.mjs,
+-- en el buildCommand de vercel.json). Cada política se crea solo si falta:
+-- `create policy` toma ACCESS EXCLUSIVE aunque no cambie nada, y en cada build
+-- eso frenaría a los crons que escriben `cron_runs`.
+--
+-- 1. Ops lee la bitácora de los crons. `cron_runs` no tiene org_id y hasta
+--    hoy solo la tocaba el carril de sistema.
+do $$ begin
+  if to_regclass('public.cron_runs') is not null
+     and not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'cron_runs' and policyname = 'ops_cron_runs') then
+    create policy ops_cron_runs on cron_runs for select using (current_setting('app.scope', true) = 'ops');
+  end if;
+end $$;
+
+-- 2. Alertas de Ops. Una regla por métrica, de un catálogo cerrado
+--    (src/lib/ops-alerts.ts): Ops decide si está encendida y desde qué valor
+--    avisa. El estado guarda si la alerta está disparada y cuándo se avisó,
+--    para mandar un correo al entrar y otro al resolverse, no uno por corrida.
+--    Sin org_id y sin RLS, igual que ops_operators y ops_audit_log: son tablas
+--    de la plataforma, no de un negocio, y ninguna ruta fuera de Ops las lee.
+--    `firing` es el valor de la última evaluación; `notified_firing` es lo
+--    último que de verdad se AVISÓ. La transición se calcula contra el
+--    segundo: un aviso que no salió se reintenta en la corrida siguiente.
+create table if not exists ops_alert_rules (
+  metric      text        primary key check (metric ~ '^[a-z0-9_]{3,40}$'),
+  enabled     boolean     not null default true,
+  threshold   numeric     not null check (threshold >= 0),
+  updated_by  text,
+  updated_at  timestamptz not null default now()
+);
+create table if not exists ops_alert_state (
+  metric       text        primary key check (metric ~ '^[a-z0-9_]{3,40}$'),
+  firing       boolean     not null default false,
+  notified_firing boolean  not null default false,
+  value        numeric,
+  since        timestamptz,
+  notified_at  timestamptz,
+  checked_at   timestamptz not null default now()
+);
+alter table ops_alert_state add column if not exists notified_firing boolean not null default false;
+
+-- 3. Métricas de las alertas, en UN solo lugar que leen la pantalla de Ops y
+--    el cron que avisa. `security definer` y solo AGREGADOS (un número por
+--    métrica, ninguna fila de ningún negocio): así el cron no necesita el
+--    carril de Ops ni políticas nuevas en tablas de negocio (regla 30). Las
+--    métricas de crons se calculan aparte, en código, porque dependen del
+--    horario declarado en vercel.json. Las ventanas cubren el intervalo real
+--    entre evaluaciones (el reloj de GitHub corre unas cuatro veces al día):
+--    una ventana de una hora dejaba fuera casi todo lo que pasaba entre dos.
+create or replace function cord_ops_alert_metrics()
+returns table (metric text, value numeric)
+language sql stable security definer
+set search_path = public, pg_temp
+as $$
+  -- Con menos de 20 entregas en el día el porcentaje es ruido: vale 0.
+  select 'webhook_fail_pct_24h', case when count(*) >= 20
+           then round(100.0 * count(*) filter (where not ok) / count(*), 1) else 0 end
+    from webhook_deliveries where created_at >= now() - interval '24 hours' and not es_prueba
+  union all
+  -- Solo la última semana: filas anteriores a la columna processed_at no
+  -- tienen ese dato y contarían como atoradas para siempre.
+  select 'stripe_events_stuck', count(*)::numeric from stripe_events
+   where processed_at is null and received_at < now() - interval '15 minutes'
+     and received_at >= now() - interval '7 days'
+  union all
+  select 'workflow_failed_24h', count(*)::numeric from workflow_runs
+   where status = 'failed' and coalesce(finished_at, updated_at) >= now() - interval '24 hours'
+  union all
+  select 'api_5xx_6h', count(*)::numeric from api_requests
+   where status >= 500 and created_at >= now() - interval '6 hours'
+  union all
+  select 'disputes_needs_response', count(*)::numeric from cobro_disputas
+   where status in ('needs_response', 'warning_needs_response')
+  union all
+  select 'payouts_failed_7d', count(*)::numeric from payouts
+   where status = 'failed' and updated_at >= now() - interval '7 days'
+  union all
+  select 'integrations_error', count(*)::numeric from integracion_conexiones where estado = 'error'
+  union all
+  -- Componentes cuya ÚLTIMA muestra de las últimas 6 h falló.
+  select 'health_failing', count(*)::numeric from (
+    select distinct on (service) ok from health_checks
+     where checked_at >= now() - interval '6 hours'
+     order by service, checked_at desc
+  ) latest where not ok
+$$;
+revoke all on function cord_ops_alert_metrics() from public;
+do $$ begin
+  if exists (select 1 from pg_roles where rolname = 'cord_app') then
+    grant execute on function cord_ops_alert_metrics() to cord_app;
+  end if;
+end $$;
+-- END ops-fase4
+
+-- BEGIN ops-fase5
+-- 2026-10-08: cortesías de Cord Ops — días gratis y planes regalados.
+-- Aditiva e idempotente: corre en cada build (scripts/migrate-ops.mjs).
+--
+-- Un regalo NO es evidencia de pago, y por eso no se escribe en orgs:
+-- `billing_paid_through` y compañía las escribe solo una factura cobrada
+-- (regla 17), y la reconciliación diaria borra cualquier sello que no la
+-- tenga. El regalo vive aparte, con vencimiento, y da ACCESO; Stripe, cuando
+-- aplica, solo deja de cobrar (prueba extendida o cupón sobre el precio base).
+--
+-- 1. Cortesías. Una sola viva por organización: para cambiarla se revoca y se
+--    da otra. Tabla de Cord sobre el negocio: RLS forzada y solo el carril de
+--    Ops la escribe; la app la lee con cord_access_grant().
+create table if not exists ops_plan_grants (
+  id                      uuid        primary key default gen_random_uuid(),
+  org_id                  uuid        not null references orgs(id) on delete cascade,
+  plan                    text        not null check (plan in ('starter', 'pro', 'scale', 'developer')),
+  kind                    text        not null check (kind in ('dias', 'plan')),
+  mechanism               text        not null check (mechanism in ('acceso', 'trial', 'cupon')),
+  starts_at               timestamptz not null default now(),
+  expires_at              timestamptz not null,
+  status                  text        not null default 'active' check (status in ('active', 'expired', 'revoked')),
+  reason                  text        not null check (char_length(btrim(reason)) between 3 and 300),
+  operator_id             uuid        references ops_operators(user_id) on delete set null,
+  operator_email          text        not null,
+  stripe_subscription_id  text,
+  stripe_coupon_id        text,
+  -- Fin de periodo que ya había pagado antes de mover su cobro (mecanismo
+  -- trial): revocar regresa el cobro AQUÍ, nunca antes. Sin esto, revocar
+  -- cobraba de inmediato un periodo nuevo y perdía lo ya pagado.
+  original_period_end     timestamptz,
+  created_at              timestamptz not null default now(),
+  revoked_at              timestamptz,
+  revoked_by              text,
+  check (expires_at > starts_at),
+  check (status <> 'revoked' or revoked_at is not null)
+);
+create unique index if not exists uq_ops_plan_grants_active on ops_plan_grants(org_id) where status = 'active';
+create index if not exists idx_ops_plan_grants_org on ops_plan_grants(org_id, created_at desc);
+-- El `alter` solo si hace falta: toma ACCESS EXCLUSIVE aunque no cambie nada,
+-- y cord_access_grant() lee esta tabla en cada request.
+do $$ begin
+  if not exists (select 1 from pg_class where oid = 'ops_plan_grants'::regclass and relrowsecurity and relforcerowsecurity) then
+    alter table ops_plan_grants enable row level security;
+    alter table ops_plan_grants force row level security;
+  end if;
+end $$;
+do $$ begin
+  if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'ops_plan_grants' and policyname = 'ops_plan_grants_select') then
+    create policy ops_plan_grants_select on ops_plan_grants for select using (current_setting('app.scope', true) = 'ops');
+  end if;
+  if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'ops_plan_grants' and policyname = 'ops_plan_grants_insert') then
+    create policy ops_plan_grants_insert on ops_plan_grants for insert with check (current_setting('app.scope', true) = 'ops');
+  end if;
+  if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'ops_plan_grants' and policyname = 'ops_plan_grants_update') then
+    create policy ops_plan_grants_update on ops_plan_grants for update
+      using (current_setting('app.scope', true) = 'ops') with check (current_setting('app.scope', true) = 'ops');
+  end if;
+end $$;
+
+-- 2. El mejor acceso sin cobro vigente de una organización (o de su padre si
+--    es sandbox): cortesía de Ops o promoción de The Cord Build. Lo leen
+--    cord_effective_plan() y getEntitlementContext(), así las dos fuentes de
+--    verdad no divergen (antes la promoción daba Scale en SQL y Gratis en TS).
+create or replace function cord_access_grant(p_org uuid)
+returns table (plan text, expires_at timestamptz, source text, mechanism text)
+language sql stable security definer
+set search_path = public, pg_temp
+as $$
+  with billing as (select coalesce(sandbox_of, id) as id from orgs where id = p_org),
+  grants as (
+    select g.plan, g.expires_at, 'ops'::text as source, g.mechanism
+      from ops_plan_grants g join billing b on g.org_id = b.id
+     where g.status = 'active' and g.starts_at <= now() and g.expires_at > now()
+    union all
+    select 'scale', e.expires_at, 'build', 'promo'
+      from build_scale_entitlements e join billing b on e.org_id = b.id
+     where e.status = 'active' and e.starts_at <= now() and e.expires_at > now()
+  )
+  select plan, expires_at, source, mechanism from grants
+  order by case plan when 'developer' then 4 when 'scale' then 3 when 'pro' then 2 when 'starter' then 1 else 0 end desc,
+           expires_at desc
+  limit 1
+$$;
+revoke all on function cord_access_grant(uuid) from public;
+
+-- 3. El plan efectivo suma la cortesía. Mismo contrato que antes para el
+--    acceso pagado; solo cambia de dónde sale el acceso sin cobro.
+create or replace function cord_effective_plan(p_org uuid)
+returns text
+language sql stable security definer
+set search_path = public, pg_temp
+as $$
+  with requested as (
+    select coalesce(sandbox_of, id) as billing_org_id
+      from orgs where id = p_org
+  ), billing as (
+    select r.billing_org_id, case
+      when lower(coalesce(o.plan, 'free')) in ('business', 'negocio') then 'pro'
+      when lower(coalesce(o.plan, 'free')) in ('free', 'starter', 'pro', 'scale', 'developer')
+        then lower(coalesce(o.plan, 'free'))
+      else 'free'
+    end as stored_plan,
+    o.subscription_status, o.current_period_end, o.billing_paid_through,
+    case
+      when lower(coalesce(o.billing_paid_plan, 'free')) in ('business', 'negocio') then 'pro'
+      when lower(coalesce(o.billing_paid_plan, 'free')) in ('free', 'starter', 'pro', 'scale', 'developer')
+        then lower(coalesce(o.billing_paid_plan, 'free'))
+      else 'free'
+    end as paid_plan,
+    o.stripe_subscription_id, o.stripe_customer_id
+    from requested r join orgs o on o.id = r.billing_org_id
+  ), access as (
+    select billing_org_id, case
+    when stored_plan <> 'free' and subscription_status = 'active'
+      and current_period_end is not null and current_period_end > now()
+      and billing_paid_through is not null and billing_paid_through >= current_period_end
+      and (case paid_plan when 'developer' then 4 when 'scale' then 3 when 'pro' then 2 when 'starter' then 1 else 0 end)
+          >= (case stored_plan when 'developer' then 4 when 'scale' then 3 when 'pro' then 2 when 'starter' then 1 else 0 end)
+      and stripe_subscription_id is not null and stripe_customer_id is not null
+      then stored_plan
+    else 'free'
+    end as paid_access
+    from billing
+  ), effective as (
+    -- Acceso sin cobro: la promoción de The Cord Build o una cortesía de Ops
+    -- vigente, el mejor de los dos (cord_access_grant). Da acceso; no es pago.
+    select paid_access, coalesce((select g.plan from cord_access_grant(p_org) g), 'free') as promo_access
+    from access
+  )
+  select case
+    when (case paid_access when 'developer' then 4 when 'scale' then 3 when 'pro' then 2 when 'starter' then 1 else 0 end)
+       >= (case promo_access when 'developer' then 4 when 'scale' then 3 when 'pro' then 2 when 'starter' then 1 else 0 end)
+      then paid_access else promo_access end
+  from effective
+$$;
+revoke all on function cord_effective_plan(uuid) from public;
+do $$ begin
+  if exists (select 1 from pg_roles where rolname = 'cord_app') then
+    grant execute on function cord_access_grant(uuid) to cord_app;
+    grant execute on function cord_effective_plan(uuid) to cord_app;
+  end if;
+end $$;
+-- END ops-fase5

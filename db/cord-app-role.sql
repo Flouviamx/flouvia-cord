@@ -46,6 +46,10 @@ grant execute on function cord_sso_record_error(uuid, text) to cord_app;
 grant execute on function cord_sso_requirement_for(uuid) to cord_app;
 grant execute on function cord_resolve_inbound_email(text, text) to cord_app;
 grant execute on function cord_resolve_integracion(text, text) to cord_app;
+-- Métricas agregadas de las alertas de Cord Ops (security definer, sin filas de negocio).
+grant execute on function cord_ops_alert_metrics() to cord_app;
+-- Mejor acceso sin cobro vigente (cortesía de Ops o promoción de The Cord Build).
+grant execute on function cord_access_grant(uuid) to cord_app;
 
 -- Revert operativo (ejecutar solo si la ventana falla): cambiar DATABASE_URL
 -- al rol dueño anterior. No se elimina cord_app ni se desactiva RLS.

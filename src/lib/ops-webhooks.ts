@@ -25,7 +25,8 @@ export const opsWebhookStats = () => sql`
     (select count(*)::int from webhook_events where estado = 'failed' and created_at >= now() - interval '7 days') outbox_failed_7d,
     (select count(*)::int from webhooks where activo) endpoints_active,
     (select count(*)::int from webhooks where not activo and deshabilitado_at is not null) endpoints_disabled,
-    (select count(*)::int from stripe_events where processed_at is null and received_at < now() - interval '5 minutes') stripe_stuck,
+    (select count(*)::int from stripe_events where processed_at is null and received_at < now() - interval '5 minutes'
+       and received_at >= now() - interval '7 days') stripe_stuck,
     (select count(*)::int from stripe_events where last_error is not null and received_at >= now() - interval '7 days') stripe_errors_7d`;
 
 /** Endpoints con fallos seguidos o apagados por la racha: lo primero que se revisa. */
@@ -71,6 +72,7 @@ export const opsOutboxFailed = (limit = 10, orgId: string | null = null) => sql`
 export const opsStripeEvents = (limit = 12) => sql`
   select id, type, received_at, claimed_at, processed_at, attempt_count, last_error
   from stripe_events
-  where last_error is not null or (processed_at is null and received_at < now() - interval '5 minutes')
+  where received_at >= now() - interval '7 days'
+    and (last_error is not null or (processed_at is null and received_at < now() - interval '5 minutes'))
   order by received_at desc
   limit ${limit}`;

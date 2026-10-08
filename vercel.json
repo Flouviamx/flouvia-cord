@@ -5,7 +5,7 @@
       "claude/*": false
     }
   },
-  "buildCommand": "node scripts/migrate-brand-profile.mjs && node scripts/migrate-catalogo-fiscal.mjs && node scripts/migrate-tareas.mjs && node scripts/migrate-cron-runs.mjs && node scripts/migrate-ops-fase3.mjs && npm run build",
+  "buildCommand": "node scripts/migrate-brand-profile.mjs && node scripts/migrate-catalogo-fiscal.mjs && node scripts/migrate-tareas.mjs && node scripts/migrate-cron-runs.mjs && node scripts/migrate-ops.mjs && npm run build",
   "crons": [
     {
       "path": "/api/health",
@@ -66,6 +66,10 @@
     {
       "path": "/api/cron/workflows",
       "schedule": "0 14 * * *"
+    },
+    {
+      "path": "/api/cron/ops-alertas",
+      "schedule": "50 11 * * *"
     },
     {
       "path": "/api/cron/integraciones",

@@ -51,6 +51,10 @@ const CREA_DINERO = [
     /\/v1\/subscriptions\b/,
     /\/v1\/refunds/,
     /\/v1\/customers\b/,
+    // Un cupón o un calendario de suscripción cambian cuánto se cobra: un
+    // cupón al 100 % regala dinero igual que un reembolso.
+    /\/v1\/coupons\b/,
+    /\/v1\/subscription_schedules\b/,
     /application_fee_amount/,
     /application_fee_percent/,
 ];
@@ -67,6 +71,8 @@ const CREA_OBJETO = [
     /\/v1\/subscriptions['"`]/,
     /\/v1\/refunds['"`]/,
     /\/v1\/setup_intents['"`]/,
+    /\/v1\/coupons['"`]/,
+    /\/v1\/subscription_schedules['"`]/,
 ];
 
 const CARRILES = /\b(withOrgTx|withUserTx|withSystemTx|withOpsTx|withCaptureToken)\s*\(/;

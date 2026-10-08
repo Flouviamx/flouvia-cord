@@ -1,0 +1,109 @@
+---
+import OpsLayout from '../../layouts/OpsLayout.astro';
+import OpsShell from '../../components/ops/OpsShell.astro';
+import { sql, withOpsTx } from '../../lib/db';
+import { opsAgo, opsDate, opsNumber, opsPct } from '../../lib/ops-format';
+import { opsApiFailures, opsApiStats, opsApiTopOrgs, opsApiTopRoutes, opsCliLogins, opsMcpSessions, opsOauthClients, opsOauthGrants } from '../../lib/ops-developers';
+
+if (!Astro.locals.opsOperator) return Astro.redirect('/ops/login');
+const orgParam = Astro.url.searchParams.get('org') || '';
+const orgId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orgParam) ? orgParam.toLowerCase() : null;
+
+let stats: any = {};
+let routes: any[] = [], orgs: any[] = [], failures: any[] = [], clients: any[] = [], grants: any[] = [], cli: any[] = [];
+let mcp = 0;
+let orgName: string | null = null;
+let error = false;
+try {
+  const r = await withOpsTx(
+    opsApiStats(orgId), opsApiTopRoutes(orgId), opsApiTopOrgs(), opsApiFailures(orgId),
+    opsOauthClients(), opsOauthGrants(orgId), opsCliLogins(orgId), opsMcpSessions(),
+    sql`select nombre from orgs where id = ${orgId}::uuid`,
+  );
+  [stats] = r[0] as any[];
+  [, routes, orgs, failures, clients, grants, cli] = r as any[];
+  mcp = Number((r[7] as any[])[0]?.active || 0);
+  orgName = (r[8] as any[])[0]?.nombre ?? null;
+} catch (cause) { error = true; console.error('[ops/developers]', cause); }
+
+const total = Number(stats.requests || 0);
+const ok = total - Number(stats.server_errors || 0) - Number(stats.client_errors || 0) - Number(stats.limited || 0);
+const CLI_STATE: Record<string, [string, string]> = { pendiente: ['Pendiente', 'amber'], aprobado: ['Aprobado', 'blue'], rechazado: ['Rechazado', 'red'], reclamado: ['En uso', 'green'] };
+const grantState = (g: any): [string, string] => g.revoked_at ? ['Revocado', 'red'] : new Date(g.refresh_expires_at) <= new Date() ? ['Vencido', ''] : ['Activo', 'green'];
+const plural = (n: unknown, one: string, many: string) => `${opsNumber(n)} ${Number(n) === 1 ? one : many}`;
+const keyLabel = (f: any) => f.key_prefix ? `${f.key_nombre || 'Llave'} · ${f.key_prefix}…${f.key_last4}` : 'Llave eliminada';
+---
+<OpsLayout title="API | Cord Ops"><OpsShell active="developers" title="API y accesos" subtitle="Tráfico de la API pública y MCP, rechazos por límite, permisos OAuth y accesos del CLI.">
+  {error && <div class="ops-inline-error">No se pudo cargar la actividad de la API.</div>}
+  {orgId && <div class="ops-links"><a class="ops-back" href={`/ops/organizations/${orgId}`}>{orgName || 'Organización'}</a><a class="ops-link" href="/ops/developers">Ver toda la plataforma</a></div>}
+
+  <section class="ops-card ops-metrics cols-6">
+    <div class="ops-metric"><span>Llamadas 24 h</span><strong>{opsNumber(total)}</strong><small>{orgId ? 'De esta organización' : `${plural(stats.orgs, 'organización', 'organizaciones')} · ${plural(stats.keys, 'llave', 'llaves')}`}</small></div>
+    <div class="ops-metric"><span>Atendidas</span><strong>{total ? `${opsPct(ok, total)}%` : '—'}</strong><small>{opsNumber(stats.client_errors)} rechazadas por la petición</small></div>
+    <div class="ops-metric"><span>Errores del servidor</span><strong>{opsNumber(stats.server_errors)}</strong><small>Respuestas 5xx</small></div>
+    <div class="ops-metric"><span>Limitadas</span><strong>{opsNumber(stats.limited)}</strong><small>429: rate limit o cuota del plan</small></div>
+    <div class="ops-metric"><span>p95</span><strong>{stats.p95_ms == null ? '—' : `${opsNumber(stats.p95_ms)} ms`}</strong><small>Tiempo de respuesta</small></div>
+    <div class="ops-metric"><span>MCP</span><strong>{opsNumber(stats.mcp)}</strong><small>Llamadas · {opsNumber(mcp)} sesiones vivas</small></div>
+  </section>
+
+  <div class="ops-grid-2 ops-section">
+    <section>
+      <header class="ops-section-header"><div><h2>Rutas</h2><p>Las de más tráfico en 24 horas.</p></div></header>
+      <div class="ops-card ops-table-wrap"><table class="ops-table">
+        <thead><tr><th>Ruta</th><th class="num">Llamadas</th><th class="num">5xx</th><th class="num">429</th><th class="num">p95</th></tr></thead>
+        <tbody>
+          {routes.map((r) => <tr><td><strong class="ops-code">{r.metodo} {r.ruta}</strong></td><td class="num">{opsNumber(r.n)}</td><td class="num">{Number(r.server_errors) ? <span class="ops-badge red">{opsNumber(r.server_errors)}</span> : <span class="ops-muted">0</span>}</td><td class="num">{Number(r.limited) ? <span class="ops-badge amber">{opsNumber(r.limited)}</span> : <span class="ops-muted">0</span>}</td><td class="num">{r.p95_ms == null ? '—' : `${opsNumber(r.p95_ms)} ms`}</td></tr>)}
+          {routes.length === 0 && <tr><td colspan="5" class="ops-empty">Sin llamadas en 24 horas.</td></tr>}
+        </tbody>
+      </table></div>
+    </section>
+    {orgId ? <section>
+      <header class="ops-section-header"><div><h2>Permisos OAuth</h2><p>Apps que actúan en nombre de esta organización.</p></div></header>
+      <div class="ops-card ops-list">
+        {grants.map((g) => { const [label, tone] = grantState(g); return <div class="ops-list-row two"><div><strong>{g.client_nombre}</strong><span class="ops-sub">{g.scope === 'write' ? 'Lectura y escritura' : 'Solo lectura'} · {g.user_email || 'persona eliminada'} · {opsAgo(g.refreshed_at || g.created_at).toLowerCase()}</span></div><span class:list={['ops-badge', tone]}>{label}</span></div>; })}
+        {grants.length === 0 && <div class="ops-empty">Sin permisos OAuth.</div>}
+      </div>
+    </section> : <section>
+      <header class="ops-section-header"><div><h2>Organizaciones</h2><p>Las que más llaman en 24 horas.</p></div></header>
+      <div class="ops-card ops-list">
+        {orgs.map((o) => <a class="ops-list-row two" href={`/ops/developers?org=${o.org_id}`}><div><strong>{o.org_nombre}</strong><span class="ops-sub">{opsNumber(o.server_errors)} 5xx · {opsNumber(o.limited)} limitadas · última {opsAgo(o.last_at).toLowerCase()}</span></div><time>{opsNumber(o.n)}</time></a>)}
+        {orgs.length === 0 && <div class="ops-empty">Nadie ha llamado a la API en 24 horas.</div>}
+      </div>
+    </section>}
+  </div>
+
+  <section class="ops-section">
+    <header class="ops-section-header"><div><h2>Rechazos recientes</h2><p>Errores del servidor y límites de los últimos 7 días. Un 429 es rate limit por llave (se registra uno por llave por minuto) o la cuota del plan agotada.</p></div></header>
+    <div class="ops-card ops-table-wrap"><table class="ops-table">
+      <thead><tr><th>Ruta</th>{!orgId && <th>Organización</th>}<th>Llave</th><th>Resultado</th><th class="num">Tiempo</th><th>Cuándo</th></tr></thead>
+      <tbody>
+        {failures.map((f) => <tr>
+          <td><strong class="ops-code">{f.metodo} {f.ruta}</strong>{f.mode === 'test' && <span class="ops-sub">Modo prueba</span>}</td>
+          {!orgId && <td><a href={`/ops/developers?org=${f.org_id}`}>{f.org_nombre}</a></td>}
+          <td><span class="ops-code">{keyLabel(f)}</span></td>
+          <td><span class:list={['ops-badge', f.status === 429 ? 'amber' : 'red']}>{f.status}</span></td>
+          <td class="num">{f.duracion_ms ? `${opsNumber(f.duracion_ms)} ms` : '—'}</td>
+          <td><span title={opsDate(f.created_at)}>{opsAgo(f.created_at)}</span></td>
+        </tr>)}
+        {failures.length === 0 && <tr><td colspan={orgId ? 5 : 6} class="ops-empty">Ningún rechazo en 7 días.</td></tr>}
+      </tbody>
+    </table></div>
+  </section>
+
+  <div class:list={[orgId ? '' : 'ops-grid-2 even', 'ops-section']}>
+    {!orgId && <section>
+      <header class="ops-section-header"><div><h2>Clientes OAuth</h2><p>Apps registradas que piden acceso a las cuentas.</p></div></header>
+      <div class="ops-card ops-list">
+        {clients.map((c) => <div class="ops-list-row two"><div><strong>{c.nombre}</strong><span class="ops-sub">{c.dominio || c.slug} · {plural(c.active_grants, 'permiso', 'permisos')} en {plural(c.orgs, 'organización', 'organizaciones')} · {c.last_used ? `usado ${opsAgo(c.last_used).toLowerCase()}` : 'sin uso'}</span></div><span class:list={['ops-badge', c.revoked_at ? 'red' : 'green']}>{c.revoked_at ? 'Revocado' : 'Activo'}</span></div>)}
+        {clients.length === 0 && <div class="ops-empty">Sin clientes OAuth.</div>}
+      </div>
+    </section>}
+    <section>
+      <header class="ops-section-header"><div><h2>Accesos del CLI</h2><p><span class="ops-code">cord login</span>: desde qué equipo y quién lo aprobó.</p></div></header>
+      <div class="ops-card ops-list">
+        {cli.map((l) => { const [label, tone] = CLI_STATE[l.estado] ?? [l.estado, '']; return <div class="ops-list-row two"><div><strong>{l.host || 'Equipo sin nombre'}</strong><span class="ops-sub">{l.org_nombre || 'Sin organización'}{l.aprobado_por_email && ` · aprobó ${l.aprobado_por_email}`} · {opsAgo(l.created_at).toLowerCase()}{l.estado === 'reclamado' && !l.key_active && ' · llave revocada'}</span></div><span class:list={['ops-badge', tone]}>{label}</span></div>; })}
+        {cli.length === 0 && <div class="ops-empty">Sin accesos del CLI.</div>}
+      </div>
+    </section>
+  </div>
+</OpsShell></OpsLayout>

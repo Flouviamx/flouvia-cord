@@ -151,9 +151,11 @@ export const DIM_COL: Record<UsageDim, 'ia' | 'cfdi' | 'api' | 'usuarios' | 'env
 const OVERAGE_SAFETY_MULTIPLIER = 10;
 
 // Los asientos no llevan techo de seguridad: no tienen costo de proveedor.
-function usageHardCap(plan: PlanId, dim: UsageDim, included: number | null): number {
+// `overage` = el plan lo permite Y el plan efectivo lo respalda un pago: con
+// una cortesía (o la promoción del Build) lo incluido es tope duro.
+function usageHardCap(dim: UsageDim, included: number | null, overage: boolean): number {
     if (included === null) return 2_147_483_647;
-    if (!allowsOverage(plan, dim)) return included;
+    if (!overage) return included;
     return dim === 'usuario' ? 2_147_483_647 : included * OVERAGE_SAFETY_MULTIPLIER;
 }
 
@@ -176,12 +178,12 @@ export async function checkQuota(orgId: string, dim: MeterDim): Promise<{ ok: bo
         const limit = INCLUDED[plan]?.[col];
         if (limit === null || limit === undefined) return { ok: true }; // ilimitado
         const used = Number(row?.[col] ?? 0);
-        const isOverage = allowsOverage(plan, dim);
+        const isOverage = context.overageAllowed && allowsOverage(plan, dim);
         if (!isOverage) {
             if (used >= limit) return { ok: false, reason: `Alcanzaste el límite de tu plan (${limit} este mes). Sube de plan para seguir usando esta función.` };
             return { ok: true };
         }
-        if (used >= usageHardCap(plan, dim, limit)) {
+        if (used >= usageHardCap(dim, limit, true)) {
             return { ok: false, reason: 'Uso excepcionalmente alto este periodo. Contáctanos para desbloquear.' };
         }
         return { ok: true };
@@ -305,11 +307,12 @@ export async function reserveUsage(orgId: string, dim: UsageDim, rawValue = 1, o
         const plan = context.effectivePlan;
         const col = DIM_COL[dim];
         const included = INCLUDED[plan][col];
-        const hardCap = usageHardCap(plan, dim, included);
+        const overage = context.overageAllowed && allowsOverage(plan, dim);
+        const hardCap = usageHardCap(dim, included, overage);
         const periodo = new Date().toISOString().slice(0, 7);
         const id = randomUUID();
         const meterEligible = !context.isSandbox && plan !== 'free' && !!context.stripeCustomerId
-            && included !== null && allowsOverage(plan, dim);
+            && included !== null && overage;
         const includedForMeter = included ?? 2_147_483_647;
 
         const queryFor = (column: 'ia' | 'cfdi' | 'api' | 'usuarios' | 'envios' | 'docs') => {
@@ -493,7 +496,7 @@ export async function cancelUsage(orgId: string, reservationId: string): Promise
 export async function commitInvoiceUsage(orgId: string, reservationId: string): Promise<void> {
     const context = await getEntitlementContext(orgId);
     const included = INCLUDED[context.effectivePlan].cfdi;
-    const eligible = !context.isSandbox && context.effectivePlan !== 'free' && !!context.stripeCustomerId;
+    const eligible = !context.isSandbox && context.effectivePlan !== 'free' && !!context.stripeCustomerId && context.overageAllowed;
     // Sentencias separadas en la MISMA transacción: tras esperar el lock, la
     // lectura obtiene un snapshot nuevo con las confirmaciones anteriores.
     await withOrgTx(orgId,
@@ -599,7 +602,7 @@ export async function syncSeatUsage(orgId: string): Promise<string | null> {
     const context = await getEntitlementContext(orgId);
     const plan = context.effectivePlan;
     const included = INCLUDED[plan].usuarios;
-    if (context.isSandbox || !context.stripeCustomerId || included === null || !allowsOverage(plan, 'usuario')) return null;
+    if (context.isSandbox || !context.stripeCustomerId || included === null || !context.overageAllowed || !allowsOverage(plan, 'usuario')) return null;
     const periodo = new Date().toISOString().slice(0, 7);
     const id = randomUUID();
     const [, [row]] = await withOrgTx(orgId,

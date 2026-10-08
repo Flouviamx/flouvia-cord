@@ -57,7 +57,7 @@ if (!/claimOpsTotpStep/.test(login)) fail('totp-un-uso', 'el TOTP de Ops debe re
 // 3. Toda ruta de API de Ops que muta exige operador, y las de administración
 //    exigen rol admin. Las de login son la excepción por definición.
 const LOGIN_ROUTES = new Set(['src/pages/api/ops/auth.ts', 'src/pages/api/ops/passkey-options.ts', 'src/pages/api/ops/passkey-verify.ts']);
-const ADMIN_ROUTES = ['src/pages/api/ops/users/[id].ts', 'src/pages/api/ops/organizations/[id].ts', 'src/pages/api/ops/security.ts', 'src/pages/api/ops/status-incidents.ts', 'src/pages/api/ops/recovery.ts'];
+const ADMIN_ROUTES = ['src/pages/api/ops/users/[id].ts', 'src/pages/api/ops/organizations/[id].ts', 'src/pages/api/ops/security.ts', 'src/pages/api/ops/status-incidents.ts', 'src/pages/api/ops/recovery.ts', 'src/pages/api/ops/alerts.ts', 'src/pages/api/ops/organizations/[id]/grants.ts'];
 for (const file of opsApi) {
     if (LOGIN_ROUTES.has(file)) continue;
     const src = read(file);
@@ -75,6 +75,7 @@ const fresh = [
     'src/pages/api/ops/passkeys/register-options.ts',
     'src/pages/api/ops/passkeys/register.ts',
     'src/pages/api/ops/passkeys/[id].ts',
+    'src/pages/api/ops/organizations/[id]/grants.ts',
 ];
 for (const file of fresh) {
     if (!/requireFreshOpsAuth\(/.test(read(file))) fail('auth-reciente', `${file} no exige requireFreshOpsAuth()`);
@@ -150,7 +151,10 @@ if (block < 0 || blockEnd < 0) {
     const ownTables = /foreach t in array array\[('ops_[a-z_]+'(?:,\s*'ops_[a-z_]+')*)\] loop\s+if not exists \(select 1 from pg_policies[^)]*policyname = t \|\| '_select'\)/.exec(ownWrite);
     for (const stmt of schema.slice(blockEnd).match(/create policy[^;]*;/gi) || []) {
         if (!/'ops'/.test(stmt) || /\bfor (select|update)\b/i.test(stmt)) continue;
-        const inOwnBlock = ownTables && /\bfor (insert|delete)\b/i.test(stmt) && ownWrite.includes(stmt);
+        // Escritura propia: tablas ops_* del bloque fase 3 (formato iterado) o
+        // una política literal `on ops_<tabla>` (cortesías, fase 5).
+        const ownLiteral = /\bon ops_[a-z_]+\b/i.test(stmt) && /\bfor (insert|delete)\b/i.test(stmt);
+        const inOwnBlock = (ownTables && /\bfor (insert|delete)\b/i.test(stmt) && ownWrite.includes(stmt)) || ownLiteral;
         if (!inOwnBlock) fail('schema', `política posterior al endurecimiento otorga \`ops\` sin limitarla a SELECT o UPDATE: ${stmt.slice(0, 80)}`);
     }
     if (f3 < 0 || f3End < 0) {
@@ -165,7 +169,7 @@ if (block < 0 || blockEnd < 0) {
             if (new RegExp(`create policy[^;]*on ${t}[^;]*app\\.org_id`, 'i').test(schema)) fail('schema', `${t} tiene una política del carril de la organización`);
         }
     }
-    if (!/migrate-ops-fase3\.mjs/.test(read('vercel.json'))) fail('schema', 'la migración ops-fase3 debe correr en el buildCommand de vercel.json');
+    if (!/migrate-ops\.mjs/.test(read('vercel.json'))) fail('schema', 'la migración ops-fase3 debe correr en el buildCommand de vercel.json');
 }
 const role = read('db/cord-app-role.sql');
 if (!/revoke update, delete, truncate on ops_audit_log from cord_app/.test(role)) {
@@ -190,6 +194,40 @@ if (!/setRequestLocale\(/.test(recovery)) fail('recuperacion', 'el correo reenvi
 const notesApi = read('src/pages/api/ops/organizations/[id]/notes.ts');
 if (!/withOpsTx\(/.test(notesApi) || !/opsAuditQuery\(|insert into ops_audit_log/.test(notesApi)) fail('notas', 'las notas se escriben en withOpsTx y se auditan en la misma transacción');
 if (!/author_operator_id\s*=\s*\$\{operator\.userId\}/.test(notesApi)) fail('notas', 'borrar una nota ajena exige ser admin (condición en el DELETE)');
+
+// 13. Monitor, inspectores y alertas (tanda 4). El inspector de API nunca
+//     selecciona hashes, secretos ni códigos; las métricas de alertas son solo
+//     agregados, en una función security definer cerrada al público; el cron
+//     de alertas reclama su periodo (CRON_SECRET + cron_runs); y la migración
+//     es espejo de schema.sql y corre en el build.
+const developers = read('src/lib/ops-developers.ts').replace(/^\s*\/\/.*$/gm, '');
+for (const col of ['secret_hash', 'refresh_hash', 'device_hash', 'user_code', 'secret_enc', 'code_hash']) {
+    if (new RegExp(`\\b${col}\\b`).test(developers)) fail('inspector', `ops-developers.ts selecciona ${col}`);
+}
+const fase4 = read('db/migrations/2026-10-08-ops-fase4.sql');
+if (!schema.includes(fase4.trim())) fail('schema', 'schema.sql y db/migrations/2026-10-08-ops-fase4.sql divergen');
+if (!/function cord_ops_alert_metrics\(\)[\s\S]*?security definer/.test(fase4)) fail('alertas', 'cord_ops_alert_metrics() debe ser security definer');
+if (!/revoke all on function cord_ops_alert_metrics\(\) from public/.test(fase4)) fail('alertas', 'cord_ops_alert_metrics() debe revocarse de public');
+if (/returns table \([^)]*org_id/.test(fase4)) fail('alertas', 'cord_ops_alert_metrics() devuelve agregados, nunca filas de una organización');
+if (!read('scripts/migrate-ops.mjs').includes("'2026-10-08-ops-fase4.sql'")) fail('schema', 'migrate-ops.mjs no aplica la migración ops-fase4');
+const alertCron = read('src/pages/api/cron/ops-alertas.ts');
+if (!/assertCronAuth\(/.test(alertCron) || !/runCronOnce\(/.test(alertCron)) fail('alertas', 'el cron de alertas valida CRON_SECRET y reclama su periodo en cron_runs');
+
+// 14. Cortesías (fase 5). Un regalo da ACCESO y nunca se disfraza de pago:
+//     la ruta no escribe columnas de evidencia de pago en orgs, reserva la
+//     cortesía antes de llamar al procesador con llaves de idempotencia
+//     derivadas de ella, y su tabla y función son espejo del schema.
+const grantsApi = read('src/pages/api/ops/organizations/[id]/grants.ts');
+if (/billing_paid_through\s*=|billing_paid_plan\s*=|update orgs\b/i.test(grantsApi)) fail('cortesias', 'la ruta de cortesías escribe evidencia de pago en orgs: un regalo no es un pago (regla 17)');
+if (!/strictRateLimit\(/.test(grantsApi)) fail('cortesias', 'la ruta de cortesías necesita strictRateLimit');
+if (!/idempotencyKey: `ops-grant:\$\{grantId\}/.test(grantsApi)) fail('cortesias', 'las llamadas al procesador usan llaves de idempotencia derivadas del id de la cortesía');
+if (grantsApi.indexOf('insert into ops_plan_grants') > grantsApi.indexOf("'/v1/coupons'")) fail('cortesias', 'la cortesía se reserva ANTES de llamar al procesador');
+if (!/applies_to\[products\]/.test(grantsApi)) fail('cortesias', 'el cupón aplica solo al producto base: los excedentes se siguen cobrando');
+if (!/original_period_end/.test(grantsApi)) fail('cortesias', 'revocar días gratis devuelve el cobro a su fecha original (original_period_end), nunca cobra antes');
+const fase5 = read('db/migrations/2026-10-08-ops-fase5.sql');
+if (!schema.includes(fase5.trim())) fail('schema', 'schema.sql y db/migrations/2026-10-08-ops-fase5.sql divergen');
+if (!read('scripts/migrate-ops.mjs').includes("'2026-10-08-ops-fase5.sql'")) fail('schema', 'migrate-ops.mjs no aplica la migración ops-fase5');
+if (!/overageAllowed:\s*accessSource === 'paid' \|\| \(accessSource === 'grant' && liveSubscription\)/.test(read('src/lib/org-entitlements.ts'))) fail('cortesias', 'el excedente solo se cobra con una suscripción viva: pagada, o con cortesía encima');
 
 if (failures.length) {
     console.error(`security:ops — ${failures.length} violaciones del contrato de Cord Ops\n`);

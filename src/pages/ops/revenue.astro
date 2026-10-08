@@ -4,7 +4,7 @@ import OpsShell from '../../components/ops/OpsShell.astro';
 import OpsDist from '../../components/ops/OpsDist.astro';
 import { withOpsTx } from '../../lib/db';
 import { opsAgo, opsDate, opsMoney, opsNumber, opsPct, opsSubscription } from '../../lib/ops-format';
-import { opsRevenueAtRisk, opsRevenueCanceling, opsRevenueOrgs, opsStoredPlan, summarizeRevenue, type OpsRevenueOrg } from '../../lib/ops-billing';
+import { opsRevenueAtRisk, opsRevenueCanceling, opsRevenueCourtesy, opsRevenueOrgs, opsStoredPlan, summarizeRevenue, type OpsRevenueOrg } from '../../lib/ops-billing';
 import { PLANES } from '../../lib/precios';
 
 if (!Astro.locals.opsOperator) return Astro.redirect('/ops/login');
@@ -19,6 +19,7 @@ try {
 const byCurrency = summarizeRevenue(rows);
 const canceling = opsRevenueCanceling(rows);
 const atRisk = opsRevenueAtRisk(rows);
+const courtesy = opsRevenueCourtesy(rows);
 const paying = byCurrency.reduce((a, c) => a + c.paying, 0);
 const annual = byCurrency.reduce((a, c) => a + c.annual, 0);
 const planName = (id: unknown) => { const plan = opsStoredPlan(id); return PLANES.find((p) => p.id === plan)?.nombre ?? plan; };
@@ -32,7 +33,7 @@ const planName = (id: unknown) => { const plan = opsStoredPlan(id); return PLANE
     <div class="ops-metric"><span>Organizaciones que pagan</span><strong>{opsNumber(paying)}</strong><small>Plan pagado verificado, no solo guardado</small></div>
     <div class="ops-metric"><span>Pago anual</span><strong>{opsPct(annual, paying)}%</strong><small>{opsNumber(annual)} de {opsNumber(paying)}</small></div>
     <div class="ops-metric"><span>Cancelan al cierre</span><strong>{opsNumber(canceling.length)}</strong><small>Siguen pagando hasta su fecha</small></div>
-    <div class="ops-metric"><span>En riesgo</span><strong>{opsNumber(atRisk.length)}</strong><small>Plan de pago sin cobro que lo respalde</small></div>
+    <div class="ops-metric"><span>En riesgo</span><strong>{opsNumber(atRisk.length)}</strong><small>Plan de pago sin cobro que lo respalde · {opsNumber(courtesy.length)} en cortesía</small></div>
   </section>
 
   <section class="ops-section">

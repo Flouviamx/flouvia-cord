@@ -7,7 +7,11 @@ import { platformCurrencyFor, type PlatformCurrency } from './plan-currency';
 import { hasPaidBillingEvidence, normalizePlan } from './entitlements';
 import { MESES_POR_ANIO, PLANES } from './precios';
 
-/** Suscripción y cuenta de cobros. `effective_plan` es el plan PAGADO (regla 17). */
+/**
+ * Suscripción y cuenta de cobros. `effective_plan` es el ACCESO efectivo:
+ * plan pagado o cortesía, lo que sea mayor. Lo pagado se decide aparte con
+ * hasPaidBillingEvidence (regla 17).
+ */
 export function opsOrgBilling(orgId: string) {
   return sql`select o.id, coalesce(o.plan, 'free') plan, cord_effective_plan(o.id) effective_plan,
       o.subscription_status, o.billing_cycle, o.current_period_end, o.cancel_at_period_end,
@@ -92,10 +96,13 @@ export const opsRevenueOrgs = () => sql`
   select o.id, o.nombre, o.country_code, coalesce(o.plan, 'free') plan, cord_effective_plan(o.id) effective_plan,
          o.billing_cycle, o.billing_currency, o.subscription_status, o.cancel_at_period_end,
          o.current_period_end, o.billing_paid_through, o.billing_paid_plan, o.billing_last_paid_at,
-         o.stripe_subscription_id, o.stripe_customer_id, o.created_at
+         o.stripe_subscription_id, o.stripe_customer_id, o.created_at,
+         (select g.plan from ops_plan_grants g
+           where g.org_id = o.id and g.status = 'active' and g.expires_at > now() limit 1) grant_plan
   from orgs o
   where o.sandbox_of is null and not coalesce(o.is_demo, false)
-    and (o.stripe_subscription_id is not null or o.subscription_status is not null or coalesce(o.plan, 'free') <> 'free')
+    and (o.stripe_subscription_id is not null or o.subscription_status is not null or coalesce(o.plan, 'free') <> 'free'
+      or exists (select 1 from ops_plan_grants g where g.org_id = o.id and g.status = 'active' and g.expires_at > now()))
   order by o.created_at desc
   limit 5000`;
 
@@ -105,6 +112,8 @@ export interface OpsRevenueOrg {
   cancel_at_period_end: boolean | null; current_period_end: string | Date | null;
   billing_paid_through?: string | Date | null; billing_paid_plan?: string | null;
   stripe_subscription_id?: string | null; stripe_customer_id?: string | null;
+  /** Plan de una cortesía de Ops vigente, si la hay. */
+  grant_plan?: string | null;
 }
 
 export interface OpsCurrencyRevenue {
@@ -180,6 +189,12 @@ export const opsRevenueCanceling = (rows: OpsRevenueOrg[]) => rows
   .filter((r) => opsIsPaying(r) && r.cancel_at_period_end)
   .sort((a, b) => new Date(a.current_period_end || 0).getTime() - new Date(b.current_period_end || 0).getTime());
 
-/** Tienen un plan de pago guardado, pero el cobro no lo respalda (vencido, impago, inconsistente). */
+/**
+ * Tienen un plan de pago guardado, pero el cobro no lo respalda (vencido,
+ * impago, inconsistente). Una cortesía vigente no es riesgo: se decidió.
+ */
 export const opsRevenueAtRisk = (rows: OpsRevenueOrg[]) => rows
-  .filter((r) => opsStoredPlan(r.plan) !== 'free' && !opsIsPaying(r) && r.subscription_status !== 'canceled');
+  .filter((r) => opsStoredPlan(r.plan) !== 'free' && !opsIsPaying(r) && r.subscription_status !== 'canceled' && !r.grant_plan);
+
+/** Con acceso por cortesía de Ops: no pagan (o pagan menos) a propósito. */
+export const opsRevenueCourtesy = (rows: OpsRevenueOrg[]) => rows.filter((r) => !!r.grant_plan);

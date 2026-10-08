@@ -5,7 +5,7 @@ import OpsCommand from './OpsCommand.astro';
 
 type OpsSection =
   | 'overview' | 'activity' | 'organizations' | 'users' | 'revenue' | 'invoices' | 'workflows'
-  | 'integrations' | 'webhooks' | 'usage' | 'status' | 'security' | 'database';
+  | 'integrations' | 'webhooks' | 'developers' | 'usage' | 'status' | 'crons' | 'alerts' | 'security' | 'database';
 
 interface Props {
   active: OpsSection;
@@ -32,10 +32,13 @@ const groups: { label: string; items: { id: OpsSection; href: string; label: str
     { id: 'workflows', href: '/ops/workflows', label: 'Workflows', icon: 'workflow', key: 'w' },
     { id: 'integrations', href: '/ops/integrations', label: 'Integraciones', icon: 'plug', key: 'i' },
     { id: 'webhooks', href: '/ops/webhooks', label: 'Webhooks', icon: 'send', key: 'h' },
+    { id: 'developers', href: '/ops/developers', label: 'API y accesos', icon: 'code', key: 'e' },
   ] },
   { label: 'Plataforma', items: [
     { id: 'usage', href: '/ops/usage', label: 'Uso y costos', icon: 'chart', key: 'c' },
     { id: 'status', href: '/ops/status', label: 'Disponibilidad', icon: 'check-circle', key: 'd' },
+    { id: 'crons', href: '/ops/crons', label: 'Crons', icon: 'clock', key: 'p' },
+    { id: 'alerts', href: '/ops/alerts', label: 'Alertas', icon: 'bell', key: 'l' },
     { id: 'security', href: '/ops/security', label: 'Seguridad', icon: 'shield', key: 's' },
     { id: 'database', href: '/ops/database', label: 'Base de datos', icon: 'database', key: 'b' },
   ] },

@@ -10,7 +10,9 @@ import { opsConnectRequirements, opsMinor, opsOrgBilling, opsOrgDisputes, opsOrg
 import { opsDeliveryPage } from '../../../lib/ops-webhooks';
 import { mergeOpsLog, OPS_NOTE_MAX, opsOrgNotes, opsOrgTags } from '../../../lib/ops-notes';
 import { iconInner } from '../../../lib/icons';
+import { GRANT_MAX_DAYS, GRANT_MAX_MONTHS, GRANT_PLANS, OPS_GRANT_MECHANISM } from '../../../lib/ops-grants';
 import { PLANES } from '../../../lib/precios';
+import { hasPaidBillingEvidence, normalizePlan } from '../../../lib/entitlements';
 
 if (!Astro.locals.opsOperator) return Astro.redirect('/ops/login');
 const id = String(Astro.params.id || '');
@@ -56,9 +58,11 @@ const r = await withOpsTx(
   opsOrgTags(id),
   opsWorkflowFailures(8, id),
   opsDeliveryPage('failed', id, 8, 0),
+  sql`select id, plan, kind, mechanism, starts_at, expires_at, status, reason, operator_email, stripe_coupon_id, revoked_at, revoked_by, created_at
+      from ops_plan_grants where org_id = ${id} order by created_at desc limit 6`,
 );
 const [orgRows, members, quotes, clients, products, keys, webhooks, sso, audit, feed, invoices, workflows, integrations, collected, commerceRows, closed,
-  billingRows, payouts, refunds, disputes, subInvoices, notes, tags, failedRuns, failedDeliveries] = r as any[];
+  billingRows, payouts, refunds, disputes, subInvoices, notes, tags, failedRuns, failedDeliveries, grants] = r as any[];
 if (!orgRows.length) return Astro.redirect('/ops/organizations');
 const org: any = orgRows[0];
 const commerce: any = commerceRows[0] || {};
@@ -69,8 +73,13 @@ const fullName = (m: any) => [m.first_name, m.last_name].filter(Boolean).join(' 
 const billing: any = billingRows[0] || {};
 const requirements = opsConnectRequirements(billing.stripe_requirements);
 const effectivePlan = String(billing.effective_plan || 'free');
-// El plan guardado es una proyección; el pagado es el que autoriza (regla 17).
-const planMismatch = effectivePlan !== String(billing.plan || 'free');
+// Acceso efectivo (pago o cortesía) y plan PAGADO son cosas distintas: una
+// cortesía no se rotula como pago (regla 17).
+const paidPlan = hasPaidBillingEvidence({
+  plan: billing.plan, subscriptionStatus: billing.subscription_status, currentPeriodEnd: billing.current_period_end,
+  billingPaidThrough: billing.billing_paid_through, billingPaidPlan: billing.billing_paid_plan,
+  stripeSubscriptionId: billing.stripe_subscription_id, stripeCustomerId: billing.stripe_customer_id,
+}) ? normalizePlan(billing.plan) : 'free';
 const stripeLinks = [
   ['Cliente', stripeDashboardUrl('customer', billing.stripe_customer_id)],
   ['Suscripción', stripeDashboardUrl('subscription', billing.stripe_subscription_id)],
@@ -83,10 +92,13 @@ const openDisputes = disputes.filter((d: any) => !['won', 'lost', 'charge_refund
 const planName = (id: unknown) => PLANES.find((p) => p.id === String(id || 'free'))?.nombre ?? String(id || 'free');
 // Mismo día civil: "renueva el 26" y "pagado hasta el 26" dicen lo mismo.
 const sameDay = (a: unknown, b: unknown) => !!a && !!b && Math.abs(new Date(String(a)).getTime() - new Date(String(b)).getTime()) < 86_400_000;
+const activeGrant = grants.find((g: any) => g.status === 'active' && new Date(g.expires_at) > new Date());
+const grantHistory = grants.filter((g: any) => g !== activeGrant);
+const grantState = (g: any): [string, string] => g.status === 'revoked' ? ['Revocada', 'red'] : g.status === 'expired' || new Date(g.expires_at) <= new Date() ? ['Vencida', ''] : ['Vigente', 'green'];
 const resendable = (d: any) => d.invoice_number && d.lifecycle !== 'draft' && d.lifecycle !== 'void';
 ---
 <OpsLayout title={`${org.nombre} | Cord Ops`}><OpsShell active="organizations" eyebrow="Organización" title={org.nombre} subtitle={`${org.owner_email || 'Sin propietario'} · ${org.country_code} · ${org.moneda}`}>
-  <div class="ops-links"><a class="ops-back" href="/ops/organizations">Organizaciones</a><a class="ops-link" href={`/ops/activity?org=${org.id}`}>Toda su actividad</a><a class="ops-link" href={`/ops/usage?org=${org.id}`}>Uso y costos</a></div>
+  <div class="ops-links"><a class="ops-back" href="/ops/organizations">Organizaciones</a><a class="ops-link" href={`/ops/activity?org=${org.id}`}>Toda su actividad</a><a class="ops-link" href={`/ops/usage?org=${org.id}`}>Uso y costos</a><a class="ops-link" href={`/ops/developers?org=${org.id}`}>API y accesos</a></div>
 
   <section class="ops-card">
     <div class="ops-detail-hero">
@@ -137,7 +149,8 @@ const resendable = (d: any) => d.invoice_number && d.lifecycle !== 'draft' && d.
     <section>
       <header class="ops-section-header"><div><h2>Suscripción de Cord</h2><p>Lo que paga y lo que eso le da.</p></div></header>
       <div class="ops-card ops-card-pad"><dl class="ops-key-value">
-        <div><dt>Plan pagado</dt><dd><strong>{planName(effectivePlan)}</strong>{planMismatch && <span class="ops-badge amber">Guardado: {planName(billing.plan)}</span>}</dd></div>
+        <div><dt>Acceso efectivo</dt><dd><strong>{planName(effectivePlan)}</strong>{effectivePlan !== paidPlan && <span class="ops-badge blue">{activeGrant ? 'Por cortesía' : 'Por promoción'}</span>}</dd></div>
+        <div><dt>Plan pagado</dt><dd>{planName(paidPlan)}{normalizePlan(billing.plan) !== paidPlan && <span class="ops-badge amber">Guardado: {planName(billing.plan)}</span>}</dd></div>
         <div><dt>Estado</dt><dd>{opsSubscription(billing.subscription_status)}{billing.billing_cycle && ` · ${billing.billing_cycle}`}{billing.cancel_at_period_end && <span class="ops-badge red">Cancela al cierre del periodo</span>}</dd></div>
         <div><dt>{billing.cancel_at_period_end ? 'Termina' : 'Renueva'}</dt><dd>{opsDate(billing.current_period_end, '—')}{billing.billing_paid_through && !sameDay(billing.billing_paid_through, billing.current_period_end) && ` · pagado hasta ${opsDate(billing.billing_paid_through)}`}</dd></div>
         <div><dt>Último cobro</dt><dd>{billing.billing_last_paid_at
@@ -167,6 +180,35 @@ const resendable = (d: any) => d.invoice_number && d.lifecycle !== 'draft' && d.
       </div>
     </section>
   </div>
+
+  <section class="ops-section" id="cortesias">
+    <header class="ops-section-header"><div><h2>Cortesías</h2><p>Días gratis o plan regalado. Dan acceso y no cuentan como pago. Con suscripción, sus excedentes se siguen cobrando; sin ella, lo incluido es su tope.</p></div></header>
+    <div class="ops-grid-2 even ops-grant-grid">
+      <div class="ops-card ops-list wrap-sub">
+        {activeGrant ? <div class="ops-list-row two ops-grant-active"><div><strong>{planName(activeGrant.plan)} hasta el {opsDate(activeGrant.expires_at)}</strong><span class="ops-sub">{OPS_GRANT_MECHANISM[activeGrant.mechanism]} · {activeGrant.reason} · {activeGrant.operator_email}</span></div>
+          {isAdmin ? <button class="ops-button danger-soft sm" data-ops-action="revoke_grant" data-endpoint={`/api/ops/organizations/${org.id}/grants`} data-target-id={activeGrant.id} data-confirm={org.nombre} data-danger="true" data-title="Revocar cortesía" data-description={activeGrant.mechanism === 'trial' ? 'Su cobro vuelve a la fecha que ya tenía pagada antes de la cortesía (si esa fecha ya pasó, se le cobra ahora con su tarjeta guardada), y pierde el acceso de cortesía.' : activeGrant.mechanism === 'cupon' ? 'Quita el cupón de su suscripción: la próxima mensualidad se cobra completa, y pierde el acceso de cortesía.' : 'Pierde de inmediato el acceso que le daba la cortesía. No toca el procesador.'}>Revocar</button> : <span class="ops-badge green">Vigente</span>}
+        </div> : <div class="ops-empty">Sin cortesía vigente.</div>}
+        {grantHistory.map((g: any) => { const [label, tone] = grantState(g); return <div class="ops-list-row two"><div><strong>{planName(g.plan)} · {g.kind === 'dias' ? 'días gratis' : 'plan regalado'}</strong><span class="ops-sub">{opsDate(g.created_at)} → {opsDate(g.expires_at)} · {OPS_GRANT_MECHANISM[g.mechanism]} · {g.reason}{g.revoked_by && ` · revocó ${g.revoked_by}`}</span></div><span class:list={['ops-badge', tone]}>{label}</span></div>; })}
+      </div>
+      {isAdmin && !activeGrant && !org.sandbox_of && <form class="ops-card ops-card-pad ops-grant-form" data-ops-grant-form data-endpoint={`/api/ops/organizations/${org.id}/grants`}>
+        <div class="ops-grant-kinds" role="radiogroup" aria-label="Tipo de cortesía">
+          <label><input type="radio" name="kind" value="dias" checked /> <span>Días gratis</span></label>
+          <label><input type="radio" name="kind" value="plan" /> <span>Plan regalado</span></label>
+        </div>
+        <div class="ops-grant-fields">
+          <label class="ops-field"><span data-ops-grant-amount-label>Días (1 a {GRANT_MAX_DAYS})</span><input class="ops-input" name="amount" type="number" min="1" max={GRANT_MAX_DAYS} value="14" required data-max-dias={GRANT_MAX_DAYS} data-max-plan={GRANT_MAX_MONTHS} /></label>
+          <label class="ops-field"><span>Plan</span><select class="ops-select" name="plan">{GRANT_PLANS.map((p) => <option value={p} selected={p === 'pro'}>{planName(p)}</option>)}</select><small>En días gratis a quien ya paga, conserva el suyo.</small></label>
+        </div>
+        <label class="ops-field"><span>Motivo</span><input class="ops-input" name="reason" maxlength="300" required placeholder="Por qué, para quien lea la bitácora después" /></label>
+        <div class="ops-grant-review" data-ops-grant-review hidden>
+          <p data-ops-grant-summary></p>
+          <label class="ops-field"><span>Escribe <strong>{org.nombre}</strong> para confirmar</span><input class="ops-input" name="confirmation" autocomplete="off" /></label>
+        </div>
+        <p class="ops-inline-error" data-ops-grant-error hidden></p>
+        <div class="ops-grant-actions"><button type="submit" class="ops-button secondary sm" data-ops-grant-step="review">Revisar</button><button type="button" class="ops-button sm" data-ops-grant-step="confirm" hidden>Dar cortesía</button></div>
+      </form>}
+    </div>
+  </section>
 
   {billing.stripe_account_id && <div class="ops-grid-3 ops-section">
     <section>
@@ -323,6 +365,60 @@ const resendable = (d: any) => d.invoice_number && d.lifecycle !== 'draft' && d.
     catch (error: any) { input.setCustomValidity(error.message); input.reportValidity(); }
   });
   tagForm?.querySelector('input')?.addEventListener('input', (event) => (event.target as HTMLInputElement).setCustomValidity(''));
+  // Cortesías: primero "Revisar" (sin efectos, el servidor dice qué hará con
+  // el estado real de la suscripción) y después confirmar con el nombre.
+  const grantForm = document.querySelector<HTMLFormElement>('[data-ops-grant-form]');
+  if (grantForm) {
+    const review = grantForm.querySelector<HTMLElement>('[data-ops-grant-review]')!;
+    const summary = grantForm.querySelector<HTMLElement>('[data-ops-grant-summary]')!;
+    const grantError = grantForm.querySelector<HTMLElement>('[data-ops-grant-error]')!;
+    const reviewBtn = grantForm.querySelector<HTMLButtonElement>('[data-ops-grant-step="review"]')!;
+    const confirmBtn = grantForm.querySelector<HTMLButtonElement>('[data-ops-grant-step="confirm"]')!;
+    const amount = grantForm.querySelector<HTMLInputElement>('input[name="amount"]')!;
+    const amountLabel = grantForm.querySelector<HTMLElement>('[data-ops-grant-amount-label]')!;
+    const payload = () => {
+      const data = new FormData(grantForm);
+      return { kind: data.get('kind'), amount: Number(data.get('amount')), plan: data.get('plan'), reason: String(data.get('reason') || ''), confirmation: String(data.get('confirmation') || '') };
+    };
+    // Lo que mostró "Revisar": al confirmar, el servidor verifica que siga igual.
+    let reviewed: { mechanism: string; plan: string } | null = null;
+    const reset = () => { review.hidden = true; confirmBtn.hidden = true; reviewBtn.hidden = false; grantError.hidden = true; reviewed = null; };
+    grantForm.addEventListener('input', (event) => { if ((event.target as HTMLInputElement).name !== 'confirmation') reset(); });
+    grantForm.querySelectorAll<HTMLInputElement>('input[name="kind"]').forEach((radio) => radio.addEventListener('change', () => {
+      const dias = radio.value === 'dias' && radio.checked;
+      const max = dias ? amount.dataset.maxDias : amount.dataset.maxPlan;
+      amount.max = String(max);
+      amount.value = dias ? '14' : '3';
+      amountLabel.textContent = dias ? `Días (1 a ${max})` : `Meses (1 a ${max})`;
+    }));
+    const call = async (dryRun: boolean) => {
+      const res = await fetch(grantForm.dataset.endpoint || '', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...payload(), dryRun, expect: dryRun ? undefined : reviewed }) });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        if (res.status === 428) window.location.href = `/ops/login?next=${encodeURIComponent(window.location.pathname)}`;
+        throw new Error(data.error || 'No se pudo completar.');
+      }
+      return data;
+    };
+    grantForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      reviewBtn.disabled = true; grantError.hidden = true;
+      try {
+        const data = await call(true);
+        reviewed = { mechanism: data.mechanism, plan: data.plan };
+        summary.textContent = data.summary;
+        review.hidden = false; confirmBtn.hidden = false; reviewBtn.hidden = true;
+        grantForm.querySelector<HTMLInputElement>('input[name="confirmation"]')?.focus();
+      } catch (error: any) { grantError.textContent = error.message; grantError.hidden = false; }
+      finally { reviewBtn.disabled = false; }
+    });
+    confirmBtn.addEventListener('click', async () => {
+      confirmBtn.disabled = true; grantError.hidden = true;
+      try { await call(false); window.location.reload(); }
+      catch (error: any) { grantError.textContent = error.message; grantError.hidden = false; confirmBtn.disabled = false; }
+    });
+  }
+
   document.addEventListener('click', async (event) => {
     const target = event.target as HTMLElement;
     const tag = target.closest<HTMLButtonElement>('[data-ops-tag-remove]');

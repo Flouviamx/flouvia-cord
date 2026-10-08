@@ -36,6 +36,10 @@ export const OPS_AUDIT_LABELS: Record<string, string> = {
   'ops.redeliver_webhook': 'Webhook re-entregado',
   'ops.retry_workflow_run': 'Workflow reintentado',
   'ops.resend_invoice': 'Factura reenviada al cliente',
+  'ops.alert_rule_updated': 'Regla de alerta ajustada',
+  'ops.plan_grant_created': 'Cortesía dada',
+  'ops.plan_grant_revoked': 'Cortesía revocada',
+  'ops.plan_grant_failed': 'Cortesía rechazada por el procesador',
 };
 
 /** Estado de un depósito, un reembolso o una disputa, en palabras y con tono de badge. */

@@ -12,6 +12,7 @@ import { sql, withOpsTx } from '../../lib/db';
 import { getPublicStatusSnapshot } from '../../lib/platform-health';
 import { opsAgo, opsDate, opsEventLabel, opsMoney, opsNumber, opsPct, OPS_AUDIT_LABELS } from '../../lib/ops-format';
 import { opsCollectedByCurrency, opsDailySeries, opsEventFeed, opsOverviewStats, opsTopEventTypes, opsTopOrgs } from '../../lib/ops-insights';
+import { OPS_ALERT_METRICS, opsAlertValue } from '../../lib/ops-alerts';
 
 if (!Astro.locals.opsOperator) return Astro.redirect('/ops/login');
 const range = parseOpsRange(Astro.url.searchParams.get('range'));
@@ -26,6 +27,7 @@ let recentUsers: any[] = [];
 let recentOrgs: any[] = [];
 let blockedOrgs: any[] = [];
 let audit: any[] = [];
+let firingAlerts: any[] = [];
 let error = false;
 try {
   const r = await withOpsTx(
@@ -45,9 +47,10 @@ try {
     sql`select id, nombre, stripe_disabled_reason from orgs
         where stripe_disabled_reason is not null and stripe_disabled_reason <> '' order by created_at desc limit 3`,
     sql`select action, result, actor_email, target_type, created_at from ops_audit_log order by created_at desc limit 6`,
+    sql`select metric, value, since from ops_alert_state where firing order by since`,
   );
   [s] = r[0] as any[];
-  [, series, feed, collected, topTypes, topOrgs, recentUsers, recentOrgs, blockedOrgs, audit] = r as any[];
+  [, series, feed, collected, topTypes, topOrgs, recentUsers, recentOrgs, blockedOrgs, audit, firingAlerts] = r as any[];
 } catch (cause) { error = true; console.error('[ops/overview]', cause); }
 
 let snapshot: Awaited<ReturnType<typeof getPublicStatusSnapshot>> | null = null;
@@ -60,6 +63,11 @@ const platform = !snapshot ? { tone: 'gray', title: 'Sin señal de las sondas', 
   : { tone: 'amber', title: failing.length ? 'Servicio degradado' : 'Incidente abierto', text: failing.length ? `Falla: ${failing.map((f) => f.service).join(', ')}.` : `${openIncidents.length} incidente(s) publicado(s) sin resolver.` };
 
 const attention = [
+  // Alertas configurables disparadas en la última evaluación del cron.
+  ...firingAlerts.flatMap((a) => {
+    const metric = OPS_ALERT_METRICS.find((m) => m.id === a.metric);
+    return metric ? [{ level: 'red', title: `Alerta: ${metric.label}`, text: `Disparada ${opsAgo(a.since).toLowerCase()}. ${metric.description}`, href: metric.href, n: opsAlertValue(metric, a.value == null ? null : Number(a.value)) }] : [];
+  }),
   ...failing.map((f) => ({ level: 'red', title: `La sonda ${f.service} está fallando`, text: `Última muestra ${opsAgo(f.checkedAt).toLowerCase()}.`, href: '/ops/status', n: '' })),
   ...(s.integrations_error > 0 ? [{ level: 'red', title: 'Integraciones con error', text: 'El proveedor rechazó la conexión o la sincronización.', href: '/ops/integrations?estado=error', n: opsNumber(s.integrations_error) }] : []),
   ...(s.runs_failed_24h > 0 ? [{ level: 'amber', title: 'Workflows fallidos en 24 h', text: `${opsPct(s.runs_failed_24h, s.runs_24h)}% de ${opsNumber(s.runs_24h)} ejecuciones.`, href: '/ops/workflows', n: opsNumber(s.runs_failed_24h) }] : []),
