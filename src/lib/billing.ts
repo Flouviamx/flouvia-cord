@@ -242,6 +242,10 @@ function stripeError(err: any, status: number): Error {
     (e as any).code = err?.code;
     (e as any).param = err?.param;
     (e as any).docUrl = err?.doc_url;
+    // Un cargo rechazado trae el motivo específico y el intento que quedó:
+    // la política de reintentos del cobro automático decide con ellos.
+    (e as any).declineCode = err?.decline_code;
+    (e as any).paymentIntent = err?.payment_intent;
     return e;
 }
 

@@ -6292,6 +6292,9 @@ alter table clientes add column if not exists stripe_customer_account text;
 -- consentimiento (fecha, IP y navegador los pone el servidor, como en
 -- tos_acceptance). El negocio solo puede apagarlo: cargar a un método guardado
 -- sin la autorización de su titular no es una preferencia del vendedor.
+-- El consentimiento viaja PENDIENTE (con el id del intento que guarda el
+-- método) hasta que el proveedor confirma ese método: un intento que falla no
+-- puede reemplazar la evidencia del cobro automático que ya estaba activo.
 -- `autopay_desactivado` guarda quién lo apagó y por qué (cliente, negocio, o
 -- el sistema tras un mandato revocado o una tarjeta reportada).
 alter table clientes add column if not exists autopay_activo boolean not null default false;
@@ -6301,6 +6304,8 @@ alter table clientes add column if not exists autopay_payment_method_id text;
 alter table clientes add column if not exists autopay_metodo jsonb;
 
 alter table clientes add column if not exists autopay_consentimiento jsonb;
+
+alter table clientes add column if not exists autopay_consentimiento_pendiente jsonb;
 
 alter table clientes add column if not exists autopay_desactivado jsonb;
 
@@ -6363,6 +6368,7 @@ create table if not exists cobro_automatico_estado (
   cliente_id uuid not null references clientes(id) on delete cascade,
   currency text not null check (currency ~ '^[A-Z]{3}$'),
   intentos int not null default 0,
+  primer_intento_at timestamptz,
   siguiente_at timestamptz,
   ultimo_codigo text,
   ultimo_at timestamptz,

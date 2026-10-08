@@ -49,6 +49,8 @@ export function invoiceEventDetail(tipo: string, detalle: string, locale: Timeli
     if ((m = d.match(/^Enviada a (.+) \(envío masivo\)$/))) return `Sent to ${m[1]} (bulk send)`;
     if ((m = d.match(/^Enviada a (.+)$/))) return `Sent to ${m[1]}`;
     if ((m = d.match(/^Abono de (.+)$/))) return `Payment of ${m[1]}`;
+    if ((m = d.match(/^El cobro automático no pasó \(ref: (.+)\)$/))) return `Automatic payment did not go through (ref: ${m[1]})`;
+    if ((m = d.match(/^El pago desde el portal no se completó \(ref: (.+)\)$/))) return `Payment from the portal was not completed (ref: ${m[1]})`;
     if ((m = d.match(/^Anulada: (.+)$/))) return `Voided: ${m[1]}`;
     if ((m = d.match(/^Error al emitir: (.+)$/))) return `Issuing failed: ${m[1] === 'desconocido' ? 'unknown' : m[1]}`;
     return d;

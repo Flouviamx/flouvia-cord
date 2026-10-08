@@ -21,6 +21,8 @@ alter table clientes add column if not exists autopay_metodo jsonb;
 
 alter table clientes add column if not exists autopay_consentimiento jsonb;
 
+alter table clientes add column if not exists autopay_consentimiento_pendiente jsonb;
+
 alter table clientes add column if not exists autopay_desactivado jsonb;
 
 alter table orgs add column if not exists acepta_domiciliacion boolean not null default false;
@@ -69,6 +71,7 @@ create table if not exists cobro_automatico_estado (
   cliente_id uuid not null references clientes(id) on delete cascade,
   currency text not null check (currency ~ '^[A-Z]{3}$'),
   intentos int not null default 0,
+  primer_intento_at timestamptz,
   siguiente_at timestamptz,
   ultimo_codigo text,
   ultimo_at timestamptz,
