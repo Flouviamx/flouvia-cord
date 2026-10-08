@@ -218,6 +218,11 @@ Neon se recomienda provisionar desde Vercel Marketplace para recibir un
   de alta como dominio del proyecto en Vercel y su CNAME en DNS.
 - `billing.cordhq.app` no comparte la cookie de sesión con el apex: la recibe por
   traspaso de un solo uso. Ver regla 26 de `estandares-ingenieria.md`.
+- Las ramas `claude/*` no despliegan (`git.deploymentEnabled` en `vercel.json`,
+  oct 2026). Vercel cuenta contra su tope diario de 100 despliegues incluso los
+  previews que una regla cancela, y una docena de sesiones en paralelo lo
+  agotaron y bloquearon el despliegue de producción de `main`. Esas ramas se
+  verifican con build, tests y capturas locales; `main` despliega igual que antes.
 - Adaptador: SSR.
 - La landing y otras páginas explícitas pueden usar `prerender: true`.
 - Toda nueva ruta API debe declarar `export const prerender = false`.
