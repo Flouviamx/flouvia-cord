@@ -18,6 +18,8 @@ import DianSettings from '../../../components/app/settings/DianSettings.astro';
 import { estadoDian } from '../../../lib/fiscal/latam/dian/estado';
 import SiiSettings from '../../../components/app/settings/SiiSettings.astro';
 import { estadoSii } from '../../../lib/fiscal/latam/sii/estado';
+import SpfeSettings from '../../../components/app/settings/SpfeSettings.astro';
+import { estadoSpfeOrg } from '../../../lib/fiscal/spfe/estado';
 import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
 const ORG = await getOrg();
@@ -42,6 +44,8 @@ const verifactuOn = ORG.verifactuModo === 'verifactu';
 const verifactuRegistrando = verifactuOn && verifactuEnvioConfig().habilitado;
 const DECLARACION_DISPONIBLE = isEs && declaracionResponsableONull() !== null;
 const INCIDENCIAS_VF = isEs ? await incidenciasVerifactu(ORG.id).catch(() => []) : [];
+// España: factura electrónica entre empresarios por la solución pública de la AEAT.
+const SPFE = isEs ? await estadoSpfeOrg(ORG.id).catch(() => null) : null;
 const VF_INC_ESTADO: Record<string, string> = L === 'en'
     ? { rechazado: 'Rejected by the AEAT', bloqueado: 'Could not be sent', aceptado_con_errores: 'Registered with errors' }
     : { rechazado: 'Rechazada por la AEAT', bloqueado: 'No se pudo enviar', aceptado_con_errores: 'Registrada con errores' };
@@ -420,6 +424,13 @@ const EINV_AUTO_LABEL = EINV_AUTO === 'facturx'
                     ))}
                 </div>
             )}
+        </SettingsSection>
+    )}
+
+    {SPFE && (
+        <SettingsSection icon="document" class="s-block">
+            <Fragment slot="heading">{t(L, 'spfe.ajustes.titulo')}</Fragment>
+            <SpfeSettings estado={SPFE} locale={L} />
         </SettingsSection>
     )}
 
