@@ -574,9 +574,10 @@ subsanación.
 ## Rieles fiscales de LatAm — oct 2026
 
 Factura electrónica autorizada por la autoridad de cada país, con motor propio
-(sin PAC ni intermediario), igual que Verifactu. Hoy hay un riel: **ARCA
-(Argentina)**. El marco está hecho para que NFS-e Nacional (Brasil), DIAN
-(Colombia), SUNAT (Perú) y SII (Chile) se monten encima sin tocar la emisión.
+(sin PAC ni intermediario), igual que Verifactu. Rieles: **ARCA
+(Argentina)** y **NFS-e de Padrão Nacional (Brasil)**. El marco está hecho para
+que DIAN (Colombia), SUNAT (Perú) y SII (Chile) se monten encima sin tocar la
+emisión.
 
 ### El marco (`src/lib/fiscal/latam/`)
 
@@ -694,6 +695,130 @@ de venta y el comportamiento de producción. Sí se verificó contra ARCA real:
 que el CMS es legible (el WSAA llegó a evaluar el certificado), que los pedidos
 de Cord se deserializan en WSFEv1 (respuesta 600 por token y no `soap:Client`)
 y el TLS de los cuatro endpoints.
+
+### NFS-e de Padrão Nacional (Brasil)
+
+Emisión directa ante la **Sefin Nacional** (Sistema Nacional NFS-e, API del
+emisor público nacional), sin agregador. Proveedor:
+`providers/BrazilNfseProvider.ts`; riel: `latam/nfse/`. Solo **servicios**: la
+NF-e de productos la autoriza la SEFAZ de cada estado y Cord no la emite (la
+pantalla lo dice).
+
+- **Transporte**: mTLS con el certificado ICP-Brasil A1 del contribuyente
+  (e-CNPJ o e-CPF), JSON, y los XML en GZip + base64. `POST /nfse` genera la
+  NFS-e de forma síncrona; `GET /dps/{id}` devuelve la chave de la NFS-e que
+  generó una DPS; `GET /nfse/{chave}`; `POST /nfse/{chave}/eventos` para la
+  cancelación (`sefin.ts`, contrato del Swagger vendorizado).
+- **Titular del certificado**: la extensión otherName de la ICP-Brasil
+  (2.16.76.1.3.3 CNPJ, 2.16.76.1.3.1 CPF). Un e-CNPJ de la matriz firma por sus
+  filiales (mismo CNPJ raíz). Al subirlo, Cord prueba el mTLS con
+  `HEAD /dps/{id}` (sin efectos).
+- **DPS** (`dps.ts`, leiaute 1.01): Id = `DPS` + municipio IBGE + tipo de
+  inscripción + CNPJ/CPF + serie + número. La **serie** la configura el negocio
+  (1 a 49999, el rango de los sistemas propios) y el **número** lo elige Cord:
+  el mayor usado en esa serie (en cualquier estado) + 1, o el número inicial
+  configurado. El prestador emisor no informa nombre ni dirección (E0121); la
+  inscripción municipal va solo si el negocio la configuró.
+- **Un servicio por NFS-e**: todos los conceptos con el código de la lista
+  nacional configurado (`servicos.ts`, generado del ANEXO_I), y la descripción
+  los enumera con cantidad y precio. Solo códigos con incidencia en el
+  establecimiento del prestador y sin grupo de obra o evento: el lugar de
+  prestación es el municipio del negocio. Los que tributan donde se prestan se
+  rechazan en Ajustes y al emitir.
+- **ISS**: va por dentro del precio; un concepto con impuesto agregado no se
+  envía. La alícuota la pone el municipio desde su parametrización; Cord solo
+  informa `pAliq` cuando la regla lo exige y tiene el dato real (ME/EPP con todo
+  por el Simples e ISS retenido: la tasa de la retención).
+- **Retención**: solo el ISS retenido por el tomador, cuando el documento lleva
+  el perfil de retención (Ajustes › Impuestos) que el negocio marcó como ISS en
+  la sección de la NFS-e. Retenciones federales (IRRF, CSLL, PIS/COFINS, INSS)
+  todavía no: se rechazan antes de enviar. Si la alícuota que aplicó el
+  municipio no es la del perfil, la NFS-e queda generada y la factura muestra el
+  aviso de la diferencia del valor líquido.
+- **Descuento de documento**: desconto incondicionado. `vServ` es el bruto
+  (subtotal neto + descuento repartido por el motor de Cord) y `vDescIncond` el
+  descuento; la base del ISSQN es el subtotal de Cord.
+- **Simples Nacional**: situación (no optante, MEI, ME/EPP), régimen de
+  apuración del ME/EPP y su porcentaje aproximado de tributos (`pTotTribSN`,
+  obligatorio para ME/EPP: E0712). Los demás declaran `indTotTrib = 0`.
+- **Reforma tributaria (IBS/CBS)**: el grupo `IBSCBS` de la DPS es facultativo
+  en 2026 (NT 004 v2 §1.1: la regla de obligatoriedad está suspendida en
+  producción y producción restringida) y Cord no lo envía, porque exige
+  clasificar cada operación (cIndOp, CST, cClassTrib) con datos que no tiene.
+  `security:nfse` falla el día que un esquema vendorizado lo vuelva
+  obligatorio.
+- **Recuperación**: sin respuesta legible (red, 500, NFS-e ilegible) el intento
+  queda `incierto` y se CONSULTA `GET /dps/{id}` + `GET /nfse/{chave}`: si la
+  NFS-e encapsula la DPS enviada, es nuestra; si encapsula otra, la serie la usó
+  otro sistema (se descarta y se emite con el número siguiente); si no existe y
+  pasaron 10 minutos, se descarta. E0014 (la DPS ya generó una NFS-e) es la
+  misma consulta. Nunca se reenvía.
+- **Cancelación**: evento e101101 (`anulable: true`), idempotente: antes de
+  pedirlo se consulta `GET /nfse/{chave}/eventos/101101/1`. Fuera del plazo o
+  del valor que el municipio permite (E0822, E0823), la anulación se rechaza con
+  el motivo y la factura sigue vigente.
+- **Sin nota de crédito**: la NFS-e no la tiene; una nota de crédito de una
+  factura `nfse_invoice` se rechaza antes de hablar con la Sefin y el mensaje
+  pide anular y emitir de nuevo.
+- **Impresión**: la NT 008 v1.02 fija el DANFSe (modelo propio, solo datos del
+  XML). El PDF de Cord no lo imita: es el documento comercial que acompaña a la
+  NFS-e e imprime número, competencia, emisión, DPS, servicio, incidencia, base,
+  alícuota e ISSQN de la Sefin, la chave completa, el QR de la consulta pública
+  (`https://www.nfse.gov.br/ConsultaPublica/?tpc=1&chave=`) con su leyenda
+  oficial y, en homologación, "NFS-e SEM VALIDADE JURÍDICA". El XML de la NFS-e
+  queda guardado en `fiscal_rail_comprobantes.respuesta`.
+- **Homologación**: producción restringida; número `H-NFSE-…`, `simulado: true`,
+  `livemode: false`.
+
+**No cubierto (se rechaza antes de enviar):** exportación (tomador del
+exterior) y moneda extranjera, servicios con incidencia en el lugar de
+prestación o en el tomador, obras y eventos, deducciones/reducciones de base,
+beneficios municipales, imunidade/não incidência, retenciones federales,
+intermediario, sustitución de NFS-e (cancelar y emitir de nuevo), el grupo
+IBSCBS y la NF-e de productos. Tampoco se consultan los parámetros municipales
+(alícuotas, convenio): un municipio no adherido o sin convenio activo lo dice
+la Sefin (E0037–E0039, E0619/E0640) y Cord lo traduce.
+
+**Verificación:** `npm run security:nfse` (en `test:payments`) reproduce las
+tablas oficiales (5570 municipios del ANEXO_A, 337 servicios del ANEXO_I),
+coteja el contrato del Swagger, valida con xmllint cada DPS, el pedido de
+cancelación y una NFS-e simulada contra los XSD de **producción** y de
+**producción restringida** y la firma contra el xmldsig restringido 1.00,
+recalcula la forma canónica con lxml y verifica la firma con openssl. El XSD de
+producción 20260209 tiene un defecto conocido (`TSSerieDPS` con `^…$`, que en
+XSD son literales y rechazan toda serie): el check lo parchea y avisa si el
+oficial cambia. `test/nfse-db.test.ts` (PGlite + Sefin simulada) cubre emisión,
+rechazo, ISS retenido, certificado rechazado, respuesta perdida, E0014, cron,
+cancelación, concurrencia y RLS; `test/nfse-dps.test.ts`, las piezas puras.
+
+### Activación de la NFS-e, paso a paso
+
+1. El despliegue aplica `db/deploy/2026-10-08-latam-arca.sql` (las tablas
+   `fiscal_rail_*` son las del marco; la NFS-e no agrega esquema).
+2. **Homologación (producción restringida).** Con el e-CNPJ A1 de un
+   contribuyente de un municipio adherido al emisor nacional:
+   `NFSE_PRUEBA_PASSWORD='…' npm run nfse:prueba -- --p12 empresa.pfx --municipio <IBGE> --serie 900 --servico 010101 --op-simples 1 --emitir --cancelar`
+   (sin certificado solo comprueba red y TLS). Prueba el mTLS, emite una NFS-e
+   de R$ 1,00, la consulta por el Id de la DPS y por la chave, y la cancela.
+   Nunca toca producción ni la base.
+3. **De punta a punta en un Preview** con `NFSE_ENABLED=true` y
+   `NFSE_ENTORNO=homologacion`: una org brasileña de prueba con plan Starter
+   carga su CNPJ, sube el certificado, completa municipio, serie, Simples
+   Nacional y servicio, emite una factura (con y sin descuento, y con ISS
+   retenido) y la anula.
+4. **Producción.** `NFSE_ENTORNO=produccion` y `NFSE_ENABLED=true` en
+   Production. Cada negocio sube el certificado del entorno nuevo (se guardan
+   por separado).
+
+**Lo que no se pudo verificar sin un certificado ICP-Brasil real** (la Sefin
+responde 403 a todo pedido sin certificado de cliente, incluso a su
+documentación): la generación real de una NFS-e, la aceptación de la firma
+RSA-SHA1 en el leiaute 1.01 (los esquemas 1.01 no fijan el algoritmo; el
+xmldsig restringido 1.00 publicado fija RSA-SHA1 y es el que sigue Cord), el
+formato exacto de `codigo` en `erros[]` (Cord acepta `E0014` y `0014`), el
+dígito verificador de la chave (Cord no lo recalcula: la recibe) y los
+mensajes vivos de cada municipio. El Swagger que fija los nombres de los campos
+JSON es una captura publicada de la página de producción restringida.
 
 ## Documento de factura — ago 2026
 

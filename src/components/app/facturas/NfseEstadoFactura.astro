@@ -1,0 +1,60 @@
+---
+// Estado de la factura ante el Sistema Nacional NFS-e (Brasil), en el panel
+// lateral de /app/facturas/[id]: número y chave de la NFS-e, avisos, o por qué
+// no se generó. Lee el último intento del riel (fiscal_rail_comprobantes); si
+// la factura nunca pasó por la Sefin (documento comercial) no dibuja nada.
+import { ultimoIntento } from '../../../lib/fiscal/latam/comprobantes';
+
+interface Props { orgId: string; documentoId: string; locale: 'es' | 'en'; }
+const { orgId, documentoId, locale } = Astro.props;
+const en = locale === 'en';
+const intento = orgId ? await ultimoIntento(orgId, documentoId, 'nfse').catch(() => null) : null;
+
+const TITULO: Record<string, [string, string]> = {
+    autorizado: ['NFS-e generada', 'NFS-e issued'],
+    pendiente: ['Esperando la confirmación del Sistema Nacional NFS-e', 'Waiting for the national NFS-e system to confirm'],
+    incierto: ['Esperando la confirmación del Sistema Nacional NFS-e', 'Waiting for the national NFS-e system to confirm'],
+    rechazado: ['El Sistema Nacional NFS-e no generó la NFS-e', 'The national NFS-e system did not issue the NFS-e'],
+    descartado: ['El Sistema Nacional NFS-e no registró este intento', 'The national NFS-e system did not register this attempt'],
+};
+const titulo = intento ? (TITULO[intento.estado]?.[en ? 1 : 0] ?? intento.estado) : '';
+const numero = (intento?.respuesta as { nfse?: { nNFSe?: string } } | null)?.nfse?.nNFSe ?? '';
+const chave = intento?.estado === 'autorizado' ? String(intento.autorizacion ?? '') : '';
+const observaciones = (intento?.observaciones ?? []).map((o) => o.mensaje || o.msg).filter(Boolean) as string[];
+const prueba = intento?.entorno === 'homologacion';
+---
+
+{intento && (
+    <section class="fd-meta-section nfse-fe">
+        <div class="nfse-fe-head"><h2>NFS-e</h2></div>
+        <div class={`nfse-fe-state is-${intento.estado}`}>
+            <span class="nfse-fe-dot" aria-hidden="true"></span>
+            <span class="nfse-fe-copy">
+                <strong>{titulo}</strong>
+                {numero && <small>{en ? `NFS-e no. ${numero}` : `NFS-e n.º ${numero}`}</small>}
+                {chave && <small class="nfse-fe-chave">{en ? 'Access key' : 'Chave de acceso'} {chave}</small>}
+                {intento.estado !== 'autorizado' && intento.errorMensaje && <small>{intento.errorMensaje}</small>}
+                {prueba && <small>{en ? 'NFS-e test environment: no legal validity.' : 'Ambiente de pruebas de la NFS-e: sin validez jurídica.'}</small>}
+            </span>
+        </div>
+        {observaciones.length > 0 && (
+            <ul class="nfse-fe-obs">
+                {observaciones.map((o) => <li>{o}</li>)}
+            </ul>
+        )}
+    </section>
+)}
+
+<style>
+    .nfse-fe-head h2 { font-size: 0.82rem; font-weight: 600; margin: 0 0 0.6rem; color: var(--color-text); }
+    .nfse-fe-state { display: flex; gap: 0.6rem; align-items: flex-start; }
+    .nfse-fe-dot { width: 7px; height: 7px; margin-top: 0.35rem; border-radius: 50%; background: var(--color-text-muted); flex-shrink: 0; }
+    .nfse-fe-state.is-autorizado .nfse-fe-dot { background: var(--color-ok); }
+    .nfse-fe-state.is-pendiente .nfse-fe-dot, .nfse-fe-state.is-incierto .nfse-fe-dot { background: #d97706; }
+    .nfse-fe-state.is-rechazado .nfse-fe-dot { background: var(--color-err, #dc2626); }
+    .nfse-fe-copy { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .nfse-fe-copy strong { font-size: 0.82rem; color: var(--color-text); }
+    .nfse-fe-copy small { font-size: 0.75rem; color: var(--color-text-muted); line-height: 1.45; overflow-wrap: anywhere; }
+    .nfse-fe-chave { font-variant-numeric: tabular-nums; }
+    .nfse-fe-obs { margin: 0.6rem 0 0; padding-left: 1.1rem; font-size: 0.75rem; color: var(--color-text-muted); line-height: 1.45; }
+</style>

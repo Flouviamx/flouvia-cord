@@ -86,6 +86,11 @@ export async function resolverPendientesDeOrg(orgId: string, rail: RailId, deadl
             }
             return r;
         }
+        case 'nfse': {
+            const { resolverIntentosDeOrg } = await import('./nfse/autorizacao');
+            const { finalizeInvoice } = await import('../invoices');
+            return { orgId, ...(await resolverIntentosDeOrg(orgId, config.entorno, intentos, deadline, (id) => finalizeInvoice(orgId, id))) };
+        }
         default:
             return r;
     }

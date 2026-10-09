@@ -211,7 +211,8 @@ describe('riel y tipo de documento', () => {
         expect(railDePais('ar')?.id).toBe('arca');
         expect(railDePais('MX')).toBeNull();
         expect(railDeDocumento('arca_credit_note')?.anulable).toBe(false);
-        expect(DOCUMENTOS_DE_RIELES).toEqual(['arca_invoice', 'arca_credit_note']);
+        // Otros rieles (NFS-e…) también se registran: aquí basta con que estén los de ARCA.
+        expect(DOCUMENTOS_DE_RIELES).toEqual(expect.arrayContaining(['arca_invoice', 'arca_credit_note']));
         expect(isFiscalDocument('arca_invoice', 'AR')).toBe(true);
         expect(isFiscalDocument('commercial_invoice', 'AR')).toBe(false);
         expect(documentPrefix('arca_credit_note', 'FA')).toBe('NC-FA');
