@@ -18,7 +18,7 @@ import { resolveViewer } from '../../lib/public-viewer';
 import { moneyFull } from '../../lib/fmt';
 import { getCountryProfile } from '../../lib/countries';
 import { currencyDecimals } from '../../lib/currency';
-import { fmtTaxPct, taxDisplayRows } from '../../lib/tax-components';
+import { fmtTaxPct, taxDisplayRows, taxNotes } from '../../lib/tax-components';
 import { currentLocale } from '../../lib/context';
 import { t } from '../../i18n/app';
 import { publicInvoiceGuidance, publicInvoiceContact, publicInvoicePayability } from '../../lib/fiscal/public-invoice-state';
@@ -43,10 +43,13 @@ const color = /^#[0-9a-fA-F]{6}$/.test(f.org.color ?? '') ? f.org.color! : '#0a1
 const { puedePagar, puedePagarMp } = publicInvoicePayability(f, !!(import.meta.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY));
 // Canadá: GST y QST/PST/RST en renglones aparte — el cliente recupera cada uno
 // ante una autoridad distinta. `null` en el resto de países (un solo renglón).
+// EE. UU., con el sales tax por dirección: un renglón por jurisdicción, y la
+// nota de un 0 % legítimo ("sin obligación de recaudar en Texas").
 const impuestosPorNombre = taxDisplayRows(f.lineas, f.pais, {
     region: f.emisor?.address?.region, decimals: currencyDecimals(f.currency || 'MXN'),
     taxLabel: getCountryProfile(f.pais).taxLabel,
 });
+const notasImpuesto = taxNotes(f.lineas, L);
 // Descuento de documento: cada concepto se muestra a su importe BRUTO y el
 // descuento aparece en los totales, antes de los impuestos (cuyas bases ya son
 // netas). Sin descuento, la tabla es la de siempre.
@@ -216,6 +219,7 @@ import { iconInner } from '../../lib/icons';
                     ))
                     : <div class="iv-row"><span>{t(L, 'fact.p_impuestos')}</span><span class="editorial">{moneyFull(f.impuestos)}</span></div>
                 )}
+                {notasImpuesto.map((nota) => <div class="iv-row"><span>{nota}</span><span></span></div>)}
                 <div class="iv-row iv-row-total"><span>{t(L, 'fact.p_total')}</span><span class="editorial">{moneyFull(f.total)}</span></div>
                 {f.pagado > 0 && (
                     <div class="iv-row"><span>{t(L, 'fact.p_pagado')}</span><span class="editorial">−{moneyFull(f.pagado)}</span></div>

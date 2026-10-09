@@ -26,6 +26,8 @@ const expectedFeatures = {
   audit_log: 'pro', webhook_replay: 'pro', collections: 'pro', cashflow_90: 'pro',
   approvals: 'scale', collections_ai: 'pro', late_interest: 'scale',
   smtp: 'scale', sso: 'scale', agent_governance: 'scale',
+  // Sales tax de EE. UU. por dirección: el costo por cálculo lo paga Cord.
+  us_sales_tax: 'starter',
 };
 check(JSON.stringify(FEATURE_MIN_PLAN) === JSON.stringify(expectedFeatures), 'La matriz de features cambió sin actualizar la prueba contractual.');
 check(!planIncludes('starter', 'custom_domain') && planIncludes('pro', 'custom_domain'), 'Dominio propio debe iniciar en Pro.');
@@ -33,6 +35,7 @@ check(normalizePlan('business') === 'pro' && normalizePlan('negocio') === 'pro',
 check(normalizePlan('admin') === 'free' && normalizePlan('') === 'free', 'Un plan desconocido debe caer a Gratis.');
 check(!planIncludes('free', 'cfdi') && planIncludes('starter', 'cfdi'), 'La emisión fiscal integrada requiere Starter.');
 check(planIncludes('free', 'international_invoicing'), 'Los documentos comerciales deben estar disponibles en Gratis.');
+check(!planIncludes('free', 'us_sales_tax') && planIncludes('starter', 'us_sales_tax'), 'El sales tax automático por dirección requiere Starter (cada cálculo le cuesta a Cord).');
 check(!planIncludes('starter', 'collections') && planIncludes('pro', 'collections'), 'Cobranza debe iniciar en Pro.');
 check(!planIncludes('starter', 'collections_ai') && planIncludes('pro', 'collections_ai'), 'Cobranza con IA debe iniciar en Profesional.');
 check(!planIncludes('pro', 'approvals') && planIncludes('scale', 'approvals'), 'Aprobaciones deben iniciar en Scale.');

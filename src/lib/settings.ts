@@ -53,7 +53,7 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
         icon: iconInner('quote'),
         tabs: [
             { id: 'cotizaciones', label: 'Folio e IVA',         labelEn: 'Numbering & tax',  href: '/app/ajustes/cotizaciones', keywords: 'folio numeracion numbering prefijo prefix serie consecutivo' },
-            { id: 'impuestos',    label: 'Impuestos',           labelEn: 'Taxes',            href: '/app/ajustes/impuestos',    keywords: 'iva vat sales tax taxes gst impuesto impuestos tasa tasas rate rates retencion retenciones withholding isr irpf exento exempt catalogo' },
+            { id: 'impuestos',    label: 'Impuestos',           labelEn: 'Taxes',            href: '/app/ajustes/impuestos',    keywords: 'iva vat sales tax taxes gst impuesto impuestos tasa tasas rate rates retencion retenciones withholding isr irpf exento exempt catalogo condado county ciudad city direccion address nexus registro registration' },
             { id: 'pdf',          label: 'Documento PDF',       labelEn: 'PDF document',     href: '/app/ajustes/pdf' },
             { id: 'aprobaciones', label: 'Aprobaciones',        labelEn: 'Approvals',        href: '/app/ajustes/aprobaciones', keywords: 'descuento discount margen margin umbral limite autorizacion' },
             { id: 'plantillas',   label: 'Plantillas',          labelEn: 'Templates',        href: '/app/ajustes/plantillas' },

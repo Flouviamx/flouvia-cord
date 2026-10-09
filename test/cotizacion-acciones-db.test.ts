@@ -37,7 +37,7 @@ vi.mock('../src/lib/cotizaciones', () => ({
 }));
 vi.mock('../src/lib/cobros', () => ({ materializeAnticipoCobros: vi.fn() }));
 vi.mock('../src/lib/impuestos-db', () => ({
-    taxCatalogFor: async () => ({ resolve: () => 0, defaultRate: 0, retenciones: [], country: m.pais }),
+    taxCatalogFor: async () => ({ resolve: () => 0, defaultRate: 0, retenciones: [], country: m.pais, breakdown: () => null }),
     TaxCatalogUnavailableError: class extends Error {},
 }));
 vi.mock('../src/lib/posthog-server', () => ({ trackServer: vi.fn() }));
@@ -60,11 +60,11 @@ beforeAll(async () => {
             sent_at timestamptz, approved_at timestamptz, paid_at timestamptz, payment_method text, aprob_estado text,
             cliente_id uuid, terminos text, vigencia date, notas text, subtotal numeric, iva numeric, total numeric,
             retencion_total numeric, retenciones_snapshot jsonb, iva_incluido boolean, anticipo_pct numeric, es_recurrente boolean,
-            descuento numeric not null default 0, descuento_def jsonb, tax_rounding text);
+            descuento numeric not null default 0, descuento_def jsonb, tax_rounding text, us_tax_calculo_id uuid);
         create table eventos(org_id uuid, cotizacion_id uuid, tipo text, detalle text);
         create table cotizacion_items(cotizacion_id uuid, producto_id uuid, descripcion text, cantidad numeric, precio_unitario numeric,
             precio_negociado numeric, costo_unitario numeric, orden int, tax_rate numeric, exemption_reason text,
-            clave_sat text, clave_unidad_sat text);
+            clave_sat text, clave_unidad_sat text, tax_breakdown jsonb);
         create table cotizacion_versiones(cotizacion_id uuid, org_id uuid, version int, subtotal numeric, iva numeric, total numeric,
             items jsonb, notas text, iva_incluido boolean);
         create table cotizacion_cobros(cotizacion_id uuid, status text, stripe_payment_intent_id text);

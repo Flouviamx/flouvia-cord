@@ -66,6 +66,8 @@ jobs:
           # lo que quedó). En vercel.json sigue diario como respaldo.
           # fiscal-latam (ARCA) también es horario: resuelve por consulta las
           # facturas que quedaron sin respuesta de la autoridad.
+          # us-tax registra cada hora las ventas de EE. UU. con sales tax por
+          # dirección que aún no están en la declaración del negocio.
           # spfe (factura electrónica entre empresarios, solución pública de la
           # AEAT) es horario por lo mismo: envía y resuelve por consulta.
           TABLA="
@@ -83,6 +85,7 @@ jobs:
           7:*:api/cron/expirar-cotizaciones
           *:*:api/cron/verifactu-submit
           *:*:api/cron/fiscal-latam
+          *:*:api/cron/us-tax
           *:*:api/cron/spfe
           12:*:api/cron/anclas-tiempo
           14:*:api/cron/integraciones

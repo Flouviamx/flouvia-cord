@@ -15,7 +15,7 @@ import QRCode from 'qrcode';
 import { mmAPuntos, VERIFACTU_QR_PRESENTACION } from './verifactu/qr';
 import { countryName, getCountryProfile, isEuCountry, spainTaxTerritory, taxLabelFor } from '../countries';
 import { currencyDecimals, normalizeCurrency } from '../currency';
-import { fmtTaxPct, splitTaxBucket } from '../tax-components';
+import { fmtTaxPct, lineTaxPct, splitTaxBucket, taxJurisdictionRows, taxNotes } from '../tax-components';
 import { EU_EXEMPTION_INFO, EXEMPTION_INFO, isEuExemptionCode, isExemptionReason } from './exemption';
 import {
   PdfDocument, measureText as measure, prepareImage, truncateText as truncate, wrapText as wrap,
@@ -658,7 +658,9 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
     const qty = Number(line.quantity) || 0;
     cell(1, qtyFmt.format(qty));
     cell(2, money(hasDiscount && qty > 0 ? gross / qty : line.unitPrice));
-    cell(3, taxLabel(Number(line.taxRate) || 0));
+    // EE. UU.: la tasa legal combinada de las jurisdicciones (9.5 %), no la
+    // efectiva del cálculo con que el motor reproduce el centavo.
+    cell(3, line.taxBreakdown ? taxLabel(lineTaxPct(line.taxRate, line.taxBreakdown) / 100) : taxLabel(Number(line.taxRate) || 0));
     cell(4, money(hasDiscount ? gross : line.subtotal), 'bold');
 
     const rate = Number(line.taxRate) || 0;
@@ -678,7 +680,16 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
   // los muestra así (src/lib/tax-components.ts). El resto de países conserva el
   // renglón por tasa con la etiqueta del país.
   const taxDisplay: { label: string; base: number; amount: number }[] = [];
-  for (const [rate, bucket] of taxRows) {
+  // EE. UU., sales tax por dirección: un renglón por jurisdicción (estado,
+  // condado, ciudad, distritos) con su tasa legal, en vez de uno por tasa.
+  const jurisdicciones = taxJurisdictionRows(
+    input.lines.map((l) => ({ base: Number(l.subtotal) || 0, impuesto: Number(l.taxAmount) || 0, taxBreakdown: l.taxBreakdown })),
+    { decimals },
+  );
+  if (jurisdicciones) {
+    for (const j of jurisdicciones) if (j.impuesto !== 0) taxDisplay.push({ label: j.label, base: j.base, amount: j.impuesto });
+  }
+  for (const [rate, bucket] of (jurisdicciones ? [] : taxRows) as typeof taxRows) {
     const partes = splitTaxBucket(input.countryCode, rate * 100, bucket.base, bucket.amount, {
       region: input.issuer.address?.region, lang, decimals,
     });
@@ -829,6 +840,9 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
     isIntraCommunity ? { title: tx('legalNotice'), body: reverseChargeNotice(issuerCountry, lang) } : null,
     exemptionNotes.length ? { title: tx('legalNotice'), body: exemptionNotes.join(' ') } : null,
     ...(input.autoridad?.leyendas ?? []).map((body) => ({ title: tx('legalNotice'), body })),
+    // EE. UU.: un 0 % legítimo se dice ("sin obligación de recaudar sales tax
+    // en Texas", cliente exento con su certificado).
+    ...(taxNotes(input.lines, lang).length ? [{ title: tx('legalNotice'), body: taxNotes(input.lines, lang).join('. ') + '.' }] : []),
     frenchB2b ? { title: tx('legalNotice'), body: FR_B2B_NOTICE } : null,
     input.documentNotes ? { title: isCreditNote ? tx('reason') : tx('notes'), body: input.documentNotes } : null,
     input.notes ? { title: tx('conditions'), body: input.notes } : null,

@@ -1,6 +1,6 @@
 import { sql, withOrgTx } from '../db';
 import { requireResourceCapacity, resourceLimitError } from '../org-entitlements';
-import { isCountryCode } from '../countries';
+import { isCountryCode, isUsState } from '../countries';
 import { validateTaxId } from '../tax-id';
 import { normalizeTerm } from '../payment-terms';
 import { checkLeitwegId, einvoiceAddressLeitwegProblem, leitwegProblem, normalizeEInvoiceAddress, splitEInvoiceAddress } from '../fiscal/einvoice/codes';
@@ -17,6 +17,25 @@ const NIVELES = ['estandar', 'plata', 'oro', 'distribuidor'];
 const CONDICIONES_IVA_IDS = new Set(CONDICIONES_IVA_RECEPTOR.map((c) => c.id));
 
 const textoCorto = (v: unknown, max: number) => String(v ?? '').replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, max);
+
+/**
+ * Certificado de exención de sales tax (EE. UU.): número, estado que lo
+ * expidió y vigencia. `undefined` = el llamador no lo mandó (se conserva).
+ */
+function certificadoExencion(raw: unknown): { numero: string; estado: string | null; vence: string | null } | null | undefined {
+    if (raw === undefined) return undefined;
+    if (!raw || typeof raw !== 'object') return null;
+    const r = raw as Record<string, unknown>;
+    const numero = textoCorto(r.numero, 60);
+    if (!numero) return null;
+    const estado = textoCorto(r.estado, 2).toUpperCase();
+    const vence = textoCorto(r.vence, 10);
+    return {
+        numero,
+        estado: isUsState(estado) ? estado : null,
+        vence: /^\d{4}-\d{2}-\d{2}$/.test(vence) ? vence : null,
+    };
+}
 
 export function cleanClientInput(input: Record<string, any>) {
     const countryRaw = String(input.country_code ?? '').trim().toUpperCase();
@@ -68,12 +87,27 @@ export function cleanClientInput(input: Record<string, any>) {
         comuna: input.comuna === undefined ? undefined : (textoCorto(input.comuna, 20) || null),
         nfe: nfe === undefined ? undefined : (nfe.ok ? nfe.valor : null),
         nfe_error: nfe && !nfe.ok ? nfe.error : null,
+        // EE. UU.: cliente exento de sales tax (reventa, sin fines de lucro,
+        // gobierno) con su certificado. Mismo contrato: undefined = no tocar.
+        tax_exempt: input.tax_exempt === undefined ? undefined : input.tax_exempt === true,
+        tax_exempt_cert: certificadoExencion(input.tax_exempt_cert),
     };
 }
 
 /** Datos de NF-e del cliente con forma inválida: se dice qué falta en vez de guardarlos a medias. */
 function nfeInputError(c: ClientInput): ActionOutcome | null {
     return c.nfe_error ? done(400, { error: c.nfe_error, code: 'invalid_request', field: 'nfe' }) : null;
+}
+
+/** Una exención sin número de certificado no se guarda: sería un 0 % sin respaldo. */
+function exencionInputError(c: ClientInput): ActionOutcome | null {
+    if (c.tax_exempt === true && !c.tax_exempt_cert) {
+        return done(400, {
+            error: 'Para marcar al cliente como exento de sales tax, captura el número de su certificado de exención.',
+            code: 'tax_exempt_certificate_required',
+        });
+    }
+    return null;
 }
 
 /**
@@ -152,6 +186,8 @@ export async function createClient(ctx: ActionContext, input: Record<string, any
     if (einvoiceDenied) return einvoiceDenied;
     const nfeDenied = nfeInputError(c);
     if (nfeDenied) return nfeDenied;
+    const exencionDenied = exencionInputError(c);
+    if (exencionDenied) return exencionDenied;
     const taxDenied = await checkClientTaxId(ctx, c);
     if (taxDenied) return taxDenied;
     const capacityDenied = await requireResourceCapacity(ctx.orgId, 'clients');
@@ -163,7 +199,7 @@ export async function createClient(ctx: ActionContext, input: Record<string, any
                 org_id, empresa, contacto, email, telefono, rfc, terminos_default, limite_credito,
                 nivel, descuento_pct, regimen_fiscal, uso_cfdi, cp_fiscal,
                 country_code, direccion_line1, direccion_line2, ciudad, region, condicion_iva,
-                einvoice_address, buyer_reference, giro, comuna, dian, nfe
+                einvoice_address, buyer_reference, giro, comuna, dian, nfe, tax_exempt, tax_exempt_cert
             )
             values (
                 ${ctx.orgId}, ${c.empresa}, ${c.contacto}, ${c.email}, ${c.telefono}, ${c.rfc}, ${c.terminos}, ${c.limite},
@@ -171,7 +207,8 @@ export async function createClient(ctx: ActionContext, input: Record<string, any
                 ${c.country_code}, ${c.direccion_line1}, ${c.direccion_line2}, ${c.ciudad}, ${c.region}, ${c.condicion_iva ?? null},
                 ${c.einvoice_address ?? null}, ${c.buyer_reference ?? null}, ${c.giro ?? null}, ${c.comuna ?? null},
                 ${c.dian ? JSON.stringify(c.dian) : null}::jsonb,
-                ${c.nfe ? JSON.stringify(c.nfe) : null}::jsonb
+                ${c.nfe ? JSON.stringify(c.nfe) : null}::jsonb,
+                ${c.tax_exempt === true}, ${c.tax_exempt_cert ? JSON.stringify(c.tax_exempt_cert) : null}::jsonb
             )
             returning *`);
     } catch (error) {
@@ -197,6 +234,8 @@ export async function updateClient(ctx: ActionContext, id: string, input: Record
     if (einvoiceDenied) return einvoiceDenied;
     const nfeDenied = nfeInputError(c);
     if (nfeDenied) return nfeDenied;
+    const exencionDenied = exencionInputError(c);
+    if (exencionDenied) return exencionDenied;
     if (c.rfc) {
         const taxDenied = await checkClientTaxId(ctx, c, before ?? undefined);
         if (taxDenied) return taxDenied;
@@ -224,7 +263,9 @@ async function writeClientUpdate(ctx: ActionContext, id: string, c: ClientInput)
             giro = case when ${c.giro === undefined}::boolean then giro else ${c.giro ?? null}::text end,
             comuna = case when ${c.comuna === undefined}::boolean then comuna else ${c.comuna ?? null}::text end,
             dian = case when ${c.dian === undefined}::boolean then dian else ${c.dian ? JSON.stringify(c.dian) : null}::jsonb end,
-            nfe = case when ${c.nfe === undefined}::boolean then nfe else ${c.nfe ? JSON.stringify(c.nfe) : null}::jsonb end
+            nfe = case when ${c.nfe === undefined}::boolean then nfe else ${c.nfe ? JSON.stringify(c.nfe) : null}::jsonb end,
+            tax_exempt = case when ${c.tax_exempt === undefined}::boolean then tax_exempt else ${c.tax_exempt === true} end,
+            tax_exempt_cert = case when ${c.tax_exempt_cert === undefined}::boolean then tax_exempt_cert else ${c.tax_exempt_cert ? JSON.stringify(c.tax_exempt_cert) : null}::jsonb end
         where id = ${id} and org_id = ${ctx.orgId}
         returning *`);
     if (!rows.length) return NO_ENCONTRADO;
@@ -257,6 +298,7 @@ function clientRowToInput(c: Record<string, any>): Record<string, unknown> {
         condicion_iva: c.condicion_iva, giro: c.giro, comuna: c.comuna,
         dian: c.dian ?? null,
         nfe: c.nfe ?? null,
+        tax_exempt: c.tax_exempt === true, tax_exempt_cert: c.tax_exempt_cert ?? null,
     };
 }
 

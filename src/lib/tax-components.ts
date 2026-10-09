@@ -135,10 +135,13 @@ export const fmtTaxPct = (tasa: number) => `${Math.round(tasa * 1000) / 1000}%`;
  * sin ella se deriva de los importes.
  */
 export function taxDisplayRows(
-    lines: { subtotal: number; impuesto: number; taxRate?: number | null }[],
+    lines: { subtotal: number; impuesto: number; taxRate?: number | null; taxBreakdown?: JurisdiccionLinea | null }[],
     country: string,
     opts: { region?: string | null; lang?: string; decimals?: number; taxLabel?: string } = {},
 ): TaxComponentAmount[] | null {
+    // EE. UU., sales tax por dirección: un renglón por jurisdicción.
+    const jurisdicciones = taxJurisdictionRows(lines.map((l) => ({ base: l.subtotal, impuesto: l.impuesto, taxBreakdown: l.taxBreakdown })), opts);
+    if (jurisdicciones) return jurisdicciones.map((r) => ({ nombre: r.nombre, tasa: r.tasa, impuesto: r.impuesto }));
     if (!taxComponents(country, 5, opts)) return null;
     const buckets = new Map<number, { base: number; impuesto: number }>();
     for (const l of lines) {
@@ -181,8 +184,19 @@ export function taxDisplayRows(
  */
 export function taxBreakdownRows(
     porTasa: { tasa: number; base: number; impuesto: number }[],
-    opts: { country: string; region?: string | null; lang?: string; decimals?: number; taxLabel?: string },
+    opts: {
+        country: string; region?: string | null; lang?: string; decimals?: number; taxLabel?: string;
+        /**
+         * Las líneas del documento con su base, impuesto y desglose por
+         * jurisdicción (EE. UU.). Con desglose, los renglones son por
+         * jurisdicción y no por tasa: la tasa de cada línea es la efectiva del
+         * cálculo, que no es la que se imprime.
+         */
+        lineas?: { base: number; impuesto: number; taxBreakdown?: JurisdiccionLinea | null }[];
+    },
 ): { tasa: number; label: string; impuesto: number }[] {
+    const jurisdicciones = opts.lineas ? taxJurisdictionRows(opts.lineas, opts) : null;
+    if (jurisdicciones) return jurisdicciones.map((r) => ({ tasa: r.tasa / 100, label: r.label, impuesto: r.impuesto }));
     const filas: { tasa: number; label: string; impuesto: number }[] = [];
     for (const t of porTasa) {
         if (!(Math.abs(t.impuesto) > 0)) continue;
@@ -224,4 +238,125 @@ export function taxOptionIndex(
     const exacta = options.findIndex((o) => Math.abs(o.rate - rate) < 1e-9 && (o.exemptionReason || null) === causa);
     if (exacta >= 0) return exacta;
     return options.findIndex((o) => Math.abs(o.rate - rate) < 1e-9);
+}
+
+
+// ── Sales tax de EE. UU. por jurisdicción ────────────────────────────────────
+// Con el cálculo por dirección (src/lib/us-tax/), una línea no lleva "la tasa
+// de su estado": lleva la suma de estado + condado + ciudad + distritos de la
+// dirección del cliente, y el documento imprime cada una. La tasa congelada en
+// la línea es la EFECTIVA del cálculo (impuesto ÷ base, para que el motor
+// reproduzca el centavo); lo que se imprime son las tasas legales de cada
+// jurisdicción, que viajan en `taxBreakdown`. Forma mínima de us-tax/core.ts
+// (`UsTaxDesglose`), repetida aquí porque este archivo no importa nada.
+
+export interface JurisdiccionLinea {
+    estado?: string;
+    estadoNombre?: string;
+    motivo?: string | null;
+    certificado?: string | null;
+    componentes?: { nombre: string; tasa: number; impuesto: number }[];
+}
+
+export interface JurisdiccionRow {
+    /** Jurisdicción: "California", "Los Angeles County". */
+    nombre: string;
+    /** Porcentaje 0–100 de esa jurisdicción. */
+    tasa: number;
+    /** "California 6%". */
+    label: string;
+    base: number;
+    impuesto: number;
+}
+
+/**
+ * Renglones por jurisdicción de un documento con sales tax por dirección. La
+ * suma es EXACTAMENTE el impuesto de las líneas: si una línea conserva el
+ * importe con que se calculó, se usan los importes por jurisdicción del
+ * cálculo; si cambió (aprobación parcial con un descuento por monto), su
+ * impuesto vigente se reparte en proporción a las tasas y la última
+ * jurisdicción se queda con el resto. `null` = ninguna línea trae desglose y
+ * el llamador conserva su desglose de siempre.
+ */
+export function taxJurisdictionRows(
+    lines: { base: number; impuesto: number; taxBreakdown?: JurisdiccionLinea | null }[],
+    opts: { decimals?: number; taxLabel?: string } = {},
+): JurisdiccionRow[] | null {
+    if (!lines.some((l) => l.taxBreakdown && typeof l.taxBreakdown === 'object')) return null;
+    const decimals = opts.decimals ?? 2;
+    const tolerancia = 0.5 / 10 ** decimals;
+    const filas = new Map<string, JurisdiccionRow>();
+    const sumar = (nombre: string, tasa: number, base: number, impuesto: number) => {
+        const label = nombre ? `${nombre} ${fmtTaxPct(tasa)}` : fmtTaxPct(tasa);
+        const previa = filas.get(label);
+        if (previa) {
+            previa.base = redondear(previa.base + base, decimals);
+            previa.impuesto = redondear(previa.impuesto + impuesto, decimals);
+        } else {
+            filas.set(label, { nombre, tasa, label, base: redondear(base, decimals), impuesto: redondear(impuesto, decimals) });
+        }
+    };
+    for (const l of lines) {
+        const impuesto = Number(l.impuesto) || 0;
+        if (!(Math.abs(impuesto) > 0)) continue;
+        const base = Number(l.base) || 0;
+        const comps = (l.taxBreakdown?.componentes ?? []).filter((c) => Number(c.tasa) > 0);
+        if (!comps.length) {
+            // Un concepto con impuesto y sin desglose (anterior al cálculo):
+            // conserva la etiqueta del país y su tasa.
+            sumar(opts.taxLabel || '', base ? Math.round(impuesto / base * 1e6) / 1e4 : 0, base, impuesto);
+            continue;
+        }
+        const guardado = comps.reduce((s, c) => s + (Number(c.impuesto) || 0), 0);
+        const totalTasas = comps.reduce((s, c) => s + Number(c.tasa), 0);
+        const exacto = Math.abs(guardado - impuesto) < tolerancia;
+        let asignado = 0;
+        comps.forEach((c, i) => {
+            const parte = i === comps.length - 1
+                ? redondear(impuesto - asignado, decimals)
+                : redondear(exacto ? Number(c.impuesto) || 0 : impuesto * Number(c.tasa) / totalTasas, decimals);
+            asignado = redondear(asignado + parte, decimals);
+            sumar(c.nombre, Number(c.tasa), base, parte);
+        });
+    }
+    return [...filas.values()];
+}
+
+/**
+ * Porcentaje que se imprime en el renglón de una línea: la suma de las tasas
+ * legales de sus jurisdicciones (9.5), no la efectiva del cálculo (9.5018).
+ * Sin desglose, la tasa congelada de siempre.
+ */
+export function lineTaxPct(taxRate: number | null | undefined, taxBreakdown?: JurisdiccionLinea | null): number {
+    const comps = (taxBreakdown?.componentes ?? []).filter((c) => Number(c.tasa) > 0);
+    if (comps.length) return Math.round(comps.reduce((s, c) => s + Number(c.tasa), 0) * 1e4) / 1e4;
+    if (taxBreakdown && taxBreakdown.motivo) return 0;
+    return Math.round((Number(taxRate) || 0) * 1e6) / 1e4;
+}
+
+/**
+ * Las notas que el documento debe imprimir cuando una línea calculada lleva
+ * 0 % legítimo: "Sin obligación de recaudar sales tax en Texas", el cliente
+ * exento con su certificado. Sin duplicados, en el idioma del documento.
+ */
+export function taxNotes(lines: { taxBreakdown?: JurisdiccionLinea | null }[], lang?: string): string[] {
+    const en = String(lang || '').startsWith('en');
+    const notas: string[] = [];
+    for (const l of lines) {
+        const d = l.taxBreakdown;
+        if (!d?.motivo) continue;
+        const estado = d.estadoNombre || d.estado || '';
+        let nota = '';
+        if (d.motivo === 'sin_registro') {
+            nota = en ? `No obligation to collect sales tax in ${estado}` : `Sin obligación de recaudar sales tax en ${estado}`;
+        } else if (d.motivo === 'exento') {
+            nota = en
+                ? `Tax-exempt customer${d.certificado ? ` (exemption certificate ${d.certificado})` : ''}`
+                : `Cliente exento de sales tax${d.certificado ? ` (certificado de exención ${d.certificado})` : ''}`;
+        } else if (d.motivo === 'no_gravable') {
+            nota = en ? `Not subject to sales tax in ${estado}` : `Venta no gravada con sales tax en ${estado}`;
+        }
+        if (nota && !notas.includes(nota)) notas.push(nota);
+    }
+    return notas;
 }

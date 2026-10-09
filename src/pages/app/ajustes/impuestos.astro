@@ -15,6 +15,8 @@ import { getCountryProfile, hasTaxPreset, taxKindLabel, taxPresetsFor, usStateTa
 import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
 import { exemptionChoicesFor } from '../../../lib/fiscal/exemption';
+import UsTaxSettings from '../../../components/app/settings/UsTaxSettings.astro';
+import { usTaxStatus } from '../../../lib/us-tax/config';
 const ORG = await getOrg();
 const L = currentLocale();
 const tf = (key: string, vars: Record<string, string> = {}) => {
@@ -26,6 +28,9 @@ const IMPUESTOS = await getImpuestos();
 const PAIS = String(ORG.countryCode || 'MX');
 const PROFILE = getCountryProfile(PAIS, L);
 const isUs = PAIS === 'US';
+// Sales tax por dirección (estado + condado + ciudad + distritos): solo para un
+// negocio de EE. UU.
+const US_TAX = isUs ? await usTaxStatus(ORG.id) : null;
 // Sales tax es ESTATAL, no nacional (por eso US no está en TAX_PRESETS): solo
 // hay algo que sembrar si el negocio ya declaró su estado en Ajustes › Fiscal.
 const usState = isUs ? String((ORG.fiscalMetadata as any)?.region || '') : '';
@@ -126,6 +131,15 @@ const CAUSA_AUTO = L === 'en' ? 'Automatic (from the client)' : 'Automática (se
             </p>
         </div>
     </SettingsSection>
+
+    {US_TAX && (
+        <SettingsSection icon="globe" class="s-block">
+            <Fragment slot="heading">{L === 'en' ? 'Sales tax by address' : 'Sales tax por dirección'}</Fragment>
+            <div class="s-body">
+                <UsTaxSettings config={US_TAX.config} entitled={US_TAX.entitled} activo={US_TAX.activo} problema={US_TAX.problema} locale={L === 'en' ? 'en' : 'es'} />
+            </div>
+        </SettingsSection>
+    )}
 
     <SettingsSection icon="sliders" class="s-block" data-i18n-crear-err={t(L, 'set.imp.no_se_pudo_crear')} data-i18n-actualizar-err={t(L, 'set.imp.no_se_pudo_actualizar')}
         data-i18n-eliminar-titulo={t(L, 'set.imp.eliminar_titulo')} data-i18n-eliminar-body={t(L, 'set.imp.eliminar_body')}

@@ -33,7 +33,7 @@ vi.mock('../src/lib/org-entitlements', () => ({
 vi.mock('../src/lib/fiscal/emit', () => ({ emitFiscalDocument: vi.fn() }));
 vi.mock('../src/lib/cobros', () => ({ materializeAnticipoCobros: vi.fn() }));
 vi.mock('../src/lib/impuestos-db', () => ({
-    taxCatalogFor: async () => ({ resolve: () => 0.16, defaultRate: 0.16, retenciones: [] }),
+    taxCatalogFor: async () => ({ resolve: () => 0.16, defaultRate: 0.16, retenciones: [], country: 'MX', breakdown: () => null }),
     TaxCatalogUnavailableError: class extends Error {},
 }));
 vi.mock('../src/lib/posthog-server', () => ({ trackServer: vi.fn() }));

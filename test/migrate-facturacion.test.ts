@@ -121,6 +121,16 @@ describe('migración de despliegue de facturación', () => {
             const rlsCupones = (await db.query<{ relname: string }>(`select relname from pg_class where relname in ('cupones', 'cupon_redenciones') and relrowsecurity and relforcerowsecurity order by relname`)).rows;
             expect(rlsCupones.map((r) => r.relname)).toEqual(['cupon_redenciones', 'cupones']);
 
+            // Sales tax de EE. UU. por dirección (db/deploy/2026-10-09-us-tax.sql).
+            const rlsUsTax = (await db.query<{ relname: string }>(`select relname from pg_class where relname in ('us_tax_calculos', 'us_tax_registros') and relrowsecurity and relforcerowsecurity order by relname`)).rows;
+            expect(rlsUsTax.map((r) => r.relname)).toEqual(['us_tax_calculos', 'us_tax_registros']);
+            const usTaxCols = (await db.query<{ c: string }>(`select table_name || '.' || column_name as c from information_schema.columns
+                where column_name in ('us_tax_calculo_id', 'tax_breakdown', 'tax_exempt', 'tax_exempt_cert', 'us_tax_auto', 'us_tax_origen') order by 1`)).rows.map((r) => r.c);
+            expect(usTaxCols).toEqual([
+                'clientes.tax_exempt', 'clientes.tax_exempt_cert', 'cotizacion_items.tax_breakdown', 'cotizaciones.us_tax_calculo_id',
+                'documentos_fiscales.us_tax_calculo_id', 'orgs.us_tax_auto', 'orgs.us_tax_origen',
+            ]);
+
             // Factura electrónica entre empresarios (db/deploy/2026-10-09-spfe.sql):
             // la cola y lo recibido con RLS forzada, y el trigger que hace inmutable lo enviado.
             const rlsSpfe = (await db.query<{ relname: string }>(`select relname from pg_class

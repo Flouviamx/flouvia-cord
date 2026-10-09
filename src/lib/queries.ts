@@ -39,12 +39,12 @@ import {
 } from './metrics';
 import {
     STATUS_META, lineTotal, quoteSubtotal, quoteIva, quoteTotal, quoteTaxBreakdown, quoteRetenciones,
-    quoteDescuento, quoteSubtotalBruto,
+    quoteDescuento, quoteSubtotalBruto, quoteTaxLines,
     type QuoteStatus, type QuoteItem, type QuoteEvent, type Quote,
 } from './quote';
 import { descuentoDesdeJson, descuentoParaMotor, etiquetaDescuento } from './descuentos';
 
-export { STATUS_META, money, lineTotal, quoteSubtotal, quoteIva, quoteTotal, quoteTaxBreakdown, quoteRetenciones, quoteDescuento, quoteSubtotalBruto };
+export { STATUS_META, money, lineTotal, quoteSubtotal, quoteIva, quoteTotal, quoteTaxBreakdown, quoteRetenciones, quoteDescuento, quoteSubtotalBruto, quoteTaxLines };
 export type { QuoteStatus, QuoteItem, QuoteEvent, Quote };
 
 // ── Formatters (Postgres → display) ─────────────────────────────────────────
@@ -1247,6 +1247,9 @@ function mapCliente(c: DbRow) {
         dian: c.dian && typeof c.dian === 'object' ? JSON.stringify(c.dian) : '',
         // Datos de NF-e (Brasil), serializados para el data-attribute del modal.
         nfe: c.nfe && typeof c.nfe === 'object' ? JSON.stringify(c.nfe) : '',
+        // EE. UU.: exención de sales tax con su certificado, serializada para el modal.
+        taxExempt: c.tax_exempt === true ? '1' : '',
+        taxExemptCert: c.tax_exempt_cert && typeof c.tax_exempt_cert === 'object' ? JSON.stringify(c.tax_exempt_cert) : '',
         giro: (c.giro as string) ?? '',
         comuna: (c.comuna as string) ?? '',
         origen: (c.origen as string) || 'app',
@@ -1369,6 +1372,9 @@ export async function getCliente(id: string) {
         nfe: c.nfe && typeof c.nfe === 'object' ? JSON.stringify(c.nfe) : '',
         buyerReference: (c.buyer_reference as string) ?? '',
         condicionIva: c.condicion_iva === null || c.condicion_iva === undefined ? '' : String(c.condicion_iva),
+        // EE. UU.: exención de sales tax con su certificado, serializada para el modal.
+        taxExempt: c.tax_exempt === true ? '1' : '',
+        taxExemptCert: c.tax_exempt_cert && typeof c.tax_exempt_cert === 'object' ? JSON.stringify(c.tax_exempt_cert) : '',
         giro: (c.giro as string) ?? '',
         comuna: (c.comuna as string) ?? '',
         origen: (c.origen as string) || 'app',
@@ -1450,6 +1456,8 @@ function rowToQuote(c: any, items: any[], eventos: any[], versiones: any[] = [],
             precioNegociado: it.precio_negociado === null ? null : num(it.precio_negociado),
             taxRate: it.tax_rate != null ? num(it.tax_rate) : undefined,
             exemptionReason: (it.exemption_reason as string) || null,
+            // EE. UU.: desglose por jurisdicción del sales tax calculado por dirección.
+            taxBreakdown: it.tax_breakdown && typeof it.tax_breakdown === 'object' ? it.tax_breakdown : null,
             claveSat: (it.clave_sat as string) || null,
             claveUnidadSat: (it.clave_unidad_sat as string) || null,
             aprobado: it.aprobado !== false,   // default true (sin columna o no decidido = incluida)
@@ -1884,6 +1892,8 @@ export async function getFacturaByToken(token: string) {
             subtotal: num(l.subtotal),
             impuesto: num(l.taxAmount),
             taxRate: num(l.taxRate),
+            // EE. UU.: desglose por jurisdicción congelado con el concepto.
+            taxBreakdown: l.taxBreakdown && typeof l.taxBreakdown === 'object' ? l.taxBreakdown : null,
             total: num(l.total),
             descuento: num(l.discount),
         })),
@@ -1996,6 +2006,8 @@ export async function getFacturaDetalle(id: string) {
             // redondeados no la reproduce (5.33 / 33.33 no es 0.16).
             taxRate: num(l.taxRate),
             exemptionReason: (l.exemptionReason as string) || null,
+            // EE. UU.: desglose por jurisdicción congelado con el concepto.
+            taxBreakdown: l.taxBreakdown && typeof l.taxBreakdown === 'object' ? l.taxBreakdown : null,
             total: num(l.total),
             // Claves SAT CONGELADAS con las que se timbró (o se timbrará) el concepto.
             productKey: (l.productKey as string) || null,
@@ -2337,7 +2349,7 @@ export async function getLiveSnapshot(orgId: string, cotizacionId: string): Prom
     const fallbackRate = num(c.org_iva_pct) / 100;
     const retencionesGuardadas = Array.isArray(c.retenciones_snapshot) ? c.retenciones_snapshot : [];
     const descuentoDef = descuentoDesdeJson(c.descuento_def);
-    let desglose: { porTasa: any[]; retenciones: any[]; descuentoTotal: number } = { porTasa: [], retenciones: [], descuentoTotal: 0 };
+    let desglose: { porTasa: any[]; retenciones: any[]; descuentoTotal: number; lineas: { base: number; impuesto: number }[] } = { porTasa: [], retenciones: [], descuentoTotal: 0, lineas: [] };
     try {
         // Solo las líneas que el cliente aceptó: tras una aprobación parcial el
         // subtotal y el total ya excluyen las demás, y el desglose debe cuadrar
@@ -2398,6 +2410,11 @@ export async function getLiveSnapshot(orgId: string, cotizacionId: string): Prom
         impuestos: taxBreakdownRows(desglose.porTasa, {
             country: String(c.org_country_code || 'MX'), region: (c.org_region as string) || null,
             decimals: currencyDecimals(normalizeCurrency(c.quote_currency as string)),
+            // EE. UU.: renglones por jurisdicción, iguales a los del SSR.
+            lineas: (() => {
+                const vigentes = items.filter((it: any) => it.aprobado !== false);
+                return desglose.lineas.map((l, i) => ({ base: l.base, impuesto: l.impuesto, taxBreakdown: vigentes[i]?.tax_breakdown ?? null }));
+            })(),
         }),
         retenciones: desglose.retenciones.map((r: any) => ({ nombre: r.nombre, monto: r.monto })),
         descuento: desglose.descuentoTotal > 0

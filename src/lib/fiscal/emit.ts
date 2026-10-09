@@ -359,7 +359,7 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string, do
           c.cliente_id, c.terminos as quote_terminos, c.created_at as quote_created,
           coalesce(c.approved_at, c.created_at) as quote_base_date,
           c.base_currency, c.fiscal_currency, c.fx_rate, c.fx_rate_source, c.fx_locked_until,
-          c.iva_incluido, c.retencion_total, c.retenciones_snapshot, c.descuento_def, c.tax_rounding,
+          c.iva_incluido, c.retencion_total, c.retenciones_snapshot, c.descuento_def, c.us_tax_calculo_id, c.tax_rounding,
           o.moneda as org_moneda,
           cl.empresa as cliente_empresa, cl.rfc as cliente_rfc,
           cl.email as cliente_email, cl.contacto as cliente_contacto,
@@ -377,7 +377,7 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string, do
     // Las claves SAT son clasificación, no aritmética: la de la LÍNEA gana y lo
     // que falte se lee del producto al timbrar; quedan congeladas en
     // `line_items_snapshot` del documento.
-    sql`select ci.descripcion, ci.cantidad, ci.precio_unitario, ci.precio_negociado, ci.aprobado, ci.tax_rate, ci.exemption_reason, ci.producto_id,
+    sql`select ci.descripcion, ci.cantidad, ci.precio_unitario, ci.precio_negociado, ci.aprobado, ci.tax_rate, ci.exemption_reason, ci.tax_breakdown, ci.producto_id,
                ci.clave_sat as linea_clave_sat, ci.clave_unidad_sat as linea_clave_unidad_sat,
                p.clave_sat, p.clave_unidad_sat, p.unidad as producto_unidad
         from cotizacion_items ci
@@ -486,6 +486,9 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string, do
       unidad: approvedItems[i]?.producto_unidad,
     }, approvedItems[i]?.linea_clave_unidad_sat)),
     ...causaDe(i, l.tax_rate),
+    // EE. UU.: el desglose por jurisdicción que se congeló al cotizar viaja
+    // con su concepto; la tasa efectiva ya es `tax_rate`.
+    ...(approvedItems[i]?.tax_breakdown ? { taxBreakdown: approvedItems[i].tax_breakdown } : {}),
   }));
   // Brasil con la NF-e: los datos de NF-e del producto, y NFS-e (servicios)
   // o NF-e (mercancías) según los conceptos (latam/nfe/enrutamiento.ts).
@@ -627,7 +630,7 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string, do
             issuer_snapshot, recipient_snapshot, line_items_snapshot,
             idempotency_key, schema_version, provider_data, updated_at,
             buyer_reference, payee_account,
-            descuento_total, descuento
+            descuento_total, descuento, us_tax_calculo_id
           )
           select ${orgId}, ${cotizacionId}, ${(head.cliente_id as string) || null},
                  ${country}, ${docType}, 'pending',
@@ -639,7 +642,10 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string, do
                  ${JSON.stringify(issuer)}, ${JSON.stringify(recipient)}, ${JSON.stringify(linesNfe)},
                  ${idempotencyKey}, 'cord.invoice.v1', ${JSON.stringify(isPartial ? { aprobacion_parcial: true, lineas_facturadas: approvedItems.length, lineas_totales: allItems.length } : {})}::jsonb, now(),
                  ${(head.cliente_buyer_reference as string) || null}, ${payee ? JSON.stringify(payee) : null}::jsonb,
-                 ${descuentoTotal}, ${descuento && descuentoTotal > 0 ? JSON.stringify({ ...descuento, ...(head.iva_incluido && descuento.tipo === 'monto' ? { iva_incluido: true } : {}) }) : null}::jsonb
+                 ${descuentoTotal}, ${descuento && descuentoTotal > 0 ? JSON.stringify({ ...descuento, ...(head.iva_incluido && descuento.tipo === 'monto' ? { iva_incluido: true } : {}) }) : null}::jsonb,
+                 -- La factura de una cotización es la MISMA venta: comparte su
+                 -- cálculo de sales tax (una sola transacción registrada).
+                 ${(head.us_tax_calculo_id as string) || null}::uuid
             from next_number
           returning id, invoice_number, fiscal_id, status, provider_data, pdf_url, xml_url, public_token, created_at, updated_at
         )
