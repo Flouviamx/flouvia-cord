@@ -1,7 +1,7 @@
 ---
 title: "E-invoicing: Factur-X, XRechnung, Peppol, and Facturae"
 seoTitle: "E-invoicing: Factur-X, XRechnung, Peppol, and Facturae"
-description: "Download each invoice as Factur-X, XRechnung, or Peppol BIS (EN 16931), or as Facturae in Spain, attach it to the email, and complete the data each format requires."
+description: "Download each invoice as Factur-X, XRechnung, or Peppol BIS (EN 16931), or as Facturae in Spain, attach it to the email, and get ready for e-invoicing between businesses with the AEAT."
 lastUpdated: "2026-10-09"
 reviewedBy: "Cord product and operations"
 appliesToMarkets: [ES, DE, FR]
@@ -147,6 +147,51 @@ says so: it works for your client, but **to submit it to FACe it must be signed*
 the Spanish public sector's invoice entry point, also requires the DIR3 codes of the
 public body, which Cord does not collect yet. Cord does not submit invoices to FACe.
 </Callout>
+
+## E-invoicing between businesses in Spain
+
+Spanish law requires businesses and professionals to issue and receive e-invoices when the
+client is another business or professional established in Spain (Law 18/2022 and Royal
+Decree 238/2026). Order HAC/1028/2026 started the clock on 6 October 2026:
+
+- **6 October 2027:** businesses invoicing more than 8 million euros a year.
+- **6 October 2028:** all other businesses and professionals.
+- **6 October 2029:** self-employed people invoicing up to 8 million euros start reporting
+  payment of the invoices they receive.
+
+Cord will send each invoice to a client established in Spain through the **AEAT public
+e-invoicing solution**, which is free, and will tell it when you were paid. Only full
+payment is reported: a partial payment is not. If the invoice was already paid when you
+issued it, the invoice itself says so and your client does not have to report the
+payment.
+
+<Callout type="info">
+**Coming soon.** The AEAT has not yet published the technical specification of its
+service. Cord will turn sending on as soon as it does. Until then nothing is sent, and the
+invoice detail and **Settings › Tax profile** say so.
+</Callout>
+
+Get ready now:
+
+<Steps>
+
+1. Upload your electronic certificate in **Settings › Tax profile › Verifactu**: it is the
+   same one your business will use to identify itself to the AEAT.
+2. On each Spanish client, enter their **NIF** and full address: street and number, town,
+   postal code, and province. The AEAT does not accept the invoice without them.
+3. Open an invoice issued to a client in Spain. The **E-invoice (AEAT)** section says
+   whether it already has what the AEAT requires or what is missing.
+
+</Steps>
+
+These will not go through the public solution:
+
+- invoices to clients outside Spain, which are outside the obligation;
+- invoices with **IRPF withholding**, until the AEAT publishes how its format declares
+  them. Until then, download them as **Facturae**, one of the syntaxes the law accepts;
+- invoices from businesses in the Basque Country and Navarre, which depend on agreements
+  with their regional tax authorities that have not been published yet;
+- credit notes for a simplified invoice.
 
 ## Leitweg-ID
 

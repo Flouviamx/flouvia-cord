@@ -23,6 +23,7 @@ import ArcaEstadoFactura from '../../../components/app/facturas/ArcaEstadoFactur
 import NfseEstadoFactura from '../../../components/app/facturas/NfseEstadoFactura.astro';
 import SunatEstadoFactura from '../../../components/app/facturas/SunatEstadoFactura.astro';
 import DianEstadoFactura from '../../../components/app/facturas/DianEstadoFactura.astro';
+import SpfeEstadoFactura from '../../../components/app/facturas/SpfeEstadoFactura.astro';
 import SiiEstadoFactura from '../../../components/app/facturas/SiiEstadoFactura.astro';
 import { EXEMPTION_INFO, EXEMPTION_REASONS } from '../../../lib/fiscal/exemption';
 import { currentLocale } from '../../../lib/context';
@@ -686,6 +687,12 @@ const EINV_FIX: Record<string, { href: string; es: string; en: string }> = {
                                     </button>
                                 )}
                             </section>
+                        )}
+
+                        {/* Factura electrónica entre empresarios por la solución pública de
+                            la AEAT: "Próximamente" hasta que la AEAT publique su servicio. */}
+                        {String(f.pais || '').toUpperCase() === 'ES' && hasIssued && f.estado !== 'draft' && (
+                            <SpfeEstadoFactura orgId={f.orgId ?? ''} documentoId={f.id} locale={L} />
                         )}
 
                         {String(f.pais || '').toUpperCase() === 'AR' && (
