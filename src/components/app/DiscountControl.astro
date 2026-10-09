@@ -1,0 +1,122 @@
+---
+// Descuento de documento en el resumen de los editores (cotización nueva,
+// edición de cotización y factura): porcentaje, monto en la divisa del
+// documento o un cupón. Va entre el subtotal y los impuestos porque se aplica
+// ANTES de impuestos.
+//
+// Solo dibuja; el estado y la validación del cupón viven en
+// src/lib/discount-client.ts (`wireDiscountControl`), que cada editor conecta a
+// su recálculo. Todo el markup existe desde el servidor y el script solo
+// muestra, oculta y cambia textos: así el CSS scopeado de aquí aplica (regla 11).
+//
+// El importe nunca viaja al servidor: el editor manda la definición
+// (`descuento: {tipo, valor}`) o el código (`cupon`), y el servidor recalcula
+// con el mismo motor.
+import { currentLocale } from '../../lib/context';
+import type { DescuentoDef } from '../../lib/descuentos';
+
+interface Props {
+    /** Descuento con el que abre el editor (borrador o cotización guardados). */
+    initial?: Pick<DescuentoDef, 'tipo' | 'valor' | 'codigo'> | null;
+}
+
+const { initial = null } = Astro.props;
+const L = currentLocale();
+const en = L === 'en';
+const I18N = {
+    quitar: en ? 'Remove' : 'Quitar',
+    aplicar: en ? 'Apply' : 'Aplicar',
+    validando: en ? 'Checking…' : 'Validando…',
+    valorInvalido: en ? 'Enter an amount greater than zero.' : 'Escribe una cantidad mayor que cero.',
+    pctInvalido: en ? 'A percentage goes from 0 to 100.' : 'Un porcentaje va de 0 a 100.',
+    codigoInvalido: en ? 'Use 3 to 32 letters, numbers, hyphen, or underscore.' : 'Usa de 3 a 32 letras, números, guion o guion bajo.',
+    errorRed: en ? "Couldn't check the coupon. Try again." : 'No se pudo validar el cupón. Intenta de nuevo.',
+    // Motivos de /api/cupones/validar, por código estable.
+    coupon_no_existe: en ? 'That coupon does not exist.' : 'Ese cupón no existe.',
+    coupon_inactivo: en ? 'That coupon is deactivated.' : 'Ese cupón está desactivado.',
+    coupon_aun_no_vigente: en ? 'That coupon is not valid yet.' : 'Ese cupón todavía no está vigente.',
+    coupon_vencido: en ? 'That coupon has expired.' : 'Ese cupón ya venció.',
+    coupon_moneda: en ? 'That coupon is in a different currency than this document.' : 'Ese cupón es de otra divisa que la del documento.',
+    coupon_agotado: en ? 'That coupon has no uses left.' : 'Ese cupón ya no tiene usos disponibles.',
+    coupon_agotado_cliente: en ? 'This client has already used that coupon as many times as allowed.' : 'Este cliente ya usó ese cupón todas las veces permitidas.',
+    coupon_requiere_cliente: en ? 'That coupon is limited per client: choose a client first.' : 'Ese cupón está limitado por cliente: elige un cliente primero.',
+};
+---
+
+<div class="dsc" data-discount-control data-locale={L} data-i18n={JSON.stringify(I18N)} data-initial={JSON.stringify(initial ?? null)}>
+    <div class="sum-line dsc-row" data-dsc-row hidden>
+        <span class="dsc-label-wrap">
+            <span data-dsc-label></span>
+            <button type="button" class="dsc-remove" data-dsc-remove>{I18N.quitar}</button>
+        </span>
+        <span class="editorial" data-dsc-amount></span>
+    </div>
+
+    <button type="button" class="dsc-add" data-dsc-open aria-expanded="false">
+        {en ? '+ Add discount or coupon' : '+ Agregar descuento o cupón'}
+    </button>
+
+    <div class="dsc-panel" data-dsc-panel hidden>
+        <div class="dsc-modes" role="radiogroup" aria-label={en ? 'Discount type' : 'Tipo de descuento'}>
+            <button type="button" class="dsc-mode" role="radio" aria-checked="true" data-dsc-mode="porcentaje">{en ? 'Percent' : 'Porcentaje'}</button>
+            <button type="button" class="dsc-mode" role="radio" aria-checked="false" data-dsc-mode="monto">{en ? 'Amount' : 'Monto'}</button>
+            <button type="button" class="dsc-mode" role="radio" aria-checked="false" data-dsc-mode="cupon">{en ? 'Coupon' : 'Cupón'}</button>
+        </div>
+        <div class="dsc-input-row">
+            <input class="ed-input dsc-input" data-dsc-value type="number" min="0" step="any" inputmode="decimal"
+                aria-label={en ? 'Discount value' : 'Valor del descuento'} placeholder="10" />
+            <input class="ed-input dsc-input dsc-code" data-dsc-code type="text" maxlength="32" autocomplete="off" spellcheck="false" hidden
+                aria-label={en ? 'Coupon code' : 'Código del cupón'} placeholder={en ? 'WELCOME10' : 'BIENVENIDA10'} />
+            <span class="dsc-unit" data-dsc-unit>%</span>
+            <button type="button" class="dsc-apply" data-dsc-apply>{I18N.aplicar}</button>
+        </div>
+        <p class="dsc-msg" data-dsc-msg role="status" hidden></p>
+        <p class="dsc-hint">{en
+            ? 'Applied before tax and spread across the lines in proportion to their amount.'
+            : 'Se aplica antes de impuestos y se reparte entre las líneas según su importe.'}</p>
+    </div>
+</div>
+
+<style>
+    .dsc { display: flex; flex-direction: column; gap: 0.45rem; }
+    /* `.sum-line` y el panel son flex: sin esto `hidden` no oculta nada. */
+    .dsc [hidden] { display: none !important; }
+    .dsc-row { align-items: baseline; }
+    .dsc-row .editorial { color: var(--color-ok, #059669); }
+    .dsc-label-wrap { display: inline-flex; align-items: baseline; gap: 0.5rem; min-width: 0; flex-wrap: wrap; }
+    .dsc-remove, .dsc-add {
+        font-family: var(--font-sans); font-size: 0.72rem; font-weight: 600; color: var(--color-text-muted);
+        background: none; border: none; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 2px;
+    }
+    .dsc-add { align-self: flex-start; text-decoration: none; color: var(--color-blue-deep); }
+    .dsc-remove:hover, .dsc-add:hover { color: var(--color-blue-deep); }
+    .dsc-remove:focus-visible, .dsc-add:focus-visible, .dsc-mode:focus-visible, .dsc-apply:focus-visible {
+        outline: 2px solid rgba(10, 25, 47, 0.25); outline-offset: 2px; border-radius: 6px;
+    }
+    .dsc-panel { display: flex; flex-direction: column; gap: 0.5rem; padding: 0.7rem; border-radius: 14px; background: var(--color-bg-soft, #f5f5f7); }
+    .dsc-modes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 3px; border-radius: 10px; background: rgba(10, 25, 47, 0.05); }
+    .dsc-mode {
+        font-family: var(--font-sans); font-size: 0.72rem; font-weight: 600; color: var(--color-text-muted);
+        background: none; border: none; border-radius: 8px; padding: 6px 4px; cursor: pointer;
+        transition: background 0.2s, color 0.2s;
+    }
+    .dsc-mode[aria-checked="true"] { background: #fff; color: var(--color-text); box-shadow: 0 1px 2px rgba(10, 25, 47, 0.12); }
+    .dsc-input-row { display: flex; align-items: center; gap: 0.4rem; }
+    .dsc-input { flex: 1; min-width: 0; }
+    .dsc-code { text-transform: uppercase; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 0.3px; }
+    .dsc-unit { font-size: 0.78rem; font-weight: 600; color: var(--color-text-muted); min-width: 2.2em; text-align: center; }
+    .dsc-unit:empty { display: none; }
+    .dsc-apply {
+        font-family: var(--font-sans); font-size: 0.76rem; font-weight: 600; color: #fff; background: var(--color-blue-deep);
+        border: none; border-radius: 999px; padding: 8px 14px; cursor: pointer; transition: transform 0.2s;
+    }
+    .dsc-apply:hover { transform: scale(1.03); }
+    .dsc-apply:active { transform: scale(0.97); }
+    .dsc-apply:disabled { opacity: 0.6; cursor: wait; transform: none; }
+    .dsc-msg { font-size: 0.72rem; color: var(--color-danger, #dc2626); margin: 0; line-height: 1.4; }
+    .dsc-hint { font-size: 0.7rem; color: var(--color-text-muted); margin: 0; line-height: 1.4; }
+    @media (max-width: 880px) {
+        .dsc-mode, .dsc-apply, .dsc-remove, .dsc-add { min-height: 44px; }
+        .dsc-input { font-size: 16px; }
+    }
+</style>

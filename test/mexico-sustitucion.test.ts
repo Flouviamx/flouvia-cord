@@ -183,6 +183,27 @@ describe('emitir el sustituto', () => {
     expect(m.event).toHaveBeenCalledWith('org-a', 'orig-a', 'void', 'Sustituida por F-000002');
   });
 
+  it('el mismo cupón no se redime dos veces: su redención pasa al sustituto', async () => {
+    const CUPON = '9d2c1b4a-1e2f-4a3b-8c4d-5e6f7a8b9c0d';
+    const def = { tipo: 'porcentaje', valor: 10, codigo: 'BIENVENIDA', cupon_id: CUPON };
+    m.tx
+      .mockResolvedValueOnce([[head({ descuento: def, descuento_total: 10, sustituye_descuento: def,
+        line_items_snapshot: [{ description: 'Servicio', quantity: 1, unitPrice: 90, taxRate: 0.16, subtotal: 90, taxAmount: 14.4, total: 104.4, discount: 10 }],
+        subtotal: 90, tax_total: 14.4, total: 104.4 })]])
+      .mockResolvedValueOnce([[], [{ invoice_number: 'F-000002' }]])
+      .mockResolvedValueOnce([[{ pagado: 0, metodo: null }]])
+      .mockResolvedValueOnce([[], [], [], [], [], [], [], []]);
+    m.issue.mockResolvedValue({ success: true, provider: 'facturapi', documentId: 'provider-b', fiscalId: UUID_SUSTITUTO });
+    m.cancel.mockResolvedValue({ success: true, status: 'pending' });
+    await finalizeInvoice('org-a', 'doc-b');
+    // Ninguna llamada a cord_cupon_redimir: el cupón ya cuenta por el original.
+    expect(statements().some((q) => q.text.includes('cord_cupon_redimir'))).toBe(false);
+    const exito = m.tx.mock.calls[3].slice(1) as Array<{ text: string; values: unknown[] }>;
+    const cupon = exito.find((q) => q.text.includes('update cupon_redenciones'))!;
+    expect(cupon.values).toEqual(['doc-b', 'orig-a', 'org-a', CUPON]);
+    expect(exito.some((q) => q.text.includes('update documento_reembolso_asignaciones set documento_id'))).toBe(true);
+  });
+
   it('si el original ya no se puede sustituir, no timbra', async () => {
     m.tx.mockResolvedValueOnce([[head()]]);
     m.preflight.mockResolvedValue('Tiene complementos de pago emitidos.');

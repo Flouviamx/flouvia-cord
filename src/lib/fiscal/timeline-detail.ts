@@ -60,6 +60,8 @@ export function invoiceEventDetail(tipo: string, detalle: string, locale: Timeli
         const en = motivo && descripcion === motivo.es ? motivo.en : descripcion;
         return `Voided: ${m[1]} · ${en}${nota.length ? ` — ${nota.join(' — ')}` : ''}`;
     }
+    if ((m = d.match(/^El cobro automático no pasó \(ref: (.+)\)$/))) return `Automatic payment did not go through (ref: ${m[1]})`;
+    if ((m = d.match(/^El pago desde el portal no se completó \(ref: (.+)\)$/))) return `Payment from the portal was not completed (ref: ${m[1]})`;
     if ((m = d.match(/^Anulada: (.+)$/))) return `Voided: ${m[1]}`;
     if ((m = d.match(/^Borrador que sustituye a (.+)$/))) return `Draft replacing ${m[1] === 'la factura original' ? 'the original invoice' : m[1]}`;
     if ((m = d.match(/^Sustituye a (.+)$/))) return `Replaces ${m[1] === 'la factura original' ? 'the original invoice' : m[1]}`;

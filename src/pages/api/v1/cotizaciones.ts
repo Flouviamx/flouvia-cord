@@ -64,6 +64,8 @@ export const POST = withApiAuth('write', async ({ request }, auth) => {
 // Una pk_ vive en una página pública: lo que crea es un borrador que el vendedor
 // revisa. No envía correos (sería un relé de spam con el dominio de Cord) ni
 // fija costo o precio negociado; el precio de lista sí, porque es lo que se cotiza.
+// Tampoco fija un descuento: el único que admite es un CÓDIGO de cupón, que el
+// servidor valida contra los cupones del negocio (vigencia, divisa, usos).
 export function publishableQuoteInput(body: any): any | Response {
     if (!body || typeof body !== 'object') return body;
     if (body.send) return fail('Enviar la cotización requiere una Secret Key desde tu servidor.', 'insufficient_scope', 403);
@@ -79,6 +81,7 @@ export function publishableQuoteInput(body: any): any | Response {
         notas: body.notas,
         base_currency: body.base_currency,
         iva_incluido: body.iva_incluido,
+        ...(typeof body.cupon === 'string' && body.cupon.trim() ? { cupon: body.cupon } : {}),
         items,
         send: false,
     };

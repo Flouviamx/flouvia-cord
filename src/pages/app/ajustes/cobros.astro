@@ -9,6 +9,7 @@ import { t } from '../../../i18n/app';
 import { describeFee, describeSubscriptionFee, FEE_TERMS_VERSION } from '../../../lib/fees';
 import { payoutSpecFor } from '../../../lib/payout-fields';
 import { supportsOnlinePayments, supportsMercadoPago, countryName, getCountryProfile } from '../../../lib/countries';
+import { DOMICILIACION, domiciliacionDelPais, estadoCapacidad } from '../../../lib/cobros/metodos';
 const ORG = await getOrg();
 const L = currentLocale();
 
@@ -27,6 +28,15 @@ const speiDisponible = PAIS === 'MX';
 // del negocio (regla 14). La cuenta sirve igual: cotiza, factura y cobra con
 // pago registrado a mano.
 const cobrosEnLinea = supportsOnlinePayments(PAIS);
+// Domiciliación: SEPA en la zona euro, ACH en EE. UU. Solo donde existe el
+// método para el país del negocio, y solo se ofrece a clientes con la
+// capacidad ACTIVA en la cuenta (`metodosPara`).
+const DOMI = cobrosEnLinea ? domiciliacionDelPais(PAIS) : null;
+const DOMI_ESTADO = DOMI ? estadoCapacidad(ORG.stripeCapacidades, DOMICILIACION[DOMI].capacidad) : 'unrequested';
+const DOMI_CHIP: Record<string, string> = {
+    active: t(L, 'set.cobros.dom_activa'), pending: t(L, 'set.cobros.dom_revision'),
+    inactive: t(L, 'set.cobros.dom_inactiva'), unrequested: '',
+};
 // Segundo riel: donde Stripe no abre cuentas, Mercado Pago sí. El dinero llega
 // igual a la cuenta del negocio; lo que cambia es quién procesa la tarjeta.
 const mercadoPago = supportsMercadoPago(PAIS);
@@ -256,6 +266,43 @@ import { iconInner } from '../../../lib/icons';
                 </div>
                 )}
 
+                <!-- Domiciliación bancaria (SEPA / ACH) -->
+                {DOMI && (
+                <div class={`pay-method ${!puedeCobrar ? 'is-locked' : ''}`} id="cbrDomi"
+                    data-i18n={JSON.stringify({ ok: t(L, 'set.cobros.dom_guardado'), error: t(L, 'set.cobros.dom_error'), chip: DOMI_CHIP })}>
+                    <div class="pm-ico">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('bank')}></svg>
+                    </div>
+                    <div class="pm-text">
+                        <strong>{DOMI === 'sepa_debit' ? t(L, 'set.cobros.dom_sepa_titulo') : t(L, 'set.cobros.dom_ach_titulo')}
+                            <span class="pm-chip" id="cbrDomiChip" data-estado={DOMI_ESTADO} hidden={!ORG.aceptaDomiciliacion || !DOMI_CHIP[DOMI_ESTADO]}>{DOMI_CHIP[DOMI_ESTADO]}</span></strong>
+                        <span>{DOMI === 'sepa_debit' ? t(L, 'set.cobros.dom_sepa_desc') : t(L, 'set.cobros.dom_ach_desc')}</span>
+                    </div>
+                    <label class="s-toggle pm-toggle">
+                        <input type="checkbox" id="cbrDomiToggle" checked={puedeCobrar && ORG.aceptaDomiciliacion} disabled={!puedeCobrar} />
+                        <span class="s-toggle-track"><span class="s-toggle-thumb"></span></span>
+                    </label>
+                </div>
+                )}
+
+                <!-- Cobro automático: los clientes guardan un método en su portal -->
+                {cobrosEnLinea && (
+                <div class={`pay-method ${!puedeCobrar ? 'is-locked' : ''}`} id="cbrAutopay"
+                    data-i18n={JSON.stringify({ ok: t(L, 'set.cobros.dom_guardado'), error: t(L, 'set.cobros.dom_error') })}>
+                    <div class="pm-ico">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('refresh')}></svg>
+                    </div>
+                    <div class="pm-text">
+                        <strong>{t(L, 'set.cobros.autopay_titulo')}</strong>
+                        <span>{t(L, 'set.cobros.autopay_desc')}</span>
+                    </div>
+                    <label class="s-toggle pm-toggle">
+                        <input type="checkbox" id="cbrAutopayToggle" checked={puedeCobrar && ORG.cobroAutomaticoPermitido} disabled={!puedeCobrar} />
+                        <span class="s-toggle-track"><span class="s-toggle-thumb"></span></span>
+                    </label>
+                </div>
+                )}
+
                 <!-- Transferencia manual -->
                 <div class="pay-method pay-method--stack">
                     <div class="pm-head">
@@ -430,6 +477,12 @@ import { iconInner } from '../../../lib/icons';
     .pm-text strong { font-size: 0.88rem; font-weight: 600; letter-spacing: -0.01em; color: var(--color-text); }
     .pm-text span { font-size: 0.76rem; color: var(--color-text-muted); line-height: 1.4; }
     .pm-toggle { margin-left: auto; }
+    .pm-chip {
+        display: inline-flex; margin-left: 8px; padding: 1px 8px; border-radius: 999px; vertical-align: 1px;
+        font-size: 0.68rem; font-weight: 600; background: rgba(10,25,47,0.06); color: var(--color-text-muted);
+    }
+    .pm-chip[data-estado="active"] { background: rgba(20,104,63,0.1); color: #14683f; }
+    .pm-chip[data-estado="pending"] { background: rgba(245,158,11,0.12); color: #b45309; }
     .pm-bank {
         display: flex; flex-direction: column; gap: 1rem;
         margin: 14px 0 4px 52px; padding-top: 14px; border-top: 1px solid var(--color-border);
@@ -852,4 +905,43 @@ import { iconInner } from '../../../lib/icons';
             feeButton.disabled = false;
         }
     });
+</script>
+
+<script>
+    // Domiciliación y cobro automático se guardan al momento: encender la
+    // domiciliación pide la capacidad al proveedor y su estado vuelve en la
+    // respuesta. Si falla, el interruptor regresa a donde estaba.
+    const enlazar = (filaId: string, toggleId: string, campo: 'domiciliacion' | 'cobro_automatico') => {
+        const fila = document.getElementById(filaId);
+        const toggle = document.getElementById(toggleId) as HTMLInputElement | null;
+        if (!fila || !toggle) return;
+        const T = JSON.parse(fila.dataset.i18n || '{}');
+        toggle.addEventListener('change', async () => {
+            const valor = toggle.checked;
+            toggle.disabled = true;
+            try {
+                const res = await fetch('/api/billing/connect/domiciliacion', {
+                    method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ [campo]: valor }),
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(data.error || T.error);
+                const chip = document.getElementById('cbrDomiChip');
+                if (chip && campo === 'domiciliacion') {
+                    const estado = String(data.domiciliacion || 'unrequested');
+                    chip.dataset.estado = estado;
+                    chip.textContent = T.chip?.[estado] || '';
+                    chip.hidden = !valor || !chip.textContent;
+                }
+                (window as any).cordToast?.(T.ok, 'ok');
+            } catch (e) {
+                toggle.checked = !valor;
+                (window as any).cordToast?.(e instanceof Error ? e.message : T.error, 'error');
+            } finally {
+                toggle.disabled = false;
+            }
+        });
+    };
+    enlazar('cbrDomi', 'cbrDomiToggle', 'domiciliacion');
+    enlazar('cbrAutopay', 'cbrAutopayToggle', 'cobro_automatico');
 </script>

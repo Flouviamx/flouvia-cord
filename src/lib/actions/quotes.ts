@@ -16,6 +16,8 @@ import { lineSatKeyError, lineSatKeysFrom } from '../fiscal/sat-claves';
 import { trackServer } from '../posthog-server';
 import { currencyDecimals, normalizeCurrency } from '../currency';
 import { FXService, FXUnavailableError } from '../fx/FXService';
+import { descuentoDesdeJson, descuentoParaMotor, leerDescuentoBody, type DescuentoDef } from '../descuentos';
+import { DescuentoError, liberarCupon, resolverDescuento } from '../cupones';
 import { type ActionContext, type ActionOutcome, auditAction, done, fromResponse } from './outcome';
 
 export type { ActionContext, ActionOutcome };
@@ -130,7 +132,8 @@ export async function runQuoteAction(ctx: ActionContext, id: string, input: Reco
     const action = ACTIONS[input.action];
     if (!action) return done(400, { error: 'Acción no válida' });
 
-    const [rows] = await withOrgTx(orgId, sql`select id, status, version, base_currency, fiscal_currency, fx_rate, total
+    const [rows] = await withOrgTx(orgId, sql`select id, status, version, base_currency, fiscal_currency, fx_rate, total,
+                                    cliente_id, descuento, descuento_def
                              from cotizaciones where id = ${id} and org_id = ${orgId}`);
     if (!rows.length) return done(404, { error: 'Cotización no encontrada' });
 
@@ -162,14 +165,50 @@ export async function runQuoteAction(ctx: ActionContext, id: string, input: Reco
         });
         const satError = lineSatKeyError(items.map((it: any) => ({ descripcion: it.descripcion, productKey: it.clave_sat, unitKey: it.clave_unidad_sat })));
         if (satError) return done(400, { error: satError, code: 'invalid_request' });
+        const monedaVenta = normalizeCurrency(input.base_currency, normalizeCurrency(rows[0].base_currency as string));
+
+        // Descuento de documento. Sin `descuento` ni `cupon` en el body se
+        // conserva el que la cotización ya tenía (una acción de la API que solo
+        // cambia líneas no lo borra). Un cupón ya aplicado se conserva tal cual:
+        // se validó al aplicarlo y el tope de usos se revisa al aprobarse.
+        const pedido = leerDescuentoBody(input);
+        if ('error' in pedido) return done(400, { error: pedido.error, code: 'invalid_discount' });
+        const previo = descuentoDesdeJson(rows[0].descuento_def);
+        // Un monto está en la divisa en la que se aplicó: si la cotización
+        // cambia de divisa, ese número ya no significa lo mismo.
+        const cambioDivisa = monedaVenta !== normalizeCurrency(rows[0].base_currency as string);
+        let descuento: DescuentoDef | null = previo;
+        if (!pedido.presente) {
+            if (previo?.tipo === 'monto' && cambioDivisa) {
+                return done(400, { error: 'El descuento está en otra divisa. Vuelve a aplicarlo.', code: 'discount_currency' });
+            }
+        } else {
+            const mismoCupon = !!pedido.solicitud.cupon && previo?.codigo === pedido.solicitud.cupon && !!previo?.cupon_id
+                && !(previo.tipo === 'monto' && cambioDivisa);
+            if (!mismoCupon) {
+                try {
+                    descuento = await resolverDescuento(orgId, pedido.solicitud, {
+                        moneda: monedaVenta,
+                        clienteId: input.cliente_id ? String(input.cliente_id) : (rows[0].cliente_id as string | null),
+                        cotizacionId: id,
+                    });
+                } catch (error) {
+                    if (error instanceof DescuentoError) return done(error.status, { error: error.message, code: error.code });
+                    throw error;
+                }
+            }
+        }
         const totals = calculateDocumentTotals(items as any[], {
             ivaIncluido: iva_incluido,
             retenciones: catalogo.retenciones,
             // Redondeo por línea en la divisa de venta: es lo que después
             // timbra el CFDI y registra Verifactu, así que la cotización y su
             // factura cuadran al centavo (ver RoundingOptions en engine.ts).
-            roundLines: currencyDecimals(normalizeCurrency(input.base_currency, normalizeCurrency(rows[0].base_currency as string))),
+            roundLines: currencyDecimals(monedaVenta),
+            descuento: descuentoParaMotor(descuento),
         });
+        const descuentoTotal = totals.descuentoTotal;
+        const descuentoJson = descuento ? JSON.stringify(descuento) : null;
         const realSubtotal = totals.subtotal;
         const iva = totals.impuestos;
         const total = totals.total;
@@ -239,12 +278,14 @@ export async function runQuoteAction(ctx: ActionContext, id: string, input: Reco
                         subtotal = ${realSubtotal}, iva = ${iva}, total = ${total},
                         retencion_total = ${retencionTotal},
                         retenciones_snapshot = ${retencionesSnapshot}::jsonb,
+                        descuento = ${descuentoTotal}, descuento_def = ${descuentoJson}::jsonb,
                         version = ${nextVersion}, iva_incluido = ${iva_incluido},
                         anticipo_pct = ${anticipoPct}, es_recurrente = ${esRecurrente}
                       where id = ${id}`);
         } else {
             writes.push(sql`update cotizaciones set subtotal = ${realSubtotal}, iva = ${iva}, total = ${total},
                         retencion_total = ${retencionTotal}, retenciones_snapshot = ${retencionesSnapshot}::jsonb,
+                        descuento = ${descuentoTotal}, descuento_def = ${descuentoJson}::jsonb,
                         version = ${nextVersion}, iva_incluido = ${iva_incluido} where id = ${id}`);
         }
 
@@ -315,8 +356,40 @@ export async function runQuoteAction(ctx: ActionContext, id: string, input: Reco
             return lostRace();
         }
     } else if (action.to === 'approved') {
-        const [moved] = await withOrgTx(orgId, sql`update cotizaciones set status = 'approved', approved_at = ${now} where id = ${id} and org_id = ${orgId} and status = any(${action.from}::text[]) returning id`);
-        if (!moved.length) return lostRace();
+        // La aprobación vuelve vinculante la cotización: aquí se redime su
+        // cupón. Si los usos se agotaron desde que se aplicó, no se aprueba con
+        // un descuento que el negocio ya no puede dar.
+        const descuentoQuote = descuentoDesdeJson(rows[0].descuento_def);
+        if (descuentoQuote?.cupon_id) {
+            // Redención y aprobación en UNA transacción, con la cotización
+            // bloqueada: la aprobación solo avanza si el uso quedó registrado, y
+            // una cotización que ya cambió de estado no redime nada.
+            const [redRows, moved] = await withOrgTx(orgId,
+                sql`select cord_cupon_redimir(${orgId}::uuid, ${descuentoQuote.cupon_id}::uuid, c.cliente_id, c.id, null::uuid,
+                           coalesce(c.descuento, 0), c.base_currency) as r
+                      from cotizaciones c
+                     where c.id = ${id} and c.org_id = ${orgId} and c.status = any(${action.from}::text[])
+                       for update`,
+                sql`update cotizaciones set status = 'approved', approved_at = ${now}
+                     where id = ${id} and org_id = ${orgId} and status = any(${action.from}::text[])
+                       and exists (select 1 from cupon_redenciones r
+                                    where r.org_id = ${orgId} and r.cupon_id = ${descuentoQuote.cupon_id}::uuid and r.cotizacion_id = ${id})
+                    returning id`);
+            const redencion = String(redRows[0]?.r || '');
+            if (!redRows.length) return lostRace();
+            if (redencion !== 'ok') {
+                return done(409, {
+                    error: redencion === 'no_existe'
+                        ? `El cupón ${descuentoQuote.codigo || ''} ya no existe. Quítalo de la cotización y vuelve a enviarla.`
+                        : `El cupón ${descuentoQuote.codigo || ''} ya no tiene usos disponibles${redencion === 'agotado_cliente' ? ' para este cliente' : ''}. Quítalo de la cotización y vuelve a enviarla.`,
+                    code: `coupon_${redencion}`,
+                });
+            }
+            if (!moved.length) return lostRace();
+        } else {
+            const [moved] = await withOrgTx(orgId, sql`update cotizaciones set status = 'approved', approved_at = ${now} where id = ${id} and org_id = ${orgId} and status = any(${action.from}::text[]) returning id`);
+            if (!moved.length) return lostRace();
+        }
         try { await materializeAnticipoCobros(id, orgId); } catch { /* fallback en payment-intent */ }
     } else if (action.to === 'paid') {
         const method = input.payment_method || 'transferencia';
@@ -348,6 +421,11 @@ export async function runQuoteAction(ctx: ActionContext, id: string, input: Reco
     } else {
         const [moved] = await withOrgTx(orgId, sql`update cotizaciones set status = ${action.to} where id = ${id} and org_id = ${orgId} and status = any(${action.from}::text[]) returning id`);
         if (!moved.length) return lostRace();
+        // Una cotización rechazada o vencida no consume su cupón. Hoy solo se
+        // redime al aprobar, así que normalmente no hay nada que devolver.
+        if ((action.to === 'rejected' || action.to === 'expired') && descuentoDesdeJson(rows[0].descuento_def)?.cupon_id) {
+            await liberarCupon(orgId, { cotizacionId: id });
+        }
     }
 
     invalidateMoneyCaches(orgId);

@@ -29,7 +29,8 @@
 // pidió su factura) libera las ventas en la misma transacción.
 
 import { sql, withOrgTx } from '../db';
-import { calculateDocumentTotals } from '../../../packages/elements/src/engine';
+import { calculateDocumentTotals, type DescuentoInput } from '../../../packages/elements/src/engine';
+import { descuentoDesdeJson, descuentoParaMotor } from '../descuentos';
 import { documentTypeForOrg } from './document-kind';
 import { partiesFrom } from './parties';
 import { finalizeInvoice } from './invoices';
@@ -48,7 +49,7 @@ export const MAX_VENTAS_GLOBAL = 2000;
 const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 const TASAS_CFDI = [0, 0.08, 0.16];
 
-export type MotivoExclusion = 'en_global' | 'facturada' | 'divisa' | 'retenciones' | 'extranjero' | 'tasa';
+export type MotivoExclusion = 'en_global' | 'facturada' | 'divisa' | 'retenciones' | 'extranjero' | 'tasa' | 'sin_importe';
 
 export interface VentaGlobal {
     id: string;
@@ -57,8 +58,11 @@ export interface VentaGlobal {
     clienteRfc: string | null;
     pagadaEn: string;
     total: number;
+    /** Base neta: después del descuento de documento. */
     subtotal: number;
     impuestos: number;
+    /** Descuento de documento de la venta, antes de impuestos. */
+    descuento: number;
     formaPago: string;
     /** Conceptos que la venta aporta a la global (uno por tasa). */
     conceptos: FiscalLineItem[];
@@ -88,17 +92,24 @@ export function anioEnMexico(now = new Date()): number {
 }
 
 /**
- * Conceptos de UNA venta para la global. Con el mismo motor y el mismo
- * redondeo por línea que la factura individual (emit.ts); el impuesto de cada
- * concepto es base × tasa redondeado, que es lo que el PAC recalcula.
+ * Conceptos de UNA venta para la global. Con el mismo motor, el mismo redondeo
+ * por línea y el mismo descuento de documento que la factura individual
+ * (emit.ts): la venta se documenta por lo que se cobró, no por su precio de
+ * lista. El impuesto de cada concepto es base × tasa redondeado, que es lo que
+ * el PAC recalcula.
+ *
+ * Con descuento, cada concepto lleva su parte en `discount` (Concepto@Descuento:
+ * ValorUnitario es el bruto y la base del traslado es Importe − Descuento, la
+ * neta). Devuelve `null` si alguna tasa no cabe en el CFDI global y `[]` si la
+ * venta no tiene importe que documentar (descuento del 100 %).
  */
 export function conceptosDeVenta(
     folio: string,
     items: Array<{ cantidad: unknown; precio_unitario: unknown; precio_negociado: unknown; tax_rate: unknown; aprobado?: unknown }>,
-    opts: { ivaIncluido: boolean; fallbackRate: number },
+    opts: { ivaIncluido: boolean; fallbackRate: number; descuento?: DescuentoInput | null },
 ): FiscalLineItem[] | null {
     const aprobadas = items.filter((it) => it.aprobado !== false);
-    if (!aprobadas.length) return null;
+    if (!aprobadas.length) return [];
     let totals;
     try {
         totals = calculateDocumentTotals(aprobadas.map((it) => ({
@@ -107,25 +118,37 @@ export function conceptosDeVenta(
             precio_unitario: it.precio_unitario as number,
             precio_negociado: (it.precio_negociado ?? null) as number | null,
             tax_rate: it.tax_rate === null || it.tax_rate === undefined ? opts.fallbackRate : Number(it.tax_rate),
-        })), { ivaIncluido: opts.ivaIncluido, roundLines: 2 });
+        })), { ivaIncluido: opts.ivaIncluido, roundLines: 2, descuento: opts.descuento ?? null });
     } catch {
         return null;
     }
-    const conceptos: FiscalLineItem[] = [];
-    for (const grupo of totals.porTasa) {
-        const tasa = Math.round(grupo.tasa * 1e6) / 1e6;
+    // Un concepto por tasa: base y descuento son la suma de los de sus líneas
+    // (ya redondeados por línea, como en la factura individual).
+    const grupos = new Map<number, { base: number; descuento: number }>();
+    for (const l of totals.lineas) {
+        const tasa = Math.round(Number(l.tax_rate) * 1e6) / 1e6;
         if (!TASAS_CFDI.includes(tasa)) return null;
-        const base = round2(grupo.base);
-        // El SAT exige ValorUnitario > 0 en un ingreso: un grupo en cero no aporta concepto.
+        const g = grupos.get(tasa) ?? { base: 0, descuento: 0 };
+        g.base += Number(l.base) || 0;
+        g.descuento += Number(l.descuento) || 0;
+        grupos.set(tasa, g);
+    }
+    const conceptos: FiscalLineItem[] = [];
+    for (const [tasa, g] of [...grupos.entries()].sort((a, b) => a[0] - b[0])) {
+        const base = round2(g.base);
+        const descuento = round2(g.descuento);
+        // El SAT exige ValorUnitario > 0 y una base de traslado mayor que cero:
+        // un grupo que el descuento dejó en cero no aporta concepto.
         if (!(base > 0)) continue;
         const impuesto = round2(base * tasa);
         conceptos.push({
             description: 'Venta', quantity: 1, unitPrice: base, taxRate: tasa,
             subtotal: base, taxAmount: impuesto, total: round2(base + impuesto),
+            ...(descuento > 0 ? { discount: descuento } : {}),
             productKey: DEFAULT_PRODUCT_KEY, unitKey: 'ACT', identification: folio,
         });
     }
-    return conceptos.length ? conceptos : null;
+    return conceptos;
 }
 
 /**
@@ -140,7 +163,7 @@ export async function ventasParaGlobal(orgId: string, rango: { desde: string; ha
         select zona_horaria, iva_pct, moneda from orgs where id = ${orgId} limit 1`);
     const zona = zonaValida(org?.zona_horaria);
     const [ventas] = await withOrgTx(orgId, sql`
-        select c.id, c.folio, c.total, c.paid_at, c.payment_method, c.iva_incluido,
+        select c.id, c.folio, c.total, c.paid_at, c.payment_method, c.iva_incluido, c.descuento_def,
                coalesce(c.base_currency, o.moneda, 'MXN') as moneda,
                coalesce(c.retencion_total, 0) as retencion_total,
                cl.empresa as cliente, cl.rfc as cliente_rfc, cl.country_code as cliente_pais,
@@ -190,15 +213,19 @@ export async function ventasParaGlobal(orgId: string, rango: { desde: string; ha
         for (const v of candidatas) {
             const conceptos = conceptosDeVenta(String(v.folio || v.id), porVenta.get(String(v.id)) || [], {
                 ivaIncluido: !!v.iva_incluido, fallbackRate,
+                // El descuento de documento de la cotización (descuentos.ts).
+                descuento: descuentoParaMotor(descuentoDesdeJson(v.descuento_def)),
             });
             if (!conceptos) { excluir(v, 'tasa'); continue; }
+            if (!conceptos.length) { excluir(v, 'sin_importe'); continue; }
             const subtotal = round2(conceptos.reduce((s, c) => s + c.subtotal, 0));
             const impuestos = round2(conceptos.reduce((s, c) => s + c.taxAmount, 0));
+            const descuento = round2(conceptos.reduce((s, c) => s + (c.discount || 0), 0));
             elegibles.push({
                 id: String(v.id), folio: String(v.folio || ''), cliente: (v.cliente as string) || null,
                 clienteRfc: (v.cliente_rfc as string) || null,
                 pagadaEn: v.paid_at instanceof Date ? v.paid_at.toISOString() : String(v.paid_at),
-                total: round2(subtotal + impuestos), subtotal, impuestos,
+                total: round2(subtotal + impuestos), subtotal, impuestos, descuento,
                 formaPago: satFormFor(v.payment_method), conceptos,
             });
         }
@@ -284,6 +311,7 @@ export async function createGlobalInvoice(orgId: string, input: GlobalInput): Pr
     const lines = ventas.flatMap((v) => v.conceptos);
     const subtotal = round2(lines.reduce((s, l) => s + l.subtotal, 0));
     const taxes = round2(lines.reduce((s, l) => s + l.taxAmount, 0));
+    const descuentoTotal = round2(lines.reduce((s, l) => s + (l.discount || 0), 0));
     const total = round2(subtotal + taxes);
     const { issuer } = partiesFrom(head, 'MX');
     const recipient = {
@@ -316,13 +344,13 @@ export async function createGlobalInvoice(orgId: string, input: GlobalInput): Pr
                     currency, ledger_currency, fx_rate, ledger_total, subtotal, tax_total, total,
                     retencion_total, retenciones_snapshot, lifecycle, due_date, amount_paid, amount_remaining,
                     public_token, created_by, issuer_snapshot, recipient_snapshot, line_items_snapshot,
-                    schema_version, provider_data, informacion_global, updated_at
+                    schema_version, provider_data, informacion_global, descuento_total, updated_at
                   )
                   select ${orgId}, null, null, 'MX', 'cfdi_40', 'pending', 'facturapi',
                          'MXN', 'MXN', 1, ${total}, ${subtotal}, ${taxes}, ${total},
                          0, '[]'::jsonb, 'draft', null, 0, 0,
                          null, ${input.createdBy || null}, ${JSON.stringify(issuer)}, ${JSON.stringify(recipient)}, ${JSON.stringify(lines)},
-                         'cord.invoice.v1', '{}'::jsonb, ${JSON.stringify(info)}::jsonb, now()
+                         'cord.invoice.v1', '{}'::jsonb, ${JSON.stringify(info)}::jsonb, ${descuentoTotal}, now()
                     from libres where libres.n = ${ids.length}
                   returning id
                 ), ventas as (

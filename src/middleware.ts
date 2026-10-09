@@ -42,7 +42,7 @@ import { canonicalPathForInvalidEnglishRoute, preferredPublicLang } from './i18n
 // pagar (`/api/i/[token]/payment-intent`) ni se registraba la vista
 // (`/api/i/[token]`, la señal de la regla 19). Ambos handlers existían y estaban
 // bien; lo único que faltaba era esta línea.
-const PUBLIC_API_PREFIXES = ["/api/q/", "/api/i/", "/api/stripe/", "/api/mercadopago/", "/api/cron/", "/api/v1/", "/api/mcp/sse", "/api/mcp/message", "/api/auth/", "/api/contacto/", "/api/blog/", "/api/billing/connect/capture/"];
+const PUBLIC_API_PREFIXES = ["/api/q/", "/api/i/", "/api/portal/", "/api/stripe/", "/api/mercadopago/", "/api/cron/", "/api/v1/", "/api/mcp/sse", "/api/mcp/message", "/api/auth/", "/api/contacto/", "/api/blog/", "/api/billing/connect/capture/"];
 // Solo los tres endpoints que CREAN una sesión de Ops son públicos. Cualquier
 // futura API bajo /api/ops queda privada por default y exige sesión Ops válida.
 const OPS_PUBLIC_API_EXACT = [
@@ -791,7 +791,10 @@ const securityHeaders = async (context: any, next: any) => {
     // puede filtrar su URL por `Referer`, igual que el enlace de recuperación de
     // contraseña.
     const isCapturaIdentidad = path === "/verificar-identidad" || path.startsWith("/verificar-identidad/");
-    const isPublicInvoice = path.startsWith('/i/') || path.startsWith('/api/i/');
+    // El portal del cliente lleva la misma credencial portadora en la URL que la
+    // factura, y además da acceso a métodos de pago guardados.
+    const isPublicInvoice = path.startsWith('/i/') || path.startsWith('/api/i/')
+        || path.startsWith('/portal/') || path.startsWith('/api/portal/');
 
     secureRes.headers.set(
         "Referrer-Policy",

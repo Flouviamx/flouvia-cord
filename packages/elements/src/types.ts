@@ -160,6 +160,13 @@ export interface CreateQuoteInput {
     fx_buffer_pct?: number;
     /** Si es `true`, los precios unitarios de los items ya incluyen IVA. */
     iva_incluido?: boolean;
+    /**
+     * Código de un cupón del negocio (ej. 'BIENVENIDA10'). El servidor lo
+     * valida (vigencia, divisa, usos) y aplica su descuento antes de impuestos;
+     * si no aplica, responde con el motivo. Es el único descuento que admite
+     * una publishable key.
+     */
+    cupon?: string;
     /** Lista de productos o servicios a cotizar. Obligatorio (mínimo 1). */
     items: QuoteItemInput[];
 }

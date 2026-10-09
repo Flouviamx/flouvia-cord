@@ -30,6 +30,7 @@
 import { sql, withOrgTx } from '../db';
 import { createInvoiceDraft, releaseInvoicePaymentAttempts, type DraftResult } from './invoices';
 import { isFormaPago, isUsoCfdi } from './cfdi-catalogos';
+import { descuentoDesdeJson } from '../descuentos';
 import { logInvoiceEvent } from './timeline';
 import type { FiscalLineItem } from './index';
 
@@ -80,7 +81,7 @@ async function readOriginal(orgId: string, originalId: string) {
         select d.id, d.org_id, d.country_code, d.document_type, d.status, d.lifecycle, d.credit_note_of,
                d.informacion_global, d.sustituida_por, d.provider_data, d.invoice_number, d.fiscal_id,
                d.cotizacion_id, d.cliente_id, d.currency, d.due_date, d.notes, d.service_date, d.service_date_end,
-               d.line_items_snapshot, d.cfdi_uso, d.cfdi_forma_pago, d.amount_paid,
+               d.line_items_snapshot, d.cfdi_uso, d.cfdi_forma_pago, d.amount_paid, d.descuento, d.descuento_total,
                d.stripe_payment_intent_id, d.mp_preference_id, o.stripe_account_id,
                exists (select 1 from documentos_fiscales n where n.credit_note_of = d.id and n.org_id = d.org_id
                         and n.lifecycle <> 'void') as has_credit_notes,
@@ -136,6 +137,15 @@ export async function createSubstitutionDraft(
     const formaOriginal = original.cfdi_forma_pago
         || (providerData.payment_method === 'PUE' && isFormaPago(providerData.payment_form) ? providerData.payment_form : null);
 
+    // Descuento de documento: el sustituto hereda la MISMA definición (con su
+    // cupón, sin revalidarlo: ya se redimió con el original y la redención pasa
+    // al sustituto al timbrarlo) y cada concepto vuelve a su precio BRUTO. Copiar
+    // el neto y además el descuento lo aplicaría dos veces.
+    const descuento = descuentoDesdeJson(original.descuento);
+    const descuentoHeredado = descuento
+        ? { def: descuento, total: Number(original.descuento_total) || 0, currency: String(original.currency || 'MXN') }
+        : null;
+
     let result: DraftResult;
     try {
         result = await createInvoiceDraft(orgId, {
@@ -149,15 +159,19 @@ export async function createSubstitutionDraft(
             notes: original.notes || null,
             createdBy: opts.createdBy ?? null,
             // El snapshot ya es base sin impuesto; el unitario se recupera con
-            // la misma precisión con la que se timbró.
-            items: lines.map((l) => ({
+            // la misma precisión con la que se timbró (bruto si hubo descuento).
+            items: lines.map((l) => {
+                const bruto = Number(l.subtotal) + (descuento ? Number(l.discount) || 0 : 0);
+                return {
                 descripcion: String(l.description || 'Concepto'),
                 cantidad: Number(l.quantity) || 1,
-                precioUnitario: Number(l.quantity) ? Math.round((Number(l.subtotal) / Number(l.quantity)) * 1e6) / 1e6 : Number(l.unitPrice) || 0,
+                precioUnitario: Number(l.quantity) ? Math.round((bruto / Number(l.quantity)) * 1e6) / 1e6 : Number(l.unitPrice) || 0,
                 taxRate: Number(l.taxRate),
                 productKey: l.productKey ?? null,
                 unitKey: l.unitKey ?? null,
-            })),
+                };
+            }),
+            descuentoHeredado,
             cfdiUso: isUsoCfdi(original.cfdi_uso) ? original.cfdi_uso : null,
             cfdiFormaPago: isFormaPago(formaOriginal) ? formaOriginal : null,
             sustituyeA: originalId,

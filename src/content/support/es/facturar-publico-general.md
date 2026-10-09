@@ -24,7 +24,9 @@ documentan ante el SAT en una **factura global** del periodo, a nombre de
 5. Pulsa **Emitir factura global**.
 
 Cada venta entra como un concepto con la clave **01010101**, la unidad **ACT** y
-el folio de la cotización como número de identificación. El CFDI se emite en
+el folio de la cotización como número de identificación. Si la venta tuvo un
+descuento o un cupón, el concepto lo declara como su **Descuento**: la factura
+global ampara lo que realmente cobraste. El CFDI se emite en
 pesos, con método de pago **PUE**, uso **S01** y, como domicilio del receptor,
 el código postal fiscal de tu negocio. Por eso Cord te pide capturarlo en
 **Ajustes › Datos fiscales** antes de emitirla.
@@ -40,7 +42,8 @@ Cord te dice por qué una venta del periodo no aparece:
 - se cobró en otra divisa (la global se emite en pesos);
 - tiene retenciones (el SAT pide una factura por cada operación con retenciones);
 - el cliente está en el extranjero (lleva factura individual);
-- tiene una tasa de IVA distinta de 0 %, 8 % o 16 %.
+- tiene una tasa de IVA distinta de 0 %, 8 % o 16 %;
+- no tiene importe que documentar (un descuento del 100 %).
 
 Mientras una venta esté en una factura global vigente, Cord no deja emitirle
 una factura individual: la misma venta quedaría facturada dos veces.

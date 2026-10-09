@@ -28,6 +28,7 @@ import { t } from '../../../i18n/app';
 import { DEFAULT_PRODUCT_KEY, DEFAULT_UNIT_KEY } from '../../../lib/fiscal/sat-claves';
 import { FORMAS_PAGO, MESES, MOTIVOS_CANCELACION, PERIODICIDADES } from '../../../lib/fiscal/cfdi-catalogos';
 import { repsBloqueantes, substitutionBlocker } from '../../../lib/fiscal/sustitucion';
+import { etiquetaDescuento } from '../../../lib/descuentos';
 
 export const prerender = false;
 
@@ -136,7 +137,7 @@ const VF_CAUSAS = EXEMPTION_REASONS.map((code) => ({ code, label: `${code} · ${
 const EV_LABEL: Record<string, string> = {
     created: t(L, 'fact.ev.created'), issued: t(L, 'fact.ev.issued'),
     sent: t(L, 'fact.ev.sent'), viewed: t(L, 'fact.ev.viewed'),
-    payment: t(L, 'fact.ev.payment'), paid: t(L, 'fact.ev.paid'),
+    payment: t(L, 'fact.ev.payment'), payment_failed: t(L, 'fact.ev.payment_failed'), paid: t(L, 'fact.ev.paid'),
     reminder: t(L, 'fact.ev.reminder'), void: t(L, 'fact.ev.void'),
     credit_note: t(L, 'fact.ev.credit_note'), uncollectible: t(L, 'fact.ev.uncollectible'),
     verifactu: t(L, 'fact.ev.verifactu'),
@@ -157,6 +158,11 @@ const stepIdx = !f ? 0
 const INVOICE_STEPS = L === 'en'
     ? ['Draft', 'Issued', 'Sent', 'Viewed', 'Paid']
     : ['Borrador', 'Emitida', 'Enviada', 'Vista', 'Pagada'];
+
+// Descuento de documento: el concepto se lee a su importe BRUTO y el descuento
+// va en los totales antes de los impuestos (las bases de abajo ya son netas).
+const hayDescuento = (f?.descuentoTotal ?? 0) > 0;
+const brutoLinea = (l: { subtotal: number; descuento: number }) => l.subtotal + (hayDescuento ? l.descuento : 0);
 
 // Desglose por tasa a partir de las líneas del snapshot: es la forma de que una
 // factura con conceptos exentos y gravados cuadre a la vista.
@@ -363,13 +369,16 @@ import { iconInner } from '../../../lib/icons';
                                         )}
                                     </span>
                                     <span class="fd-qty">{linea.cantidad}</span>
-                                    <span class="editorial fd-price">{money(linea.precioUnitario)}</span>
-                                    <span class="editorial fd-amount">{money(linea.subtotal)}</span>
+                                    <span class="editorial fd-price">{money(hayDescuento && linea.cantidad > 0 ? brutoLinea(linea) / linea.cantidad : linea.precioUnitario)}</span>
+                                    <span class="editorial fd-amount">{money(brutoLinea(linea))}</span>
                                 </div>
                             ))}
 
                             <div class="fd-totals">
-                                <div class="fd-tline"><span>{t(L, 'fact.d_subtotal')}</span><span class="editorial">{money(f.subtotal)}</span></div>
+                                <div class="fd-tline"><span>{t(L, 'fact.d_subtotal')}</span><span class="editorial">{money(f.subtotal + f.descuentoTotal)}</span></div>
+                                {hayDescuento && (
+                                    <div class="fd-tline fd-tax"><span>{etiquetaDescuento(f.descuento, L)}</span><span class="editorial">−{money(f.descuentoTotal)}</span></div>
+                                )}
                                 {tasas.map((row) => (
                                     <div class="fd-tline fd-tax"><span>{row.label}</span><span class="editorial">{money(row.impuesto)}</span></div>
                                 ))}
@@ -382,6 +391,7 @@ import { iconInner } from '../../../lib/icons';
                                     <div class="fd-tline"><span>{t(L, 'fact.d_pagado')}</span><span class="editorial">−{money(f.pagado)}</span></div>
                                 )}
                                 <div class="fd-tline fd-due"><span>{t(L, 'fact.d_saldo')}</span><span class="editorial">{money(f.saldo)}</span></div>
+                                {f.pagoEnProceso && f.estado === 'open' && <p class="fd-proceso">{t(L, 'fact.d_pago_en_proceso')}</p>}
                             </div>
 
                             {f.fxRate && f.fxRate !== 1 && f.ledgerCurrency && (
@@ -770,6 +780,13 @@ import { iconInner } from '../../../lib/icons';
                     return;
                 }
                 if ((payload.action === 'duplicate' || payload.action === 'substitute') && data.id) {
+                    // Un cupón que ya no aplica no impide duplicar: la copia sale
+                    // sin él y el servidor lo dice; se lee antes de ir al editor.
+                    if (data.aviso) {
+                        (window as any).cordToast?.(String(data.aviso));
+                        setTimeout(() => { location.href = `/app/facturas/nueva?draft=${data.id}`; }, 2600);
+                        return;
+                    }
                     location.href = `/app/facturas/nueva?draft=${data.id}`;
                     return;
                 }
@@ -1156,4 +1173,5 @@ import { iconInner } from '../../../lib/icons';
         .fd-util-grid { grid-template-columns: repeat(4, minmax(62px, 1fr)); overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
         .fd-util-grid::-webkit-scrollbar { display: none; }
     }
+    .fd-proceso { margin: 0.6rem 0 0; font-size: 0.78rem; line-height: 1.5; color: #3730a3; }
 </style>

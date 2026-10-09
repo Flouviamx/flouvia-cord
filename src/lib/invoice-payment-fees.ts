@@ -1,6 +1,7 @@
 import { sql, withOrgTx } from './db';
 import { stripe } from './billing';
 import type { FeeResult } from './fees';
+import { metodoAnalitica } from './cobros/metodos';
 
 /** Save the accepted split with the payment, never reconstruct it from today's rates. */
 export function setInvoiceFeeMetadata(form: URLSearchParams, fee: Pick<FeeResult, 'feeBaseCents' | 'feeIvaCents' | 'applicationFeeCents'>) {
@@ -52,7 +53,7 @@ export function invoiceCommissionValues(intent: any, charge: any) {
     return { currency, amount: charge.amount, total, base: base!, tax: tax!, processor, net,
         chargeId: String(charge.id), balanceId: idOf(charge.balance_transaction) || null,
         applicationFeeId: idOf(charge.application_fee) || null,
-        method: charge.payment_method_details?.type === 'customer_balance' ? 'spei' : 'tarjeta',
+        method: metodoAnalitica(charge.payment_method_details?.type),
         status: review ? 'needs_review' : bt ? 'settled' : 'pending',
         createdAt: new Date(charge.created * 1000).toISOString() };
 }

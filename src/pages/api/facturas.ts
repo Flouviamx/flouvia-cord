@@ -15,6 +15,7 @@ import { requireEntitlement } from '../../lib/org-entitlements';
 import { currentUserId } from '../../lib/context';
 import { invoicingFeatureFor } from '../../lib/fiscal/gate';
 import { isISODate } from '../../lib/rango';
+import { leerDescuentoBody } from '../../lib/descuentos';
 
 export const GET: APIRoute = async ({ url }) => {
     const denied = await requirePerm('cobranza'); if (denied) return denied;
@@ -54,6 +55,9 @@ export const POST: APIRoute = async ({ request }) => {
     }
     const servicio = parseServiceDates(body);
     if (!servicio.ok) return json({ error: servicio.error }, 400);
+    // `descuento: {tipo, valor}` o `cupon: 'CODIGO'`; el importe lo calcula el motor.
+    const descuento = leerDescuentoBody(body);
+    if ('error' in descuento) return json({ error: descuento.error, code: 'invalid_discount' }, 400);
 
     const result = await createInvoiceDraft(orgId, {
         clienteId: String(body.cliente_id ?? '').trim(),
@@ -66,6 +70,7 @@ export const POST: APIRoute = async ({ request }) => {
         notes: String(body.notas ?? '').trim().slice(0, 1000) || null,
         bufferPct: Number(body.fx_buffer_pct) || 0,
         ivaIncluido: body.iva_incluido === true,
+        descuento: descuento.presente ? descuento.solicitud : null,
         createdBy: currentUserId(),
         ...parseCfdiOverrides(body),
     });
@@ -73,6 +78,7 @@ export const POST: APIRoute = async ({ request }) => {
     // impuesto: no se inventa la tasa, se dice que no se pudo confirmar); el
     // resto son datos mal capturados.
     if (!result.ok) {
+        if (result.code) return json({ error: result.error, code: result.code }, result.status || 400);
         const serviceDown = /tipo de cambio|catálogo de impuestos/i.test(result.error || '');
         return json({ error: result.error }, serviceDown ? 503 : 400);
     }

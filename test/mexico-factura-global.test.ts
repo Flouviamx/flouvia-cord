@@ -8,6 +8,7 @@ import {
     MESES, PERIODICIDADES, esNombrePublicoGeneral, globalPeriodError, globalPeriodRange, isMotivoCancelacion, motivoTexto,
 } from '../src/lib/fiscal/cfdi-catalogos';
 import { conceptosDeVenta, formaDeMayorImporte } from '../src/lib/fiscal/factura-global';
+import { calculateDocumentTotals } from '../packages/elements/src/engine';
 
 describe('periodo de la factura global (Anexo 20)', () => {
     const base = { periodicidad: '04', meses: '09', anio: 2026, regimen: '601', anioEmision: 2026 };
@@ -88,7 +89,41 @@ describe('conceptos de una venta', () => {
     it('una tasa que el CFDI global no admite deja la venta fuera', () => {
         expect(conceptosDeVenta('COT-3', [{ cantidad: 1, precio_unitario: 100, precio_negociado: null, tax_rate: 0.05 }],
             { ivaIncluido: false, fallbackRate: 0.16 })).toBeNull();
-        expect(conceptosDeVenta('COT-4', [], { ivaIncluido: false, fallbackRate: 0.16 })).toBeNull();
+        // Sin conceptos aprobados no hay importe que documentar.
+        expect(conceptosDeVenta('COT-4', [], { ivaIncluido: false, fallbackRate: 0.16 })).toEqual([]);
+    });
+
+    it('con descuento de documento cada concepto lleva su Descuento y la suma cuadra con lo cobrado', () => {
+        const items = [
+            { cantidad: 3, precio_unitario: 333.33, precio_negociado: null, tax_rate: 0.16 },
+            { cantidad: 1, precio_unitario: 250, precio_negociado: null, tax_rate: 0.16 },
+            { cantidad: 2, precio_unitario: 99.99, precio_negociado: null, tax_rate: 0 },
+        ];
+        const descuento = { tipo: 'porcentaje' as const, valor: 12.5 };
+        // Lo que se cobró: el mismo motor con el que la cotización calculó su total.
+        const cobrado = calculateDocumentTotals(items.map((it) => ({ descripcion: 'x', ...it })), { roundLines: 2, descuento });
+        const conceptos = conceptosDeVenta('COT-9', items, { ivaIncluido: false, fallbackRate: 0.16, descuento })!;
+        expect(conceptos.map((c) => c.taxRate)).toEqual([0, 0.16]);
+        const suma = (k: 'subtotal' | 'taxAmount' | 'total' | 'discount') => Math.round(conceptos.reduce((acc, c) => acc + (c[k] || 0), 0) * 100) / 100;
+        expect(suma('discount')).toBe(cobrado.descuentoTotal);
+        expect(suma('subtotal')).toBe(cobrado.subtotal);
+        expect(suma('taxAmount')).toBe(cobrado.impuestos);
+        expect(suma('total')).toBe(cobrado.total);
+        for (const c of conceptos) expect(c.discount).toBeGreaterThan(0);
+    });
+
+    it('un monto fijo con precios con IVA incluido también cuadra', () => {
+        const items = [{ cantidad: 1, precio_unitario: 1160, precio_negociado: null, tax_rate: 0.16 }];
+        const descuento = { tipo: 'monto' as const, valor: 116 };
+        const cobrado = calculateDocumentTotals(items.map((it) => ({ descripcion: 'x', ...it })), { ivaIncluido: true, roundLines: 2, descuento });
+        const [c] = conceptosDeVenta('COT-10', items, { ivaIncluido: true, fallbackRate: 0.16, descuento })!;
+        expect([c.subtotal, c.discount, c.taxAmount, c.total]).toEqual([900, 100, 144, 1044]);
+        expect(c.total).toBe(cobrado.total);
+    });
+
+    it('una venta con descuento del 100 % no tiene concepto que timbrar', () => {
+        expect(conceptosDeVenta('COT-11', [{ cantidad: 1, precio_unitario: 100, precio_negociado: null, tax_rate: 0.16 }],
+            { ivaIncluido: false, fallbackRate: 0.16, descuento: { tipo: 'porcentaje', valor: 100 } })).toEqual([]);
     });
 
     it('la forma de pago es la de la venta de mayor importe con forma conocida', () => {
@@ -149,6 +184,16 @@ describe('CFDI global hacia Facturapi', () => {
         expect(body.use).toBe('S01');
         expect(body.items[0].product).toMatchObject({ product_key: '01010101', unit_key: 'ACT', sku: 'COT-0007' });
         expect(r.rawProviderData).toMatchObject({ global: { periodicidad: '04', meses: '09', anio: 2026 } });
+    });
+
+    it('una venta con descuento viaja con su Descuento y el ValorUnitario bruto', async () => {
+        const r = await (await provider()).issueDocument(request({
+            global: { periodicidad: '04', meses: '09', anio: 2026 },
+            lines: [line({ unitPrice: 900, subtotal: 900, taxAmount: 144, total: 1044, discount: 100, productKey: '01010101', unitKey: 'ACT', identification: 'COT-10' })],
+            totals: { subtotal: 900, taxes: 144, total: 1044, currency: 'MXN', discountTotal: 100 },
+        }));
+        expect(r.success).toBe(true);
+        expect(sent().items[0]).toMatchObject({ quantity: 1, discount: 100, product: { price: 1000, sku: 'COT-10', product_key: '01010101', unit_key: 'ACT' } });
     });
 
     it('no timbra la global sin código postal del emisor ni con un periodo inválido', async () => {

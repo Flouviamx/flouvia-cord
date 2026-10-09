@@ -61,6 +61,8 @@ import type {
 import { effectiveLineSatKeys, lineSatKeyError, lineSatKeysFrom } from './sat-claves';
 import { isFormaPago, isMotivoCancelacion, isUsoCfdi, motivoTexto, type MotivoCancelacion } from './cfdi-catalogos';
 import { exemptionReasonFor } from './exemption';
+import { descuentoDesdeJson, descuentoParaMotor, type DescuentoDef, type DescuentoSolicitud } from '../descuentos';
+import { DescuentoError, liberarCupon, redimirCupon, resolverDescuento } from '../cupones';
 
 export interface DraftLineInput {
   descripcion: string;
@@ -109,6 +111,12 @@ export interface CreateDraftInput {
   /** Los precios capturados ya incluyen impuesto. */
   ivaIncluido?: boolean;
   /**
+   * Descuento de documento pedido: manual (`{tipo, valor}`) o cupón (código).
+   * El importe lo calcula el motor; nunca viene del navegador. En una edición,
+   * `undefined` conserva el que el borrador ya tenía.
+   */
+  descuento?: DescuentoSolicitud | null;
+  /**
    * México: uso del CFDI y forma de pago que el negocio fija para ESTE
    * documento. `null` = automáticos (uso de la ficha del cliente; forma según
    * los cobros). `undefined` al editar = no se tocan.
@@ -119,6 +127,11 @@ export interface CreateDraftInput {
   sustituyeA?: string | null;
   /** Cotización de origen que hereda el sustituto de su original. */
   cotizacionId?: string | null;
+  /**
+   * Solo servidor: descuento YA aplicado a otro documento que este hereda tal
+   * cual (el sustituto de un CFDI). No se revalida el cupón: ya se redimió.
+   */
+  descuentoHeredado?: { def: DescuentoDef; total: number; currency: string } | null;
 }
 
 /**
@@ -214,8 +227,43 @@ export function parseCfdiOverrides(body: Record<string, unknown>): { cfdiUso?: s
 export interface DraftResult {
   ok: boolean;
   error?: string;
+  /** HTTP sugerido y código estable cuando el motivo no es un dato mal capturado (un cupón agotado, por ejemplo). */
+  status?: number;
+  code?: string;
   documentId?: string;
   publicToken?: string;
+}
+
+/**
+ * La definición de descuento de un borrador que se guarda. Un cupón que el
+ * borrador YA tenía se conserva tal cual (se validó al aplicarlo; el tope de
+ * usos lo vuelve a revisar la emisión): así reabrir y guardar no cambia el
+ * importe. Con un monto expresado sobre precios con impuesto, el borrador ya
+ * guardó sus precios sin impuesto, y ese monto pasa a su equivalente antes de
+ * impuestos (`descuento_total`) para que el documento no cambie.
+ */
+async function descuentoDelBorrador(
+  orgId: string,
+  solicitud: DescuentoSolicitud | null | undefined,
+  previo: { def: DescuentoDef | null; total: number; currency: string } | null,
+  ctx: { moneda: string; clienteId: string; documentoId?: string; ivaIncluido: boolean },
+): Promise<DescuentoDef | null> {
+  const enOtraDivisa = (def: DescuentoDef | null) => def?.tipo === 'monto' && previo && normalizeCurrency(previo.currency) !== ctx.moneda;
+  const conservar = (def: DescuentoDef): DescuentoDef => (def.tipo === 'monto' && def.iva_incluido && !ctx.ivaIncluido
+    ? { tipo: 'monto', valor: previo?.total || 0, ...(def.codigo ? { codigo: def.codigo } : {}), ...(def.cupon_id ? { cupon_id: def.cupon_id } : {}) }
+    : def);
+  if (solicitud === undefined) {
+    const def = previo?.def ?? null;
+    if (enOtraDivisa(def)) throw new DescuentoError('El descuento está en otra divisa. Vuelve a aplicarlo.', 'discount_currency');
+    return def ? conservar(def) : null;
+  }
+  if (!solicitud) return null;
+  if (solicitud.cupon && previo?.def?.cupon_id && previo.def.codigo === solicitud.cupon && !enOtraDivisa(previo.def)) {
+    return conservar(previo.def);
+  }
+  return resolverDescuento(orgId, solicitud, {
+    moneda: ctx.moneda, clienteId: ctx.clienteId, documentoId: ctx.documentoId, ivaIncluido: ctx.ivaIncluido,
+  });
 }
 
 /**
@@ -257,9 +305,10 @@ function buildLines(
   ivaIncluido: boolean,
   retenciones: { nombre: string; tasa: number; tipo?: string }[] = [],
   decimals = 2,
+  descuento: DescuentoDef | null = null,
 ): {
   lines: FiscalLineItem[]; subtotal: number; taxes: number; total: number; byRate: TaxBreakdown[];
-  retenciones: FiscalRetencion[]; retencionTotal: number;
+  retenciones: FiscalRetencion[]; retencionTotal: number; descuentoTotal: number;
 } {
   // calculateDocumentTotals, no calculateInvoiceTotals: el editor
   // (facturas/nueva.astro) resta las retenciones del catálogo al mostrar el
@@ -280,7 +329,9 @@ function buildLines(
     // Cada concepto redondeado a los decimales de la divisa y los totales como
     // la suma de esos importes: lo que el CFDI valida y lo que Verifactu
     // desglosa (ver RoundingOptions en engine.ts).
-    { ivaIncluido, retenciones, roundLines: decimals },
+    // El descuento de documento se reparte por línea antes de impuestos: cada
+    // concepto lleva su parte (`discount`) y `subtotal` queda como la base neta.
+    { ivaIncluido, retenciones, roundLines: decimals, descuento: descuentoParaMotor(descuento) },
   );
   const round = (value: number) => roundTo(value, decimals);
 
@@ -295,6 +346,7 @@ function buildLines(
     subtotal: round(l.base),
     taxAmount: round(l.impuesto),
     total: round(l.total),
+    ...(l.descuento > 0 ? { discount: round(l.descuento) } : {}),
     // `totals.lineas` conserva el orden de `items`. Ya validada por el llamador.
     ...(items[i]?.exemptionReason ? { exemptionReason: items[i].exemptionReason as string } : {}),
   }));
@@ -307,6 +359,7 @@ function buildLines(
     retenciones: totals.retenciones.map((r) => ({ ...r, base: round(r.base), monto: round(r.monto) })),
     retencionTotal: round(totals.retencionTotal),
     byRate: totals.porTasa,
+    descuentoTotal: round(totals.descuentoTotal),
   };
 }
 
@@ -426,9 +479,19 @@ export async function createInvoiceDraft(orgId: string, input: CreateDraftInput)
   });
   const ledgerCurrency = normalizeCurrency((head.org_moneda as string) || profile.currency);
   const currency = normalizeCurrency(input.currency || ledgerCurrency, ledgerCurrency);
+  let descuento: DescuentoDef | null;
+  try {
+    const heredado = input.descuento === undefined ? input.descuentoHeredado ?? null : null;
+    descuento = await descuentoDelBorrador(orgId, heredado ? undefined : (input.descuento ?? null), heredado, {
+      moneda: currency, clienteId: String(head.cliente_id), ivaIncluido: input.ivaIncluido === true,
+    });
+  } catch (error) {
+    if (error instanceof DescuentoError) return { ok: false, error: error.message, status: error.status, code: error.code };
+    throw error;
+  }
   let built;
   try {
-    built = buildLines(itemsConTasaValidada, catalogo.defaultRate, input.ivaIncluido === true, catalogo.retenciones, currencyDecimals(currency));
+    built = buildLines(itemsConTasaValidada, catalogo.defaultRate, input.ivaIncluido === true, catalogo.retenciones, currencyDecimals(currency), descuento);
   } catch (error: unknown) {
     // RangeError del motor = tasa fuera de [0,1]. Se traduce a un error de
     // captura en vez de dejar que reviente como 500 sin explicación.
@@ -456,7 +519,7 @@ export async function createInvoiceDraft(orgId: string, input: CreateDraftInput)
       lifecycle, due_date, amount_paid, amount_remaining, public_token, notes, created_by,
       issuer_snapshot, recipient_snapshot, line_items_snapshot,
       schema_version, provider_data, updated_at, service_date, service_date_end,
-      cfdi_uso, cfdi_forma_pago, sustituye_a
+      descuento_total, descuento, cfdi_uso, cfdi_forma_pago, sustituye_a
     ) values (
       ${orgId}, ${input.sustituyeA ? (input.cotizacionId || null) : null}, ${String(head.cliente_id)}, ${country}, ${docType}, 'pending',
       ${docType === 'cfdi_40' ? 'facturapi' : 'cord'},
@@ -466,6 +529,7 @@ export async function createInvoiceDraft(orgId: string, input: CreateDraftInput)
       ${input.notes || null}, ${input.createdBy || null},
       ${JSON.stringify(issuer)}, ${JSON.stringify(recipient)}, ${JSON.stringify(lines)},
       'cord.invoice.v1', '{}'::jsonb, now(), ${input.serviceDate || null}::date, ${input.serviceDateEnd || null}::date,
+      ${built.descuentoTotal}, ${descuento ? JSON.stringify(descuento) : null}::jsonb,
       ${overrides.uso ?? null}, ${overrides.forma ?? null}, ${input.sustituyeA || null}
     )
     returning id, public_token`);
@@ -499,7 +563,7 @@ export async function updateInvoiceDraft(
 
   const [docRows] = await withOrgTx(orgId, sql`
     select id, lifecycle, invoice_number, public_token, amount_paid, credit_note_of, document_type, country_code, provider_data,
-           informacion_global
+           descuento, descuento_total, currency, informacion_global
       from documentos_fiscales
      where id = ${documentId} and org_id = ${orgId}
      limit 1`);
@@ -557,9 +621,18 @@ export async function updateInvoiceDraft(
   });
   const ledgerCurrency = normalizeCurrency((head.org_moneda as string) || profile.currency);
   const currency = normalizeCurrency(input.currency || ledgerCurrency, ledgerCurrency);
+  let descuento: DescuentoDef | null;
+  try {
+    descuento = await descuentoDelBorrador(orgId, input.descuento, {
+      def: descuentoDesdeJson(doc.descuento), total: Number(doc.descuento_total) || 0, currency: String(doc.currency || currency),
+    }, { moneda: currency, clienteId: String(head.cliente_id), documentoId: documentId, ivaIncluido: input.ivaIncluido === true });
+  } catch (error) {
+    if (error instanceof DescuentoError) return { ok: false, error: error.message, status: error.status, code: error.code };
+    throw error;
+  }
   let built;
   try {
-    built = buildLines(itemsConTasaValidada, catalogo.defaultRate, input.ivaIncluido === true, catalogo.retenciones, currencyDecimals(currency));
+    built = buildLines(itemsConTasaValidada, catalogo.defaultRate, input.ivaIncluido === true, catalogo.retenciones, currencyDecimals(currency), descuento);
   } catch (error: unknown) {
     if (error instanceof RangeError) return { ok: false, error: 'Alguna línea tiene una tasa de impuesto inválida.' };
     throw error;
@@ -589,6 +662,8 @@ export async function updateInvoiceDraft(
       total = ${total},
       retencion_total = ${retencionTotal},
       retenciones_snapshot = ${JSON.stringify(retenciones)}::jsonb,
+      descuento_total = ${built.descuentoTotal},
+      descuento = ${descuento ? JSON.stringify(descuento) : null}::jsonb,
       amount_remaining = ${total} - coalesce(amount_paid, 0),
       due_date = ${dueDate}::date,
       notes = ${input.notes || null},
@@ -636,8 +711,10 @@ async function finalizeReservedInvoice(orgId: string, documentId: string): Promi
            d.issuer_snapshot, d.recipient_snapshot, d.line_items_snapshot,
            d.fiscal_id, d.provider, d.provider_data, d.credit_note_of,
            d.informacion_global, d.sustituye_a, d.cfdi_uso, d.cfdi_forma_pago,
+           d.cliente_id as doc_cliente_id, d.descuento, d.descuento_total,
            original.fiscal_id as original_fiscal_id, original.status as original_status,
            sust.fiscal_id as sustituye_fiscal_id, sust.invoice_number as sustituye_numero,
+           sust.descuento as sustituye_descuento,
            cl.uso_cfdi as cliente_uso
       from documentos_fiscales d
       join orgs o on o.id = d.org_id
@@ -721,6 +798,33 @@ async function finalizeReservedInvoice(orgId: string, documentId: string): Promi
   })) {
     return { emitted: false, status: 'error', error: serieCompartidaMensaje(cleanPrefix(fiscalMetadata.invoice_prefix, profile.invoicePrefix)) };
   }
+  // El cupón se redime ANTES de reservar folio: si sus usos se agotaron entre
+  // el borrador y la emisión, la factura no se emite y no se quema un número.
+  // La redención es idempotente por documento (un reintento no cuenta dos
+  // veces) y la factura de una cotización reusa la de la cotización.
+  const descuentoDoc = descuentoDesdeJson(head.descuento);
+  // El sustituto de un CFDI con el MISMO cupón no lo redime otra vez: la
+  // redención del original pasa a él en la transacción que lo marca emitido.
+  const cuponHeredado = !!sustituyeA && !!descuentoDoc?.cupon_id
+    && descuentoDesdeJson(head.sustituye_descuento)?.cupon_id === descuentoDoc.cupon_id;
+  if (descuentoDoc?.cupon_id && !head.credit_note_of && !cuponHeredado) {
+    const redencion = await redimirCupon(orgId, descuentoDoc, {
+      clienteId: head.doc_cliente_id ? String(head.doc_cliente_id) : null,
+      cotizacionId: head.cotizacion_id ? String(head.cotizacion_id) : null,
+      documentoId: documentId,
+      monto: Number(head.descuento_total) || 0,
+      moneda: String(head.currency || 'MXN'),
+    });
+    if (redencion !== 'ok') {
+      const codigo = descuentoDoc.codigo || '';
+      const motivo = redencion === 'agotado_cliente'
+        ? `Este cliente ya usó el cupón ${codigo} todas las veces que permite.`
+        : redencion === 'agotado' ? `El cupón ${codigo} ya no tiene usos disponibles.`
+        : `El cupón ${codigo} ya no existe.`;
+      return { emitted: false, status: 'error', httpStatus: 409, error: `${motivo} Quítalo del borrador para emitir la factura.` };
+    }
+  }
+
   const idempotencyKey = String(head.idempotency_key || `invoice:${documentId}:v1`);
   const issuedAt = new Date().toISOString();
   // Serie + ejercicio: mismo criterio que emit.ts — la serie es el propio
@@ -816,6 +920,7 @@ async function finalizeReservedInvoice(orgId: string, documentId: string): Promi
       ...(Number(head.retencion_total) > 0
         ? { retenciones: (head.retenciones_snapshot as FiscalRetencion[]) || [], retencionTotal: Number(head.retencion_total) }
         : {}),
+      ...(Number(head.descuento_total) > 0 ? { discountTotal: Number(head.descuento_total) } : {}),
     },
     issuedAt,
     providerApiKey: decryptSecret(head.facturapi_live_key_enc as string)
@@ -902,6 +1007,12 @@ async function finalizeReservedInvoice(orgId: string, documentId: string): Promi
     ...(substituted ? [
       sql`update documento_pagos set documento_id = ${documentId}
            where documento_id = ${sustituyeA} and org_id = ${orgId}`,
+      // El reparto de reembolsos (cobros agrupados) sigue a sus pagos: sin
+      // moverlo, el sustituto contaría el cobro completo y no lo devuelto.
+      sql`update documento_reembolso_asignaciones set documento_id = ${documentId}
+           where documento_id = ${sustituyeA} and org_id = ${orgId}`,
+      ...(cuponHeredado ? [sql`update cupon_redenciones set documento_id = ${documentId}
+           where documento_id = ${sustituyeA} and org_id = ${orgId} and cupon_id = ${descuentoDoc!.cupon_id}`] : []),
       sql`update documentos_fiscales set sustituida_por = ${documentId}, updated_at = now()
            where id = ${sustituyeA} and org_id = ${orgId} and (sustituida_por is null or sustituida_por = ${documentId})`,
       invoiceBalanceQuery(orgId, sustituyeA as string),
@@ -1031,7 +1142,7 @@ export async function voidInvoice(
     select d.id, d.lifecycle, d.status, d.amount_paid, d.country_code, d.credit_note_of,
            exists (select 1 from documentos_fiscales n where n.credit_note_of = d.id and n.org_id = d.org_id and n.lifecycle <> 'void') as has_credit_notes,
            d.provider_document_id, d.provider_data, d.document_type, d.provider,
-           d.stripe_payment_intent_id, d.mp_preference_id,
+           d.stripe_payment_intent_id, d.mp_preference_id, d.descuento,
            d.informacion_global, d.sustituida_por, d.sustituye_a,
            rep.fiscal_id as sustituta_fiscal_id, rep.status as sustituta_status,
            o.facturapi_live_key, o.facturapi_live_key_enc, o.sandbox_of, o.stripe_account_id
@@ -1078,6 +1189,7 @@ export async function voidInvoice(
       ...(doc.credit_note_of ? [invoiceBalanceQuery(orgId, String(doc.credit_note_of))] : []),
       ...releaseGlobal,
     );
+    if (descuentoDesdeJson(doc.descuento)?.cupon_id) await liberarCuponDe(orgId, documentId);
     return { ok: true };
   }
 
@@ -1188,6 +1300,14 @@ export async function voidInvoice(
     ...(doc.credit_note_of ? [invoiceBalanceQuery(orgId, String(doc.credit_note_of))] : []),
     ...releaseGlobal,
     ...(originalVivo ? [
+      // El cupón que el sustituto heredó vuelve a su original vivo; uno propio
+      // del sustituto se libera después, como en cualquier anulación.
+      sql`update cupon_redenciones r set documento_id = ${originalVivo}
+           where r.documento_id = ${documentId} and r.org_id = ${orgId}
+             and exists (select 1 from documentos_fiscales o where o.id = ${originalVivo} and o.org_id = ${orgId}
+                          and o.sustituida_por = ${documentId} and o.lifecycle <> 'void'
+                          and o.descuento->>'cupon_id' = r.cupon_id::text)
+             and exists (select 1 from documentos_fiscales s where s.id = ${documentId} and s.org_id = ${orgId} and s.lifecycle = 'void')`,
       sql`update documentos_fiscales set sustituida_por = null, updated_at = now()
            where id = ${originalVivo} and org_id = ${orgId} and sustituida_por = ${documentId} and lifecycle <> 'void'
              and exists (select 1 from documentos_fiscales r where r.id = ${documentId} and r.org_id = ${orgId} and r.lifecycle = 'void')`,
@@ -1227,7 +1347,18 @@ export async function voidInvoice(
     };
   }
   await logInvoiceEvent(orgId, documentId, 'void', voidReason ? `Anulada: ${voidReason}` : 'Anulada');
+  if (descuentoDesdeJson(doc.descuento)?.cupon_id) await liberarCuponDe(orgId, documentId);
   return { ok: true, cancellationStatus: 'accepted' };
+}
+
+/**
+ * Una factura anulada devuelve el uso de su cupón. La anulación ya ocurrió y
+ * no se deshace por esto: si liberar falla, el contador queda un uso arriba
+ * (nunca abajo) y se deja rastro.
+ */
+async function liberarCuponDe(orgId: string, documentId: string) {
+  try { await liberarCupon(orgId, { documentoId: documentId }); }
+  catch (error) { log.error('no se liberó el cupón de una factura anulada', { route: 'fiscal/invoices', err: error, orgId, documentId }); }
 }
 
 /**
@@ -1246,7 +1377,7 @@ export async function releaseInvoicePaymentAttempts(orgId: string, doc: any): Pr
       const intent = await stripe(`/v1/payment_intents/${encodeURIComponent(pi)}`, undefined, 'GET', { stripeAccount: account });
       const status = String(intent?.status || '');
       if (['processing', 'requires_capture', 'succeeded'].includes(status)) {
-        return { ok: false, error: 'Hay un pago con tarjeta en proceso para esta factura. Espera a que se confirme y emite una nota de crédito en lugar de anularla.' };
+        return { ok: false, error: 'Hay un pago en proceso para esta factura. Espera a que se confirme y emite una nota de crédito en lugar de anularla.' };
       }
       if (status !== 'canceled') {
         await stripe(`/v1/payment_intents/${encodeURIComponent(pi)}/cancel`, undefined, 'POST', {
@@ -1259,6 +1390,39 @@ export async function releaseInvoicePaymentAttempts(orgId: string, doc: any): Pr
         return { ok: false, error: 'No pudimos cerrar el cobro en línea de esta factura. Intenta de nuevo en un momento.' };
       }
     }
+  }
+  // Cobros agrupados (portal, cobro automático) que incluyen esta factura: un
+  // débito en proceso bloquea la anulación; uno que nadie confirmó se cancela
+  // (es de varias facturas: el cliente vuelve a elegir desde su portal).
+  const [agrupados] = await withOrgTx(orgId, sql`
+    select p.id, p.estado, p.stripe_payment_intent_id from pagos_agrupados p
+      join pago_agrupado_documentos a on a.pago_id = p.id and a.org_id = p.org_id
+     where p.org_id = ${orgId} and a.documento_id = ${doc.id} and p.estado in ('creado', 'procesando')`);
+  const enProceso = { ok: false as const, error: 'Hay un pago en proceso para esta factura. Espera a que se confirme y emite una nota de crédito en lugar de anularla.' };
+  for (const row of agrupados) {
+    if (row.estado !== 'creado' && row.estado !== 'procesando') continue;
+    if (row.estado === 'procesando' || !account) return enProceso;
+    const grupoPi = row.stripe_payment_intent_id ? String(row.stripe_payment_intent_id) : '';
+    if (grupoPi) {
+      try {
+        const { stripe } = await import('../billing');
+        const intent = await stripe(`/v1/payment_intents/${encodeURIComponent(grupoPi)}`, undefined, 'GET', { stripeAccount: account });
+        const status = String(intent?.status || '');
+        if (['processing', 'requires_capture', 'succeeded'].includes(status)) return enProceso;
+        if (status !== 'canceled') {
+          await stripe(`/v1/payment_intents/${encodeURIComponent(grupoPi)}/cancel`, undefined, 'POST', {
+            stripeAccount: account, idempotencyKey: `cord-grupo-cancel-${row.id}`,
+          });
+        }
+      } catch (error: any) {
+        if (error?.code !== 'resource_missing') {
+          return { ok: false, error: 'No pudimos cerrar el cobro en línea de esta factura. Intenta de nuevo en un momento.' };
+        }
+      }
+    }
+    await withOrgTx(orgId, sql`
+      update pagos_agrupados set estado = 'cancelado', updated_at = now()
+       where id = ${row.id} and org_id = ${orgId} and estado = 'creado'`);
   }
   if (doc.mp_preference_id) {
     const { expireMpPreference } = await import('../mercadopago');
@@ -1314,6 +1478,7 @@ export async function createCreditNote(
   try { credit = creditNoteBreakdown(doc, monto); }
   catch (error) { return { ok: false, error: error instanceof Error ? error.message : 'No se pudo calcular la nota de crédito.' }; }
   const { lines, subtotal, taxes, retenciones, retencionTotal } = credit;
+  const descuentoNota = money(lines.reduce((sum, l) => sum + (Number(l.discount) || 0), 0));
   const country = String(doc.country_code || 'MX').toUpperCase();
 
   const regulatory = isFiscalDocument(String(doc.document_type || documentTypeFor(country)), country, String(doc.provider));
@@ -1326,7 +1491,7 @@ export async function createCreditNote(
       lifecycle, due_date, amount_paid, amount_remaining, public_token,
       credit_note_of, notes, created_by, retenciones_snapshot, retencion_total,
       issuer_snapshot, recipient_snapshot, line_items_snapshot,
-      schema_version, provider_data, updated_at
+      schema_version, provider_data, updated_at, descuento_total
     ) select
       ${orgId}, ${doc.cotizacion_id || null}, ${doc.cliente_id || null}, ${country},
       ${creditType}, 'pending',
@@ -1337,7 +1502,7 @@ export async function createCreditNote(
       ${documentId}, ${opts.motivo || null}, ${opts.createdBy || null}, ${JSON.stringify(retenciones)}::jsonb, ${retencionTotal},
       ${JSON.stringify(doc.issuer_snapshot)}, ${JSON.stringify(doc.recipient_snapshot)},
       ${JSON.stringify(lines)},
-      'cord.invoice.v1', '{}'::jsonb, now()
+      'cord.invoice.v1', '{}'::jsonb, now(), ${descuentoNota}
     from documentos_fiscales original
     where original.id = ${documentId} and original.org_id = ${orgId}
       and original.status = 'issued' and original.lifecycle <> 'void'

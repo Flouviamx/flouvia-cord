@@ -55,6 +55,7 @@ const BOOT = {
             en_global: t(L, 'fglob.motivo.en_global'), facturada: t(L, 'fglob.motivo.facturada'),
             divisa: t(L, 'fglob.motivo.divisa'), retenciones: t(L, 'fglob.motivo.retenciones'),
             extranjero: t(L, 'fglob.motivo.extranjero'), tasa: t(L, 'fglob.motivo.tasa'),
+            sin_importe: t(L, 'fglob.motivo.sin_importe'),
         },
         emitir: t(L, 'fglob.emitir'),
         emitiendo: t(L, 'fglob.emitiendo'),
@@ -150,6 +151,7 @@ const BOOT = {
 
                 <aside class="fg-side">
                     <div class="fg-sum-line"><span>{t(L, 'fglob.ventas_sel')}</span><b class="editorial" id="fgCount">0</b></div>
+                    <div class="fg-sum-line" id="fgDescLine" hidden><span>{t(L, 'fglob.descuento')}</span><b class="editorial" id="fgDescuento">—</b></div>
                     <div class="fg-sum-line"><span>{t(L, 'fglob.subtotal')}</span><b class="editorial" id="fgSubtotal">—</b></div>
                     <div class="fg-sum-line"><span>{t(L, 'fglob.iva')}</span><b class="editorial" id="fgIva">—</b></div>
                     <div class="fg-sum-line fg-total"><span>{t(L, 'fglob.total')}</span><b class="editorial" id="fgTotal">—</b></div>
@@ -218,6 +220,10 @@ const BOOT = {
             const sel = ventas.filter((v) => v.sel);
             const sum = (k: string) => Math.round(sel.reduce((s, v) => s + Number(v[k] || 0), 0) * 100) / 100;
             $('fgCount').textContent = String(sel.length);
+            // Descuento de documento de las ventas: el subtotal ya es la base neta.
+            const desc = sum('descuento');
+            $('fgDescLine').hidden = !(desc > 0);
+            $('fgDescuento').textContent = desc > 0 ? `−${fmt(desc)}` : '—';
             $('fgSubtotal').textContent = sel.length ? fmt(sum('subtotal')) : '—';
             $('fgIva').textContent = sel.length ? fmt(sum('impuestos')) : '—';
             $('fgTotal').textContent = sel.length ? fmt(sum('total')) : '—';
@@ -353,6 +359,7 @@ const BOOT = {
     .fg-excl ul { margin: 0.6rem 0 0; padding-left: 1.1rem; line-height: 1.7; }
     .fg-side { position: sticky; top: 76px; display: flex; flex-direction: column; gap: 0.7rem; }
     .fg-sum-line { display: flex; justify-content: space-between; font-size: 0.86rem; color: var(--color-text-muted); }
+    .fg-sum-line[hidden] { display: none; }
     .fg-sum-line b { color: var(--color-text); font-weight: 600; }
     .fg-total { padding-top: 0.7rem; border-top: 1px solid var(--color-border); font-size: 0.95rem; }
     .fg-total b { font-size: 1.15rem; }

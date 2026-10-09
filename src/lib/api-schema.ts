@@ -12,6 +12,13 @@ const money = z.number().describe('Importe en la divisa indicada por `moneda`.')
 const currency = z.string().nullable().describe('Divisa ISO 4217.');
 const date = z.string().nullable().describe('Fecha ISO 8601.');
 const open = <T extends z.ZodRawShape>(shape: T) => z.looseObject(shape);
+const AppliedDiscount = open({
+    tipo: z.enum(['porcentaje', 'monto']),
+    valor: z.number().describe('Puntos porcentuales (10 = 10 %) o monto en la divisa del documento, según tipo.'),
+    cupon: z.string().nullable().describe('Código del cupón del que salió; null si fue manual.'),
+    monto: money.describe('Descuento calculado, antes de impuestos, en la divisa indicada por moneda.'),
+    moneda: currency,
+}).nullable().describe('Descuento de documento, aplicado antes de impuestos y repartido entre las líneas; null si no hay. subtotal ya es neto.');
 
 // ── Objetos ─────────────────────────────────────────────────────────────────
 
@@ -27,6 +34,7 @@ export const QuoteDetail = Quote.extend({
     notas: z.string().nullable(),
     aprobacion: open({ estado: z.string().describe('pendiente, aprobada o rechazada.'), motivo: z.string().nullable() }).nullable(),
     items: z.array(open({ descripcion: z.string(), cantidad: z.number(), unidad: z.string().nullable(), precio_lista: money, precio_negociado: money.nullable() })),
+    descuento: AppliedDiscount,
     eventos: z.array(open({ tipo: z.string().describe('Qué pasó: created, sent, viewed, approved, comment…'), detalle: z.string().nullable(), cuando: z.string() })),
 });
 
@@ -65,7 +73,14 @@ export const InvoiceDetail = Invoice.extend({
     subtotal: money, impuestos: money, moneda_contable: currency, tipo_cambio: z.number().nullable(), total_contable: money.nullable(),
     notas: z.string().nullable(), nota_credito_de: z.string().nullable(),
     emisor: z.unknown(), receptor: z.unknown(),
-    conceptos: z.array(open({ descripcion: z.string(), cantidad: z.number(), precio_unitario: money, subtotal: money, impuesto: money, total: money, clave_sat: z.string().nullable(), clave_unidad_sat: z.string().nullable() })),
+    descuento: AppliedDiscount,
+    conceptos: z.array(open({
+        descripcion: z.string(), cantidad: z.number(),
+        precio_unitario: money.describe('Precio unitario NETO (después del descuento de documento), sin impuesto.'),
+        subtotal: money.describe('Base neta del concepto, después del descuento de documento.'),
+        descuento: money.describe('Parte del descuento de documento que le tocó a este concepto, antes de impuestos; 0 si no hay.'),
+        impuesto: money, total: money, clave_sat: z.string().nullable(), clave_unidad_sat: z.string().nullable(),
+    })),
     pagos: z.array(open({ monto: money, moneda: currency, metodo: z.string().nullable(), referencia: z.string().nullable(), cuando: z.string() })),
 });
 
@@ -114,6 +129,12 @@ const FiscalReceptorInput = z.object({
     regimen_fiscal: z.string().optional(), uso_cfdi: z.string().optional(), cp_fiscal: z.string().optional(),
 });
 
+const DiscountInput = z.object({
+    tipo: z.enum(['porcentaje', 'monto']).describe('porcentaje (de 0 a 100) o monto en la divisa del documento.'),
+    valor: z.number().describe('10 = 10 % con porcentaje; con monto, el importe a descontar, que se topa en el total bruto.'),
+}).nullable().describe('Descuento de documento antes de impuestos, repartido entre las líneas en proporción a su importe. Cord calcula el monto; null lo quita.');
+const CouponInput = z.string().describe('Código de un cupón del negocio. Cord valida vigencia, divisa y usos; si viene, manda sobre descuento. Es el único descuento que admite una llave publicable.');
+
 const QuoteItemInput = z.object({
     descripcion: z.string(), cantidad: z.number(), precio_unitario: z.number(),
     precio_negociado: z.number().optional(), costo_unitario: z.number().optional(), producto_id: z.string().optional(),
@@ -137,6 +158,8 @@ export const CreateQuoteInput = z.object({
     base_currency: z.string().optional(),
     fiscal_currency: z.string().optional(),
     iva_incluido: z.boolean().optional(),
+    descuento: DiscountInput.optional(),
+    cupon: CouponInput.optional(),
     send: z.boolean().optional().describe('Solo con Secret Key.'),
 });
 
@@ -182,7 +205,7 @@ export const OPERATIONS: Operation[] = [
     { method: 'POST', path: '/productos', summary: 'Crear producto', tag: 'Productos', scope: 'write', body: z.looseObject({ nombre: z.string() }), response: Ack },
 
     { method: 'GET', path: '/facturas', summary: 'Listar facturas', tag: 'Facturas', scope: 'read', page: 'cursor', query: { ...cursorQ, estado: z.string(), cliente: z.string(), desde: z.string(), hasta: z.string(), q: z.string() }, response: Invoice },
-    { method: 'POST', path: '/facturas', summary: 'Crear factura en borrador', tag: 'Facturas', scope: 'write', body: z.object({ cliente_id: z.string(), items: z.array(QuoteItemInput).min(1).max(200), currency: z.string().optional(), due_date: z.string().optional(), service_date: z.string().optional(), service_date_end: z.string().optional(), notas: z.string().optional(), iva_incluido: z.boolean().optional(), document_mode: z.enum(['commercial', 'fiscal']).optional(), fx_buffer_pct: z.number().optional() }), response: Ack },
+    { method: 'POST', path: '/facturas', summary: 'Crear factura en borrador', tag: 'Facturas', scope: 'write', body: z.object({ cliente_id: z.string(), items: z.array(QuoteItemInput).min(1).max(200), currency: z.string().optional(), due_date: z.string().optional(), service_date: z.string().optional(), service_date_end: z.string().optional(), notas: z.string().optional(), iva_incluido: z.boolean().optional(), document_mode: z.enum(['commercial', 'fiscal']).optional(), fx_buffer_pct: z.number().optional(), descuento: DiscountInput.optional(), cupon: CouponInput.optional() }), response: Ack },
     { method: 'GET', path: '/facturas/{id}', summary: 'Detalle de factura', tag: 'Facturas', scope: 'read', response: InvoiceDetail },
     { method: 'POST', path: '/facturas/{id}', summary: 'Emitir, enviar, anular, registrar pago o nota de crédito', tag: 'Facturas', scope: 'write', body: action(['finalize', 'send', 'void', 'payment', 'credit_note'], { monto: z.number().optional(), moneda: z.string().optional(), metodo: z.string().optional(), referencia: z.string().optional(), motivo: z.string().optional() }), response: Ack },
 

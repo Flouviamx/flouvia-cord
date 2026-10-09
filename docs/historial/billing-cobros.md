@@ -1685,3 +1685,37 @@ agencias, blog y la documentación pública ES/EN.
   (`migrate-catalogo-fiscal.mjs`), igual que `migrate-brand-profile.mjs`.
 - Pendiente fuera del repo: publicar `@flouviahq/elements` 2.1.0, `n8n-nodes-cord` 1.2.0
   y las apps de Zapier y Make con las nuevas opciones de plazo.
+
+## 2026-10-08 — Portal del cliente, cobro agrupado, cobro automático y SEPA/ACH
+
+Se construyó el carril de cobro sin el vendedor de por medio: el cliente ve
+todas sus facturas en un link propio, paga varias con un solo cargo, y puede
+dejar un método guardado para que cada factura se cobre en su vencimiento.
+
+- **Por qué un reparto guardado y no metadata.** Un intento que paga varias
+  facturas necesita decir cuánto le toca a cada una; meterlo en la metadata del
+  proveedor la hace editable desde el navegador y limitada a 500 caracteres. Se
+  guarda en `pago_agrupado_documentos`, con el saldo leído de la base al crear
+  el cobro, y el webhook solo lo aplica.
+- **Por qué los reembolsos se reparten.** `invoiceBalanceQuery` contaba cada
+  reembolso de un PaymentIntent contra cada factura que ese intento pagó.
+  Mientras un intento pagaba una sola factura daba igual; con el cobro agrupado,
+  devolver 50 reabría 50 en cada factura. El reparto va de la última aplicada a
+  la primera y es todo o nada; los reembolsos anteriores conservan la regla
+  vieja porque sus intentos pagaron una sola factura.
+- **Por qué el consentimiento queda pendiente.** Un SetupIntent que no se
+  confirma no puede reemplazar la evidencia del cobro automático que ya estaba
+  activo. El servidor guarda fecha, IP y navegador con el id del intento, y solo
+  la promueve cuando el proveedor confirma ESE método de ESE Customer.
+- **Por qué la domiciliación no se ofrece en MXN.** La comisión de Cord es de
+  tarjeta; cobrarla sobre un débito SEPA o ACH sería una tarifa que nadie
+  aprobó. Fuera de MXN Cord no cobra comisión, así que ahí sí se ofrece.
+- **Topes de reintento** tomados de la documentación del proveedor (8 oct
+  2026): un débito SEPA o ACH se reintenta solo por fondos insuficientes, 2 veces,
+  en 30 o 40 días; SEPA tarda hasta 6 días hábiles y se puede devolver 8 semanas;
+  ACH tarda hasta 4 y solo admite reembolsos completos.
+  https://docs.stripe.com/payments/sepa-debit ·
+  https://docs.stripe.com/payments/ach-direct-debit ·
+  https://docs.stripe.com/declines/codes
+- La migración de despliegue ahora también salta un índice que ya existe:
+  `create index if not exists` toma su candado antes de comprobarlo.

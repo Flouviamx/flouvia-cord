@@ -79,6 +79,71 @@ marcado pagado por el webhook). La app de México (MLM) conecta vendedores de ot
 país: se confirmó el mismo día con un vendedor de prueba de Colombia (MCO), así que
 no hace falta una app por país.
 
+## Portal del cliente, cobro agrupado, cobro automático y domiciliación — oct 2026
+
+Código en `src/lib/cobros/`; esquema en la sección "PORTAL DEL CLIENTE…" de
+`db/schema.sql`, espejo de `db/deploy/2026-10-08-cobros-portal.sql`.
+
+- **Portal** (`/portal/[token]`, `src/lib/cobros/portal.ts`): un link POR CLIENTE
+  con sus facturas emitidas, el saldo por divisa (nunca sumado entre divisas), el
+  pago de varias a la vez y el cobro automático. El token (32 bytes) es la
+  credencial: `cord_resolve_portal` lo traduce y la consulta vuelve a `withOrgTx`.
+  La ruta va sin referrer, sin caché, sin indexar y SIN analítica; vive en
+  `cordhq.app` y nunca en el dominio propio del negocio (ese solo sirve `/q` e
+  `/i`). El negocio lo crea, rota, apaga o envía desde la ficha del cliente
+  (`/api/clientes/portal`, con auditoría). Solo aparecen las facturas con
+  `cliente_id`.
+- **Cobro agrupado** (`agrupados.ts`): un PaymentIntent paga varias facturas. El
+  reparto se decide al crear el cobro con el saldo REAL de cada factura (el
+  navegador solo elige cuáles) y queda en `pago_agrupado_documentos`; el webhook
+  lo aplica con `applyPayment` por factura, idempotente por el mismo índice
+  `(documento_id, stripe_payment_intent_id)`. El intento NO lleva `documento_id`:
+  si lo llevara, `settleInvoiceFromIntent` le aplicaría el cobro completo a una
+  sola factura. Una comisión por cobro (la llave de `comisiones` es el PI).
+- **Reembolsos repartidos** (`allocateInvoiceRefund` en `reconciliation.ts`):
+  devolver parte de un cobro que pagó varias facturas se asigna de la última
+  aplicada a la primera, completo o nada; sin reparto, un reembolso solo cuenta
+  si su cobro pagó una sola factura (todo lo anterior a oct 2026).
+- **Domiciliación** (`metodos.ts`): SEPA Direct Debit en EUR para ES/DE/FR y ACH
+  en USD para EE. UU. La enciende el negocio en Ajustes › Cobros
+  (`/api/billing/connect/domiciliacion`), que pide la capacidad
+  (`sepa_debit_payments` / `us_bank_account_ach_payments`) a la cuenta conectada;
+  `orgs.stripe_capacidades` guarda su estado desde `account.updated`, y solo una
+  capacidad `active` se ofrece. Donde Cord cobra comisión (hoy MXN) solo se
+  ofrece tarjeta: la comisión es de tarjeta y no hay tarifa aprobada para débito.
+  Un débito queda días en `processing`: `documentos_fiscales.pago_en_proceso_pi`
+  bloquea cobrar otra vez y anular, y `/i` y el portal lo dicen. Stripe manda al
+  titular el aviso de cada cargo SEPA y la confirmación del mandato ACH (por eso
+  el Customer lleva el correo del cliente). ACH no admite reembolsos parciales.
+- **Cobro automático** (`automatico.ts`, cron `/api/cron/cobro-automatico`
+  diario 14:15 UTC): lo ACTIVA el cliente en su portal con un SetupIntent (o al
+  pagar, marcando "guardar"). El consentimiento lo registra el servidor (fecha,
+  IP, navegador) como PENDIENTE con el id del intento, y solo se activa cuando el
+  proveedor confirma ESE método de ESE Customer. Se cobran, en UN cargo por
+  cliente y divisa, las facturas vencidas desde el día de la autorización y
+  emitidas al menos un día antes; el método tiene que cubrir la divisa. El
+  correo de la factura le avisa al cliente fecha y método del cargo. El negocio
+  solo puede apagarlo (por cliente en su ficha, o para todos en Ajustes).
+- **Reintentos** (`reintentos.ts`, pura y probada): un rechazo duro (robada,
+  fraude, mandato revocado) apaga el método y no se reintenta; datos vencidos o
+  inválidos piden otro método; autenticación requerida pide pagar desde el
+  portal; fondos insuficientes esperan al siguiente 1 o 16 del mes; el resto en
+  2, 4 y 7 días; máximo 4 intentos con tarjeta. Un débito solo se reintenta por
+  fondos, 2 veces y dentro de 30 (SEPA) o 40 (ACH) días, los mismos topes que
+  aplica el proveedor. Un rechazo cuenta una vez aunque lleguen el error síncrono
+  y el webhook. Al cliente le llega un correo con su portal; al negocio, una
+  tarea cuando el cobro se detiene.
+- **Respuesta incierta**: sin respuesta del proveedor el cobro queda `creado` sin
+  intento (el índice `uq_pagos_agrupados_automatico_vivo` impide abrir otro) y
+  la siguiente corrida reintenta con la MISMA clave de idempotencia; después de
+  20 horas se cancela (si el cargo hubiera salido, su webhook ya lo habría
+  ligado). El cron también concilia cobros sin webhook o con un débito de más de
+  3 días en proceso.
+- **Eventos del webhook** que este carril necesita en el scope de cuentas
+  conectadas: `payment_intent.processing`, `payment_intent.canceled`,
+  `setup_intent.succeeded` y `mandate.updated` (ver
+  `pendientes-integraciones.md`).
+
 ## Términos de pago, claves SAT y CFDI a extranjeros — oct 2026
 
 - **Términos de pago:** `contado` o `net<N>` = N días naturales. Se ofrecen `net7`,
@@ -140,7 +205,11 @@ Catálogos puros en `src/lib/fiscal/cfdi-catalogos.ts`.
   cotizaciones COBRADAS (`paid_at` en el calendario del negocio) sin factura vigente y sin
   otra global viva, y dice por qué excluye las demás (otra divisa, retenciones, cliente
   extranjero, tasa fuera de 0/8/16 %). Un concepto por venta y por tasa: 01010101, ACT,
-  `sku` (NoIdentificacion) = folio, ValorUnitario = base. Receptor PUBLICO EN GENERAL /
+  `sku` (NoIdentificacion) = folio, ValorUnitario = base. Con descuento de documento
+  (`cotizaciones.descuento_def`) el motor lo reparte igual que en la factura
+  individual y cada concepto lleva su parte en `discount` (Concepto@Descuento); la base
+  neta y el descuento suman lo que se cobró, y una venta que el descuento deja en cero
+  se excluye (`sin_importe`). Receptor PUBLICO EN GENERAL /
   XAXX010101000 / 616 / S01 / código postal del emisor, PUE y la forma de pago de la venta
   de mayor importe (editable). El documento vive en `documentos_fiscales` con
   `document_type = 'cfdi_40'`, sin cliente ni cotización y con `informacion_global`
@@ -157,10 +226,16 @@ Catálogos puros en `src/lib/fiscal/cfdi-catalogos.ts`.
 - **Sustitución** (`src/lib/fiscal/sustitucion.ts`, acción `substitute` de
   `PATCH /api/facturas/[id]`, permiso de cobranza): crea un borrador con los datos del
   original y `sustituye_a` (`uq_documentos_sustituye_a`: un sustituto vivo por
-  original). Al emitirlo, `finalizeInvoice` corre `substitutionPreflight` (el original
-  sigue siendo sustituible; cierra sus cobros en vuelo), timbra con `related_documents`
-  relación 04 y, en la MISMA transacción que lo marca emitido y con los dos locks de
-  saldo, mueve `documento_pagos` del original al sustituto y fija `sustituida_por`. Un
+  original). El borrador copia los conceptos a su precio bruto y hereda el descuento
+  de documento tal cual (`descuentoHeredado`: con su cupón, sin revalidarlo). Al
+  emitirlo, `finalizeInvoice` corre `substitutionPreflight` (el original sigue siendo
+  sustituible; cierra sus cobros en vuelo, también los agrupados), timbra con
+  `related_documents` relación 04 y, en la MISMA transacción que lo marca emitido y con
+  los dos locks de saldo, mueve `documento_pagos` y el reparto de reembolsos
+  (`documento_reembolso_asignaciones`) del original al sustituto, pasa la redención
+  del cupón si es el mismo (no se redime dos veces) y fija `sustituida_por`. Un
+  reintento del webhook de un cobro ya movido sobre el original es un duplicado (sigue
+  la cadena `sustituida_por`), no un pago tardío. Un
   original sustituido concilia con saldo 0 (`paid`; `refund_due` = pagado − reembolsado)
   y rechaza pagos manuales; uno tardío del proveedor queda registrado con aviso. Después
   se pide la cancelación del original con motivo 01 y el UUID del sustituto: `pending`,
@@ -169,6 +244,9 @@ Catálogos puros en `src/lib/fiscal/cfdi-catalogos.ts`.
   proceso (el SAT marca "No cancelable" un CFDI con relacionados vigentes), una
   cancelación en curso y la factura global (se corrige cancelándola). Anular un sustituto
   sin pagos devuelve el saldo al original.
+- **Cobro agrupado y cobro automático:** un CFDI sustituido, uno con un sustituto en
+  curso y la factura global no entran en `crearPagoAgrupado` ni en el cron de cobro
+  automático; el portal no lista el sustituido (lo reemplaza su sustituto).
 - **Motivo de cancelación:** el detalle pide la clave (02, 03; 04 solo en la global; 01
   deshabilitado con "usa Sustituir CFDI") y la ruta responde 400 sin ella en un CFDI
   vigente. `void_reason` guarda "0N · descripción del SAT". API v1, MCP y workflows con
@@ -176,6 +254,53 @@ Catálogos puros en `src/lib/fiscal/cfdi-catalogos.ts`.
 - **Uso y forma de pago fijados en el documento:** `documentos_fiscales.cfdi_uso` y
   `cfdi_forma_pago` (null = automáticos). El editor de facturas los ofrece en México; el
   sustituto los hereda del original. La forma solo aplica a un CFDI PUE.
+## Descuentos de documento y cupones — oct 2026
+
+- **Qué es:** una rebaja sobre la venta completa (`porcentaje` de 0 a 100 o
+  `monto` en la divisa del documento), ANTES de impuestos. La aplica el motor
+  (`calculateDocumentTotals`, opción `descuento`) y la reparte entre las líneas
+  en proporción a su importe bruto; con `roundLines` el reparto es en unidades
+  mínimas por mayor residuo (la suma por línea es exactamente el descuento y
+  ninguna línea queda negativa). Un monto se topa en el bruto. Con precios que
+  incluyen impuesto, el monto rebaja lo que paga el cliente y la base se
+  desagrega después. Las retenciones se calculan sobre las bases descontadas.
+- **Contrato de datos:** el navegador y la API mandan la DEFINICIÓN
+  (`descuento: {tipo, valor}`) o un código (`cupon`), nunca un importe; el cupón
+  manda sobre el manual (`src/lib/descuentos.ts`, `leerDescuentoBody`). Sin
+  ninguna de las dos llaves, una edición conserva el descuento guardado.
+  Cotización: `cotizaciones.descuento` = importe antes de impuestos (la hoja lo
+  exporta y su `subtotal` es el bruto) y `descuento_def` = definición. Factura:
+  `documentos_fiscales.descuento_total` y `descuento` (definición, con
+  `cupon_id`); cada concepto del snapshot lleva `discount` y su `subtotal` sigue
+  siendo la base NETA (`unitPrice` también es neto). `cotizacion_items.descuento_pct`
+  no se usa: Shopify y la contabilidad lo aplican por línea.
+- **Cupones** (`cupones`, Ajustes › Descuentos › Cupones, permiso `ajustes`):
+  código `[A-Z0-9_-]{3,32}` único por organización, vigencia en la zona horaria
+  del negocio, divisa obligatoria para un monto, tope global y por cliente.
+  Código, tipo, valor y divisa no se editan; un cupón usado no se borra, se
+  desactiva. El editor valida con `POST /api/cupones/validar` (permiso `cotizar`).
+- **Ciclo de vida** (`src/lib/cupones.ts`): vigencia y `activo` se revisan al
+  APLICAR; un cupón ya aplicado a un documento se conserva al editarlo. El uso se
+  registra cuando el documento se vuelve vinculante, con `cord_cupon_redimir`
+  (bloquea la fila del cupón): la factura al emitirse —ANTES de reservar folio—
+  y la cotización al aprobarse, en la misma transacción que la aprobación. Si los
+  usos se agotaron, no se emite ni se aprueba (el vendedor lo ve en el historial).
+  La factura de una cotización reusa su redención. Anular la factura, borrar el
+  borrador o rechazar la cotización la libera (`cord_cupon_liberar`). Un
+  descuento manual cuenta para el tope de aprobación; un cupón no.
+- **Rieles:** CFDI con `items[].discount` y ValorUnitario bruto (Facturapi:
+  "monto total de descuento aplicado a este concepto"; Anexo 20: Importe −
+  Descuento = base, y la base de un traslado debe ser mayor que cero, por eso un
+  concepto que el descuento deja en cero se rechaza antes del PAC). Verifactu
+  declara la base neta. La nota de crédito prorratea el `discount`. El PDF
+  muestra el importe bruto por concepto y "Descuento (CÓDIGO)" en los totales.
+- **Copias:** duplicar o repetir una factura copia el precio BRUTO y el
+  descuento aparte; una recurrencia lleva solo un descuento manual
+  (`documento_recurrencias.descuento`). Aprobación parcial y factura de una
+  cotización vuelven a aplicar la definición sobre lo aprobado.
+- **Despliegue:** `db/deploy/2026-10-08-descuentos.sql`. Lo verifican
+  `test/engine-descuento.test.ts`, `test/cupones-db.test.ts` y
+  `test/descuento-fiscal.test.ts`.
 
 ## Facturación internacional — ago 2026
 

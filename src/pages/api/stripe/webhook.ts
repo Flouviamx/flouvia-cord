@@ -27,6 +27,9 @@ import { computeSubscriptionFee } from '../../../lib/fees';
 import { applyPayment } from '../../../lib/fiscal/payments';
 import { recordInvoiceRefund } from '../../../lib/fiscal/reconciliation';
 import { reconcileInvoiceCommission } from '../../../lib/invoice-payment-fees';
+import { cobroCancelado, cobroConfirmado, cobroEnProceso, cobroFallido, mandatoActualizado, metodoGuardado } from '../../../lib/cobros/webhook';
+import { resolverTipoMetodo } from '../../../lib/cobros/agrupados';
+import { metodoAnalitica } from '../../../lib/cobros/metodos';
 import { invalidateMoneyCaches } from '../../../lib/queries';
 import { fromMinorUnits, normalizeCurrency, toMinorUnits } from '../../../lib/currency';
 import { log } from '../../../lib/log';
@@ -188,12 +191,35 @@ async function handleStripeEvent(event: any): Promise<void> {
             // Y, por separado, el saldo de la FACTURA. Son dos ledgers: el de
             // la cotización (cotizacion_cobros) y el del documento fiscal.
             await settleInvoiceFromIntent(obj, event.account);
+            // Cobro agrupado (portal, cobro automático) y la marca de débito en proceso.
+            await cobroConfirmado(obj, event.account);
+            break;
+        }
+        // Domiciliación (SEPA, ACH): el débito tarda días. Mientras tanto la
+        // factura no se cobra otra vez ni se anula.
+        case 'payment_intent.processing': {
+            await cobroEnProceso(obj, event.account);
             break;
         }
         case 'payment_intent.payment_failed': {
             await markBuildBidFailed(obj);
             await markPaymentFailed(obj, event.account);
             await failInvoiceFromIntent(obj, event.account);
+            await cobroFallido(obj, event.account);
+            break;
+        }
+        case 'payment_intent.canceled': {
+            await cobroCancelado(obj, event.account);
+            break;
+        }
+        // El cliente guardó un método para el cobro automático desde su portal.
+        case 'setup_intent.succeeded': {
+            await metodoGuardado(obj, event.account);
+            break;
+        }
+        // Un mandato SEPA/ACH inactivo (revocado, disputado) ya no autoriza cargos.
+        case 'mandate.updated': {
+            await mandatoActualizado(obj, event.account);
             break;
         }
         // ── Alta / cambio de plan / renovación ────────────────────────────────
@@ -418,8 +444,7 @@ async function settleInvoiceFromIntent(intent: any, account?: string): Promise<v
             after(sendOpsAlert('Comisión de factura pendiente de revisión',
                 `Organización ${orgId}; documento ${targetId}; pago ${intent.id}. Revisar desglose o divisa antes de facturar la comisión.`));
         }
-        const pm = Array.isArray(intent?.payment_method_types) && intent.payment_method_types.includes('customer_balance')
-            ? 'spei' : 'tarjeta';
+        const pm = metodoAnalitica(await resolverTipoMetodo(intent, account));
         // Neither analytics DB lookups nor PostHog delivery may delay Stripe's
         // acknowledgement or interrupt the already-recorded paid transition.
         after((async () => {
@@ -1450,6 +1475,17 @@ async function recordCapabilityEvent(capability: any, account: string | undefine
     } catch { /* mismo criterio que arriba */ }
 }
 
+/** Estado de cada capacidad de la cuenta (active | pending | inactive), sin nada más. */
+function capacidadesDeCuenta(account: any): Record<string, string> {
+    const caps = account?.capabilities && typeof account.capabilities === 'object' ? account.capabilities : {};
+    const out: Record<string, string> = {};
+    for (const [k, v] of Object.entries(caps)) {
+        const estado = typeof v === 'string' ? v : String((v as any)?.status || '');
+        if (/^[a-z_]{1,60}$/.test(k) && /^(active|pending|inactive)$/.test(estado)) out[k] = estado;
+    }
+    return out;
+}
+
 async function updateAccountStatus(account: any) {
     if (!account.id) return;
     const orgId = await orgForConnectedAccount(account.id);
@@ -1470,7 +1506,8 @@ async function updateAccountStatus(account: any) {
             stripe_payouts_enabled = ${payoutsEnabled},
             stripe_details_submitted = ${detailsSubmitted},
             stripe_disabled_reason = ${disabledReason},
-            stripe_requirements = ${requirements}
+            stripe_requirements = ${requirements},
+            stripe_capacidades = ${JSON.stringify(capacidadesDeCuenta(account))}::jsonb
             where id = ${orgId} returning id`);
     if (!updated.length) throw new Error(`Cuenta de cobros no actualizada para organización ${orgId}`);
 

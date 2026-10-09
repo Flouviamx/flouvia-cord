@@ -24,7 +24,9 @@ addressed to **PUBLICO EN GENERAL** with the generic RFC **XAXX010101000**.
 5. Click **Issue global invoice**.
 
 Each sale goes in as one item with product key **01010101**, unit **ACT** and
-the quote number as its identification number. The CFDI is issued in Mexican
+the quote number as its identification number. If the sale had a discount or a
+coupon, the item declares it as its **Discount**: the global invoice covers what
+you actually collected. The CFDI is issued in Mexican
 pesos, with payment method **PUE**, use **S01** and your business's tax postal
 code as the recipient's address. That is why Cord asks you to enter it in
 **Settings › Tax details** before issuing it.
@@ -40,7 +42,8 @@ Cord tells you why a sale of the period does not appear:
 - it was collected in another currency (the global invoice is issued in pesos);
 - it has withholdings (the SAT requires one invoice per transaction with withholdings);
 - the client is abroad (it needs an individual invoice);
-- it has a VAT rate other than 0%, 8% or 16%.
+- it has a VAT rate other than 0%, 8% or 16%;
+- it has no amount to document (a 100% discount).
 
 While a sale is in a valid global invoice, Cord does not let you issue an
 individual invoice for it: the same sale would be invoiced twice.

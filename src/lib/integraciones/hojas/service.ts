@@ -220,9 +220,12 @@ async function ponerFila(cx: ConexionHoja, clave: Pestana, folio: string, celdas
     else await cliente.agregarFila(cx.token, cx.libroId, hoja, celdas);
 }
 
+// `cotizaciones.subtotal` es la base NETA (ya con el descuento de documento):
+// la hoja lee subtotal − descuento + impuestos = total, así que su columna
+// `subtotal` es el bruto.
 const COTIZACION = (orgId: string, quoteId: string) => sql`
     select c.folio, coalesce(cl.empresa, '') as cliente, c.status, c.created_at, c.vigencia,
-           c.base_currency, c.subtotal, c.descuento, c.iva, c.total, c.public_token,
+           c.base_currency, c.subtotal + coalesce(c.descuento, 0) as subtotal, c.descuento, c.iva, c.total, c.public_token,
            coalesce((select sum(cb.monto) from cotizacion_cobros cb
                       where cb.cotizacion_id = c.id and cb.org_id = ${orgId} and cb.status = 'pagado'), 0) as cobrado
       from cotizaciones c
@@ -300,7 +303,7 @@ export async function sincronizarTodo(
 
     const [quotes] = await withOrgTx(orgId, sql`
         select c.folio, coalesce(cl.empresa, '') as cliente, c.status, c.created_at, c.vigencia,
-               c.base_currency, c.subtotal, c.descuento, c.iva, c.total, c.public_token,
+               c.base_currency, c.subtotal + coalesce(c.descuento, 0) as subtotal, c.descuento, c.iva, c.total, c.public_token,
                coalesce((select sum(cb.monto) from cotizacion_cobros cb
                           where cb.cotizacion_id = c.id and cb.org_id = ${orgId} and cb.status = 'pagado'), 0) as cobrado
           from cotizaciones c

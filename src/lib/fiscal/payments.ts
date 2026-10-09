@@ -123,6 +123,32 @@ export async function applyPayment(
 
   const pi = input.stripePaymentIntentId || null;
   const mp = input.mpPaymentId || null;
+
+  // Sustituida: sus pagos se mudaron al sustituto (y de ahí, si a su vez se
+  // sustituyó, al siguiente). Un reintento del webhook de un cobro que YA está
+  // ahí es un duplicado, no un pago tardío que haya que devolver.
+  if (replaced && (pi || mp)) {
+    const [yaAplicado] = await withOrgTx(orgId, sql`
+      with recursive cadena(id, n) as (
+        select d.sustituida_por, 1 from documentos_fiscales d
+         where d.id = ${documentoId} and d.org_id = ${orgId} and d.sustituida_por is not null
+        union all
+        select d.sustituida_por, c.n + 1 from documentos_fiscales d join cadena c on d.id = c.id
+         where d.org_id = ${orgId} and d.sustituida_por is not null and c.n < 10
+      )
+      select p.documento_id from documento_pagos p join cadena c on c.id = p.documento_id
+       where p.org_id = ${orgId}
+         and (${pi}::text is not null and p.stripe_payment_intent_id = ${pi}
+           or ${mp}::text is not null and p.mp_payment_id = ${mp})
+       limit 1`);
+    if (yaAplicado.length) {
+      return {
+        ok: true, duplicate: true,
+        amountPaid: money(Number(doc.amount_paid) || 0), amountRemaining: 0,
+        lifecycle: String(doc.lifecycle), justPaid: false,
+      };
+    }
+  }
   // Un pago del proveedor llega con la llave de SU riel. Las dos columnas
   // existen por separado para que cada índice único sea el que hace el trabajo;
   // con una sola compartida, dos ids distintos podrían chocar entre rieles.

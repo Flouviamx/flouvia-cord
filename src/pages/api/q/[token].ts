@@ -28,6 +28,8 @@ import { markViewed } from '../../../lib/queries';
 import { currencyDecimals, normalizeCurrency } from '../../../lib/currency';
 import { calculateDocumentTotals, retencionBase } from '../../../../packages/elements/src/engine';
 import { money as roundMoney } from '../../../lib/fiscal/emit';
+import { descuentoDesdeJson, descuentoParaMotor } from '../../../lib/descuentos';
+import { liberarCupon } from '../../../lib/cupones';
 
 // Los eventos que escribe el link público (firma parcial, contrapropuesta) los
 // lee el vendedor en su historial: el importe va con la divisa de la cotización.
@@ -58,6 +60,7 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
     if (!identity) return json({ error: 'Cotización no encontrada' }, 404);
     const [rows] = await withOrgTx(identity.orgId, sql`
         select c.id, c.org_id, c.status, c.rev, c.base_currency, c.iva_incluido, c.retenciones_snapshot, o.moneda,
+               c.descuento, c.descuento_def,
                (o.sandbox_of is not null) as is_sandbox, o.is_demo
         from cotizaciones c join orgs o on o.id = c.org_id
         where c.id = ${identity.id} and c.org_id = ${identity.orgId}`);
@@ -151,6 +154,10 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
 
         // El driver HTTP de Neon NO soporta sql.begin(callback); usa sql.transaction([...]).
         const txQueries: any[] = [];
+        const descuentoQuote = descuentoDesdeJson(c.descuento_def);
+        // Descuento que queda en firme: el de la cotización o, en aprobación
+        // parcial, el recalculado sobre lo aprobado (abajo).
+        let descuentoFinal = Number(c.descuento) || 0;
         if (isPartial) {
             // Recalcula con el MISMO motor que crear/editar (regla 23): tasa POR
             // LÍNEA de lo que de verdad se aprobó, impuesto incluido si aplica, y
@@ -180,6 +187,8 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
                             base: retencionBase(r.baseTipo),
                         })),
                         roundLines: currencyDecimals(quoteCurrency),
+                        // Un porcentaje rebaja lo aprobado; un monto se topa en su bruto.
+                        descuento: descuentoParaMotor(descuentoQuote),
                     },
                 );
             } catch (error: unknown) {
@@ -190,11 +199,13 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
             const newIva = roundMoney(totals.impuestos);
             const newTotal = roundMoney(totals.total);
             const newRetencionTotal = roundMoney(totals.retencionTotal);
+            descuentoFinal = roundMoney(totals.descuentoTotal);
             txQueries.push(sql`
                 update cotizaciones set
                     status = 'approved', approved_at = now(),
                     subtotal = ${newSubtotal}, iva = ${newIva}, total = ${newTotal},
-                    retencion_total = ${newRetencionTotal}, retenciones_snapshot = ${JSON.stringify(totals.retenciones)}::jsonb
+                    retencion_total = ${newRetencionTotal}, retenciones_snapshot = ${JSON.stringify(totals.retenciones)}::jsonb,
+                    descuento = ${descuentoFinal}
                 where id = ${c.id} and org_id = ${orgId}`);
         } else {
             txQueries.push(sql`update cotizaciones set status = 'approved', approved_at = now() where id = ${c.id} and org_id = ${orgId}`);
@@ -208,6 +219,24 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
         }
         txQueries.push(sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
                   values (${c.org_id}, ${c.id}, 'approved', ${detalle})`);
+        // Aprobar vuelve vinculante la cotización: aquí se redime su cupón, con
+        // la cotización bloqueada y solo si sigue viva. Si los usos se
+        // agotaron desde que se envió, la firma no procede y el vendedor lo ve
+        // en su historial: el cliente no puede arreglarlo, el negocio sí.
+        if (descuentoQuote?.cupon_id) {
+            const [redRows] = await withOrgTx(orgId, sql`
+                select cord_cupon_redimir(${orgId}::uuid, ${descuentoQuote.cupon_id}::uuid, q.cliente_id, q.id, null::uuid,
+                       ${descuentoFinal}::numeric, ${quoteCurrency}) as r
+                  from cotizaciones q
+                 where q.id = ${c.id} and q.org_id = ${orgId} and q.status in ('sent', 'viewed')
+                   for update`);
+            if (!redRows.length) return json({ error: 'Esta cotización ya no se puede modificar' }, 409);
+            if (redRows[0].r !== 'ok') {
+                await withOrgTx(orgId, sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
+                    values (${orgId}, ${c.id}, 'comment', ${`El cliente intentó aprobar, pero el cupón ${descuentoQuote.codigo || ''} ya no tiene usos disponibles. Quítalo y vuelve a enviar la cotización.`})`);
+                return json({ error: 'Esta cotización necesita una actualización del vendedor antes de aprobarse. Ya le avisamos.', code: 'coupon_unavailable' }, 409);
+            }
+        }
         txQueries.push(sql`insert into cotizacion_firmas (org_id, cotizacion_id, firmante_nombre, firmante_email, firmante_ip, user_agent, snapshot_hash)
                   values (${c.org_id}, ${c.id}, ${signedBy || 'Anónimo'}, ${email || null}, ${ip}, ${ua}, ${snapshotHash})`);
         await withOrgTx(orgId, ...txQueries);
@@ -240,6 +269,8 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
         if (!alive) return json({ error: 'Esta cotización ya no se puede modificar', status: c.status }, 409);
         await withOrgTx(orgId, sql`update cotizaciones set status = 'rejected'
             where id = ${c.id} and org_id = ${orgId}`);
+        // Una cotización rechazada no consume su cupón.
+        if (descuentoDesdeJson(c.descuento_def)?.cupon_id) await liberarCupon(orgId, { cotizacionId: c.id as string });
         const comentario = String(body.comentario ?? '').trim().slice(0, 500);
         await withOrgTx(orgId, sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
             values (${orgId}, ${c.id}, 'rejected', ${comentario ? `El cliente rechazó: "${comentario}"` : 'El cliente rechazó la cotización desde el link'})`);

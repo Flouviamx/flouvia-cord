@@ -16,6 +16,7 @@ import { ok, fail, invoiceListItem, readJsonBody } from '../../../lib/apiv1';
 import { requireEntitlement } from '../../../lib/org-entitlements';
 import { invoicingFeatureFor } from '../../../lib/fiscal/gate';
 import { isISODate } from '../../../lib/rango';
+import { leerDescuentoBody } from '../../../lib/descuentos';
 
 export const GET = withApiAuth('read', async ({ url }) => {
     // Keyset, no offset: con offset una factura nueva desplaza la página y
@@ -58,6 +59,8 @@ export const POST = withApiAuth('write', async ({ request }, auth) => {
     }
     const servicio = parseServiceDates(body);
     if (!servicio.ok) return fail(servicio.error, 'invalid_request', 400);
+    const descuento = leerDescuentoBody(body);
+    if ('error' in descuento) return fail(descuento.error, 'invalid_request', 400);
 
     const result = await createInvoiceDraft(orgId, {
         clienteId,
@@ -70,8 +73,12 @@ export const POST = withApiAuth('write', async ({ request }, auth) => {
         notes: String(body.notas ?? '').trim().slice(0, 1000) || null,
         bufferPct: Number(body.fx_buffer_pct) || 0,
         ivaIncluido: body.iva_incluido === true,
+        descuento: descuento.presente ? descuento.solicitud : null,
     });
     if (!result.ok) {
+        // Un cupón que no aplica es un conflicto de estado (vencido, agotado),
+        // no un payload mal formado; uno inexistente es 404.
+        if (result.code) return fail(result.error!, result.code, result.status || 400);
         // Regla 22: sin tasa demostrable no se factura. 503, no 400 — el
         // integrador debe reintentar, no corregir su payload. Mismo trato para
         // un catálogo de impuestos que no se pudo leer (regla 22 aplicada al

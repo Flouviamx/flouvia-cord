@@ -46,7 +46,7 @@ export const GET: APIRoute = async ({ url }) => {
         desde: rango.desde, hasta: rango.hasta,
         elegibles: elegibles.map((v) => ({
             id: v.id, folio: v.folio, cliente: v.cliente, cliente_rfc: v.clienteRfc, pagada: v.pagadaEn,
-            subtotal: v.subtotal, impuestos: v.impuestos, total: v.total, forma_pago: v.formaPago,
+            subtotal: v.subtotal, impuestos: v.impuestos, descuento: v.descuento, total: v.total, forma_pago: v.formaPago,
         })),
         excluidas,
         forma_pago_sugerida: formaPagoSugerida,

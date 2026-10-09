@@ -32,16 +32,19 @@ import { calculateDocumentTotals, retencionBase, type RetencionBase } from '../.
 import { dueDateFor, venceDia } from './cobros';
 import { taxBreakdownRows } from './tax-components';
 import { taskBadge } from './tasks-db';
+import { metodosPara } from './cobros/metodos';
 import type { PublicViewer } from './public-viewer';
 import {
     STATUS_ABIERTA, STATUS_GANADA, STATUS_PERDIDA, STATUS_SALIO,
 } from './metrics';
 import {
     STATUS_META, lineTotal, quoteSubtotal, quoteIva, quoteTotal, quoteTaxBreakdown, quoteRetenciones,
+    quoteDescuento, quoteSubtotalBruto,
     type QuoteStatus, type QuoteItem, type QuoteEvent, type Quote,
 } from './quote';
+import { descuentoDesdeJson, descuentoParaMotor, etiquetaDescuento } from './descuentos';
 
-export { STATUS_META, money, lineTotal, quoteSubtotal, quoteIva, quoteTotal, quoteTaxBreakdown, quoteRetenciones };
+export { STATUS_META, money, lineTotal, quoteSubtotal, quoteIva, quoteTotal, quoteTaxBreakdown, quoteRetenciones, quoteDescuento, quoteSubtotalBruto };
 export type { QuoteStatus, QuoteItem, QuoteEvent, Quote };
 
 // ── Formatters (Postgres → display) ─────────────────────────────────────────
@@ -165,6 +168,9 @@ export async function getOrg() {
         aceptaTarjeta: o.acepta_tarjeta !== false,
         aceptaTransferencia: !!o.acepta_transferencia,
         cobroSpeiAuto: !!o.cobro_spei_auto,
+        aceptaDomiciliacion: !!o.acepta_domiciliacion,
+        cobroAutomaticoPermitido: o.cobro_automatico_permitido !== false,
+        stripeCapacidades: (o.stripe_capacidades ?? {}) as Record<string, string>,
         checkoutV2: !!o.checkout_v2,
         feeEnabled: !!o.fee_enabled,
         feePlan: (o.fee_plan as string) || 'legacy_zero',
@@ -1410,6 +1416,8 @@ function rowToQuote(c: any, items: any[], eventos: any[], versiones: any[] = [],
         // esto las líneas antiguas no tendrían tasa demostrable (ver lib/quote.ts).
         taxRateFallback: c.org_iva_pct != null ? num(c.org_iva_pct) / 100 : undefined,
         retenciones: Array.isArray(c.retenciones_snapshot) ? c.retenciones_snapshot : [],
+        descuento: descuentoDesdeJson(c.descuento_def),
+        descuentoTotal: num(c.descuento),
         anticipoPct: c.anticipo_pct != null ? num(c.anticipo_pct) : null,
         esRecurrente: Boolean(c.es_recurrente),
         items: items.map((it): QuoteItem => ({
@@ -1765,6 +1773,7 @@ export async function getFacturaByToken(token: string) {
                    d.due_date, d.notes, d.issued_at, d.created_at, d.public_token,
                    d.issuer_snapshot, d.recipient_snapshot, d.line_items_snapshot,
                    d.provider_data, d.pdf_url, d.xml_url, d.credit_note_of,
+                   d.descuento_total, d.descuento,
                    c.public_token as quote_token, c.folio as quote_folio,
                    o.nombre as org_nombre, o.logo_url as org_logo_url,
                    o.color_marca as org_color, o.email_contacto as org_email,
@@ -1776,8 +1785,14 @@ export async function getFacturaByToken(token: string) {
                    o.stripe_charges_enabled as org_stripe_charges_enabled,
                    o.acepta_tarjeta as org_acepta_tarjeta,
                    o.acepta_transferencia as org_acepta_transferencia,
+                   o.acepta_domiciliacion as org_acepta_domiciliacion,
+                   o.stripe_capacidades as org_stripe_capacidades,
                    o.mp_charges_enabled as org_mp_charges_enabled,
-                   o.embed_domains as org_embed_domains
+                   o.embed_domains as org_embed_domains,
+                   d.pago_en_proceso_pi,
+                   exists (select 1 from pago_agrupado_documentos a
+                            join pagos_agrupados p on p.id = a.pago_id and p.org_id = a.org_id
+                           where a.org_id = d.org_id and a.documento_id = d.id and p.estado = 'procesando') as agrupado_en_proceso
               from documentos_fiscales d
               join orgs o on o.id = d.org_id
               left join cotizaciones c on c.id = d.cotizacion_id
@@ -1825,6 +1840,9 @@ export async function getFacturaByToken(token: string) {
         fxRate: r.fx_rate !== null && r.fx_rate !== undefined ? num(r.fx_rate) : null,
         subtotal: num(r.subtotal),
         impuestos: num(r.tax_total),
+        // Descuento de documento antes de impuestos; `subtotal` ya es neto.
+        descuentoTotal: num(r.descuento_total),
+        descuento: descuentoDesdeJson(r.descuento),
         total,
         pagado,
         saldo,
@@ -1843,6 +1861,7 @@ export async function getFacturaByToken(token: string) {
             impuesto: num(l.taxAmount),
             taxRate: num(l.taxRate),
             total: num(l.total),
+            descuento: num(l.discount),
         })),
         pagos: pagos.map((pg: any) => ({
             monto: num(pg.monto),
@@ -1859,6 +1878,14 @@ export async function getFacturaByToken(token: string) {
             && !!r.org_stripe_account_id
             && !!r.org_stripe_charges_enabled,
         aceptaTarjeta: !!r.org_acepta_tarjeta,
+        // Los métodos en línea de ESTA factura: tarjeta y, en su divisa, la
+        // domiciliación si el negocio la encendió y su cuenta la tiene activa.
+        metodosEnLinea: metodosPara({
+            aceptaTarjeta: !!r.org_acepta_tarjeta, aceptaDomiciliacion: !!r.org_acepta_domiciliacion,
+            capacidades: r.org_stripe_capacidades,
+        }, currency),
+        // Un débito bancario en proceso (días): no se ofrece pagar otra vez.
+        pagoEnProceso: !!r.pago_en_proceso_pi || !!r.agrupado_en_proceso,
         aceptaTransferencia: !!r.org_acepta_transferencia,
         // El segundo riel: cobrar la factura con Mercado Pago. Exige además que
         // el país lo tenga, igual que en la cotización (`availableRails`).
@@ -1921,17 +1948,23 @@ export async function getFacturaDetalle(id: string) {
         // volver a resolverla.
         orgId,
         clienteEmail: (r.cliente_email as string) || null,
+        // Un débito bancario (SEPA, ACH) cobrado y todavía sin confirmar.
+        pagoEnProceso: !!r.pago_en_proceso_pi,
         notas: (r.notes as string) || null,
         ledgerCurrency: (r.ledger_currency as string) || null,
         fxRate: r.fx_rate !== null && r.fx_rate !== undefined ? num(r.fx_rate) : null,
         ledgerTotal: r.ledger_total !== null && r.ledger_total !== undefined ? num(r.ledger_total) : null,
         subtotal: num(r.subtotal),
         impuestos: num(r.tax_total),
+        // Descuento de documento antes de impuestos; `subtotal` ya es neto.
+        descuentoTotal: num(r.descuento_total),
+        descuento: descuentoDesdeJson(r.descuento),
         emisor: (r.issuer_snapshot as any) || {},
         receptor: (r.recipient_snapshot as any) || {},
         lineas: ((r.line_items_snapshot as any[]) || []).map((l: any) => ({
             descripcion: String(l.description || ''),
             cantidad: num(l.quantity),
+            // NETO (base / cantidad). Con descuento, el bruto es (subtotal + descuento) / cantidad.
             precioUnitario: num(l.unitPrice),
             subtotal: num(l.subtotal),
             impuesto: num(l.taxAmount),
@@ -1943,6 +1976,7 @@ export async function getFacturaDetalle(id: string) {
             // Claves SAT CONGELADAS con las que se timbró (o se timbrará) el concepto.
             productKey: (l.productKey as string) || null,
             unitKey: (l.unitKey as string) || null,
+            descuento: num(l.discount),
         })),
         anuladaEn: r.voided_at ? fmtDate(r.voided_at as string) : null,
         motivoAnulacion: (r.void_reason as string) || null,
@@ -2246,12 +2280,15 @@ export interface LiveSnapshot {
     /** Desglose por tasa, para que el parche en vivo dibuje las MISMAS filas que el SSR. */
     impuestos: Array<{ tasa: number; impuesto: number; label: string }>;
     retenciones: Array<{ nombre: string; monto: number }>;
+    /** Descuento de documento antes de impuestos (`subtotal` ya es neto). `null` sin descuento. */
+    descuento: { monto: number; etiqueta: string } | null;
 }
 
 export async function getLiveSnapshot(orgId: string, cotizacionId: string): Promise<LiveSnapshot | null> {
     const [cabecera, items, cobros] = await withOrgTx(orgId,
         sql`select c.rev, c.status, c.subtotal, c.iva, c.total, c.vigencia, c.notas,
                    c.iva_incluido, c.retenciones_snapshot, o.iva_pct as org_iva_pct,
+                   c.descuento_def, o.idioma as org_idioma,
                    o.country_code as org_country_code, o.fiscal_metadata->>'region' as org_region,
                    coalesce(c.base_currency, o.moneda) as quote_currency
               from cotizaciones c join orgs o on o.id = c.org_id
@@ -2275,7 +2312,8 @@ export async function getLiveSnapshot(orgId: string, cotizacionId: string): Prom
     // ninguna de ellas.
     const fallbackRate = num(c.org_iva_pct) / 100;
     const retencionesGuardadas = Array.isArray(c.retenciones_snapshot) ? c.retenciones_snapshot : [];
-    let desglose: { porTasa: any[]; retenciones: any[] } = { porTasa: [], retenciones: [] };
+    const descuentoDef = descuentoDesdeJson(c.descuento_def);
+    let desglose: { porTasa: any[]; retenciones: any[]; descuentoTotal: number } = { porTasa: [], retenciones: [], descuentoTotal: 0 };
     try {
         // Solo las líneas que el cliente aceptó: tras una aprobación parcial el
         // subtotal y el total ya excluyen las demás, y el desglose debe cuadrar
@@ -2298,6 +2336,7 @@ export async function getLiveSnapshot(orgId: string, cotizacionId: string): Prom
                     nombre: r.nombre, tipo: r.tipo, tasa: r.tasa, base: retencionBase(r.baseTipo),
                 })),
                 roundLines: currencyDecimals(normalizeCurrency(c.quote_currency as string)),
+                descuento: descuentoParaMotor(descuentoDef),
             },
         );
     } catch { /* una tasa corrupta no debe tumbar el stream; se manda sin desglose */ }
@@ -2334,6 +2373,9 @@ export async function getLiveSnapshot(orgId: string, cotizacionId: string): Prom
             decimals: currencyDecimals(normalizeCurrency(c.quote_currency as string)),
         }),
         retenciones: desglose.retenciones.map((r: any) => ({ nombre: r.nombre, monto: r.monto })),
+        descuento: desglose.descuentoTotal > 0
+            ? { monto: desglose.descuentoTotal, etiqueta: etiquetaDescuento(descuentoDef, String(c.org_idioma || 'es')) }
+            : null,
     };
 }
 

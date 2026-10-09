@@ -303,7 +303,7 @@ export const ANALYTICS_EVENTS = {
     },
     optional: {
       quote_id: 'uuid', invoice_id: 'uuid', cobro_id: 'uuid', stripe_invoice_id: 'string',
-      payment_kind: ['settlement', 'partial', 'legacy', 'invoice', 'recurring'],
+      payment_kind: ['settlement', 'partial', 'legacy', 'invoice', 'recurring', 'grouped', 'autopay'],
     },
     description: 'Ingreso confirmado por Stripe. ÚNICA fuente de revenue real.',
     since: 2,
