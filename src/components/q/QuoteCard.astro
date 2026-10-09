@@ -180,7 +180,7 @@ const demoRuntimeJson = esDemo
 import { iconInner } from '../../lib/icons';
 ---
 
-<div class="q-card" data-brand-surface style={brandStyle(resolveBrandProfile(ORG.brandProfile), ORG.colorMarca, ORG.colorSecundario)} data-token={q.token} data-folio={folio} data-iva={ORG.ivaPct} data-iva-incluido={q.iva_incluido ? '1' : ''} data-currency={ORG.moneda || 'MXN'} data-pais={ORG.paisCode || 'MX'} data-org={ORG.nombre} data-init={yaAprobada ? 'approved' : yaRechazada ? 'rejected' : 'review'} data-demo={esDemo ? '1' : undefined} data-solo-lectura={soloLectura ? '1' : undefined} data-status={q.status}>
+<div class="q-card" data-brand-surface style={brandStyle(resolveBrandProfile(ORG.brandProfile), ORG.colorMarca, ORG.colorSecundario)} data-token={q.token} data-folio={folio} data-iva={ORG.ivaPct} data-iva-incluido={q.iva_incluido ? '1' : ''} data-currency={ORG.moneda || 'MXN'} data-pais={ORG.paisCode || 'MX'} data-tax-rounding={q.taxRounding ?? 'line'} data-org={ORG.nombre} data-init={yaAprobada ? 'approved' : yaRechazada ? 'rejected' : 'review'} data-demo={esDemo ? '1' : undefined} data-solo-lectura={soloLectura ? '1' : undefined} data-status={q.status}>
     <script type="application/json" id="qRetenciones" is:inline set:html={jsonForScript((q.retenciones || []).map((r: any) => ({ nombre: r.nombre, tasa: r.tasa, tipo: r.tipo, base: retencionBase(r.baseTipo) })))} />
     <script type="application/json" id="qDescuento" is:inline set:html={jsonForScript(q.descuento ? { tipo: q.descuento.tipo, valor: q.descuento.valor } : null)} />
     {esDemo && <script type="application/json" id="qDemo" is:inline set:html={demoRuntimeJson} />}
@@ -798,6 +798,10 @@ import { iconInner } from '../../lib/icons';
     // negocio en Madrid ve "1.000,00 €" y el de uno en Tokio "¥1,000".
     // Un solo constructor por superficie — ver regla 21 de estándares.
     const QCURRENCY = (card?.dataset.currency || 'MXN').toUpperCase();
+    // Regla de redondeo del impuesto con la que se guardó la cotización
+    // (cotizaciones.tax_rounding): la vista previa del cliente debe dar el
+    // mismo total que el servidor (CL: impuesto por documento).
+    const QTAX_ROUNDING: 'line' | 'document' = card?.dataset.taxRounding === 'document' ? 'document' : 'line';
     const qCurrencyFmt = (minimumFractionDigits: number, maximumFractionDigits: number) => {
         try {
             return new Intl.NumberFormat(I18NQ.localeIntl || 'es-MX', {
@@ -927,7 +931,7 @@ import { iconInner } from '../../lib/icons';
             precio_unitario: l.precio,
             tax_rate: l.taxRate ?? fallbackRate,
         }));
-        return calculateDocumentTotals(items, { ivaIncluido, retenciones: qRetenciones, roundLines: currencyDecimals(QCURRENCY), descuento: qDescuento });
+        return calculateDocumentTotals(items, { ivaIncluido, retenciones: qRetenciones, roundLines: currencyDecimals(QCURRENCY), taxRounding: QTAX_ROUNDING, descuento: qDescuento });
     }
 
     // ── Aprobación parcial: selección de líneas + total en vivo ──
@@ -992,7 +996,7 @@ import { iconInner } from '../../lib/icons';
                     });
                     try {
                         // Mismo redondeo por línea que el servidor al firmar.
-                        const totals = calculateDocumentTotals(items, { ivaIncluido, retenciones: qRetenciones, roundLines: currencyDecimals(QCURRENCY), descuento: qDescuento });
+                        const totals = calculateDocumentTotals(items, { ivaIncluido, retenciones: qRetenciones, roundLines: currencyDecimals(QCURRENCY), taxRounding: QTAX_ROUNDING, descuento: qDescuento });
                         tot.textContent = moneyFmt(totals.total);
                     } catch {
                         // Una tasa corrupta no debe tumbar la vista previa — el

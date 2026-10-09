@@ -3,7 +3,7 @@ import { jsonForScript } from '../../../../lib/escape';
 // Editor de cotizaciones para editar y crear nuevas versiones (V2, V3...).
 import AppLayout from '../../../../layouts/AppLayout.astro';
 import { getProductos, getClientes, getOrg, getCotizacion, getImpuestos } from '../../../../lib/queries';
-import { getCountryProfile } from '../../../../lib/countries';
+import { getCountryProfile, taxRoundingFor } from '../../../../lib/countries';
 import { buildTaxOptions, defaultTaxRate, retencionesFrom } from '../../../../lib/impuestos';
 import { currentLocale } from '../../../../lib/context';
 import { t } from '../../../../i18n/app';
@@ -166,6 +166,9 @@ import { iconInner } from '../../../../lib/icons';
     taxOptions: TAX_OPTIONS, defaultTaxRate: DEFAULT_TAX_RATE, retenciones: RETENCIONES,
     taxLabel: TAX_LABEL, multiTax: MULTI_TAX,
     taxCountry: PAIS, taxRegion: ORG.fiscalMetadata?.region || null,
+    // Regla de redondeo del impuesto del país (CL: por documento): guardar una
+    // versión recalcula con ella (actions/quotes.ts), así que la vista previa también.
+    taxRounding: taxRoundingFor(PAIS),
     // Clave SAT por línea: solo México timbra CFDI (src/lib/sat-line-picker.ts).
     sat: isMx, satI18n: satLineI18n(L),
 })} />
@@ -287,9 +290,10 @@ import { iconInner } from '../../../../lib/icons';
                 precio_negociado: l.negociado,
                 tax_rate: l.taxRate ?? DEFAULT_TAX,
             })),
-            // Mismo redondeo por línea que el servidor, en la divisa de la cotización.
+            // Mismo redondeo que el servidor, en la divisa de la cotización.
             {
                 ivaIncluido, retenciones: BOOT.retenciones || [], roundLines: currencyDecimals(quoteCurrency || 'MXN'),
+                taxRounding: BOOT.taxRounding === 'document' ? 'document' : 'line',
                 descuento: descuento.engine(),
             },
         );

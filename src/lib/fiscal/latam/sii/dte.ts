@@ -9,11 +9,20 @@
 //     formato DTE, IndExe); 61 para la nota de crédito.
 //   - Montos en pesos chilenos, enteros (MontoType: nonNegativeInteger). Un
 //     documento en otra moneda no se emite: sería una factura de exportación.
-//   - IVA: 19 % sobre el monto neto del documento ("IVA: valor num. = a Monto
-//     neto * tasa IVA", formato DTE, campo 112). Cord calcula el IVA por
-//     concepto; si su suma no coincide con el 19 % del neto, el documento NO se
-//     envía (el SII no lo rechaza, pero manda corregirlo con nota de crédito, y
-//     lo que el SII registra debe ser lo que el cliente paga).
+//   - IVA: UNA vez por documento sobre el monto neto. Formato DTE v2.2
+//     (2019-07-10), campo 107 MntNeto: "Suma de valores total de ítems
+//     afectos - descuentos globales + recargos globales"; campo 111 TasaIVA
+//     "En Porcentaje"; campo 112 IVA: "Valor num.= a Monto neto *tasa IVA"; y
+//     MontoType es nonNegativeInteger (SiiTypes_v10.xsd), así que el producto
+//     se redondea al peso. Sin tolerancia publicada, y el SII no lo rechaza:
+//     "No se rechazan documentos por errores de contenido por ejemplo errores
+//     como que el IVA no sea igual a la tasa del IVA por el Monto neto; las
+//     correcciones a este tipo de errores deberán ser hechas vía Nota de
+//     Crédito o Nota de Débito" (§2.2). Por eso el IVA lo calcula el motor de
+//     Cord por documento para Chile (countries.ts, taxRounding 'document') y
+//     el DTE lleva ESE importe, el mismo que ve y paga el cliente. La
+//     comprobación contra round(neto × 19 %) queda como red de seguridad: solo
+//     salta con un documento guardado con otra regla, y entonces no se envía.
 //   - Exento: IndExe=1 en la línea (33 y 61); en la 34 no se usa ("No se usa
 //     este campo si la factura es exenta en forma global") y el documento solo
 //     informa MntExe (manual de muestras impresas, 1.4).
@@ -211,15 +220,17 @@ export function armarBorrador(e: EntradaDte): BorradorSii {
     const tipo: TipoDte = original ? 61 : neto > 0 || lineas.some((l) => !l.exento) ? 33 : 34;
     if (tipo === 34 && lineas.some((l) => !l.exento)) throw new RailDatosError('Una factura exenta no lleva conceptos con IVA.');
 
-    // IVA del documento: 19 % del neto. Cord lo calculó concepto por concepto.
-    const iva = Math.round(neto * TASA_IVA);
-    const ivaCord = entero(e.totales.taxes);
+    // IVA del documento: el que calculó el motor de Cord (por documento en
+    // Chile), verificado contra la fórmula del SII (campo 112).
     if (!esEntero(e.totales.taxes) || !esEntero(e.totales.subtotal)) {
         throw new RailDatosError('El documento tiene centavos: en pesos chilenos los montos son enteros. Vuelve a guardarlo en CLP.');
     }
-    if (ivaCord !== iva) {
-        throw new RailDatosError(`El IVA de este documento ($ ${pesos(ivaCord)}) se calculó concepto por concepto y difiere del 19 % del neto que exige el SII ($ ${pesos(iva)}). Ajusta un precio o agrupa los conceptos y vuelve a emitirlo.`);
+    const iva = entero(e.totales.taxes);
+    const ivaSii = Math.round(neto * TASA_IVA);
+    if (iva !== ivaSii) {
+        throw new RailDatosError(`El IVA de este documento ($ ${pesos(iva)}) no es el 19 % de su monto neto ($ ${pesos(ivaSii)}), como lo calcula el SII: se guardó con otra regla de redondeo. Vuelve a guardarlo (o edita la cotización de la que viene) para recalcularlo y emítelo de nuevo.`);
     }
+    const ivaCord = iva;
     const total = neto + exento + iva;
     if (total !== entero(e.totales.subtotal) + ivaCord || entero(e.totales.subtotal) !== neto + exento) {
         throw new RailDatosError('Los importes del documento no cuadran entre sí. Vuelve a guardarlo antes de emitir.');

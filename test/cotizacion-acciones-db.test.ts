@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PGlite } from '@electric-sql/pglite';
 
-const m = vi.hoisted(() => ({ db: null as any, concurrent: null as null | string, cancel: vi.fn(), reserve: vi.fn() }));
+const m = vi.hoisted(() => ({ db: null as any, concurrent: null as null | string, cancel: vi.fn(), reserve: vi.fn(), pais: 'MX' }));
 
 vi.mock('../src/lib/db', () => ({
     sql: (s: TemplateStringsArray, ...values: any[]) => ({ text: s.reduce((text, part, i) => text + (i ? `$${i}` : '') + part, ''), values }),
@@ -37,7 +37,7 @@ vi.mock('../src/lib/cotizaciones', () => ({
 }));
 vi.mock('../src/lib/cobros', () => ({ materializeAnticipoCobros: vi.fn() }));
 vi.mock('../src/lib/impuestos-db', () => ({
-    taxCatalogFor: async () => ({ resolve: () => 0, defaultRate: 0, retenciones: [] }),
+    taxCatalogFor: async () => ({ resolve: () => 0, defaultRate: 0, retenciones: [], country: m.pais }),
     TaxCatalogUnavailableError: class extends Error {},
 }));
 vi.mock('../src/lib/posthog-server', () => ({ trackServer: vi.fn() }));
@@ -60,7 +60,7 @@ beforeAll(async () => {
             sent_at timestamptz, approved_at timestamptz, paid_at timestamptz, payment_method text, aprob_estado text,
             cliente_id uuid, terminos text, vigencia date, notas text, subtotal numeric, iva numeric, total numeric,
             retencion_total numeric, retenciones_snapshot jsonb, iva_incluido boolean, anticipo_pct numeric, es_recurrente boolean,
-            descuento numeric not null default 0, descuento_def jsonb);
+            descuento numeric not null default 0, descuento_def jsonb, tax_rounding text);
         create table eventos(org_id uuid, cotizacion_id uuid, tipo text, detalle text);
         create table cotizacion_items(cotizacion_id uuid, producto_id uuid, descripcion text, cantidad numeric, precio_unitario numeric,
             precio_negociado numeric, costo_unitario numeric, orden int, tax_rate numeric, exemption_reason text,
@@ -146,6 +146,19 @@ describe('edición de líneas contra Postgres', () => {
         const r = await runQuoteAction(ctx, QUOTE, { action: 'update_draft', items: [{ descripcion: 'nueva', cantidad: 2, precio_unitario: 50 }] });
         expect(r.status).toBe(200);
         expect((await m.db.query('select descripcion from cotizacion_items')).rows).toEqual([{ descripcion: 'nueva' }]);
+        // La regla de redondeo del impuesto se guarda con los totales que produjo.
+        expect((await one('select tax_rounding from cotizaciones')).tax_rounding).toBe('line');
+    });
+
+    it('una cotización chilena se guarda con el impuesto redondeado por documento', async () => {
+        m.pais = 'CL';
+        try {
+            const r = await runQuoteAction(ctx, QUOTE, { action: 'update_draft', items: [{ descripcion: 'cl', cantidad: 1, precio_unitario: 1003 }] });
+            expect(r.status).toBe(200);
+            expect((await one('select tax_rounding from cotizaciones')).tax_rounding).toBe('document');
+        } finally {
+            m.pais = 'MX';
+        }
     });
 
     it('si falla una línea no se pierde nada: ni líneas ni encabezado', async () => {

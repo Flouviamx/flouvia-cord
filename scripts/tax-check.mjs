@@ -16,7 +16,9 @@
 // A diferencia de los tests unitarios, este script mira también la FUENTE: que
 // las constantes muertas no vuelvan a colarse en las superficies de dinero.
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
     calculateDocumentTotals,
     calculateInvoiceTotals,
@@ -27,6 +29,7 @@ import {
     getCountryProfile,
     taxKindLabel,
     taxPresetsFor,
+    taxRoundingFor,
 } from '../src/lib/countries.ts';
 import { splitTaxBucket } from '../src/lib/tax-components.ts';
 import { buildTaxOptions, defaultTaxRate } from '../src/lib/impuestos.ts';
@@ -271,6 +274,34 @@ assert.ok(!taxPresetsFor('PE').some((p) => p.kind === 'retencion'), 'PE: el cat�
     assert.ok(validRfc('GODE561231GR8'), 'RFC de persona física con dígito verificador del SAT');
     assert.ok(!validRfc('EKU9003173C8'), 'un dígito verificador alterado debe rechazarse');
     assert.ok(!validRfc('123'), 'un RFC demasiado corto debe rechazarse');
+}
+
+// ── 10. Redondeo del impuesto: una sola fuente por país ─────────────────────
+// Chile calcula el IVA una vez por documento (Formato DTE v2.2 del SII, campo
+// 112: "Monto neto * tasa IVA", en pesos enteros); el resto, por línea. La
+// regla sale de countries.ts y TODA llamada al motor que redondea (roundLines)
+// declara también taxRounding: un llamador que la olvide calcularía la
+// cotización, la factura o el link público con una aritmética distinta.
+{
+    assert.equal(taxRoundingFor('CL'), 'document');
+    for (const pais of ['MX', 'ES', 'US', 'AR', 'BR', 'CO', 'PE']) assert.equal(taxRoundingFor(pais), 'line', pais);
+    const tres = [1003, 1003, 1003].map((p) => linea(1, p, 0.19));
+    assert.equal(calculateDocumentTotals(tres, { roundLines: 0 }).impuestos, 573, 'por línea: 191 × 3');
+    assert.equal(calculateDocumentTotals(tres, { roundLines: 0, taxRounding: taxRoundingFor('CL') }).impuestos, 572, 'por documento: round(3009 × 0,19)');
+
+    const SRC = fileURLToPath(new URL('../src/', import.meta.url));
+    const archivos = (dir) => readdirSync(dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory()
+        ? archivos(join(dir, e.name))
+        : /\.(ts|tsx|astro)$/.test(e.name) ? [join(dir, e.name)] : []));
+    const sinRegla = [];
+    for (const f of archivos(SRC)) {
+        const texto = readFileSync(f, 'utf8');
+        for (const m of texto.matchAll(/roundLines:/g)) {
+            const ventana = texto.slice(Math.max(0, m.index - 600), m.index + 400);
+            if (!ventana.includes('taxRounding')) sinRegla.push(`${f.slice(SRC.length)}:${texto.slice(0, m.index).split('\n').length}`);
+        }
+    }
+    assert.deepEqual(sinRegla, [], `llamadas al motor con roundLines y sin taxRounding (la regla del país, countries.ts): ${sinRegla.join(', ')}`);
 }
 
 console.log('security:tax (impuestos, rieles de cobro y zona horaria) OK');

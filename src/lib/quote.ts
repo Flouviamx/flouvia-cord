@@ -3,7 +3,7 @@
 // público y la API v1. Aquí viven también su vocabulario de estados y sus
 // totales, calculados con el MISMO motor que los escribe en la base.
 
-import { calculateDocumentTotals, retencionBase, type RetencionBase } from '../../packages/elements/src/engine';
+import { calculateDocumentTotals, retencionBase, type RetencionBase, type TaxRounding } from '../../packages/elements/src/engine';
 import { currencyDecimals } from './currency';
 import { descuentoParaMotor, type DescuentoDef } from './descuentos';
 
@@ -84,6 +84,12 @@ export interface Quote {
     descuento?: DescuentoDef | null;
     /** Importe del descuento guardado (`cotizaciones.descuento`), antes de impuestos. */
     descuentoTotal?: number;
+    /**
+     * Regla de redondeo del impuesto con la que se guardaron sus totales
+     * (`cotizaciones.tax_rounding`, ver taxRoundingGuardado). Todo recálculo en
+     * vivo usa esta, no la vigente del país.
+     */
+    taxRounding?: TaxRounding;
 }
 
 export const STATUS_META: Record<QuoteStatus, { label: string; color: string; bg: string }> = {
@@ -137,6 +143,7 @@ const documentTotals = (q: Quote) => {
         // el que se guardó y con el que se factura (ver RoundingOptions).
         {
             ivaIncluido: !!q.iva_incluido, retenciones, roundLines: currencyDecimals(q.baseCurrency || 'MXN'),
+            taxRounding: q.taxRounding ?? 'line',
             descuento: descuentoParaMotor(q.descuento),
         },
     );

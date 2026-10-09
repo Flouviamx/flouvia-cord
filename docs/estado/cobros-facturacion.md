@@ -1098,9 +1098,13 @@ Cobertura:
   que no lo recibió (STATUS 2, 3, 9, o 5 con token nuevo). Con trackid y sin
   registro del DTE a las 24 h → rechazado.
 - **Montos**: pesos chilenos enteros (otra divisa sería exportación). IVA del
-  documento = round(neto × 19 %); Cord lo calcula por concepto y, si la suma
-  difiere, el documento NO se envía y el mensaje dice cuánto (el SII obligaría a
-  corregirlo con nota de crédito). Descuento de documento como `DescuentoMonto`
+  documento = round(neto × 19 %), una sola vez (Formato DTE v2.2, campos 107,
+  111 y 112; sin tolerancia publicada). Chile calcula así en TODO Cord, no solo
+  en el DTE: `taxRounding: 'document'` en su perfil (ver "IVA redondeado por
+  documento" abajo), y el DTE lleva el IVA del documento tal cual. La
+  comprobación contra round(neto × 19 %) queda como red de seguridad: solo
+  salta con un documento guardado con otra regla, y entonces no se envía (el SII
+  no lo rechazaría, pero obligaría a corregirlo con nota de crédito). Descuento de documento como `DescuentoMonto`
   por línea con `MontoItem` neto; precio y cantidad solo se informan si
   round(cantidad × precio) = monto + descuento. Retenciones: rechazadas (la de
   honorarios es de la boleta de honorarios).
@@ -1126,10 +1130,65 @@ Cobertura:
 - **Certificación** (`SII_ENTORNO=homologacion`, maullin): número `C-FE-…`,
   `simulado: true`, `livemode: false` y leyenda "sin validez tributaria".
 
-**Decisiones abiertas:** el IVA por concepto frente al del documento (hoy se
-rechaza la diferencia en vez de ajustar; la salida limpia es que el motor
-calcule el IVA chileno por documento); `fiscalId` = `<RUT>/T<tipo>/F<folio>`;
-los plazos de 2 h y 24 h; la vigencia de 60 min del token.
+**Decisiones abiertas:** `fiscalId` = `<RUT>/T<tipo>/F<folio>`; los plazos de
+2 h y 24 h; la vigencia de 60 min del token.
+
+### IVA redondeado por documento (Chile) — oct 2026
+
+Fuente primaria: Formato DTE v2.2 del SII (2019-07-10). Campo 107 MntNeto:
+"Suma de valores total de ítems afectos - descuentos globales + recargos
+globales" (con montos brutos, "se debe dividir por (1 + tasa de IVA)"); campo
+111 TasaIVA "En Porcentaje"; campo 112 IVA: "Valor num.= a Monto neto *tasa
+IVA"; los montos son `MontoType` (`nonNegativeInteger`, SiiTypes_v10.xsd). No
+hay tolerancia publicada, y §2.2 dice que el SII no rechaza un IVA distinto de
+neto × tasa, sino que obliga a corregirlo con nota de crédito o de débito.
+
+Con el IVA redondeado por línea, una factura de varias líneas en pesos
+descuadraba seguido (medido con importes al azar: 26 % con dos líneas, 35 % con
+tres, 47 % con cinco) y el riel no la enviaba. Ahora:
+
+- **Motor** (`packages/elements/src/engine.ts`, regla 23, sigue siendo ÚNICO):
+  opción `taxRounding: 'line' | 'document'` junto a `roundLines`. `'line'` es el
+  default y no cambia nada. `'document'`: por tasa, impuesto = round(Σ bases ×
+  tasa). Por LÍNEA el impuesto de cada tasa se reparte por mayor residuo
+  (unidades mínimas, empate por orden de línea): la suma por línea es
+  exactamente el impuesto del documento y cada línea queda a lo más a un peso de
+  round(base × tasa). Con precio con IVA incluido, la base de cada tasa es
+  round(Σ importes con IVA ÷ 1,19) —el "Monto neto" con montos brutos del campo
+  107— repartida igual, y el IVA es esa base × 19 % redondeado; el total puede
+  quedar a un peso de la suma capturada, igual que ya pasaba por línea.
+- **Fuente única por país**: `taxRounding` del perfil (`src/lib/countries.ts`,
+  `taxRoundingFor`); solo Chile tiene `'document'`. `npm run security:tax`
+  falla si una llamada al motor con `roundLines` no declara `taxRounding`.
+- **Llamadores**: la cotización (crear y editar en `cotizaciones.ts` y
+  `actions/quotes.ts`, que también sirven a la API v1 y al MCP), los tres
+  editores (cotización nueva, versión y factura nueva), la factura
+  (`fiscal/invoices.ts › buildLines`, también desde la API v1 y el MCP) y la nota de crédito
+  (`fiscal/credit-note.ts`, que ahora calcula el impuesto con el motor), la
+  factura desde una cotización (`fiscal/emit.ts`), la factura global de México
+  (regla de México), el link público `/q` (SSR, vista previa del cliente en
+  `QuoteCard`, aprobación parcial en `/api/q/[token]` y el stream en vivo de
+  `getLiveSnapshot`) y el PDF de la cotización (`lib/quote.ts`). `/i`, el PDF de
+  la factura y el DTE leen lo guardado, que ya sale de esa regla.
+- **El snapshot manda.** Una cotización guarda la regla con sus totales
+  (`cotizaciones.tax_rounding`, `db/deploy/2026-10-09-redondeo-impuesto.sql`;
+  nulo = por línea, lo anterior) y todo recálculo —link público, aprobación
+  parcial, factura desde la cotización— usa la guardada: lo que el cliente vio y
+  pagó no cambia por debajo. Editar la cotización la recalcula con la regla
+  vigente. Una factura emitida no se recalcula: PDF, `/i` y DTE usan su
+  snapshot; una nota de crédito usa la regla del país salvo que la factura
+  original no se pueda reproducir con ella (un documento anterior), en cuyo caso
+  usa la de la factura.
+- **Fuera de alcance, a propósito**: el Quote Builder headless de Elements
+  (`createQuoteBuilder`) no pasa `roundLines` ni conoce el país —su total es una
+  vista previa y el servidor devuelve el autoritativo al crear—, y los scripts de
+  contrato de ARCA, NFS-e y DIAN prueban sus propios rieles con la regla por
+  línea de esos países.
+
+Verificación: `test/iva-documento.test.ts` (motor, fuente por país, 600
+facturas al azar que con IVA por línea no se podían enviar, descuento, nota de
+crédito parcial y documentos ya emitidos), `test/sii-db.test.ts` (emisión de
+punta a punta de esos casos) y `npm run security:sii`.
 
 **Verificación:** `npm run security:sii` (en `test:payments`) reproduce el
 timbre y los DigestValue del ejemplo oficial F60T33, valida los sobres 33, 34,
@@ -2015,6 +2074,8 @@ Contratos que quedaron vigentes tras auditar Cord Invoicing en los 12 mercados.
   API, MCP, configuración asistida y cliente nuevo desde una cotización.
 - **Redondeo por línea** en la divisa del documento (`roundLines`): los totales son
   la suma de importes ya redondeados, que es lo que el CFDI y Verifactu validan.
+  Chile redondea el impuesto por documento (`taxRounding`, oct 2026; ver "IVA
+  redondeado por documento (Chile)").
 - **México.** PUE con la forma real cuando la factura nace pagada, PPD/99 si no; el
   complemento de pago (CFDI tipo P) se emite solo al registrar cada pago, con su
   estado en `provider_data.reps` y reintento desde la factura. Una emisión cuyo

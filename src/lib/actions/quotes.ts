@@ -11,6 +11,7 @@ import { MAX_ITEMS, NEGATIVE_LINE_ERROR, QuoteError, assertClienteDeOrg, hasNega
 import { materializeAnticipoCobros } from '../cobros';
 import { sanitizeItem, calculateDocumentTotals } from '../../../packages/elements/src/engine';
 import { taxCatalogFor, TaxCatalogUnavailableError } from '../impuestos-db';
+import { taxRoundingFor } from '../countries';
 import { exemptionReasonFor } from '../fiscal/exemption';
 import { lineSatKeyError, lineSatKeysFrom } from '../fiscal/sat-claves';
 import { trackServer } from '../posthog-server';
@@ -198,13 +199,17 @@ export async function runQuoteAction(ctx: ActionContext, id: string, input: Reco
                 }
             }
         }
+        // Editar recalcula TODO con la regla vigente del país (CL: impuesto por
+        // documento) y la guarda: desde aquí, los recálculos usan esta.
+        const taxRounding = taxRoundingFor(catalogo.country);
         const totals = calculateDocumentTotals(items as any[], {
             ivaIncluido: iva_incluido,
             retenciones: catalogo.retenciones,
-            // Redondeo por línea en la divisa de venta: es lo que después
-            // timbra el CFDI y registra Verifactu, así que la cotización y su
+            // Redondeo en la divisa de venta: es lo que después timbra el CFDI,
+            // registra Verifactu o envía el DTE, así que la cotización y su
             // factura cuadran al centavo (ver RoundingOptions en engine.ts).
             roundLines: currencyDecimals(monedaVenta),
+            taxRounding,
             descuento: descuentoParaMotor(descuento),
         });
         const descuentoTotal = totals.descuentoTotal;
@@ -279,14 +284,14 @@ export async function runQuoteAction(ctx: ActionContext, id: string, input: Reco
                         retencion_total = ${retencionTotal},
                         retenciones_snapshot = ${retencionesSnapshot}::jsonb,
                         descuento = ${descuentoTotal}, descuento_def = ${descuentoJson}::jsonb,
-                        version = ${nextVersion}, iva_incluido = ${iva_incluido},
+                        version = ${nextVersion}, iva_incluido = ${iva_incluido}, tax_rounding = ${taxRounding},
                         anticipo_pct = ${anticipoPct}, es_recurrente = ${esRecurrente}
                       where id = ${id}`);
         } else {
             writes.push(sql`update cotizaciones set subtotal = ${realSubtotal}, iva = ${iva}, total = ${total},
                         retencion_total = ${retencionTotal}, retenciones_snapshot = ${retencionesSnapshot}::jsonb,
                         descuento = ${descuentoTotal}, descuento_def = ${descuentoJson}::jsonb,
-                        version = ${nextVersion}, iva_incluido = ${iva_incluido} where id = ${id}`);
+                        version = ${nextVersion}, iva_incluido = ${iva_incluido}, tax_rounding = ${taxRounding} where id = ${id}`);
         }
 
         const productosPropios = await productosDeOrg(orgId, items.map((it: any) => it.producto_id));

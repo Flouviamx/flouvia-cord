@@ -13,7 +13,7 @@ export { enableDebug, debugLog } from './debug.js';
 export type {
     EngineItem, EngineItemInput, EngineTotals,
     InvoiceItemInput, InvoiceItem, InvoiceTotals, TaxBreakdown,
-    RetencionInput, RetencionApplied, RetencionBase, DocumentTotals, DescuentoInput,
+    RetencionInput, RetencionApplied, RetencionBase, DocumentTotals, DescuentoInput, RoundingOptions, TaxRounding,
 } from './engine.js';
 export type { CordGlobalConfig } from './config.js';
 export type { CordErrorCode } from './api.js';

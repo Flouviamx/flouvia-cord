@@ -31,6 +31,7 @@
 import { sql, withOrgTx } from '../db';
 import { calculateDocumentTotals, type DescuentoInput } from '../../../packages/elements/src/engine';
 import { descuentoDesdeJson, descuentoParaMotor } from '../descuentos';
+import { taxRoundingFor } from '../countries';
 import { documentTypeForOrg } from './document-kind';
 import { partiesFrom } from './parties';
 import { finalizeInvoice } from './invoices';
@@ -118,7 +119,11 @@ export function conceptosDeVenta(
             precio_unitario: it.precio_unitario as number,
             precio_negociado: (it.precio_negociado ?? null) as number | null,
             tax_rate: it.tax_rate === null || it.tax_rate === undefined ? opts.fallbackRate : Number(it.tax_rate),
-        })), { ivaIncluido: opts.ivaIncluido, roundLines: 2, descuento: opts.descuento ?? null });
+        })), {
+            // La factura global es solo de México (CFDI 4.0, MXN): dos decimales y
+            // la regla de redondeo del perfil de México (por línea).
+            ivaIncluido: opts.ivaIncluido, roundLines: 2, taxRounding: taxRoundingFor('MX'), descuento: opts.descuento ?? null,
+        });
     } catch {
         return null;
     }

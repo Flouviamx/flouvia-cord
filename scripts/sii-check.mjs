@@ -55,6 +55,8 @@ import {
 } from '../src/lib/fiscal/latam/sii/ws.ts';
 import { faseDte, faseEnvio, mensajeToken, mensajeUpload, tokenTransitorio } from '../src/lib/fiscal/latam/sii/errores.ts';
 import { RailDatosError } from '../src/lib/fiscal/latam/errores.ts';
+import { calculateDocumentTotals } from '../packages/elements/src/engine.ts';
+import { taxRoundingFor } from '../src/lib/countries.ts';
 
 const FIX = fileURLToPath(new URL('./fixtures/sii/', import.meta.url));
 const leer = (f, enc = 'utf8') => readFileSync(join(FIX, f), enc);
@@ -343,6 +345,18 @@ assert.match(d33.envioXml, /Servicio de &quot;consultor\xeda&quot; &amp; soporte
         lineas: [linea({ subtotal: 1003, taxAmount: 191, total: 1194, quantity: 1, unitPrice: 1003 }), linea({ subtotal: 1003, taxAmount: 191, total: 1194, quantity: 1, unitPrice: 1003 })],
         totales: { subtotal: 2006, taxes: 382, total: 2388, currency: 'CLP' },
     }), /19 %/, 'IVA por línea (191+191) frente a round(2006 × 0,19) = 381: no se envía');
+    // El mismo documento con la regla de Chile en el motor único (countries.ts,
+    // taxRounding 'document'): el IVA es el del SII y el DTE lo lleva tal cual.
+    assert.equal(taxRoundingFor('CL'), 'document', 'Chile redondea el IVA por documento');
+    const motor = calculateDocumentTotals([1003, 1003].map((p) => ({ descripcion: 'x', cantidad: 1, precio_unitario: p, tax_rate: 0.19 })),
+        { roundLines: 0, taxRounding: taxRoundingFor('CL') });
+    assert.deepEqual([motor.impuestos, motor.lineas.map((l) => l.impuesto)], [381, [191, 190]], 'IVA del documento repartido entre las líneas');
+    const conMotor = armarBorrador({
+        ...base,
+        lineas: motor.lineas.map((l) => linea({ subtotal: l.base, taxAmount: l.impuesto, total: l.total, quantity: 1, unitPrice: l.base })),
+        totales: { subtotal: motor.subtotal, taxes: motor.impuestos, total: motor.total, currency: 'CLP' },
+    });
+    assert.deepEqual([conMotor.neto, conMotor.iva, conMotor.total], [2006, 381, 2387], 'el DTE lleva el IVA del documento');
 
     // CAF.
     assert.throws(() => parsearCaf(cafDePrueba({ rut: '96543210-8' }).bytes, RUT_EMISOR), /RUT/, 'un CAF de otro RUT');

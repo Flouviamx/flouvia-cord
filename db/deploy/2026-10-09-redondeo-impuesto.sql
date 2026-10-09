@@ -1,0 +1,21 @@
+-- Migración aditiva e idempotente (oct 2026): cotizaciones.tax_rounding, la
+-- regla de redondeo del impuesto con la que se calcularon los totales
+-- guardados de cada cotización. Corre en cada despliegue ANTES del build
+-- (vercel.json → scripts/migrate-facturacion.mjs). Cada sentencia es espejo
+-- LITERAL de la sección "Redondeo del impuesto por documento" al final de
+-- db/schema.sql (lo verifica test/migrate-facturacion.test.ts).
+
+-- ── Redondeo del impuesto por documento (oct 2026) ──────────────────────────
+-- Con qué regla se calcularon los totales GUARDADOS de una cotización (opción
+-- `taxRounding` del motor, packages/elements/src/engine.ts): 'line' (cada
+-- concepto redondea su impuesto y el documento los suma; CFDI, Verifactu) o
+-- 'document' (por tasa, round(Σ bases × tasa); la regla del DTE chileno).
+-- Se fija con el país del emisor (src/lib/countries.ts, taxRoundingFor) al
+-- crear o editar, y todo recálculo posterior —link público, aprobación
+-- parcial, factura desde la cotización— usa el guardado: un documento no
+-- cambia de aritmética por debajo. Nulo = 'line', la regla con la que se
+-- guardaron todas las cotizaciones anteriores. Las facturas no la necesitan:
+-- un borrador se recalcula entero al guardarse y una emitida no se recalcula
+-- (su snapshot manda).
+alter table cotizaciones add column if not exists tax_rounding text check (tax_rounding in ('line', 'document'));
+-- END redondeo-impuesto

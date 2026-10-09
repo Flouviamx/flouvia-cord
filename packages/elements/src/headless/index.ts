@@ -18,7 +18,7 @@ export type { FiscalLocale } from '../fiscal/messages.js';
 export { sanitizeAppearance, appearanceToCss, APPEARANCE_VARIABLES } from '../appearance.js';
 export type { SanitizedAppearance, AppearanceTheme } from '../appearance.js';
 export { calculateDocumentTotals, calculateInvoiceTotals, roundMoney } from '../engine.js';
-export type { DocumentTotals, InvoiceItemInput, RetencionInput, RetencionBase, DescuentoInput } from '../engine.js';
+export type { DocumentTotals, InvoiceItemInput, RetencionInput, RetencionBase, DescuentoInput, RoundingOptions, TaxRounding } from '../engine.js';
 export { CordError } from '../api.js';
 export type { CordErrorCode } from '../api.js';
 export type { CordElementsConfig, CordTaxOption, CordRetencion, CordTerminos } from '../contract/elements-config.js';

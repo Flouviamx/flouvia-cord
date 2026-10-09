@@ -65,6 +65,9 @@ const { fechaChile } = await import('../src/lib/fiscal/latam/sii/texto');
 const { railListo } = await import('../src/lib/fiscal/latam/estado');
 const { orgsConPendientes, resolverPendientesDeOrg } = await import('../src/lib/fiscal/latam/resolucion');
 const { representacionDe } = await import('../src/lib/fiscal/latam/representacion');
+const { calculateDocumentTotals } = await import('../packages/elements/src/engine');
+const { taxRoundingFor } = await import('../src/lib/countries');
+const { creditNoteBreakdown } = await import('../src/lib/fiscal/credit-note');
 const provider = new ChileSiiProvider({ esperaVeredictoMs: 30 });
 const HOY = fechaChile(new Date());
 
@@ -526,6 +529,71 @@ describe('nota de crédito (61)', () => {
         const r = await provider.cancelDocument('x');
         expect(r).toMatchObject({ success: false, status: 'rejected' });
         expect(r.error).toMatch(/nota de crédito/);
+    });
+});
+
+describe('IVA por documento (la regla de Chile en el motor único)', () => {
+    /** Líneas y totales como los guarda una factura chilena (fiscal/invoices.ts › buildLines). */
+    function desdeMotor(items: { precio: number; tasa?: number; cantidad?: number }[], extra: Record<string, unknown> = {}) {
+        const t = calculateDocumentTotals(
+            items.map((it) => ({ descripcion: 'Servicio', cantidad: it.cantidad ?? 1, precio_unitario: it.precio, tax_rate: it.tasa ?? 0.19 })),
+            { roundLines: 0, taxRounding: taxRoundingFor('CL'), ...extra },
+        );
+        return {
+            lines: t.lineas.map((l) => ({
+                description: l.descripcion, quantity: l.cantidad, unitPrice: l.base / l.cantidad, taxRate: l.tax_rate,
+                subtotal: l.base, taxAmount: l.impuesto, total: l.total, ...(l.descuento > 0 ? { discount: l.descuento } : {}),
+            })),
+            totals: { subtotal: t.subtotal, taxes: t.impuestos, total: t.total, currency: 'CLP', discountTotal: t.descuentoTotal },
+        };
+    }
+
+    it('varias líneas que descuadraban con IVA por línea (573 contra 572) se emiten', async () => {
+        const { lines, totals } = desdeMotor([{ precio: 1003 }, { precio: 1003 }, { precio: 1003 }]);
+        expect(totals.taxes).toBe(572);
+        const r = await provider.issueDocument(request(await nuevoDocumento(), { lines, totals }));
+        expect(r.success).toBe(true);
+        const archivo = sii.uploads.at(-1)!;
+        expect(archivo).toContain('<MntNeto>3009</MntNeto>');
+        expect(archivo).toContain('<IVA>572</IVA>');
+        expect(archivo).toContain('<MntTotal>3581</MntTotal>');
+    });
+
+    it('con descuento de documento: DescuentoMonto por línea e IVA sobre el neto ya descontado', async () => {
+        const { lines, totals } = desdeMotor([{ precio: 1003, cantidad: 3 }, { precio: 2007 }, { precio: 4999, tasa: 0 }], { descuento: { tipo: 'monto', valor: 1234 } });
+        const r = await provider.issueDocument(request(await nuevoDocumento(), { lines, totals }));
+        expect(r.success).toBe(true);
+        const archivo = sii.uploads.at(-1)!;
+        const neto = Number(/<MntNeto>(\d+)</.exec(archivo)![1]);
+        expect(Number(/<IVA>(\d+)</.exec(archivo)![1])).toBe(Math.round(neto * 0.19));
+        expect([...archivo.matchAll(/<DescuentoMonto>(\d+)</g)].reduce((s, x) => s + Number(x[1]), 0)).toBe(1234);
+    });
+
+    it('nota de crédito parcial de esa factura, con el IVA de su propio neto', async () => {
+        const factura = await nuevoDocumento();
+        const { lines, totals } = desdeMotor([{ precio: 1003 }, { precio: 2017 }, { precio: 3011 }, { precio: 4999, tasa: 0 }]);
+        const f = await provider.issueDocument(request(factura, { lines, totals }));
+        expect(f.success).toBe(true);
+        const original = {
+            country_code: 'CL', currency: 'CLP', total: totals.total, subtotal: totals.subtotal, tax_total: totals.taxes,
+            retencion_total: 0, retenciones_snapshot: [], line_items_snapshot: lines,
+        };
+        let nota: ReturnType<typeof creditNoteBreakdown> | null = null;
+        for (let monto = Math.floor(totals.total / 3); !nota && monto < totals.total; monto++) {
+            try { nota = creditNoteBreakdown(original, monto); } catch { /* el siguiente importe */ }
+        }
+        const nc = await nuevoDocumento({ creditNoteOf: factura });
+        const r = await provider.issueDocument(request(nc, {
+            documentType: 'sii_credit_note', lines: nota!.lines,
+            totals: { subtotal: nota!.subtotal, taxes: nota!.taxes, total: nota!.subtotal + nota!.taxes, currency: 'CLP' },
+        }));
+        expect(r.success).toBe(true);
+        const archivo = sii.uploads.at(-1)!;
+        expect(archivo).toContain('<TipoDTE>61</TipoDTE>');
+        expect(archivo).toContain('<CodRef>3</CodRef>');
+        const neto = Number(/<MntNeto>(\d+)</.exec(archivo)![1]);
+        expect(Number(/<IVA>(\d+)</.exec(archivo)![1])).toBe(Math.round(neto * 0.19));
+        expect(Number(/<IVA>(\d+)</.exec(archivo)![1])).toBe(nota!.taxes);
     });
 });
 
