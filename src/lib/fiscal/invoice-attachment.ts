@@ -55,6 +55,9 @@ export async function buildInvoicePdfAttachment(orgId: string, documentoId: stri
  *     misma factura con el mismo nombre de archivo; un lector que no entiende
  *     Factur-X ve el PDF de siempre.
  *   - xrechnung: el PDF más el XML de XRechnung (UBL).
+ *   - facturae: el PDF más la Facturae 3.2.2 (`.xsig` si el negocio activó la
+ *     firma con su certificado, `.xml` sin firmar si no). Solo emisores en
+ *     España: `renderEInvoice` la niega fuera y el correo sale con el PDF.
  *
  * Si el documento no califica (falta un dato que el formato exige) el correo
  * sale con el PDF de siempre: el detalle de la factura dice qué falta. NUNCA

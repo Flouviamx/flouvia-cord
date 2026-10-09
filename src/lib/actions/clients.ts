@@ -171,7 +171,7 @@ export async function updateClient(ctx: ActionContext, id: string, input: Record
     const einvoiceDenied = einvoiceInputError(c, before?.einvoice_address as string | null | undefined);
     if (einvoiceDenied) return einvoiceDenied;
     if (c.rfc) {
-        const taxDenied = await checkClientTaxId(ctx, c, before);
+        const taxDenied = await checkClientTaxId(ctx, c, before ?? undefined);
         if (taxDenied) return taxDenied;
     }
     return writeClientUpdate(ctx, id, c);

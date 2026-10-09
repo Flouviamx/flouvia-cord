@@ -13,6 +13,7 @@ import { getActiveOrgId } from '../../../lib/db';
 import { estadoPortalCliente } from '../../../lib/cobros/portal';
 import { etiquetaMetodo } from '../../../lib/cobros/metodos';
 import { fmtDateLong } from '../../../lib/fmt-server';
+import { checkLeitwegId, einvoiceAddressLeitwegProblem, leitwegProblem, splitEInvoiceAddress } from '../../../lib/fiscal/einvoice/codes';
 import '../../../styles/modal.css';
 
 const L = currentLocale();
@@ -38,6 +39,18 @@ const PORTAL_MOTIVO: Record<string, string> = {
 // como en el país del negocio.
 const TAX_ID_LABEL = getCountryProfile(String(c.countryCode || ORG.countryCode || 'MX'), L).taxIdLabel;
 const canEdit = memberCan(ME, 'clientes');
+// Un Leitweg-ID guardado antes de que Cord comprobara su dígito de control no
+// se reescribe solo: se marca aquí y se pide corregir. Mientras tanto, la
+// factura electrónica de este cliente falla cerrado con el mismo motivo.
+const LEITWEG_DIR = einvoiceAddressLeitwegProblem(c.einvoiceAddress);
+const LEITWEG_REF = !LEITWEG_DIR && splitEInvoiceAddress(c.einvoiceAddress)?.scheme === '0204' && c.buyerReference
+    ? checkLeitwegId(c.buyerReference)
+    : null;
+const LEITWEG = LEITWEG_DIR
+    ? { texto: t(L, 'cdet.leitweg_direccion'), motivo: leitwegProblem(LEITWEG_DIR.reason, L === 'en' ? 'en' : 'es') }
+    : LEITWEG_REF && !LEITWEG_REF.ok
+        ? { texto: t(L, 'cdet.leitweg_referencia'), motivo: leitwegProblem(LEITWEG_REF.reason, L === 'en' ? 'en' : 'es') }
+        : null;
 
 const NIVEL_LABEL: Record<string, string> = { estandar: t(L, 'cdet.nivel_estandar'), plata: t(L, 'cdet.nivel_plata'), oro: t(L, 'cdet.nivel_oro'), distribuidor: t(L, 'cdet.nivel_distribuidor') };
 const m = c.metricas;
@@ -285,6 +298,13 @@ import { iconInner } from '../../../lib/icons';
             <section class="dc-side-block">
                 <div class="sec-head"><h2 class="sec-title">{c.fiscalCompleto ? t(L, 'cdet.fiscal_completo') : t(L, 'cdet.fiscal_incompleto')}</h2></div>
                 <span class:list={['dc-fiscal-badge', { on: c.fiscalCompleto }]}>{c.fiscalCompleto ? t(L, 'cdet.fiscal_completo') : t(L, 'cdet.fiscal_incompleto')}</span>
+                {LEITWEG && (
+                    <div class="dc-leitweg" role="status">
+                        <strong>{t(L, 'cdet.leitweg_titulo')}</strong>
+                        <span>{LEITWEG.texto}</span>
+                        <span>{LEITWEG.motivo}</span>
+                    </div>
+                )}
             </section>
 
             <section class="dc-side-block">
@@ -553,6 +573,8 @@ import { iconInner } from '../../../lib/icons';
     .dc-wa-btn:active { transform: scale(0.97); }
     .dc-fiscal-badge { display: inline-block; font-size: 0.78rem; font-weight: 600; padding: 5px 12px; border-radius: 100px; color: var(--color-warn); background: rgba(245,158,11,0.12); }
     .dc-fiscal-badge.on { color: var(--color-ok); background: rgba(16,185,129,0.12); }
+    .dc-leitweg { display: flex; flex-direction: column; gap: 0.3rem; margin-top: 0.8rem; font-size: 0.78rem; line-height: 1.45; color: var(--color-text-muted); }
+    .dc-leitweg strong { color: var(--color-danger); font-weight: 600; }
     .dc-fiscal-badge-sm { font-size: 0.66rem; font-weight: 700; padding: 4px 11px; }
 
     .dc-delete {

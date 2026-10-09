@@ -176,6 +176,11 @@ const EINV_AUTO_LABEL = EINV_AUTO === 'facturx'
                 <p class="csd-intro">{L === 'en'
                     ? 'Each invoice can be downloaded as Factur-X (PDF with the XML inside), XRechnung or Peppol BIS (EN 16931), so your client can process it automatically. Cord generates and attaches them; it does not send them over the Peppol network or through an e-invoicing platform.'
                     : 'Cada factura se puede descargar como Factur-X (PDF con el XML dentro), XRechnung o Peppol BIS (EN 16931) para que tu cliente la procese automáticamente. Cord las genera y las adjunta; no las envía por la red Peppol ni por una plataforma de facturación electrónica.'}</p>
+                {isEs && (
+                    <p class="csd-intro">{L === 'en'
+                        ? 'In Spain, each invoice can also be downloaded as Facturae 3.2.2, the Spanish format, which also declares the personal income tax withholding (IRPF). Factur-X, XRechnung and Peppol have no place for withholdings, so an invoice with IRPF is only available as Facturae.'
+                        : 'En España, cada factura también se puede descargar como Facturae 3.2.2, el formato español, que además declara la retención de IRPF. Factur-X, XRechnung y Peppol no tienen dónde declarar una retención, así que una factura con IRPF solo está disponible como Facturae.'}</p>
+                )}
                 <div class="s-row">
                     <div class="s-field">
                         <label for="fContactName">{L === 'en' ? 'Billing contact' : 'Contacto de facturación'}</label>
@@ -225,11 +230,29 @@ const EINV_AUTO_LABEL = EINV_AUTO === 'facturx'
                         <option value="off" selected={FM.einvoice_email === 'off'}>{L === 'en' ? 'PDF only' : 'Solo el PDF'}</option>
                         <option value="facturx" selected={FM.einvoice_email === 'facturx'}>{L === 'en' ? 'Factur-X PDF (replaces the PDF)' : 'PDF Factur-X (en lugar del PDF)'}</option>
                         <option value="xrechnung" selected={FM.einvoice_email === 'xrechnung'}>{L === 'en' ? 'PDF + XRechnung XML' : 'PDF + XML de XRechnung'}</option>
+                        {isEs && <option value="facturae" selected={FM.einvoice_email === 'facturae'}>{L === 'en' ? 'PDF + Facturae XML' : 'PDF + XML de Facturae'}</option>}
                     </select>
                     <span class="s-hint">{L === 'en'
                         ? 'If an invoice is missing data for the format, the email goes with the regular PDF and the invoice tells you what is missing.'
                         : 'Si a una factura le falta un dato del formato, el correo sale con el PDF de siempre y la factura te dice qué falta.'}</span>
                 </div>
+                {isEs && (
+                    <div class="s-field">
+                        <label class="s-toggle" style="margin-bottom:0.3rem">
+                            <input type="checkbox" id="fFacturaeFirma" data-field="fiscal_facturae_firma" checked={FM.facturae_firma === true}
+                                disabled={!verifactuOn && FM.facturae_firma !== true} />
+                            <span class="s-toggle-track"><span class="s-toggle-thumb"></span></span>
+                            <span class="s-toggle-text">{L === 'en' ? 'Sign the Facturae with my electronic certificate' : 'Firmar la Facturae con mi certificado electrónico'}</span>
+                        </label>
+                        <span class="s-hint">{verifactuOn
+                            ? (L === 'en'
+                                ? 'Uses the certificate you uploaded for Verifactu. The signature (XAdES) is made in your business name, so it only applies if you turn it on. Unsigned, the Facturae works for your client, but FACe (public administrations) only accepts it signed and with the DIR3 codes of the public body, which Cord does not collect yet. Cord does not submit it to FACe.'
+                                : 'Usa el certificado que subiste para Verifactu. La firma (XAdES) va en nombre de tu negocio, así que solo se aplica si la activas. Sin firmar, la Facturae le sirve a tu cliente, pero FACe (administraciones públicas) solo la acepta firmada y con los códigos DIR3 del organismo, que Cord todavía no captura. Cord no la presenta en FACe.')
+                            : (L === 'en'
+                                ? 'Upload your electronic certificate in the Verifactu section to sign it. Until then the Facturae is delivered unsigned: it works for your client, but FACe (public administrations) only accepts it signed.'
+                                : 'Sube tu certificado electrónico en la sección Verifactu para firmarla. Mientras tanto la Facturae se entrega sin firmar: le sirve a tu cliente, pero FACe (administraciones públicas) solo la acepta firmada.')}</span>
+                    </div>
+                )}
             </div>
         </SettingsSection>
     )}

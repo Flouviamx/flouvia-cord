@@ -302,7 +302,7 @@ Catálogos puros en `src/lib/fiscal/cfdi-catalogos.ts`.
   `test/engine-descuento.test.ts`, `test/cupones-db.test.ts` y
   `test/descuento-fiscal.test.ts`.
 
-## Factura electrónica europea (Factur-X, XRechnung, Peppol) — oct 2026
+## Factura electrónica europea (Factur-X, XRechnung, Peppol) y Facturae — oct 2026
 
 - **Qué es:** la MISMA factura que el PDF, escrita para una máquina según
   EN 16931-1. Tres formatos, para emisores establecidos en la UE:
@@ -327,7 +327,9 @@ Catálogos puros en `src/lib/fiscal/cfdi-catalogos.ts`.
   línea, lo que dice el PDF; EN 16931 lo admite mientras difiera menos de una
   unidad de base × tasa (BR-CO-17, tolerancia del schematron CEN 1.3.16) y, si
   no, es el problema `vat_rounding`.
-- **Categorías (UNTDID 5305):** tasa > 0 → S. Al 0 % manda la causa del
+- **Categorías (UNTDID 5305):** tasa > 0 → S; emisor en Canarias → L (IGIC) y
+  en Ceuta o Melilla → M (IPSI) a cualquier tipo, también el 0 % (ver "IGIC e
+  IPSI" abajo). Al 0 % manda la causa del
   concepto: España traduce su causa de Verifactu (E2→G, E5→K, S2→AE, N1→O,
   N2→AE con empresario de la UE u O fuera, resto E con su mención); el resto de
   la UE usa la clasificación VATEX que el negocio elige en su perfil exento
@@ -361,17 +363,20 @@ Catálogos puros en `src/lib/fiscal/cfdi-catalogos.ts`.
   con prefijo ES.
 - **Falla cerrado** (`assessEInvoice`, lista con texto es/en y dónde se corrige):
   borrador, anulada, documento de prueba, proforma, emisor fuera de la UE,
-  IGIC/IPSI, **retenciones** (EN 16931 no las tiene: BT-115 menor que el total
-  rompería BR-CO-16), divisa con tres decimales, totales o líneas que no
-  cuadran, O mezclada, faltantes de identidad. Cada formato pide además lo suyo
+  **retenciones** (ver "IRPF" abajo), una causa de exención en IGIC o IPSI
+  (BR-AF-10, BR-AG-10), un Leitweg-ID que no pasa su dígito de control, divisa
+  con tres decimales, totales o líneas que no cuadran, O mezclada, faltantes de
+  identidad. Cada formato pide además lo suyo
   (`formatProblems`): XRechnung la referencia del comprador (BR-DE-15), contacto
   con nombre, teléfono y correo (BR-DE-2/5/6/7), ciudad y CP del cliente y el
   IBAN en una factura; Peppol la referencia u orden de compra (R003), las dos
-  direcciones electrónicas sin `EM` (R010/R020) y, entre empresas alemanas, el IBAN.
+  direcciones electrónicas sin `EM` (R010/R020) y, entre empresas alemanas, el
+  IBAN; Factur-X y XRechnung CII, que el IGIC no esté al 0 % (`igic_zero_cii`).
 - **Datos nuevos:** Ajustes › Perfil fiscal (solo UE) guarda en
   `orgs.fiscal_metadata` `contact_name`, `contact_phone`, `einvoice_address`
   ("esquema EAS:id", validado contra la lista de BR-CL-25), `legal_registration_id`,
-  `bic` y `einvoice_email`. El cliente: `clientes.einvoice_address` y
+  `bic`, `einvoice_email` (`off`, `facturx`, `xrechnung` o, solo en España,
+  `facturae`) y `facturae_firma` (solo España). El cliente: `clientes.einvoice_address` y
   `buyer_reference` (la que toman sus facturas por defecto). La factura:
   `documentos_fiscales.buyer_reference`/`purchase_order` (editor, POST
   /api/facturas, update_draft, /api/v1/facturas) y `payee_account` (IBAN
@@ -379,13 +384,16 @@ Catálogos puros en `src/lib/fiscal/cfdi-catalogos.ts`.
   que la API y la página pública exponen). La unidad (BT-130) sale del producto
   en todos los países (`resolveLineUnitKey`). Despliegue:
   `db/deploy/2026-10-08-einvoice.sql`.
-- **Superficies:** `/api/fiscal/documents/[id]/{facturx,xrechnung,xrechnung-cii,peppol}`
+- **Superficies:** `/api/fiscal/documents/[id]/{facturx,xrechnung,xrechnung-cii,peppol,facturae}`
   y el mismo `[format]` en `/api/i/[token]/documents/` (409 con lo que falta).
   El detalle de la factura lista los formatos disponibles y lo que falta para
   los demás; la página pública solo enlaza los disponibles. Correo
   (`buildInvoiceAttachments`): `facturx` sustituye el PDF por el Factur-X;
-  `xrechnung` agrega el XML al PDF; `off` deja solo el PDF. Por defecto Francia
-  → `facturx`, Alemania → `xrechnung`, resto → `off`. Si la factura no admite
+  `xrechnung` agrega el XML al PDF; `facturae` agrega la Facturae (`.xsig`
+  firmada o `.xml` sin firmar); `off` deja solo el PDF. Por defecto Francia
+  → `facturx`, Alemania → `xrechnung`, resto → `off`: España incluida, porque
+  la obligación B2B (Ley 18/2022, art. 12; RD 238/2026) todavía no es exigible
+  y el cliente no espera un XML que no pidió. Si la factura no admite
   el formato, sale el PDF de siempre: el correo nunca falla por esto.
 - **PDF/A-3b:** el Factur-X es el PDF de siempre dibujado igual y ensamblado
   aparte (`createInvoicePdf({ assemble })`; sin `assemble` sale byte a byte el
@@ -393,18 +401,25 @@ Catálogos puros en `src/lib/fiscal/cfdi-catalogos.ts`.
   Helvetica/Times) incrustadas en subconjunto con cmap (3,1) y `/Widths` del
   programa de fuente, perfil sRGB como OutputIntent, XMP con `pdfaid` y la
   extensión de Factur-X, fecha de metadatos = fecha de expedición (determinista).
-  Las tablas AFM de `writer.ts` difieren de Helvetica real en pocos glifos de
-  Latin-1 (ß, í en regular; €, «, », ß en negrita): desplazan medio punto un
-  texto alineado a la derecha que los contenga, en los dos PDF; no se corrigen
-  porque cambiarían el PDF de siempre.
+  Las tablas de anchos de `writer.ts` son las de Helvetica real (regular y
+  negrita por separado); `test/einvoice.test.ts` las recorre contra Liberation
+  en todo WinAnsi salvo ¯ ± µ · ÷, donde Liberation copia los anchos de Arial y
+  Times New Roman.
 - **Verificación:** `test/einvoice.test.ts` (rápido) y
-  `npm run security:einvoice` (`scripts/einvoice-check.mjs`): once muestras
-  (`test/helpers/einvoice-samples.ts`) en cada formato contra XSD UBL 2.1/CII
+  `npm run security:einvoice` (`scripts/einvoice-check.mjs`, en CI con
+  `.github/workflows/einvoice.yml`): catorce muestras EN 16931
+  (`test/helpers/einvoice-samples.ts`, con IGIC 7 % + 3 %, IGIC con un 0 % e
+  IPSI 4/10/0 %) en cada formato que admiten contra XSD UBL 2.1/CII
   D16B/Factur-X, schematron CEN 1.3.16, KoSIT 1.6.3 + XRechnung 3.0.2
   (configuración 2026-08-31), Peppol BIS 3.0.21 (reglas propias y su copia de
   CEN, vía phive-rules-peppol 4.6.3), schematron Factur-X 1.09 y veraPDF
-  (Mustang 2.26), más siete controles negativos que cada validador debe
-  rechazar. Artefactos con URL y SHA-256 fijos en `.cache/einvoice/` o
+  (Mustang 2.26); siete Facturae, sin firmar y firmadas, contra el XSD oficial
+  con XMLDSig y XAdES, y la firma verificada por `javax.xml.crypto` del JDK
+  (`scripts/lib/XmlDsigVerify.java`). Trece controles negativos que cada
+  validador debe rechazar, entre ellos un IGIC con causa de exención (CEN y
+  Peppol), un IGIC al 0 % en CII (CEN y KoSIT), un TaxTypeCode fuera de la
+  lista (XSD), un importe y una hora de firma alterados después de firmar
+  (XMLDSig) y un elemento XAdES inventado (XSD). Artefactos con URL y SHA-256 fijos en `.cache/einvoice/` o
   `EINVOICE_TOOLS_DIR`; sin Java/xmllint/red se omite con aviso salvo con
   `EINVOICE_VALIDATION_REQUIRED=1`. Avisos aceptados, no errores:
   PEPPOL-EN16931-R008 del schematron Factur-X (`ApplicableHeaderTradeDelivery`
@@ -412,9 +427,93 @@ Catálogos puros en `src/lib/fiscal/cfdi-catalogos.ts`.
   (recomienda fecha de prestación cuando el emisor no es alemán y no la
   capturó) y el aviso aritmético de Mustang en la muestra de redondeo (recalcula
   el IVA por tasa en vez de sumar el redondeado por línea; dentro de BR-CO-17).
-- **Pendiente:** transmisión (Peppol Access Point, PA francesa), XRechnung para
-  la administración con Leitweg-ID validado (hoy texto libre), retenciones,
-  IGIC/IPSI, Order-X, perfil EXTENDED, y correr `security:einvoice` en CI.
+- **Pendiente:** transmisión (Peppol Access Point, PA francesa, FACe), los
+  códigos DIR3 de la Facturae para la administración pública española
+  (`AdministrativeCentres`), la extensión española de UBL de la Orden
+  HAC/1028/2026 (ver "IRPF"), Order-X y el perfil EXTENDED.
+
+### IGIC e IPSI (Canarias, Ceuta y Melilla)
+
+- **Categorías propias de EN 16931:** L (IGIC) y M (IPSI), con sus reglas
+  BR-AF-* y BR-AG-* del schematron CEN 1.3.16. Se agrupan por tipo como S
+  (BR-AF-08, BR-AG-08), con la misma tolerancia de redondeo (BR-AF-09,
+  BR-AG-09), y no admiten causa de exención (BR-AF-10, BR-AG-10): un concepto
+  con causa falla cerrado (`igic_exemption`, `ipsi_exemption`). El territorio
+  lo decide la provincia del emisor (`spainTaxTerritory`: 35 y 38 → IGIC, 51 y
+  52 → IPSI). Peppol las admite: su lista UNCL5305 es `AE E S Z G O K L M B`.
+- **El NIF no es NIF-IVA.** Canarias, Ceuta y Melilla están fuera del
+  territorio del IVA de la UE (Directiva 2006/112/CE, art. 6): el NIF del
+  emisor va como registro fiscal (BT-32, `TaxScheme` FC en UBL, `FC` en CII) y
+  como identificador legal; nunca con prefijo ES como BT-31. Por lo mismo el
+  PDF no imprime la mención de operación intracomunitaria desde esos
+  territorios, y rotula el impuesto como IGIC o IPSI (`taxLabelFor`).
+- **IGIC al 0 %: solo UBL.** La sintaxis UBL del schematron CEN 1.3.16 pide
+  `Percent >= 0` (BR-AF-05), pero la CII exige `RateApplicablePercent > 0`
+  (BR-AF-05/06/07) y el schematron de Factur-X 1.09 también. Una factura con un
+  concepto de IGIC al 0 % se genera como XRechnung UBL y Peppol, y para
+  Factur-X y XRechnung CII falla cerrado con el motivo (`igic_zero_cii`). El
+  IPSI al 0 % pasa en las dos sintaxis.
+
+### IRPF: Facturae sí, EN 16931 no
+
+- **EN 16931 no tiene dónde declarar una retención.** UBL la desaconseja
+  (UBL-CR-513: "A UBL invoice should not include the WithholdingTaxTotal"), CII
+  no la modela y BR-CO-16 fija el importe a pagar como total con impuestos
+  menos anticipos. Representarla como descuento o como anticipo (BT-113)
+  falsearía la base o el importe a pagar, así que Factur-X, XRechnung y Peppol
+  siguen fallando cerrado con retenciones (`withholding`), y el texto dice que
+  en España la Facturae sí las declara.
+- **La ley española admite Facturae.** El RD 238/2026 (BOE-A-2026-7295), que
+  desarrolla el art. 12 de la Ley 18/2022, acepta en su art. 7.1 las sintaxis
+  UBL, CII, EDIFACT y Facturae, sin CIUS española. La Orden HAC/1028/2026
+  (BOE-A-2026-20587), Anexo I, define una extensión nacional para UBL con la
+  retención en `cac:WithholdingTaxTotal` (grupo BG-ES-4 "Retención aplicada",
+  esquema WTH, lista L5, BT-ES-16 a 21), pero sus especificaciones técnicas y
+  validadores no están publicados: queda pendiente, y no se inventa.
+- **Facturae 3.2.2** (`src/lib/fiscal/einvoice/facturae.ts`), solo emisores en
+  España y en euros, del mismo snapshot que el PDF: IVA (01), IPSI (02), IGIC
+  (03) con su `TaxTypeCode`; el IRPF en `TaxesWithheld` (04); una retención que
+  no sea de IRPF falla cerrado (`facturae_withholding_type`). Exenta y no
+  sujeta como `SpecialTaxableEvent` (01 y 02) con la mención de su causa;
+  inversión del sujeto pasivo con su literal legal y los dos NIF con prefijo de
+  país en la operación intracomunitaria; exportación (E2) y servicio a un
+  cliente de fuera de la UE como no sujeta; persona física (`Individual`) o
+  jurídica (`LegalEntity`) según el NIF. Rectificativa: `InvoiceClass` OR,
+  `Corrective` con la factura original, método 02 "Rectificación por
+  diferencias" e importes negativos, igual que el registro R1 por diferencias
+  de Verifactu. Los totales se comprueban al céntimo antes de entregarla:
+  `InvoiceTotal` = base + impuestos repercutidos − retenciones, contra los del
+  documento (`totals_mismatch`).
+- **Firma XAdES-EPES** (`xades.ts`) según la política de firma de Facturae
+  v3.1 (identificador y huellas publicados por la administración en
+  facturae.gob.es): tres referencias (documento enveloped, `SignedProperties`
+  y `KeyInfo`), RSA-SHA256, C14N inclusiva, `SigningTime`,
+  `SigningCertificate`, `SignaturePolicyIdentifier` y rol "emisor". Solo hace
+  falta para presentarla en FACe, que Cord no hace. Usa el certificado que el
+  negocio subió para Verifactu, y solo si activa "Firmar la Facturae" en
+  Ajustes › Perfil fiscal (`fiscal_metadata.facturae_firma`): es una firma en
+  su nombre. Sin la opción o sin certificado vigente se descarga `.xml` sin
+  firmar, y el detalle de la factura lo dice ("para presentarla en FACe hay
+  que firmarla"). FACe además exige los códigos DIR3 del organismo, que Cord
+  todavía no captura.
+
+### Leitweg-ID
+
+- **Dígito de control** según la Formatspezifikation Leitweg-ID v2.0.2 (KoSIT,
+  28.07.2021), cap. 2: Grobadressierung de 2 a 12 dígitos que empieza por el
+  Land (01–16) o el Bund (99), Feinadressierung opcional de hasta 30 letras o
+  dígitos, y Prüfziffer ISO/IEC 7064 MOD 97-10 (letras A = 10 … Z = 35). El
+  ejemplo de la especificación, 04011000-1234512345-06, es vector de prueba
+  junto con sus pasos intermedios (`checkLeitwegId` en
+  `src/lib/fiscal/einvoice/codes.ts`).
+- **Dónde se comprueba:** solo donde Cord sabe que es un Leitweg-ID: una
+  dirección electrónica con esquema 0204 (Ajustes y ficha del cliente) y la
+  referencia del comprador de un cliente con dirección 0204 (ficha del
+  cliente, editor, POST /api/facturas, update_draft y /api/v1/facturas, que
+  responde 400 con el motivo en es/en). En la factura electrónica un
+  Leitweg-ID inválido falla cerrado (`seller_leitweg`, `buyer_leitweg`,
+  `buyer_reference_leitweg`). Un valor guardado antes que ya no pase no se
+  reescribe: la ficha del cliente lo marca y pide corregirlo.
 
 ## Facturación internacional — ago 2026
 

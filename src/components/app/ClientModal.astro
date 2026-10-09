@@ -271,8 +271,8 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
                         <label for="cmBuyerRef">{L === 'en' ? 'Buyer reference (Leitweg-ID)' : 'Referencia del comprador (Leitweg-ID)'} <span class="m-optlbl">{t(L, 'cmod.opcional')}</span></label>
                         <input class="m-input" id="cmBuyerRef" maxlength="200" autocomplete="off" />
                         <span class="m-hint">{L === 'en'
-                            ? 'German public bodies require it on every invoice. New invoices for this client start with it.'
-                            : 'La administración pública alemana la exige en cada factura. Las facturas nuevas de este cliente la llevan por defecto.'}</span>
+                            ? 'German public bodies require it on every invoice. New invoices for this client start with it. With a 0204 electronic address, Cord checks its check digits.'
+                            : 'La administración pública alemana la exige en cada factura. Las facturas nuevas de este cliente la llevan por defecto. Con una dirección electrónica 0204, Cord comprueba sus dígitos de control.'}</span>
                     </div>
                 </section>
             )}

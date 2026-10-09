@@ -1,7 +1,7 @@
 ---
-title: "European e-invoicing: Factur-X, XRechnung, and Peppol"
-seoTitle: "European e-invoicing: Factur-X, XRechnung, and Peppol"
-description: "Download each invoice as Factur-X, XRechnung, or Peppol BIS (EN 16931), attach it to the email, and complete the data each format requires."
+title: "E-invoicing: Factur-X, XRechnung, Peppol, and Facturae"
+seoTitle: "E-invoicing: Factur-X, XRechnung, Peppol, and Facturae"
+description: "Download each invoice as Factur-X, XRechnung, or Peppol BIS (EN 16931), or as Facturae in Spain, attach it to the email, and complete the data each format requires."
 lastUpdated: "2026-10-09"
 reviewedBy: "Cord product and operations"
 appliesToMarkets: [ES, DE, FR]
@@ -32,12 +32,14 @@ This feature is new and may not be enabled on your account yet. If you don't see
   sector and accepted by many companies in Germany. UBL is the most common; CII is there
   in case your client asks for it.
 - **Peppol BIS 3.0 (UBL):** the format of the Peppol network, used across much of Europe.
+- **Facturae 3.2.2 (XML):** the Spanish format, only for businesses established in Spain
+  and invoices in euros. It is the only one that declares the **IRPF withholding**.
 
 <Callout type="warning">
 Cord **generates** these files, lets you download them, and can attach them to the
-invoice email. It **does not send them** over the Peppol network or through a French
-e-invoicing platform. If your client asks to receive them over Peppol, download them and
-upload them to your access provider.
+invoice email. It **does not send them** over the Peppol network, through a French
+e-invoicing platform, or to FACe. If your client asks to receive them over Peppol,
+download them and upload them to your access provider.
 </Callout>
 
 ## Set up your data once
@@ -54,7 +56,7 @@ upload them to your access provider.
    state how to pay.
 4. On each client that needs it, open the **E-invoicing** section and enter their
    **electronic address** and **buyer reference**. In Germany, for public bodies, the
-   reference is the **Leitweg-ID** and it is mandatory.
+   reference is the **Leitweg-ID** and it is mandatory (see [Leitweg-ID](#leitweg-id)).
 
 </Steps>
 
@@ -86,6 +88,9 @@ In **Settings › Tax profile › Attach to invoice emails** you choose what goe
 - **PDF only.**
 - **Factur-X PDF:** replaces the regular PDF (it looks the same and carries the XML inside).
 - **PDF + XRechnung XML.**
+- **PDF + Facturae XML** (Spain only): signed if you turned signing on, unsigned
+  otherwise. In Spain the automatic value is the PDF only: your client does not expect an
+  XML they did not ask for.
 
 If an invoice is missing data for the chosen format, the email goes out with the regular
 PDF and the invoice tells you what is missing. Sending never stops because of this.
@@ -102,9 +107,57 @@ Each line is classified with the European VAT category:
   another EU country with a VAT number (reverse charge), a client outside the EU (export),
   or a domestic exemption.
 
+**Canary Islands, Ceuta, and Melilla.** If your business is in the Canary Islands, each
+line is declared with **IGIC** (category L of the European standard); in Ceuta or Melilla,
+with **IPSI** (category M), always with its rate, 0% included. Those territories are
+outside the EU VAT area, so your NIF travels as a tax registration and not as a VAT
+number, and a line cannot carry an exemption reason: remove it from the exempt profile
+and keep the rate. **IGIC at 0%** can be downloaded as XRechnung (UBL), Peppol, and
+Facturae, but not as Factur-X or XRechnung (CII): the official validator of that syntax
+requires a rate above zero.
+
 A **document discount** appears as it does on the PDF: each line with its amount before
 the discount and the discount subtracted in the totals, split by VAT rate, so the total
 matches the invoice to the cent.
+
+## Facturae (Spain)
+
+If your business is in Spain, every invoice in euros can also be downloaded as **Facturae
+3.2.2**, from the invoice detail and from its public link. It comes from the same issued
+invoice, with the same amounts:
+
+- **IRPF** as a withholding (not as a discount: the invoice base and total do not change);
+- **VAT**, **IGIC**, or **IPSI** with its rate, and exempt or non-taxable supplies with
+  their reason;
+- **reverse charge** with its legal wording;
+- a **credit note** as a corrective invoice by differences, with the invoice it corrects.
+
+<Steps>
+
+1. To **sign it**, upload your electronic certificate in **Settings › Tax profile ›
+   Verifactu**.
+2. In the **European e-invoicing** section, turn on **Sign the Facturae with my electronic
+   certificate**. The signature is made in your name, so it only applies if you turn it on.
+
+</Steps>
+
+<Callout type="warning">
+Without a signature, the Facturae is downloaded as an unsigned XML and the invoice detail
+says so: it works for your client, but **to submit it to FACe it must be signed**. FACe,
+the Spanish public sector's invoice entry point, also requires the DIR3 codes of the
+public body, which Cord does not collect yet. Cord does not submit invoices to FACe.
+</Callout>
+
+## Leitweg-ID
+
+The Leitweg-ID identifies a German public body and ends with **two check digits**. Cord
+checks them on any electronic address with scheme 0204 (yours or a client's) and on the
+buyer reference of a client with that address: on the client, in the invoice editor, and
+in the API. If they do not match, it is not saved and Cord says why; copy it again,
+complete, from the purchase order or the public body.
+
+A Leitweg-ID saved before this check is not changed on its own: the client page flags it
+as **Leitweg-ID to correct**, and their e-invoices are not generated until you fix it.
 
 ## When it cannot be generated
 
@@ -112,9 +165,12 @@ Cord does not produce an e-invoice that differs from the real invoice. There is 
 electronic version for:
 
 - drafts, voided invoices, pro formas, and test documents;
-- invoices with **withholdings** (for example Spanish IRPF): the European standard does
-  not support them;
-- invoices with IGIC or IPSI (Canary Islands, Ceuta, and Melilla);
+- in Factur-X, XRechnung, and Peppol, invoices with **withholdings** (for example Spanish
+  IRPF): the European standard has no place to declare them, and subtracting them as a
+  discount or prepayment would change the base or the amount due. In Spain, download it
+  as **Facturae**;
+- an IGIC or IPSI line with an exemption reason;
+- a Leitweg-ID whose check digits do not match;
 - older invoices whose totals are not the exact sum of their lines;
 - a supply **not subject** to VAT mixed with lines of another category: issue them
   separately.
@@ -126,6 +182,10 @@ electronic version for:
 - **"Peppol requires your participant identifier":** add your electronic address in
   **Settings › Tax profile** with a scheme other than email.
 - **"XRechnung requires payment instructions":** add your IBAN in **Settings › Payments**.
+- **"The Leitweg-ID check digits do not match":** copy it again, complete, from the
+  purchase order or the public body, and correct it on the client.
+- **"Facturae requires the client's tax ID":** enter it on the client; the Facturae is not
+  generated without it.
 
 ## Related
 

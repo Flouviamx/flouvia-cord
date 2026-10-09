@@ -13,7 +13,7 @@ import { resolveBrandProfile, onBrandColor } from '../brand-profile';
 
 import QRCode from 'qrcode';
 import { mmAPuntos, VERIFACTU_QR_PRESENTACION } from './verifactu/qr';
-import { countryName, getCountryProfile, isEuCountry, taxLabelFor } from '../countries';
+import { countryName, getCountryProfile, isEuCountry, spainTaxTerritory, taxLabelFor } from '../countries';
 import { currencyDecimals, normalizeCurrency } from '../currency';
 import { fmtTaxPct, splitTaxBucket } from '../tax-components';
 import { EU_EXEMPTION_INFO, EXEMPTION_INFO, isEuExemptionCode, isExemptionReason } from './exemption';
@@ -763,8 +763,12 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
   // no siempre responde, y bloquear la factura por eso sería peor que no
   // validar): solo verifica que ambas partes declaren tax id y country code
   // en países distintos de la UE.
+  // Canarias, Ceuta y Melilla están fuera del territorio del IVA de la UE
+  // (Directiva 2006/112/CE, art. 6): desde ahí no hay operación
+  // intracomunitaria ni inversión del sujeto pasivo que mencionar.
   const recipientCountry = String(input.recipient.address?.countryCode || '').toUpperCase();
-  const isIntraCommunity = isEuCountry(issuerCountry) && isEuCountry(recipientCountry)
+  const issuerOutsideEuVat = issuerCountry === 'ES' && spainTaxTerritory(input.issuer.address?.region) !== 'iva';
+  const isIntraCommunity = isEuCountry(issuerCountry) && isEuCountry(recipientCountry) && !issuerOutsideEuVat
     && issuerCountry !== recipientCountry && !!input.issuer.taxId && !!input.recipient.taxId
     && input.lines.some((l) => (Number(l.taxRate) || 0) === 0);
   // Francia, entre profesionales: el receptor con identificador fiscal es la

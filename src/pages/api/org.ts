@@ -377,6 +377,11 @@ export const PATCH: APIRoute = async ({ request }) => {
     // La franquicia es un régimen de Francia y Alemania: al salir de esos
     // países (o en cualquier otro) no puede seguir imprimiendo su mención.
     if (countryCode !== 'FR' && countryCode !== 'DE') delete currentFiscalMetadata.vat_regime;
+    // Facturae es el formato español: fuera de España ni se adjunta ni se firma.
+    if (countryCode !== 'ES') {
+        delete currentFiscalMetadata.facturae_firma;
+        if (currentFiscalMetadata.einvoice_email === 'facturae') delete currentFiscalMetadata.einvoice_email;
+    }
 
     // Una serie por emisor: si otra organización con el mismo identificador
     // fiscal ya numera con esta serie, se dice al guardar y no al emitir.

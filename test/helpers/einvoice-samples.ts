@@ -16,7 +16,7 @@
 
 import { calculateDocumentTotals, type DescuentoInput } from '../../packages/elements/src/engine';
 import type { FiscalLineItem, FiscalParty } from '../../src/lib/fiscal/index';
-import type { EInvoiceFormat, EInvoiceSource } from '../../src/lib/fiscal/einvoice/model';
+import type { En16931Format, EInvoiceSource } from '../../src/lib/fiscal/einvoice/model';
 import type { FacturaeSource } from '../../src/lib/fiscal/einvoice/facturae';
 import type { InvoicePdfInput } from '../../src/lib/fiscal/invoice-pdf';
 
@@ -141,16 +141,16 @@ export interface EInvoiceSample {
     title: string;
     source: EInvoiceSource;
     /** Formatos que la muestra DEBE poder generar. */
-    formats: EInvoiceFormat[];
+    formats: En16931Format[];
     /** Categorías UNTDID 5305 esperadas en el desglose, en orden. */
     categories: string[];
 }
 
-function sample(id: string, title: string, formats: EInvoiceFormat[], categories: string[], src: Omit<EInvoiceSource, 'subtotal' | 'taxTotal' | 'total'>): EInvoiceSample {
+function sample(id: string, title: string, formats: En16931Format[], categories: string[], src: Omit<EInvoiceSource, 'subtotal' | 'taxTotal' | 'total'>): EInvoiceSample {
     return { id, title, formats, categories, source: { ...src, ...totals(src.lines) } };
 }
 
-const ALL: EInvoiceFormat[] = ['facturx', 'xrechnung', 'xrechnung-cii', 'peppol'];
+const ALL: En16931Format[] = ['facturx', 'xrechnung', 'xrechnung-cii', 'peppol'];
 
 
 export const EINVOICE_SAMPLES: EInvoiceSample[] = [

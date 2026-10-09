@@ -1,7 +1,7 @@
 ---
-title: "Factura electrónica europea: Factur-X, XRechnung y Peppol"
-seoTitle: "Factura electrónica europea: Factur-X, XRechnung y Peppol"
-description: "Descarga cada factura como Factur-X, XRechnung o Peppol BIS (EN 16931), adjúntala al correo y completa los datos que cada formato exige."
+title: "Factura electrónica: Factur-X, XRechnung, Peppol y Facturae"
+seoTitle: "Factura electrónica: Factur-X, XRechnung, Peppol y Facturae"
+description: "Descarga cada factura como Factur-X, XRechnung o Peppol BIS (EN 16931), o como Facturae en España, adjúntala al correo y completa los datos que cada formato exige."
 lastUpdated: "2026-10-09"
 reviewedBy: "Producto y operaciones de Cord"
 appliesToMarkets: [ES, DE, FR]
@@ -32,12 +32,14 @@ Esta función es nueva y puede no estar habilitada todavía en tu cuenta. Si no 
   alemana y que aceptan muchas empresas en Alemania. UBL es el más común; CII existe
   por si tu cliente lo pide.
 - **Peppol BIS 3.0 (UBL):** el formato de la red Peppol, usado en buena parte de Europa.
+- **Facturae 3.2.2 (XML):** el formato español, solo para negocios establecidos en
+  España y facturas en euros. Es el único que declara la **retención de IRPF**.
 
 <Callout type="warning">
 Cord **genera** estos archivos, te deja descargarlos y puede adjuntarlos al correo de la
-factura. **No los envía** por la red Peppol ni por una plataforma de facturación
-electrónica francesa. Si tu cliente te pide recibirlos por Peppol, descárgalos y súbelos
-a tu proveedor de acceso.
+factura. **No los envía** por la red Peppol, ni por una plataforma de facturación
+electrónica francesa, ni a FACe. Si tu cliente te pide recibirlos por Peppol, descárgalos
+y súbelos a tu proveedor de acceso.
 </Callout>
 
 ## Prepara tus datos una vez
@@ -54,7 +56,8 @@ a tu proveedor de acceso.
    indicar cómo pagar.
 4. En cada cliente que lo necesite, abre la sección **Factura electrónica** y captura su
    **dirección electrónica** y su **referencia del comprador**. En Alemania, para la
-   administración pública, la referencia es el **Leitweg-ID** y es obligatoria.
+   administración pública, la referencia es el **Leitweg-ID** y es obligatoria (ver
+   [Leitweg-ID](#leitweg-id)).
 
 </Steps>
 
@@ -87,6 +90,9 @@ el correo:
 - **Solo el PDF.**
 - **PDF Factur-X:** sustituye al PDF normal (se ve igual y lleva el XML dentro).
 - **PDF + XML de XRechnung.**
+- **PDF + XML de Facturae** (solo en España): firmada si activaste la firma, sin firmar
+  si no. En España el valor automático es solo el PDF: tu cliente no espera un XML que
+  no pidió.
 
 Si a una factura le falta un dato del formato elegido, el correo sale con el PDF de
 siempre y la factura te dice qué falta. El envío nunca se detiene por esto.
@@ -104,9 +110,62 @@ Cada concepto se clasifica con la categoría de IVA europea:
   con número de IVA (inversión del sujeto pasivo), cliente fuera de la UE (exportación) o
   exención nacional.
 
+**Canarias, Ceuta y Melilla.** Si tu negocio está en Canarias, cada concepto se declara
+con **IGIC** (categoría L de la norma europea); en Ceuta o Melilla, con **IPSI**
+(categoría M), siempre con su tipo, también el 0 %. Esos territorios están fuera del IVA
+de la Unión Europea, así que tu NIF viaja como registro fiscal y no como número de IVA, y
+un concepto no puede llevar causa de exención: quítala del perfil exento y deja el tipo.
+El **IGIC al 0 %** se puede descargar como XRechnung (UBL), Peppol y Facturae, pero no
+como Factur-X ni XRechnung (CII): el validador oficial de esa sintaxis exige un tipo mayor
+que cero.
+
 Un **descuento de documento** aparece como en el PDF: cada concepto con su importe antes
 del descuento y el descuento restado en los totales, separado por tasa de IVA, de modo
 que el total coincide al céntimo con el de la factura.
+
+## Facturae (España)
+
+Si tu negocio está en España, cada factura en euros también se descarga como **Facturae
+3.2.2**, desde el detalle de la factura y desde su link público. Sale de la misma factura
+emitida y con los mismos importes:
+
+- el **IRPF** como retención (no como descuento: la base y el total de la factura no
+  cambian);
+- **IVA**, **IGIC** o **IPSI** con su tipo, y las operaciones exentas o no sujetas con su
+  causa;
+- la **inversión del sujeto pasivo** con su mención legal;
+- una **nota de crédito** como factura rectificativa por diferencias, con la factura que
+  corrige.
+
+<Steps>
+
+1. Para **firmarla**, sube tu certificado electrónico en **Ajustes › Perfil fiscal ›
+   Verifactu**.
+2. En la sección **Factura electrónica europea**, activa **Firmar la Facturae con mi
+   certificado electrónico**. La firma va en tu nombre, por eso solo se aplica si la
+   activas.
+
+</Steps>
+
+<Callout type="warning">
+Sin firma, la Facturae se descarga como XML sin firmar y el detalle de la factura lo dice:
+le sirve a tu cliente, pero **para presentarla en FACe hay que firmarla**. FACe, el punto
+de entrada de facturas de la administración pública, además exige los códigos DIR3 del
+organismo, que Cord todavía no captura. Cord no presenta facturas en FACe.
+</Callout>
+
+## Leitweg-ID
+
+El Leitweg-ID identifica a un organismo de la administración pública alemana y lleva al
+final **dos dígitos de control**. Cord los comprueba en la dirección electrónica con
+esquema 0204 (tuya o del cliente) y en la referencia del comprador de un cliente con esa
+dirección: en el cliente, en el editor de la factura y en la API. Si no coinciden, no se
+guarda y te dice por qué; vuelve a copiarlo completo de la orden de compra o del
+organismo.
+
+Un Leitweg-ID guardado antes de esta comprobación no se cambia solo: la ficha del cliente
+lo marca como **Leitweg-ID por corregir** y sus facturas electrónicas no se generan hasta
+que lo corrijas.
 
 ## Cuándo no se puede generar
 
@@ -114,8 +173,11 @@ Cord no genera una factura electrónica que no coincida con la factura real. No 
 versión electrónica para:
 
 - borradores, facturas anuladas, proformas y documentos de prueba;
-- facturas con **retenciones** (por ejemplo IRPF): la norma europea no las contempla;
-- facturas con IGIC o IPSI (Canarias, Ceuta y Melilla);
+- en Factur-X, XRechnung y Peppol, facturas con **retenciones** (por ejemplo IRPF): la
+  norma europea no tiene dónde declararlas, y restarlas como descuento o anticipo
+  cambiaría la base o el importe a pagar. En España, descárgala como **Facturae**;
+- un concepto de IGIC o IPSI con causa de exención;
+- un Leitweg-ID cuyos dígitos de control no coinciden;
 - facturas antiguas cuyos totales no son la suma exacta de sus conceptos;
 - una operación **no sujeta** al IVA mezclada con conceptos de otra categoría: emítelas
   por separado.
@@ -127,6 +189,10 @@ versión electrónica para:
 - **"Peppol pide tu identificador de participante":** agrega tu dirección electrónica en
   **Ajustes › Perfil fiscal** con un esquema distinto del correo.
 - **"XRechnung pide cómo pagar":** agrega tu IBAN en **Ajustes › Cobros**.
+- **"Los dígitos de control del Leitweg-ID no coinciden":** cópialo de nuevo, completo,
+  de la orden de compra o del organismo, y corrígelo en el cliente.
+- **"Facturae exige el NIF del cliente":** captúralo en el cliente; la Facturae no se
+  genera sin él.
 
 ## Relacionado
 

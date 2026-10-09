@@ -6,15 +6,22 @@
 // `helpers/einvoice-samples.ts`.
 
 import { describe, expect, it } from 'vitest';
-import { EINVOICE_SAMPLES, DE_SELLER, FR_SELLER, sampleLine, samplePdfInput } from './helpers/einvoice-samples';
+import { generateKeyPairSync, createHash, verify as verifySignature } from 'node:crypto';
+import forge from 'node-forge';
+import { EINVOICE_SAMPLES, FACTURAE_SAMPLES, CANARIAS_SELLER, CEUTA_SELLER, DE_SELLER, FR_SELLER, sampleLine, samplePdfInput } from './helpers/einvoice-samples';
 import {
     assessEInvoice, calendarDay, formatProblems, frVatFromSiren, isEInvoiceFormat, isoDayIn, lineVat, partyIds, unitPrice,
-    type EInvoiceSource,
+    RATED_CATEGORIES, type EInvoiceSource,
 } from '../src/lib/fiscal/einvoice/model';
 import { serializeUbl, UBL_CUSTOMIZATION, UBL_PROFILE_ID } from '../src/lib/fiscal/einvoice/ubl';
 import { serializeCii, CII_GUIDELINE } from '../src/lib/fiscal/einvoice/cii';
 import { buildFacturX, FACTURX_FILENAME } from '../src/lib/fiscal/einvoice/facturx';
-import { einvoiceEmailMode, normalizeBic, normalizeEInvoiceAddress, splitEInvoiceAddress } from '../src/lib/fiscal/einvoice/codes';
+import {
+    checkLeitwegId, einvoiceAddressLeitwegProblem, einvoiceEmailMode, leitwegCheckDigits, leitwegProblem, normalizeBic,
+    normalizeEInvoiceAddress, splitEInvoiceAddress,
+} from '../src/lib/fiscal/einvoice/codes';
+import { assessFacturae, FACTURAE_ROOT_OPEN, type FacturaeSource } from '../src/lib/fiscal/einvoice/facturae';
+import { FACTURAE_POLICY_SHA1, FACTURAE_POLICY_URL, issuerNameRfc2253, signFacturae } from '../src/lib/fiscal/einvoice/xades';
 import { exemptionChoicesFor, exemptionReasonFor } from '../src/lib/fiscal/exemption';
 import { loadArchivalFonts } from '../src/lib/pdf/pdfa';
 import { measureText, winAnsiCodePoint, type FontKey } from '../src/lib/pdf/writer';
@@ -45,12 +52,12 @@ describe('muestras: modelo EN 16931 y reglas de cuadre', () => {
             expect(sum(inv.vat.map((v) => v.taxable))).toBe(cents(inv.totals.taxExclusive));
             expect(sum(inv.vat.map((v) => v.tax))).toBe(cents(inv.totals.tax));
             for (const v of inv.vat) {
-                const lines = inv.lines.filter((l) => l.category === v.category && (v.category !== 'S' || l.rate === v.rate));
+                const lines = inv.lines.filter((l) => l.category === v.category && (!RATED_CATEGORIES.has(v.category) || l.rate === v.rate));
                 const allowance = inv.allowances.filter((x) => x.category === v.category && x.rate === v.rate);
                 // BR-S-08 y hermanas: base del grupo = Σ BT-131 − Σ BT-92 del grupo.
                 expect(cents(v.taxable)).toBe(sum(lines.map((l) => l.netAmount)) - sum(allowance.map((x) => x.amount)));
-                // BR-CO-17 (tolerancia de una unidad del schematron CEN 1.3.16).
-                if (v.category === 'S') expect(Math.abs(v.tax - (v.taxable * v.rate) / 100)).toBeLessThan(1);
+                // BR-CO-17, BR-AF-09, BR-AG-09 (tolerancia de una unidad del schematron CEN 1.3.16).
+                if (RATED_CATEGORIES.has(v.category)) expect(Math.abs(v.tax - (v.taxable * v.rate) / 100)).toBeLessThan(1);
                 else expect(v.tax).toBe(0);
             }
             // PEPPOL-EN16931-R120: cantidad × precio ≈ importe de la línea.
@@ -320,7 +327,10 @@ describe('códigos y ajustes', () => {
         expect(einvoiceEmailMode('FR', 'off')).toBe('off');
         expect(einvoiceEmailMode('DE', 'facturx')).toBe('facturx');
         expect(einvoiceEmailMode('FR', 'pdf-raro')).toBe('facturx');
+        // Facturae solo si el negocio la elige: nunca es el valor por defecto.
+        expect(einvoiceEmailMode('ES', 'facturae')).toBe('facturae');
         expect(isEInvoiceFormat('peppol')).toBe(true);
+        expect(isEInvoiceFormat('facturae')).toBe(true);
         expect(isEInvoiceFormat('xml')).toBe(false);
     });
 
@@ -336,5 +346,246 @@ describe('códigos y ajustes', () => {
         expect(exemptionChoicesFor('DE', 'en').map((c) => c.code)).not.toContain('VATEX-FR-FRANCHISE');
         expect(exemptionChoicesFor('MX', 'es')).toEqual([]);
         expect(exemptionChoicesFor('ES', 'es')[0].code).toBe('E1');
+    });
+});
+
+describe('IGIC e IPSI: categorías L y M de EN 16931', () => {
+    const igic = () => clone(byId('igic').source);
+    const fp = (src: EInvoiceSource, f: Parameters<typeof formatProblems>[0]) => formatProblems(f, assessEInvoice(src)).map((p) => p.code);
+
+    it('el territorio del emisor decide la categoría, a cualquier tipo (también el 0 %)', () => {
+        const ctx = { issuerCountry: 'ES', buyerCountry: 'ES', smallBusiness: false, lang: 'es' as const };
+        expect(lineVat(sampleLine('x', 1, 10, 0.07), { ...ctx, territory: 'igic' }).category).toBe('L');
+        expect(lineVat(sampleLine('x', 1, 10, 0), { ...ctx, territory: 'igic' }).category).toBe('L');
+        expect(lineVat(sampleLine('x', 1, 10, 0.04), { ...ctx, territory: 'ipsi' }).category).toBe('M');
+        expect(lineVat(sampleLine('x', 1, 10, 0.21), { ...ctx, territory: 'iva' }).category).toBe('S');
+    });
+
+    it('un grupo por tipo (BR-AF-08, BR-AG-08) con su impuesto', () => {
+        const groups = (src: EInvoiceSource) => assessEInvoice(src).invoice!.vat.map((v) => `${v.category} ${v.rate}`).sort();
+        expect(groups(igic())).toEqual(['L 3', 'L 7']);
+        expect(groups(clone(byId('ipsi').source))).toEqual(['M 0', 'M 10', 'M 4']);
+        const inv = assessEInvoice(igic()).invoice!;
+        expect(inv.vat.find((v) => v.rate === 7)!.tax).toBe(71.4);
+        expect(inv.vat.find((v) => v.rate === 3)!.tax).toBe(5.4);
+    });
+
+    it('fuera del territorio del IVA de la UE el NIF no es NIF-IVA: va como registro fiscal (BT-32)', () => {
+        const inv = assessEInvoice(igic()).invoice!;
+        expect(inv.seller.vatId).toBeUndefined();
+        expect(inv.seller.taxRegistrationId).toBe(CANARIAS_SELLER.taxId);
+        expect(inv.buyer.vatId).toBeUndefined();
+        const ubl = serializeUbl(inv, 'peppol');
+        expect(ubl).toContain('<cac:TaxCategory><cbc:ID>L</cbc:ID><cbc:Percent>7</cbc:Percent>');
+        expect(ubl).toContain('<cac:PartyTaxScheme><cbc:CompanyID>B35001239</cbc:CompanyID><cac:TaxScheme><cbc:ID>FC</cbc:ID>');
+        expect(ubl).not.toContain('ESB35001239');
+        expect(serializeCii(inv, 'xrechnung')).toContain('<ram:CategoryCode>L</ram:CategoryCode>');
+        const ceuta = assessEInvoice(clone(byId('ipsi').source)).invoice!;
+        expect(ceuta.seller.taxRegistrationId).toBe(CEUTA_SELLER.taxId);
+    });
+
+    it('una causa de exención no cabe en L ni en M (BR-AF-10, BR-AG-10)', () => {
+        const src = igic();
+        src.lines[1] = { ...src.lines[1], exemptionReason: 'E1' };
+        expect(assessEInvoice(src).problems.map((p) => p.code)).toContain('igic_exemption');
+        const ipsi = clone(byId('ipsi').source);
+        ipsi.lines[2] = { ...ipsi.lines[2], exemptionReason: 'E1' };
+        expect(assessEInvoice(ipsi).problems.map((p) => p.code)).toContain('ipsi_exemption');
+    });
+
+    it('IGIC al 0 %: UBL sí, CII no (BR-AF-05 de CEN 1.3.16 exige > 0 en CII)', () => {
+        const zero = clone(byId('igic-zero').source);
+        expect(fp(zero, 'xrechnung')).toEqual([]);
+        expect(fp(zero, 'peppol')).toEqual([]);
+        expect(fp(zero, 'facturx')).toContain('igic_zero_cii');
+        expect(fp(zero, 'xrechnung-cii')).toContain('igic_zero_cii');
+        // El IPSI al 0 % sí pasa en CII (BR-AG-05 admite >= 0).
+        expect(fp(clone(byId('ipsi').source), 'facturx')).toEqual([]);
+    });
+});
+
+describe('Leitweg-ID (Formatspezifikation v2.0.2, KoSIT)', () => {
+    // Oráculo independiente: ISO/IEC 7064 MOD 97-10 con BigInt.
+    const oracle = (id: string) => {
+        const digits = id.toUpperCase().replace(/-/g, '').replace(/[A-Z]/g, (c) => String(c.charCodeAt(0) - 55));
+        return BigInt(digits) % 97n === 1n;
+    };
+
+    it('el ejemplo de la especificación, paso a paso (cap. 2.4)', () => {
+        // 04011000123451234500 mod 97 = 92; 98 - 92 = 06.
+        expect(BigInt('04011000123451234500') % 97n).toBe(92n);
+        expect(leitwegCheckDigits('04011000-1234512345')).toBe('06');
+        expect(checkLeitwegId('04011000-1234512345-06')).toEqual({ ok: true, normalized: '04011000-1234512345-06' });
+        expect(oracle('04011000-1234512345-06')).toBe(true);
+    });
+
+    it('letras en la Feinadressierung (A = 10 … Z = 35) y sin distinguir mayúsculas', () => {
+        for (const id of ['991-33333TEST-33', '992-90009-96', '04011000-12345-03']) {
+            expect(oracle(id), id).toBe(true);
+            expect(checkLeitwegId(id).ok, id).toBe(true);
+        }
+        expect(leitwegCheckDigits('991-33333TEST')).toBe('33');
+        expect(checkLeitwegId('991-33333test-33')).toEqual({ ok: true, normalized: '991-33333TEST-33' });
+    });
+
+    it('rechaza dígito de control, estado federado y forma', () => {
+        expect(checkLeitwegId('04011000-12345-34')).toEqual({ ok: false, reason: 'checksum' });
+        expect(checkLeitwegId('991-01234-44')).toEqual({ ok: false, reason: 'checksum' });
+        expect(checkLeitwegId('17011000-12345-03')).toEqual({ ok: false, reason: 'land' });
+        expect(checkLeitwegId('00011000-12345-03')).toEqual({ ok: false, reason: 'land' });
+        expect(checkLeitwegId('04011000-1234512345')).toEqual({ ok: false, reason: 'shape' });
+        expect(checkLeitwegId('04011000-1234512345-6')).toEqual({ ok: false, reason: 'shape' });
+        expect(checkLeitwegId('0401100012345678-03')).toEqual({ ok: false, reason: 'shape' });
+        expect(leitwegProblem('checksum', 'es')).not.toBe(leitwegProblem('checksum', 'en'));
+    });
+
+    it('solo la dirección 0204 es un Leitweg-ID', () => {
+        expect(einvoiceAddressLeitwegProblem('0204:04011000-1234512345-06')).toBeNull();
+        expect(einvoiceAddressLeitwegProblem('0204:04011000-12345-34')).toEqual({ ok: false, reason: 'checksum' });
+        expect(einvoiceAddressLeitwegProblem('0088:4000001000005')).toBeNull();
+    });
+
+    it('en la factura electrónica, un Leitweg-ID inválido falla cerrado', () => {
+        const de = () => clone(byId('de-leitweg').source);
+        const codes = (src: EInvoiceSource) => assessEInvoice(src).problems.map((p) => p.code);
+        expect(codes(de())).toEqual([]);
+        expect(codes({ ...de(), buyerReference: '04011000-1234512345-07' })).toContain('buyer_reference_leitweg');
+        const src = de();
+        src.recipient = { ...src.recipient, electronicAddress: { scheme: '0204', id: '04011000-1234512345-07' } };
+        expect(codes(src)).toContain('buyer_leitweg');
+        // Sin dirección 0204 la referencia del comprador es texto libre.
+        const fr = clone(byId('fr-b2b').source);
+        expect(codes({ ...fr, buyerReference: 'SERVICE-ACHATS-12' })).not.toContain('buyer_reference_leitweg');
+    });
+});
+
+describe('Facturae 3.2.2 (España)', () => {
+    const tag = (xml: string, name: string) => [...xml.matchAll(new RegExp(`<${name}>([^<]*)</${name}>`, 'g'))].map((m) => m[1]);
+    const num = (xml: string, name: string) => Number(tag(xml, name)[0]);
+    const byFe = (id: string) => structuredClone(FACTURAE_SAMPLES.find((s) => s.id === id)!.source) as FacturaeSource;
+
+    for (const s of FACTURAE_SAMPLES) {
+        it(`${s.id}: se genera y cuadra al céntimo con el documento`, () => {
+            const fe = assessFacturae(s.source);
+            expect(fe.problems).toEqual([]);
+            const xml = fe.xml!;
+            expect(xml.startsWith(FACTURAE_ROOT_OPEN)).toBe(true);
+            const sign = s.source.creditNoteOf ? -1 : 1;
+            expect(cents(num(xml, 'TotalGrossAmountBeforeTaxes'))).toBe(cents(sign * s.source.subtotal));
+            expect(cents(num(xml, 'TotalTaxOutputs'))).toBe(cents(sign * s.source.taxTotal));
+            expect(cents(num(xml, 'TotalTaxesWithheld'))).toBe(cents(sign * (s.source.retencionTotal || 0)));
+            // InvoiceTotal = base + impuestos repercutidos - retenciones.
+            expect(cents(num(xml, 'InvoiceTotal'))).toBe(cents(num(xml, 'TotalGrossAmountBeforeTaxes')) + cents(num(xml, 'TotalTaxOutputs')) - cents(num(xml, 'TotalTaxesWithheld')));
+            expect(cents(num(xml, 'InvoiceTotal'))).toBe(cents(sign * s.source.total));
+            expect(tag(xml, 'TotalOutstandingAmount')[0]).toBe(tag(xml, 'InvoiceTotal')[0]);
+            expect(xml).not.toMatch(/undefined|NaN|null/);
+        });
+    }
+
+    it('el IRPF va en TaxesWithheld con su código (04), nunca restado de la base', () => {
+        const xml = assessFacturae(byFe('fe-irpf')).xml!;
+        const withheld = /<TaxesWithheld>([\s\S]*?)<\/TaxesWithheld>/.exec(xml)![1];
+        expect(tag(withheld, 'TaxTypeCode')).toEqual(['04']);
+        expect(tag(withheld, 'TaxRate')).toEqual(['15.00']);
+        expect(num(xml, 'TotalGrossAmountBeforeTaxes')).toBe(2040);
+        expect(num(xml, 'TotalTaxesWithheld')).toBe(306);
+        expect(num(xml, 'InvoiceTotal')).toBe(2162.4);
+    });
+
+    it('cada impuesto con su código: IVA 01, IGIC 03, IPSI 02', () => {
+        expect(new Set(tag(assessFacturae(byFe('fe-mixto')).xml!, 'TaxTypeCode'))).toEqual(new Set(['01']));
+        expect(new Set(tag(assessFacturae(byFe('fe-igic-irpf')).xml!, 'TaxTypeCode'))).toEqual(new Set(['03', '04']));
+        expect(new Set(tag(assessFacturae(byFe('fe-ipsi')).xml!, 'TaxTypeCode'))).toEqual(new Set(['02']));
+    });
+
+    it('exenta, no sujeta e inversión del sujeto pasivo', () => {
+        const mixto = assessFacturae(byFe('fe-mixto')).xml!;
+        expect(tag(mixto, 'SpecialTaxableEventCode')).toEqual(['01']);
+        expect(tag(mixto, 'SpecialTaxableEventReason')[0]).toMatch(/^01 .*art\. 20/);
+        const intra = assessFacturae(byFe('fe-intra-ue')).xml!;
+        expect(tag(intra, 'SpecialTaxableEventCode')).toEqual(['02']);
+        expect(tag(intra, 'LegalReference')).toContain('Inversión del sujeto pasivo');
+        // Operación intracomunitaria: los dos NIF con el prefijo de su país.
+        expect(tag(intra, 'TaxIdentificationNumber')).toEqual(['ESB28003218', 'FR83404833048']);
+        expect(tag(intra, 'ResidenceTypeCode')).toEqual(['R', 'U']);
+    });
+
+    it('rectificativa por diferencias: OR, importes negativos y la factura que corrige', () => {
+        const xml = assessFacturae(byFe('fe-rectificativa')).xml!;
+        expect(tag(xml, 'InvoiceClass')).toEqual(['OR']);
+        expect(tag(xml, 'InvoiceSeriesCode').concat(tag(xml, 'InvoiceNumber'))).toContain('LP-2026-0017');
+        expect(tag(xml, 'CorrectionMethod')).toEqual(['02']);
+        expect(num(xml, 'InvoiceTotal')).toBeLessThan(0);
+        expect(num(xml, 'TotalTaxesWithheld')).toBeLessThan(0);
+    });
+
+    it('falla cerrado con el motivo', () => {
+        const codes = (src: FacturaeSource) => assessFacturae(src).problems.map((p) => p.code);
+        expect(codes({ ...byFe('fe-irpf'), currency: 'USD' })).toContain('facturae_currency');
+        expect(codes({ ...byFe('fe-irpf'), issuer: { ...FR_SELLER } })).toContain('facturae_es_only');
+        expect(codes({ ...byFe('fe-irpf'), total: byFe('fe-irpf').total + 0.01 })).toContain('totals_mismatch');
+        const otra = byFe('fe-irpf');
+        otra.retenciones = otra.retenciones!.map((r) => ({ ...r, nombre: 'Retención por arrendamiento', tipo: 'otra' }));
+        expect(codes(otra)).toContain('facturae_withholding_type');
+        expect(codes({ ...byFe('fe-rectificativa'), creditNoteOf: null })).toContain('facturae_credit_original');
+        expect(codes({ ...byFe('fe-irpf'), invoiceNumber: 'X'.repeat(21) })).toContain('facturae_number');
+        expect(codes({ ...byFe('fe-irpf'), status: 'pending' })).toContain('not_issued');
+        expect(assessFacturae({ ...byFe('fe-irpf'), currency: 'USD' }).xml).toBeNull();
+    });
+});
+
+describe('firma XAdES-EPES de la Facturae (política v3.1)', () => {
+    const { privateKey, publicKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
+    const privateKeyPem = privateKey.export({ type: 'pkcs8', format: 'pem' }).toString();
+    const cert = forge.pki.createCertificate();
+    cert.publicKey = forge.pki.publicKeyFromPem(publicKey.export({ type: 'spki', format: 'pem' }).toString());
+    cert.serialNumber = '01a2b3c4d5';
+    cert.validity.notBefore = new Date('2026-01-01T00:00:00Z');
+    cert.validity.notAfter = new Date('2036-01-01T00:00:00Z');
+    const attrs = [{ name: 'countryName', value: 'ES' }, { name: 'organizationName', value: 'Prueba, S.L.' }, { name: 'commonName', value: 'Firma de prueba' }];
+    cert.setSubject(attrs);
+    cert.setIssuer(attrs);
+    cert.sign(forge.pki.privateKeyFromPem(privateKeyPem), forge.md.sha256.create());
+    const certDer = Buffer.from(forge.asn1.toDer(forge.pki.certificateToAsn1(cert)).getBytes(), 'binary');
+    const signer = { privateKeyPem, certDer };
+    const xml = assessFacturae(FACTURAE_SAMPLES[0].source).xml!;
+    const opts = { signingTime: new Date('2026-10-09T10:00:00Z'), id: 'prueba' };
+    const signed = signFacturae(xml, signer, opts);
+    const DS = 'xmlns:ds="http://www.w3.org/2000/09/xmldsig#"';
+    const FE = 'xmlns:fe="http://www.facturae.gob.es/formato/Versiones/Facturaev3_2_2.xml"';
+
+    it('determinista: mismo documento, mismo certificado y misma hora, mismos bytes', () => {
+        expect(signFacturae(xml, signer, opts)).toBe(signed);
+        expect(signed.startsWith('<?xml version="1.0" encoding="UTF-8"?>')).toBe(true);
+    });
+
+    it('tres referencias, política de Facturae y rol de emisor', () => {
+        expect(signed.match(/<ds:Reference /g)).toHaveLength(3);
+        expect(signed).toContain('URI=""');
+        expect(signed).toContain('Type="http://uri.etsi.org/01903#SignedProperties" URI="#SignedProperties-prueba"');
+        expect(signed).toContain('<ds:Reference URI="#KeyInfo-prueba">');
+        expect(signed).toContain(`<xades:Identifier>${FACTURAE_POLICY_URL}</xades:Identifier>`);
+        expect(signed).toContain(`<ds:DigestValue>${FACTURAE_POLICY_SHA1}</ds:DigestValue>`);
+        expect(signed).toContain('<xades:ClaimedRole>emisor</xades:ClaimedRole>');
+        expect(signed).toContain(`<ds:X509Certificate>${certDer.toString('base64')}</ds:X509Certificate>`);
+        expect(signed).toContain('<xades:SigningTime>2026-10-09T10:00:00Z</xades:SigningTime>');
+        expect(signed).toContain(`<ds:DigestValue>${createHash('sha256').update(certDer).digest('base64')}</ds:DigestValue>`);
+    });
+
+    it('la referencia del documento es la huella de la Facturae sin la firma (enveloped)', () => {
+        const ref = /<ds:Reference Id="Reference-prueba" URI="">[\s\S]*?<ds:DigestValue>([^<]+)<\/ds:DigestValue>/.exec(signed)![1];
+        expect(ref).toBe(createHash('sha256').update(xml, 'utf8').digest('base64'));
+    });
+
+    it('la firma RSA verifica sobre la forma canónica de SignedInfo', () => {
+        const signedInfo = /<ds:SignedInfo[\s\S]*?<\/ds:SignedInfo>/.exec(signed)![0].replace('<ds:SignedInfo ', `<ds:SignedInfo ${DS} ${FE} `);
+        const value = Buffer.from(/<ds:SignatureValue[^>]*>([^<]+)<\/ds:SignatureValue>/.exec(signed)![1], 'base64');
+        expect(verifySignature('RSA-SHA256', Buffer.from(signedInfo, 'utf8'), publicKey, value)).toBe(true);
+        const tampered = signedInfo.replace(/<ds:DigestValue>[^<]+/, '<ds:DigestValue>AAAA');
+        expect(verifySignature('RSA-SHA256', Buffer.from(tampered, 'utf8'), publicKey, value)).toBe(false);
+    });
+
+    it('el emisor del certificado en RFC 2253, con las comas escapadas', () => {
+        expect(issuerNameRfc2253(certDer)).toBe('CN=Firma de prueba,O=Prueba\\, S.L.,C=ES');
     });
 });

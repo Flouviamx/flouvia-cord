@@ -21,6 +21,20 @@
 //   veraPDF    PDF/A-3b del Factur-X, vía Mustang 2.26 (que además vuelve a
 //              validar el XML incrustado)
 //
+// Y las Facturae 3.2.2 de emisores españoles (`FACTURAE_SAMPLES`: IRPF, tipos
+// mezclados con descuento, IGIC, IPSI, intracomunitaria, exportación y
+// rectificativa), sin firmar y firmadas con un certificado de prueba:
+//
+//   XSD        Facturae 3.2.2 oficial (facturae.gob.es) con XMLDSig (W3C) y
+//              XAdES 1.3.2 (ETSI) importados: valida también la firma
+//   XMLDSig    la firma XAdES-EPES verificada con javax.xml.crypto del JDK
+//              (scripts/lib/XmlDsigVerify.java): cada referencia recanonicalizada
+//              por su cuenta y la firma RSA contra el certificado del KeyInfo
+//
+// Facturae no publica un schematron: sus reglas de negocio (totales, tipos)
+// las prueban test/einvoice.test.ts y el propio `assessFacturae`, que falla
+// cerrado si los totales no cuadran al céntimo.
+//
 // Y controles NEGATIVOS: copias deliberadamente rotas que cada validador debe
 // rechazar. Sin ellos, un validador mal invocado (que no lee el archivo, que
 // apunta a otro XSLT) "pasaría" todo y el check no probaría nada.
@@ -94,6 +108,26 @@ const ARTEFACTS = {
     mustang: {
         url: 'https://repo1.maven.org/maven2/org/mustangproject/Mustang-CLI/2.26.0/Mustang-CLI-2.26.0.jar',
         sha256: '42d7868cb68264874a7b8cab4c3587b03b23ccc7cd72373da917f66758bb9736',
+        extract: false,
+    },
+    // Facturae 3.2.2: el esquema oficial tal como lo publica facturae.gob.es
+    // (con BOM y extensión .xml), y los dos que importa para la firma. Su
+    // `schemaLocation` apunta a la red: se reescribe a la copia local (y
+    // xmllint corre con --nonet). XAdES importa la edición 2008 de XMLDSig;
+    // se resuelve a la misma copia que Facturae (difieren en un salto de línea).
+    facturae: {
+        url: 'https://www.facturae.gob.es/content/dam/facturae/formato/versiones/Facturaev3_2_2.xml',
+        sha256: 'b4bbcd587f5fb0a8a906336cca09b0a40d06ffaa78c6a62f6e438c4e6ea86e07',
+        extract: false,
+    },
+    xmldsig: {
+        url: 'https://www.w3.org/TR/xmldsig-core/xmldsig-core-schema.xsd',
+        sha256: 'd102ad3df7664c307e0c2c776ba4a90513b1969974d8a940bae1a77f9f21e15d',
+        extract: false,
+    },
+    xades: {
+        url: 'https://uri.etsi.org/01903/v1.3.2/XAdES01903v132-201601.xsd',
+        sha256: '5d491d4031fc98cdc2b515810c70578e9c52dfdc132f1ffa4a267a51084fcb68',
         extract: false,
     },
 };
@@ -299,6 +333,69 @@ async function kosit(jar, config, files, outDir) {
     return out;
 }
 
+/** Firma XMLDSig/XAdES con la implementación del JDK (modo de archivo fuente). */
+async function xmldsig(files) {
+    const r = await run('java', [join(ROOT, 'scripts/lib/XmlDsigVerify.java'), ...files]);
+    const out = {};
+    for (const f of files) {
+        const line = r.stdout.split('\n').find((l) => l === `OK ${f}` || l.startsWith(`FAIL ${f}:`));
+        out[f] = line === `OK ${f}`
+            ? { ok: true, errors: [], warnings: [] }
+            : { ok: false, errors: [line ? line.slice(`FAIL ${f}:`.length).trim().slice(0, 240) : `el verificador no informó (código ${r.code}): ${oneLine(r.stderr).slice(-300)}`], warnings: [] };
+    }
+    return out;
+}
+
+/**
+ * Esquemas de Facturae en el caché, con sus importaciones apuntando a las
+ * copias locales, y un esquema conductor que junta Facturae y XAdES (la firma
+ * lleva elementos de los dos). Devuelve el conductor.
+ */
+function facturaeSchemas(paths) {
+    const dir = join(CACHE, 'facturae-xsd');
+    mkdirSync(dir, { recursive: true });
+    const local = (file, from, to) => {
+        const text = readFileSync(file, 'utf8');
+        if (!text.includes(from)) throw new Error(`${basename(file)}: no importa ${from}`);
+        return text.replace(from, to);
+    };
+    writeFileSync(join(dir, 'xmldsig-core-schema.xsd'), readFileSync(paths.xmldsig));
+    writeFileSync(join(dir, 'Facturaev3_2_2.xsd'), local(paths.facturae, 'schemaLocation="http://www.w3.org/TR/xmldsig-core/xmldsig-core-schema.xsd"', 'schemaLocation="xmldsig-core-schema.xsd"'));
+    writeFileSync(join(dir, 'XAdES.xsd'), local(paths.xades, 'schemaLocation="http://www.w3.org/TR/2008/REC-xmldsig-core-20080610/xmldsig-core-schema.xsd"', 'schemaLocation="xmldsig-core-schema.xsd"'));
+    const driver = join(dir, 'facturae-xades.xsd');
+    writeFileSync(driver, [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">',
+        '<xs:import namespace="http://www.facturae.gob.es/formato/Versiones/Facturaev3_2_2.xml" schemaLocation="Facturaev3_2_2.xsd"/>',
+        '<xs:import namespace="http://uri.etsi.org/01903/v1.3.2#" schemaLocation="XAdES.xsd"/>',
+        '</xs:schema>',
+        '',
+    ].join('\n'));
+    return driver;
+}
+
+/**
+ * Firmante de prueba: RSA 2048 y un certificado autofirmado con la forma del
+ * de un representante de persona jurídica. Solo sirve para comprobar que la
+ * firma que arma Cord se verifica; no es un certificado cualificado.
+ */
+async function testSigner() {
+    const { generateKeyPairSync } = await import('node:crypto');
+    const forge = (await import('node-forge')).default;
+    const { privateKey, publicKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
+    const privateKeyPem = privateKey.export({ type: 'pkcs8', format: 'pem' }).toString();
+    const cert = forge.pki.createCertificate();
+    cert.publicKey = forge.pki.publicKeyFromPem(publicKey.export({ type: 'spki', format: 'pem' }).toString());
+    cert.serialNumber = '01a2b3c4d5';
+    cert.validity.notBefore = new Date('2026-01-01T00:00:00Z');
+    cert.validity.notAfter = new Date('2036-01-01T00:00:00Z');
+    const attrs = [{ name: 'countryName', value: 'ES' }, { name: 'organizationName', value: 'Prueba, S.L.' }, { type: '2.5.4.97', value: 'VATES-B12345674' }, { name: 'commonName', value: 'Firma de prueba' }];
+    cert.setSubject(attrs);
+    cert.setIssuer(attrs);
+    cert.sign(forge.pki.privateKeyFromPem(privateKeyPem), forge.md.sha256.create());
+    return { privateKeyPem, certDer: Buffer.from(forge.asn1.toDer(forge.pki.certificateToAsn1(cert)).getBytes(), 'binary') };
+}
+
 async function mustang(jar, pdf) {
     const r = await run('java', ['-Xmx1g', '-jar', jar, '--no-notices', '--action', 'validate', '--source', pdf], 600_000);
     const text = r.stdout;
@@ -356,19 +453,22 @@ async function main() {
     for (const f of [KOSIT_JAR, UBL_XSD.Invoice, UBL_XSD.CreditNote, CII_XSD, join(FX, 'Factur-X_EN16931.xsd'), ...Object.values(XSLT)]) {
         if (!existsSync(f)) throw new Error(`artefacto incompleto: falta ${f}`);
     }
+    const FACTURAE_XSD = facturaeSchemas(paths);
 
     // ── Muestras ──
-    const { EINVOICE_SAMPLES, samplePdfInput } = await import('../test/helpers/einvoice-samples.ts');
+    const { EINVOICE_SAMPLES, FACTURAE_SAMPLES, samplePdfInput } = await import('../test/helpers/einvoice-samples.ts');
     const { assessEInvoice, formatProblems } = await import('../src/lib/fiscal/einvoice/model.ts');
     const { serializeUbl } = await import('../src/lib/fiscal/einvoice/ubl.ts');
     const { serializeCii } = await import('../src/lib/fiscal/einvoice/cii.ts');
     const { buildFacturX } = await import('../src/lib/fiscal/einvoice/facturx.ts');
+    const { assessFacturae } = await import('../src/lib/fiscal/einvoice/facturae.ts');
+    const { signFacturae } = await import('../src/lib/fiscal/einvoice/xades.ts');
     const { loadArchivalFonts } = await import('../src/lib/pdf/pdfa.ts');
     const fonts = await loadArchivalFonts();
 
     const RUN = join(CACHE, 'run');
     rmSync(RUN, { recursive: true, force: true });
-    const D = { xrUbl: join(RUN, 'xrechnung-ubl'), xrCii: join(RUN, 'xrechnung-cii'), peppol: join(RUN, 'peppol'), fxXml: join(RUN, 'facturx-xml'), fxPdf: join(RUN, 'facturx-pdf') };
+    const D = { xrUbl: join(RUN, 'xrechnung-ubl'), xrCii: join(RUN, 'xrechnung-cii'), peppol: join(RUN, 'peppol'), fxXml: join(RUN, 'facturx-xml'), fxPdf: join(RUN, 'facturx-pdf'), fe: join(RUN, 'facturae'), feSigned: join(RUN, 'facturae-firmada') };
     for (const d of Object.values(D)) mkdirSync(d, { recursive: true });
 
     const generationErrors = [];
@@ -393,6 +493,19 @@ async function main() {
                 put(D.fxPdf, `${s.id}.pdf`, pdf, meta);
             }
         }
+    }
+    // Facturae: la misma muestra sin firmar (como sale sin certificado) y
+    // firmada (como sale con la firma activada), con fecha fija.
+    const signer = await testSigner();
+    for (const s of FACTURAE_SAMPLES) {
+        const fe = assessFacturae(s.source);
+        if (!fe.xml) {
+            generationErrors.push(`${s.id} (facturae): ${fe.problems.map((p) => p.code).join(', ')}`);
+            continue;
+        }
+        const meta = { sample: s.id, format: 'facturae' };
+        put(D.fe, `${s.id}.xml`, `<?xml version="1.0" encoding="UTF-8"?>\n${fe.xml}`, meta);
+        put(D.feSigned, `${s.id}.xsig`, signFacturae(fe.xml, signer, { signingTime: new Date('2026-10-09T10:00:00Z'), id: s.id }), meta);
     }
     if (generationErrors.length) {
         console.error('security:einvoice FALLÓ: muestras que no se pudieron generar:');
@@ -437,6 +550,15 @@ async function main() {
         negatives[f] = { expect: ['cen-cii', 'kosit'], why: 'IGIC al 0 % en la sintaxis CII (BR-AF-05)' };
     }
 
+    // Facturae: un tipo de impuesto fuera de la lista lo rechaza el XSD; en la
+    // firmada, tocar un importe del documento o la hora de firma (dentro de
+    // SignedProperties) rompe su referencia, y un elemento XAdES inventado lo
+    // rechaza el esquema de XAdES.
+    negative(D.fe, 'fe-irpf.xml', 'neg-tipo-impuesto.xml', once(/<TaxTypeCode>01<\/TaxTypeCode>/, '<TaxTypeCode>30</TaxTypeCode>'), ['xsd'], 'TaxTypeCode fuera de la lista de Facturae');
+    negative(D.feSigned, 'fe-irpf.xsig', 'neg-importe.xsig', once(/<InvoiceTotal>([0-9.]+)<\/InvoiceTotal>/, (_m, v) => `<InvoiceTotal>${(Number(v) + 1).toFixed(2)}</InvoiceTotal>`), ['xmldsig'], 'importe alterado después de firmar');
+    negative(D.feSigned, 'fe-irpf.xsig', 'neg-hora-firma.xsig', once(/<xades:SigningTime>2026-10-09T10:00:00/, '<xades:SigningTime>2026-10-09T11:00:00'), ['xmldsig'], 'SignedProperties alteradas después de firmar');
+    negative(D.feSigned, 'fe-irpf.xsig', 'neg-xades.xsig', (s) => s.replace('<xades:SignerRole>', '<xades:SignerRoleX>').replace('</xades:SignerRole>', '</xades:SignerRoleX>'), ['xsd'], 'elemento fuera del esquema XAdES');
+
     const filesIn = (dir) => readdirSync(dir).map((n) => join(dir, n)).sort();
     const ublSchema = (f) => (readFileSync(f, 'utf8').includes('<CreditNote ') ? UBL_XSD.CreditNote : UBL_XSD.Invoice);
 
@@ -461,13 +583,15 @@ async function main() {
         async () => record('kosit', await kosit(KOSIT_JAR, XR, filesIn(D.xrUbl), join(CACHE, 'kosit', 'ubl'))),
         async () => record('kosit', await kosit(KOSIT_JAR, XR, filesIn(D.xrCii), join(CACHE, 'kosit', 'cii'))),
         ...filesIn(D.fxPdf).map((pdf) => async () => record('mustang', { [pdf]: await mustang(paths.mustang, pdf) })),
+        async () => record('xsd', await xsd([...filesIn(D.fe), ...filesIn(D.feSigned)], () => FACTURAE_XSD)),
+        async () => record('xmldsig', await xmldsig(filesIn(D.feSigned))),
     ];
     const t0 = Date.now();
     await pool(jobs, Math.max(2, Math.min(4, Math.floor(availableParallelism() / 2))));
 
     // ── Veredicto ──
-    const VALIDATORS = ['xsd', 'cen-ubl', 'cen-cii', 'kosit', 'peppol', 'peppol-cen', 'facturx-sch', 'verapdf'];
-    const LABEL = { xsd: 'XSD', 'cen-ubl': 'CEN UBL', 'cen-cii': 'CEN CII', kosit: 'KoSIT XRechnung', peppol: 'Peppol', 'peppol-cen': 'Peppol CEN', 'facturx-sch': 'Factur-X', verapdf: 'veraPDF + Mustang' };
+    const VALIDATORS = ['xsd', 'cen-ubl', 'cen-cii', 'kosit', 'peppol', 'peppol-cen', 'facturx-sch', 'verapdf', 'xmldsig'];
+    const LABEL = { xsd: 'XSD', 'cen-ubl': 'CEN UBL', 'cen-cii': 'CEN CII', kosit: 'KoSIT XRechnung', peppol: 'Peppol', 'peppol-cen': 'Peppol CEN', 'facturx-sch': 'Factur-X', verapdf: 'veraPDF + Mustang', xmldsig: 'XMLDSig (JDK)' };
     const failures = [];
     const warningIds = new Map();
     const rel = (f) => f.slice(RUN.length + 1);
@@ -502,6 +626,8 @@ async function main() {
         peppol: ['xsd', 'cen-ubl', 'peppol', 'peppol-cen'],
         'facturx-xml': ['xsd', 'cen-cii', 'facturx-sch'],
         'facturx-pdf': ['verapdf'],
+        facturae: ['xsd'],
+        'facturae-firmada': ['xsd', 'xmldsig'],
     };
     for (const f of Object.keys(written)) {
         const group = basename(dirname(f));
