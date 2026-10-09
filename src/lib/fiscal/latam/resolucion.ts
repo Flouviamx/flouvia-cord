@@ -4,8 +4,9 @@
 //
 // Nunca reenvía: CONSULTA a la autoridad qué pasó con ese número y lo resuelve
 // (autorizado → la factura se termina de emitir; no existe → se descarta y el
-// documento vuelve a poder emitirse o anularse). Mismo patrón que el envío de
-// Verifactu: la emisión es síncrona y este barrido recoge lo que quedó.
+// documento vuelve a poder emitirse o anularse, ver liberarDocumento en
+// comprobantes.ts). Mismo patrón que el envío de Verifactu: la emisión es
+// síncrona y este barrido recoge lo que quedó.
 //
 // Carriles (regla 30): el barrido cross-org es una función security definer
 // que solo responde con app.scope = 'system' (withSystemTx, cron validado);
@@ -34,20 +35,6 @@ export interface ResultadoOrg {
 export async function orgsConPendientes(rail: RailId, antiguedadS = ANTIGUEDAD_CRON_S): Promise<string[]> {
     const [rows] = await withSystemTx(sql`select cord_fiscal_rail_orgs_por_resolver(${rail}, ${antiguedadS}) as org_id`);
     return rows.map((r) => String(r.org_id)).filter(Boolean);
-}
-
-/**
- * El documento vuelve a quedar libre: la autoridad no registró el intento, así
- * que puede emitirse otra vez (con otro número) o anularse. Se quitan las
- * marcas de entrega incierta que bloqueaban ambas cosas.
- */
-async function liberarDocumento(orgId: string, documentoId: string, mensaje: string): Promise<void> {
-    await withOrgTx(orgId, sql`
-        update documentos_fiscales
-           set provider_data = (coalesce(provider_data, '{}'::jsonb) - 'delivery_uncertain' - 'retry_safe')
-                               || jsonb_build_object('error', ${mensaje}::text),
-               updated_at = now()
-         where id = ${documentoId} and org_id = ${orgId} and status <> 'issued'`);
 }
 
 /** Resuelve los intentos colgados de una organización. */
@@ -85,9 +72,8 @@ export async function resolverPendientesDeOrg(orgId: string, rail: RailId, deadl
                         const { finalizeInvoice } = await import('../invoices');
                         await finalizeInvoice(orgId, intento.documentoId);
                     } else if (resultado === 'descartado') {
+                        // resolverPorConsulta ya liberó el documento (liberarDocumento).
                         r.descartados++;
-                        await liberarDocumento(orgId, intento.documentoId,
-                            'ARCA no registró esta factura. Puedes volver a emitirla: tendrá un número nuevo.');
                     } else {
                         r.sinResolver++;
                     }

@@ -30,6 +30,7 @@ import Icon from '../Icon.astro';
 import { jsonForScript } from '../../lib/escape';
 import TermPicker from './TermPicker.astro';
 import { CONDICIONES_IVA_RECEPTOR } from '../../lib/fiscal/latam/arca/constantes';
+import { railConfig } from '../../lib/fiscal/latam/config';
 
 interface Props {
     showDelete?: boolean;
@@ -43,7 +44,8 @@ const ORG_CURRENCY = String(ORG.moneda || getCountryProfile(ORG_COUNTRY, L).curr
 const orgIsMx = ORG_COUNTRY === 'MX';
 // Argentina: ARCA exige la condición frente al IVA del receptor en cada
 // factura (RG 5616/2024); sin ella, un cliente con CUIT no se puede facturar.
-const orgIsAr = ORG_COUNTRY === 'AR';
+// Solo con el riel encendido: sin él nada la lee (regla 15).
+const orgIsAr = ORG_COUNTRY === 'AR' && railConfig('arca').habilitado;
 
 // El cliente puede ser de CUALQUIER país, no solo de los que Cord ofrece al
 // darse de alta (regla 28: esto valida un dato ya guardado, no un catálogo

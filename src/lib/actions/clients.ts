@@ -34,8 +34,12 @@ export function cleanClientInput(input: Record<string, any>) {
         ciudad: String(input.ciudad ?? '').trim().slice(0, 100) || null,
         region: String(input.region ?? '').trim().slice(0, 100) || null,
         // Condición frente al IVA (Argentina): CondicionIVAReceptorId de ARCA.
-        // Fuera del catálogo se descarta en vez de guardarse a medias.
-        condicion_iva: CONDICIONES_IVA_IDS.has(Number(input.condicion_iva)) ? Number(input.condicion_iva) : null,
+        // Fuera del catálogo se descarta en vez de guardarse a medias; ausente
+        // (undefined) significa "no tocarla" — un llamador que no la conoce no
+        // puede borrarla.
+        condicion_iva: input.condicion_iva === undefined
+            ? undefined
+            : CONDICIONES_IVA_IDS.has(Number(input.condicion_iva)) ? Number(input.condicion_iva) : null,
     };
 }
 
@@ -98,7 +102,7 @@ export async function createClient(ctx: ActionContext, input: Record<string, any
             values (
                 ${ctx.orgId}, ${c.empresa}, ${c.contacto}, ${c.email}, ${c.telefono}, ${c.rfc}, ${c.terminos}, ${c.limite},
                 ${c.nivel}, ${c.descuento}, ${c.regimen_fiscal}, ${c.uso_cfdi}, ${c.cp_fiscal},
-                ${c.country_code}, ${c.direccion_line1}, ${c.direccion_line2}, ${c.ciudad}, ${c.region}, ${c.condicion_iva}
+                ${c.country_code}, ${c.direccion_line1}, ${c.direccion_line2}, ${c.ciudad}, ${c.region}, ${c.condicion_iva ?? null}
             )
             returning *`);
     } catch (error) {
@@ -138,7 +142,7 @@ async function writeClientUpdate(ctx: ActionContext, id: string, c: ClientInput)
             regimen_fiscal = ${c.regimen_fiscal}, uso_cfdi = ${c.uso_cfdi}, cp_fiscal = ${c.cp_fiscal},
             country_code = ${c.country_code}, direccion_line1 = ${c.direccion_line1},
             direccion_line2 = ${c.direccion_line2}, ciudad = ${c.ciudad}, region = ${c.region},
-            condicion_iva = ${c.condicion_iva}
+            condicion_iva = case when ${c.condicion_iva === undefined} then condicion_iva else ${c.condicion_iva ?? null}::smallint end
         where id = ${id} and org_id = ${ctx.orgId}
         returning *`);
     if (!rows.length) return NO_ENCONTRADO;

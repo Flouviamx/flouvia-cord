@@ -71,6 +71,13 @@ function fila(r: Record<string, any>): IntentoRail {
     };
 }
 
+/** Un intento por id, releído (el que se tenía en memoria pudo resolverse en otra instancia). */
+export async function intentoPorId(orgId: string, id: string): Promise<IntentoRail | null> {
+    const [rows] = await withOrgTx(orgId, sql`
+        select * from fiscal_rail_comprobantes where id = ${id} and org_id = ${orgId} limit 1`);
+    return rows[0] ? fila(rows[0]) : null;
+}
+
 /** El intento vivo (pendiente, incierto o autorizado) de un documento, si existe. */
 export async function intentoVivo(orgId: string, documentoId: string, rail: RailId, entorno: EntornoRail): Promise<IntentoRail | null> {
     const [rows] = await withOrgTx(orgId, sql`
@@ -229,4 +236,22 @@ export async function anotarUltimoAutorizado(orgId: string, k: ClaveSecuencia, n
     await withOrgTx(orgId, sql`
         update fiscal_rail_secuencias set ultimo_autorizado = greatest(coalesce(ultimo_autorizado, 0), ${numero}), updated_at = now()
          where org_id = ${orgId} and rail = ${k.rail} and entorno = ${k.entorno} and serie = ${k.serie} and tipo = ${k.tipo}`);
+}
+
+/**
+ * El intento se descartó (la autoridad no lo registró): el documento vuelve a
+ * quedar libre para emitirse otra vez —con otro número— o anularse. Se quitan
+ * las marcas de entrega incierta y el id del proveedor pasa a `err_`, que es
+ * lo que voidInvoice reconoce como "nada quedó emitido fuera de Cord".
+ */
+export async function liberarDocumento(orgId: string, documentoId: string, rail: RailId, mensaje: string): Promise<void> {
+    await withOrgTx(orgId, sql`
+        update documentos_fiscales
+           set provider_data = (coalesce(provider_data, '{}'::jsonb) - 'delivery_uncertain' - 'retry_safe')
+                               || jsonb_build_object('error', ${mensaje}::text),
+               provider_document_id = case
+                   when provider_document_id is null or left(provider_document_id, 4) = 'err_' then provider_document_id
+                   else ${`err_${rail}_`} || provider_document_id end,
+               updated_at = now()
+         where id = ${documentoId} and org_id = ${orgId} and status <> 'issued'`);
 }

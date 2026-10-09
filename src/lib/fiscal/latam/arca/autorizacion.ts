@@ -22,8 +22,8 @@
 import { log } from '../../../log';
 import { invalidarTicket, obtenerTicket, type ClaveAcceso } from '../accesos';
 import {
-    anotarConsulta, anotarUltimoAutorizado, conSecuencia, intentoVivo, marcarEnviado, reclamarNumero, resolverIntento,
-    sinResolverDeSecuencia, type IntentoRail,
+    anotarConsulta, anotarUltimoAutorizado, conSecuencia, intentoPorId, intentoVivo, liberarDocumento, marcarEnviado,
+    reclamarNumero, resolverIntento, sinResolverDeSecuencia, type IntentoRail,
 } from '../comprobantes';
 import { credencialActiva, leerAjustes, marcarVerificacion, type CredencialActiva } from '../credenciales';
 import { RailDatosError, RailNoDisponibleError, RailTransitorioError, MSG_INCIERTO } from '../errores';
@@ -223,6 +223,8 @@ export function coincide(enviada: SolicitudArca, c: NonNullable<Awaited<ReturnTy
 
 export type ResultadoResolucion = 'autorizado' | 'descartado' | 'sin_resolver';
 
+const MSG_DESCARTADO = 'ARCA no registró esta factura. Puedes volver a emitirla (tendrá un número nuevo) o descartarla.';
+
 /** Un intento enviado y sin respuesta se considera perdido después de esto (ARCA responde en segundos). */
 export const ANTIGUEDAD_PARA_DESCARTAR_S = 120;
 
@@ -230,11 +232,18 @@ export const ANTIGUEDAD_PARA_DESCARTAR_S = 120;
  * Resuelve un intento `pendiente` o `incierto` CONSULTANDO a ARCA. Nunca
  * reenvía. Debe llamarse con la secuencia tomada.
  */
-export async function resolverPorConsulta(ctx: ContextoArca, intento: IntentoRail, ahora = Date.now()): Promise<ResultadoResolucion> {
+export async function resolverPorConsulta(ctx: ContextoArca, recibido: IntentoRail, ahora = Date.now()): Promise<ResultadoResolucion> {
+    // Releído dentro del lease: otra instancia pudo resolverlo mientras este
+    // proceso esperaba la secuencia.
+    const intento = await intentoPorId(ctx.orgId, recibido.id);
+    if (!intento || intento.estado === 'rechazado' || intento.estado === 'descartado') return 'descartado';
+    if (intento.estado === 'autorizado') return 'autorizado';
     const sol = intento.solicitud as SolicitudArca;
     if (!intento.enviadoAt) {
         // Reclamado y nunca enviado (el proceso murió antes): el número está libre.
-        await resolverIntento(ctx.orgId, intento.id, { estado: 'descartado', mensaje: 'El pedido no llegó a enviarse a ARCA.' });
+        if (await resolverIntento(ctx.orgId, intento.id, { estado: 'descartado', mensaje: 'El pedido no llegó a enviarse a ARCA.' })) {
+            await liberarDocumento(ctx.orgId, intento.documentoId, 'arca', MSG_DESCARTADO);
+        }
         return 'descartado';
     }
     try {
@@ -255,16 +264,19 @@ export async function resolverPorConsulta(ctx: ContextoArca, intento: IntentoRai
             // ARCA tiene ese número con OTROS datos: lo usó otro sistema con el
             // mismo punto de venta. El pedido de Cord no fue autorizado.
             log.error('arca: el número reclamado lo tiene otro comprobante', { route: 'fiscal/arca', orgId: ctx.orgId, intento: intento.id, numero: intento.numero });
-            await resolverIntento(ctx.orgId, intento.id, {
+            const conflicto = await resolverIntento(ctx.orgId, intento.id, {
                 estado: 'descartado',
                 mensaje: 'ARCA tiene ese número con otro comprobante: el punto de venta se está usando desde otro sistema.',
                 respuesta: { conflicto: true, consulta: c ?? null },
             });
+            if (conflicto) await liberarDocumento(ctx.orgId, intento.documentoId, 'arca', MSG_DESCARTADO);
             return 'descartado';
         }
         // ARCA no tiene ese número. Si el pedido ya es viejo, no se autorizó.
         if (ahora - Date.parse(intento.enviadoAt) >= ANTIGUEDAD_PARA_DESCARTAR_S * 1000) {
-            await resolverIntento(ctx.orgId, intento.id, { estado: 'descartado', mensaje: 'ARCA no registró el pedido.', respuesta: { ultimo } });
+            if (await resolverIntento(ctx.orgId, intento.id, { estado: 'descartado', mensaje: 'ARCA no registró el pedido.', respuesta: { ultimo } })) {
+                await liberarDocumento(ctx.orgId, intento.documentoId, 'arca', MSG_DESCARTADO);
+            }
             return 'descartado';
         }
         await anotarConsulta(ctx.orgId, intento.id, MSG_INCIERTO);
@@ -294,6 +306,11 @@ export async function emitirAnteArca(ctx: ContextoArca, documentoId: string, bas
     const clave = { rail: 'arca' as const, entorno: ctx.entorno, serie: String(base.ptoVta), tipo: String(base.cbteTipo) };
     return conSecuencia(ctx.orgId, clave, async () => {
         for (let vuelta = 0; vuelta < 2; vuelta++) {
+            // 0) Otra instancia pudo autorizar ESTE documento mientras se
+            //    esperaba el lease (dos clics en "Emitir"): se devuelve ese.
+            const previo = await intentoVivo(ctx.orgId, documentoId, 'arca', ctx.entorno);
+            if (previo?.estado === 'autorizado') return { tipo: 'autorizado', intento: previo } as const;
+
             // 1) Lo colgado de esta secuencia se resuelve antes de pedir otro número.
             for (const colgado of await sinResolverDeSecuencia(ctx.orgId, 'arca', ctx.entorno, clave.serie, clave.tipo)) {
                 const r = await resolverPorConsulta(ctx, colgado);
