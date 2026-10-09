@@ -106,13 +106,13 @@ describe('montos en pesos y tipo de documento', () => {
     it('nota de crédito: CodRef 1 si anula el total, 3 si corrige; nunca más que la factura', () => {
         const original = { tipo: 33 as const, folio: 7, fechaEmision: '2026-10-01', total: 119_000, receptor: { ...receptor } };
         const total = armarBorrador(entrada({ notaCreditoDe: original, receptor: {} }));
-        expect(total).toMatchObject({ tipo: 61, referencia: { tipo: 33, folio: 7, codigo: 1, razon: 'Anula documento' } });
+        expect(total).toMatchObject({ tipo: 61, referencias: [{ tipo: 33, folio: 7, codigo: 1, razon: 'Anula documento' }] });
         const parcial = armarBorrador(entrada({
             notaCreditoDe: original, receptor: {}, motivo: 'Devolución parcial',
             lineas: [linea({ unitPrice: 10_000, subtotal: 10_000, taxAmount: 1900, total: 11_900 })],
             totales: { subtotal: 10_000, taxes: 1900, total: 11_900, currency: 'CLP' },
         }));
-        expect(parcial.referencia).toMatchObject({ codigo: 3, razon: 'Devolución parcial' });
+        expect(parcial.referencias?.[0]).toMatchObject({ codigo: 3, razon: 'Devolución parcial' });
         expect(() => armarBorrador(entrada({
             notaCreditoDe: { ...original, total: 1000 }, receptor: {},
         }))).toThrow(/no puede superar/);
@@ -208,10 +208,13 @@ describe('representación impresa', () => {
 
     it('recuadro, totalizadores, timbre con su resolución y copia cedible', () => {
         expect(rep.recuadro).toEqual({ lineas: ['R.U.T.: 76.123.456-0', 'FACTURA ELECTRÓNICA', 'N° 5'], pie: 'S.I.I. - SANTIAGO CENTRO' });
-        expect(rep.filas).toEqual(expect.arrayContaining([
-            { k: 'Giro del cliente', v: 'Comercio' }, { k: 'Forma de pago', v: 'Crédito' }, { k: 'Vencimiento', v: '08/11/2026' },
-            { k: 'Monto neto', v: '$ 100.000' }, { k: 'IVA 19%', v: '$ 19.000' },
-        ]));
+        expect(rep.filas).toEqual(expect.arrayContaining([{ k: 'Forma de pago', v: 'Crédito' }, { k: 'Vencimiento', v: '08/11/2026' }]));
+        // Manual de muestras impresas 1.1.7 y 1.4: giro y casa matriz bajo la razón
+        // social; los totalizadores del SII en la zona de totales, con la tasa.
+        expect(rep.emisor).toEqual(['Giro: Consultoría', 'Casa matriz: Av. Providencia 1234, Providencia']);
+        expect(rep.receptor).toEqual(['Giro: Comercio', 'Dirección: San Diego 2222', 'Comuna: La Florida']);
+        expect(rep.totales).toEqual([{ k: 'Monto neto', v: '$ 100.000' }, { k: 'IVA (19%)', v: '$ 19.000' }]);
+        expect(rep).toMatchObject({ totalEtiqueta: 'Monto total', descuentoPorLinea: true });
         expect(rep.timbre?.leyendas).toEqual(['Timbre Electrónico SII', 'Res. 80 de 2014 - Verifique documento: www.sii.cl']);
         expect(rep.cedible?.acuseCampos).toEqual(['Nombre', 'RUT', 'Fecha', 'Recinto', 'Firma']);
         expect(rep.cedible?.acuseTexto).toMatch(/Ley 19\.983/);

@@ -25,6 +25,12 @@ import { canonicalPathForInvalidEnglishRoute, preferredPublicLang } from './i18n
 // por sesión (el proveedor de correo no la tiene, así que no es alcanzable). Para
 // activarlo hay que (1) agregarlo aquí y (2) exigir INBOUND_EMAIL_SECRET dentro
 // del handler (ya implementado) para que no quede abierto.
+// /api/webhooks/sii-intercambio → correo entrante de la casilla de intercambio
+// de DTE (Chile). SÍ es público: se autentica dentro del handler con el mismo
+// INBOUND_EMAIL_SECRET (bearer en tiempo constante + firma HMAC del cuerpo,
+// lib/inbound-auth.ts), falla cerrado sin el secreto o sin
+// SII_INTERCAMBIO_DOMINIO, y la casilla del destinatario resuelve la
+// organización con una función security definer (regla 30).
 // /api/contacto/* → formulario público de ventas (lead capture, sin sesión; el
 // handler valida honeypot + rate limit propio, ya que aquí salta el limiter interno).
 // /api/billing/connect/capture/[token] → verificación de identidad "continúa en
@@ -52,7 +58,7 @@ const OPS_PUBLIC_API_EXACT = [
 ];
 // OAuth legal intent is unauthenticated by definition (the account does not
 // exist yet), but it remains a same-origin POST subject to the CSRF check.
-const PUBLIC_API_EXACT = ["/api/mcp", "/api/cli/login", "/api/cli/login/claim", "/api/health", "/api/docs-search.json", "/api/support-search.json", "/api/geo", "/api/legal/oauth-intent", "/api/resend/marketing-webhook", "/api/integraciones/hubspot/webhook", "/api/integraciones/hubspot/tarjeta", "/api/integraciones/slack/eventos", "/api/integraciones/slack/comando", "/api/integraciones/slack/interaccion", "/api/integraciones/shopify/webhook", "/api/integraciones/shopify/instalar", "/api/build/payment-intent", "/api/oauth/token", "/api/oauth/revoke", "/api/oauth/entrega", ...OPS_PUBLIC_API_EXACT];
+const PUBLIC_API_EXACT = ["/api/mcp", "/api/cli/login", "/api/cli/login/claim", "/api/health", "/api/docs-search.json", "/api/support-search.json", "/api/geo", "/api/legal/oauth-intent", "/api/resend/marketing-webhook", "/api/integraciones/hubspot/webhook", "/api/integraciones/hubspot/tarjeta", "/api/integraciones/slack/eventos", "/api/integraciones/slack/comando", "/api/integraciones/slack/interaccion", "/api/integraciones/shopify/webhook", "/api/integraciones/shopify/instalar", "/api/build/payment-intent", "/api/oauth/token", "/api/oauth/revoke", "/api/oauth/entrega", "/api/webhooks/sii-intercambio", ...OPS_PUBLIC_API_EXACT];
 
 // Exención CSRF independiente de "API pública". Solo entra aquí una mutación
 // que se autentica con una credencial que el navegador no adjunta por sí solo

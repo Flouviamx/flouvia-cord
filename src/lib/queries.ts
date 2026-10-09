@@ -1649,6 +1649,8 @@ function rowToFactura(r: any) {
         tipo: r.document_type as string,
         fiscalId: (r.fiscal_id as string) || null,
         notaCreditoDe: (r.credit_note_of as string) || null,
+        // Chile: nota de débito (DTE 56) del documento que modifica.
+        notaDebitoDe: (r.nota_debito_de as string) || null,
         publicToken: (r.public_token as string) || null,
         enviada: !!r.sent_at,
         status: r.status as string,

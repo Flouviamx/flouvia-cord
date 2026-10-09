@@ -12,6 +12,7 @@
 // El certificado y los CAF viajan una sola vez (multipart a /api/fiscal/sii y
 // /api/fiscal/sii-folios) y nunca vuelven: la pantalla solo ve resúmenes.
 import type { EstadoSii } from '../../../lib/fiscal/latam/sii/estado';
+import SiiCertificacion from './SiiCertificacion.astro';
 
 interface Props { estado: EstadoSii; locale: 'es' | 'en'; }
 const { estado, locale } = Astro.props;
@@ -33,6 +34,7 @@ const FALTANTE: Record<string, [string, string]> = {
 const TIPO: Record<number, [string, string]> = {
     33: ['Factura electrónica (33)', 'Electronic invoice (33)'],
     34: ['Factura exenta (34)', 'Exempt invoice (34)'],
+    56: ['Nota de débito (56)', 'Debit note (56)'],
     61: ['Nota de crédito (61)', 'Credit note (61)'],
 };
 const faltantes = estado.faltantes.map((f) => FALTANTE[f]?.[en ? 1 : 0] ?? f);
@@ -77,8 +79,8 @@ const RES = A.resoluciones?.[estado.entorno];
     </div>
 
     <p class="sii-scope">{en
-        ? 'Cord issues electronic invoices (33), exempt invoices (34) and credit notes (61). Electronic receipts (boleta, 39), export invoices and fees receipts (boleta de honorarios) are not available.'
-        : 'Cord emite factura electrónica (33), factura exenta (34) y nota de crédito (61). La boleta electrónica (39), la factura de exportación y la boleta de honorarios no están disponibles.'}</p>
+        ? 'Cord issues electronic invoices (33), exempt invoices (34), debit notes (56) and credit notes (61), and receives and answers the documents your suppliers send you. Electronic receipts (boleta, 39), dispatch guides (52), export invoices and fees receipts (boleta de honorarios) are not available.'
+        : 'Cord emite factura electrónica (33), factura exenta (34), nota de débito (56) y nota de crédito (61), y recibe y responde los documentos que te envían tus proveedores. La boleta electrónica (39), la guía de despacho (52), la factura de exportación y la boleta de honorarios no están disponibles.'}</p>
 
     {estado.habilitado && (
         <Fragment>
@@ -136,8 +138,8 @@ const RES = A.resoluciones?.[estado.entorno];
             <div class="sii-section">
                 <span class="sii-block-title">{en ? 'Folios (CAF)' : 'Folios (CAF)'}</span>
                 <p class="sii-hint sii-hint-top">{en
-                    ? 'Each document uses one folio from a file the SII authorizes (Timbraje electrónico). A used folio is never reused. Invoice and credit-note folios expire six months after their authorization.'
-                    : 'Cada documento usa un folio de un archivo que autoriza el SII (Timbraje electrónico). Un folio usado no se reutiliza nunca. Los folios de factura y de nota de crédito vencen a los seis meses de su autorización.'}</p>
+                    ? 'Each document uses one folio from a file the SII authorizes (Timbraje electrónico). A used folio is never reused. Invoice, debit-note and credit-note folios expire six months after their authorization.'
+                    : 'Cada documento usa un folio de un archivo que autoriza el SII (Timbraje electrónico). Un folio usado no se reutiliza nunca. Los folios de factura, nota de débito y nota de crédito vencen a los seis meses de su autorización.'}</p>
                 <ul class="sii-folios" data-sii-folios>
                     {estado.folios.map((f) => (
                         <li class={`sii-folio${f.porAgotarse ? ' is-low' : ''}`}>
@@ -201,6 +203,8 @@ const RES = A.resoluciones?.[estado.entorno];
                     <span class="sii-msg" data-sii-msg-cert></span>
                 </div>
             </div>
+
+            <SiiCertificacion entorno={estado.entorno} locale={locale} />
         </Fragment>
     )}
 </div>
@@ -277,6 +281,7 @@ const RES = A.resoluciones?.[estado.entorno];
     const TIPO: Record<number, [string, string]> = {
         33: ['Factura electrónica (33)', 'Electronic invoice (33)'],
         34: ['Factura exenta (34)', 'Exempt invoice (34)'],
+        56: ['Nota de débito (56)', 'Debit note (56)'],
         61: ['Nota de crédito (61)', 'Credit note (61)'],
     };
 

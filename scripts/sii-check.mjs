@@ -30,6 +30,15 @@
 //   6. Respuestas reales del SII (fixtures de certificación): semilla, token
 //      con firma válida de un certificado no registrado (10) frente a firma
 //      alterada (11), consultas sin token, upload sin autenticar.
+//   7. Certificación (ronda 3): nota de débito 56 (CodRef 3 y 1); el set de
+//      pruebas leído del archivo del SII (ISO-8859-1, CRLF) y armado en un
+//      envío con la línea SET/CASO, descuentos por línea y global y notas de
+//      monto cero, validado contra EnvioDTE_v10.xsd; la recepción de un envío
+//      de proveedor (firma, RUT, DTD, CRLF) y las tres respuestas
+//      (RespuestaDTE de recepción y de resultado, EnvioRecibos) contra
+//      RespuestaEnvioDTE_v10.xsd y EnvioRecibos_v10.xsd de www.sii.cl, con
+//      controles negativos y verificación de firmas en la JDK; el registro de
+//      reclamos contra sus WSDL de ws2 (certificación) y ws1 (producción).
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { generateKeyPairSync } from 'node:crypto';
@@ -48,7 +57,11 @@ import { emitirDocumento } from '../src/lib/fiscal/latam/sii/emision.ts';
 import { cafVigente, parsearCaf, venceCaf } from '../src/lib/fiscal/latam/sii/caf.ts';
 import { codificarPdf417, evaluar, medidasTimbre } from '../src/lib/fiscal/latam/sii/pdf417.ts';
 import { rutDelCertificado } from '../src/lib/fiscal/latam/sii/certificado.ts';
-import { NS_SII_DTE, NS_WS_SII, NS_XSI, RUT_SII, siiEndpoints } from '../src/lib/fiscal/latam/sii/constantes.ts';
+import { DECLARACION_RECIBO, NS_SII_DTE, NS_WS_RECLAMO, NS_WS_SII, NS_XSI, RUT_SII, siiEndpoints, siiReclamoEndpoint } from '../src/lib/fiscal/latam/sii/constantes.ts';
+import { armarDocumentosDelSet, codRefDeCaso, parsearSetDePruebas } from '../src/lib/fiscal/latam/sii/set-pruebas.ts';
+import { envioRecibos, leerEnvioRecibido, respuestaRecepcion, respuestaResultado, verificarFirmaRecibida } from '../src/lib/fiscal/latam/sii/respuesta-intercambio.ts';
+import { mensajeReclamo, parsearRespuestaReclamo, sobreReclamo } from '../src/lib/fiscal/latam/sii/reclamo.ts';
+import { representacionSii } from '../src/lib/fiscal/latam/sii/representacion.ts';
 import { fechaHoraChile, rutValido } from '../src/lib/fiscal/latam/sii/texto.ts';
 import {
     ESTADOS_TOKEN, parsearRecepcion, parsearRespuesta, sobreEstadoDte, sobreEstadoEnvio, sobreSemilla, sobreToken,
@@ -157,7 +170,7 @@ const b61 = armarBorrador({
     lineas: [linea({ description: 'Ajuste de precio', quantity: 1, unitPrice: 10000, subtotal: 10000, taxAmount: 1900, total: 11900 })],
     totales: { subtotal: 10000, taxes: 1900, total: 11900, currency: 'CLP' },
 });
-assert.deepEqual([b61.tipo, b61.referencia?.codigo, b61.referencia?.folio, b61.receptor.rut], [61, 3, 7, RUT_CLIENTE], 'la nota corrige montos (CodRef 3) del folio 7 con el receptor de la factura');
+assert.deepEqual([b61.tipo, b61.referencias?.[0]?.codigo, b61.referencias?.[0]?.folio, b61.receptor.rut], [61, 3, 7, RUT_CLIENTE], 'la nota corrige montos (CodRef 3) del folio 7 con el receptor de la factura');
 const d61 = emitirDocumento(b61, folio(61, 1), clave, caratula, new Date('2026-10-10T15:00:00Z'));
 assert.equal(numeroDocumento(33, 7, false), 'FE-7');
 assert.equal(numeroDocumento(61, 1, true), 'C-NC-1', 'certificación se distingue en el número');
@@ -399,4 +412,163 @@ assert.match(d33.envioXml, /Servicio de &quot;consultor\xeda&quot; &amp; soporte
         ['recibido', 'recibido', 'recibido', 'datos_distintos', 'no_recibido', 'no_autorizado', 'no_autorizado', 'no_autorizado']);
 }
 
-process.stdout.write('security:sii (ejemplo oficial F60T33, esquemas DTE/EnvioDTE 2026, firmas XMLDSig y timbre, PDF417, WSDL de maullin y palena, reglas y respuestas reales del SII) OK\n');
+// ── 7. Certificación: nota de débito, set de pruebas e intercambio ───────────
+{
+    const caf56 = parsearCaf(cafDePrueba({ rut: RUT_EMISOR, tipo: 56, desde: 1, hasta: 50, llaves }).bytes, RUT_EMISOR);
+    const caf61 = cafs[61];
+    const folioDe = (caf, tipo, n) => ({ folio: n, cafXml: caf.cafXml, llavePrivadaPem: caf.llavePrivadaPem, tipo, desde: 1, hasta: 50, fechaAutorizacion: '2026-10-01' });
+    assert.equal(venceCaf(56, '2026-04-15'), '2026-10-14', 'la nota de débito da crédito fiscal: vence a los seis meses');
+
+    // Nota de débito sobre la factura (CodRef 3) y sobre una nota de crédito que anula completa (CodRef 1).
+    const nd3 = armarBorrador({
+        emisor, receptor: {}, fechaEmision: '2026-10-11', motivo: 'Intereses por mora',
+        notaDebitoDe: { tipo: 33, folio: 7, fechaEmision: '2026-10-09', total: b33.total, receptor: b33.receptor },
+        lineas: [linea({ description: 'Intereses', quantity: 1, unitPrice: 5000, subtotal: 5000, taxAmount: 950, total: 5950 })],
+        totales: { subtotal: 5000, taxes: 950, total: 5950, currency: 'CLP' },
+    });
+    assert.deepEqual([nd3.tipo, nd3.referencias[0].codigo, nd3.referencias[0].tipo, nd3.receptor.rut, nd3.formaPago], [56, 3, 33, RUT_CLIENTE, undefined], 'ND: corrige montos (CodRef 3) con el receptor del documento, sin FmaPago');
+    const nd1 = armarBorrador({
+        emisor, receptor: {}, fechaEmision: '2026-10-11',
+        notaDebitoDe: { tipo: 61, folio: 1, fechaEmision: '2026-10-10', total: b61.total, receptor: b61.receptor },
+        lineas: [linea({ description: 'Ajuste de precio', quantity: 1, unitPrice: 10000, subtotal: 10000, taxAmount: 1900, total: 11900 })],
+        totales: { subtotal: 10000, taxes: 1900, total: 11900, currency: 'CLP' },
+    });
+    assert.deepEqual([nd1.referencias[0].codigo, nd1.referencias[0].razon], [1, 'Anula nota de crédito'], 'ND por el total de una NC: la anula (CodRef 1, caso c)');
+    const d56 = emitirDocumento(nd3, folioDe(caf56, 56, 1), clave, caratula, new Date('2026-10-11T15:00:00Z'));
+    assert.equal(numeroDocumento(56, 1, true), 'C-ND-1');
+    assert.equal(representacionSii({ borrador: nd3, folio: 1, timbre: d56.timbre, unidadSii: 'X', resolucion: { numero: 0, fecha: '2026-10-01' }, certificacion: false }).cedible, undefined, 'la nota de débito no tiene copia cedible (manual de muestras, 1.4)');
+
+    // Set de pruebas: el archivo del SII (ISO-8859-1, CRLF, tabuladores) → un envío con los ocho casos.
+    const texto = leer('set-pruebas-basico.txt', 'latin1');
+    const archivoSet = parsearSetDePruebas(texto);
+    assert.deepEqual(archivoSet.sets.map((s) => [s.nombre, s.numeroAtencion, s.casos.map((c) => c.tipo).join(',')]), [['SET BASICO', '4352553', '33,33,33,33,61,61,61,56']]);
+    assert.deepEqual(archivoSet.noSoportados.map((n) => n.motivo), ['libro', 'libro', 'guia', 'exportacion', 'compra'], 'libros, guía, exportación y factura de compra se dicen, no se arman');
+    assert.throws(() => parsearSetDePruebas(texto.replace('Cajón', 'Caj\uFFFDn')), RailDatosError, 'una tilde perdida no se adivina');
+    assert.throws(() => parsearSetDePruebas(texto.replace('DESCUENTO GLOBAL ITEMES AFECTOS\t\t     22%', 'RECARGO GLOBAL\t\t 5%')), /no sabe armar/, 'una línea desconocida no se ignora');
+    const set = archivoSet.sets[0];
+    assert.deepEqual(set.casos.filter((c) => c.referencia).map(codRefDeCaso), [2, 3, 1, 1], 'CodRef: corrige giro 2, devolución 3, anula 1');
+    const receptoresSet = Object.fromEntries(set.casos.filter((c) => c.tipo === 33).map((c, i) => [c.numero,
+        { ...receptor, rut: ['77777777-7', '11222333-9', '12345678-5', '22333444-K'][i], razonSocial: `Cliente ${i + 1} Ltda.` }]));
+    const foliosSet = Object.fromEntries(set.casos.map((c, i) => [c.numero, 10 + i]));
+    const docsSet = armarDocumentosDelSet({ casos: set.casos, emisor, receptores: receptoresSet, fecha: '2026-10-09', folios: foliosSet });
+    assert.deepEqual(docsSet.map((d) => d.borrador.total), [1188861, 7947392, 1679163, 3458370, 0, 3901508, 1679163, 0],
+        'totales con la fórmula del SII: descuento por línea, global sobre afectos, IVA del neto, NC por devolución al precio original');
+    assert.ok(docsSet.every((d, i) => d.borrador.referencias[0].tipo === 'SET' && d.borrador.referencias[0].razon === `CASO ${set.casos[i].numero}`), 'primera referencia: SET y CASO n');
+    assert.throws(() => armarDocumentosDelSet({ casos: set.casos, emisor, receptores: { ...receptoresSet, '4352553-2': receptoresSet['4352553-1'] }, fecha: '2026-10-09', folios: foliosSet }), /RUT distinto/, 'RUT distintos por factura');
+    const cafsSet = { 33: cafs[33], 56: caf56, 61: caf61 };
+    const firmadosSet = docsSet.map((d) => emitirDocumento(d.borrador, folioDe(cafsSet[d.borrador.tipo], d.borrador.tipo, d.folio), clave, caratula, ahora));
+    const envioSet = armarEnvio(firmadosSet.map((f) => ({ tipo: f.tipo, nodo: parsearFragmento(f.dteXml) })), caratula, ahora, clave);
+    assert.match(envioSet, /<SubTotDTE>\n<TpoDTE>33<\/TpoDTE>\n<NroDTE>4<\/NroDTE>\n<\/SubTotDTE>\n<SubTotDTE>\n<TpoDTE>56<\/TpoDTE>\n<NroDTE>1<\/NroDTE>/);
+    assert.match(envioSet, /<NmbItem>Caj\xf3n AFECTO<\/NmbItem>/, 'glosa exacta, con su tilde, en ISO-8859-1');
+
+    // Intercambio: el negocio recibe un envío de un proveedor y responde.
+    const proveedor = certificadoDePrueba();
+    const RUT_PROV = '96543210-8';
+    const cafProv = parsearCaf(cafDePrueba({ rut: RUT_PROV, tipo: 33, desde: 1, hasta: 50, llaves: llavesCaf() }).bytes, RUT_PROV);
+    const bProv = armarBorrador({
+        emisor: { ...emisor, rut: RUT_PROV, razonSocial: 'Proveedor del Sur SpA' }, receptor: { ...receptor, rut: RUT_EMISOR },
+        fechaEmision: '2026-10-09',
+        lineas: [linea({ description: 'Resmas de papel', quantity: 10, unitPrice: 10000, subtotal: 100000, taxAmount: 19000, total: 119000 })],
+        totales: { subtotal: 100000, taxes: 19000, total: 119000, currency: 'CLP' },
+    });
+    const dProv = emitirDocumento(bProv, folioDe(cafProv, 33, 5), proveedor, { rutEmisor: RUT_PROV, rutEnvia: '9876543-3', resolucion: { numero: 80, fecha: '2014-08-22' } }, ahora);
+    const envioProv = armarEnvio([{ tipo: 33, nodo: parsearFragmento(dProv.dteXml) }], { rutEmisor: RUT_PROV, rutEnvia: '9876543-3', rutReceptor: RUT_EMISOR, resolucion: { numero: 80, fecha: '2014-08-22' } }, ahora, proveedor);
+    const recibido = leerEnvioRecibido(Buffer.from(envioProv, 'latin1'), RUT_EMISOR);
+    assert.deepEqual([recibido.estado, recibido.documentos.map((d) => [d.estado, d.folio, d.montoTotal])], [0, [[0, 5, bProv.total]]]);
+    // También con fines de línea CRLF (XML 1.0 los normaliza antes de firmar).
+    assert.equal(leerEnvioRecibido(Buffer.from(envioProv.replace(/\n/g, '\r\n'), 'latin1'), RUT_EMISOR).estado, 0, 'CRLF');
+    assert.equal(leerEnvioRecibido(Buffer.from(envioProv.replace(`<MntTotal>${bProv.total}</MntTotal>`, '<MntTotal>1</MntTotal>'), 'latin1'), RUT_EMISOR).estado, 2, 'sobre alterado: error de firma');
+    assert.equal(leerEnvioRecibido(Buffer.from(envioProv, 'latin1'), '77777777-7').estado, 3, 'RUT receptor no corresponde');
+    assert.equal(leerEnvioRecibido(Buffer.from('<?xml version="1.0"?><!DOCTYPE x [<!ENTITY e SYSTEM "file:///etc/passwd">]><EnvioDTE>&e;</EnvioDTE>'), RUT_EMISOR).estado, 91, 'sin DTD ni entidades externas');
+    const dteAlterado = parsearFragmento(dProv.dteXml.replace(`<MntTotal>${bProv.total}</MntTotal>`, '<MntTotal>1</MntTotal>'));
+    const envioDteAlterado = armarEnvio([{ tipo: 33, nodo: dteAlterado }], { rutEmisor: RUT_PROV, rutEnvia: '9876543-3', rutReceptor: RUT_EMISOR, resolucion: { numero: 80, fecha: '2014-08-22' } }, ahora, proveedor);
+    assert.equal(leerEnvioRecibido(Buffer.from(envioDteAlterado, 'latin1'), RUT_EMISOR).documentos[0].estado, 1, 'DTE alterado dentro de un sobre bien firmado');
+    const car = { rutResponde: RUT_EMISOR, rutRecibe: RUT_PROV, idRespuesta: 41, contacto: { nombre: 'Empresa de Prueba SpA', mail: 'contacto@prueba.cl' } };
+    const respRecepcion = respuestaRecepcion(car, { nombreArchivo: 'EnvioDTE.xml', recibidoEn: ahora, codEnvio: 9001, envio: recibido }, ahora, clave);
+    const resultadoComun = { tipo: 33, folio: 5, fechaEmision: '2026-10-09', rutEmisor: RUT_PROV, rutReceptor: RUT_EMISOR, montoTotal: bProv.total, codEnvio: 9001 };
+    const respResultado = respuestaResultado({ ...car, idRespuesta: 42 }, [{ ...resultadoComun, estado: 0 }, { ...resultadoComun, folio: 6, estado: 2, motivo: 'Mercadería no recibida' }], ahora, clave);
+    assert.throws(() => respuestaResultado({ ...car, idRespuesta: 43 }, [{ ...resultadoComun, estado: 2 }], ahora, clave), /motivo/, 'un rechazo sin motivo no se firma (Ley 19.983)');
+    const recibos = envioRecibos({ rutResponde: RUT_EMISOR, rutRecibe: RUT_PROV, idEnvio: 44 }, [{ ...resultadoComun, recinto: 'Bodega central', rutFirma: RUT_FIRMANTE }], ahora, clave);
+    assert.match(recibos, new RegExp(`<Declaracion>${DECLARACION_RECIBO.replace(/[()]/g, '\\$&')}</Declaracion>`));
+    const raizDe = (xml) => parsearFragmento(xml.replace(/^<\?xml[^>]*\?>\n/, ''));
+    for (const [xml, id] of [[respRecepcion, 'Resultado'], [respResultado, 'Resultado'], [recibos, 'SetRecibos']]) {
+        const raiz = raizDe(xml);
+        const firma = (raiz.c ?? []).find((h) => h.n === 'Signature');
+        assert.ok(verificarFirmaRecibida(buscar(raiz, id), [raiz], firma, [raiz]).ok, `firma de <${id}> en su contexto`);
+    }
+    const recibo = buscar(raizDe(recibos), 'Recibo');
+    const firmaRecibo = (recibo.c ?? []).find((h) => h.n === 'Signature');
+    assert.ok(verificarFirmaRecibida(buscar(recibo, 'DocumentoRecibo'), [], firmaRecibo, [recibo]).ok, 'el recibo se firma suelto, como el DTE');
+
+    // Esquemas oficiales (xmllint) y firmas con la JDK, con controles negativos.
+    let xmllint = true;
+    try { execFileSync('xmllint', ['--version'], { stdio: 'ignore' }); } catch { xmllint = false; }
+    if (xmllint) {
+        const dir = mkdtempSync(join(tmpdir(), 'sii-cert-'));
+        try {
+            const valida = (t, xsd, nombre) => {
+                const f = join(dir, nombre);
+                writeFileSync(f, Buffer.from(t, 'latin1'));
+                execFileSync('xmllint', ['--noout', '--nonet', '--schema', join(FIX, xsd), f], { stdio: 'pipe' });
+            };
+            const ok = (t, xsd, nombre) => {
+                try { valida(t, xsd, nombre); } catch (e) { throw new Error(`${nombre} no valida contra ${xsd}:\n${e.stderr?.toString() ?? e}`); }
+            };
+            ok(d56.envioXml, 'EnvioDTE_v10.xsd', 'envio-56.xml');
+            ok(envioSet, 'EnvioDTE_v10.xsd', 'envio-set.xml');
+            ok(respRecepcion, 'RespuestaEnvioDTE_v10.xsd', 'respuesta-recepcion.xml');
+            ok(respResultado, 'RespuestaEnvioDTE_v10.xsd', 'respuesta-resultado.xml');
+            ok(recibos, 'EnvioRecibos_v10.xsd', 'envio-recibos.xml');
+            assert.throws(() => valida(envioSet.replace('<TpoDocRef>SET</TpoDocRef>', '<TpoDocRef>SETX</TpoDocRef>'), 'EnvioDTE_v10.xsd', 'neg-set.xml'), 'TpoDocRef de más de 3 caracteres');
+            assert.throws(() => valida(envioSet.replace('<CodRef>2</CodRef>', '<CodRef>4</CodRef>'), 'EnvioDTE_v10.xsd', 'neg-codref.xml'), 'CodRef fuera de 1–3');
+            assert.throws(() => valida(envioSet.replace('<TpoMov>D</TpoMov>', '<TpoMov>X</TpoMov>'), 'EnvioDTE_v10.xsd', 'neg-dscrcg.xml'), 'TpoMov D o R');
+            assert.throws(() => valida(respResultado.replace('<EstadoDTE>2</EstadoDTE>', '<EstadoDTE>3</EstadoDTE>'), 'RespuestaEnvioDTE_v10.xsd', 'neg-estado.xml'), 'EstadoDTE 0–2');
+            const ambas = respResultado.replace('<ResultadoDTE>', respRecepcion.slice(respRecepcion.indexOf('<RecepcionEnvio>'), respRecepcion.indexOf('</RecepcionEnvio>') + 17) + '\n<ResultadoDTE>');
+            assert.throws(() => valida(ambas, 'RespuestaEnvioDTE_v10.xsd', 'neg-ambas.xml'), 'RecepcionEnvio y ResultadoDTE son excluyentes');
+            assert.throws(() => valida(recibos.replace('acredita que la entrega', 'acredita la entrega'), 'EnvioRecibos_v10.xsd', 'neg-declaracion.xml'), 'la declaración es el texto fijo del esquema');
+        } finally {
+            rmSync(dir, { recursive: true, force: true });
+        }
+    } else if (process.env.SII_XSD_REQUIRED === '1') {
+        throw new Error('xmllint no está disponible y SII_XSD_REQUIRED=1');
+    }
+    let java = true;
+    try { execFileSync('java', ['-version'], { stdio: 'ignore' }); } catch { java = false; }
+    if (java) {
+        const dir = mkdtempSync(join(tmpdir(), 'sii-cert-firmas-'));
+        try {
+            const JAVA = fileURLToPath(new URL('./sii-firmas.java', import.meta.url));
+            const escribir = (pares) => pares.map(([n, t]) => { const f = join(dir, n); writeFileSync(f, Buffer.from(t, 'latin1')); return f; });
+            const reciboSuelto = `${DECLARACION_XML}\n${serializar(recibo)}\n`;
+            const sueltos = execFileSync('java', [JAVA, ...escribir([['dte-56.xml', d56.dteXml], ['recibo.xml', reciboSuelto], ...firmadosSet.map((f, i) => [`set-${i}.xml`, f.dteXml])])], { stdio: 'pipe' }).toString();
+            assert.equal((sueltos.match(/valida=true/g) ?? []).length, 2 + firmadosSet.length, `firmas sueltas (ND, recibo y casos del set) verificadas por la JDK:\n${sueltos}`);
+            const sobres = execFileSync('java', [JAVA, '--sobre', ...escribir([['envio-set.xml', envioSet], ['resp-recepcion.xml', respRecepcion], ['resp-resultado.xml', respResultado], ['recibos.xml', recibos]])], { stdio: 'pipe' }).toString();
+            assert.equal((sobres.match(/valida=true/g) ?? []).length, 4, `firmas de los sobres y respuestas verificadas por la JDK:\n${sobres}`);
+        } finally {
+            rmSync(dir, { recursive: true, force: true });
+        }
+    } else if (process.env.SII_JDK_REQUIRED === '1') {
+        throw new Error('java no está disponible y SII_JDK_REQUIRED=1');
+    }
+
+    // Registro de aceptación o reclamo: endpoint, espacio de nombres y parámetros de los WSDL oficiales.
+    for (const [entorno, archivo] of [['homologacion', 'registroreclamodte-cert.wsdl'], ['produccion', 'registroreclamodte-prod.wsdl']]) {
+        const w = leer(archivo);
+        assert.equal(/soap11:address location="([^"]+)"/.exec(w)?.[1], siiReclamoEndpoint(entorno), `endpoint del registro de reclamos en ${entorno}`);
+        assert.ok(w.includes(`targetNamespace="${NS_WS_RECLAMO}"`));
+        assert.ok(/style="rpc"/.test(w) && /use="literal"/.test(w), 'rpc/literal');
+    }
+    const orden = /operation name="ingresarAceptacionReclamoDoc" parameterOrder="([^"]+)"/.exec(leer('registroreclamodte-cert.wsdl'))[1].split(' ');
+    const sobreR = sobreReclamo('ingresarAceptacionReclamoDoc', { rutEmisor: '45000065-5', tipo: 34, folio: 17 }, 'ACD');
+    assert.deepEqual([...sobreR.matchAll(/<(\w+)>[^<]*<\/\1>/g)].map((x) => x[1]), orden, 'parámetros en el orden del WSDL');
+    assert.match(sobreR, /<ws:ingresarAceptacionReclamoDoc><rutEmisor>45000065<\/rutEmisor><dvEmisor>5<\/dvEmisor><tipoDoc>34<\/tipoDoc><folio>17<\/folio><accionDoc>ACD<\/accionDoc><\/ws:ingresarAceptacionReclamoDoc>/,
+        'el ejemplo del anexo del manual (v1.2)');
+    assert.ok(/<xs:element name="codResp" type="xs:int"/.test(leer('registroreclamodte.xsd')), 'respuestaTo trae codResp');
+    const resp = await parsearRespuestaReclamo('<S:Envelope xmlns:S="http://schemas.xmlsoap.org/soap/envelope/"><S:Body><ns2:ingresarAceptacionReclamoDocResponse xmlns:ns2="http://ws.registroreclamodte.diii.sdi.sii.cl"><return><codResp>0</codResp><descResp>Acción Completada OK</descResp></return></ns2:ingresarAceptacionReclamoDocResponse></S:Body></S:Envelope>', 'ingresarAceptacionReclamoDoc');
+    assert.deepEqual([resp.codigo, resp.descripcion], [0, 'Acción Completada OK']);
+    for (const c of [-1, 1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13, 14, 17, 18, 19]) {
+        assert.doesNotMatch(mensajeReclamo(c), /codResp|descResp|accionDoc|\bRCD\b|\bACD\b|\bERM\b|SOAP|Completada/, `mensaje del código ${c} para el usuario (regla 14)`);
+    }
+}
+
+process.stdout.write('security:sii (ejemplo oficial F60T33, esquemas DTE/EnvioDTE 2026, firmas XMLDSig y timbre, PDF417, WSDL de maullin y palena, reglas y respuestas reales del SII, nota de débito, set de pruebas, respuestas de intercambio y registro de reclamos) OK\n');

@@ -6,7 +6,7 @@
 //     afecta o exenta) si todos son exentos ("Si todos los ítems de una
 //     factura tienen valor 1 en este indicador la factura no puede ser factura
 //     electrónica (código 33), debería ser factura exenta (código 34)",
-//     formato DTE, IndExe); 61 para la nota de crédito.
+//     formato DTE, IndExe); 61 para la nota de crédito y 56 para la de débito.
 //   - Montos en pesos chilenos, enteros (MontoType: nonNegativeInteger). Un
 //     documento en otra moneda no se emite: sería una factura de exportación.
 //   - IVA: UNA vez por documento sobre el monto neto. Formato DTE v2.2
@@ -35,9 +35,20 @@
 //     catálogo es de la boleta de honorarios.
 //   - Receptor: RUT, razón social, giro, dirección y comuna son obligatorios en
 //     la factura (formato DTE, campos 50–61, obligatoriedad "1" en 33 y 34).
-//   - Nota de crédito: referencia la factura (TpoDocRef, FolioRef, FchRef,
-//     CodRef 1 si la anula completa, 3 si corrige montos) y conserva su
-//     receptor (formato DTE, área de referencias).
+//   - Notas: referencian el documento que modifican (TpoDocRef, FolioRef,
+//     FchRef, CodRef y RazonRef) y conservan su receptor. CodRef (formato DTE
+//     v2.2, área de referencias, campo 8): 1 "Anula Documento de Referencia"
+//     —la nota de crédito que elimina la factura completa (caso a) y la nota
+//     de débito que elimina una nota de crédito completa (caso c)—, 2 "Corrige
+//     Texto" —solo la nota de crédito (caso b)— y 3 "Corrige montos" —notas de
+//     crédito o débito (caso d)—. CodRef es obligatorio en las notas
+//     (obligatoriedad 1 en las columnas de nota de crédito y de débito).
+//   - Hasta 40 referencias (maxOccurs del XSD); los casos a, b y c llevan un
+//     ÚNICO documento de referencia. El set de pruebas agrega la línea "SET"
+//     antes de las demás (set-pruebas.ts).
+//   - Descuento global (DscRcgGlobal, TpoMov D, TpoValor %): solo lo usa el
+//     set de pruebas, que lo pide así ("descuento global ítemes afectos"); los
+//     documentos de Cord reparten su descuento por línea.
 //
 // Lo que no se puede armar bien no se envía: RailDatosError con un mensaje
 // para el dueño del negocio. Puro: scripts/sii-check.mjs lo prueba con Node plano.
@@ -45,7 +56,7 @@
 import type { FiscalLineItem, FiscalTotals } from '../../index';
 // Extensión .ts explícita: este módulo también se carga desde Node plano.
 import { RailDatosError } from '../errores.ts';
-import { LARGOS, MAX_LINEAS, TASA_IVA, TASA_IVA_PCT, TIPOS_DTE, type TipoDte } from './constantes.ts';
+import { LARGOS, MAX_LINEAS, TASA_IVA, TASA_IVA_PCT, TIPOS_DTE, TPO_DOC_REF_SET, type TipoDte } from './constantes.ts';
 import { campo, campoLargo, fechaIso } from './texto.ts';
 import { el, opt, type Nodo } from './xml.ts';
 
@@ -76,19 +87,31 @@ export interface LineaSii {
     descripcion?: string;
     cantidad?: string;
     precio?: string;
+    /** Porcentaje de descuento de la línea (DescuentoPct), además de su monto. */
+    descuentoPct?: number;
     descuento: number;
     monto: number;
     exento: boolean;
 }
 
+export type CodRef = 1 | 2 | 3;
+
 export interface ReferenciaSii {
-    tipo: TipoDte;
+    /** Tipo del documento referenciado, o 'SET' en el set de pruebas. */
+    tipo: TipoDte | typeof TPO_DOC_REF_SET;
     folio: number;
     /** aaaa-mm-dd */
     fecha: string;
-    /** 1 anula el documento, 3 corrige montos. */
-    codigo: 1 | 3;
+    /** 1 anula el documento, 2 corrige texto, 3 corrige montos. Sin código en la línea SET. */
+    codigo?: CodRef;
     razon: string;
+}
+
+/** Descuento global sobre los ítems afectos, en porcentaje (DscRcgGlobal). */
+export interface DescuentoGlobalSii {
+    pct: number;
+    monto: number;
+    glosa: string;
 }
 
 /** Todo lo que el DTE dirá, antes de tener folio. Se persiste dentro de la solicitud. */
@@ -107,7 +130,15 @@ export interface BorradorSii {
     formaPago?: 1 | 2;
     vencimiento?: string;
     periodo?: { desde: string; hasta: string };
+    descuentoGlobal?: DescuentoGlobalSii;
+    referencias?: ReferenciaSii[];
+    /** Forma anterior (una sola referencia): la leen los borradores ya guardados. */
     referencia?: ReferenciaSii;
+}
+
+/** Las referencias del borrador, en orden (también las de un borrador guardado con la forma anterior). */
+export function referenciasDe(b: Pick<BorradorSii, 'referencias' | 'referencia'>): ReferenciaSii[] {
+    return b.referencias ?? (b.referencia ? [b.referencia] : []);
 }
 
 export interface FacturaOriginal {
@@ -129,6 +160,8 @@ export interface EntradaDte {
     servicio?: { desde?: string | null; hasta?: string | null };
     /** Nota de crédito: la factura que ajusta, tal como se emitió. */
     notaCreditoDe?: FacturaOriginal | null;
+    /** Nota de débito: el documento que modifica (factura, nota de crédito o débito), tal como se emitió. */
+    notaDebitoDe?: FacturaOriginal | null;
     motivo?: string | null;
 }
 
@@ -189,7 +222,7 @@ export function receptorCompleto(r: Partial<ReceptorSii>, tipo: TipoDte): Recept
         correo: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(r.correo ?? '')) ? campo(r.correo, LARGOS.CorreoRecep) : null,
     };
     if (!receptor.razonSocial) throw new RailDatosError('Falta la razón social del cliente. Complétala en su ficha.');
-    if (tipo !== 61) {
+    if (!TIPOS_DTE[tipo].nota) {
         const faltan = [!receptor.giro && 'giro', !receptor.direccion && 'dirección', !receptor.comuna && 'comuna'].filter(Boolean);
         if (faltan.length) throw new RailDatosError(`Para la factura electrónica el SII exige el ${faltan.join(', ')} del cliente. Complétalo en su ficha y vuelve a emitirla.`);
     }
@@ -213,11 +246,13 @@ export function armarBorrador(e: EntradaDte): BorradorSii {
     const fecha = fechaIso(e.fechaEmision);
     if (!fecha) throw new RailDatosError('La fecha de emisión no es válida.');
 
-    const original = e.notaCreditoDe ?? null;
+    if (e.notaCreditoDe && e.notaDebitoDe) throw new Error('sii: un documento no es nota de crédito y de débito a la vez');
+    const debito = !!e.notaDebitoDe;
+    const original = e.notaCreditoDe ?? e.notaDebitoDe ?? null;
     const lineas = e.lineas.map(linea);
     const neto = lineas.filter((l) => !l.exento).reduce((s, l) => s + l.monto, 0);
     const exento = lineas.filter((l) => l.exento).reduce((s, l) => s + l.monto, 0);
-    const tipo: TipoDte = original ? 61 : neto > 0 || lineas.some((l) => !l.exento) ? 33 : 34;
+    const tipo: TipoDte = original ? (debito ? 56 : 61) : neto > 0 || lineas.some((l) => !l.exento) ? 33 : 34;
     if (tipo === 34 && lineas.some((l) => !l.exento)) throw new RailDatosError('Una factura exenta no lleva conceptos con IVA.');
 
     // IVA del documento: el que calculó el motor de Cord (por documento en
@@ -243,7 +278,19 @@ export function armarBorrador(e: EntradaDte): BorradorSii {
 
     let receptor: ReceptorSii;
     let referencia: ReferenciaSii | undefined;
-    if (original) {
+    if (original && debito) {
+        // Nota de débito: anula una nota de crédito completa (caso c, CodRef 1)
+        // o aumenta los montos del documento que referencia (caso d, CodRef 3).
+        receptor = original.receptor;
+        const anula = original.tipo === 61 && total === original.total;
+        referencia = {
+            tipo: original.tipo,
+            folio: original.folio,
+            fecha: original.fechaEmision,
+            codigo: anula ? 1 : 3,
+            razon: campo(e.motivo, LARGOS.RazonRef) || (anula ? 'Anula nota de crédito' : 'Corrige montos'),
+        };
+    } else if (original) {
         // La nota ajusta UN documento: mismo receptor que se informó al emitirlo.
         receptor = original.receptor;
         if (total > original.total) throw new RailDatosError('La nota de crédito no puede superar el total de la factura que ajusta.');
@@ -270,7 +317,7 @@ export function armarBorrador(e: EntradaDte): BorradorSii {
         tipo, fechaEmision: fecha, emisor: e.emisor, receptor, lineas,
         neto: tipo === 34 ? 0 : neto, exento, iva: tipo === 34 ? 0 : iva, total, descuento,
     };
-    if (!TIPOS_DTE[tipo].notaCredito) {
+    if (!TIPOS_DTE[tipo].nota) {
         // FmaPago es obligatoria en 33 y 34 (cambios del 31/05/2017): contado
         // si vence el mismo día, crédito con su vencimiento si no.
         const vence = fechaIso(e.vencimiento);
@@ -287,7 +334,7 @@ export function armarBorrador(e: EntradaDte): BorradorSii {
             borrador.periodo = { desde, hasta };
         }
     }
-    if (referencia) borrador.referencia = referencia;
+    if (referencia) borrador.referencias = [referencia];
     return borrador;
 }
 
@@ -347,17 +394,25 @@ export function nodosDocumento(b: BorradorSii, folio: number): Nodo[] {
         opt('DscItem', l.descripcion),
         opt('QtyItem', l.cantidad),
         opt('PrcItem', l.precio),
+        l.descuento > 0 && l.descuentoPct ? el('DescuentoPct', null, decimal6(l.descuentoPct)) : null,
         l.descuento > 0 ? el('DescuentoMonto', null, String(l.descuento)) : null,
         el('MontoItem', null, String(l.monto)),
     ));
-    const ref = b.referencia
-        ? [el('Referencia', null,
-            el('NroLinRef', null, '1'),
-            el('TpoDocRef', null, String(b.referencia.tipo)),
-            el('FolioRef', null, String(b.referencia.folio)),
-            el('FchRef', null, b.referencia.fecha),
-            el('CodRef', null, String(b.referencia.codigo)),
-            el('RazonRef', null, b.referencia.razon))]
+    const dg = b.descuentoGlobal;
+    const global = dg && dg.monto > 0
+        ? [el('DscRcgGlobal', null,
+            el('NroLinDR', null, '1'),
+            el('TpoMov', null, 'D'),
+            opt('GlosaDR', campo(dg.glosa, 45)),
+            el('TpoValor', null, '%'),
+            el('ValorDR', null, decimal6(dg.pct)))]
         : [];
-    return [el('Encabezado', null, idDoc, emisor, receptor, totales), ...detalle, ...ref];
+    const ref = referenciasDe(b).map((r, i) => el('Referencia', null,
+        el('NroLinRef', null, String(i + 1)),
+        el('TpoDocRef', null, String(r.tipo)),
+        el('FolioRef', null, String(r.folio)),
+        el('FchRef', null, r.fecha),
+        r.codigo ? el('CodRef', null, String(r.codigo)) : null,
+        opt('RazonRef', campo(r.razon, LARGOS.RazonRef))));
+    return [el('Encabezado', null, idDoc, emisor, receptor, totales), ...detalle, ...global, ...ref];
 }

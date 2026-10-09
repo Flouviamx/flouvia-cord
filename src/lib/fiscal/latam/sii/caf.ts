@@ -98,7 +98,7 @@ export function parsearCaf(entrada: Uint8Array | string, rutNegocio: string | nu
         throw new RailDatosError(MSG_ILEGIBLE);
     }
     if (!esTipoDte(tipo)) {
-        throw new RailDatosError(`Este archivo autoriza folios del documento tipo ${tipo}. Cord emite facturas (33), facturas exentas (34) y notas de crédito (61).`);
+        throw new RailDatosError(`Este archivo autoriza folios del documento tipo ${tipo}. Cord emite facturas (33), facturas exentas (34), notas de débito (56) y notas de crédito (61).`);
     }
     if (rutNegocio && rut !== rutNegocio) {
         throw new RailDatosError(`Estos folios están autorizados al RUT ${rut}, no al de tu negocio (${rutNegocio}).`);

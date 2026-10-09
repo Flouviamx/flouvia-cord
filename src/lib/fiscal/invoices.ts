@@ -614,7 +614,7 @@ export async function updateInvoiceDraft(
   if (negative) return { ok: false, error: negative };
 
   const [docRows] = await withOrgTx(orgId, sql`
-    select id, lifecycle, invoice_number, public_token, amount_paid, credit_note_of, document_type, country_code, provider_data,
+    select id, lifecycle, invoice_number, public_token, amount_paid, credit_note_of, nota_debito_de, document_type, country_code, provider_data,
            descuento, descuento_total, currency, informacion_global
       from documentos_fiscales
      where id = ${documentId} and org_id = ${orgId}
@@ -624,6 +624,9 @@ export async function updateInvoiceDraft(
   // La global se arma con las ventas del periodo, no en el editor.
   if (doc.informacion_global) return { ok: false, error: 'La factura global se arma desde sus ventas: descarta el borrador y emítela de nuevo.' };
   if (doc.credit_note_of) return { ok: false, error: 'La nota de crédito conserva el desglose de la factura original; descártala y crea otra para cambiar el importe.' };
+  // La nota de débito se arma desde el documento que modifica (createDebitNote):
+  // el editor de facturas la convertiría en una factura suelta.
+  if (doc.nota_debito_de) return { ok: false, error: 'La nota de débito se arma desde el documento que modifica; descártala y crea otra para cambiarla.' };
   if (doc.lifecycle !== 'draft' || doc.invoice_number || doc.provider_data?.cord_issuance) {
     return { ok: false, error: 'Esta factura ya fue emitida y no se puede editar. Anúlala o emite una nota de crédito.' };
   }
@@ -738,7 +741,7 @@ export async function updateInvoiceDraft(
       cfdi_forma_pago = case when ${overrides.forma !== undefined} then ${overrides.forma ?? null} else cfdi_forma_pago end,
       updated_at = now()
     where id = ${documentId} and org_id = ${orgId}
-      and lifecycle = 'draft' and invoice_number is null and credit_note_of is null
+      and lifecycle = 'draft' and invoice_number is null and credit_note_of is null and nota_debito_de is null
       and provider_data->'cord_issuance' is null
     returning id, public_token`);
   const row = rows[0];
@@ -1592,5 +1595,143 @@ export async function createCreditNote(
     returning id, public_token`);
   const row = inserted[0];
   if (!row) return { ok: false, error: 'No queda importe disponible: otra nota ya lo reservó o la factura dejó de estar vigente.' };
+  return { ok: true, documentId: String(row.id), publicToken: String(row.public_token) };
+}
+
+/** Un concepto de la nota de débito: lo que se cobra de más y si va afecto o exento. */
+export interface DebitNoteItem {
+  descripcion: string;
+  cantidad?: number;
+  precioUnitario: number;
+  /** Fracción (0.19) o 0 para exento; se valida contra el catálogo de impuestos. */
+  taxRate: number;
+}
+
+/**
+ * Nota de débito (Chile, DTE 56): el documento que AUMENTA lo que se cobra de
+ * una factura ya aceptada (intereses, diferencia de precio) o anula por
+ * completo una nota de crédito emitida por error (formato DTE v2.2, CodRef 1 y
+ * 3). Es exclusiva del riel que la declara (`RIELES.sii.documentos.notaDebito`):
+ * en cualquier otro país esta función responde que el documento no la admite,
+ * y nada del ciclo de la factura cambia.
+ *
+ * Nace como borrador cobrable, igual que una factura: `nota_debito_de` apunta
+ * al documento que modifica y el proveedor arma la referencia al emitir. A
+ * diferencia de la nota de crédito no reserva saldo del original: suma una
+ * cuenta por cobrar propia.
+ *
+ * - Sobre una nota de crédito: copia sus conceptos tal cual (la anula entera,
+ *   caso c del formato) y no admite otra nota de débito viva sobre la misma.
+ * - Sobre una factura (o una nota de débito): lleva los conceptos que se
+ *   indiquen, con el IVA del catálogo y la regla de redondeo del país.
+ */
+export async function createDebitNote(
+  orgId: string,
+  documentId: string,
+  opts: { items?: DebitNoteItem[]; motivo?: string; createdBy?: string | null } = {},
+): Promise<DraftResult> {
+  const [rows] = await withOrgTx(orgId, sql`
+    select id, cotizacion_id, cliente_id, country_code, document_type, currency, ledger_currency, fx_rate,
+           total, tax_total, subtotal, lifecycle, status, due_date::text as due_date, credit_note_of,
+           issuer_snapshot, recipient_snapshot, line_items_snapshot, descuento_total
+      from documentos_fiscales
+     where id = ${documentId} and org_id = ${orgId}
+     limit 1`);
+  const doc = rows[0];
+  if (!doc) return { ok: false, error: 'Documento no encontrado.' };
+  const rail = railDeDocumento(doc.document_type);
+  const debitType = rail?.documentos.notaDebito;
+  if (!rail || !debitType) return { ok: false, error: 'Este documento no admite nota de débito.' };
+  if (doc.status !== 'issued' || doc.lifecycle === 'void') {
+    return { ok: false, error: 'Solo un documento emitido y vigente admite nota de débito.' };
+  }
+  const country = String(doc.country_code || '').toUpperCase();
+  const currency = String(doc.currency || '');
+  const decimals = currencyDecimals(currency);
+  const anulaNota = !!doc.credit_note_of;
+
+  let lines: FiscalLineItem[];
+  let subtotal: number;
+  let taxes: number;
+  let total: number;
+  let descuentoTotal = 0;
+  if (anulaNota) {
+    // Anula la nota de crédito COMPLETA: los mismos conceptos y el mismo total.
+    lines = (doc.line_items_snapshot as FiscalLineItem[]) || [];
+    if (!lines.length) return { ok: false, error: 'La nota de crédito no tiene conceptos que anular.' };
+    subtotal = Number(doc.subtotal) || 0;
+    taxes = Number(doc.tax_total) || 0;
+    total = Number(doc.total) || 0;
+    descuentoTotal = Number(doc.descuento_total) || 0;
+  } else {
+    const items = (opts.items || []).filter((i) => i && String(i.descripcion || '').trim());
+    if (!items.length) return { ok: false, error: 'Indica al menos un concepto de la nota de débito.' };
+    if (items.length > 20) return { ok: false, error: 'La nota de débito admite hasta 20 conceptos.' };
+    let catalogo;
+    try { catalogo = await taxCatalogFor(orgId); }
+    catch (error) {
+      if (error instanceof TaxCatalogUnavailableError) return { ok: false, error: error.message };
+      throw error;
+    }
+    const draftItems: DraftLineInput[] = [];
+    for (const it of items) {
+      const cantidad = it.cantidad === undefined ? 1 : Number(it.cantidad);
+      const precio = Number(it.precioUnitario);
+      if (!(cantidad > 0) || !(precio > 0) || !Number.isFinite(cantidad * precio)) {
+        return { ok: false, error: 'Cada concepto necesita una cantidad y un importe mayores a cero.' };
+      }
+      draftItems.push({
+        descripcion: String(it.descripcion).trim().slice(0, 500), cantidad, precioUnitario: precio,
+        taxRate: catalogo.resolve(it.taxRate, catalogo.defaultRate),
+      });
+    }
+    let built;
+    try { built = buildLines(draftItems, catalogo.defaultRate, false, [], decimals, null, taxRoundingFor(country)); }
+    catch (error) {
+      if (error instanceof RangeError) return { ok: false, error: 'Alguna línea tiene una tasa de impuesto inválida.' };
+      throw error;
+    }
+    lines = built.lines;
+    subtotal = built.subtotal;
+    taxes = built.taxes;
+    total = built.total;
+    descuentoTotal = built.descuentoTotal;
+  }
+  if (!(total > 0)) return { ok: false, error: 'La nota de débito debe tener un importe mayor a cero.' };
+
+  const fxRate = Number(doc.fx_rate) || 1;
+  const hoy = isoDay(new Date());
+  const vence = /^\d{4}-\d{2}-\d{2}/.test(String(doc.due_date ?? '')) && String(doc.due_date).slice(0, 10) > hoy ? String(doc.due_date).slice(0, 10) : hoy;
+  const publicToken = newInvoiceToken();
+  const [, inserted] = await withOrgTx(orgId, invoiceBalanceLock(orgId, documentId), sql`
+    insert into documentos_fiscales (
+      org_id, cotizacion_id, cliente_id, country_code, document_type, status, provider,
+      currency, ledger_currency, fx_rate, ledger_total, subtotal, tax_total, total,
+      retencion_total, retenciones_snapshot,
+      lifecycle, due_date, amount_paid, amount_remaining, public_token,
+      nota_debito_de, notes, created_by,
+      issuer_snapshot, recipient_snapshot, line_items_snapshot,
+      schema_version, provider_data, updated_at, descuento_total,
+      buyer_reference, purchase_order, payee_account
+    ) select
+      ${orgId}, original.cotizacion_id, original.cliente_id, original.country_code,
+      ${debitType}, 'pending', 'cord',
+      original.currency, original.ledger_currency, original.fx_rate,
+      ${roundTo(total * fxRate, currencyDecimals(String(doc.ledger_currency || currency)))}, ${subtotal}, ${taxes}, ${total},
+      0, '[]'::jsonb,
+      'draft', ${vence}::date, 0, ${total}, ${publicToken},
+      ${documentId}, ${opts.motivo || null}, ${opts.createdBy || null},
+      original.issuer_snapshot, original.recipient_snapshot, ${JSON.stringify(lines)}::jsonb,
+      'cord.invoice.v1', '{}'::jsonb, now(), ${descuentoTotal},
+      original.buyer_reference, original.purchase_order, original.payee_account
+    from documentos_fiscales original
+    where original.id = ${documentId} and original.org_id = ${orgId}
+      and original.status = 'issued' and original.lifecycle <> 'void'
+      and (original.credit_note_of is null or not exists (
+        select 1 from documentos_fiscales n
+         where n.nota_debito_de = original.id and n.org_id = original.org_id and n.lifecycle <> 'void'))
+    returning id, public_token`);
+  const row = inserted[0];
+  if (!row) return { ok: false, error: anulaNota ? 'Esta nota de crédito ya tiene una nota de débito que la anula.' : 'El documento dejó de estar vigente.' };
   return { ok: true, documentId: String(row.id), publicToken: String(row.public_token) };
 }

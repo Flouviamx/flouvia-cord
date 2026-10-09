@@ -15,8 +15,8 @@ import type {
     FiscalCancelRequest, FiscalCancelResponse, FiscalDocumentRequest, FiscalDocumentResponse, FiscalProvider,
 } from '../index';
 
-// Proveedor fiscal de Chile: emite cada factura (33), factura exenta (34) y
-// nota de crédito (61) como Documento Tributario Electrónico ante el SII
+// Proveedor fiscal de Chile: emite cada factura (33), factura exenta (34),
+// nota de débito (56) y nota de crédito (61) como Documento Tributario Electrónico ante el SII
 // DIRECTAMENTE, sin intermediario —la misma filosofía que Verifactu y ARCA—:
 // folio del CAF del negocio, timbre electrónico, firma XMLDSig con su
 // certificado, upload al SII y consulta de su veredicto. El folio legal
@@ -133,7 +133,8 @@ export class ChileSiiProvider implements FiscalProvider {
 
     async issueDocument(request: FiscalDocumentRequest): Promise<FiscalDocumentResponse> {
         const config = railConfig('sii');
-        const esSii = request.documentType === RIELES.sii.documentos.factura || request.documentType === RIELES.sii.documentos.notaCredito;
+        const docs = RIELES.sii.documentos;
+        const esSii = request.documentType === docs.factura || request.documentType === docs.notaCredito || request.documentType === docs.notaDebito;
 
         // Replay primero: lo que el SII ya aceptó se devuelve tal cual, aunque
         // el interruptor haya cambiado desde entonces.
@@ -188,21 +189,35 @@ export class ChileSiiProvider implements FiscalProvider {
     private async borrador(request: FiscalDocumentRequest, ctx: ContextoSii): Promise<BorradorSii> {
         const [[doc]] = await withOrgTx(request.orgId, sql`
             select d.service_date::text as service_date, d.service_date_end::text as service_date_end,
-                   d.due_date::text as due_date, d.credit_note_of, d.notes, cl.giro, cl.comuna
+                   d.due_date::text as due_date, d.credit_note_of, d.nota_debito_de, d.notes, cl.giro, cl.comuna
               from documentos_fiscales d
               left join clientes cl on cl.id = d.cliente_id and cl.org_id = d.org_id
              where d.id = ${request.documentId} and d.org_id = ${request.orgId}
              limit 1`);
         if (!doc) throw new RailDatosError('Documento no encontrado.');
 
+        // El documento que la nota modifica, tal como el SII lo aceptó.
+        const originalDe = async (id: string, msg: { sinAceptar: string; otroAmbiente: string }): Promise<FacturaOriginal> => {
+            const intento = await intentoAutorizado(request.orgId, id, 'sii');
+            if (!intento) throw new RailDatosError(msg.sinAceptar);
+            if (intento.entorno !== ctx.entorno) throw new RailDatosError(msg.otroAmbiente);
+            const sol = intento.solicitud as SolicitudSii;
+            return { tipo: sol.tipo, folio: sol.folio, fechaEmision: sol.fechaEmision, total: sol.montoTotal, receptor: sol.borrador.receptor };
+        };
         let original: FacturaOriginal | null = null;
+        let originalDebito: FacturaOriginal | null = null;
         if (doc.credit_note_of || request.documentType === RIELES.sii.documentos.notaCredito) {
             if (!doc.credit_note_of) throw new RailDatosError('Esta nota de crédito no indica qué factura ajusta.');
-            const intento = await intentoAutorizado(request.orgId, String(doc.credit_note_of), 'sii');
-            if (!intento) throw new RailDatosError('La factura original no fue aceptada por el SII: su nota de crédito no puede emitirse.');
-            if (intento.entorno !== ctx.entorno) throw new RailDatosError('La factura original se emitió en otro ambiente del SII: su nota de crédito no puede emitirse aquí.');
-            const sol = intento.solicitud as SolicitudSii;
-            original = { tipo: sol.tipo, folio: sol.folio, fechaEmision: sol.fechaEmision, total: sol.montoTotal, receptor: sol.borrador.receptor };
+            original = await originalDe(String(doc.credit_note_of), {
+                sinAceptar: 'La factura original no fue aceptada por el SII: su nota de crédito no puede emitirse.',
+                otroAmbiente: 'La factura original se emitió en otro ambiente del SII: su nota de crédito no puede emitirse aquí.',
+            });
+        } else if (doc.nota_debito_de || request.documentType === RIELES.sii.documentos.notaDebito) {
+            if (!doc.nota_debito_de) throw new RailDatosError('Esta nota de débito no indica qué documento modifica.');
+            originalDebito = await originalDe(String(doc.nota_debito_de), {
+                sinAceptar: 'El documento que modifica no fue aceptado por el SII: su nota de débito no puede emitirse.',
+                otroAmbiente: 'El documento que modifica se emitió en otro ambiente del SII: su nota de débito no puede emitirse aquí.',
+            });
         }
 
         const rec = request.recipient;
@@ -242,6 +257,7 @@ export class ChileSiiProvider implements FiscalProvider {
             vencimiento: doc.due_date ?? null,
             servicio: { desde: doc.service_date ?? null, hasta: doc.service_date_end ?? null },
             notaCreditoDe: original,
+            notaDebitoDe: originalDebito,
             motivo: doc.notes ?? null,
         });
     }

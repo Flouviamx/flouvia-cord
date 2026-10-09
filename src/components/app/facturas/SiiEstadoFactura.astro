@@ -5,6 +5,11 @@
 // Chile: el XML del DTE para el cliente y la copia cedible. Lee el último
 // intento del riel (fiscal_rail_comprobantes); si el documento nunca pasó por
 // el SII (documento comercial) no dibuja nada.
+//
+// Aceptado el documento, ofrece la nota de débito (DTE 56), que solo existe en
+// este riel: sobre una factura, un cargo adicional (CodRef 3); sobre una nota
+// de crédito, su anulación completa (CodRef 1). Nace como borrador y se emite
+// como cualquier factura.
 import { ultimoIntento } from '../../../lib/fiscal/latam/comprobantes';
 import { iconInner } from '../../../lib/icons';
 
@@ -26,6 +31,8 @@ const tipo = Number((intento?.solicitud as { tipo?: number } | undefined)?.tipo 
 const observaciones = (intento?.observaciones ?? []).map((o) => o.mensaje || o.msg).filter(Boolean) as string[];
 const prueba = intento?.entorno === 'homologacion';
 const aceptado = intento?.estado === 'autorizado';
+// La nota de débito modifica un documento aceptado en el MISMO ambiente del SII.
+const admiteDebito = aceptado && [33, 34, 56, 61].includes(tipo);
 const detalle = [
     intento && aceptado ? `${en ? 'Folio' : 'Folio'} ${intento.numero}` : null,
     trackId ? `${en ? 'Submission' : 'Envío'} ${trackId}` : null,
@@ -66,8 +73,62 @@ const detalle = [
                 )}
             </div>
         )}
+        {admiteDebito && (
+            <details class="sii-nd" data-sii-nd={documentoId} data-tipo={String(tipo)}>
+                <summary>{tipo === 61 ? (en ? 'Cancel with a debit note' : 'Anular con nota de débito') : (en ? 'Issue a debit note' : 'Emitir nota de débito')}</summary>
+                <p class="sii-nd-hint">{tipo === 61
+                    ? (en ? 'A debit note that cancels this credit note in full (same items and total). It is created as a draft that you issue like any invoice.' : 'Una nota de débito que anula esta nota de crédito completa (mismos conceptos y total). Se crea como borrador y la emites como cualquier factura.')
+                    : (en ? 'Charges an additional amount on this document (interest, price difference). It is created as a draft that you issue like any invoice.' : 'Cobra un monto adicional sobre este documento (intereses, diferencia de precio). Se crea como borrador y la emites como cualquier factura.')}</p>
+                {tipo !== 61 && (
+                    <Fragment>
+                        <input class="s-input" data-nd-concepto maxlength="80" placeholder={en ? 'Concept' : 'Concepto'} aria-label={en ? 'Concept' : 'Concepto'} />
+                        <input class="s-input" data-nd-monto inputmode="numeric" placeholder={en ? 'Net amount (CLP)' : 'Monto neto (CLP)'} aria-label={en ? 'Net amount' : 'Monto neto'} />
+                        <label class="sii-nd-check"><input type="checkbox" data-nd-exento checked={tipo === 34} disabled={tipo === 34} /> {en ? 'Exempt from VAT' : 'Exento de IVA'}</label>
+                    </Fragment>
+                )}
+                <input class="s-input" data-nd-motivo maxlength="90" placeholder={en ? 'Reason (printed as the reference reason)' : 'Motivo (se imprime como razón de la referencia)'} aria-label={en ? 'Reason' : 'Motivo'} />
+                <button type="button" class="sii-nd-btn" data-nd-crear>{en ? 'Create draft' : 'Crear borrador'}</button>
+                <span class="sii-nd-msg" data-nd-msg></span>
+            </details>
+        )}
     </section>
 )}
+
+<script>
+    function initSiiNd() {
+        const box = document.querySelector<HTMLElement>('[data-sii-nd]');
+        if (!box) return;
+        const en = document.documentElement.lang === 'en';
+        const id = box.dataset.siiNd!;
+        const tipo = Number(box.dataset.tipo);
+        const btn = box.querySelector<HTMLButtonElement>('[data-nd-crear]');
+        const msg = box.querySelector<HTMLElement>('[data-nd-msg]');
+        btn?.addEventListener('click', async () => {
+            const val = (s: string) => box.querySelector<HTMLInputElement>(s)?.value.trim() ?? '';
+            const body: Record<string, unknown> = { action: 'debit_note', motivo: val('[data-nd-motivo]') };
+            if (tipo !== 61) {
+                const monto = Number(val('[data-nd-monto]').replace(/\./g, '').replace(',', '.'));
+                if (!val('[data-nd-concepto]') || !(monto > 0)) {
+                    if (msg) msg.textContent = en ? 'Write the concept and a net amount greater than zero.' : 'Escribe el concepto y un monto neto mayor a cero.';
+                    return;
+                }
+                body.items = [{ descripcion: val('[data-nd-concepto]'), monto, exento: !!box.querySelector<HTMLInputElement>('[data-nd-exento]')?.checked }];
+            }
+            btn.disabled = true;
+            try {
+                const res = await fetch(`/api/facturas/${encodeURIComponent(id)}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+                const d = await res.json().catch(() => ({}));
+                if (!res.ok || !d.id) throw new Error(d.error || '');
+                location.href = `/app/facturas/${encodeURIComponent(d.id)}`;
+            } catch (err: any) {
+                if (msg) msg.textContent = err?.message || (en ? 'The debit note could not be created.' : 'No se pudo crear la nota de débito.');
+                btn.disabled = false;
+            }
+        });
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initSiiNd);
+    else initSiiNd();
+</script>
 
 <style>
     .sii-fe-head h2 { font-size: 0.82rem; font-weight: 600; margin: 0 0 0.6rem; color: var(--color-text); }
@@ -84,5 +145,17 @@ const detalle = [
     .sii-fe-link { display: inline-flex; align-items: center; gap: 6px; font-size: 0.78rem; font-weight: 600; color: var(--color-blue-deep); text-decoration: none; min-height: 32px; }
     .sii-fe-link:hover { text-decoration: underline; }
     .sii-fe-link svg { width: 16px; height: 16px; flex-shrink: 0; }
-    @media (max-width: 880px) { .sii-fe-link { min-height: 44px; } }
+    .sii-nd { margin-top: 0.9rem; border-top: 1px solid var(--color-border); padding-top: 0.7rem; display: flex; flex-direction: column; gap: 0.5rem; }
+    .sii-nd summary { font-size: 0.78rem; font-weight: 600; color: var(--color-blue-deep); cursor: pointer; min-height: 32px; display: flex; align-items: center; }
+    .sii-nd[open] { gap: 0.5rem; }
+    .sii-nd > :not(summary) { margin-top: 0.45rem; }
+    .sii-nd-hint { font-size: 0.74rem; color: var(--color-text-muted); line-height: 1.45; margin: 0; }
+    .sii-nd .s-input { width: 100%; font-size: 0.78rem; }
+    .sii-nd-check { display: flex; align-items: center; gap: 6px; font-size: 0.76rem; color: var(--color-text); }
+    .sii-nd-btn { font-family: var(--font-sans); font-size: 0.78rem; font-weight: 600; color: #fff; background: var(--color-blue-deep); border: none; border-radius: 999px; padding: 8px 16px; cursor: pointer; align-self: flex-start; transition: transform 0.2s var(--ease-spring); }
+    .sii-nd-btn:hover { transform: scale(1.02); }
+    .sii-nd-btn:disabled { opacity: 0.6; cursor: progress; transform: none; }
+    .sii-nd-msg { font-size: 0.74rem; color: var(--color-err, #c0392b); line-height: 1.45; }
+    .sii-nd-msg:empty { display: none; }
+    @media (max-width: 880px) { .sii-fe-link, .sii-nd summary, .sii-nd-btn { min-height: 44px; } }
 </style>

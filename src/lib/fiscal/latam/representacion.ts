@@ -72,11 +72,42 @@ export interface RepresentacionImpresa {
      * leyenda de destino. Solo se imprime cuando se pide esa copia.
      */
     cedible?: { leyenda: string; acuseTitulo: string; acuseCampos: string[]; acuseTexto: string };
+    /**
+     * Datos del emisor tal como los declaró el documento ante la autoridad
+     * (Chile: giro sin abreviar, casa matriz y sucursal, en ese orden — manual
+     * de muestras impresas del SII, 1.1.7). Van bajo la razón social y
+     * reemplazan las líneas de dirección de la ficha.
+     */
+    emisor?: string[];
+    /** Lo mismo para el receptor (Chile: giro, dirección y comuna del DTE). */
+    receptor?: string[];
+    /**
+     * Totalizadores que exige la norma, en la zona de totales y en su orden
+     * (Chile: "Monto Neto", "Monto Exento", "IVA (19%)"; la factura exenta solo
+     * el exento). Reemplazan subtotal, descuento e impuestos genéricos; el
+     * total sigue siendo el del documento.
+     */
+    totales?: FilaRepresentacion[];
+    /** Rótulo del total ("Monto total"). */
+    totalEtiqueta?: string;
+    /**
+     * El descuento de cada línea se imprime en su línea, en monto (Chile: "los
+     * descuentos por línea de detalle se deben señalar obligatoriamente en
+     * montos", manual de muestras impresas, 1.4).
+     */
+    descuentoPorLinea?: boolean;
 }
 
 const texto = (v: unknown) => (typeof v === 'string' ? v : '');
 const textos = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string' && !!x) : []);
 const positivo = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : 0);
+
+function filasDe(v: unknown): FilaRepresentacion[] {
+    return Array.isArray(v)
+        ? (v as unknown[]).filter((f): f is FilaRepresentacion => !!f && typeof f === 'object'
+            && typeof (f as FilaRepresentacion).k === 'string' && typeof (f as FilaRepresentacion).v === 'string')
+        : [];
+}
 
 function recuadroDe(v: unknown): RepresentacionImpresa['recuadro'] | null {
     if (!v || typeof v !== 'object') return null;
@@ -115,10 +146,7 @@ export function representacionDe(providerData: unknown): RepresentacionImpresa |
     if (!r || typeof r !== 'object') return null;
     const titulo = texto(r.titulo);
     const pie = texto(r.pie);
-    const filas = Array.isArray(r.filas)
-        ? (r.filas as unknown[]).filter((f): f is FilaRepresentacion => !!f && typeof f === 'object'
-            && typeof (f as FilaRepresentacion).k === 'string' && typeof (f as FilaRepresentacion).v === 'string')
-        : [];
+    const filas = filasDe(r.filas);
     if (!titulo || !pie || !filas.length) return null;
     return {
         rail: texto(r.rail),
@@ -137,5 +165,10 @@ export function representacionDe(providerData: unknown): RepresentacionImpresa |
         ...(recuadroDe(r.recuadro) ? { recuadro: recuadroDe(r.recuadro)! } : {}),
         ...(timbreDe(r.timbre) ? { timbre: timbreDe(r.timbre)! } : {}),
         ...(cedibleDe(r.cedible) ? { cedible: cedibleDe(r.cedible)! } : {}),
+        ...(textos(r.emisor).length ? { emisor: textos(r.emisor) } : {}),
+        ...(textos(r.receptor).length ? { receptor: textos(r.receptor) } : {}),
+        ...(filasDe(r.totales).length ? { totales: filasDe(r.totales) } : {}),
+        ...(texto(r.totalEtiqueta) ? { totalEtiqueta: texto(r.totalEtiqueta) } : {}),
+        ...(r.descuentoPorLinea === true ? { descuentoPorLinea: true } : {}),
     };
 }

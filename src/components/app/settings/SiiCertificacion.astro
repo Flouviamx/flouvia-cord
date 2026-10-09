@@ -1,0 +1,460 @@
+---
+// Ajustes › Datos fiscales › SII: certificación e intercambio (Chile).
+//
+// - Certificación (solo en el ambiente de certificación del SII): carga del
+//   set de pruebas que el SII asignó al negocio, elección de los clientes
+//   receptores (RUT distintos por factura), envío firmado de todos los casos
+//   en un envío, veredicto del SII y muestras impresas de cada caso (con su
+//   copia cedible). Lo que el set trae y Cord no arma (libros, guías,
+//   exportación, factura de compra) se dice al cargarlo.
+// - Intercambio (ambos ambientes): la casilla de intercambio del negocio si
+//   hay correo entrante, la subida manual de un envío recibido y, por cada DTE,
+//   la aceptación o el rechazo con su motivo, el recibo de mercaderías y el
+//   registro en el SII.
+//
+// Todo se dibuja desde el navegador con textContent (los datos de un envío
+// recibido vienen de un tercero) y vive bajo [data-sii]: comparte su CSS
+// global (regla 11). Las acciones que firman piden confirmar identidad (428).
+interface Props { entorno: 'homologacion' | 'produccion'; locale: 'es' | 'en'; }
+const { entorno, locale } = Astro.props;
+const en = locale === 'en';
+const cert = entorno === 'homologacion';
+---
+
+<div class="sii-section sii-cert" data-sii-cert data-entorno={entorno}>
+    {cert && (
+        <Fragment>
+            <span class="sii-block-title">{en ? 'SII certification' : 'Certificación ante el SII'}</span>
+            <p class="sii-hint sii-hint-top">{en
+                ? 'To become an electronic issuer, the SII asks for five steps in its certification environment. Cord does the first one for you and prepares what the others need:'
+                : 'Para quedar autorizado como emisor electrónico, el SII pide cinco pasos en su ambiente de certificación. Cord hace el primero por ti y deja listo lo que necesitan los demás:'}</p>
+            <ol class="sii-cert-pasos">
+                <li>{en ? 'Test set: load the file the SII assigned you; Cord builds every case, signs them and sends them in one submission.' : 'Set de pruebas: carga el archivo que te asignó el SII; Cord arma cada caso, lo firma y los envía en un solo envío.'}</li>
+                <li>{en ? 'Simulation: issue representative documents from Invoices while this account is in certification.' : 'Simulación: emite documentos representativos desde Facturas mientras esta cuenta esté en certificación.'}</li>
+                <li>{en ? 'Exchange: the SII sends you documents; answer them below.' : 'Intercambio: el SII te envía documentos; respóndelos más abajo.'}</li>
+                <li>{en ? 'Printed samples: download the PDF of each case (and its assignable copy) and upload them on the SII site.' : 'Muestras impresas: descarga el PDF de cada caso (y su copia cedible) y súbelos en el sitio del SII.'}</li>
+                <li>{en ? 'Declaration of compliance: on the SII site, by your legal representative.' : 'Declaración de cumplimiento: en el sitio del SII, por tu representante legal.'}</li>
+            </ol>
+            <div class="s-field">
+                <label for="siiSetTexto">{en ? 'Test set (text of the file the SII gave you)' : 'Set de pruebas (texto del archivo que te entregó el SII)'}</label>
+                <textarea class="s-input sii-cert-texto" id="siiSetTexto" rows="5" spellcheck="false" placeholder={en ? 'SET BASICO - NUMERO DE ATENCION: …' : 'SET BASICO - NUMERO DE ATENCION: …'}></textarea>
+            </div>
+            <div class="sii-actions">
+                <label class="sii-btn-ghost sii-cert-archivo">
+                    <input type="file" id="siiSetArchivo" accept=".txt,text/plain" hidden />
+                    {en ? 'Open file' : 'Abrir archivo'}
+                </label>
+                <button type="button" class="sii-btn-solid" data-sii-set-cargar>{en ? 'Load test set' : 'Cargar set'}</button>
+                <span class="sii-msg" data-sii-msg-set></span>
+            </div>
+            <p class="sii-hint" data-sii-set-nosop hidden></p>
+            <div class="sii-cert-lista" data-sii-sets></div>
+        </Fragment>
+    )}
+
+    <span class={`sii-block-title${cert ? ' sii-cert-sep' : ''}`}>{en ? 'Documents received from suppliers (exchange)' : 'Documentos recibidos de proveedores (intercambio)'}</span>
+    <p class="sii-hint sii-hint-top">{en
+        ? 'When a supplier sends you a DTE, Cord checks its signature and that it is addressed to your RUT, acknowledges receipt, and then sends your acceptance or rejection (with its reason) and the goods receipt, signed with your certificate. The acceptance or claim is also registered with the SII. You have 8 calendar days from the moment the SII received the document.'
+        : 'Cuando un proveedor te envía un DTE, Cord verifica su firma y que venga a tu RUT, acusa su recibo y después envía tu aceptación o rechazo (con su motivo) y el recibo de mercaderías, firmados con tu certificado. La aceptación o el reclamo también se registra en el SII. Tienes 8 días corridos desde que el SII recibió el documento.'}</p>
+    <p class="sii-hint" data-sii-casilla hidden></p>
+    <div class="sii-cert-subir">
+        <label class="sii-drop">
+            <input type="file" id="siiRecibido" accept=".xml" />
+            <span class="sii-drop-ico">.xml</span>
+            <span class="sii-drop-t">{en ? 'Received submission' : 'Envío recibido'}</span>
+            <span class="sii-drop-s" data-sii-name="siiRecibido">{en ? 'The XML file your supplier sent you' : 'El archivo XML que te envió tu proveedor'}</span>
+        </label>
+        <div class="s-field">
+            <label for="siiRecibidoCorreo">{cert ? (en ? 'Reply to (optional; in certification, the SII exchange mailbox)' : 'Responder a (opcional; en certificación, la casilla de intercambio del SII)') : (en ? 'Reply to (the supplier exchange mailbox)' : 'Responder a (la casilla de intercambio del proveedor)')}</label>
+            <input class="s-input" id="siiRecibidoCorreo" type="email" autocomplete="off" />
+        </div>
+    </div>
+    <div class="sii-actions">
+        <button type="button" class="sii-btn-solid" data-sii-recibido-subir>{en ? 'Receive and acknowledge' : 'Recibir y acusar recibo'}</button>
+        <span class="sii-msg" data-sii-msg-recibido></span>
+    </div>
+    <div class="sii-cert-lista" data-sii-recepciones></div>
+</div>
+
+<style is:global>
+    /* Bajo [data-sii]: estas listas se dibujan desde el navegador (regla 11). */
+    [data-sii] .sii-cert-pasos { margin: 0 0 1rem; padding-left: 1.2rem; font-size: 0.78rem; color: var(--color-text-muted); line-height: 1.55; display: flex; flex-direction: column; gap: 3px; }
+    [data-sii] .sii-cert-texto { font-family: var(--font-mono, ui-monospace, monospace); font-size: 0.74rem; min-height: 96px; resize: vertical; }
+    [data-sii] .sii-cert-archivo { display: inline-flex; align-items: center; cursor: pointer; }
+    [data-sii] .sii-cert-sep { margin-top: 1.6rem; }
+    [data-sii] .sii-cert-lista { display: flex; flex-direction: column; gap: 0.8rem; margin-top: 1rem; }
+    [data-sii] .sii-cert-lista:empty { display: none; }
+    [data-sii] .sii-cert-item { border: 1px solid var(--color-border); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 0.6rem; }
+    [data-sii] .sii-cert-cab { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.3rem 0.8rem; }
+    [data-sii] .sii-cert-cab strong { font-size: 0.82rem; color: var(--color-text); }
+    [data-sii] .sii-cert-cab small, [data-sii] .sii-cert-nota { font-size: 0.74rem; color: var(--color-text-muted); line-height: 1.45; overflow-wrap: anywhere; }
+    [data-sii] .sii-cert-estado { font-size: 0.72rem; font-weight: 600; border-radius: 999px; padding: 2px 9px; background: var(--color-bg-soft); color: var(--color-text); }
+    [data-sii] .sii-cert-estado.is-ok { background: rgba(16,185,129,0.12); color: var(--color-ok); }
+    [data-sii] .sii-cert-estado.is-err { background: rgba(192,57,43,0.1); color: var(--color-err, #c0392b); }
+    [data-sii] .sii-cert-err { font-size: 0.76rem; color: var(--color-err, #c0392b); line-height: 1.45; }
+    [data-sii] .sii-cert-casos { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+    [data-sii] .sii-cert-caso { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 0.5rem 1rem; align-items: center; font-size: 0.78rem; color: var(--color-text); border-top: 1px solid var(--color-border); padding-top: 6px; }
+    [data-sii] .sii-cert-caso small { display: block; color: var(--color-text-muted); font-size: 0.72rem; }
+    [data-sii] .sii-cert-caso .s-input { font-size: 0.78rem; padding: 7px 10px; }
+    [data-sii] .sii-cert-links { display: flex; flex-wrap: wrap; gap: 0.3rem 0.9rem; }
+    [data-sii] .sii-cert-links a { font-size: 0.76rem; font-weight: 600; color: var(--color-blue-deep); text-decoration: none; min-height: 28px; display: inline-flex; align-items: center; }
+    [data-sii] .sii-cert-links a:hover { text-decoration: underline; }
+    [data-sii] .sii-cert-decision { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5rem; }
+    [data-sii] .sii-cert-subir { display: grid; grid-template-columns: minmax(0, 260px) minmax(0, 1fr); gap: 1rem; align-items: end; }
+    @media (max-width: 880px) {
+        [data-sii] .sii-cert-caso, [data-sii] .sii-cert-decision, [data-sii] .sii-cert-subir { grid-template-columns: 1fr; }
+        [data-sii] .sii-cert-links a { min-height: 44px; }
+    }
+</style>
+
+<script>
+    type Json = Record<string, any>;
+
+    function initSiiCert() {
+        const root = document.querySelector<HTMLElement>('[data-sii-cert]');
+        if (!root) return;
+        const en = document.documentElement.lang === 'en';
+        const cert = root.dataset.entorno === 'homologacion';
+        const q = <T extends Element>(s: string) => root.querySelector<T>(s);
+        const pesos = (n: number) => `$ ${new Intl.NumberFormat('es-CL', { maximumFractionDigits: 0 }).format(Number(n) || 0)}`;
+        const fecha = (iso: string | null) => (iso ? new Date(iso).toLocaleString(en ? 'en-GB' : 'es-CL', { dateStyle: 'medium', timeStyle: 'short' }) : '');
+
+        /** Elemento con texto (nunca HTML): lo recibido viene de un tercero. */
+        function h<K extends keyof HTMLElementTagNameMap>(tag: K, attrs: Record<string, string> = {}, ...hijos: Array<Node | string | null | false | undefined>): HTMLElementTagNameMap[K] {
+            const e = document.createElement(tag);
+            for (const [k, v] of Object.entries(attrs)) {
+                if (k === 'class') e.className = v; else e.setAttribute(k, v);
+            }
+            for (const c of hijos) if (c !== null && c !== false && c !== undefined) e.append(typeof c === 'string' ? document.createTextNode(c) : c);
+            return e;
+        }
+        const flash = (sel: string, text: string, ok: boolean) => {
+            const el = q<HTMLElement>(sel);
+            if (!el) return;
+            el.textContent = text;
+            el.className = 'sii-msg ' + (ok ? 'ok' : 'err');
+        };
+
+        /** fetch con el ciclo de confirmación de identidad (428 → cordStepUp → reintento). */
+        async function llamar(url: string, init: RequestInit = {}): Promise<Json> {
+            const enviar = () => fetch(url, init);
+            let res = await enviar();
+            if (res.status === 428) {
+                const stepUp = (window as any).cordStepUp;
+                if (typeof stepUp !== 'function' || !await stepUp()) {
+                    throw new Error(en ? 'You need to confirm your identity to continue.' : 'Necesitas confirmar tu identidad para continuar.');
+                }
+                res = await enviar();
+            }
+            const d = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(d.error || (en ? 'The operation could not be completed.' : 'No se pudo completar la operación.'));
+            return d;
+        }
+        const postJson = (url: string, body: unknown) => llamar(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+
+        // ── Set de pruebas ───────────────────────────────────────────────────
+        const ESTADO_SET: Record<string, [string, string, string]> = {
+            cargado: ['Listo para enviar', 'Ready to send', ''],
+            enviando: ['Enviando', 'Sending', ''],
+            enviado: ['Enviado, esperando al SII', 'Sent, waiting for the SII', ''],
+            incierto: ['Sin confirmación del SII', 'Not confirmed by the SII', 'is-err'],
+            aceptado: ['Aceptado por el SII', 'Accepted by the SII', 'is-ok'],
+            reparos: ['Aceptado con reparos', 'Accepted with objections', 'is-err'],
+            rechazado: ['Rechazado por el SII', 'Rejected by the SII', 'is-err'],
+        };
+        const NO_SOPORTADO: Record<string, [string, string]> = {
+            libro: ['libro de compras o ventas', 'purchase or sales ledger'],
+            guia: ['guía de despacho', 'dispatch guide'],
+            exportacion: ['documentos de exportación', 'export documents'],
+            compra: ['factura de compra', 'purchase invoice'],
+            otro: ['documentos que Cord no emite', 'documents Cord does not issue'],
+        };
+        let clientes: { id: string; nombre: string; rut: string; completo: boolean }[] = [];
+
+        function pintarSets(sets: Json[]) {
+            const cont = q<HTMLElement>('[data-sii-sets]');
+            if (!cont) return;
+            cont.replaceChildren(...sets.map((s) => {
+                const [es, eng, clase] = ESTADO_SET[s.estado] ?? [s.estado, s.estado, ''];
+                const item = h('div', { class: 'sii-cert-item' },
+                    h('div', { class: 'sii-cert-cab' },
+                        h('strong', {}, `${s.nombre} · ${en ? 'attention no.' : 'N° de atención'} ${s.numero_atencion}`),
+                        h('span', { class: `sii-cert-estado ${clase}` }, en ? eng : es),
+                        s.track_id ? h('small', {}, `${en ? 'Submission' : 'Envío'} ${s.track_id}`) : null),
+                    s.error ? h('span', { class: 'sii-cert-err' }, s.error) : null);
+                const lista = h('ul', { class: 'sii-cert-casos' });
+                const selects: HTMLSelectElement[] = [];
+                const facturas = (s.casos as Json[]).filter((c) => c.tipo === 33 || c.tipo === 34);
+                (s.casos as Json[]).forEach((c) => {
+                    const titulo = h('span', {}, `${en ? 'Case' : 'Caso'} ${c.numero} · ${c.nombre_tipo}`,
+                        h('small', {}, c.referencia
+                            ? `${en ? 'Modifies case' : 'Modifica el caso'} ${c.referencia}: ${c.razon}`
+                            : `${c.items} ${en ? (c.items === 1 ? 'item' : 'items') : (c.items === 1 ? 'ítem' : 'ítems')}`));
+                    let derecha: Node;
+                    if (c.folio) {
+                        const links = h('span', { class: 'sii-cert-links' },
+                            h('small', {}, `Folio ${c.folio} · ${c.receptor} · ${pesos(c.total)}`));
+                        const base = `/api/fiscal/sii-certificacion?muestra=${encodeURIComponent(s.id)}&caso=${encodeURIComponent(c.numero)}`;
+                        links.append(h('a', { href: base, target: '_blank', rel: 'noopener' }, en ? 'Printed sample' : 'Muestra impresa'));
+                        if (c.cedible) links.append(h('a', { href: `${base}&cedible=1`, target: '_blank', rel: 'noopener' }, en ? 'Assignable copy' : 'Copia cedible'));
+                        derecha = links;
+                    } else if (s.estado === 'cargado' && (c.tipo === 33 || c.tipo === 34)) {
+                        const sel = h('select', { class: 's-input', 'data-caso': c.numero, 'aria-label': `${en ? 'Recipient of case' : 'Receptor del caso'} ${c.numero}` },
+                            h('option', { value: '' }, en ? 'Choose a client' : 'Elige un cliente'),
+                            ...clientes.map((cl) => h('option', { value: cl.id, ...(cl.completo ? {} : { disabled: 'true' }) },
+                                `${cl.nombre} · ${cl.rut}${cl.completo ? '' : (en ? ' (missing giro, address or comuna)' : ' (falta giro, dirección o comuna)')}`)));
+                        // Por defecto, clientes completos distintos en orden (RUT distintos por factura).
+                        const completos = clientes.filter((cl) => cl.completo);
+                        const i = facturas.findIndex((f) => f.numero === c.numero);
+                        if (completos[i]) sel.value = completos[i].id;
+                        selects.push(sel);
+                        derecha = sel;
+                    } else {
+                        derecha = h('small', {}, c.tipo === 33 || c.tipo === 34 ? '' : (en ? 'Same recipient as the document it modifies' : 'Mismo receptor que el documento que modifica'));
+                    }
+                    lista.append(h('li', { class: 'sii-cert-caso' }, titulo, derecha));
+                });
+                item.append(lista);
+                if (s.por_tipo?.length) {
+                    item.append(h('span', { class: 'sii-cert-nota' }, (s.por_tipo as Json[]).map((t) =>
+                        `${en ? 'Type' : 'Tipo'} ${t.tipo}: ${t.aceptados} ${en ? 'accepted' : 'aceptados'}, ${t.reparos} ${en ? 'with objections' : 'con reparos'}, ${t.rechazados} ${en ? 'rejected' : 'rechazados'}`).join(' · ')));
+                }
+                if (s.estado === 'aceptado') {
+                    item.append(h('span', { class: 'sii-cert-nota' }, en
+                        ? `Report it on the SII site (Declare progress) with submission ${s.track_id}.`
+                        : `Decláralo en el sitio del SII (Declarar avance de la postulación) con el envío ${s.track_id}.`));
+                }
+                const acciones = h('div', { class: 'sii-actions' });
+                const msg = h('span', { class: 'sii-msg' });
+                const boton = (texto: string, solido: boolean, fn: () => Promise<void>) => {
+                    const b = h('button', { type: 'button', class: solido ? 'sii-btn-solid' : 'sii-btn-ghost' }, texto);
+                    b.addEventListener('click', async () => {
+                        b.disabled = true;
+                        msg.textContent = '';
+                        try { await fn(); } catch (err: any) { msg.textContent = err?.message || ''; msg.className = 'sii-msg err'; } finally { b.disabled = false; }
+                    });
+                    acciones.append(b);
+                };
+                if (s.estado === 'cargado') {
+                    boton(en ? 'Sign and send to the SII' : 'Firmar y enviar al SII', true, async () => {
+                        const receptores: Record<string, string> = {};
+                        for (const sel of selects) if (sel.value) receptores[sel.dataset.caso!] = sel.value;
+                        const d = await postJson('/api/fiscal/sii-certificacion', { accion: 'enviar', set_id: s.id, receptores });
+                        reemplazar(d.set);
+                    });
+                }
+                if (s.estado === 'enviado' || s.estado === 'enviando') {
+                    boton(en ? 'Check the SII verdict' : 'Consultar veredicto del SII', true, async () => {
+                        const d = await postJson('/api/fiscal/sii-certificacion', { accion: 'consultar', set_id: s.id });
+                        reemplazar(d.set);
+                    });
+                }
+                if (['enviado', 'incierto', 'reparos', 'rechazado'].includes(s.estado)) {
+                    boton(en ? 'New attempt (new folios)' : 'Nuevo intento (folios nuevos)', false, async () => {
+                        const d = await postJson('/api/fiscal/sii-certificacion', { accion: 'reintentar', set_id: s.id });
+                        reemplazar(d.set);
+                    });
+                }
+                acciones.append(msg);
+                item.append(acciones);
+                item.dataset.set = s.numero_atencion;
+                return item;
+            }));
+        }
+        let sets: Json[] = [];
+        const reemplazar = (s: Json) => { sets = [s, ...sets.filter((x) => x.numero_atencion !== s.numero_atencion)]; pintarSets(sets); };
+
+        async function cargarCert() {
+            if (!cert) return;
+            try {
+                const d = await llamar('/api/fiscal/sii-certificacion');
+                clientes = d.clientes || [];
+                sets = d.sets || [];
+                pintarSets(sets);
+            } catch { /* la sección de arriba ya dice si el SII no está disponible */ }
+        }
+
+        q<HTMLInputElement>('#siiSetArchivo')?.addEventListener('change', async (ev) => {
+            const f = (ev.target as HTMLInputElement).files?.[0];
+            if (!f) return;
+            const bytes = await f.arrayBuffer();
+            // El archivo del SII viene en ISO-8859-1: se lee así si no es UTF-8 válido.
+            let texto: string;
+            try { texto = new TextDecoder('utf-8', { fatal: true }).decode(bytes); } catch { texto = new TextDecoder('windows-1252').decode(bytes); }
+            const area = q<HTMLTextAreaElement>('#siiSetTexto');
+            if (area) area.value = texto;
+        });
+        q<HTMLButtonElement>('[data-sii-set-cargar]')?.addEventListener('click', async (ev) => {
+            const b = ev.currentTarget as HTMLButtonElement;
+            const texto = q<HTMLTextAreaElement>('#siiSetTexto')?.value ?? '';
+            b.disabled = true;
+            try {
+                const d = await postJson('/api/fiscal/sii-certificacion', { accion: 'cargar', texto });
+                for (const s of d.sets || []) reemplazar(s);
+                const nos = q<HTMLElement>('[data-sii-set-nosop]');
+                if (nos) {
+                    const lista = (d.no_soportados || []) as Json[];
+                    nos.hidden = !lista.length;
+                    nos.textContent = lista.length
+                        ? (en ? 'Your file also includes sets Cord does not build yet; complete them outside Cord: ' : 'Tu archivo también trae sets que Cord todavía no arma; complétalos fuera de Cord: ')
+                            + lista.map((n) => `${n.nombre}${n.numero_atencion ? ` (${n.numero_atencion})` : ''}: ${NO_SOPORTADO[n.motivo]?.[en ? 1 : 0] ?? n.motivo}`).join('; ') + '.'
+                        : '';
+                }
+                flash('[data-sii-msg-set]', (d.sets || []).length ? (en ? 'Test set loaded.' : 'Set cargado.') : (en ? 'The file has no set Cord can build.' : 'El archivo no trae un set que Cord pueda armar.'), !!(d.sets || []).length);
+            } catch (err: any) {
+                flash('[data-sii-msg-set]', err?.message || '', false);
+            } finally { b.disabled = false; }
+        });
+
+        // ── Intercambio ──────────────────────────────────────────────────────
+        const TIPO_RESP: Record<string, [string, string]> = {
+            recepcion: ['Acuse de recibo del envío', 'Submission receipt'],
+            resultado: ['Aceptación o rechazo', 'Acceptance or rejection'],
+            recibos: ['Recibo de mercaderías o servicios', 'Goods or services receipt'],
+        };
+        const RESULTADO: Record<string, [string, string]> = {
+            aceptado: ['Aceptado', 'Accepted'],
+            aceptado_reparos: ['Aceptado con discrepancias', 'Accepted with discrepancies'],
+            rechazado: ['Rechazado', 'Rejected'],
+        };
+
+        function pintarRecepciones(recs: Json[]) {
+            const cont = q<HTMLElement>('[data-sii-recepciones]');
+            if (!cont) return;
+            cont.replaceChildren(...recs.map((r) => {
+                const item = h('div', { class: 'sii-cert-item' },
+                    h('div', { class: 'sii-cert-cab' },
+                        h('strong', {}, `${r.nombreArchivo || (en ? 'Submission' : 'Envío')}${r.rutEmisor ? ` · RUT ${r.rutEmisor}` : ''}`),
+                        h('span', { class: `sii-cert-estado ${r.estado === 0 ? 'is-ok' : 'is-err'}` }, r.glosa),
+                        h('small', {}, fecha(r.recibidoAt))));
+                const lista = h('ul', { class: 'sii-cert-casos' });
+                const controles: { id: string; resultado: HTMLSelectElement; motivo: HTMLInputElement; recinto: HTMLInputElement; reclamo: HTMLSelectElement }[] = [];
+                for (const d of r.documentos as Json[]) {
+                    const titulo = h('span', {}, `${en ? 'Type' : 'Tipo'} ${d.tipo} · Folio ${d.folio} · ${pesos(d.montoTotal)}`,
+                        h('small', {}, `${d.razonSocialEmisor || d.rutEmisor} · ${d.fechaEmision} · ${d.glosa}`));
+                    let derecha: Node;
+                    if (d.resultado) {
+                        derecha = h('span', {},
+                            h('small', {}, `${RESULTADO[d.resultado]?.[en ? 1 : 0] ?? d.resultado}${d.resultadoMotivo ? `: ${d.resultadoMotivo}` : ''}${d.recibo ? (en ? ' · receipt sent' : ' · recibo enviado') : ''}`),
+                            d.reclamoAccion ? h('small', {}, `SII (${d.reclamoAccion}): ${d.reclamoMensaje ?? ''}`) : null);
+                        if (d.reclamoAccion && !d.reclamoRegistrado) {
+                            const b = h('button', { type: 'button', class: 'sii-btn-ghost' }, en ? 'Retry SII registration' : 'Reintentar registro en el SII');
+                            b.addEventListener('click', async () => {
+                                b.disabled = true;
+                                try { const x = await postJson('/api/fiscal/sii-intercambio', { accion: 'reintentar_registro', dte_id: d.id }); pintarRecepciones(x.recepciones); }
+                                catch (err: any) { b.disabled = false; flash('[data-sii-msg-recibido]', err?.message || '', false); }
+                            });
+                            (derecha as HTMLElement).append(b);
+                        }
+                    } else if (d.estado === 0) {
+                        const resultado = h('select', { class: 's-input', 'aria-label': en ? 'Decision' : 'Decisión' },
+                            h('option', { value: '' }, en ? 'Decide later' : 'Decidir después'),
+                            h('option', { value: 'aceptado' }, en ? 'Accept' : 'Aceptar'),
+                            h('option', { value: 'aceptado_reparos' }, en ? 'Accept with discrepancies' : 'Aceptar con discrepancias'),
+                            h('option', { value: 'rechazado' }, en ? 'Reject (claim)' : 'Rechazar (reclamar)'));
+                        const motivo = h('input', { class: 's-input', maxlength: '200', placeholder: en ? 'Reason (required to reject)' : 'Motivo (obligatorio al rechazar)' });
+                        const recinto = h('input', { class: 's-input', maxlength: '80', placeholder: en ? 'Where it was received (for the receipt)' : 'Recinto donde se recibió (para el recibo)' });
+                        const reclamo = h('select', { class: 's-input', 'aria-label': en ? 'Claim type' : 'Tipo de reclamo' },
+                            h('option', { value: 'RCD' }, en ? 'Claim on the content' : 'Reclamo al contenido'),
+                            h('option', { value: 'RFP' }, en ? 'Partial lack of goods' : 'Falta parcial de mercaderías'),
+                            h('option', { value: 'RFT' }, en ? 'Total lack of goods' : 'Falta total de mercaderías'));
+                        reclamo.hidden = true;
+                        resultado.addEventListener('change', () => { reclamo.hidden = resultado.value !== 'rechazado'; recinto.hidden = resultado.value === 'rechazado'; });
+                        controles.push({ id: d.id, resultado, motivo, recinto, reclamo });
+                        derecha = h('div', { class: 'sii-cert-decision' }, resultado, motivo, recinto, reclamo);
+                    } else {
+                        derecha = h('small', {}, en ? 'Not received: no commercial answer is due.' : 'No recibido: no corresponde respuesta comercial.');
+                    }
+                    lista.append(h('li', { class: 'sii-cert-caso' }, titulo, derecha));
+                }
+                item.append(lista);
+                if ((r.respuestas as Json[]).length) {
+                    const resp = h('div', { class: 'sii-cert-links' });
+                    for (const s of r.respuestas as Json[]) {
+                        resp.append(h('a', { href: `/api/fiscal/sii-intercambio?respuesta=${encodeURIComponent(s.id)}` },
+                            `${TIPO_RESP[s.tipo]?.[en ? 1 : 0] ?? s.tipo} (XML)`));
+                        resp.append(h('small', { class: 'sii-cert-nota' }, s.enviadoAt
+                            ? `${en ? 'sent to' : 'enviado a'} ${s.destinatario}`
+                            : s.errorEnvio ? s.errorEnvio : (en ? 'not sent by email' : 'sin enviar por correo')));
+                    }
+                    item.append(resp);
+                }
+                if (controles.length) {
+                    const acciones = h('div', { class: 'sii-actions' });
+                    const b = h('button', { type: 'button', class: 'sii-btn-solid' }, en ? 'Sign and send the answer' : 'Firmar y enviar respuesta');
+                    const msg = h('span', { class: 'sii-msg' });
+                    b.addEventListener('click', async () => {
+                        const documentos = controles.filter((c) => c.resultado.value).map((c) => ({
+                            id: c.id, resultado: c.resultado.value, motivo: c.motivo.value.trim() || undefined,
+                            recinto: c.resultado.value !== 'rechazado' ? c.recinto.value.trim() || undefined : undefined,
+                            ...(c.resultado.value === 'rechazado' ? { reclamo: c.reclamo.value } : {}),
+                        }));
+                        if (!documentos.length) { msg.textContent = en ? 'Choose a decision for at least one document.' : 'Elige qué hacer con al menos un documento.'; msg.className = 'sii-msg err'; return; }
+                        b.disabled = true;
+                        try {
+                            const correo = q<HTMLInputElement>('#siiRecibidoCorreo')?.value.trim();
+                            const d = await postJson('/api/fiscal/sii-intercambio', { accion: 'decidir', recepcion_id: r.id, documentos, ...(correo ? { correo } : {}) });
+                            pintarRecepciones(d.recepciones);
+                        } catch (err: any) {
+                            msg.textContent = err?.message || ''; msg.className = 'sii-msg err';
+                        } finally { b.disabled = false; }
+                    });
+                    acciones.append(b, msg);
+                    item.append(acciones);
+                }
+                return item;
+            }));
+        }
+
+        async function cargarIntercambio() {
+            try {
+                const d = await llamar('/api/fiscal/sii-intercambio');
+                const casilla = q<HTMLElement>('[data-sii-casilla]');
+                if (casilla) {
+                    casilla.hidden = false;
+                    casilla.textContent = d.casilla
+                        ? (en ? `Your exchange mailbox in Cord: ${d.casilla}. Register it with the SII as your exchange email so suppliers' documents arrive here by themselves.` : `Tu casilla de intercambio en Cord: ${d.casilla}. Regístrala en el SII como correo de intercambio para que los documentos de tus proveedores lleguen aquí solos.`)
+                        : (en ? 'Upload here the XML file of each submission you receive at your exchange email.' : 'Sube aquí el archivo XML de cada envío que recibas en tu correo de intercambio.');
+                }
+                pintarRecepciones(d.recepciones || []);
+            } catch { /* sin el SII activo no hay nada que mostrar */ }
+        }
+
+        q<HTMLInputElement>('#siiRecibido')?.addEventListener('change', (ev) => {
+            const input = ev.target as HTMLInputElement;
+            const f = input.files?.[0];
+            const name = q<HTMLElement>('[data-sii-name="siiRecibido"]');
+            if (name && f) name.textContent = f.name;
+            input.closest('.sii-drop')?.classList.toggle('has-file', !!f);
+        });
+        q<HTMLButtonElement>('[data-sii-recibido-subir]')?.addEventListener('click', async (ev) => {
+            const b = ev.currentTarget as HTMLButtonElement;
+            const input = q<HTMLInputElement>('#siiRecibido');
+            const f = input?.files?.[0];
+            if (!f) { flash('[data-sii-msg-recibido]', en ? 'Choose the received XML file first.' : 'Elige primero el archivo XML recibido.', false); return; }
+            const fd = new FormData();
+            fd.append('archivo', f);
+            const correo = q<HTMLInputElement>('#siiRecibidoCorreo')?.value.trim();
+            if (correo) fd.append('correo', correo);
+            b.disabled = true;
+            try {
+                const d = await llamar('/api/fiscal/sii-intercambio', { method: 'POST', body: fd });
+                pintarRecepciones(d.recepciones || []);
+                if (input) input.value = '';
+                input?.closest('.sii-drop')?.classList.remove('has-file');
+                flash('[data-sii-msg-recibido]', d.repetido
+                    ? (en ? 'This file had already been received.' : 'Este archivo ya se había recibido.')
+                    : d.respondido
+                        ? (d.enviado ? (en ? 'Received and acknowledged.' : 'Recibido y con acuse de recibo enviado.') : (en ? 'Received; the acknowledgment is ready to download.' : 'Recibido; el acuse de recibo quedó listo para descargar.'))
+                        : (d.pendiente || (en ? 'Received.' : 'Recibido.')), true);
+            } catch (err: any) {
+                flash('[data-sii-msg-recibido]', err?.message || '', false);
+            } finally { b.disabled = false; }
+        });
+
+        cargarCert();
+        cargarIntercambio();
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initSiiCert);
+    else initSiiCert();
+</script>

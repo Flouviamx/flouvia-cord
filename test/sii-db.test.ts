@@ -205,6 +205,7 @@ beforeAll(async () => {
         grant select, insert, update, delete on all tables in schema public to cord_app;`);
     await m.db.exec(seccion('-- ── Rieles fiscales de LatAm', '-- END rieles-latam'));
     await m.db.exec(seccion('-- ── Chile: factura electrónica con el SII', '-- END sii'));
+    await m.db.exec(seccion('-- ── Chile: nota de débito, set de pruebas e intercambio', '-- END sii-certificacion'));
     const { certPem, keyPem } = certificadoDePrueba();
     await guardarCredencial(ORG, 'sii', 'homologacion', parsearCertificado({ certificado: certPem, llave: keyPem }), { identificador: RUT_FIRMANTE, nombreArchivo: 'firmante.pfx', subidoPor: null });
     await guardarAjustes(ORG, 'sii', {

@@ -162,6 +162,22 @@ export interface RespuestaSii {
     glosa: string;
     /** Cuerpo y cabecera planos (TRACKID, SEMILLA, TOKEN, ACEPTADOS…), por nombre de etiqueta. */
     campos: Record<string, string>;
+    /**
+     * QueryEstUp de un envío con varios tipos de documento: un bloque
+     * TIPO_DOCTO/INFORMADOS/ACEPTADOS/RECHAZADOS/REPAROS por tipo (manual
+     * OI2004_CEUPDTE, "solo si Estado es EPR"). `campos` conserva el primero.
+     */
+    porTipo: { tipo: string; informados: number; aceptados: number; rechazados: number; reparos: number }[];
+}
+
+/** Bloques por tipo de documento del cuerpo de QueryEstUp, en orden. */
+export function conteoPorTipo(interno: string): RespuestaSii['porTipo'] {
+    const valores = (etiqueta: string) => [...interno.matchAll(new RegExp(`<${etiqueta}\\s*>\\s*(\\d+)\\s*</${etiqueta}>`, 'g'))].map((m) => m[1]);
+    const tipos = valores('TIPO_DOCTO');
+    const [inf, ace, rec, rep] = ['INFORMADOS', 'ACEPTADOS', 'RECHAZADOS', 'REPAROS'].map(valores);
+    return tipos.map((tipo, i) => ({
+        tipo, informados: Number(inf[i] ?? 0), aceptados: Number(ace[i] ?? 0), rechazados: Number(rec[i] ?? 0), reparos: Number(rep[i] ?? 0),
+    }));
 }
 
 /** Saca el XML <SII:RESPUESTA> del sobre SOAP y lo lee. */
@@ -180,7 +196,7 @@ export async function parsearRespuesta(xml: string, operacion: OperacionSii): Pr
     }
     // NUM_ATENCION puede venir fuera de RESP_HDR (manual OI2004_CEUPDTE, 3.5.1.1).
     if (!campos.NUM_ATENCION && hijo(resp, 'NUM_ATENCION') !== undefined) campos.NUM_ATENCION = texto(hijo(resp, 'NUM_ATENCION'));
-    return { estado: campos.ESTADO ?? '', glosa: campos.GLOSA ?? campos.GLOSA_ESTADO ?? '', campos };
+    return { estado: campos.ESTADO ?? '', glosa: campos.GLOSA ?? campos.GLOSA_ESTADO ?? '', campos, porTipo: conteoPorTipo(interno) };
 }
 
 /** Estados de las consultas que dicen que el token no sirve (tablas 3.5.2 de ambos manuales). */
