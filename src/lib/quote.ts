@@ -6,6 +6,7 @@
 import { calculateDocumentTotals, retencionBase, type RetencionBase, type TaxRounding } from '../../packages/elements/src/engine';
 import { currencyDecimals } from './currency';
 import { descuentoParaMotor, type DescuentoDef } from './descuentos';
+import type { JurisdiccionLinea } from './tax-components';
 
 export type QuoteStatus =
     | 'draft' | 'sent' | 'viewed' | 'approved' | 'rejected' | 'expired' | 'paid' | 'invoiced';
@@ -22,6 +23,12 @@ export interface QuoteItem {
     taxRate?: number;
     /** España: causa de exención congelada del concepto (fiscal/exemption.ts). */
     exemptionReason?: string | null;
+    /**
+     * EE. UU.: desglose por jurisdicción del sales tax calculado por dirección
+     * (estado, condado, ciudad, distritos). `taxRate` es la tasa efectiva del
+     * cálculo; lo que se imprime son estas tasas.
+     */
+    taxBreakdown?: JurisdiccionLinea | null;
     /** México: claves SAT propias de la línea; ganan sobre las del producto al timbrar. */
     claveSat?: string | null;
     claveUnidadSat?: string | null;
@@ -164,3 +171,14 @@ export const quoteTotal = (q: Quote) => documentTotals(q).total;
 export const quoteTaxBreakdown = (q: Quote) => documentTotals(q).porTasa.filter((t) => t.impuesto > 0);
 /** Retenciones aplicadas, ya con su monto. Se RESTAN del total. */
 export const quoteRetenciones = (q: Quote) => documentTotals(q).retenciones;
+/**
+ * Las líneas vigentes (aprobadas) con su base, su impuesto y su desglose por
+ * jurisdicción: lo que `taxBreakdownRows({ lineas })` y `taxNotes()` necesitan
+ * para imprimir el sales tax de EE. UU. por jurisdicción.
+ */
+export const quoteTaxLines = (q: Quote) => {
+    const vigentes = q.items.filter((it) => it.aprobado !== false);
+    return documentTotals(q).lineas.map((l, i) => ({
+        base: l.base, impuesto: l.impuesto, taxBreakdown: vigentes[i]?.taxBreakdown ?? null,
+    }));
+};

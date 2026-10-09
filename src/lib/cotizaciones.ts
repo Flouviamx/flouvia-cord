@@ -290,7 +290,7 @@ export async function createCotizacion(
     // no puede inventarse una tasa que el negocio no configuró. Sin tasa
     // explícita se cae al perfil predeterminado, que es lo que hacía la columna
     // plana orgs.iva_pct antes de que existiera el impuesto por línea.
-    let catalogo;
+    let catalogo: Awaited<ReturnType<typeof taxCatalogFor>>;
     try {
         catalogo = await taxCatalogFor(orgId);
     } catch (error) {

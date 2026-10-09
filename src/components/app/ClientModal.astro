@@ -58,6 +58,11 @@ const orgIsCo = ORG_COUNTRY === 'CO' && railConfig('dian').habilitado;
 // Chile: el DTE exige giro y comuna del receptor en cada factura. Solo con el
 // riel del SII encendido: sin él nada los lee (regla 15).
 const orgIsCl = ORG_COUNTRY === 'CL' && railConfig('sii').habilitado;
+// Estados Unidos: un cliente exento de sales tax (reventa, sin fines de lucro,
+// gobierno) se marca con su certificado. Lo lee el cálculo automático por
+// dirección (src/lib/us-tax/), que solo existe para un negocio de EE. UU.
+const orgIsUs = ORG_COUNTRY === 'US';
+const US_STATE_OPTIONS = subdivisionsFor('US') ?? [];
 
 // El cliente puede ser de CUALQUIER país, no solo de los que Cord ofrece al
 // darse de alta (regla 28: esto valida un dato ya guardado, no un catálogo
@@ -357,6 +362,36 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
                 </section>
             )}
 
+            {orgIsUs && (
+                <section class="cm-sec" id="cmFiscalUs" aria-labelledby="cmSecFiscalUs">
+                    <header class="cm-sec-h"><span class="cm-sec-i"><Icon name="document" size={15} /></span><h3 id="cmSecFiscalUs">{L === 'en' ? 'Sales tax exemption' : 'Exención de sales tax'}</h3></header>
+                    <label class="cm-exento">
+                        <input type="checkbox" id="cmTaxExempt" />
+                        <span>{L === 'en' ? 'This client is exempt from sales tax (resale, nonprofit, government)' : 'Este cliente está exento de sales tax (reventa, sin fines de lucro, gobierno)'}</span>
+                    </label>
+                    <div class="m-row" id="cmTaxExemptCert" hidden>
+                        <div class="m-field">
+                            <label for="cmTaxCertNum">{L === 'en' ? 'Exemption certificate number' : 'Número del certificado de exención'}</label>
+                            <input class="m-input cm-mono" id="cmTaxCertNum" maxlength="60" autocomplete="off" spellcheck="false" />
+                        </div>
+                        <div class="m-field">
+                            <label for="cmTaxCertState">{L === 'en' ? 'Issuing state' : 'Estado que lo expidió'} <span class="m-optlbl">{t(L, 'cmod.opcional')}</span></label>
+                            <select class="m-input" id="cmTaxCertState">
+                                <option value="">{L === 'en' ? 'Multistate / not specified' : 'Multiestatal / sin indicar'}</option>
+                                {US_STATE_OPTIONS.map((st) => <option value={st.code}>{`${st.name} (${st.code})`}</option>)}
+                            </select>
+                        </div>
+                        <div class="m-field">
+                            <label for="cmTaxCertVence">{L === 'en' ? 'Expires' : 'Vence'} <span class="m-optlbl">{t(L, 'cmod.opcional')}</span></label>
+                            <input class="m-input" id="cmTaxCertVence" type="date" />
+                        </div>
+                    </div>
+                    <span class="m-hint">{L === 'en'
+                        ? 'With automatic sales tax by address on, this client is not charged sales tax and the document cites the certificate. Keep a copy of the certificate on file.'
+                        : 'Con el cálculo automático por dirección encendido, a este cliente no se le cobra sales tax y el documento cita el certificado. Conserva una copia del certificado.'}</span>
+                </section>
+            )}
+
             {orgIsMx && (
                 <section class="cm-sec" id="cmFiscal" aria-labelledby="cmSecFiscal">
                     <header class="cm-sec-h"><span class="cm-sec-i"><Icon name="document" size={15} /></span><h3 id="cmSecFiscal">{t(L, 'cmod.fiscal_summary')}</h3></header>
@@ -438,6 +473,9 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
     }
 
     .cm-mono { font-variant-numeric: tabular-nums; letter-spacing: 0.02em; }
+    .cm-exento { display: flex; align-items: flex-start; gap: 0.55rem; font-size: 0.84rem; line-height: 1.45; color: var(--color-text); cursor: pointer; }
+    .cm-exento input { margin-top: 0.2rem; min-width: 16px; min-height: 16px; }
+    @media (max-width: 880px) { .cm-exento { min-height: 44px; align-items: center; } .cm-exento input { margin-top: 0; } }
     .cm-check { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.72rem; font-weight: 500; line-height: 1.4; min-height: 1em; }
     .cm-check:empty { display: none; }
     .cm-check[data-state="valid"] { color: #059669; }
@@ -524,6 +562,11 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
         const fiscalAr = document.getElementById('cmFiscalAr');
         const fiscalCo = document.getElementById('cmFiscalCo');
         const fiscalCl = document.getElementById('cmFiscalCl');
+        const fiscalUs = document.getElementById('cmFiscalUs');
+        const taxExemptBox = document.getElementById('cmTaxExempt') as HTMLInputElement | null;
+        const taxCertRow = document.getElementById('cmTaxExemptCert');
+        const syncTaxExempt = () => { if (taxCertRow && taxExemptBox) taxCertRow.hidden = !taxExemptBox.checked; };
+        taxExemptBox?.addEventListener('change', syncTaxExempt);
         const cfdiExt = document.getElementById('cmCfdiExt');
         const input = (id: string) => document.getElementById(id) as HTMLInputElement;
         const select = (id: string) => document.getElementById(id) as HTMLSelectElement | null;
@@ -632,6 +675,7 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
             if (fiscal) fiscal.hidden = c !== 'MX';
             if (fiscalAr) fiscalAr.hidden = c !== 'AR';
             if (fiscalCl) fiscalCl.hidden = c !== 'CL';
+            if (fiscalUs) fiscalUs.hidden = c !== 'US';
             if (cfdiExt) {
                 cfdiExt.hidden = c === 'MX';
                 const pais = select('cmCountry')?.selectedOptions[0]?.textContent?.trim() || c;
@@ -700,6 +744,15 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
             if (select('cmUso')) select('cmUso')!.value = data?.uso ?? '';
             if (select('cmCondIva')) select('cmCondIva')!.value = data?.condicionIva ?? '';
             if (fiscalCl) { input('cmGiro').value = data?.giro ?? ''; input('cmComuna').value = data?.comuna ?? ''; }
+            if (fiscalUs && taxExemptBox) {
+                let cert: Record<string, any> = {};
+                try { cert = data?.taxExemptCert ? JSON.parse(data.taxExemptCert) : {}; } catch { cert = {}; }
+                taxExemptBox.checked = data?.taxExempt === '1';
+                input('cmTaxCertNum').value = cert.numero ?? '';
+                select('cmTaxCertState')!.value = cert.estado ?? '';
+                input('cmTaxCertVence').value = cert.vence ?? '';
+                syncTaxExempt();
+            }
             input('cmCp').value = data?.cp ?? '';
             input('cmDireccion1').value = data?.direccion1 ?? '';
             input('cmDireccion2').value = data?.direccion2 ?? '';
@@ -789,6 +842,16 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
                 // Chile: sin el bloque visible no se mandan (undefined) y se conserva lo guardado.
                 giro: fiscalCl && !fiscalCl.hidden ? input('cmGiro').value : undefined,
                 comuna: fiscalCl && !fiscalCl.hidden ? input('cmComuna').value : undefined,
+                // EE. UU.: exención de sales tax. Sin el bloque visible (otro
+                // país) se conserva lo guardado.
+                ...(fiscalUs && !fiscalUs.hidden && taxExemptBox ? {
+                    tax_exempt: taxExemptBox.checked,
+                    tax_exempt_cert: taxExemptBox.checked ? {
+                        numero: input('cmTaxCertNum').value,
+                        estado: select('cmTaxCertState')!.value,
+                        vence: input('cmTaxCertVence').value,
+                    } : null,
+                } : {}),
                 cp_fiscal: input('cmCp').value,
                 country_code: country(),
                 direccion_line1: input('cmDireccion1').value,

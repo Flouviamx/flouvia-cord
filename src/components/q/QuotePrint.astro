@@ -1,9 +1,9 @@
 ---
-import { money, lineTotal, quoteSubtotal, quoteTotal, quoteTaxBreakdown, quoteRetenciones, quoteDescuento } from '../../lib/queries';
+import { money, lineTotal, quoteSubtotal, quoteTotal, quoteTaxBreakdown, quoteRetenciones, quoteDescuento, quoteTaxLines } from '../../lib/queries';
 import { etiquetaDescuento } from '../../lib/descuentos';
 import { getCountryProfile } from '../../lib/countries';
 import { currencyDecimals } from '../../lib/currency';
-import { taxBreakdownRows } from '../../lib/tax-components';
+import { taxBreakdownRows, taxNotes } from '../../lib/tax-components';
 import { currentLocale, setRequestCurrency } from '../../lib/context';
 import { brandStyle, brandColor, resolveBrandProfile } from '../../lib/brand-profile';
 import { t } from '../../i18n/app';
@@ -21,10 +21,14 @@ const condiciones = ORG.pdfCondiciones ? ORG.pdfCondiciones.split('\n').filter(B
 const PROFILE = getCountryProfile(ORG.countryCode || 'MX', L);
 const TAX_LABEL = PROFILE.taxLabel;
 // Un renglón por impuesto: en Canadá el 14.975% de Quebec es GST + QST.
+// EE. UU.: renglones por jurisdicción del sales tax por dirección, y la nota
+// de un 0 % legítimo ("sin obligación de recaudar en Texas").
+const TAX_LINES = quoteTaxLines(q);
 const TAX_ROWS = taxBreakdownRows(quoteTaxBreakdown(q), {
     country: ORG.countryCode || 'MX', region: ORG.fiscalMetadata?.region, taxLabel: TAX_LABEL,
-    decimals: currencyDecimals(q.baseCurrency || ORG.moneda || 'MXN'),
+    decimals: currencyDecimals(q.baseCurrency || ORG.moneda || 'MXN'), lineas: TAX_LINES,
 });
+const TAX_NOTES = taxNotes(TAX_LINES, L);
 const TAX_ID_LABEL = PROFILE.taxIdLabel;
 // Descuento de documento: subtotal BRUTO arriba y el descuento antes de impuestos.
 const DESCUENTO = quoteDescuento(q);
@@ -146,6 +150,7 @@ const darkLogo = profile.logoDark || printLogo;
                 <span>{t(L, 'imp.total')}</span>
                 <span class="editorial" >{money(quoteTotal(q))}</span>
             </div>
+            {TAX_NOTES.map((nota) => <div><span>{nota}</span><span></span></div>)}
         </section>
 
         {q.notas && (

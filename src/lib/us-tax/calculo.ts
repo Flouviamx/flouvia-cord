@@ -226,7 +226,7 @@ export async function prepareUsTaxForDocument(orgId: string, input: PrepareUsTax
     const fila = await calcularYGuardar(orgId, {
         account: cfg.account!, params, huella, clienteId: String(input.clienteId),
         registrados: new Set(cfg.registros.map((r) => r.estado)), certificado: cliente.certificado, locale,
-        idempotencyScope: venta ?? 'nueva',
+        idempotencyScope: venta ?? 'nueva', venta,
     });
     return { calculoId: fila.id };
 }

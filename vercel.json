@@ -56,6 +56,10 @@
       "schedule": "0 7 * * *"
     },
     {
+      "path": "/api/cron/us-tax",
+      "schedule": "40 9 * * *"
+    },
+    {
       "path": "/api/cron/verifactu-submit",
       "schedule": "0 9 * * *"
     },
