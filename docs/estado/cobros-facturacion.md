@@ -392,7 +392,9 @@ Catálogos puros en `src/lib/fiscal/cfdi-catalogos.ts`.
   `xrechnung` agrega el XML al PDF; `facturae` agrega la Facturae (`.xsig`
   firmada o `.xml` sin firmar); `off` deja solo el PDF. Por defecto Francia
   → `facturx`, Alemania → `xrechnung`, resto → `off`: España incluida, porque
-  la obligación B2B (Ley 18/2022, art. 12; RD 238/2026) todavía no es exigible
+  la obligación entre empresarios (Ley 18/2022, art. 12; RD 238/2026) no es
+  exigible hasta el 6-10-2027 o el 6-10-2028, viajará por la solución pública
+  de la AEAT y no por correo (sección "Factura electrónica entre empresarios"),
   y el cliente no espera un XML que no pidió. Si la factura no admite
   el formato, sale el PDF de siempre: el correo nunca falla por esto.
 - **PDF/A-3b:** el Factur-X es el PDF de siempre dibujado igual y ensamblado
@@ -429,8 +431,9 @@ Catálogos puros en `src/lib/fiscal/cfdi-catalogos.ts`.
   el IVA por tasa en vez de sumar el redondeado por línea; dentro de BR-CO-17).
 - **Pendiente:** transmisión (Peppol Access Point, PA francesa, FACe), los
   códigos DIR3 de la Facturae para la administración pública española
-  (`AdministrativeCentres`), la extensión española de UBL de la Orden
-  HAC/1028/2026 (ver "IRPF"), Order-X y el perfil EXTENDED.
+  (`AdministrativeCentres`), Order-X y el perfil EXTENDED. El envío por la
+  solución pública de la AEAT tiene su sección: construido y apagado hasta que
+  la AEAT publique su servicio.
 
 ### IGIC e IPSI (Canarias, Ceuta y Melilla)
 
@@ -468,8 +471,13 @@ Catálogos puros en `src/lib/fiscal/cfdi-catalogos.ts`.
   UBL, CII, EDIFACT y Facturae, sin CIUS española. La Orden HAC/1028/2026
   (BOE-A-2026-20587), Anexo I, define una extensión nacional para UBL con la
   retención en `cac:WithholdingTaxTotal` (grupo BG-ES-4 "Retención aplicada",
-  esquema WTH, lista L5, BT-ES-16 a 21), pero sus especificaciones técnicas y
-  validadores no están publicados: queda pendiente, y no se inventa.
+  esquema WTH, lista L5, BT-ES-16 a 21) y el grupo RETENCIONES en
+  `cac:CollectionInvoiceLine` (código RETE). Lo que no está publicado es cómo
+  viajan BT-179 y BT-180 en esa línea ni su efecto en el total a pagar (la
+  correspondencia UBL de la EN 16931:2026, CEN/TS 16931-3-2:2026), ni el
+  schematron de la AEAT: la factura de la solución pública falla cerrado con
+  retenciones (`spfe_retenciones`) y dice "descárgala como Facturae". No se
+  inventa.
 - **Facturae 3.2.2** (`src/lib/fiscal/einvoice/facturae.ts`), solo emisores en
   España y en euros, del mismo snapshot que el PDF: IVA (01), IPSI (02), IGIC
   (03) con su `TaxTypeCode`; el IRPF en `TaxesWithheld` (04); una retención que
@@ -514,6 +522,275 @@ Catálogos puros en `src/lib/fiscal/cfdi-catalogos.ts`.
   Leitweg-ID inválido falla cerrado (`seller_leitweg`, `buyer_leitweg`,
   `buyer_reference_leitweg`). Un valor guardado antes que ya no pase no se
   reescribe: la ficha del cliente lo marca y pide corregirlo.
+
+## Factura electrónica entre empresarios (solución pública de la AEAT) — oct 2026
+
+Factura electrónica obligatoria entre empresarios y profesionales de España,
+enviada por la **solución pública de facturación electrónica (SPFE)** de la
+AEAT, que es gratuita (RD 238/2026, art. 11.10). Código en
+`src/lib/fiscal/spfe/`. **Estado: construido y apagado.** La AEAT no ha
+publicado la especificación técnica del servicio, así que el riel dice
+"Próximamente" y no envía nada, aunque se encienda el interruptor.
+
+### Norma y plazos (verificado en el BOE el 9-10-2026)
+
+- **Ley 56/2007, art. 2 bis** (redacción del art. 12 de la Ley 18/2022):
+  emitir, remitir y recibir factura electrónica entre empresarios, e informar
+  de sus estados. **Ley 18/2022, disp. final octava:** efectos un año después
+  del desarrollo reglamentario para quien factura más de 8 M€ y dos años
+  después para el resto.
+- **RD 238/2026** (BOE-A-2026-7295, BOE núm. 79 de 31-03-2026). Art. 3: aplica
+  cuando el destinatario es un empresario o profesional establecido en España.
+  Art. 4: no aplica a las facturas simplificadas, salvo las cualificadas.
+  Art. 6.2: quien no emite por la SPFE remite una **copia fiel** en UBL.
+  Art. 7.1: las sintaxis admitidas son UBL, CII, EDIFACT y Facturae. Art. 11.2:
+  la SPFE solo admite UBL. Art. 12: el **destinatario** comunica el pago
+  efectivo completo o el rechazo, en cuatro días naturales sin sábados,
+  domingos ni festivos nacionales; el **emisor** puede comunicar el cobro o el
+  impago (12.4). Disp. final cuarta: los plazos se cuentan desde la entrada en
+  vigor de la Orden.
+- **Orden HAC/1028/2026** (BOE-A-2026-20587, BOE núm. 247 de 5-10-2026; en
+  vigor el **6-10-2026**). El Anexo I define la factura y la copia fiel en UBL
+  sobre la EN 16931:2026. El Anexo II define los mensajes de estado
+  (ApplicationResponse).
+- **Fechas** (confirmadas también en la sede de la AEAT, noticia de 7-10-2026):
+  - **6-10-2027:** volumen de operaciones superior a 8 M€. Ese año, además, la
+    factura va acompañada de un PDF salvo que el cliente acepte el formato
+    original (RD, disp. transitoria segunda; el PDF no va a la SPFE).
+  - **6-10-2028:** el resto.
+  - **6-10-2029:** los estados de las personas físicas y entidades en
+    atribución de rentas de hasta 8 M€. Hasta entonces son voluntarios (disp.
+    transitoria tercera).
+  - **6-10-2027:** las obligaciones de las plataformas privadas (disp. final
+    cuarta 2).
+
+Las constantes, con su artículo, viven en `src/lib/fiscal/spfe/normativa.ts`.
+
+### Qué está publicado y qué no (a 9-10-2026)
+
+**Publicado:**
+
+- El BOE: [Orden HAC/1028/2026](https://www.boe.es/buscar/act.php?id=BOE-A-2026-20587)
+  con sus anexos, el [RD 238/2026](https://www.boe.es/buscar/act.php?id=BOE-A-2026-7295)
+  y la [Ley 56/2007 consolidada](https://www.boe.es/buscar/act.php?id=BOE-A-2007-22440).
+- La [página de la SPFE en la sede](https://sede.agenciatributaria.gob.es/Sede/iva/factura-electronica.html).
+  Solo tiene "Cuestiones generales" y "Calendario de implantación"; no hay
+  apartado de información técnica, a diferencia de Verifactu.
+- Los seminarios técnicos de la AEAT en el Portal de Entidades
+  Desarrolladoras: el de 19-05-2026 (`Seminario_19_05_2026_DIT.pdf`) y el de
+  10-09-2026 (`DIT_FE_Seminario_10_septiembre.pdf`, bajo
+  `/static_files/AEAT_Desarrolladores/EEDD/Reuniones/2026/`). El de septiembre
+  describe servicios web SOAP **síncronos** con un sobre ebXML y adjuntos MTOM,
+  con este catálogo: `SendInvoiceSOAP`, `CancelInvoiceSOAP`,
+  `GetInvoicesSOAP`, `GetRegisteredInvoiceSOAP`, `DownloadInvoicesByIDSOAP`,
+  `DownloadInvoicesByLOCSOAP`, `CustomerInvoiceEventsSOAP` y
+  `SupplierInvoiceEventsSOAP`. Usa UBL 2.5 (Invoice, ApplicationResponse y
+  DocumentStatus). Admite de 1 a 100 facturas por remesa, hasta 5.120 kB por
+  factura y ningún adjunto binario. El emisor solo comunica SETTLEMENT,
+  CANCELSETTLEMENT, DEFAULT y CANCELDEFAULT, **sin parciales**. Se puede actuar
+  en nombre propio, con apoderamiento o como colaborador social; este último
+  solo para remitir facturas y cambiar estados. No es una especificación: son
+  diapositivas.
+- [OASIS UBL 2.5](https://docs.oasis-open.org/ubl/os-UBL-2.5/), OASIS Standard
+  de 12-08-2026, con el SHA-256 de cada archivo en su manifiesto.
+
+**No publicado:** el WSDL, el sobre ebXML, las direcciones de los entornos, el
+XSD de las extensiones de la AEAT, el schematron (EN 16931:2026 y reglas de la
+AEAT), los ejemplos, el catálogo de errores y el entorno de pruebas. El
+Portal de Entidades Desarrolladoras no tiene sección SPFE; las novedades de
+octubre son el modelo 232 y los servicios comunes, y la reunión del
+19-10-2026 trata las declaraciones informativas. El seminario de septiembre
+dice que todo eso se publicará **antes** del entorno de pruebas, con
+"fecha de referencia: octubre de 2026". La EN 16931-1:2026 y la CEN/TS
+16931-3-2:2026 son normas de pago (UNE), no publicaciones abiertas.
+
+Lo que falta está enumerado en `PENDIENTES_AEAT` (`normativa.ts`):
+`transporte`, `validacion`, `calificadores`, `retenciones`,
+`cabecera_mensajes` y `entorno_pruebas`. Mientras la lista no esté vacía,
+`transporteDisponible()` es falso.
+
+### Cómo envía Cord
+
+- **Interconexión, no copia fiel.** Cord envía la factura **original**
+  (`CopyIndicator` false) por la SPFE. La factura queda a disposición del
+  cliente y de la Administración (Orden, arts. 3.4 y 5.2; RD, art. 11.9). Si
+  el cliente eligió una plataforma privada, esa plataforma la recupera de la
+  SPFE (RD, art. 8.2; Orden, art. 9). Como no hay copia fiel, tampoco hay que
+  remitirla "simultáneamente".
+- **En nombre propio.** El remitente se identifica con un certificado
+  electrónico (Orden, art. 11.1). Cord usa el que el negocio sube para
+  Verifactu (`orgs.verifactu_cert_enc`), como en Verifactu. No actúa como
+  colaborador social ni como apoderado: Flouvia necesitaría para ello NIF
+  español y convenio o estar inscrita en el registro de apoderamientos. Si el
+  certificado es de un representante, ese representante necesita
+  apoderamiento del negocio.
+- **Qué facturas.** Las de emisores en España dirigidas a un cliente
+  establecido en España con NIF válido, emitidas desde que el riel se activó
+  para la organización (`spfe_envio_estado.activado_at`, para no enviar el
+  histórico de golpe). Falla cerrado, con texto es/en, en estos casos:
+  - cliente extranjero (`spfe_fuera_de_ambito`, no aplica);
+  - cliente sin NIF o con domicilio incompleto (municipio, código postal y
+    provincia son obligatorios en España);
+  - País Vasco y Navarra (`spfe_foral`): dependen de los acuerdos con las
+    Haciendas Forales (RD, disp. adicional tercera), sin publicar;
+  - rectificativa de una simplificada (`spfe_simplificada`);
+  - entrega intracomunitaria: K no está en la lista L4;
+  - otra divisa sin el euro como divisa contable (BT-6 y BT-111);
+  - **retenciones** (`spfe_retenciones`).
+- **La factura (Anexo I)** sale de `assessSpfe` (`factura.ts`). Usa el mismo
+  modelo EN 16931 que Factur-X, XRechnung y Peppol (`einvoice/model.ts`), del
+  snapshot congelado y con los totales comprobados al céntimo. Añade:
+  - BT-23 y BT-24 literales;
+  - el NIF como BT-32 (TaxScheme `LOC`, `schemeID="FC"`) con BT-30, y además
+    BT-31 (`ES`+NIF) en el territorio del IVA;
+  - el NIF del cliente como BT-47 con la misma ruta;
+  - la clave de régimen por línea (BG-32 `REGI`: 01, o 02 en exportación) con
+    el impuesto en `cbc:ValueQualifier` (`IVA`, `IGIC` o `IPSI`, BT-ES-24);
+  - el QR de VERI*FACTU como BG-24 `QR`, si la factura lo tiene;
+  - la nota de crédito como **384** con `RECT:TIPO` (el tipo de su registro de
+    Verifactu, R1 si no lo hay) y `RECT:MODALIDAD` `I`, en negativo y con la
+    factura rectificada;
+  - **BT-ES-2** (`cac:PrepaidPayment/cbc:PaidDate`), con `PrepaidAmount` y
+    total a pagar cero, si la factura ya estaba pagada al expedirse y el pago no
+    es anterior a la operación. Así el cliente no tiene que comunicar el pago
+    (Orden, art. 7.4).
+- **Retenciones (IRPF).** El Anexo I las define: grupo RETENCIONES con código
+  RETE y BG-ES-4 en `cac:WithholdingTaxTotal`, esquema WTH y lista L5. Pero
+  no fija cómo viajan BT-179 y BT-180 en `cac:CollectionInvoiceLine` ni cómo
+  afectan al total a pagar. Eso depende de la correspondencia UBL de la EN
+  16931:2026, que no está en abierto. Una factura con IRPF no se envía y la
+  pantalla dice "descárgala como Facturae" (sintaxis admitida, RD art. 7.1).
+- **Estados del emisor** (`estados.ts`). El cobro se deriva de los pagos reales
+  ya conciliados por `reconcileInvoice`:
+  - factura `paid` con dinero cobrado → **SETTLEMENT**, con la fecha del último
+    pago y el vencimiento;
+  - si se reembolsa → **CANCELSETTLEMENT**;
+  - si se marca incobrable con vencimiento → **DEFAULT** con ese vencimiento;
+  - si luego se cobra → **CANCELDEFAULT** y SETTLEMENT;
+  - una fecha distinta → primero cancela y luego vuelve a comunicar.
+  - **Sin pago parcial**: el Anexo II solo tiene el pago completo, la AEAT
+    confirmó "sin parciales", y el pago parcial del RD (art. 10.2.b) es un
+    estado opcional entre plataformas que no aplica a la SPFE (art. 10.7).
+  Ninguna nota de crédito lleva estado de cobro. Lo que la factura ya declaró
+  con BT-ES-2 no se vuelve a comunicar.
+- **Baja** (CANCELINVOICE, Orden, art. 3.5). Anular en Cord una factura que la
+  SPFE ya admitió la da de baja. Si nunca salió, el mensaje se descarta. Las
+  rutas UBL que el Anexo I da para este mensaje
+  (`cac:Response/cac:DocumentReference` y
+  `cac:PartyTaxScheme/cac:PartyLegalEntity`) **no existen en UBL 2.5**,
+  comprobado contra el XSD: Cord usa la forma del Anexo II, que sí es válida.
+  `security:spfe` lo prueba con un control negativo.
+- **Estados del cliente.** La consulta devuelve el pago o el rechazo (motivo
+  L1: 01 comercial, 02 consumo particular). Se guardan, sin duplicar, en
+  `spfe_estados_destinatario`, y se ven en el detalle de la factura y en
+  Ajustes.
+
+### La cola (`cola.ts`, `/api/cron/spfe`)
+
+- **Tablas** (sección al final de `db/schema.sql`, despliegue
+  `db/deploy/2026-10-09-spfe.sql`), las tres con RLS forzada:
+  - `spfe_mensajes`: cada mensaje con su XML y su SHA-256, en estado
+    `pendiente → admitido | rechazado | incierto | descartado`, e
+    `incierto → admitido | descartado` solo consultando. Un trigger la hace
+    inmutable: la identidad y el XML no cambian, los estados finales no
+    vuelven y un mensaje admitido no se borra a mano;
+  - `spfe_estados_destinatario`;
+  - `spfe_envio_estado`: lease, pausa, próxima consulta y `activado_at`, por
+    organización y entorno.
+- **Idempotencia sin advisory locks.** `unique (documento_id, entorno, orden)`
+  serializa los mensajes de cada factura. Un índice único parcial impide dos
+  altas vivas. Se encola solo si la factura no tiene nada en vuelo.
+- **Consulta antes que reenvío.** `enviado_at` se marca ANTES de enviar.
+  - Si no hay respuesta, el mensaje pasa a `incierto`; también si la SPFE dice
+    "duplicada" o el proceso muere tras marcar.
+  - Pasados dos minutos se consulta por código único. Si la SPFE lo tiene, el
+    mensaje queda `admitido`. Si no, `descartado`, y SOLO entonces se escribe
+    un mensaje nuevo y se envía en la misma pasada.
+  - Si la SPFE rechaza la petición entera (certificado, representación,
+    servicio caído), nada se procesó: el mensaje vuelve a `pendiente` y la
+    organización se pausa quince minutos.
+  - Un mensaje que la SPFE rechazó no se repite solo.
+- **Cron.** Cada hora desde `cord-crons.yml` y diario en `vercel.json` como
+  respaldo (regla del plan Hobby, `confiabilidad.md`). El barrido entre
+  organizaciones es `withSystemTx` solo sobre `orgs` (españolas con
+  certificado). Todo lo demás va en `withOrgTx` (regla 30). Hoy responde
+  `omitido: transporte_no_publicado` sin tocar la base ni descifrar el
+  certificado.
+- **Transporte** (`transporte.ts`). Es un puerto INTERNO, derivado de lo que
+  la Orden describe (remitir, anular, comunicar estados, consultar), no el
+  contrato de la AEAT. `transporteAeat()` devuelve null. La constante
+  `TRANSPORTE_REAL_IMPLEMENTADO` se pone en true en el mismo cambio que
+  implementa el adaptador contra el WSDL publicado.
+
+### Pantallas
+
+- **Detalle de la factura** (`SpfeEstadoFactura.astro`, emisor en España).
+  Con el riel en "Próximamente" muestra las fechas y si la factura ya tiene
+  lo que pide la AEAT o qué le falta, calculado en vivo sin escribir nada.
+  Activo, muestra el estado del envío y su CSV, el último cobro o impago
+  comunicado y lo que informó el cliente.
+- **Ajustes › Datos fiscales** (`SpfeSettings.astro`, solo España).
+  - El estado del riel y las fechas de la obligación.
+  - Si el certificado está subido.
+  - Que el IRPF va como Facturae mientras tanto.
+  - Las facturas que necesitan atención: rechazos de la SPFE o del cliente.
+  No tiene controles: la obligación no es una preferencia (regla 15).
+
+### Verificación
+
+- `test/spfe.test.ts`: piezas puras (Anexo I, fuera de ámbito, transiciones
+  de estado, interruptor).
+- `test/spfe-db.test.ts`: PGlite con el esquema real y una AEAT simulada que
+  implementa el puerto. Cubre:
+  - activación y envío idempotente;
+  - respuesta perdida resuelta por consulta, y caída antes de procesar
+    (consultar y luego reenviar);
+  - un proceso muerto tras marcar;
+  - pausa y rechazo;
+  - cobro, reembolso, impago y pagada al expedirse;
+  - baja, estados del cliente, lease, inmutabilidad y RLS.
+- `npm run security:spfe` (`scripts/spfe-check.mjs`, en `test:payments`, sin
+  red). Comprueba:
+  - los 18 XSD runtime de UBL 2.5 vendorizados en `scripts/fixtures/ubl25/`
+    con el SHA-256 del manifiesto de OASIS;
+  - cada muestra contra `UBL-Invoice-2.5.xsd` y los cinco mensajes contra
+    `UBL-ApplicationResponse-2.5.xsd`;
+  - lo literal del Anexo I y la honestidad del riel;
+  - cuatro controles negativos: orden, elemento inventado, mensaje sin
+    remitente y la ruta del Anexo I para la baja.
+  Sin `xmllint` se omite con aviso, salvo con `SPFE_XSD_REQUIRED=1`.
+- **No verificable sin la AEAT ni un certificado real:** la semántica
+  (schematron EN 16931:2026 y reglas de la AEAT), el XSD de las extensiones,
+  el sobre ebXML y el WSDL, y cualquier envío real.
+
+### Activación paso a paso
+
+1. **Esperar la publicación.** Vigilar el Portal de Entidades Desarrolladoras
+   (sección "Novedades") y la página de la SPFE en la sede. Falta el WSDL, los
+   XSD de las extensiones, el schematron, los ejemplos y el catálogo de
+   errores.
+2. **Resolver `PENDIENTES_AEAT`** contra esos archivos, no contra los
+   seminarios:
+   - escribir `transporteAeat()` (sobre ebXML, MTOM, endpoints por entorno,
+     clasificación de errores en `SpfeSinRespuestaError` /
+     `SpfePeticionRechazadaError`);
+   - ubicar los calificadores L7/L8/L10;
+   - completar las retenciones y quitar `spfe_retenciones`;
+   - fijar la cabecera del ApplicationResponse;
+   - vendorizar el XSD y el schematron de la AEAT en `security:spfe`, con sus
+     ejemplos como vectores.
+   Vaciar la lista y poner `TRANSPORTE_REAL_IMPLEMENTADO` en true en el mismo
+   cambio.
+3. **Entorno de pruebas** de la AEAT. Hace falta un certificado cualificado de
+   un contribuyente español: su NIF es el emisor de la prueba, y la AEAT pide
+   NIF reales o de prueba. Probarlo en un Preview con `SPFE_ENABLED=true` y
+   `SPFE_ENTORNO=pruebas`: emitir a un cliente español con NIF, registrar un
+   pago completo, anular otra factura y comprobar que llegan el CSV, el cobro y
+   la baja.
+4. **Producción.** `npm run db:migrate` (o el despliegue, que aplica
+   `db/deploy/2026-10-09-spfe.sql`), después `SPFE_ENTORNO=produccion` y
+   `SPFE_ENABLED=true` en Production, y redesplegar, antes del 6-10-2027 para
+   los clientes de más de 8 M€.
 
 ## Facturación internacional — ago 2026
 

@@ -130,6 +130,14 @@ describe('migración de despliegue de facturación', () => {
                 'documentos_fiscales.us_tax_calculo_id', 'orgs.us_tax_auto', 'orgs.us_tax_origen',
             ]);
 
+            // Factura electrónica entre empresarios (db/deploy/2026-10-09-spfe.sql):
+            // la cola y lo recibido con RLS forzada, y el trigger que hace inmutable lo enviado.
+            const rlsSpfe = (await db.query<{ relname: string }>(`select relname from pg_class
+                where relname in ('spfe_mensajes', 'spfe_estados_destinatario', 'spfe_envio_estado')
+                  and relrowsecurity and relforcerowsecurity order by relname`)).rows.map((r) => r.relname);
+            expect(rlsSpfe).toEqual(['spfe_envio_estado', 'spfe_estados_destinatario', 'spfe_mensajes']);
+            expect((await db.query(`select 1 from pg_trigger where tgname = 'trg_spfe_mensaje_inmutable'`)).rows).toHaveLength(1);
+
             // Canadá: la QST suelta pasa a la combinada, y la tasa plana la sigue.
             expect((await db.query<{ nombre: string; tasa: string }>(`select nombre, tasa::text from impuestos where org_id = '${ORG_CA}'`)).rows)
                 .toEqual([{ nombre: 'GST 5% + QST 9.975% (QC)', tasa: '14.975' }]);

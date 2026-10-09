@@ -68,6 +68,10 @@
       "schedule": "20 9 * * *"
     },
     {
+      "path": "/api/cron/spfe",
+      "schedule": "40 9 * * *"
+    },
+    {
       "path": "/api/cron/anclas-tiempo",
       "schedule": "0 12 * * *"
     },
