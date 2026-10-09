@@ -169,3 +169,36 @@ export async function datosPortal(token: string, stripeConfigurado: boolean): Pr
 export function divisaDelMetodo(tipo: MetodoCobro): string | null {
     return tipo === 'card' ? null : DOMICILIACION[tipo].divisa;
 }
+
+export interface EstadoPortalCliente {
+    url: string | null;
+    autopay: { activo: boolean; metodo: ResumenMetodo | null; desactivado: AutopayEstado['desactivado'] };
+    detenido: { motivo: string; currency: string; siguienteAt: string | null; intentos: number }[];
+    /** Hay al menos una factura emitida que el portal puede mostrar. */
+    tieneFacturas: boolean;
+}
+
+/** Lo que la ficha del cliente muestra del portal y del cobro automático. */
+export async function estadoPortalCliente(orgId: string, clienteId: string): Promise<EstadoPortalCliente | null> {
+    const [[c], estados] = await withOrgTx(orgId,
+        sql`select c.portal_token, c.autopay_activo, c.autopay_metodo, c.autopay_desactivado,
+                   exists (select 1 from documentos_fiscales d where d.org_id = c.org_id and d.cliente_id = c.id
+                            and d.status = 'issued' and d.credit_note_of is null) as tiene_facturas
+              from clientes c where c.id = ${clienteId} and c.org_id = ${orgId}`,
+        sql`select currency, intentos, siguiente_at, detenido_motivo from cobro_automatico_estado
+             where org_id = ${orgId} and cliente_id = ${clienteId}`);
+    if (!c) return null;
+    return {
+        url: c.portal_token ? portalUrl(String(c.portal_token)) : null,
+        autopay: {
+            activo: !!c.autopay_activo,
+            metodo: (c.autopay_metodo ?? null) as ResumenMetodo | null,
+            desactivado: (c.autopay_desactivado ?? null) as AutopayEstado['desactivado'],
+        },
+        detenido: estados.map((e: any) => ({
+            motivo: String(e.detenido_motivo || 'reintento'), currency: String(e.currency),
+            siguienteAt: fechaIso(e.siguiente_at), intentos: Number(e.intentos || 0),
+        })),
+        tieneFacturas: !!c.tiene_facturas,
+    };
+}

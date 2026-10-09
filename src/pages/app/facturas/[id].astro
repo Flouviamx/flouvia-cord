@@ -288,6 +288,7 @@ import { iconInner } from '../../../lib/icons';
                                     <div class="fd-tline"><span>{t(L, 'fact.d_pagado')}</span><span class="editorial">−{money(f.pagado)}</span></div>
                                 )}
                                 <div class="fd-tline fd-due"><span>{t(L, 'fact.d_saldo')}</span><span class="editorial">{money(f.saldo)}</span></div>
+                                {f.pagoEnProceso && f.estado === 'open' && <p class="fd-proceso">{t(L, 'fact.d_pago_en_proceso')}</p>}
                             </div>
 
                             {f.fxRate && f.fxRate !== 1 && f.ledgerCurrency && (
@@ -931,4 +932,5 @@ import { iconInner } from '../../../lib/icons';
         .fd-util-grid { grid-template-columns: repeat(4, minmax(62px, 1fr)); overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
         .fd-util-grid::-webkit-scrollbar { display: none; }
     }
+    .fd-proceso { margin: 0.6rem 0 0; font-size: 0.78rem; line-height: 1.5; color: #3730a3; }
 </style>

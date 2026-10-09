@@ -32,6 +32,7 @@ import { calculateDocumentTotals, retencionBase, type RetencionBase } from '../.
 import { dueDateFor, venceDia } from './cobros';
 import { taxBreakdownRows } from './tax-components';
 import { taskBadge } from './tasks-db';
+import { metodosPara } from './cobros/metodos';
 import type { PublicViewer } from './public-viewer';
 import {
     STATUS_ABIERTA, STATUS_GANADA, STATUS_PERDIDA, STATUS_SALIO,
@@ -165,6 +166,9 @@ export async function getOrg() {
         aceptaTarjeta: o.acepta_tarjeta !== false,
         aceptaTransferencia: !!o.acepta_transferencia,
         cobroSpeiAuto: !!o.cobro_spei_auto,
+        aceptaDomiciliacion: !!o.acepta_domiciliacion,
+        cobroAutomaticoPermitido: o.cobro_automatico_permitido !== false,
+        stripeCapacidades: (o.stripe_capacidades ?? {}) as Record<string, string>,
         checkoutV2: !!o.checkout_v2,
         feeEnabled: !!o.fee_enabled,
         feePlan: (o.fee_plan as string) || 'legacy_zero',
@@ -1772,8 +1776,14 @@ export async function getFacturaByToken(token: string) {
                    o.stripe_charges_enabled as org_stripe_charges_enabled,
                    o.acepta_tarjeta as org_acepta_tarjeta,
                    o.acepta_transferencia as org_acepta_transferencia,
+                   o.acepta_domiciliacion as org_acepta_domiciliacion,
+                   o.stripe_capacidades as org_stripe_capacidades,
                    o.mp_charges_enabled as org_mp_charges_enabled,
-                   o.embed_domains as org_embed_domains
+                   o.embed_domains as org_embed_domains,
+                   d.pago_en_proceso_pi,
+                   exists (select 1 from pago_agrupado_documentos a
+                            join pagos_agrupados p on p.id = a.pago_id and p.org_id = a.org_id
+                           where a.org_id = d.org_id and a.documento_id = d.id and p.estado = 'procesando') as agrupado_en_proceso
               from documentos_fiscales d
               join orgs o on o.id = d.org_id
               left join cotizaciones c on c.id = d.cotizacion_id
@@ -1855,6 +1865,14 @@ export async function getFacturaByToken(token: string) {
             && !!r.org_stripe_account_id
             && !!r.org_stripe_charges_enabled,
         aceptaTarjeta: !!r.org_acepta_tarjeta,
+        // Los métodos en línea de ESTA factura: tarjeta y, en su divisa, la
+        // domiciliación si el negocio la encendió y su cuenta la tiene activa.
+        metodosEnLinea: metodosPara({
+            aceptaTarjeta: !!r.org_acepta_tarjeta, aceptaDomiciliacion: !!r.org_acepta_domiciliacion,
+            capacidades: r.org_stripe_capacidades,
+        }, currency),
+        // Un débito bancario en proceso (días): no se ofrece pagar otra vez.
+        pagoEnProceso: !!r.pago_en_proceso_pi || !!r.agrupado_en_proceso,
         aceptaTransferencia: !!r.org_acepta_transferencia,
         // El segundo riel: cobrar la factura con Mercado Pago. Exige además que
         // el país lo tenga, igual que en la cotización (`availableRails`).
@@ -1904,6 +1922,8 @@ export async function getFacturaDetalle(id: string) {
         // volver a resolverla.
         orgId,
         clienteEmail: (r.cliente_email as string) || null,
+        // Un débito bancario (SEPA, ACH) cobrado y todavía sin confirmar.
+        pagoEnProceso: !!r.pago_en_proceso_pi,
         notas: (r.notes as string) || null,
         ledgerCurrency: (r.ledger_currency as string) || null,
         fxRate: r.fx_rate !== null && r.fx_rate !== undefined ? num(r.fx_rate) : null,

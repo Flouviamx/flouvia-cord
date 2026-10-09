@@ -7,10 +7,12 @@
 // haría que un anticipo de la cotización se descontara del saldo de la factura
 // dos veces.
 //
-// Solo tarjeta: SPEI asigna CLABE por customer, liquida únicamente en MXN y es
-// un riel exclusivo de México. Ofrecerlo aquí sin esa maquinaria produciría una
-// CLABE que el banco rechaza — Regla 21, una capacidad de un solo país se dice,
-// no se ofrece y falla en el proveedor.
+// Tarjeta y, si el negocio la encendió y su cuenta la tiene activa, la
+// domiciliación de la divisa de la factura (SEPA en EUR, ACH en USD;
+// `metodosDelCobro`). SPEI no: asigna CLABE por customer, liquida únicamente en
+// MXN y es un riel exclusivo de México. Ofrecerlo aquí sin esa maquinaria
+// produciría una CLABE que el banco rechaza — Regla 21, una capacidad de un
+// solo país se dice, no se ofrece y falla en el proveedor.
 //
 // Admite ABONO PARCIAL: el cuerpo puede traer `{ monto }`. El monto lo propone
 // el cliente y por eso se acota contra el saldo real de la base — nunca se
@@ -27,6 +29,7 @@ import { log } from '../../../../lib/log';
 import { limitPublicPayment } from '../../../../lib/connect-security';
 import { after } from '../../../../lib/after';
 import { trackServer } from '../../../../lib/posthog-server';
+import { metodosDelCobro } from '../../../../lib/cobros/agrupados';
 
 const STRIPE_KEY = import.meta.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY;
 
@@ -45,9 +48,13 @@ export const POST: APIRoute = async ({ params, request }) => {
                exists (select 1 from documento_pagos p
                        where p.documento_id = d.id and p.org_id = d.org_id
                          and p.stripe_payment_intent_id = d.stripe_payment_intent_id) as previous_payment_applied,
-               d.provider_data,
+               d.provider_data, d.pago_en_proceso_pi,
+               exists (select 1 from pago_agrupado_documentos a
+                        join pagos_agrupados p on p.id = a.pago_id and p.org_id = a.org_id
+                       where a.org_id = d.org_id and a.documento_id = d.id
+                         and p.estado in ('creado', 'procesando')) as agrupado_en_vuelo,
                o.sandbox_of, o.is_demo, o.stripe_account_id, o.stripe_charges_enabled,
-               o.acepta_tarjeta, o.nombre as org_nombre, o.moneda,
+               o.acepta_tarjeta, o.acepta_domiciliacion, o.stripe_capacidades, o.nombre as org_nombre, o.moneda,
                o.fee_enabled, o.fee_terms_version
           from documentos_fiscales d
           join orgs o on o.id = d.org_id
@@ -77,14 +84,25 @@ export const POST: APIRoute = async ({ params, request }) => {
     if (!d.stripe_account_id || !d.stripe_charges_enabled) {
         return json({ error: 'El negocio todavía no tiene configurada su cuenta para recibir pagos.' }, 403);
     }
-    if (!d.acepta_tarjeta) {
-        return json({ error: 'El negocio no acepta pagos con tarjeta en línea.' }, 403);
+    // Un débito bancario tarda días: mientras está en proceso (o la factura va
+    // dentro de un cobro agrupado del portal o del cobro automático) no se abre
+    // otro cobro sobre el mismo saldo.
+    if (d.pago_en_proceso_pi || d.agrupado_en_vuelo) {
+        return json({ error: 'Hay un pago en proceso para esta factura. Espera su confirmación antes de pagar otra vez.', code: 'payment_pending' }, 409);
     }
 
     // Regla 21: la divisa del cobro es la de la FACTURA, no la de la org.
     const currency = normalizeCurrency((d.currency as string) || (d.moneda as string));
     if (!stripeSupportsCurrency(currency)) {
         return json({ error: 'El pago en línea todavía no está disponible para la moneda de esta factura.' }, 409);
+    }
+    const metodos = metodosDelCobro({
+        nombre: String(d.org_nombre || ''), stripeAccountId: String(d.stripe_account_id),
+        aceptaTarjeta: !!d.acepta_tarjeta, aceptaDomiciliacion: !!d.acepta_domiciliacion,
+        capacidades: d.stripe_capacidades, feeEnabled: d.fee_enabled, feeTermsVersion: d.fee_terms_version,
+    }, currency);
+    if (!metodos.length) {
+        return json({ error: 'El negocio no acepta pagos en línea para esta factura.' }, 403);
     }
 
     const saldo = Number(d.amount_remaining ?? d.total ?? 0);
@@ -160,13 +178,17 @@ export const POST: APIRoute = async ({ params, request }) => {
                     return json({ error: 'Estamos confirmando tu abono. Actualiza la factura en unos momentos.', code: 'payment_pending' }, 409);
                 }
                 const updateable = ['requires_payment_method', 'requires_confirmation'].includes(prev.status);
+                const mismosMetodos = !Array.isArray(prev.payment_method_types)
+                    || prev.payment_method_types.join(',') === metodos.join(',');
                 const sameAmount = prev.amount === amount
-                    && Number(prev.application_fee_amount || 0) === fee.applicationFeeCents;
+                    && Number(prev.application_fee_amount || 0) === fee.applicationFeeCents && mismosMetodos;
                 const terminal = ['canceled', 'succeeded'].includes(prev.status);
                 if (!terminal && (sameAmount || updateable)) {
                     let current = prev;
                     if (!sameAmount && updateable) {
                         const upd = new URLSearchParams({ amount: String(amount) });
+                        // El negocio pudo encender o apagar la domiciliación desde el intento anterior.
+                        metodos.forEach((m, i) => upd.set(`payment_method_types[${i}]`, m));
                         setInvoiceFeeMetadata(upd, fee);
                         if (fee.applicationFeeCents > 0 || Number(prev.application_fee_amount) > 0) {
                             upd.set('application_fee_amount', String(fee.applicationFeeCents));
@@ -192,7 +214,7 @@ export const POST: APIRoute = async ({ params, request }) => {
         form.set('amount', String(amount));
         form.set('currency', stripeCurrency(currency));
         form.set('description', `Factura ${d.invoice_number || ''} — ${d.org_nombre}`.trim());
-        form.set('payment_method_types[0]', 'card');
+        metodos.forEach((m, i) => form.set(`payment_method_types[${i}]`, m));
         // El webhook concilia por esta metadata: sin `documento_id` el pago
         // llegaría a Stripe sin saber a qué factura se aplica.
         form.set('metadata[documento_id]', d.id as string);
@@ -242,7 +264,7 @@ export const POST: APIRoute = async ({ params, request }) => {
             invoice_id: d.id as string,
             amount,
             currency,
-            payment_method: 'tarjeta',
+            payment_method: metodos.length === 1 && metodos[0] === 'card' ? 'tarjeta' : metodos.join('+'),
             checkout_version: 2,
             source: 'public_link',
         }, d.sandbox_of != null, !!d.is_demo));

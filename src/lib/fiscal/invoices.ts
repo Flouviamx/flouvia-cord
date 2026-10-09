@@ -1035,7 +1035,7 @@ async function releaseInvoicePaymentAttempts(orgId: string, doc: any): Promise<{
       const intent = await stripe(`/v1/payment_intents/${encodeURIComponent(pi)}`, undefined, 'GET', { stripeAccount: account });
       const status = String(intent?.status || '');
       if (['processing', 'requires_capture', 'succeeded'].includes(status)) {
-        return { ok: false, error: 'Hay un pago con tarjeta en proceso para esta factura. Espera a que se confirme y emite una nota de crédito en lugar de anularla.' };
+        return { ok: false, error: 'Hay un pago en proceso para esta factura. Espera a que se confirme y emite una nota de crédito en lugar de anularla.' };
       }
       if (status !== 'canceled') {
         await stripe(`/v1/payment_intents/${encodeURIComponent(pi)}/cancel`, undefined, 'POST', {
@@ -1048,6 +1048,39 @@ async function releaseInvoicePaymentAttempts(orgId: string, doc: any): Promise<{
         return { ok: false, error: 'No pudimos cerrar el cobro en línea de esta factura. Intenta de nuevo en un momento.' };
       }
     }
+  }
+  // Cobros agrupados (portal, cobro automático) que incluyen esta factura: un
+  // débito en proceso bloquea la anulación; uno que nadie confirmó se cancela
+  // (es de varias facturas: el cliente vuelve a elegir desde su portal).
+  const [agrupados] = await withOrgTx(orgId, sql`
+    select p.id, p.estado, p.stripe_payment_intent_id from pagos_agrupados p
+      join pago_agrupado_documentos a on a.pago_id = p.id and a.org_id = p.org_id
+     where p.org_id = ${orgId} and a.documento_id = ${doc.id} and p.estado in ('creado', 'procesando')`);
+  const enProceso = { ok: false as const, error: 'Hay un pago en proceso para esta factura. Espera a que se confirme y emite una nota de crédito en lugar de anularla.' };
+  for (const row of agrupados) {
+    if (row.estado !== 'creado' && row.estado !== 'procesando') continue;
+    if (row.estado === 'procesando' || !account) return enProceso;
+    const grupoPi = row.stripe_payment_intent_id ? String(row.stripe_payment_intent_id) : '';
+    if (grupoPi) {
+      try {
+        const { stripe } = await import('../billing');
+        const intent = await stripe(`/v1/payment_intents/${encodeURIComponent(grupoPi)}`, undefined, 'GET', { stripeAccount: account });
+        const status = String(intent?.status || '');
+        if (['processing', 'requires_capture', 'succeeded'].includes(status)) return enProceso;
+        if (status !== 'canceled') {
+          await stripe(`/v1/payment_intents/${encodeURIComponent(grupoPi)}/cancel`, undefined, 'POST', {
+            stripeAccount: account, idempotencyKey: `cord-grupo-cancel-${row.id}`,
+          });
+        }
+      } catch (error: any) {
+        if (error?.code !== 'resource_missing') {
+          return { ok: false, error: 'No pudimos cerrar el cobro en línea de esta factura. Intenta de nuevo en un momento.' };
+        }
+      }
+    }
+    await withOrgTx(orgId, sql`
+      update pagos_agrupados set estado = 'cancelado', updated_at = now()
+       where id = ${row.id} and org_id = ${orgId} and estado = 'creado'`);
   }
   if (doc.mp_preference_id) {
     const { expireMpPreference } = await import('../mercadopago');

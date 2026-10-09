@@ -72,6 +72,11 @@ Implementación local apagada por defecto, pendiente de DNS/TLS real.
                    propia. Misma política de enmarcado (src/lib/embed-frame.ts) y misma
                    regla de rieles (publicInvoicePayability). Consulta GET /api/i/[token]
                    cada 30 s mientras está abierta y emite status_changed y cord:paid.
+/portal/[token]  → portal del cliente: sus facturas, saldo por divisa, pago de varias a
+                   la vez y cobro automático (src/lib/cobros/portal.ts). El token es
+                   credencial portadora: middleware fija no-store, noindex y
+                   no-referrer, y la página va SIN analítica. Solo en cordhq.app,
+                   nunca en el dominio propio del negocio. export const prerender = false.
 /.well-known/security.txt → RFC 9116, Expires siempre ~6 meses adelante.
 
 # Dev Blog (Subdominio dev.cordhq.app)
@@ -287,6 +292,18 @@ APIs de cobros (ago 2026)
                                              PUBLIC_API_PREFIXES: sin él el middleware
                                              responde 401 y la factura no se puede
                                              pagar (ver regla 33).
+/api/portal/[token]/{payment-intent,autopay}
+                                             carril público del portal: pagar varias
+                                             facturas (un intento, reparto guardado)
+                                             y activar/confirmar/apagar el cobro
+                                             automático. limitPublicPayment; también en
+                                             PUBLIC_API_PREFIXES.
+/api/clientes/portal                  POST   el negocio crea, rota, apaga o envía el link
+                                             del portal y apaga el cobro automático.
+/api/billing/connect/domiciliacion    PATCH  enciende SEPA/ACH (pide la capacidad) y el
+                                             permiso de cobro automático.
+/api/cron/cobro-automatico            GET    cobra lo vencido de los clientes con cobro
+                                             automático y concilia cobros abiertos.
 /api/stripe/webhook                   POST   plataforma Y cuentas conectadas, con
                                              secreto separado. Falla cerrado sin
                                              secreto; un evento firmado con el de

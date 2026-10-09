@@ -79,6 +79,71 @@ marcado pagado por el webhook). La app de México (MLM) conecta vendedores de ot
 país: se confirmó el mismo día con un vendedor de prueba de Colombia (MCO), así que
 no hace falta una app por país.
 
+## Portal del cliente, cobro agrupado, cobro automático y domiciliación — oct 2026
+
+Código en `src/lib/cobros/`; esquema en la sección "PORTAL DEL CLIENTE…" de
+`db/schema.sql`, espejo de `db/deploy/2026-10-08-cobros-portal.sql`.
+
+- **Portal** (`/portal/[token]`, `src/lib/cobros/portal.ts`): un link POR CLIENTE
+  con sus facturas emitidas, el saldo por divisa (nunca sumado entre divisas), el
+  pago de varias a la vez y el cobro automático. El token (32 bytes) es la
+  credencial: `cord_resolve_portal` lo traduce y la consulta vuelve a `withOrgTx`.
+  La ruta va sin referrer, sin caché, sin indexar y SIN analítica; vive en
+  `cordhq.app` y nunca en el dominio propio del negocio (ese solo sirve `/q` e
+  `/i`). El negocio lo crea, rota, apaga o envía desde la ficha del cliente
+  (`/api/clientes/portal`, con auditoría). Solo aparecen las facturas con
+  `cliente_id`.
+- **Cobro agrupado** (`agrupados.ts`): un PaymentIntent paga varias facturas. El
+  reparto se decide al crear el cobro con el saldo REAL de cada factura (el
+  navegador solo elige cuáles) y queda en `pago_agrupado_documentos`; el webhook
+  lo aplica con `applyPayment` por factura, idempotente por el mismo índice
+  `(documento_id, stripe_payment_intent_id)`. El intento NO lleva `documento_id`:
+  si lo llevara, `settleInvoiceFromIntent` le aplicaría el cobro completo a una
+  sola factura. Una comisión por cobro (la llave de `comisiones` es el PI).
+- **Reembolsos repartidos** (`allocateInvoiceRefund` en `reconciliation.ts`):
+  devolver parte de un cobro que pagó varias facturas se asigna de la última
+  aplicada a la primera, completo o nada; sin reparto, un reembolso solo cuenta
+  si su cobro pagó una sola factura (todo lo anterior a oct 2026).
+- **Domiciliación** (`metodos.ts`): SEPA Direct Debit en EUR para ES/DE/FR y ACH
+  en USD para EE. UU. La enciende el negocio en Ajustes › Cobros
+  (`/api/billing/connect/domiciliacion`), que pide la capacidad
+  (`sepa_debit_payments` / `us_bank_account_ach_payments`) a la cuenta conectada;
+  `orgs.stripe_capacidades` guarda su estado desde `account.updated`, y solo una
+  capacidad `active` se ofrece. Donde Cord cobra comisión (hoy MXN) solo se
+  ofrece tarjeta: la comisión es de tarjeta y no hay tarifa aprobada para débito.
+  Un débito queda días en `processing`: `documentos_fiscales.pago_en_proceso_pi`
+  bloquea cobrar otra vez y anular, y `/i` y el portal lo dicen. Stripe manda al
+  titular el aviso de cada cargo SEPA y la confirmación del mandato ACH (por eso
+  el Customer lleva el correo del cliente). ACH no admite reembolsos parciales.
+- **Cobro automático** (`automatico.ts`, cron `/api/cron/cobro-automatico`
+  diario 14:15 UTC): lo ACTIVA el cliente en su portal con un SetupIntent (o al
+  pagar, marcando "guardar"). El consentimiento lo registra el servidor (fecha,
+  IP, navegador) como PENDIENTE con el id del intento, y solo se activa cuando el
+  proveedor confirma ESE método de ESE Customer. Se cobran, en UN cargo por
+  cliente y divisa, las facturas vencidas desde el día de la autorización y
+  emitidas al menos un día antes; el método tiene que cubrir la divisa. El
+  correo de la factura le avisa al cliente fecha y método del cargo. El negocio
+  solo puede apagarlo (por cliente en su ficha, o para todos en Ajustes).
+- **Reintentos** (`reintentos.ts`, pura y probada): un rechazo duro (robada,
+  fraude, mandato revocado) apaga el método y no se reintenta; datos vencidos o
+  inválidos piden otro método; autenticación requerida pide pagar desde el
+  portal; fondos insuficientes esperan al siguiente 1 o 16 del mes; el resto en
+  2, 4 y 7 días; máximo 4 intentos con tarjeta. Un débito solo se reintenta por
+  fondos, 2 veces y dentro de 30 (SEPA) o 40 (ACH) días, los mismos topes que
+  aplica el proveedor. Un rechazo cuenta una vez aunque lleguen el error síncrono
+  y el webhook. Al cliente le llega un correo con su portal; al negocio, una
+  tarea cuando el cobro se detiene.
+- **Respuesta incierta**: sin respuesta del proveedor el cobro queda `creado` sin
+  intento (el índice `uq_pagos_agrupados_automatico_vivo` impide abrir otro) y
+  la siguiente corrida reintenta con la MISMA clave de idempotencia; después de
+  20 horas se cancela (si el cargo hubiera salido, su webhook ya lo habría
+  ligado). El cron también concilia cobros sin webhook o con un débito de más de
+  3 días en proceso.
+- **Eventos del webhook** que este carril necesita en el scope de cuentas
+  conectadas: `payment_intent.processing`, `payment_intent.canceled`,
+  `setup_intent.succeeded` y `mandate.updated` (ver
+  `pendientes-integraciones.md`).
+
 ## Términos de pago, claves SAT y CFDI a extranjeros — oct 2026
 
 - **Términos de pago:** `contado` o `net<N>` = N días naturales. Se ofrecen `net7`,

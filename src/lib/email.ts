@@ -15,6 +15,7 @@ import { currencyDecimals, normalizeCurrency } from './currency';
 import { buildInvoicePdfAttachment } from './fiscal/invoice-attachment';
 import { publicDocumentUrl } from './public-links';
 import { enviarPorGmail, OPERACIONES_GMAIL } from './integraciones/gmail/envio';
+import { etiquetaMetodo } from './cobros/metodos';
 
 const RESEND_KEY = import.meta.env.RESEND_API_KEY || process.env.RESEND_API_KEY;
 const RESEND_FROM = import.meta.env.RESEND_FROM || process.env.RESEND_FROM || 'Cord <cotizaciones@cordhq.app>';
@@ -220,6 +221,9 @@ interface InvoiceEmailRow {
     email_intro: string | null;
     email_firma: string | null;
     pdf_mensaje: string | null;
+    autopay_activo: boolean | null;
+    autopay_metodo: { tipo?: string; marca?: string | null; last4?: string | null; banco?: string | null } | null;
+    cobro_automatico_permitido: boolean | null;
 }
 
 async function loadInvoiceEmail(orgId: string, documentoId: string): Promise<InvoiceEmailRow | null> {
@@ -232,7 +236,8 @@ async function loadInvoiceEmail(orgId: string, documentoId: string): Promise<Inv
                o.logo_url, o.color_secundario, o.brand_profile,
                o.email_from_name, o.email_reply_to, o.email_contacto,
                o.portal_powered, o.sandbox_of, o.moneda,
-               o.email_intro, o.email_firma, o.pdf_mensaje
+               o.email_intro, o.email_firma, o.pdf_mensaje,
+               cl.autopay_activo, cl.autopay_metodo, o.cobro_automatico_permitido
           from documentos_fiscales d
           join orgs o on o.id = d.org_id
           left join clientes cl on cl.id = d.cliente_id
@@ -318,6 +323,20 @@ export async function notifyInvoiceIssued(orgId: string, documentoId: string): P
         .replace(/\{total\}/g, moneyFmt(Number(r.total || 0), L, currency))
         .replace(/\{negocio\}/g, esc(r.org_nombre));
 
+    // Cobro automático: el cliente sabe desde que recibe la factura cuándo y a
+    // qué método se le va a cargar. Solo si el método cubre la divisa (una
+    // cuenta SEPA no paga dólares).
+    const metodoAutopay = r.autopay_activo && r.cobro_automatico_permitido !== false ? r.autopay_metodo : null;
+    const cubre = !!metodoAutopay?.tipo && (metodoAutopay.tipo === 'card'
+        || (metodoAutopay.tipo === 'sepa_debit' && currency === 'EUR')
+        || (metodoAutopay.tipo === 'us_bank_account' && currency === 'USD'));
+    const avisoAutopay = cubre && saldo > 0
+        ? ' ' + tv(L, 'fact.e_autopay', {
+            metodo: esc(etiquetaMetodo(metodoAutopay as any, L)),
+            fecha: esc(r.due_date ? new Date(String(r.due_date)).toLocaleDateString(L === 'en' ? 'en-US' : 'es-MX', { day: 'numeric', month: 'long', timeZone: 'UTC' }) : t(L, 'fact.e_autopay_hoy')),
+        })
+        : '';
+
     const html = invoiceEmailHtml(r, {
         locale: L, link, saldo, poweredLine,
         titulo: '',
@@ -325,9 +344,10 @@ export async function notifyInvoiceIssued(orgId: string, documentoId: string): P
             org: esc(r.org_nombre),
             numero: esc(r.invoice_number || ''),
             total: moneyFmt(Number(r.total || 0), L, currency),
-        }),
+        }) + avisoAutopay,
         cta: t(L, 'fact.e_cta_ver'),
-        intro: (canCustomizeEmail && r.email_intro?.trim()) ? fill(r.email_intro) : undefined,
+        // El aviso del cobro automático va también tras el texto propio del negocio.
+        intro: (canCustomizeEmail && r.email_intro?.trim()) ? fill(r.email_intro) + avisoAutopay : undefined,
         firma: (canCustomizeEmail && r.email_firma?.trim()) ? fill(r.email_firma) : undefined,
         mensaje: r.pdf_mensaje?.trim() ? esc(r.pdf_mensaje) : undefined,
     });

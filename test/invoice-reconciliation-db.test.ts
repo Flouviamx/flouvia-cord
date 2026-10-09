@@ -2,6 +2,7 @@ vi.mock('../src/lib/fiscal/issuance-usage', () => ({ meterInvoiceEmission: (_org
 vi.mock('../src/lib/org-entitlements', () => ({ getEffectivePlan: async () => 'starter' }));
 import { PGlite } from '@electric-sql/pglite';
 import { readFileSync } from 'node:fs';
+import { splitStatements } from '../scripts/migrate-facturacion.mjs';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 const m = vi.hoisted(() => ({ tx: vi.fn(), event: vi.fn(), issue: vi.fn(), cancel: vi.fn() }));
 vi.mock('../src/lib/db', () => ({ withOrgTx: m.tx, sql: (s: TemplateStringsArray, ...values: unknown[]) => ({ text: s.reduce((out, part, i) => out + (i ? `$${i}` : '') + part, ''), values }) }));
@@ -68,8 +69,9 @@ beforeAll(async () => {
   await db.exec(schema.slice(start, next === -1 ? undefined : next));
   // El reparto de reembolsos vive en la sección del portal (cobro agrupado).
   const portal = schema.slice(schema.indexOf('-- PORTAL DEL CLIENTE, COBRO AGRUPADO'));
-  for (const sentencia of portal.split(';').filter((x) => /documento_reembolso_asignaciones/.test(x) && !/grant /.test(x))) {
-    await db.exec(sentencia.replace(/^\s*(--[^\n]*\n\s*)*/, ''));
+  const fin = portal.indexOf('-- END cobros-portal');
+  for (const sentencia of splitStatements(portal.slice(0, fin)).filter((x: string) => /\b(documento_reembolso_asignaciones|pagos_agrupados|pago_agrupado_documentos)\b/.test(x) && !/grant /.test(x))) {
+    await db.exec(sentencia);
   }
   m.tx.mockImplementation((orgId: string, ...queries: Array<{ text: string; values: unknown[] }>) => db.transaction(async (tx) => {
     await tx.query("select set_config('app.org_id', $1, true)", [orgId]);
