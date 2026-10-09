@@ -139,6 +139,13 @@ export interface FiscalDocumentResponse {
   xmlUrl?: string;
   rawProviderData?: Record<string, unknown>;
   error?: string;
+  /**
+   * Número legal que asignó la AUTORIDAD (rieles con numeración propia, p. ej.
+   * ARCA: punto de venta + número). Reemplaza al folio interno de Cord.
+   */
+  invoiceNumber?: string;
+  /** Instante de emisión que registró la autoridad, si difiere del de este intento (recuperación). */
+  issuedAt?: string;
 }
 
 export interface FiscalCancelRequest {

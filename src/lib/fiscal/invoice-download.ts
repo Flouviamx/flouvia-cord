@@ -11,6 +11,7 @@ import { isEInvoiceFormat } from './einvoice/model';
 import { currentLocale } from '../context';
 import { publicDocumentUrl } from '../public-links';
 import { isTermCode, termDays } from '../payment-terms';
+import { representacionDe } from './latam/representacion';
 
 const FACTURAPI_KEY = process.env.FACTURAPI_API_KEY || process.env.FACTURAPI_KEY || '';
 const FACTURAPI_BASE = (process.env.FACTURAPI_URL || 'https://www.facturapi.io/v2').replace(/\/$/, '');
@@ -191,6 +192,7 @@ export async function invoicePdfInput(orgId: string, doc: any, simulated: boolea
     serviceDateEnd: (doc.service_date_end as string) || null,
     creditNoteOfNumber: (doc.credit_note_of_number as string) || null,
     verifactu: doc.provider_data?.verifactu || null,
+    autoridad: representacionDe(doc.provider_data),
     // El "cómo pagar" es la página de LA FACTURA: ahí está el saldo real de
     // este documento. El link de la cotización queda como respaldo para los
     // documentos emitidos antes de que la factura tuviera token propio; una

@@ -60,6 +60,10 @@
       "schedule": "0 9 * * *"
     },
     {
+      "path": "/api/cron/fiscal-latam",
+      "schedule": "20 9 * * *"
+    },
+    {
       "path": "/api/cron/anclas-tiempo",
       "schedule": "0 12 * * *"
     },

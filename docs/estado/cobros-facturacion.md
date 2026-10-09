@@ -491,6 +491,130 @@ con el código anterior que rompan el esquema (NIF con prefijo `ES`, R1 viejos, 
 sin cliente, `ImporteTotal` con IRPF restado) se aparcarán o necesitarán
 subsanación.
 
+## Rieles fiscales de LatAm — oct 2026
+
+Factura electrónica autorizada por la autoridad de cada país, con motor propio
+(sin PAC ni intermediario), igual que Verifactu. Hoy hay un riel: **ARCA
+(Argentina)**. El marco está hecho para que NFS-e Nacional (Brasil), DIAN
+(Colombia), SUNAT (Perú) y SII (Chile) se monten encima sin tocar la emisión.
+
+### El marco (`src/lib/fiscal/latam/`)
+
+| Pieza | Archivo | Contrato |
+|---|---|---|
+| Registro de rieles | `rieles.ts` | `RIELES[id]`: país, autoridad, tipos de documento (`<rail>_invoice`/`<rail>_credit_note`), prefijo de variables, si lo autorizado se puede anular y si la autoridad numera. `document-kind.ts`, `invoices.ts` y `FiscalFactory` leen de aquí; ningún `if (country === 'AR')` fuera del riel. |
+| Interruptor | `config.ts` | `<PREFIJO>_ENABLED` (`true` o apagado) y `<PREFIJO>_ENTORNO` (`homologacion` por defecto, `produccion`). Nace apagado; un entorno desconocido apaga el riel. |
+| Credenciales | `certificado.ts`, `credenciales.ts` | Certificado + llave por organización, riel y **entorno** (`fiscal_rail_credenciales`), cifrados con `encryptRequiredSecret`. Al navegador solo vuelve el resumen (vigencia, titular, huella). PEM/DER, PKCS#1/#8 cifrada o PKCS#12; RSA ≥ 2048. |
+| Ajustes | `credenciales.ts` | `fiscal_rail_ajustes.ajustes` (jsonb) por riel, independiente del entorno. |
+| Accesos | `accesos.ts` | Ticket de la autoridad cacheado por org/riel/entorno/servicio, cifrado, renovado por UNA instancia (lease) y con `bloqueado_hasta` cuando la autoridad pide esperar. |
+| Comprobantes | `comprobantes.ts` | `fiscal_rail_comprobantes`: un intento por pedido, `pendiente → autorizado \| rechazado \| incierto → autorizado \| descartado`. Índices únicos parciales (número y documento, entre los vivos) y trigger: lo autorizado no se edita ni se borra, rechazado/descartado son finales, un incierto solo se resuelve consultando. |
+| Numeración | `comprobantes.ts` (`conSecuencia`) | Lease por secuencia (`fiscal_rail_secuencias`) + índice único: un solo pedido en vuelo por punto de venta y tipo, sin advisory locks (el driver HTTP de Neon no sostiene una sesión entre llamadas). |
+| Outbox | `resolucion.ts` + `/api/cron/fiscal-latam` | Cada hora (`cord-crons.yml`) resuelve por CONSULTA lo que quedó `pendiente`/`incierto` hace más de 2 min. Nunca reenvía. Barrido con `cord_fiscal_rail_orgs_por_resolver()` (security definer, solo `app.scope = 'system'`); el trabajo de cada org vuelve a `withOrgTx`. |
+| Errores | `errores.ts` | `RailDatosError` (corregible), `RailNoDisponibleError` (credencial/ajustes), `RailTransitorioError` (reintentar): mensaje apto para el dueño del negocio, nunca el texto crudo de la autoridad (regla 14). |
+| Impresión | `representacion.ts` | `provider_data.latam.representacion`: título, letra, código, filas, QR, leyendas y pie. `invoice-pdf.ts` la dibuja sin saber de qué país es. |
+| Estado | `estado.ts` | `railListo(org, rail)`: lo consulta `document-kind.ts` para decidir si nace `<rail>_invoice`, proforma o factura comercial. |
+
+`FiscalDocumentResponse` ganó `invoiceNumber` (el número legal que asigna la
+autoridad reemplaza al folio interno) e `issuedAt`. `voidInvoice` lee
+`anulable` del registro: donde la autoridad no anula, pide nota de crédito.
+
+**Montar un riel nuevo:** agregar su entrada en `RIELES`; su carpeta
+`latam/<rail>/` con el armado del comprobante (puro, con extensiones `.ts`
+para cargarse en Node plano), el cliente del web service y su `estado.ts`; el
+caso en `latam/estado.ts` y `latam/resolucion.ts`; un `FiscalProvider` en
+`providers/` registrado antes de `CommercialInvoiceProvider`; su sección en
+Ajustes › Datos fiscales; fixtures oficiales y un `scripts/<rail>-check.mjs`
+encadenado en `test:payments`. Las tablas no cambian.
+
+### ARCA (Argentina)
+
+Web services WSAA (autenticación con CMS firmado) y WSFEv1 (CAE), directo con
+ARCA. Proveedor: `providers/ArgentinaArcaProvider.ts`; riel:
+`latam/arca/`. Cobertura:
+
+- **Clase A/B/C** según la condición frente al IVA del emisor (Ajustes) y del
+  receptor (campo nuevo `clientes.condicion_iva`, solo para clientes
+  argentinos, tabla de la RG 5616/2024). Monotributo y exento emiten C, sin
+  IVA discriminado.
+- **Receptor**: CUIT (80), DNI (96) o consumidor final sin identificar (99/0)
+  solo en B y C y por debajo de $ 10.000.000 (RG 5700/2025). Sin condición
+  capturada se infiere consumidor final solo si no tiene CUIT; con CUIT se pide.
+- **Importes**: IVA por alícuota en `AlicIva` (0 % se informa como exento en
+  `ImpOpEx`), cuadres del manual (10048, 10023, 10061, 10051) verificados antes
+  de enviar.
+- **Descuento de documento (bonificación)**: WSFEv1 no tiene conceptos ni campo
+  de bonificación; `ImpNeto` es el neto gravado. Cada concepto llega con su
+  base ya neta y su parte del descuento (`discount`, motor de Cord), así que el
+  neto, las bases de `AlicIva` y el IVA van netos y cuadran con el documento. La
+  suma de los descuentos debe coincidir con el `discountTotal` del documento o
+  no se envía; la bonificación se guarda en la solicitud y se imprime en el
+  bloque de ARCA (el PDF ya muestra el importe bruto por concepto y el renglón
+  de descuento). Un concepto que el descuento dejó en cero no informa alícuota.
+- **Servicios** (concepto 2/3): período desde `service_date`/`service_date_end`
+  y vencimiento desde `due_date` (nunca anterior a la fecha del comprobante).
+- **Moneda**: `MonId` de la tabla de ARCA; la cotización es la congelada del
+  documento si su divisa contable es ARS (regla 22), si no la oficial de ARCA
+  (`FEParamGetCotizacion`); sin ella falla cerrado. `CanMisMonExt` no se envía.
+- **Nota de crédito**: misma clase, receptor, condición, concepto y moneda que
+  la factura autorizada que ajusta, con `CbtesAsoc`. Un comprobante con CAE no
+  se anula: la UI y `voidInvoice` piden nota de crédito.
+- **Recuperación**: respuesta perdida → consulta inmediata
+  (`FECompUltimoAutorizado` + `FECompConsultar`) y, si no alcanza, el cron.
+  Errores 500–502 de ARCA → incierto. Token rechazado (600/601) → ticket nuevo
+  y el MISMO número. 10016 (numeración cambiada) → una vuelta con el número
+  nuevo. Un número que ARCA tiene con otros datos se descarta.
+- **Impresión**: título y letra, `COD. nn`, punto de venta y número, CUIT,
+  condición, receptor, CAE y su vencimiento, comprobante asociado, QR
+  (RG 4892/2020, URL `https://www.arca.gob.ar/fe/qr/`) y leyendas: "A
+  CONSUMIDOR FINAL", transparencia fiscal en B (Ley 27.743, RG 5614/2024) y
+  crédito fiscal del monotributista en A.
+- **Homologación**: número con prefijo `H-`, `simulado: true` y
+  `livemode: false` (no cobra medidor ni se presenta como factura real), leyenda
+  "sin validez fiscal".
+
+**No cubierto (se rechaza con un mensaje antes de pedir el CAE):** Factura E de
+exportación (cliente fuera de Argentina), Factura de Crédito Electrónica
+MiPyME, receptor "No categorizado" (exige percepción), retenciones,
+tributos/percepciones (`ImpTrib`), CAEA y comprobantes M.
+
+**Verificación:** `npm run security:arca` (en `test:payments`) valida cada
+pedido contra el esquema de los WSDL oficiales y el TRA contra su XSD
+(`scripts/fixtures/arca/`), reproduce el QR del ejemplo oficial, verifica el
+CMS con openssl y lee respuestas reales de homologación. `test/arca-db.test.ts`
+(PGlite + ARCA simulado) cubre autorización, rechazo, recuperación, tickets,
+nota de crédito, concurrencia, trigger y RLS; `test/arca-comprobante.test.ts`
+las piezas puras.
+
+### Activación paso a paso
+
+1. `npm run db:migrate` (o el despliegue, que aplica
+   `db/deploy/2026-10-08-latam-arca.sql`).
+2. **Homologación.** Un certificado de prueba se genera en WSASS ("Autogestión
+   certificados Homologación", con clave fiscal) y se le asocia el servicio
+   `wsfe`. En local: `ARCA_PRUEBA_PASSWORD='…' npm run arca:prueba -- --cert c.crt --key c.key --cuit <CUIT> --pto-vta <n> --parametros --emitir`
+   (sin certificado, solo comprueba los servidores). Nunca toca producción ni
+   la base. `--parametros` coteja las tablas vivas de ARCA con las constantes.
+3. **De punta a punta en un Preview** con `ARCA_ENABLED=true` y
+   `ARCA_ENTORNO=homologacion`: una org argentina de prueba con plan Starter
+   carga CUIT, sube el certificado, completa punto de venta, condición y
+   concepto, emite una factura A, una B a consumidor final y una nota de
+   crédito.
+4. **Producción.** Cada negocio crea en ARCA un punto de venta "Factura
+   electrónica - Web services", genera su certificado de producción y lo
+   asocia a `wsfe`. Después `ARCA_ENTORNO=produccion` y `ARCA_ENABLED=true` en
+   Production. Cambiar de entorno exige que cada negocio suba el certificado del
+   entorno nuevo (se guardan por separado).
+
+**Lo que no se pudo verificar sin un certificado real de homologación** (el
+WSAA de homologación rechaza un certificado autofirmado con
+`cms.cert.untrusted`/`cms.cert.blacklist`): la emisión real de un CAE, las
+listas vivas de `FEParamGetTiposIva`/`TiposMonedas`/`CondicionIvaReceptor`
+(`arca:prueba --parametros` lo hace), los valores de `EmisionTipo` de los puntos
+de venta y el comportamiento de producción. Sí se verificó contra ARCA real:
+que el CMS es legible (el WSAA llegó a evaluar el certificado), que los pedidos
+de Cord se deserializan en WSFEv1 (respuesta 600 por token y no `soap:Client`)
+y el TLS de los cuatro endpoints.
+
 ## Documento de factura — ago 2026
 
 Fuera de México, el PDF que genera Cord **es** la factura que ve el comprador, así
