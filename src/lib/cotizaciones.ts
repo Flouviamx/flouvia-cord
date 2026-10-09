@@ -329,7 +329,7 @@ export async function createCotizacion(
     try {
         const usTax = await prepareUsTaxForDocument(orgId, {
             clienteId, currency: monedaVenta, ivaIncluido: iva_incluido, descuento: descuentoParaMotor(descuento),
-            items, calculoId: input.us_tax_calculo_id, requireClient: !!input.send,
+            items, calculoId: input.us_tax_calculo_id, requireClient: !!input.send, orgCountry: catalogo.country,
         });
         if (usTax) {
             catalogo = await taxCatalogFor(orgId, { usTaxCalculoId: usTax.calculoId });

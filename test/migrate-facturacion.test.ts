@@ -120,6 +120,16 @@ describe('migración de despliegue de facturación', () => {
             const rlsCupones = (await db.query<{ relname: string }>(`select relname from pg_class where relname in ('cupones', 'cupon_redenciones') and relrowsecurity and relforcerowsecurity order by relname`)).rows;
             expect(rlsCupones.map((r) => r.relname)).toEqual(['cupon_redenciones', 'cupones']);
 
+            // Sales tax de EE. UU. por dirección (db/deploy/2026-10-09-us-tax.sql).
+            const rlsUsTax = (await db.query<{ relname: string }>(`select relname from pg_class where relname in ('us_tax_calculos', 'us_tax_registros') and relrowsecurity and relforcerowsecurity order by relname`)).rows;
+            expect(rlsUsTax.map((r) => r.relname)).toEqual(['us_tax_calculos', 'us_tax_registros']);
+            const usTaxCols = (await db.query<{ c: string }>(`select table_name || '.' || column_name as c from information_schema.columns
+                where column_name in ('us_tax_calculo_id', 'tax_breakdown', 'tax_exempt', 'tax_exempt_cert', 'us_tax_auto', 'us_tax_origen') order by 1`)).rows.map((r) => r.c);
+            expect(usTaxCols).toEqual([
+                'clientes.tax_exempt', 'clientes.tax_exempt_cert', 'cotizacion_items.tax_breakdown', 'cotizaciones.us_tax_calculo_id',
+                'documentos_fiscales.us_tax_calculo_id', 'orgs.us_tax_auto', 'orgs.us_tax_origen',
+            ]);
+
             // Canadá: la QST suelta pasa a la combinada, y la tasa plana la sigue.
             expect((await db.query<{ nombre: string; tasa: string }>(`select nombre, tasa::text from impuestos where org_id = '${ORG_CA}'`)).rows)
                 .toEqual([{ nombre: 'GST 5% + QST 9.975% (QC)', tasa: '14.975' }]);

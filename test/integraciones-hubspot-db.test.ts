@@ -130,7 +130,8 @@ beforeAll(async () => {
         create table clientes(id uuid primary key default gen_random_uuid(), org_id uuid, empresa text, contacto text, email text, telefono text,
             rfc text, terminos_default text, limite_credito numeric, nivel text, descuento_pct numeric, regimen_fiscal text, uso_cfdi text,
             cp_fiscal text, country_code text, direccion_line1 text, direccion_line2 text, ciudad text, region text, condicion_iva smallint,
-            einvoice_address text, buyer_reference text, giro text, comuna text, dian jsonb, created_at timestamptz default now());
+            einvoice_address text, buyer_reference text, giro text, comuna text, dian jsonb,
+            tax_exempt boolean not null default false, tax_exempt_cert jsonb, created_at timestamptz default now());
         create table cotizaciones(id uuid primary key default gen_random_uuid(), org_id uuid, folio text, status text, total numeric,
             base_currency text, cliente_id uuid, created_at timestamptz default now(), approved_at timestamptz, paid_at timestamptz, vigencia date);
         insert into orgs values ('${A}', 'MXN'), ('${B}', 'USD');

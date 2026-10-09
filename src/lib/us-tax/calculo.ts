@@ -139,6 +139,11 @@ export interface PrepareUsTaxInput {
     /** Un documento que se ENVÍA necesita cliente: sin destino no hay tasa. */
     requireClient?: boolean;
     /**
+     * País de la organización si el llamador ya lo tiene (el de `taxCatalogFor`):
+     * fuera de EE. UU. no se toca la base en cada guardado.
+     */
+    orgCountry?: string | null;
+    /**
      * La venta a la que pertenece el documento, si ya existe
      * ('cotizacion:<id>' o 'documento:<id>'). Un documento nuevo no la tiene
      * todavía: la reclama con `claimUsTaxCalculo()` después de insertarse.
@@ -171,6 +176,8 @@ export async function claimUsTaxCalculo(orgId: string, calculoId: string | null 
  * el documento sigue con el catálogo de siempre.
  */
 export async function prepareUsTaxForDocument(orgId: string, input: PrepareUsTaxInput): Promise<{ calculoId: string } | null> {
+    // Fuera de EE. UU. no se toca nada: ni la base ni el contexto del request.
+    if (input.orgCountry && String(input.orgCountry).toUpperCase() !== 'US') return null;
     const locale = currentLocale();
     const cfg = await loadUsTaxConfig(orgId);
     if (cfg.country !== 'US' || !cfg.auto) return null;

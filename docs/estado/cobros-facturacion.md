@@ -1869,7 +1869,9 @@ cuenta declara su estado (`fiscal_metadata.region`): `usStateTaxPresets()`
 siembra `Sales tax <ST> <n>%` + `Exempt/Resale` a partir de `US_STATE_TAX` (las
 50 + DC). Un estado nuevo sin sales tax estatal (Oregon, por ejemplo) no ofrece
 el preset de consumo, solo el exento — inventar una tasa 0% de "consumo" ahí
-sería peor que dejarla vacía.
+sería peor que dejarla vacía. La tasa COMBINADA por dirección del cliente
+(estado + condado + ciudad + distritos) es una preferencia aparte: ver "Sales
+tax de EE. UU. por dirección del cliente" abajo.
 
 ### Cartera: un solo lugar para los dos rieles
 
@@ -2145,6 +2147,194 @@ Contratos que quedaron vigentes tras auditar Cord Invoicing en los 12 mercados.
   `fmtDate()`. El driver entrega un `date` como medianoche del servidor y
   `fmtDate` lo convierte a la zona del negocio: en México el detalle de la
   factura decía que vencía un día antes. Para comparar o serializar, `venceDia()`.
+
+## Sales tax de EE. UU. por dirección del cliente — oct 2026
+
+El catálogo de arranque de EE. UU. siembra solo la tasa ESTATAL mínima
+(`usStateTaxPresets()`): un negocio en Los Ángeles cobraba 7.25 % donde la tasa
+combinada de estado + condado + ciudad + distritos especiales es ~9.5 %. Con la
+preferencia **Calcular el sales tax por la dirección del cliente** (Ajustes ›
+Impuestos, `orgs.us_tax_auto`, nace apagada), la tasa de cada línea de una
+cotización o factura para un cliente en EE. UU. sale de un cálculo real por su
+dirección, hecho con la Tax Calculation API de Stripe **en la cuenta conectada
+del negocio** (`Stripe-Account`). El negocio es quien está registrado ante cada
+estado, quien recauda y quien declara: el cálculo usa SUS registros, no los de
+Cord. Código: `src/lib/us-tax/` (`core.ts` puro, `stripe.ts` la única puerta a
+`/v1/tax/*`, `calculo.ts` cálculo/transacciones/barrido, `config.ts` Ajustes,
+`editor.ts` arranque de los editores) y `src/lib/us-tax-client.ts` (vista previa
+en el navegador).
+
+### Qué cuesta y quién lo paga
+
+Fuente primaria (verificada el 2026-10-09):
+
+- [stripe.com/tax/pricing](https://stripe.com/tax/pricing), integración por
+  API (plan Tax Basic, pago por uso): **USD 0.50 por transacción** registrada
+  "where you're registered to collect taxes", con **10 cálculos incluidos por
+  transacción** y **USD 0.05 por cálculo** adicional.
+- [support.stripe.com/questions/understanding-stripe-tax-pricing](https://support.stripe.com/questions/understanding-stripe-tax-pricing):
+  Transaction API USD 0.50 por llamada, Calculation API USD 0.05 por llamada,
+  cobro **diario** de todos los cálculos desde el saldo y reembolso a fin de
+  mes de los cálculos cubiertos por transacciones (no se acumulan entre meses).
+  El cálculo se cobra aunque no termine en transacción.
+- [docs.stripe.com/connect/direct-charges-fee-payer-behavior](https://docs.stripe.com/connect/direct-charges-fee-payer-behavior),
+  tabla "List of fee behaviors for payer values": fila **Stripe Tax** →
+  `application_custom` = **Platform**. Las cuentas de Cord Payments se crean con
+  `type: 'custom'` (`createConnectAccount`, `src/lib/billing.ts`), así que
+  `controller.fees.payer = application_custom`: **lo paga Cord**, no el negocio.
+
+Decisión: no se le cobra por uso al negocio (eso exigiría precios y medidores
+nuevos en Stripe Billing). La capacidad es un **feature gate** desde **Starter**
+(`FEATURE_MIN_PLAN.us_sales_tax`, regla 18), con el mismo criterio que la
+emisión fiscal integrada; la UI lo dice como "Incluido en tu plan: no se te
+cobra por cálculo". Para acotar lo que paga Cord: `strictRateLimit` por
+organización en el punto donde se gasta (30/min y 300/h, `calcularYGuardar`),
+otro por persona e IP en la vista previa, y el **reuso** del cálculo de la
+vista previa al guardar (huella idéntica en las últimas 24 h): una cotización
+típica cuesta 1–3 cálculos y una transacción. Con un plan que ya no la incluye
+(downgrade) la preferencia se conserva pero queda inoperante: los documentos
+usan el catálogo manual (regla 17).
+
+### Configuración (Ajustes › Impuestos)
+
+`PUT /api/impuestos/us-config` (`saveUsTaxConfig`): domicilio completo del
+negocio (`orgs.us_tax_origen`, calle + ciudad + estado + ZIP), qué vende
+(`orgs.us_tax_codigo`, lista cerrada de cuatro product tax codes generales:
+`txcd_20030000` servicios, `txcd_99999999` bienes físicos, `txcd_10103001` SaaS
+empresarial, `txcd_10000000` servicios digitales) y los estados donde recauda
+(`us_tax_registros`). Se sincroniza con la Tax Settings API (`head_office`,
+`defaults[tax_code]`) y la Registrations API (`state_sales_tax`, `active_from:
+now`), todo con `Stripe-Account`:
+
+- Un registro creado allá y no anotado aquí (caída a medio guardado) se
+  **adopta** al siguiente guardado (se listan los activos) en vez de
+  duplicarse; un alta lleva `Idempotency-Key = us-tax-reg:<fila local>`.
+- Un estado que se quita se da de **baja** (`baja_at`) y se **vence** allá
+  (`expires_at=now`): los registros no se borran, ni en Cord ni en Stripe.
+- La preferencia solo queda encendida con plan, cuenta de cobros, domicilio
+  completo, al menos un estado y `status = active` en la cuenta
+  (`us_tax_estado`). Si falta algo responde qué y la apaga (regla 15).
+- Requiere la cuenta de Cord Payments (`orgs.stripe_account_id`): sin ella el
+  cálculo no tiene dónde vivir y se dice "actívala en Ajustes › Cobros".
+
+### El documento
+
+1. `prepareUsTaxForDocument()` saca las bases de cada línea con el motor único
+   (tasa 0, ya con el descuento de documento repartido, en la divisa de venta)
+   y arma la **huella** (sha256 de divisa, destino, exención, impuesto
+   incluido, clasificación e importes). Reusa un cálculo LIBRE (la vista
+   previa) o de ESTA misma venta con esa huella en las últimas 24 h; si no,
+   calcula (`expand[]=line_items.data.tax_breakdown`, `reference = L<i>`, una
+   línea en 0 no se manda) y guarda la fila en `us_tax_calculos`.
+2. El llamador pasa el id a `taxCatalogFor(orgId, { usTaxCalculoId })`, que lee
+   la fila **de la organización y vigente** (`expires_at > now()`) y da a cada
+   línea su tasa y su desglose: la `tax_rate` que mande el navegador se ignora.
+   Un id de otra organización, vencido o que no corresponde al documento es
+   `calculo_vencido`. Lo usan `createCotizacion`, `update_draft`/`send`/`resend`
+   (`actions/quotes.ts`) y los borradores de factura (`createInvoiceDraft`,
+   `updateInvoiceDraft`); la factura que sale de una cotización (`emit.ts`)
+   hereda su cálculo y su desglose porque es la MISMA venta.
+3. La línea congela la **tasa efectiva** (`cotizacion_items.tax_rate` /
+   `taxRate` del snapshot, fracción con precisión completa = impuesto ÷ base
+   del cálculo) y el desglose por jurisdicción
+   (`cotizacion_items.tax_breakdown` / `taxBreakdown` del snapshot:
+   `{ estado, estadoNombre, motivo, componentes: [{ nombre, nivel, tasa,
+   impuesto }], certificado? }`).
+4. El PDF, `/q`, `/i`, la impresión, las vistas del vendedor y los dos
+   editores imprimen un renglón por jurisdicción ("California 6%", "Los Angeles
+   County 0.25%"…) con `taxJurisdictionRows()` / `taxBreakdownRows({ lineas })`
+   / `taxDisplayRows()` (`src/lib/tax-components.ts`, constructor único), la
+   columna de la línea dice la tasa legal combinada (`lineTaxPct`) y
+   `taxNotes()` imprime el 0 % legítimo: "Sin obligación de recaudar sales tax
+   en Texas", "Cliente exento de sales tax (certificado de exención …)".
+
+**Conciliación con el motor único.** El proveedor redondea el impuesto POR
+JURISDICCIÓN (6 % + 0.25 % + 3.25 % de 70.00 = 4.20 + 0.18 + 2.28 = 6.66, no
+el 6.65 del 9.5 % sobre la suma). La línea no guarda el 9.5 % legal sino la
+tasa efectiva 6.66 / 70.00: con ella `calculateDocumentTotals()` —el mismo
+motor, el mismo redondeo por línea (`taxRounding = 'line'` en EE. UU.)—
+reproduce **al centavo** el impuesto del cálculo, también con precio con
+impuesto incluido (tasa = impuesto ÷ (bruto − impuesto)). El total que el
+documento cobra y el que se reporta son el mismo número, sin un segundo motor.
+Si después el documento cambia (aprobación parcial, descuento por monto), el
+total legal es el que el documento cobra: al registrar la venta se recalcula
+con lo cobrado y solo se registra si el impuesto coincide al centavo; si no,
+queda `no_concilia` para revisión y nunca se reporta una cifra distinta.
+
+**Fallo cerrado** (`UsTaxError`, regla 22; mensajes en es/en sin nombrar al
+proveedor, regla 14): sin cuenta de cobros, domicilio incompleto, sin estados,
+configuración pendiente, cliente sin estado o ZIP de 5 dígitos (calle y ciudad
+se mandan si están y mejoran la precisión), dirección que no se ubica
+(`customer_tax_location_invalid`), cliente exento sin certificado o con el
+certificado vencido, más de 100 conceptos, proveedor caído o límite de uso. La
+cotización o factura **no se guarda** y responde el motivo
+(`code: us_tax_<motivo>`); el editor lo muestra en el resumen antes de
+guardar. Un estado donde el negocio NO está registrado no es error: el
+proveedor responde `not_collecting`, la línea lleva 0 % con `motivo:
+'sin_registro'`. Si el negocio SÍ dice recaudar en ese estado y el proveedor
+responde `not_collecting`, la configuración está desincronizada y se falla
+(`registro_desincronizado`). Un borrador SIN cliente usa el catálogo; enviarlo
+exige cliente.
+
+**Cliente exento.** `clientes.tax_exempt` + `clientes.tax_exempt_cert`
+(`{ numero, estado, vence }`), en la ficha del cliente (sección "Exención de
+sales tax", solo para negocios de EE. UU.). Sin número de certificado no se
+guarda la exención; con el certificado vencido el documento falla cerrado. Al
+calcular viaja como `customer_details[taxability_override]=customer_exempt` y
+el documento cita el certificado.
+
+### La venta registrada (Tax Transactions)
+
+`recordUsTaxTransaction()` crea la transacción con
+`/v1/tax/transactions/create_from_calculation` (los cálculos vencen a los 90
+días), **una vez por cálculo**: `transaccion_ref = cord:<id del cálculo>` es
+único (índice parcial) y se reserva ANTES de llamar; la clave de idempotencia
+es la misma referencia y el proveedor rechaza una `reference` repetida. Se
+dispara al emitir la factura (`finalizeReservedInvoice`, también la que viene
+de una cotización) y el cron `/api/cron/us-tax` (cada hora en
+`cord-crons.yml`, diario en `vercel.json`) recoge las cotizaciones cobradas por
+cualquier riel y los reintentos. `us_tax_calculos.venta` dice qué venta
+reclamó el cálculo: una cotización y su factura comparten cálculo y
+transacción; dos documentos idénticos del mismo día que compartieron la vista
+previa son dos ventas y el segundo se registra con un cálculo propio. Anular
+una factura revierte la venta completa (`create_reversal`, `mode=full`,
+referencia `cord:<id>:anulada`), salvo que su cálculo respalde una cotización
+ya cobrada.
+
+Los reportes para declarar viven en la cuenta del negocio; como es Custom (sin
+Dashboard), la plataforma los descarga con la Report API
+(`connected_account_tax.transactions.itemized.2`). Cord todavía no los expone.
+
+### Verificación
+
+`test/us-tax-core.test.ts` (tasa efectiva vs motor con miles de importes,
+desglose, notas, errores) y `test/us-tax-db.test.ts` (PGlite + proveedor
+simulado: reuso, aislamiento por organización, fallo cerrado, exención,
+transacción única, conciliación, dos ventas, barrido, reverso y la
+sincronización de Ajustes). `npm run security:us-tax`
+(`scripts/us-tax-check.mjs`, encadenado en `test:payments`): una sola puerta a
+`/v1/tax/*`, idempotencia en cada creación, límite antes del cálculo, plan
+efectivo, `taxCatalogFor` acotado a la organización y vigente, rate limit y
+sin mensajes crudos en las rutas, la UI sin el nombre del proveedor, RLS
+forzada y grants en esquema y migración, el cron registrado y la aritmética.
+Esquema: sección final de `db/schema.sql` (`-- END us-tax`) con su espejo
+`db/deploy/2026-10-09-us-tax.sql`.
+
+### Pendiente
+
+- **Sin llaves reales no se probó contra Stripe**: la forma de las llamadas y
+  respuestas sale de la referencia de la API (docs.stripe.com, 2026-10-09) y
+  está cubierta con un proveedor simulado. Antes de anunciarlo: probar en modo
+  test con una cuenta Custom de EE. UU. (registro en CA, una dirección de Los
+  Ángeles, un cliente en TX y uno exento) y confirmar que la cuenta de la
+  plataforma tiene Stripe Tax habilitado para cuentas conectadas.
+- Notas de crédito de una factura con sales tax por dirección: copian el
+  desglose para imprimirlo, pero no crean el reverso PARCIAL de la
+  transacción.
+- Clasificación por producto (tax code por concepto): hoy una por negocio.
+- `/api/v1` y el MCP no exponen la exención del cliente ni el desglose por
+  jurisdicción (los documentos que crean sí calculan por dirección).
+- Exponer los reportes de transacciones al negocio (Report API).
 
 ## Seguimiento de confiabilidad
 

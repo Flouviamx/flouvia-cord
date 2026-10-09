@@ -21,6 +21,7 @@ import { esProveedorConta, type ProveedorConta } from './config';
 import { qboAsegurarCliente, qboCrearFactura, qboRefresh } from './qbo';
 import { xeroAsegurarContacto, xeroCrearFactura, xeroRefresh, xeroTenant } from './xero';
 import { impuestoDe } from './impuestos';
+import { lineTaxPct } from '../../tax-components';
 import { ContaImpuestoError, type ContaCliente, type FacturaConta, type LineaConta, type MotivoImpuesto, type TokensConta } from './tipos';
 
 export interface ConexionConta {
@@ -229,7 +230,11 @@ export function lineasDeSnapshot(snapshot: unknown): LineaConta[] {
         // precio YA redondeado, para que la línea cuadre consigo misma.
         const precio = Math.round(Math.max(0, Number.isFinite(crudo) ? crudo : 0) * 100) / 100;
         const importe = r2(precio * cantidad);
-        const tasa = tasaValida(l?.taxRate) ?? 0;
+        // EE. UU., sales tax por dirección: la tasa congelada es la EFECTIVA del
+        // cálculo (9.5018 %); la contabilidad busca la tasa legal combinada
+        // (9.5 %). El importe del impuesto sigue siendo el de la factura.
+        const desglose = l?.taxBreakdown && typeof l.taxBreakdown === 'object' ? l.taxBreakdown as any : null;
+        const tasa = desglose ? lineTaxPct(Number(l?.taxRate), desglose) / 100 : (tasaValida(l?.taxRate) ?? 0);
         // El impuesto de la línea es el que quedó en la factura, no uno recalculado.
         const guardado = Number(l?.taxAmount);
         return {

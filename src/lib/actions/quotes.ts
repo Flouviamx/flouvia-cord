@@ -213,7 +213,7 @@ export async function runQuoteAction(ctx: ActionContext, id: string, input: Reco
             const usTax = await prepareUsTaxForDocument(orgId, {
                 clienteId: clienteFinal, currency: monedaVenta, ivaIncluido: iva_incluido,
                 descuento: descuentoParaMotor(descuento), items, calculoId: input.us_tax_calculo_id,
-                requireClient: input.action !== 'update_draft', venta: `cotizacion:${id}`,
+                requireClient: input.action !== 'update_draft', venta: `cotizacion:${id}`, orgCountry: catalogo.country,
             });
             if (usTax) {
                 catalogo = await taxCatalogFor(orgId, { usTaxCalculoId: usTax.calculoId });

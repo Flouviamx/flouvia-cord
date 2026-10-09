@@ -163,7 +163,7 @@ export interface CreateDraftInput {
 async function conUsTax<C extends { resolve: (p: unknown, f: number, l?: number) => number; breakdown: (l: number) => UsTaxDesglose | null; defaultRate: number }>(
   orgId: string,
   catalogo: C,
-  input: { clienteId: string; currency: string; ivaIncluido: boolean; descuento: DescuentoDef | null; items: DraftLineInput[]; calculoId: unknown; venta: string | null },
+  input: { clienteId: string; currency: string; ivaIncluido: boolean; descuento: DescuentoDef | null; items: DraftLineInput[]; calculoId: unknown; venta: string | null; orgCountry: string },
 ): Promise<{ ok: true; catalogo: C; items: DraftLineInput[]; calculoId: string | null } | { ok: false; error: string; status: number; code: string }> {
   try {
     const usTax = await prepareUsTaxForDocument(orgId, {
@@ -177,6 +177,7 @@ async function conUsTax<C extends { resolve: (p: unknown, f: number, l?: number)
       calculoId: input.calculoId,
       requireClient: true,
       venta: input.venta,
+      orgCountry: input.orgCountry,
     });
     if (!usTax) return { ok: true, catalogo, items: input.items, calculoId: null };
     const conCalculo = await taxCatalogFor(orgId, { usTaxCalculoId: usTax.calculoId }) as unknown as C;
@@ -592,7 +593,7 @@ export async function createInvoiceDraft(orgId: string, input: CreateDraftInput)
   const usTax = await conUsTax(orgId, catalogo, {
     clienteId: String(head.cliente_id), currency, ivaIncluido: input.ivaIncluido === true, descuento,
     items: itemsConTasaValidada, calculoId: input.usTaxCalculoId,
-    venta: ventaCotizacion ? usTaxVentaKey({ cotizacionId: ventaCotizacion }) : null,
+    venta: ventaCotizacion ? usTaxVentaKey({ cotizacionId: ventaCotizacion }) : null, orgCountry: country,
   });
   if (!usTax.ok) return usTax;
   catalogo = usTax.catalogo;
@@ -753,7 +754,7 @@ export async function updateInvoiceDraft(
   const venta = usTaxVentaKey({ cotizacionId: (doc.cotizacion_id as string | null) || null, documentoId: documentId });
   const usTax = await conUsTax(orgId, catalogo, {
     clienteId: String(head.cliente_id), currency, ivaIncluido: input.ivaIncluido === true, descuento,
-    items: itemsConTasaValidada, calculoId: input.usTaxCalculoId, venta,
+    items: itemsConTasaValidada, calculoId: input.usTaxCalculoId, venta, orgCountry: country,
   });
   if (!usTax.ok) return usTax;
   catalogo = usTax.catalogo;
@@ -1184,7 +1185,7 @@ async function finalizeReservedInvoice(orgId: string, documentId: string): Promi
   // EE. UU.: la venta emitida se registra para la declaración del negocio
   // (una vez por cálculo). Si falla, el cron /api/cron/us-tax la reintenta:
   // la emisión ya ocurrió y no se deshace por esto.
-  if (response.success) {
+  if (response.success && country === 'US') {
     try { await recordUsTaxTransaction(orgId, { documentoId: documentId }); }
     catch (error) { log.warn('us-tax: registro de la venta pendiente', { orgId, route: 'fiscal/invoices', err: error }); }
   }
@@ -1504,8 +1505,10 @@ export async function voidInvoice(
   // EE. UU.: la venta que se registró al emitir se revierte (salvo que su
   // cálculo respalde una cotización ya cobrada). Si falla, queda en el log:
   // la anulación ya ocurrió.
-  try { await reverseUsTaxForDocument(orgId, documentId); }
-  catch (error) { log.warn('us-tax: reversión de la venta pendiente', { orgId, route: 'fiscal/invoices', err: error }); }
+  if (String(doc.country_code || '').toUpperCase() === 'US') {
+    try { await reverseUsTaxForDocument(orgId, documentId); }
+    catch (error) { log.warn('us-tax: reversión de la venta pendiente', { orgId, route: 'fiscal/invoices', err: error }); }
+  }
   return { ok: true, cancellationStatus: 'accepted' };
 }
 

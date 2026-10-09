@@ -133,7 +133,7 @@ const CAUSA_AUTO = L === 'en' ? 'Automatic (from the client)' : 'Automática (se
     </SettingsSection>
 
     {US_TAX && (
-        <SettingsSection icon="map" class="s-block">
+        <SettingsSection icon="globe" class="s-block">
             <Fragment slot="heading">{L === 'en' ? 'Sales tax by address' : 'Sales tax por dirección'}</Fragment>
             <div class="s-body">
                 <UsTaxSettings config={US_TAX.config} entitled={US_TAX.entitled} activo={US_TAX.activo} problema={US_TAX.problema} locale={L === 'en' ? 'en' : 'es'} />

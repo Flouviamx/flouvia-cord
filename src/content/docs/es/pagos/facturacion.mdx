@@ -34,6 +34,8 @@ Para el ciclo completo de una factura (borrador, emisión, envío, cobro, notas 
 
 En los tres casos, el impuesto se calcula **por línea**: puedes mezclar un concepto gravado con uno exento, y cada uno imprime el nombre del impuesto de tu país (IVA en México y España, VAT en Reino Unido, GST en Canadá, Sales tax por estado en Estados Unidos).
 
+En Estados Unidos, desde el plan Starter, puedes encender en **Ajustes › Impuestos** el cálculo del sales tax **por la dirección del cliente**: cada línea toma la tasa combinada de estado, condado, ciudad y distritos especiales de esa dirección, y el documento imprime un renglón por jurisdicción. Necesita tu domicilio completo, los estados donde recaudas y tu cuenta de cobros activa. En un estado donde no recaudas la línea lleva 0 % y el documento lo dice; un cliente exento se marca en su ficha con su certificado. Si falta un dato (por ejemplo, el ZIP del cliente) o el cálculo no está disponible, el documento no se guarda y te dice qué falta: nunca usa una tasa estimada.
+
 <Callout type="info" title="Documentos de prueba">
 Si un documento aparece como **Documento de prueba**, ningún proveedor fiscal lo emitió: no tiene validez ante la autoridad, el link se lo advierte a tu cliente y no se puede pagar en línea. Una emisión de prueba no se convierte en válida al cambiar la configuración.
 </Callout>
