@@ -22,6 +22,7 @@ import { estadoVerifactuFactura } from '../../../lib/fiscal/verifactu/incidencia
 import ArcaEstadoFactura from '../../../components/app/facturas/ArcaEstadoFactura.astro';
 import NfseEstadoFactura from '../../../components/app/facturas/NfseEstadoFactura.astro';
 import SunatEstadoFactura from '../../../components/app/facturas/SunatEstadoFactura.astro';
+import SiiEstadoFactura from '../../../components/app/facturas/SiiEstadoFactura.astro';
 import { EXEMPTION_INFO, EXEMPTION_REASONS } from '../../../lib/fiscal/exemption';
 import { currentLocale } from '../../../lib/context';
 import { getInvoiceTimeline } from '../../../lib/fiscal/timeline';
@@ -692,6 +693,9 @@ const EINV_FIX: Record<string, { href: string; es: string; en: string }> = {
                         )}
                         {String(f.pais || '').toUpperCase() === 'PE' && (
                             <SunatEstadoFactura orgId={f.orgId ?? ''} documentoId={f.id} locale={L === 'en' ? 'en' : 'es'} />
+                        )}
+                        {String(f.pais || '').toUpperCase() === 'CL' && (
+                            <SiiEstadoFactura orgId={f.orgId ?? ''} documentoId={f.id} locale={L === 'en' ? 'en' : 'es'} />
                         )}
 
                     </aside>

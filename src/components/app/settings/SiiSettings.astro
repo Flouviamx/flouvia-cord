@@ -1,0 +1,499 @@
+---
+// Ajustes › Datos fiscales › Factura electrónica con el SII (Chile).
+//
+// Lo que el negocio aporta para emitir DTE directamente ante el SII: los
+// datos del emisor que exige el documento (giro, actividad económica, comuna,
+// resolución), los archivos de folios (CAF) que autoriza el SII y el
+// certificado digital de la persona que firma. Estado honesto: mientras falte
+// cualquiera, o mientras Cord no tenga el SII activo, las facturas siguen como
+// documento comercial y aquí se dice exactamente eso (regla 15). Sin el SII
+// activo en el despliegue no se ofrece ningún control: no hay consumidor.
+//
+// El certificado y los CAF viajan una sola vez (multipart a /api/fiscal/sii y
+// /api/fiscal/sii-folios) y nunca vuelven: la pantalla solo ve resúmenes.
+import type { EstadoSii } from '../../../lib/fiscal/latam/sii/estado';
+
+interface Props { estado: EstadoSii; locale: 'es' | 'en'; }
+const { estado, locale } = Astro.props;
+const en = locale === 'en';
+
+const FALTANTE: Record<string, [string, string]> = {
+    rut: ['el RUT de tu negocio (arriba, en Identidad de facturación)', 'your business RUT (above, under Invoice identity)'],
+    razon_social: ['la razón social (arriba, en Identidad de facturación)', 'the legal name (above, under Invoice identity)'],
+    direccion: ['la dirección del emisor', 'the issuer address'],
+    giro: ['el giro', 'the line of business (giro)'],
+    acteco: ['la actividad económica', 'the economic activity code'],
+    comuna: ['la comuna', 'the comuna'],
+    unidad_sii: ['la unidad del SII', 'the SII office'],
+    resolucion: ['el número y la fecha de la resolución del SII', 'the SII resolution number and date'],
+    certificado: ['el certificado digital', 'the digital certificate'],
+    certificado_vencido: ['un certificado vigente (el actual venció)', 'a valid certificate (the current one expired)'],
+    folios: ['folios de factura (CAF)', 'invoice folios (CAF)'],
+};
+const TIPO: Record<number, [string, string]> = {
+    33: ['Factura electrónica (33)', 'Electronic invoice (33)'],
+    34: ['Factura exenta (34)', 'Exempt invoice (34)'],
+    61: ['Nota de crédito (61)', 'Credit note (61)'],
+};
+const faltantes = estado.faltantes.map((f) => FALTANTE[f]?.[en ? 1 : 0] ?? f);
+const prueba = estado.entorno === 'homologacion';
+const cred = estado.credencial;
+const caduca = cred?.caduca?.slice(0, 10) ?? '';
+const titulo = !estado.habilitado
+    ? (en ? 'Coming soon' : 'Próximamente')
+    : estado.listo
+        ? (prueba ? (en ? 'Connected to the SII certification environment' : 'Conectado al ambiente de certificación del SII') : (en ? 'Electronic invoicing with the SII active' : 'Factura electrónica con el SII activa'))
+        : (en ? 'Not connected yet' : 'Aún sin conectar');
+const sub = estado.listo
+    ? (prueba
+        ? (en ? 'Documents are sent to the SII certification environment and have no tax validity.' : 'Los documentos se envían al ambiente de certificación del SII y no tienen validez tributaria.')
+        : (en ? `Certificate valid until ${caduca} · signer RUT ${cred?.identificador}` : `Certificado vigente hasta ${caduca} · RUT firmante ${cred?.identificador}`))
+    : (en ? `Missing: ${faltantes.join(', ')}.` : `Falta: ${faltantes.join(', ')}.`);
+const A = estado.ajustes;
+const RES = A.resoluciones?.[estado.entorno];
+---
+
+<div class="sii" data-sii data-entorno={estado.entorno}>
+    <p class="sii-intro">{en
+        ? 'In Chile every invoice is an electronic tax document (DTE) that must reach the SII. Cord issues it directly: it takes the folio from the file the SII authorized, stamps it with the electronic seal, signs it with your certificate, sends it to the SII and prints the seal (PDF417) on the PDF. Until everything below is complete, invoices are issued as commercial documents without tax validity.'
+        : 'En Chile cada factura es un documento tributario electrónico (DTE) que debe llegar al SII. Cord lo emite directamente: toma el folio del archivo que autorizó el SII, le pone el timbre electrónico, lo firma con tu certificado, lo envía al SII e imprime el timbre (PDF417) en el PDF. Mientras falte algo de lo que sigue, las facturas se emiten como documento comercial sin validez tributaria.'}</p>
+
+    <div class="sii-state" data-on={estado.listo ? '1' : '0'} data-sii-state>
+        <span class="sii-dot" aria-hidden="true"></span>
+        <span class="sii-state-info">
+            <span class="sii-state-title" data-sii-title>{titulo}</span>
+            <span class="sii-state-sub" data-sii-sub>{estado.habilitado
+                ? sub
+                : (en ? 'Electronic invoicing with the SII is not available in Cord yet. Your invoices are still issued as commercial documents; we will let you know when you can connect it.' : 'La factura electrónica con el SII todavía no está disponible en Cord. Tus facturas se siguen emitiendo como documento comercial; te avisaremos cuando puedas conectarla.')}</span>
+            {estado.habilitado && cred?.verificacionError && (
+                <span class="sii-state-err" data-sii-verif>{cred.verificacionError}</span>
+            )}
+        </span>
+        {estado.habilitado && (
+            <button type="button" class="sii-btn-ghost" data-sii-remove style={cred ? '' : 'display:none'}>
+                {en ? 'Disconnect' : 'Desconectar'}
+            </button>
+        )}
+    </div>
+
+    <p class="sii-scope">{en
+        ? 'Cord issues electronic invoices (33), exempt invoices (34) and credit notes (61). Electronic receipts (boleta, 39), export invoices and fees receipts (boleta de honorarios) are not available.'
+        : 'Cord emite factura electrónica (33), factura exenta (34) y nota de crédito (61). La boleta electrónica (39), la factura de exportación y la boleta de honorarios no están disponibles.'}</p>
+
+    {estado.habilitado && (
+        <Fragment>
+            <span class="sii-block-title">{en ? 'Issuer details' : 'Datos del emisor'}</span>
+            <div class="sii-grid">
+                <div class="s-field sii-wide">
+                    <label for="siiGiro">{en ? 'Line of business (giro), as registered with the SII' : 'Giro, tal como está inscrito en el SII'}</label>
+                    <input class="s-input" id="siiGiro" value={A.giro ?? ''} maxlength="80" autocomplete="off" />
+                </div>
+                <div class="s-field">
+                    <label for="siiActeco">{en ? 'Economic activity codes (up to 4)' : 'Códigos de actividad económica (hasta 4)'}</label>
+                    <input class="s-input" id="siiActeco" value={(A.acteco ?? []).join(', ')} inputmode="numeric" placeholder="620200" autocomplete="off" />
+                </div>
+                <div class="s-field">
+                    <label for="siiUnidad">{en ? 'SII office (regional directorate)' : 'Unidad del SII (dirección regional)'}</label>
+                    <input class="s-input" id="siiUnidad" value={A.unidadSii ?? ''} maxlength="60" placeholder={en ? 'e.g. SANTIAGO CENTRO' : 'p. ej. SANTIAGO CENTRO'} autocomplete="off" />
+                </div>
+                <div class="s-field sii-wide">
+                    <label for="siiDir">{en ? 'Issuer address (if different from the invoice identity)' : 'Dirección del emisor (si difiere de la identidad de facturación)'}</label>
+                    <input class="s-input" id="siiDir" value={A.direccion ?? ''} maxlength="60" autocomplete="off" />
+                </div>
+                <div class="s-field">
+                    <label for="siiComuna">{en ? 'Comuna' : 'Comuna'}</label>
+                    <input class="s-input" id="siiComuna" value={A.comuna ?? ''} maxlength="20" autocomplete="off" />
+                </div>
+                <div class="s-field">
+                    <label for="siiCiudad">{en ? 'City (optional)' : 'Ciudad (opcional)'}</label>
+                    <input class="s-input" id="siiCiudad" value={A.ciudad ?? ''} maxlength="20" autocomplete="off" />
+                </div>
+                <div class="s-field">
+                    <label for="siiSucursal">{en ? 'Branch name (optional)' : 'Sucursal (opcional)'}</label>
+                    <input class="s-input" id="siiSucursal" value={A.sucursal ?? ''} maxlength="20" autocomplete="off" />
+                </div>
+                <div class="s-field">
+                    <label for="siiCdgSuc">{en ? 'SII branch code (optional)' : 'Código de sucursal del SII (opcional)'}</label>
+                    <input class="s-input" id="siiCdgSuc" value={A.cdgSucursal ?? ''} inputmode="numeric" autocomplete="off" />
+                </div>
+                <div class="s-field">
+                    <label for="siiResNum">{prueba ? (en ? 'Resolution number (0 in certification)' : 'Número de resolución (0 en certificación)') : (en ? 'SII resolution number' : 'Número de resolución del SII')}</label>
+                    <input class="s-input" id="siiResNum" value={RES?.numero ?? ''} inputmode="numeric" autocomplete="off" />
+                </div>
+                <div class="s-field">
+                    <label for="siiResFecha">{en ? 'Resolution date' : 'Fecha de la resolución'}</label>
+                    <input class="s-input" id="siiResFecha" type="date" value={RES?.fecha ?? ''} />
+                </div>
+            </div>
+            <p class="sii-hint">{prueba
+                ? (en ? 'In the certification environment the resolution number is 0 and the date is the one the SII gives you when you apply as an electronic issuer.' : 'En el ambiente de certificación el número de resolución es 0 y la fecha es la que te informa el SII al postular como emisor electrónico.')
+                : (en ? 'The resolution that authorizes you as an electronic issuer is printed under the seal of every document.' : 'La resolución que te autoriza como emisor electrónico se imprime bajo el timbre de cada documento.')}</p>
+            <div class="sii-actions">
+                <button type="button" class="sii-btn-solid" data-sii-save>{en ? 'Save SII details' : 'Guardar datos del SII'}</button>
+                <span class="sii-msg" data-sii-msg-ajustes></span>
+            </div>
+
+            <div class="sii-section">
+                <span class="sii-block-title">{en ? 'Folios (CAF)' : 'Folios (CAF)'}</span>
+                <p class="sii-hint sii-hint-top">{en
+                    ? 'Each document uses one folio from a file the SII authorizes (Timbraje electrónico). A used folio is never reused. Invoice and credit-note folios expire six months after their authorization.'
+                    : 'Cada documento usa un folio de un archivo que autoriza el SII (Timbraje electrónico). Un folio usado no se reutiliza nunca. Los folios de factura y de nota de crédito vencen a los seis meses de su autorización.'}</p>
+                <ul class="sii-folios" data-sii-folios>
+                    {estado.folios.map((f) => (
+                        <li class={`sii-folio${f.porAgotarse ? ' is-low' : ''}`}>
+                            <span class="sii-folio-t">{TIPO[f.tipo]?.[en ? 1 : 0]}</span>
+                            <span class="sii-folio-n">{en ? `${f.disponibles} available` : `${f.disponibles} disponibles`}{f.porAgotarse ? (en ? ' · request more from the SII' : ' · solicita más al SII') : ''}</span>
+                        </li>
+                    ))}
+                </ul>
+                <ul class="sii-cafs" data-sii-cafs>
+                    {estado.cafs.map((c) => (
+                        <li class={`sii-caf${c.vencido ? ' is-expired' : ''}`}>
+                            <span class="sii-caf-info">
+                                <strong>{TIPO[c.tipo]?.[en ? 1 : 0]} · {c.desde}–{c.hasta}</strong>
+                                <small>{en ? `Next ${c.siguiente > c.hasta ? '—' : c.siguiente} · ${c.restantes} left · authorized ${c.fechaAutorizacion}` : `Siguiente ${c.siguiente > c.hasta ? '—' : c.siguiente} · quedan ${c.restantes} · autorizado el ${c.fechaAutorizacion}`}{c.vence ? (c.vencido ? (en ? ` · expired ${c.vence}` : ` · venció el ${c.vence}`) : (en ? ` · expires ${c.vence}` : ` · vence el ${c.vence}`)) : ''}</small>
+                            </span>
+                            {c.siguiente === c.desde && (
+                                <button type="button" class="sii-btn-ghost" data-sii-caf-remove={c.id}>{en ? 'Remove' : 'Quitar'}</button>
+                            )}
+                        </li>
+                    ))}
+                </ul>
+                <div class="sii-files is-single">
+                    <label class="sii-drop">
+                        <input type="file" id="siiCaf" accept=".xml" />
+                        <span class="sii-drop-ico">.xml</span>
+                        <span class="sii-drop-t">{en ? 'Folio file' : 'Archivo de folios'}</span>
+                        <span class="sii-drop-s" data-sii-name="siiCaf">{en ? 'As downloaded from the SII, unmodified' : 'Tal como lo descargaste del SII, sin modificarlo'}</span>
+                    </label>
+                </div>
+                <div class="sii-actions">
+                    <button type="button" class="sii-btn-solid" data-sii-caf-upload>{en ? 'Upload folios' : 'Subir folios'}</button>
+                    <span class="sii-msg" data-sii-msg-caf></span>
+                </div>
+            </div>
+
+            <div class="sii-section">
+                <span class="sii-block-title">{en ? 'Digital certificate' : 'Certificado digital'}</span>
+                <p class="sii-hint sii-hint-top">{en
+                    ? 'The certificate of the person authorized before the SII to sign your documents (.pfx/.p12, issued by an accredited certification authority).'
+                    : 'El certificado de la persona autorizada ante el SII para firmar los documentos de tu negocio (.pfx/.p12, emitido por una entidad certificadora acreditada).'}</p>
+                <div class="sii-files is-single">
+                    <label class="sii-drop">
+                        <input type="file" id="siiP12" accept=".p12,.pfx" />
+                        <span class="sii-drop-ico">.pfx</span>
+                        <span class="sii-drop-t">{en ? 'Certificate with key' : 'Certificado con llave'}</span>
+                        <span class="sii-drop-s" data-sii-name="siiP12">{en ? 'Choose your .pfx/.p12 file' : 'Elige tu archivo .pfx/.p12'}</span>
+                    </label>
+                </div>
+                <div class="sii-grid sii-cert-grid">
+                    <div class="s-field">
+                        <label for="siiPass">{en ? 'Certificate password' : 'Contraseña del certificado'}</label>
+                        <input class="s-input" id="siiPass" type="password" autocomplete="off" />
+                    </div>
+                    <div class="s-field" data-sii-rut-field hidden>
+                        <label for="siiRutFirmante">{en ? 'RUT of the certificate holder' : 'RUT del titular del certificado'}</label>
+                        <input class="s-input" id="siiRutFirmante" autocomplete="off" placeholder="12345678-5" />
+                    </div>
+                </div>
+                <div class="sii-actions">
+                    <button type="button" class="sii-btn-solid" data-sii-upload>{en ? 'Upload certificate' : 'Subir certificado'}</button>
+                    <span class="sii-msg" data-sii-msg-cert></span>
+                </div>
+            </div>
+        </Fragment>
+    )}
+</div>
+
+<style is:global>
+    /* Global y llaveado por [data-sii]: la lista de folios y sus botones se
+       vuelven a dibujar desde el navegador (regla 11). */
+    [data-sii] .sii-intro { font-size: 0.82rem; color: var(--color-text-muted); line-height: 1.55; margin: 0 0 1.1rem; }
+    [data-sii] .sii-state { display: flex; align-items: center; gap: 11px; border: 1px solid var(--color-border); border-radius: 10px; padding: 12px 14px; margin-bottom: 0.9rem; }
+    [data-sii] .sii-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--color-text-muted); flex-shrink: 0; }
+    [data-sii] .sii-state[data-on="1"] .sii-dot { background: var(--color-ok); box-shadow: 0 0 0 3px rgba(16,185,129,0.18); }
+    [data-sii] .sii-state-info { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+    [data-sii] .sii-state-title { font-size: 0.86rem; font-weight: 600; color: var(--color-text); }
+    [data-sii] .sii-state-sub { font-size: 0.76rem; color: var(--color-text-muted); line-height: 1.45; }
+    [data-sii] .sii-state-err { font-size: 0.76rem; color: var(--color-err, #c0392b); line-height: 1.45; }
+    [data-sii] .sii-scope { font-size: 0.76rem; color: var(--color-text-muted); line-height: 1.5; margin: 0 0 1.3rem; }
+    [data-sii] .sii-block-title { display: block; font-size: 0.84rem; font-weight: 600; color: var(--color-text); margin-bottom: 0.8rem; }
+    [data-sii] .sii-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.9rem 1rem; }
+    [data-sii] .sii-wide { grid-column: 1 / -1; }
+    [data-sii] .sii-hint { font-size: 0.76rem; color: var(--color-text-muted); line-height: 1.5; margin: 0.8rem 0 0; }
+    [data-sii] .sii-hint-top { margin: 0 0 0.9rem; }
+    [data-sii] .sii-section { border-top: 1px solid var(--color-border); margin-top: 1.4rem; padding-top: 1.2rem; }
+    [data-sii] .sii-folios, [data-sii] .sii-cafs { list-style: none; margin: 0 0 1rem; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+    [data-sii] .sii-folio { display: flex; justify-content: space-between; gap: 1rem; font-size: 0.8rem; color: var(--color-text); }
+    [data-sii] .sii-folio-n { color: var(--color-text-muted); font-variant-numeric: tabular-nums; }
+    [data-sii] .sii-folio.is-low .sii-folio-n { color: var(--color-warn, #b7791f); }
+    [data-sii] .sii-caf { display: flex; align-items: center; gap: 0.8rem; border: 1px solid var(--color-border); border-radius: 10px; padding: 9px 12px; }
+    [data-sii] .sii-caf-info { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+    [data-sii] .sii-caf-info strong { font-size: 0.8rem; font-weight: 600; color: var(--color-text); font-variant-numeric: tabular-nums; }
+    [data-sii] .sii-caf-info small { font-size: 0.72rem; color: var(--color-text-muted); font-variant-numeric: tabular-nums; }
+    [data-sii] .sii-caf.is-expired .sii-caf-info small { color: var(--color-err, #c0392b); }
+    [data-sii] .sii-cafs:empty, [data-sii] .sii-folios:empty { display: none; }
+    [data-sii] .sii-files { display: grid; grid-template-columns: minmax(0, 260px); gap: 1rem; }
+    [data-sii] .sii-drop { display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; border: 1.5px dashed var(--color-border); border-radius: 12px; padding: 1.2rem 1rem; cursor: pointer; background: var(--color-bg-soft); transition: border-color 0.2s, background 0.2s; }
+    [data-sii] .sii-drop:hover { border-color: var(--color-blue-deep); }
+    [data-sii] .sii-drop.has-file { border-style: solid; border-color: var(--color-ok); background: rgba(16,185,129,0.06); }
+    [data-sii] .sii-drop input { display: none; }
+    [data-sii] .sii-drop:focus-within { outline: 2px solid var(--color-blue-deep); outline-offset: 2px; }
+    [data-sii] .sii-drop-ico { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.04em; color: var(--color-blue-deep); }
+    [data-sii] .sii-drop-t { font-size: 0.82rem; font-weight: 600; color: var(--color-text); }
+    [data-sii] .sii-drop-s { font-size: 0.72rem; color: var(--color-text-muted); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    [data-sii] .sii-cert-grid { margin-top: 1rem; }
+    [data-sii] .sii-cert-grid [hidden] { display: none; }
+    [data-sii] .sii-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 0.7rem; margin-top: 1.1rem; }
+    [data-sii] .sii-btn-solid { font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; color: #fff; background: var(--color-blue-deep); border: none; border-radius: 999px; padding: 9px 18px; cursor: pointer; transition: transform 0.2s var(--ease-spring), opacity 0.2s; }
+    [data-sii] .sii-btn-solid:hover { transform: scale(1.02); }
+    [data-sii] .sii-btn-solid:active { transform: scale(0.98); }
+    [data-sii] .sii-btn-solid:disabled { opacity: 0.6; cursor: progress; transform: none; }
+    [data-sii] .sii-btn-ghost { font-family: var(--font-sans); font-size: 0.78rem; font-weight: 600; color: var(--color-text); background: transparent; border: 1px solid var(--color-border); border-radius: 999px; padding: 7px 14px; cursor: pointer; flex-shrink: 0; }
+    [data-sii] .sii-msg { font-size: 0.78rem; line-height: 1.45; }
+    [data-sii] .sii-msg.ok { color: var(--color-ok); }
+    [data-sii] .sii-msg.err { color: var(--color-err, #c0392b); }
+    @media (max-width: 880px) {
+        [data-sii] .sii-grid, [data-sii] .sii-files { grid-template-columns: 1fr; }
+        [data-sii] .sii-btn-solid, [data-sii] .sii-btn-ghost { min-height: 44px; }
+    }
+</style>
+
+<script>
+    // El servidor manda códigos; la pantalla los dice en el idioma de la cuenta.
+    const FALTANTE: Record<string, [string, string]> = {
+        rut: ['el RUT de tu negocio (arriba, en Identidad de facturación)', 'your business RUT (above, under Invoice identity)'],
+        razon_social: ['la razón social (arriba, en Identidad de facturación)', 'the legal name (above, under Invoice identity)'],
+        direccion: ['la dirección del emisor', 'the issuer address'],
+        giro: ['el giro', 'the line of business (giro)'],
+        acteco: ['la actividad económica', 'the economic activity code'],
+        comuna: ['la comuna', 'the comuna'],
+        unidad_sii: ['la unidad del SII', 'the SII office'],
+        resolucion: ['el número y la fecha de la resolución del SII', 'the SII resolution number and date'],
+        certificado: ['el certificado digital', 'the digital certificate'],
+        certificado_vencido: ['un certificado vigente (el actual venció)', 'a valid certificate (the current one expired)'],
+        folios: ['folios de factura (CAF)', 'invoice folios (CAF)'],
+    };
+    const TIPO: Record<number, [string, string]> = {
+        33: ['Factura electrónica (33)', 'Electronic invoice (33)'],
+        34: ['Factura exenta (34)', 'Exempt invoice (34)'],
+        61: ['Nota de crédito (61)', 'Credit note (61)'],
+    };
+
+    function initSii() {
+        const root = document.querySelector<HTMLElement>('[data-sii]');
+        if (!root) return;
+        const en = document.documentElement.lang === 'en';
+        const i = en ? 1 : 0;
+        const q = <T extends Element>(s: string) => root.querySelector<T>(s);
+        const state = q<HTMLElement>('[data-sii-state]');
+        const title = q<HTMLElement>('[data-sii-title]');
+        const sub = q<HTMLElement>('[data-sii-sub]');
+        const removeBtn = q<HTMLButtonElement>('[data-sii-remove]');
+        const saveBtn = q<HTMLButtonElement>('[data-sii-save]');
+        const uploadBtn = q<HTMLButtonElement>('[data-sii-upload]');
+        const cafBtn = q<HTMLButtonElement>('[data-sii-caf-upload]');
+        if (!state || !saveBtn || !uploadBtn || !cafBtn) return;
+
+        const flash = (sel: string, text: string, ok: boolean, sticky = false) => {
+            const el = q<HTMLElement>(sel);
+            if (!el) return;
+            el.textContent = text;
+            el.className = 'sii-msg ' + (ok ? 'ok' : 'err');
+            if (ok && !sticky) setTimeout(() => { el.textContent = ''; el.className = 'sii-msg'; }, 5000);
+        };
+
+        const pintarFolios = (v: any) => {
+            const folios = q<HTMLElement>('[data-sii-folios]');
+            if (folios) {
+                folios.replaceChildren(...(v.folios || []).map((f: any) => {
+                    const li = document.createElement('li');
+                    li.className = 'sii-folio' + (f.porAgotarse ? ' is-low' : '');
+                    const t = document.createElement('span');
+                    t.className = 'sii-folio-t';
+                    t.textContent = TIPO[f.tipo]?.[i] ?? String(f.tipo);
+                    const n = document.createElement('span');
+                    n.className = 'sii-folio-n';
+                    n.textContent = (en ? `${f.disponibles} available` : `${f.disponibles} disponibles`)
+                        + (f.porAgotarse ? (en ? ' · request more from the SII' : ' · solicita más al SII') : '');
+                    li.append(t, n);
+                    return li;
+                }));
+            }
+            const cafs = q<HTMLElement>('[data-sii-cafs]');
+            if (cafs) {
+                cafs.replaceChildren(...(v.cafs || []).map((c: any) => {
+                    const li = document.createElement('li');
+                    li.className = 'sii-caf' + (c.vencido ? ' is-expired' : '');
+                    const info = document.createElement('span');
+                    info.className = 'sii-caf-info';
+                    const strong = document.createElement('strong');
+                    strong.textContent = `${TIPO[c.tipo]?.[i] ?? c.tipo} · ${c.desde}–${c.hasta}`;
+                    const small = document.createElement('small');
+                    const sig = c.siguiente > c.hasta ? '—' : c.siguiente;
+                    small.textContent = (en ? `Next ${sig} · ${c.restantes} left · authorized ${c.fechaAutorizacion}` : `Siguiente ${sig} · quedan ${c.restantes} · autorizado el ${c.fechaAutorizacion}`)
+                        + (c.vence ? (c.vencido ? (en ? ` · expired ${c.vence}` : ` · venció el ${c.vence}`) : (en ? ` · expires ${c.vence}` : ` · vence el ${c.vence}`)) : '');
+                    info.append(strong, small);
+                    li.append(info);
+                    if (c.siguiente === c.desde) {
+                        const b = document.createElement('button');
+                        b.type = 'button';
+                        b.className = 'sii-btn-ghost';
+                        b.setAttribute('data-sii-caf-remove', c.id);
+                        b.textContent = en ? 'Remove' : 'Quitar';
+                        li.append(b);
+                    }
+                    return li;
+                }));
+            }
+        };
+
+        // Repinta el estado con la vista que devuelven /api/fiscal/sii y /api/fiscal/sii-folios.
+        const pintar = (v: any) => {
+            const prueba = v.entorno === 'homologacion';
+            state.setAttribute('data-on', v.listo ? '1' : '0');
+            if (title) title.textContent = v.listo
+                ? (prueba ? (en ? 'Connected to the SII certification environment' : 'Conectado al ambiente de certificación del SII') : (en ? 'Electronic invoicing with the SII active' : 'Factura electrónica con el SII activa'))
+                : (en ? 'Not connected yet' : 'Aún sin conectar');
+            if (sub) sub.textContent = v.listo
+                ? (prueba
+                    ? (en ? 'Documents are sent to the SII certification environment and have no tax validity.' : 'Los documentos se envían al ambiente de certificación del SII y no tienen validez tributaria.')
+                    : (en ? `Certificate valid until ${v.credencial?.caduca} · signer RUT ${v.credencial?.identificador}` : `Certificado vigente hasta ${v.credencial?.caduca} · RUT firmante ${v.credencial?.identificador}`))
+                : (en ? 'Missing: ' : 'Falta: ') + (v.faltantes || []).map((f: string) => FALTANTE[f]?.[i] ?? f).join(', ') + '.';
+            q<HTMLElement>('[data-sii-verif]')?.remove();
+            if (v.credencial?.verificacion_error) {
+                const e = document.createElement('span');
+                e.className = 'sii-state-err';
+                e.setAttribute('data-sii-verif', '');
+                e.textContent = v.credencial.verificacion_error;
+                sub?.after(e);
+            }
+            if (removeBtn) removeBtn.style.display = v.credencial ? '' : 'none';
+            pintarFolios(v);
+        };
+
+        root.querySelectorAll<HTMLInputElement>('input[type="file"]').forEach((input) => input.addEventListener('change', () => {
+            const f = input.files?.[0];
+            const name = q<HTMLElement>(`[data-sii-name="${input.id}"]`);
+            if (name && f) name.textContent = f.name;
+            input.closest('.sii-drop')?.classList.toggle('has-file', !!f);
+        }));
+
+        saveBtn.addEventListener('click', async () => {
+            const val = (id: string) => (document.getElementById(id) as HTMLInputElement | null)?.value ?? '';
+            const body = {
+                giro: val('siiGiro'),
+                acteco: val('siiActeco'),
+                unidad_sii: val('siiUnidad'),
+                direccion: val('siiDir'),
+                comuna: val('siiComuna'),
+                ciudad: val('siiCiudad'),
+                sucursal: val('siiSucursal'),
+                cdg_sucursal: val('siiCdgSuc'),
+                resolucion_numero: val('siiResNum'),
+                resolucion_fecha: val('siiResFecha'),
+            };
+            saveBtn.disabled = true;
+            try {
+                const res = await fetch('/api/fiscal/sii', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+                const d = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(d.error || '');
+                pintar(d);
+                flash('[data-sii-msg-ajustes]', en ? 'SII details saved.' : 'Datos del SII guardados.', true);
+            } catch (err: any) {
+                flash('[data-sii-msg-ajustes]', err?.message || (en ? 'Could not save the SII details' : 'No se pudieron guardar los datos del SII'), false);
+            } finally { saveBtn.disabled = false; }
+        });
+
+        cafBtn.addEventListener('click', async () => {
+            const input = document.getElementById('siiCaf') as HTMLInputElement | null;
+            const f = input?.files?.[0];
+            if (!f) { flash('[data-sii-msg-caf]', en ? 'Choose the folio file first.' : 'Elige primero el archivo de folios.', false); return; }
+            const fd = new FormData();
+            fd.append('caf', f);
+            cafBtn.disabled = true;
+            try {
+                const res = await fetch('/api/fiscal/sii-folios', { method: 'POST', body: fd });
+                const d = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(d.error || '');
+                pintar(d);
+                if (input) input.value = '';
+                input?.closest('.sii-drop')?.classList.remove('has-file');
+                flash('[data-sii-msg-caf]', en ? 'Folios uploaded.' : 'Folios cargados.', true);
+            } catch (err: any) {
+                flash('[data-sii-msg-caf]', err?.message || (en ? 'Could not upload the folio file' : 'No se pudo subir el archivo de folios'), false);
+            } finally { cafBtn.disabled = false; }
+        });
+
+        root.addEventListener('click', async (ev) => {
+            const btn = (ev.target as HTMLElement).closest<HTMLButtonElement>('[data-sii-caf-remove]');
+            if (!btn) return;
+            const ok = await (window as any).cordConfirm?.({
+                title: en ? 'Remove folio file' : 'Quitar archivo de folios',
+                body: en ? 'None of its folios has been used. You can upload it again later. Remove it?' : 'No se ha usado ninguno de sus folios. Podrás volver a subirlo después. ¿Quitarlo?',
+                confirmText: en ? 'Remove' : 'Quitar',
+            });
+            if (!ok) return;
+            btn.disabled = true;
+            try {
+                const res = await fetch(`/api/fiscal/sii-folios?id=${encodeURIComponent(btn.getAttribute('data-sii-caf-remove') || '')}`, { method: 'DELETE' });
+                const d = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(d.error || '');
+                pintar(d);
+            } catch (err: any) {
+                btn.disabled = false;
+                flash('[data-sii-msg-caf]', err?.message || (en ? 'Could not remove the folio file' : 'No se pudo quitar el archivo de folios'), false);
+            }
+        });
+
+        uploadBtn.addEventListener('click', async () => {
+            const f = (document.getElementById('siiP12') as HTMLInputElement | null)?.files?.[0];
+            if (!f) { flash('[data-sii-msg-cert]', en ? 'Choose your .pfx/.p12 file first.' : 'Elige primero tu archivo .pfx/.p12.', false); return; }
+            const fd = new FormData();
+            fd.append('p12', f);
+            fd.append('password', (document.getElementById('siiPass') as HTMLInputElement | null)?.value ?? '');
+            const rut = (document.getElementById('siiRutFirmante') as HTMLInputElement | null)?.value.trim();
+            if (rut) fd.append('rut_firmante', rut);
+            uploadBtn.disabled = true;
+            const orig = uploadBtn.textContent;
+            uploadBtn.textContent = en ? 'Uploading…' : 'Subiendo…';
+            try {
+                const res = await fetch('/api/fiscal/sii', { method: 'POST', body: fd });
+                const d = await res.json().catch(() => ({}));
+                if (d.requiere_rut) q<HTMLElement>('[data-sii-rut-field]')?.removeAttribute('hidden');
+                if (!res.ok) throw new Error(d.error || '');
+                const passIn = document.getElementById('siiPass') as HTMLInputElement | null;
+                if (passIn) passIn.value = '';
+                pintar(d);
+                flash('[data-sii-msg-cert]', d.aviso || (en ? 'Certificate uploaded.' : 'Certificado cargado.'), !d.aviso, !!d.aviso);
+                if (!d.aviso) (window as any).cordToast?.(en ? 'SII certificate uploaded' : 'Certificado del SII cargado', 'ok');
+            } catch (err: any) {
+                flash('[data-sii-msg-cert]', err?.message || (en ? 'Could not upload the certificate' : 'No se pudo subir el certificado'), false);
+            } finally { uploadBtn.disabled = false; uploadBtn.textContent = orig; }
+        });
+
+        removeBtn?.addEventListener('click', async () => {
+            const ok = await (window as any).cordConfirm?.({
+                title: en ? 'Disconnect the SII' : 'Desconectar el SII',
+                body: en
+                    ? 'New invoices will be issued as commercial documents, without being sent to the SII, until you upload a certificate again. Your folios stay saved. Disconnect?'
+                    : 'Las facturas nuevas se emitirán como documento comercial, sin enviarse al SII, hasta que subas un certificado de nuevo. Tus folios se conservan. ¿Desconectar?',
+                danger: true,
+                confirmText: en ? 'Disconnect' : 'Desconectar',
+            });
+            if (!ok) return;
+            removeBtn.disabled = true;
+            try {
+                const res = await fetch('/api/fiscal/sii', { method: 'DELETE' });
+                const d = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(res.status === 409 && typeof d.error === 'string' ? d.error : '');
+                pintar(d);
+                flash('[data-sii-msg-cert]', en ? 'SII certificate disconnected.' : 'Certificado del SII desconectado.', true);
+            } catch (err: any) {
+                flash('[data-sii-msg-cert]', err?.message || (en ? 'Could not disconnect the certificate' : 'No se pudo desconectar el certificado'), false);
+            } finally { removeBtn.disabled = false; }
+        });
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initSii);
+    else initSii();
+</script>

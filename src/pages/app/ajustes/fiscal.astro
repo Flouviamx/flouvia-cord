@@ -14,6 +14,8 @@ import NfseSettings from '../../../components/app/settings/NfseSettings.astro';
 import { estadoNfse } from '../../../lib/fiscal/latam/nfse/estado';
 import SunatSettings from '../../../components/app/settings/SunatSettings.astro';
 import { estadoSunat } from '../../../lib/fiscal/latam/sunat/estado';
+import SiiSettings from '../../../components/app/settings/SiiSettings.astro';
+import { estadoSii } from '../../../lib/fiscal/latam/sii/estado';
 import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
 const ORG = await getOrg();
@@ -28,6 +30,8 @@ const ARCA = ORG.countryCode === 'AR' ? await estadoArca(ORG.id).catch(() => nul
 const NFSE = ORG.countryCode === 'BR' ? await estadoNfse(ORG.id).catch(() => null) : null;
 // Perú: factura electrónica enviada a SUNAT (SEE - Del contribuyente).
 const SUNAT = ORG.countryCode === 'PE' ? await estadoSunat(ORG.id).catch(() => null) : null;
+// Chile: DTE emitido directamente ante el SII.
+const SII = ORG.countryCode === 'CL' ? await estadoSii(ORG.id).catch(() => null) : null;
 const verifactuOn = ORG.verifactuModo === 'verifactu';
 // Certificado cargado no es lo mismo que registrar: con el envío a la AEAT
 // apagado no se encadena nada, y la pantalla no puede decir "activo".
@@ -433,6 +437,13 @@ const EINV_AUTO_LABEL = EINV_AUTO === 'facturx'
         <SettingsSection icon="shield" class="s-block">
             <Fragment slot="heading">{L === 'en' ? 'Electronic invoicing with SUNAT' : 'Factura electrónica con SUNAT'}</Fragment>
             <SunatSettings estado={SUNAT} locale={L === 'en' ? 'en' : 'es'} />
+        </SettingsSection>
+    )}
+
+    {SII && (
+        <SettingsSection icon="shield" class="s-block">
+            <Fragment slot="heading">{L === 'en' ? 'Electronic invoicing with the SII' : 'Factura electrónica con el SII'}</Fragment>
+            <SiiSettings estado={SII} locale={L === 'en' ? 'en' : 'es'} />
         </SettingsSection>
     )}
 </SettingsShell>

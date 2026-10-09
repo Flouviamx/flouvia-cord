@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions targetNamespace="http://DefaultNamespace" xmlns="http://schemas.xmlsoap.org/wsdl/" xmlns:apachesoap="http://xml.apache.org/xml-soap" xmlns:impl="http://DefaultNamespace" xmlns:intf="http://DefaultNamespace" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:wsdlsoap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <message name="getVersionRequest">
+  </message>
+  <message name="getStateResponse">
+    <part name="getStateReturn" type="xsd:string"/>
+  </message>
+  <message name="getEstDteResponse">
+    <part name="getEstDteReturn" type="xsd:string"/>
+  </message>
+  <message name="getVersionPatchResponse">
+    <part name="getVersionPatchReturn" type="xsd:string"/>
+  </message>
+  <message name="getVersionResponse">
+    <part name="getVersionReturn" type="xsd:string"/>
+  </message>
+  <message name="getVersionPatchRequest">
+  </message>
+  <message name="getVersionMenorResponse">
+    <part name="getVersionMenorReturn" type="xsd:string"/>
+  </message>
+  <message name="getVersionMenorRequest">
+  </message>
+  <message name="getVersionMayorResponse">
+    <part name="getVersionMayorReturn" type="xsd:string"/>
+  </message>
+  <message name="getStateRequest">
+  </message>
+  <message name="getVersionMayorRequest">
+  </message>
+  <message name="getEstDteRequest">
+    <part name="RutConsultante" type="xsd:string"/>
+    <part name="DvConsultante" type="xsd:string"/>
+    <part name="RutCompania" type="xsd:string"/>
+    <part name="DvCompania" type="xsd:string"/>
+    <part name="RutReceptor" type="xsd:string"/>
+    <part name="DvReceptor" type="xsd:string"/>
+    <part name="TipoDte" type="xsd:string"/>
+    <part name="FolioDte" type="xsd:string"/>
+    <part name="FechaEmisionDte" type="xsd:string"/>
+    <part name="MontoDte" type="xsd:string"/>
+    <part name="Token" type="xsd:string"/>
+  </message>
+  <portType name="QueryEstDte">
+    <operation name="getVersionMayor">
+      <input message="impl:getVersionMayorRequest" name="getVersionMayorRequest"/>
+      <output message="impl:getVersionMayorResponse" name="getVersionMayorResponse"/>
+    </operation>
+    <operation name="getVersionMenor">
+      <input message="impl:getVersionMenorRequest" name="getVersionMenorRequest"/>
+      <output message="impl:getVersionMenorResponse" name="getVersionMenorResponse"/>
+    </operation>
+    <operation name="getVersionPatch">
+      <input message="impl:getVersionPatchRequest" name="getVersionPatchRequest"/>
+      <output message="impl:getVersionPatchResponse" name="getVersionPatchResponse"/>
+    </operation>
+    <operation name="getEstDte" parameterOrder="RutConsultante DvConsultante RutCompania DvCompania RutReceptor DvReceptor TipoDte FolioDte FechaEmisionDte MontoDte Token">
+      <input message="impl:getEstDteRequest" name="getEstDteRequest"/>
+      <output message="impl:getEstDteResponse" name="getEstDteResponse"/>
+    </operation>
+    <operation name="getVersion">
+      <input message="impl:getVersionRequest" name="getVersionRequest"/>
+      <output message="impl:getVersionResponse" name="getVersionResponse"/>
+    </operation>
+    <operation name="getState">
+      <input message="impl:getStateRequest" name="getStateRequest"/>
+      <output message="impl:getStateResponse" name="getStateResponse"/>
+    </operation>
+  </portType>
+  <binding name="QueryEstDteSoapBinding" type="impl:QueryEstDte">
+    <wsdlsoap:binding style="rpc" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <operation name="getVersionMayor">
+      <wsdlsoap:operation soapAction=""/>
+      <input name="getVersionMayorRequest">
+        <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://DefaultNamespace" use="encoded"/>
+      </input>
+      <output name="getVersionMayorResponse">
+        <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://DefaultNamespace" use="encoded"/>
+      </output>
+    </operation>
+    <operation name="getVersionMenor">
+      <wsdlsoap:operation soapAction=""/>
+      <input name="getVersionMenorRequest">
+        <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://DefaultNamespace" use="encoded"/>
+      </input>
+      <output name="getVersionMenorResponse">
+        <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://DefaultNamespace" use="encoded"/>
+      </output>
+    </operation>
+    <operation name="getVersionPatch">
+      <wsdlsoap:operation soapAction=""/>
+      <input name="getVersionPatchRequest">
+        <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://DefaultNamespace" use="encoded"/>
+      </input>
+      <output name="getVersionPatchResponse">
+        <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://DefaultNamespace" use="encoded"/>
+      </output>
+    </operation>
+    <operation name="getEstDte">
+      <wsdlsoap:operation soapAction=""/>
+      <input name="getEstDteRequest">
+        <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://DefaultNamespace" use="encoded"/>
+      </input>
+      <output name="getEstDteResponse">
+        <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://DefaultNamespace" use="encoded"/>
+      </output>
+    </operation>
+    <operation name="getVersion">
+      <wsdlsoap:operation soapAction=""/>
+      <input name="getVersionRequest">
+        <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://DefaultNamespace" use="encoded"/>
+      </input>
+      <output name="getVersionResponse">
+        <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://DefaultNamespace" use="encoded"/>
+      </output>
+    </operation>
+    <operation name="getState">
+      <wsdlsoap:operation soapAction=""/>
+      <input name="getStateRequest">
+        <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://DefaultNamespace" use="encoded"/>
+      </input>
+      <output name="getStateResponse">
+        <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://DefaultNamespace" use="encoded"/>
+      </output>
+    </operation>
+  </binding>
+  <service name="QueryEstDteService">
+    <port binding="impl:QueryEstDteSoapBinding" name="QueryEstDte">
+      <wsdlsoap:address location="https://palena.sii.cl/DTEWS/QueryEstDte.jws"/>
+    </port>
+  </service>
+</definitions>

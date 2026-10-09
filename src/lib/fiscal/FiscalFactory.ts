@@ -4,6 +4,7 @@ import { SpainVerifactuProvider } from './providers/SpainVerifactuProvider';
 import { ArgentinaArcaProvider } from './providers/ArgentinaArcaProvider';
 import { BrazilNfseProvider } from './providers/BrazilNfseProvider';
 import { PeruSunatProvider } from './providers/PeruSunatProvider';
+import { ChileSiiProvider } from './providers/ChileSiiProvider';
 import { CommercialInvoiceProvider } from './providers/CommercialInvoiceProvider';
 
 export class FiscalFactory {
@@ -20,6 +21,7 @@ export class FiscalFactory {
     new ArgentinaArcaProvider(),
     new BrazilNfseProvider(),
     new PeruSunatProvider(),
+    new ChileSiiProvider(),
     new CommercialInvoiceProvider(),
     // Un adapter regulatorio nuevo se registra antes del provider comercial.
     // El documento canónico y el folio permanecen iguales.

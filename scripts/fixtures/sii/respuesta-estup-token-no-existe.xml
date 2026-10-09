@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+ <soapenv:Body>
+  <ns1:getEstUpResponse soapenv:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" xmlns:ns1="http://DefaultNamespace">
+   <ns1:getEstUpReturn xsi:type="xsd:string">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&#xd;
+&lt;SII:RESPUESTA xmlns:SII=&quot;http://www.sii.cl/XMLSchema&quot;&gt;&#xd;
+    &lt;SII:RESP_HDR&gt;&#xd;
+        &lt;ESTADO&gt;001&lt;/ESTADO&gt;&#xd;
+        &lt;GLOSA&gt;TOKEN NO EXISTE&lt;/GLOSA&gt;&#xd;
+    &lt;/SII:RESP_HDR&gt;&#xd;
+&lt;/SII:RESPUESTA&gt;&#xd;
+</ns1:getEstUpReturn>
+  </ns1:getEstUpResponse>
+ </soapenv:Body>
+</soapenv:Envelope>

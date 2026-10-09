@@ -95,6 +95,8 @@ export interface InvoicePdfInput {
    * `provider_data.latam.representacion`, leída con representacionDe().
    */
   autoridad?: RepresentacionImpresa | null;
+  /** Copia cedible (Chile): imprime el acuse de recibo y la leyenda de destino de `autoridad.cedible`. */
+  copiaCedible?: boolean;
   /** Instrucciones de pago (link, banco). Se imprime tal cual. */
   paymentInstructions?: string | null;
   /** Condiciones generales del negocio (orgs.pdf_condiciones), iguales en cada documento. */
@@ -118,6 +120,8 @@ const ZEBRA: RGB = [249, 250, 251];
 const WHITE: RGB = [255, 255, 255];
 const WARN: RGB = [180, 83, 9];
 const WARN_BG: RGB = [254, 243, 199];
+/** Recuadro del tipo de documento de un riel que lo exige (Chile: negro o rojo, nunca verde). */
+const RECUADRO: RGB = [200, 16, 46];
 
 const MARGIN = 48;
 const PAGE_W = 595.28;
@@ -403,15 +407,31 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
   const headRight = PAGE_W - MARGIN - 220;
   const tituloDoc = input.autoridad?.titulo
     ?? (input.documentType === 'proforma' ? tx('proforma') : input.creditNoteOfNumber ? tx('creditNote') : tx('invoice'));
-  doc.text(tituloDoc, headRight, 42, {
-    size: 9, font: 'bold', color: headerInk, align: 'right', width: 220, tracking: 2.4,
-  });
-  doc.text(truncateText(input.invoiceNumber, 220, 19, 'bold'), headRight, 66, {
-    size: 19, font: 'bold', color: headerInk, align: 'right', width: 220,
-  });
-  doc.text(fmtDate(input.issuedAt), headRight, 84, {
-    size: 8.5, color: headerInk, align: 'right', width: 220,
-  });
+  const recuadro = input.autoridad?.recuadro;
+  if (recuadro) {
+    // Recuadro que la norma del país exige arriba a la derecha (Chile: entre
+    // 1,5 × 5,5 y 4 × 8 cm, filete de 0,5 a 1 mm, negrita de 10 o más, negro
+    // o rojo; la unidad del SII debajo — manual de muestras impresas, 1.1.4).
+    const boxW = mmAPuntos(72);
+    const lineas = recuadro.lineas.flatMap((l) => wrapText(l, boxW - 14, 10, 'bold'));
+    const boxH = Math.max(mmAPuntos(15), lineas.length * 13 + 14);
+    const boxX = PAGE_W - MARGIN - boxW;
+    doc.rect(boxX, 12, boxW, boxH, { fill: WHITE, stroke: RECUADRO, lineWidth: mmAPuntos(0.7) });
+    lineas.forEach((l, i) => doc.text(l, boxX, 12 + (boxH - lineas.length * 13) / 2 + 10 + i * 13, {
+      size: 10, font: 'bold', color: RECUADRO, align: 'center', width: boxW,
+    }));
+    if (recuadro.pie) doc.text(recuadro.pie, boxX, 12 + boxH + 12, { size: 9, font: 'bold', color: headerInk, align: 'center', width: boxW });
+  } else {
+    doc.text(tituloDoc, headRight, 42, {
+      size: 9, font: 'bold', color: headerInk, align: 'right', width: 220, tracking: 2.4,
+    });
+    doc.text(truncateText(input.invoiceNumber, 220, 19, 'bold'), headRight, 66, {
+      size: 19, font: 'bold', color: headerInk, align: 'right', width: 220,
+    });
+    doc.text(fmtDate(input.issuedAt), headRight, 84, {
+      size: 8.5, color: headerInk, align: 'right', width: 220,
+    });
+  }
 
   let y = HEADER_H + 26;
 
@@ -845,6 +865,58 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
       });
     }
     y += qrSize;
+  }
+
+  // ── Timbre 2D del riel y copia cedible, al pie del documento ───────────────
+  // Lo calcula el riel (latam/representacion.ts): aquí solo se dibujan los
+  // módulos. Chile: PDF417 a no menos de 2 cm del borde izquierdo, zona de
+  // silencio de 0,25", leyendas debajo en cuerpo 6 o más; la copia cedible
+  // suma el acuse de recibo y "CEDIBLE" abajo a la derecha (manual de
+  // muestras impresas del SII, 1.4 y 1.5).
+  const timbre = input.autoridad?.timbre;
+  const cedible = input.copiaCedible ? input.autoridad?.cedible : undefined;
+  if (timbre || cedible) {
+    const silencio = mmAPuntos(6.35);
+    const modulo = timbre ? mmAPuntos(timbre.moduloMm) : 0;
+    const altoFila = timbre ? mmAPuntos(timbre.altoFilaMm) : 0;
+    const altoTimbre = timbre ? timbre.filas.length * altoFila + 12 + timbre.leyendas.length * 9 : 0;
+    const acuseW = contentW / 2 - 10;
+    const acuseX = MARGIN + contentW - acuseW;
+    const textoAcuse = cedible ? wrapText(cedible.acuseTexto, acuseW - 16, 6.5) : [];
+    const altoAcuse = cedible ? 22 + cedible.acuseCampos.length * 15 + textoAcuse.length * 8 + 30 : 0;
+    let top = y + silencio;
+    if (top + Math.max(altoTimbre, altoAcuse) > BOTTOM_LIMIT) { doc.addPage(); top = MARGIN + silencio; }
+    if (timbre) {
+      const x = Math.max(MARGIN, mmAPuntos(20));
+      timbre.filas.forEach((hex, r) => {
+        const bits = [...hex].map((c) => parseInt(c, 16).toString(2).padStart(4, '0')).join('').slice(0, timbre.modulos);
+        // Corridas de módulos oscuros como un solo rectángulo.
+        for (let c = 0; c < bits.length; c++) {
+          if (bits[c] !== '1') continue;
+          let fin = c;
+          while (fin + 1 < bits.length && bits[fin + 1] === '1') fin++;
+          doc.rect(x + c * modulo, top + r * altoFila, (fin - c + 1) * modulo, altoFila, { fill: [0, 0, 0] });
+          c = fin;
+        }
+      });
+      const anchoTimbre = timbre.modulos * modulo;
+      const ly = top + timbre.filas.length * altoFila + 12;
+      timbre.leyendas.forEach((l, i) => doc.text(l, x, ly + i * 9, {
+        size: 7, font: i === 0 ? 'bold' : 'regular', color: INK, align: 'center', width: anchoTimbre,
+      }));
+    }
+    if (cedible) {
+      doc.rect(acuseX, top, acuseW, altoAcuse - 24, { stroke: INK, lineWidth: 0.6 });
+      doc.text(cedible.acuseTitulo.toUpperCase(), acuseX + 8, top + 14, { size: 7.5, font: 'bold', color: INK, tracking: 1 });
+      cedible.acuseCampos.forEach((campo, i) => {
+        const fy = top + 32 + i * 15;
+        doc.text(`${campo}:`, acuseX + 8, fy, { size: 7.5, color: INK });
+        doc.line(acuseX + 50, fy + 1, acuseX + acuseW - 8, fy + 1, { color: MUTED, width: 0.4 });
+      });
+      textoAcuse.forEach((l, i) => doc.text(l, acuseX + 8, top + 32 + cedible.acuseCampos.length * 15 + i * 8, { size: 6.5, color: INK }));
+      doc.text(cedible.leyenda, acuseX, top + altoAcuse - 4, { size: 14, font: 'bold', color: INK, align: 'right', width: acuseW });
+    }
+    y = top + Math.max(altoTimbre, altoAcuse) + 8;
   }
 
   // ── Pie legal y numeración, en TODAS las páginas ───────────────────────────

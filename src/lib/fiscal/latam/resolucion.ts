@@ -128,6 +128,44 @@ export async function resolverPendientesDeOrg(orgId: string, rail: RailId, deadl
             }
             return r;
         }
+        case 'sii': {
+            // Mismo recorrido que ARCA: consulta (QueryEstUp / QueryEstDte) con
+            // la secuencia tomada; el SII valida después del upload, así que
+            // aquí termina de emitirse lo que el SII aceptó entretanto.
+            const { contextoSii, resolverPorConsulta } = await import('./sii/autorizacion');
+            const [[org]] = await withOrgTx(orgId, sql`select fiscal_metadata->>'tax_id' as tax_id, rfc from orgs where id = ${orgId}`);
+            let ctx;
+            try {
+                ctx = await contextoSii(orgId, config.entorno, org?.tax_id || org?.rfc);
+            } catch (error) {
+                r.sinResolver = intentos.length;
+                r.error = esErrorSeguro(error) ? error.message : 'contexto no disponible';
+                return r;
+            }
+            for (const intento of intentos) {
+                if (Date.now() >= deadline) break;
+                r.revisados++;
+                try {
+                    const resultado = await conSecuencia(orgId, { rail, entorno: intento.entorno, serie: intento.serie, tipo: intento.tipo },
+                        () => resolverPorConsulta(ctx, intento), { esperaMaxMs: 2_000, leaseS: 90 });
+                    if (resultado === 'autorizado') {
+                        r.autorizados++;
+                        const { finalizeInvoice } = await import('../invoices');
+                        await finalizeInvoice(orgId, intento.documentoId);
+                    } else if (resultado === 'descartado') {
+                        r.descartados++;
+                    } else {
+                        r.sinResolver++;
+                    }
+                } catch (error) {
+                    r.sinResolver++;
+                    if (!esErrorSeguro(error)) {
+                        log.error('rieles-latam: no se pudo resolver un intento', { route: 'fiscal/latam', orgId, intento: intento.id, err: error });
+                    }
+                }
+            }
+            return r;
+        }
         default:
             return r;
     }

@@ -1264,7 +1264,7 @@ export async function voidInvoice(
   // de un documento que va a seguir vigente.
   const railDoc = railDeDocumento(doc.document_type);
   if (railDoc && !railDoc.anulable && !(doc.sandbox_of || doc.provider_data?.simulado === true)) {
-    return { ok: false, requiresCreditNote: true, error: `En ${railDoc.pais === 'AR' ? 'Argentina' : 'este país'} un comprobante autorizado por ${railDoc.autoridad} no se anula: emite una nota de crédito por el importe que quieras compensar.` };
+    return { ok: false, requiresCreditNote: true, error: `En ${railDoc.pais === 'AR' ? 'Argentina' : railDoc.pais === 'CL' ? 'Chile' : 'este país'} un comprobante autorizado por ${railDoc.autoridad} no se anula: emite una nota de crédito por el importe que quieras compensar.` };
   }
 
   // ── Motivo del SAT (México) ─────────────────────────────────────────────
