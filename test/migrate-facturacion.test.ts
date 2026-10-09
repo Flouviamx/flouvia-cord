@@ -26,6 +26,7 @@ const BASE = `
         nombre text not null, tipo text not null default 'iva', tasa numeric not null default 0,
         es_default boolean not null default false, activo boolean not null default true, kind text not null default 'consumo');
     create table cotizacion_items (id serial primary key, tax_rate numeric);
+    create table clientes (id uuid primary key, org_id uuid not null references orgs(id) on delete cascade, empresa text);
 `;
 
 const ORG_ES = '00000000-0000-4000-8000-0000000000e5';
@@ -84,6 +85,13 @@ describe('migración de despliegue de facturación', () => {
                 'impuestos.exemption_reason', 'impuestos.retencion_base', 'orgs.verifactu_modo',
                 'verifactu_registros.envio_error', 'verifactu_registros.subsana_de',
             ]);
+            // Factura electrónica europea (db/deploy/2026-10-08-einvoice.sql).
+            const einvoice = (await db.query<{ c: string }>(`select table_name || '.' || column_name as c from information_schema.columns
+                where column_name in ('buyer_reference', 'purchase_order', 'payee_account', 'einvoice_address') order by 1`)).rows.map((r) => r.c);
+            expect(einvoice).toEqual([
+                'clientes.buyer_reference', 'clientes.einvoice_address',
+                'documentos_fiscales.buyer_reference', 'documentos_fiscales.payee_account', 'documentos_fiscales.purchase_order',
+            ]);
             const funciones = (await db.query<{ proname: string }>(`select proname from pg_proc where proname in ('cord_serie_en_uso', 'cord_verifactu_multiples_ot', 'cord_verifactu_registro_inmutable') order by proname`)).rows;
             expect(funciones.map((f) => f.proname)).toEqual(['cord_serie_en_uso', 'cord_verifactu_multiples_ot', 'cord_verifactu_registro_inmutable']);
             expect((await db.query(`select 1 from verifactu_envio_estado`)).rows).toEqual([]);
@@ -105,8 +113,11 @@ describe('migración de despliegue de facturación', () => {
             expect(bloqueantes).toEqual([]);
             // El perfil que el negocio borró no vuelve.
             expect(await causas()).toEqual(['E2', 'E5', 'S2']);
-            // Las restricciones siguen mandando.
+            // Las restricciones siguen mandando, con la clasificación VATEX
+            // ampliada: un perfil exento la admite y uno de consumo no.
             await expect(db.exec(`insert into impuestos (org_id, nombre, tasa, kind, exemption_reason) values ('${ORG_ES}', 'x', 21, 'consumo', 'E2')`)).rejects.toThrow();
+            await db.exec(`insert into impuestos (org_id, nombre, tasa, kind, exemption_reason) values ('${ORG_ES}', 'Export', 0, 'exento', 'VATEX-EU-G')`);
+            await expect(db.exec(`insert into impuestos (org_id, nombre, tasa, kind, exemption_reason) values ('${ORG_ES}', 'x', 0, 'exento', 'VATEX-XX')`)).rejects.toThrow();
             await expect(db.exec(`insert into documentos_fiscales (id, org_id, service_date, service_date_end) values (gen_random_uuid(), '${ORG_ES}', '2026-10-02', '2026-10-01')`)).rejects.toThrow();
         } finally {
             await db.close();

@@ -6,7 +6,9 @@ import { brandImagePng } from '../brand-image';
 
 import { sql, withOrgTx } from '../db';
 import { decryptSecret } from '../crypto-secret';
-import { createInvoicePdf } from './invoice-pdf';
+import { createInvoicePdf, type InvoicePdfInput } from './invoice-pdf';
+import { isEInvoiceFormat } from './einvoice/model';
+import { currentLocale } from '../context';
 import { publicDocumentUrl } from '../public-links';
 import { isTermCode, termDays } from '../payment-terms';
 
@@ -30,7 +32,9 @@ export async function loadInvoiceDocumentRow(orgId: string, id: string, publicTo
            d.status, d.lifecycle, d.issued_at, d.cotizacion_id, d.notes as document_notes,
            d.service_date::text as service_date, d.service_date_end::text as service_date_end,
            d.public_token as invoice_token, d.due_date as invoice_due,
-           orig.invoice_number as credit_note_of_number,
+           d.buyer_reference, d.purchase_order, d.payee_account, d.due_date::text as invoice_due_text,
+           orig.invoice_number as credit_note_of_number, orig.issued_at as credit_note_of_issued_at,
+           o.fiscal_metadata as org_fiscal_metadata,
            o.facturapi_live_key, o.facturapi_live_key_enc,
            -- Marca y condiciones: son PRESENTACIÓN, no datos fiscales, así que se
            -- leen en vivo (el snapshot inmutable sigue mandando en importes y
@@ -51,10 +55,29 @@ export async function loadInvoiceDocumentRow(orgId: string, id: string, publicTo
 }
 
 export async function downloadInvoiceDocument(orgId: string, id: string, format: string, publicToken?: string): Promise<Response> {
-  if (!UUID_RE.test(id) || !['pdf', 'xml'].includes(format)) return new Response('Formato no encontrado', { status: 404 });
+  const einvoice = isEInvoiceFormat(format);
+  if (!UUID_RE.test(id) || (!['pdf', 'xml'].includes(format) && !einvoice)) return new Response('Formato no encontrado', { status: 404 });
 
   const doc = await loadInvoiceDocumentRow(orgId, id, publicToken);
   if (!doc || doc.status !== 'issued') return new Response('Documento no encontrado', { status: 404 });
+
+  // Factura electrónica europea (Factur-X, XRechnung, Peppol): se genera del
+  // mismo snapshot. Si el documento no califica, se dice qué falta (409).
+  if (einvoice) {
+    const { renderEInvoice } = await import('./einvoice/server');
+    const result = await renderEInvoice(orgId, doc, format);
+    if (!result.ok) {
+      const en = currentLocale() === 'en';
+      return new Response(result.problems.map((p) => (en ? p.en : p.es)).join('\n'), {
+        status: 409,
+        headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'private, no-store' },
+      });
+    }
+    return new Response(new Uint8Array(result.file.content), {
+      status: 200,
+      headers: downloadHeaders(result.file.contentType, result.file.filename),
+    });
+  }
 
   if (doc.document_type === 'cfdi_40' || doc.document_type === 'cfdi_egreso') {
     const facturapiId = doc.provider_data?.facturapi_id as string | undefined;
@@ -119,11 +142,19 @@ async function invoicePdf(orgId: string, doc: any, simulated: boolean): Promise<
 
 /** PDF de una factura a partir de la fila de `loadInvoiceDocumentRow`. */
 export async function renderInvoicePdf(orgId: string, doc: any, simulated: boolean): Promise<Buffer> {
+  return createInvoicePdf(await invoicePdfInput(orgId, doc, simulated));
+}
+
+/**
+ * La entrada del PDF de una factura, sin dibujarlo. La comparten el PDF de
+ * siempre y el Factur-X (que es ese mismo PDF ensamblado como PDF/A-3).
+ */
+export async function invoicePdfInput(orgId: string, doc: any, simulated: boolean): Promise<InvoicePdfInput> {
   const term = String(doc.terminos || '');
   const appearance = resolveBrandProfile(doc.brand_profile);
   const source = appearance.header === 'contrast' && appearance.logoDark ? appearance.logoDark : doc.logo_url;
   const logoBytes = await brandImagePng(source);
-  const pdf = createInvoicePdf({
+  return {
     brandProfile: appearance,
     brandSecondary: doc.color_secundario as string | null,
     invoiceNumber: String(doc.invoice_number || 'INV'),
@@ -169,8 +200,10 @@ export async function renderInvoicePdf(orgId: string, doc: any, simulated: boole
       : (doc.public_token ? await publicDocumentUrl(orgId, 'q', doc.public_token) : null),
     notes: (doc.pdf_condiciones as string) || null,
     documentNotes: (doc.document_notes as string) || null,
-  });
-  return pdf;
+    // Referencia del comprador (Leitweg-ID) y orden de compra: las lleva la
+    // factura electrónica (BT-10, BT-13) y el PDF las imprime igual.
+    reference: [doc.buyer_reference, doc.purchase_order].map((v) => String(v || '').trim()).filter(Boolean).join(' · ') || null,
+  };
 }
 
 function downloadHeaders(contentType: string, filename: string): Record<string, string> {

@@ -45,3 +45,38 @@ export async function buildInvoicePdfAttachment(orgId: string, documentoId: stri
         return null;
     }
 }
+
+/**
+ * Los adjuntos del correo de una factura: el PDF y, si el negocio lo pidió
+ * (Ajustes › Datos fiscales, `fiscal_metadata.einvoice_email`, con default por
+ * país), su factura electrónica europea.
+ *
+ *   - facturx: el PDF adjunto ES el Factur-X (PDF/A-3 con el XML dentro). Es la
+ *     misma factura con el mismo nombre de archivo; un lector que no entiende
+ *     Factur-X ve el PDF de siempre.
+ *   - xrechnung: el PDF más el XML de XRechnung (UBL).
+ *
+ * Si el documento no califica (falta un dato que el formato exige) el correo
+ * sale con el PDF de siempre: el detalle de la factura dice qué falta. NUNCA
+ * lanza, por el mismo motivo que `buildInvoicePdfAttachment`.
+ */
+export async function buildInvoiceAttachments(orgId: string, documentoId: string): Promise<InvoiceAttachment[]> {
+    const soloPdf = async () => {
+        const pdf = await buildInvoicePdfAttachment(orgId, documentoId);
+        return pdf ? [pdf] : [];
+    };
+    try {
+        const doc = await loadInvoiceDocumentRow(orgId, documentoId);
+        if (!doc || doc.status !== 'issued') return [];
+        const { einvoiceEmailMode } = await import('./einvoice/codes');
+        const mode = einvoiceEmailMode(String(doc.country_code || ''), doc.org_fiscal_metadata?.einvoice_email);
+        if (mode === 'off') return soloPdf();
+        const { renderEInvoice } = await import('./einvoice/server');
+        const result = await renderEInvoice(orgId, doc, mode).catch(() => null);
+        if (!result?.ok) return soloPdf();
+        const electronica = { filename: result.file.filename, content: new Uint8Array(result.file.content) };
+        return mode === 'facturx' ? [electronica] : [...await soloPdf(), electronica];
+    } catch {
+        return soloPdf();
+    }
+}

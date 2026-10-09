@@ -10,7 +10,7 @@ import { getCountryProfile } from '../countries';
 import { currencyDecimals, normalizeCurrency, toMinorUnits } from '../currency';
 import { dueDateFor, isoDay } from '../cobros';
 import { FiscalFactory } from './FiscalFactory';
-import { partiesFrom } from './parties';
+import { partiesFrom, payeeAccountFrom } from './parties';
 import { calculateDocumentTotals, retencionBase } from '../../../packages/elements/src/engine';
 import { after } from '../after';
 import { log } from '../log';
@@ -19,7 +19,7 @@ import type {
   FiscalDocumentResponse,
   FiscalLineItem,
 } from './index';
-import { resolveLineSatKeys } from './sat-claves';
+import { resolveLineSatKeys, resolveLineUnitKey } from './sat-claves';
 import { exemptionReasonFor } from './exemption';
 import { serieCompartida, serieCompartidaMensaje } from './serie';
 
@@ -338,7 +338,9 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string, do
           cl.regimen_fiscal as cliente_regimen, cl.uso_cfdi as cliente_uso,
           cl.cp_fiscal as cliente_cp, cl.country_code as cliente_country_code,
           cl.direccion_line1 as cliente_direccion_line1, cl.direccion_line2 as cliente_direccion_line2,
-          cl.ciudad as cliente_ciudad, cl.region as cliente_region
+          cl.ciudad as cliente_ciudad, cl.region as cliente_region,
+          cl.telefono as cliente_telefono, cl.einvoice_address as cliente_einvoice_address, cl.buyer_reference as cliente_buyer_reference,
+          o.banco_clabe_enc as org_banco_clabe_enc, o.banco_clabe_last4 as org_banco_clabe_last4, o.banco_beneficiario as org_banco_beneficiario
         from cotizaciones c
         join orgs o on o.id = c.org_id
         left join clientes cl on cl.id = c.cliente_id
@@ -436,7 +438,10 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string, do
       claveSat: approvedItems[i]?.clave_sat,
       claveUnidadSat: approvedItems[i]?.clave_unidad_sat,
       unidad: approvedItems[i]?.producto_unidad,
-    }) : {}),
+    }) : resolveLineUnitKey({
+      claveUnidadSat: approvedItems[i]?.clave_unidad_sat,
+      unidad: approvedItems[i]?.producto_unidad,
+    })),
     ...causaDe(i, l.tax_rate),
   }));
   const subtotal = round(totals.subtotal);
@@ -446,6 +451,7 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string, do
 
   const fiscalMetadata = metadata(head.fiscal_metadata);
   const { issuer, recipient } = partiesFrom(head, country);
+  const payee = payeeAccountFrom(head, country);
   // ── Divisa del comprobante ────────────────────────────────────────────────
   // La factura se emite en la divisa de la VENTA (`base_currency`): sus importes
   // son exactamente los que el cliente aprobó y paga. Cuando la contabilidad del
@@ -557,7 +563,8 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string, do
             subtotal, tax_total, total, retencion_total, retenciones_snapshot,
             lifecycle, due_date, amount_paid, amount_remaining, public_token,
             issuer_snapshot, recipient_snapshot, line_items_snapshot,
-            idempotency_key, schema_version, provider_data, updated_at
+            idempotency_key, schema_version, provider_data, updated_at,
+            buyer_reference, payee_account
           )
           select ${orgId}, ${cotizacionId}, ${(head.cliente_id as string) || null},
                  ${country}, ${docType}, 'pending',
@@ -567,7 +574,8 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string, do
                  ${subtotal}, ${taxes}, ${total}, ${retencionTotal}, ${JSON.stringify(totals.retenciones)}::jsonb,
                  'draft', ${dueDate}::date, 0, ${total}, ${publicToken},
                  ${JSON.stringify(issuer)}, ${JSON.stringify(recipient)}, ${JSON.stringify(lines)},
-                 ${idempotencyKey}, 'cord.invoice.v1', ${JSON.stringify(isPartial ? { aprobacion_parcial: true, lineas_facturadas: approvedItems.length, lineas_totales: allItems.length } : {})}::jsonb, now()
+                 ${idempotencyKey}, 'cord.invoice.v1', ${JSON.stringify(isPartial ? { aprobacion_parcial: true, lineas_facturadas: approvedItems.length, lineas_totales: allItems.length } : {})}::jsonb, now(),
+                 ${(head.cliente_buyer_reference as string) || null}, ${payee ? JSON.stringify(payee) : null}::jsonb
             from next_number
           returning id, invoice_number, fiscal_id, status, provider_data, pdf_url, xml_url, public_token, created_at, updated_at
         )

@@ -43,16 +43,90 @@ export function isExemptionReason(value: unknown): value is ExemptionReason {
     return typeof value === 'string' && (EXEMPTION_REASONS as readonly string[]).includes(value);
 }
 
+// ── Resto de la UE: clasificación de la factura electrónica (EN 16931) ──────
+//
+// Fuera de España no hay registro que pida la causa código a código, pero la
+// factura electrónica europea sí: cada concepto al 0 % lleva una categoría de
+// IVA (UNTDID 5305) y, salvo el tipo cero, el motivo en la lista VATEX de la
+// Comisión. Cord no puede saber si un 0 % es una exportación de bienes, un
+// servicio fuera del ámbito del IVA o una entrega intracomunitaria: lo elige el
+// negocio en su perfil exento, igual que la causa española, y viaja por el
+// mismo camino (`impuestos.exemption_reason` → concepto → snapshot).
+//
+// Códigos verificados contra la lista BR-CL-22 del schematron oficial de
+// EN 16931 (CEN/TC 434, v1.3.16) y las reglas PEPPOL-EN16931-P0104..P0107,
+// que atan VATEX-EU-G, -O, -IC y -AE a sus categorías G, O, K y AE. 'Z' no es
+// un código VATEX: es la categoría "tipo cero", que no lleva motivo.
+
+/** Estados miembro de la UE salvo España (que usa su propia lista, arriba). */
+const EU_SIN_ES = new Set([
+    'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR', 'DE', 'GR',
+    'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL', 'PL', 'PT', 'RO', 'SK',
+    'SI', 'SE',
+]);
+
+export const EU_EXEMPTION_CODES = [
+    'VATEX-EU-AE', 'VATEX-EU-IC', 'VATEX-EU-G', 'VATEX-EU-O', 'Z',
+    'VATEX-EU-132', 'VATEX-EU-135-1', 'VATEX-EU-79-C', 'VATEX-EU-148', 'VATEX-EU-151', 'VATEX-EU-309',
+    'VATEX-FR-FRANCHISE',
+] as const;
+export type EuExemptionCode = (typeof EU_EXEMPTION_CODES)[number];
+
+/** Categoría de IVA de EN 16931 (UNTDID 5305) para una línea al 0 %. */
+export type ZeroVatCategory = 'Z' | 'E' | 'AE' | 'K' | 'G' | 'O';
+
+interface EuExemptionInfo {
+    es: string;
+    en: string;
+    category: ZeroVatCategory;
+    /** Texto del motivo (BT-120), en inglés como la lista VATEX. */
+    text: string;
+    /** Solo se ofrece a emisores de estos países. */
+    countries?: readonly string[];
+}
+
+export const EU_EXEMPTION_INFO: Record<EuExemptionCode, EuExemptionInfo> = {
+    'VATEX-EU-AE': { es: 'Inversión del sujeto pasivo', en: 'Reverse charge', category: 'AE', text: 'Reverse charge' },
+    'VATEX-EU-IC': { es: 'Entrega intracomunitaria de bienes', en: 'Intra-community supply of goods', category: 'K', text: 'Intra-community supply' },
+    'VATEX-EU-G': { es: 'Exportación fuera de la UE', en: 'Export outside the EU', category: 'G', text: 'Export outside the EU' },
+    'VATEX-EU-O': { es: 'No sujeta al IVA', en: 'Not subject to VAT', category: 'O', text: 'Not subject to VAT' },
+    Z: { es: 'Tipo cero', en: 'Zero rated', category: 'Z', text: '' },
+    'VATEX-EU-132': { es: 'Exenta por interés general (art. 132 de la Directiva)', en: 'Exempt: activities in the public interest (art. 132)', category: 'E', text: 'Exempt based on article 132 of Council Directive 2006/112/EC' },
+    'VATEX-EU-135-1': { es: 'Exenta: seguros y servicios financieros (art. 135)', en: 'Exempt: insurance and financial services (art. 135)', category: 'E', text: 'Exempt based on article 135(1) of Council Directive 2006/112/EC' },
+    'VATEX-EU-79-C': { es: 'Suplidos (art. 79.c de la Directiva)', en: 'Disbursements (art. 79(c))', category: 'E', text: 'Exempt based on article 79, point c of Council Directive 2006/112/EC' },
+    'VATEX-EU-148': { es: 'Exenta: transporte marítimo y aéreo internacional (art. 148)', en: 'Exempt: international sea and air transport (art. 148)', category: 'E', text: 'Exempt based on article 148 of Council Directive 2006/112/EC' },
+    'VATEX-EU-151': { es: 'Exenta: diplomáticos y organismos internacionales (art. 151)', en: 'Exempt: diplomatic and international bodies (art. 151)', category: 'E', text: 'Exempt based on article 151 of Council Directive 2006/112/EC' },
+    'VATEX-EU-309': { es: 'Régimen especial de agencias de viajes (art. 309)', en: 'Travel agents scheme (art. 309)', category: 'E', text: 'Travel agents VAT scheme' },
+    'VATEX-FR-FRANCHISE': { es: 'Franquicia en base (art. 293 B del CGI)', en: 'VAT franchise (art. 293 B CGI)', category: 'E', text: 'TVA non applicable, art. 293 B du CGI', countries: ['FR'] },
+};
+
+export function isEuExemptionCode(value: unknown): value is EuExemptionCode {
+    return typeof value === 'string' && (EU_EXEMPTION_CODES as readonly string[]).includes(value);
+}
+
+/** Las causas que el catálogo ofrece al negocio de `country`, con su etiqueta. */
+export function exemptionChoicesFor(country: string, lang: 'es' | 'en'): { code: string; label: string }[] {
+    const cc = String(country || '').toUpperCase();
+    if (cc === 'ES') return EXEMPTION_REASONS.map((code) => ({ code, label: `${code} · ${EXEMPTION_INFO[code][lang]}` }));
+    if (!EU_SIN_ES.has(cc)) return [];
+    return EU_EXEMPTION_CODES
+        .filter((code) => !EU_EXEMPTION_INFO[code].countries || EU_EXEMPTION_INFO[code].countries!.includes(cc))
+        .map((code) => ({ code, label: `${EU_EXEMPTION_INFO[code][lang]} · ${code === 'Z' ? (lang === 'en' ? 'category Z' : 'categoría Z') : code}` }));
+}
+
 /**
- * La causa que se CONSERVA para un concepto: solo en España (es la única
- * autoridad que la pide código a código) y solo en una línea sin impuesto —
+ * La causa que se CONSERVA para un concepto, solo en una línea sin impuesto —
  * con tasa > 0 la operación está sujeta y no exenta, y `desglose.ts` la
- * rechazaría. Cualquier otra cosa se descarta en vez de guardarse.
+ * rechazaría. España conserva su lista de Verifactu (E1–E6, N1, N2, S2); el
+ * resto de la UE, la clasificación de la factura electrónica. Cualquier otra
+ * cosa (otro país, otro código) se descarta en vez de guardarse.
  */
-export function exemptionReasonFor(country: string, value: unknown, taxRate: number | null | undefined): ExemptionReason | null {
-    if (String(country || '').toUpperCase() !== 'ES') return null;
+export function exemptionReasonFor(country: string, value: unknown, taxRate: number | null | undefined): ExemptionReason | EuExemptionCode | null {
+    const cc = String(country || '').toUpperCase();
     const code = String(value ?? '').trim().toUpperCase();
-    if (!isExemptionReason(code)) return null;
     if (Number(taxRate) !== 0) return null;
-    return code;
+    if (cc === 'ES') return isExemptionReason(code) ? code : null;
+    if (!EU_SIN_ES.has(cc) || !isEuExemptionCode(code)) return null;
+    const only = EU_EXEMPTION_INFO[code].countries;
+    return !only || only.includes(cc) ? code : null;
 }

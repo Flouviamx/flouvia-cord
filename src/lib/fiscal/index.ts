@@ -28,6 +28,19 @@ export interface FiscalParty {
    * número de GST/HST de la CRA — sin él el cliente no recupera la QST.
    */
   extraTaxIds?: { kind: 'qst'; value: string }[];
+  /** Teléfono de contacto. Del emisor lo exige XRechnung (BT-42, BR-DE-6). */
+  phone?: string;
+  /**
+   * Dirección electrónica de la factura electrónica europea (BT-34 / BT-49):
+   * esquema de la lista EAS (0088 GLN, 0204 Leitweg-ID, 0009 SIRET, EM correo…)
+   * más el identificador. Congelada al emitir, como el resto de la parte.
+   */
+  electronicAddress?: { scheme: string; id: string };
+  /**
+   * Registro legal cuando no es el identificador fiscal (SIREN, Handelsregister):
+   * BT-30 / BT-47, con su esquema ISO 6523 si se conoce.
+   */
+  legalRegistrationId?: { id: string; scheme?: string };
 }
 
 export interface FiscalLineItem {

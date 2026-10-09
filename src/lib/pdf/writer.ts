@@ -59,6 +59,13 @@ function encodeWinAnsi(value: string): number[] {
     return Array.from(String(value ?? '')).map(toWinAnsiByte);
 }
 
+/** Punto de código Unicode de un byte WinAnsi (el inverso de `toWinAnsiByte`). Lo usa el modo PDF/A. */
+export function winAnsiCodePoint(byte: number): number | null {
+    if ((byte >= 0x20 && byte <= 0x7e) || (byte >= 0xa0 && byte <= 0xff)) return byte;
+    for (const [char, code] of Object.entries(WINANSI_HIGH)) if (code === byte) return char.codePointAt(0) ?? null;
+    return null;
+}
+
 /** Escapa un literal de cadena PDF ya codificado en bytes WinAnsi. */
 function pdfString(value: string): string {
     return encodeWinAnsi(value)
@@ -176,7 +183,7 @@ export function wrapText(text: string, maxWidth: number, size: number, font: Fon
 }
 
 // ── Imágenes ─────────────────────────────────────────────────────────────────
-interface EmbeddedImage {
+export interface EmbeddedImage {
     width: number;
     height: number;
     data: Buffer;
@@ -350,6 +357,8 @@ export class PdfDocument {
     private pages: string[][] = [];
     private current: string[] = [];
     private images = new Map<string, EmbeddedImage>();
+    /** Bytes WinAnsi pintados con cada fuente: el modo PDF/A incrusta solo esos glifos. */
+    private usedGlyphs: Record<FontKey, Set<number>> = { regular: new Set(), bold: new Set(), italic: new Set() };
 
     constructor(options: { width?: number; height?: number; fontFamily?: FontFamily } = {}) {
         this.fontFamily = options.fontFamily ?? 'sans';
@@ -434,6 +443,7 @@ export class PdfDocument {
         const size = options.size ?? 9;
         const font = options.font ?? 'regular';
         const tracking = options.tracking ?? 0;
+        for (const byte of encodeWinAnsi(raw)) this.usedGlyphs[font].add(byte);
         let drawX = x;
         if (options.align && options.align !== 'left' && options.width) {
             const textWidth = measureText(raw, size, font, this.fontFamily) + tracking * Math.max(0, raw.length - 1);
@@ -471,6 +481,25 @@ export class PdfDocument {
     static fit(img: EmbeddedImage, maxW: number, maxH: number): { w: number; h: number } {
         const ratio = Math.min(maxW / img.width, maxH / img.height, 1);
         return { w: img.width * ratio, h: img.height * ratio };
+    }
+
+    /**
+     * El documento ya dibujado, sin ensamblar: páginas (operadores de contenido),
+     * imágenes y glifos usados. Lo consume el ensamblador PDF/A
+     * (`lib/pdf/pdfa.ts`); `build()` sigue siendo el camino de siempre.
+     */
+    parts(): {
+        width: number; height: number; fontFamily: FontFamily;
+        pages: string[]; images: [string, EmbeddedImage][]; usedGlyphs: Record<FontKey, Set<number>>;
+    } {
+        return {
+            width: this.width,
+            height: this.height,
+            fontFamily: this.fontFamily,
+            pages: this.pages.map((page) => page.join('\n')),
+            images: [...this.images],
+            usedGlyphs: this.usedGlyphs,
+        };
     }
 
     build(): Buffer {

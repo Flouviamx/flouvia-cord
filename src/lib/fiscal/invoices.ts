@@ -28,7 +28,7 @@ import { dueDateFor, isoDay } from '../cobros';
 import { FXService, FXUnavailableError } from '../fx/FXService';
 import { calculateDocumentTotals, type TaxBreakdown } from '../../../packages/elements/src/engine';
 import { FiscalFactory } from './FiscalFactory';
-import { partiesFrom } from './parties';
+import { partiesFrom, payeeAccountFrom } from './parties';
 import { creditNoteBreakdown } from './credit-note';
 import { invoiceBalanceLock, invoiceBalanceQuery, reconcileInvoice } from './reconciliation';
 import { taxCatalogFor, TaxCatalogUnavailableError } from '../impuestos-db';
@@ -58,7 +58,7 @@ import type {
   FiscalParty,
   FiscalRetencion,
 } from './index';
-import { resolveLineSatKeys } from './sat-claves';
+import { resolveLineSatKeys, resolveLineUnitKey } from './sat-claves';
 import { exemptionReasonFor } from './exemption';
 
 export interface DraftLineInput {
@@ -100,6 +100,24 @@ export interface CreateDraftInput {
   bufferPct?: number | null;
   /** Los precios capturados ya incluyen impuesto. */
   ivaIncluido?: boolean;
+  /**
+   * Referencia del comprador (BT-10; Leitweg-ID en la administración alemana)
+   * y orden de compra (BT-13). `undefined` = sin cambio (al crear, la del
+   * cliente); `null` = vacía a propósito.
+   */
+  buyerReference?: string | null;
+  purchaseOrder?: string | null;
+}
+
+/**
+ * Referencia del comprador y orden de compra desde el body HTTP
+ * (`buyer_reference`, `purchase_order`). Ausente = `undefined` (no se toca);
+ * vacía = `null`. Texto libre acotado: la factura electrónica las copia tal cual.
+ */
+export function parseInvoiceReferences(body: Record<string, unknown>): { buyerReference?: string | null; purchaseOrder?: string | null } {
+  const ref = (v: unknown) => (v === undefined ? undefined
+    : String(v ?? '').replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, 200) || null);
+  return { buyerReference: ref(body.buyer_reference), purchaseOrder: ref(body.purchase_order) };
 }
 
 /** Máximo de conceptos por factura. Mismo tope que una cotización. */
@@ -145,7 +163,8 @@ export function parseInvoiceItems(raw: unknown): DraftLineInput[] {
     // `?? null` y no `|| null`: una línea exenta manda 0, y con `||` ese 0
     // caería al default de la org gravando lo que no debe gravarse.
     taxRate: numOrNull(i?.tax_rate),
-    exemptionReason: i?.exemption_reason ? String(i.exemption_reason).slice(0, 4) : null,
+    // Hasta 24: además de E1–S2 (España) caben los códigos VATEX del resto de la UE.
+    exemptionReason: i?.exemption_reason ? String(i.exemption_reason).slice(0, 24) : null,
     // Solo se descartan los renglones vacíos (cantidad 0 o en blanco). Una
     // cantidad negativa ya no se tira en silencio: llega a la validación y se
     // rechaza con un motivo (ver negativeLineError).
@@ -176,7 +195,7 @@ export interface DraftResult {
  * de `buildLines` conservan el orden de `items`. Se leen en servidor y acotadas
  * a la organización: el navegador no decide con qué clave se timbra.
  */
-async function withSatKeys(orgId: string, items: DraftLineInput[], lines: FiscalLineItem[]): Promise<FiscalLineItem[]> {
+async function withSatKeys(orgId: string, items: DraftLineInput[], lines: FiscalLineItem[], onlyUnit = false): Promise<FiscalLineItem[]> {
   const ids = Array.from(new Set(items.map((i) => i.productoId).filter((id): id is string => !!id && UUID_RE.test(id))));
   if (!ids.length) return lines;
   const [rows] = await withOrgTx(orgId, sql`
@@ -185,7 +204,11 @@ async function withSatKeys(orgId: string, items: DraftLineInput[], lines: Fiscal
   const byId = new Map(rows.map((r: any) => [String(r.id), r]));
   return lines.map((line, i) => {
     const p: any = items[i]?.productoId ? byId.get(String(items[i].productoId)) : null;
-    return p ? { ...line, ...resolveLineSatKeys({ claveSat: p.clave_sat, claveUnidadSat: p.clave_unidad_sat, unidad: p.unidad }) } : line;
+    if (!p) return line;
+    // Fuera de México solo la unidad (BT-130 de la factura electrónica europea).
+    return { ...line, ...(onlyUnit
+      ? resolveLineUnitKey({ claveUnidadSat: p.clave_unidad_sat, unidad: p.unidad })
+      : resolveLineSatKeys({ claveSat: p.clave_sat, claveUnidadSat: p.clave_unidad_sat, unidad: p.unidad })) };
   });
 }
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -336,7 +359,10 @@ export async function createInvoiceDraft(orgId: string, input: CreateDraftInput)
            cl.regimen_fiscal as cliente_regimen, cl.uso_cfdi as cliente_uso,
            cl.cp_fiscal as cliente_cp, cl.terminos_default as cliente_terminos,
            cl.country_code as cliente_country_code, cl.direccion_line1 as cliente_direccion_line1,
-           cl.direccion_line2 as cliente_direccion_line2, cl.ciudad as cliente_ciudad, cl.region as cliente_region
+           cl.direccion_line2 as cliente_direccion_line2, cl.ciudad as cliente_ciudad, cl.region as cliente_region,
+           cl.telefono as cliente_telefono, cl.einvoice_address as cliente_einvoice_address, cl.buyer_reference as cliente_buyer_reference,
+           o.telefono as org_telefono, o.banco_clabe_enc as org_banco_clabe_enc, o.banco_clabe_last4 as org_banco_clabe_last4,
+           o.banco_beneficiario as org_banco_beneficiario
       from orgs o
       join clientes cl on cl.id = ${input.clienteId} and cl.org_id = o.id
      where o.id = ${orgId}
@@ -379,14 +405,18 @@ export async function createInvoiceDraft(orgId: string, input: CreateDraftInput)
     throw error;
   }
   const { subtotal, taxes, total, retenciones, retencionTotal } = built;
-  // México: cada concepto lleva las claves SAT de su producto (sat-claves.ts).
-  const lines = country === 'MX' ? await withSatKeys(orgId, itemsConTasaValidada, built.lines) : built.lines;
+  // México: cada concepto lleva las claves SAT de su producto (sat-claves.ts);
+  // el resto, la unidad.
+  const lines = await withSatKeys(orgId, itemsConTasaValidada, built.lines, country !== 'MX');
 
   const fx = await resolveFxRate(currency, ledgerCurrency, total, country, isFiscalDocument(docType, country));
   if ('error' in fx) return { ok: false, error: fx.error };
   const fxRate = fx.rate;
 
   const { issuer, recipient } = partiesFrom(head, country);
+  const payee = payeeAccountFrom(head, country);
+  const buyerReference = input.buyerReference === undefined
+    ? ((head.cliente_buyer_reference as string) || null) : input.buyerReference;
   const dueDate = input.dueDate
     || isoDay(dueDateFor(new Date(), (head.cliente_terminos as string) || null));
   const publicToken = newInvoiceToken();
@@ -398,7 +428,8 @@ export async function createInvoiceDraft(orgId: string, input: CreateDraftInput)
       retencion_total, retenciones_snapshot,
       lifecycle, due_date, amount_paid, amount_remaining, public_token, notes, created_by,
       issuer_snapshot, recipient_snapshot, line_items_snapshot,
-      schema_version, provider_data, updated_at, service_date, service_date_end
+      schema_version, provider_data, updated_at, service_date, service_date_end,
+      buyer_reference, purchase_order, payee_account
     ) values (
       ${orgId}, null, ${String(head.cliente_id)}, ${country}, ${docType}, 'pending',
       ${docType === 'cfdi_40' ? 'facturapi' : 'cord'},
@@ -407,7 +438,8 @@ export async function createInvoiceDraft(orgId: string, input: CreateDraftInput)
       'draft', ${dueDate}::date, 0, ${total}, ${publicToken},
       ${input.notes || null}, ${input.createdBy || null},
       ${JSON.stringify(issuer)}, ${JSON.stringify(recipient)}, ${JSON.stringify(lines)},
-      'cord.invoice.v1', '{}'::jsonb, now(), ${input.serviceDate || null}::date, ${input.serviceDateEnd || null}::date
+      'cord.invoice.v1', '{}'::jsonb, now(), ${input.serviceDate || null}::date, ${input.serviceDateEnd || null}::date,
+      ${buyerReference}, ${input.purchaseOrder ?? null}, ${payee ? JSON.stringify(payee) : null}::jsonb
     )
     returning id, public_token`);
   const row = rows[0];
@@ -461,7 +493,10 @@ export async function updateInvoiceDraft(
            cl.regimen_fiscal as cliente_regimen, cl.uso_cfdi as cliente_uso,
            cl.cp_fiscal as cliente_cp, cl.terminos_default as cliente_terminos,
            cl.country_code as cliente_country_code, cl.direccion_line1 as cliente_direccion_line1,
-           cl.direccion_line2 as cliente_direccion_line2, cl.ciudad as cliente_ciudad, cl.region as cliente_region
+           cl.direccion_line2 as cliente_direccion_line2, cl.ciudad as cliente_ciudad, cl.region as cliente_region,
+           cl.telefono as cliente_telefono, cl.einvoice_address as cliente_einvoice_address, cl.buyer_reference as cliente_buyer_reference,
+           o.telefono as org_telefono, o.banco_clabe_enc as org_banco_clabe_enc, o.banco_clabe_last4 as org_banco_clabe_last4,
+           o.banco_beneficiario as org_banco_beneficiario
       from orgs o
       join clientes cl on cl.id = ${input.clienteId} and cl.org_id = o.id
      where o.id = ${orgId}
@@ -498,13 +533,15 @@ export async function updateInvoiceDraft(
     throw error;
   }
   const { subtotal, taxes, total, retenciones, retencionTotal } = built;
-  // México: cada concepto lleva las claves SAT de su producto (sat-claves.ts).
-  const lines = country === 'MX' ? await withSatKeys(orgId, itemsConTasaValidada, built.lines) : built.lines;
+  // México: cada concepto lleva las claves SAT de su producto (sat-claves.ts);
+  // el resto, la unidad.
+  const lines = await withSatKeys(orgId, itemsConTasaValidada, built.lines, country !== 'MX');
 
   const fx = await resolveFxRate(currency, ledgerCurrency, total, country, isFiscalDocument(docType, country));
   if ('error' in fx) return { ok: false, error: fx.error };
 
   const { issuer, recipient } = partiesFrom(head, country);
+  const payee = payeeAccountFrom(head, country);
   const dueDate = input.dueDate
     || isoDay(dueDateFor(new Date(), (head.cliente_terminos as string) || null));
 
@@ -530,6 +567,9 @@ export async function updateInvoiceDraft(
       issuer_snapshot = ${JSON.stringify(issuer)},
       recipient_snapshot = ${JSON.stringify(recipient)},
       line_items_snapshot = ${JSON.stringify(lines)},
+      buyer_reference = case when ${input.buyerReference === undefined}::boolean then buyer_reference else ${input.buyerReference ?? null}::text end,
+      purchase_order = case when ${input.purchaseOrder === undefined}::boolean then purchase_order else ${input.purchaseOrder ?? null}::text end,
+      payee_account = ${payee ? JSON.stringify(payee) : null}::jsonb,
       updated_at = now()
     where id = ${documentId} and org_id = ${orgId}
       and lifecycle = 'draft' and invoice_number is null and credit_note_of is null
@@ -1106,7 +1146,8 @@ export async function createCreditNote(
       lifecycle, due_date, amount_paid, amount_remaining, public_token,
       credit_note_of, notes, created_by, retenciones_snapshot, retencion_total,
       issuer_snapshot, recipient_snapshot, line_items_snapshot,
-      schema_version, provider_data, updated_at
+      schema_version, provider_data, updated_at,
+      buyer_reference, purchase_order, payee_account
     ) select
       ${orgId}, ${doc.cotizacion_id || null}, ${doc.cliente_id || null}, ${country},
       ${creditType}, 'pending',
@@ -1117,7 +1158,9 @@ export async function createCreditNote(
       ${documentId}, ${opts.motivo || null}, ${opts.createdBy || null}, ${JSON.stringify(retenciones)}::jsonb, ${retencionTotal},
       ${JSON.stringify(doc.issuer_snapshot)}, ${JSON.stringify(doc.recipient_snapshot)},
       ${JSON.stringify(lines)},
-      'cord.invoice.v1', '{}'::jsonb, now()
+      'cord.invoice.v1', '{}'::jsonb, now(),
+      -- La nota cita la misma referencia del comprador que la factura (BT-10).
+      original.buyer_reference, original.purchase_order, original.payee_account
     from documentos_fiscales original
     where original.id = ${documentId} and original.org_id = ${orgId}
       and original.status = 'issued' and original.lifecycle <> 'void'

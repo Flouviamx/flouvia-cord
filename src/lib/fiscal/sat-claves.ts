@@ -143,3 +143,14 @@ export function resolveLineSatKeys(product: {
         ...(unitKey && isUnitKey(unitKey) ? { unitKey } : {}),
     };
 }
+
+/**
+ * Solo la clave de unidad. Fuera de México no hay claves del SAT, pero la
+ * factura electrónica europea pide la unidad de cada concepto (BT-130) en la
+ * misma lista UN/ECE Rec. 20/21 de la que sale c_ClaveUnidad: cada clave de
+ * `SAT_UNITS` está en la lista de códigos de EN 16931 (BR-CL-23).
+ */
+export function resolveLineUnitKey(product: { claveUnidadSat?: unknown; unidad?: unknown } | null | undefined): { unitKey?: string } {
+    const { unitKey } = resolveLineSatKeys(product ? { claveUnidadSat: product.claveUnidadSat, unidad: product.unidad } : null);
+    return unitKey ? { unitKey } : {};
+}

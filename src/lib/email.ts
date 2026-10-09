@@ -12,7 +12,7 @@ import { trackExternalUsage } from './external-usage';
 import { getEntitlementContext } from './org-entitlements';
 import { planIncludes } from './entitlements';
 import { currencyDecimals, normalizeCurrency } from './currency';
-import { buildInvoicePdfAttachment } from './fiscal/invoice-attachment';
+import { buildInvoiceAttachments } from './fiscal/invoice-attachment';
 import { publicDocumentUrl } from './public-links';
 import { enviarPorGmail, OPERACIONES_GMAIL } from './integraciones/gmail/envio';
 
@@ -334,9 +334,10 @@ export async function notifyInvoiceIssued(orgId: string, documentoId: string): P
 
     // El PDF va adjunto. Para un área de cuentas por pagar el archivo ES el
     // trámite: un correo con solo un botón obliga a entrar al link, descargar y
-    // reenviar a mano. `buildInvoicePdfAttachment` nunca lanza — si el PDF
-    // falla, el correo sale igual con su link.
-    const pdf = await buildInvoicePdfAttachment(orgId, documentoId);
+    // reenviar a mano. Con la factura electrónica europea activada, el PDF es
+    // el Factur-X o lo acompaña el XML de XRechnung. `buildInvoiceAttachments`
+    // nunca lanza — si el PDF falla, el correo sale igual con su link.
+    const adjuntos = await buildInvoiceAttachments(orgId, documentoId);
 
     const testPrefix = r.sandbox_of ? t(L, 'email.prueba_prefix') : '';
     const result = await sendEmail({
@@ -348,7 +349,7 @@ export async function notifyInvoiceIssued(orgId: string, documentoId: string): P
         fromName: canCustomizeEmail ? (r.email_from_name || r.org_nombre) : r.org_nombre,
         replyTo: canCustomizeEmail ? (r.email_reply_to || r.email_contacto || null) : (r.email_contacto || null),
         replyToPropio: canCustomizeEmail ? (r.email_reply_to || null) : null,
-        attachments: pdf ? [pdf] : undefined,
+        attachments: adjuntos.length ? adjuntos : undefined,
     });
     return result.sent;
 }

@@ -13,6 +13,8 @@
 // la dirección real del receptor.
 
 import type { FiscalParty } from './index';
+import { isEuCountry } from '../countries';
+import { splitEInvoiceAddress } from './einvoice/codes';
 
 export function metadata(value: unknown): Record<string, string> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
@@ -38,6 +40,13 @@ export function partiesFrom(head: any, issuerCountry: string): { issuer: FiscalP
       ...(issuerCountry === 'CA' && fiscalMetadata.qst_number
         ? { extraTaxIds: [{ kind: 'qst' as const, value: fiscalMetadata.qst_number }] } : {}),
       email: head.org_email ? String(head.org_email) : undefined,
+      // Contacto, dirección electrónica y registro mercantil: los pide la
+      // factura electrónica europea (BG-6, BT-34, BT-30) y quedan congelados
+      // con el resto del emisor.
+      ...(fiscalMetadata.contact_name ? { contactName: fiscalMetadata.contact_name } : {}),
+      ...(fiscalMetadata.contact_phone || head.org_telefono ? { phone: fiscalMetadata.contact_phone || String(head.org_telefono) } : {}),
+      ...(splitEInvoiceAddress(fiscalMetadata.einvoice_address) ? { electronicAddress: splitEInvoiceAddress(fiscalMetadata.einvoice_address)! } : {}),
+      ...(fiscalMetadata.legal_registration_id ? { legalRegistrationId: { id: fiscalMetadata.legal_registration_id } } : {}),
       address: {
         countryCode: issuerCountry,
         line1: fiscalMetadata.address_line1 || (head.org_direccion ? String(head.org_direccion) : undefined),
@@ -53,6 +62,8 @@ export function partiesFrom(head: any, issuerCountry: string): { issuer: FiscalP
       taxSystem: head.cliente_regimen ? String(head.cliente_regimen) : undefined,
       email: head.cliente_email ? String(head.cliente_email) : undefined,
       contactName: head.cliente_contacto ? String(head.cliente_contacto) : undefined,
+      ...(head.cliente_telefono ? { phone: String(head.cliente_telefono) } : {}),
+      ...(splitEInvoiceAddress(head.cliente_einvoice_address) ? { electronicAddress: splitEInvoiceAddress(head.cliente_einvoice_address)! } : {}),
       address: {
         countryCode: recipientCountry,
         line1: head.cliente_direccion_line1 ? String(head.cliente_direccion_line1) : undefined,
@@ -62,5 +73,22 @@ export function partiesFrom(head: any, issuerCountry: string): { issuer: FiscalP
         postalCode: head.cliente_cp ? String(head.cliente_cp) : undefined,
       },
     },
+  };
+}
+
+/**
+ * La cuenta para transferencia del emisor tal como está al emitir
+ * (`documentos_fiscales.payee_account`, BT-84/BT-86 de la factura electrónica
+ * europea). Solo para emisores de la UE, que es donde se usa. El IBAN se copia
+ * CIFRADO (`orgs.banco_clabe_enc`): quien genera el XML lo descifra y valida.
+ */
+export function payeeAccountFrom(head: any, issuerCountry: string): { ibanEnc: string; last4: string; bic?: string; holder?: string } | null {
+  if (!isEuCountry(issuerCountry) || !head.org_banco_clabe_enc) return null;
+  const fiscalMetadata = metadata(head.fiscal_metadata);
+  return {
+    ibanEnc: String(head.org_banco_clabe_enc),
+    last4: String(head.org_banco_clabe_last4 || ''),
+    ...(fiscalMetadata.bic ? { bic: fiscalMetadata.bic } : {}),
+    ...(head.org_banco_beneficiario ? { holder: String(head.org_banco_beneficiario) } : {}),
   };
 }

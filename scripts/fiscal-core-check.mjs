@@ -91,6 +91,13 @@ assert.match(download, /d\.public_token = \$\{publicToken \?\? null\}/);
 assert.match(download, /d\.lifecycle not in \('draft', 'void'\)/);
 assert.match(publicDownload, /await resolvePublicInvoice\(token\)/);
 assert.match(publicDownload, /downloadInvoiceDocument\(identity\.orgId, identity\.id, format, token\)/);
+// Factura electrónica europea: el link público acepta solo los formatos de la
+// lista cerrada, y la descarga los genera del documento YA cargado bajo el
+// token (o la sesión) — nunca de un id que llegue por parámetro — y responde
+// 409 con lo que falta en vez de un archivo que no valida.
+assert.match(publicDownload, /!\['pdf', 'xml'\]\.includes\(format\) && !isEInvoiceFormat\(format\)/);
+assert.match(download, /const doc = await loadInvoiceDocumentRow\(orgId, id, publicToken\);[\s\S]*renderEInvoice\(orgId, doc, format\)/);
+assert.match(download, /status: 409/);
 
 // ── Estados Unidos: sales tax es estatal, no nacional ──────────────────────
 // US no está en TAX_PRESETS a propósito (sin tasa nacional que sugerir), pero

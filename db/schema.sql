@@ -4064,6 +4064,36 @@ select o.id, c.nombre, 'exento', 'exento', 0, false, c.causa
    and not exists (select 1 from impuestos i where i.org_id = o.id and i.exemption_reason = c.causa);
 insert into migraciones_datos (id) values ('es-causas-exencion-2026-10') on conflict (id) do nothing;
 
+-- ── Factura electrónica europea (EN 16931), oct 2026 ────────────────────────
+-- Factur-X, XRechnung y Peppol BIS Billing 3.0 se generan del snapshot de la
+-- factura (src/lib/fiscal/einvoice/). Lo que el estándar pide y Cord no
+-- guardaba: la referencia del comprador (BT-10; en Alemania, el Leitweg-ID de
+-- la administración pública, obligatorio en XRechnung por BR-DE-15), la orden
+-- de compra (BT-13) y la cuenta para transferencia vigente al emitir (BT-84 y
+-- BT-86). `payee_account` guarda el IBAN CIFRADO (el mismo valor de
+-- `orgs.banco_clabe_enc`), su terminación, el BIC y el titular: una factura de
+-- marzo dice la cuenta de marzo aunque el negocio cambie de banco en junio, y
+-- el snapshot no relaja la protección del dato de origen.
+alter table documentos_fiscales add column if not exists buyer_reference text;
+alter table documentos_fiscales add column if not exists purchase_order text;
+alter table documentos_fiscales add column if not exists payee_account jsonb;
+-- Del cliente: su dirección electrónica (BT-49, "esquema EAS:identificador",
+-- p. ej. 0204:991-12345-67) y la referencia que sus facturas toman por defecto.
+alter table clientes add column if not exists einvoice_address text;
+alter table clientes add column if not exists buyer_reference text;
+-- El perfil exento del catálogo lleva, fuera de España, la clasificación VATEX
+-- de la factura electrónica (src/lib/fiscal/exemption.ts): exportación,
+-- inversión del sujeto pasivo, entrega intracomunitaria, no sujeta, tipo cero o
+-- un artículo de exención de la Directiva. España conserva E1–E6, N1, N2 y S2.
+-- La definición nueva contiene todos los valores de la anterior: la migración
+-- de despliegue no vuelve a tocar la restricción una vez aplicada.
+alter table impuestos drop constraint if exists chk_impuestos_exemption_reason;
+alter table impuestos add constraint chk_impuestos_exemption_reason
+  check (exemption_reason is null or (kind = 'exento' and exemption_reason in ('E1','E2','E3','E4','E5','E6','N1','N2','S2','VATEX-EU-AE','VATEX-EU-IC','VATEX-EU-G','VATEX-EU-O','Z','VATEX-EU-132','VATEX-EU-135-1','VATEX-EU-79-C','VATEX-EU-148','VATEX-EU-151','VATEX-EU-309','VATEX-FR-FRANCHISE')));
+alter table cotizacion_items drop constraint if exists chk_cotizacion_items_exemption_reason;
+alter table cotizacion_items add constraint chk_cotizacion_items_exemption_reason
+  check (exemption_reason is null or exemption_reason in ('E1','E2','E3','E4','E5','E6','N1','N2','S2','VATEX-EU-AE','VATEX-EU-IC','VATEX-EU-G','VATEX-EU-O','Z','VATEX-EU-132','VATEX-EU-135-1','VATEX-EU-79-C','VATEX-EU-148','VATEX-EU-151','VATEX-EU-309','VATEX-FR-FRANCHISE'));
+
 -- ── Numeración de facturas: serie + ejercicio ───────────────────────────────
 -- `invoice_sequences` numeraba indefinidamente sin año ni serie: legal con
 -- serie única, pero incompatible con cualquier gestoría española, y cambiar

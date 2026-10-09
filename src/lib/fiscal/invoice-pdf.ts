@@ -92,6 +92,11 @@ export interface InvoicePdfInput {
    * rectificación, que la ley pide que conste (no solo en el historial).
    */
   documentNotes?: string | null;
+  /**
+   * Ensamblado alternativo del documento ya dibujado: el PDF/A-3 de Factur-X
+   * (`lib/pdf/pdfa.ts`). Sin él sale el PDF de siempre, byte a byte.
+   */
+  assemble?: (doc: PdfDocument) => Buffer;
 }
 
 const INK: RGB = [17, 24, 39];
@@ -763,5 +768,5 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
     });
   }
 
-  return doc.build();
+  return input.assemble ? input.assemble(doc) : doc.build();
 }

@@ -4,6 +4,7 @@ import type { APIRoute } from 'astro';
 import { resolvePublicInvoice, reqIp } from '../../../../../lib/db';
 import { strictRateLimit } from '../../../../../lib/ratelimit';
 import { downloadInvoiceDocument } from '../../../../../lib/fiscal/invoice-download';
+import { isEInvoiceFormat } from '../../../../../lib/fiscal/einvoice/model';
 
 const privacyHeaders = {
     'Cache-Control': 'private, no-store',
@@ -15,7 +16,9 @@ const privacyHeaders = {
 export const GET: APIRoute = async ({ params, request }) => {
     const token = params.token ?? '';
     const format = params.format ?? '';
-    if (!['pdf', 'xml'].includes(format)) {
+    // pdf/xml de siempre y la factura electrónica europea del mismo documento
+    // (facturx, xrechnung, xrechnung-cii, peppol), que se genera del snapshot.
+    if (!['pdf', 'xml'].includes(format) && !isEInvoiceFormat(format)) {
         return new Response('Documento no encontrado', { status: 404, headers: privacyHeaders });
     }
     // Cada descarga dibuja un PDF o se va al PAC —a veces con la llave de la
