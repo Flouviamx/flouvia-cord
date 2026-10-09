@@ -43,6 +43,11 @@ export interface InvoicePdfInput {
   voided?: boolean;
   /** Retenciones del documento — se RESTAN de subtotal+impuestos para llegar a `total`. */
   retenciones?: FiscalRetencion[] | null;
+  /**
+   * Código del cupón del descuento de documento, si salió de uno. El importe
+   * no viaja aparte: es la suma de `lines[].discount` del snapshot.
+   */
+  discountCode?: string | null;
   /** Divisa contable del emisor, si difiere de `currency`. */
   ledgerCurrency?: string | null;
   /** Tipo de cambio `currency` → `ledgerCurrency` aplicado al documento. */
@@ -204,6 +209,7 @@ const PDF_TEXT = {
   unitPrice: P('P. unitario', 'Unit price', 'Prix unit. HT', 'Einzelpreis', 'Preço unit.'),
   amount: P('Importe', 'Amount', 'Montant HT', 'Betrag', 'Valor'),
   subtotal: P('Subtotal', 'Subtotal', 'Total HT', 'Zwischensumme', 'Subtotal'),
+  discount: P('Descuento', 'Discount', 'Remise', 'Rabatt', 'Desconto'),
   base: P('base', 'base', 'base', 'Basis', 'base'),
   total: P('TOTAL', 'TOTAL', 'TOTAL TTC', 'GESAMT', 'TOTAL'),
   invoiceTotal: P('Importe total factura', 'Invoice total', 'Total facture TTC', 'Rechnungsbetrag', 'Total da fatura'),
@@ -549,6 +555,14 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
   // no un único renglón de "impuestos".
   const taxBuckets = new Map<number, { base: number; amount: number }>();
 
+  // Descuento de documento: cada concepto trae su parte (`discount`) y su
+  // `subtotal` ya es la base neta. Con descuento, la tabla muestra el importe
+  // BRUTO de cada concepto (cantidad × precio cuadra a la vista) y el renglón de
+  // descuento aparece en los totales; los impuestos siguen sobre la base neta.
+  const discountOf = (line: FiscalLineItem) => Math.max(Number(line.discount) || 0, 0);
+  const discountTotal = Math.round(input.lines.reduce((sum, line) => sum + discountOf(line), 0) * 1e6) / 1e6;
+  const hasDiscount = discountTotal > 0;
+
   input.lines.forEach((line, index) => {
     const descLines = wrapText(String(line.description || '—'), COLS[0].width - 20, 9);
     const rowH = Math.max(LINE_H * descLines.length, LINE_H) + PAD * 2;
@@ -567,10 +581,12 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
       doc.text(value, colX(col), baseY, {
         size: 9, font, color: INK, align: 'right', width: COLS[col].width - 10,
       });
-    cell(1, qtyFmt.format(Number(line.quantity) || 0));
-    cell(2, money(line.unitPrice));
+    const gross = (Number(line.subtotal) || 0) + discountOf(line);
+    const qty = Number(line.quantity) || 0;
+    cell(1, qtyFmt.format(qty));
+    cell(2, money(hasDiscount && qty > 0 ? gross / qty : line.unitPrice));
     cell(3, taxLabel(Number(line.taxRate) || 0));
-    cell(4, money(line.subtotal), 'bold');
+    cell(4, money(hasDiscount ? gross : line.subtotal), 'bold');
 
     const rate = Number(line.taxRate) || 0;
     const bucket = taxBuckets.get(rate) ?? { base: 0, amount: 0 };
@@ -613,7 +629,7 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
   // convertido no basta: es la cuota la que se declara.
   const issuerCountry = String(input.issuer.address?.countryCode || input.countryCode).toUpperCase();
   const taxInLedger = hasFx && isEuCountry(issuerCountry) && Number(input.taxTotal) > 0;
-  const totalsH = 16 + (taxDisplay.length || 1) * 16 + (retenciones.length ? 16 : 0) + retenciones.length * 16 + 42 + (hasFx ? 26 : 0) + (taxInLedger ? 11 : 0);
+  const totalsH = 16 + (hasDiscount ? 16 : 0) + (taxDisplay.length || 1) * 16 + (retenciones.length ? 16 : 0) + retenciones.length * 16 + 42 + (hasFx ? 26 : 0) + (taxInLedger ? 11 : 0);
 
   if (y + totalsH > BOTTOM_LIMIT) { doc.addPage(); y = MARGIN + 8; }
   const totalsTop = y + 16;
@@ -627,7 +643,13 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
     ty += 16;
   };
 
-  totalRow(tx('subtotal'), `${money(input.subtotal)} ${currency}`);
+  // Con descuento, el subtotal es la suma BRUTA y el descuento se resta a la
+  // vista antes de los impuestos (cuyas bases ya son netas).
+  totalRow(tx('subtotal'), `${money(Number(input.subtotal) + discountTotal)} ${currency}`);
+  if (hasDiscount) {
+    const code = String(input.discountCode || '').trim();
+    totalRow(code ? `${tx('discount')} (${code})` : tx('discount'), `−${money(discountTotal)} ${currency}`, true);
+  }
   if (taxDisplay.length) {
     for (const row of taxDisplay) {
       totalRow(`${row.label} · ${tx('base')} ${money(row.base)}`, `${money(row.amount)} ${currency}`, true);

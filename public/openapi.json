@@ -864,6 +864,40 @@
                     "type": "boolean",
                     "description": "true si los precios capturados ya incluyen el impuesto."
                   },
+                  "descuento": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "tipo": {
+                            "type": "string",
+                            "enum": [
+                              "porcentaje",
+                              "monto"
+                            ],
+                            "description": "porcentaje (de 0 a 100) o monto en la divisa del documento."
+                          },
+                          "valor": {
+                            "type": "number",
+                            "description": "10 = 10 % con porcentaje; con monto, el importe a descontar, que se topa en el total bruto."
+                          }
+                        },
+                        "required": [
+                          "tipo",
+                          "valor"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "description": "Descuento de documento antes de impuestos, repartido entre las líneas en proporción a su importe. Cord calcula el monto; null lo quita."
+                  },
+                  "cupon": {
+                    "type": "string",
+                    "description": "Código de un cupón del negocio. Cord valida vigencia, divisa y usos; si viene, manda sobre descuento. Es el único descuento que admite una llave publicable."
+                  },
                   "send": {
                     "description": "Solo con Secret Key.",
                     "type": "boolean"
@@ -1122,6 +1156,65 @@
                           },
                           "description": "Líneas."
                         },
+                        "descuento": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "tipo": {
+                                  "type": "string",
+                                  "enum": [
+                                    "porcentaje",
+                                    "monto"
+                                  ],
+                                  "description": "Tipo."
+                                },
+                                "valor": {
+                                  "type": "number",
+                                  "description": "Puntos porcentuales (10 = 10 %) o monto en la divisa del documento, según tipo."
+                                },
+                                "cupon": {
+                                  "anyOf": [
+                                    {
+                                      "type": "string"
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ],
+                                  "description": "Código del cupón del que salió; null si fue manual."
+                                },
+                                "monto": {
+                                  "type": "number",
+                                  "description": "Descuento calculado, antes de impuestos, en la divisa indicada por moneda."
+                                },
+                                "moneda": {
+                                  "anyOf": [
+                                    {
+                                      "type": "string"
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ],
+                                  "description": "Divisa ISO 4217."
+                                }
+                              },
+                              "required": [
+                                "tipo",
+                                "valor",
+                                "cupon",
+                                "monto",
+                                "moneda"
+                              ],
+                              "additionalProperties": {}
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ],
+                          "description": "Descuento de documento, aplicado antes de impuestos y repartido entre las líneas; null si no hay. subtotal ya es neto."
+                        },
                         "eventos": {
                           "type": "array",
                           "items": {
@@ -1172,6 +1265,7 @@
                         "notas",
                         "aprobacion",
                         "items",
+                        "descuento",
                         "eventos"
                       ],
                       "additionalProperties": {},
@@ -3413,6 +3507,40 @@
                     "type": "number",
                     "description": "Cobertura en puntos porcentuales sobre el tipo de cambio de referencia (2 = +2%); se acota a 25. Default 0."
                   },
+                  "descuento": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "tipo": {
+                            "type": "string",
+                            "enum": [
+                              "porcentaje",
+                              "monto"
+                            ],
+                            "description": "porcentaje (de 0 a 100) o monto en la divisa del documento."
+                          },
+                          "valor": {
+                            "type": "number",
+                            "description": "10 = 10 % con porcentaje; con monto, el importe a descontar, que se topa en el total bruto."
+                          }
+                        },
+                        "required": [
+                          "tipo",
+                          "valor"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "description": "Descuento de documento antes de impuestos, repartido entre las líneas en proporción a su importe. Cord calcula el monto; null lo quita."
+                  },
+                  "cupon": {
+                    "type": "string",
+                    "description": "Código de un cupón del negocio. Cord valida vigencia, divisa y usos; si viene, manda sobre descuento. Es el único descuento que admite una llave publicable."
+                  },
                   "buyer_reference": {
                     "type": "string",
                     "description": "Referencia del comprador para su cuenta por pagar (en Alemania, el Leitweg-ID de la administración pública). La lleva la factura electrónica europea (BT-10) y la exige XRechnung. Sin ella, la del cliente."
@@ -3677,6 +3805,65 @@
                         "receptor": {
                           "description": "Datos fiscales del cliente que recibe la factura."
                         },
+                        "descuento": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "tipo": {
+                                  "type": "string",
+                                  "enum": [
+                                    "porcentaje",
+                                    "monto"
+                                  ],
+                                  "description": "Tipo."
+                                },
+                                "valor": {
+                                  "type": "number",
+                                  "description": "Puntos porcentuales (10 = 10 %) o monto en la divisa del documento, según tipo."
+                                },
+                                "cupon": {
+                                  "anyOf": [
+                                    {
+                                      "type": "string"
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ],
+                                  "description": "Código del cupón del que salió; null si fue manual."
+                                },
+                                "monto": {
+                                  "type": "number",
+                                  "description": "Descuento calculado, antes de impuestos, en la divisa indicada por moneda."
+                                },
+                                "moneda": {
+                                  "anyOf": [
+                                    {
+                                      "type": "string"
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ],
+                                  "description": "Divisa ISO 4217."
+                                }
+                              },
+                              "required": [
+                                "tipo",
+                                "valor",
+                                "cupon",
+                                "monto",
+                                "moneda"
+                              ],
+                              "additionalProperties": {}
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ],
+                          "description": "Descuento de documento, aplicado antes de impuestos y repartido entre las líneas; null si no hay. subtotal ya es neto."
+                        },
                         "conceptos": {
                           "type": "array",
                           "items": {
@@ -3692,11 +3879,15 @@
                               },
                               "precio_unitario": {
                                 "type": "number",
-                                "description": "Importe en la divisa indicada por `moneda`."
+                                "description": "Precio unitario NETO (después del descuento de documento), sin impuesto."
                               },
                               "subtotal": {
                                 "type": "number",
-                                "description": "Importe en la divisa indicada por `moneda`."
+                                "description": "Base neta del concepto, después del descuento de documento."
+                              },
+                              "descuento": {
+                                "type": "number",
+                                "description": "Parte del descuento de documento que le tocó a este concepto, antes de impuestos; 0 si no hay."
                               },
                               "impuesto": {
                                 "type": "number",
@@ -3712,6 +3903,7 @@
                               "cantidad",
                               "precio_unitario",
                               "subtotal",
+                              "descuento",
                               "impuesto",
                               "total"
                             ],
@@ -3804,6 +3996,7 @@
                         "nota_credito_de",
                         "emisor",
                         "receptor",
+                        "descuento",
                         "conceptos",
                         "pagos"
                       ],

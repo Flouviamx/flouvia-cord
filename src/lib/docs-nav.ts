@@ -164,6 +164,7 @@ export const DOCS_NAV: NavSection[] = [
           { slug: 'pagos/facturacion', label: { es: 'Facturación por país', en: 'Invoicing by country' } },
           { slug: 'pagos/facturas-emitidas', label: { es: 'Facturas', en: 'Invoices' } },
           { slug: 'pagos/facturas-recurrentes', label: { es: 'Facturas recurrentes', en: 'Recurring invoices' } },
+          { slug: 'pagos/factura-electronica', label: { es: 'Factura electrónica europea', en: 'European e-invoicing' } },
         ],
       },
       {

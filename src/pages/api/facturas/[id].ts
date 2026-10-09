@@ -21,6 +21,7 @@ import { currentUserId } from '../../../lib/context';
 import { after } from '../../../lib/after';
 import { strictRateLimit, strictLimitResponse } from '../../../lib/ratelimit';
 import { isISODate } from '../../../lib/rango';
+import { leerDescuentoBody, type DescuentoSolicitud } from '../../../lib/descuentos';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -124,6 +125,9 @@ async function updateDraft(orgId: string, id: string, body: any, request: Reques
     }
     const servicio = parseServiceDates(body);
     if (!servicio.ok) return json({ error: servicio.error }, 400);
+    // Sin `descuento` ni `cupon` en el body, el borrador conserva el que tenía.
+    const descuento = leerDescuentoBody(body);
+    if ('error' in descuento) return json({ error: descuento.error, code: 'invalid_discount' }, 400);
 
     const result = await updateInvoiceDraft(orgId, id, {
         clienteId: String(body.cliente_id ?? '').trim(),
@@ -137,8 +141,10 @@ async function updateDraft(orgId: string, id: string, body: any, request: Reques
         bufferPct: Number(body.fx_buffer_pct) || 0,
         ivaIncluido: body.iva_incluido === true,
         ...parseInvoiceReferences(body),
+        descuento: descuento.presente ? descuento.solicitud : undefined,
     });
     if (!result.ok) {
+        if (result.code) return json({ error: result.error, code: result.code }, result.status || 400);
         // Igual que al crear: un fallo de FX o del catálogo de impuestos es 503 y
         // se reintenta; una factura ya emitida es 409 porque el estado, no el
         // payload, es lo que impide.
@@ -248,19 +254,39 @@ async function duplicate(orgId: string, id: string, request: Request) {
     if (!source) return json({ error: 'Factura no encontrada' }, 404);
     if (!source.clienteId) return json({ error: 'La factura original no tiene un cliente editable.' }, 409);
 
-    const result = await createInvoiceDraft(orgId, {
-        clienteId: source.clienteId,
+    // Con descuento de documento, el concepto se copia a su precio BRUTO (base
+    // + su parte del descuento) y el descuento viaja como definición: copiar
+    // el precio neto y además el descuento lo aplicaría dos veces.
+    const descuentoOrigen = source.descuento;
+    const solicitud: DescuentoSolicitud | null = descuentoOrigen
+        ? (descuentoOrigen.codigo
+            ? { manual: null, cupon: descuentoOrigen.codigo }
+            : { manual: { tipo: descuentoOrigen.tipo, valor: descuentoOrigen.tipo === 'monto' && descuentoOrigen.iva_incluido ? source.descuentoTotal : descuentoOrigen.valor }, cupon: null })
+        : null;
+    const draft = (descuento: DescuentoSolicitud | null) => createInvoiceDraft(orgId, {
+        clienteId: source.clienteId!,
         currency: source.currency || undefined,
         dueDate: null,
         notes: source.notas,
         createdBy: currentUserId(),
+        descuento,
         items: source.lineas.map((linea) => ({
             descripcion: linea.descripcion,
             cantidad: linea.cantidad,
-            precioUnitario: linea.precioUnitario,
+            precioUnitario: descuento && linea.descuento > 0 && linea.cantidad > 0
+                ? Math.round((linea.subtotal + linea.descuento) / linea.cantidad * 1e6) / 1e6
+                : linea.precioUnitario,
             taxRate: linea.taxRate,
         })),
     });
+    let result = await draft(solicitud);
+    // Un cupón que ya no aplica (vencido, agotado para este cliente) no impide
+    // duplicar: la copia sale a precio neto, sin cupón, y se avisa.
+    let aviso: string | undefined;
+    if (!result.ok && result.code?.startsWith('coupon_') && solicitud) {
+        aviso = `${result.error} La copia conserva los importes sin el cupón.`;
+        result = await draft(null);
+    }
     if (!result.ok) return json({ error: result.error || 'No se pudo duplicar la factura.' }, 400);
 
     await logAudit(orgId, {
@@ -268,7 +294,7 @@ async function duplicate(orgId: string, id: string, request: Request) {
         detalle: `Copia de ${source.invoiceNumber || id}`, ip: reqIp(request),
     });
     invalidateMoneyCaches(orgId);
-    return json({ ok: true, id: result.documentId, token: result.publicToken });
+    return json({ ok: true, id: result.documentId, token: result.publicToken, ...(aviso ? { aviso } : {}) });
 }
 
 /** Registra un pago manual (transferencia, efectivo, cheque) contra la factura. */
@@ -350,7 +376,16 @@ export const DELETE: APIRoute = async ({ params, request }) => {
     const denied = await requirePerm('cotizar'); if (denied) return denied;
     const id = params.id ?? '';
     const orgId = await getActiveOrgId();
-    const [rows] = await withOrgTx(orgId, sql`
+    if (!UUID_RE.test(id)) return json({ error: 'Factura no encontrada' }, 404);
+    // El uso de cupón que un intento de emisión fallido dejó registrado se
+    // libera en la MISMA transacción y con la misma condición que el borrado:
+    // después del delete la redención ya no apuntaría a ningún documento.
+    const [, rows] = await withOrgTx(orgId,
+        sql`select cord_cupon_liberar(${orgId}::uuid, null, ${id}::uuid)
+              from documentos_fiscales
+             where id = ${id} and org_id = ${orgId} and lifecycle = 'draft' and invoice_number is null and provider_data->'cord_issuance' is null
+               and descuento->>'cupon_id' is not null`,
+        sql`
         delete from documentos_fiscales
          where id = ${id} and org_id = ${orgId} and lifecycle = 'draft' and invoice_number is null and provider_data->'cord_issuance' is null
         returning id`);

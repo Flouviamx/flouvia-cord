@@ -1,7 +1,8 @@
 // Migración de despliegue de facturación (oct 2026): fecha de prestación,
 // retención sobre lo gravado, impuestos compuestos de Canadá, causa de
-// exención de España, serie por emisor y la cadena de Verifactu con sus
-// correcciones y su estado de envío. Aditiva e idempotente; NUNCA corre el
+// exención de España, serie por emisor, la cadena de Verifactu con sus
+// correcciones y su estado de envío, y el portal del cliente con el cobro
+// agrupado y automático. Aditiva e idempotente; NUNCA corre el
 // schema completo. Va en el buildCommand de vercel.json antes de
 // `npm run build`: si falla, el despliegue se detiene y queda vivo el anterior,
 // en vez de publicar código que consulta columnas o funciones inexistentes
@@ -20,8 +21,8 @@
 // `drop/add constraint` toman ACCESS EXCLUSIVE aunque no haya nada que hacer, y
 // en cada despliegue se encolarían detrás de cualquier transacción larga sobre
 // tablas calientes (`documentos_fiscales`, `cotizacion_items`). Lo que ya está
-// —columna, restricción con la misma definición, política, trigger, RLS— se
-// salta.
+// —columna, restricción con la misma definición, índice, política, trigger,
+// RLS— se salta.
 import { neon } from '@neondatabase/serverless';
 import { readdir, readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
@@ -95,6 +96,7 @@ const RE = {
     createPolicy: /^create policy "?(\w+)"? on (\w+)/i,
     dropTrigger: /^drop trigger if exists (\w+) on (\w+)$/i,
     createTrigger: /^create trigger (\w+)/i,
+    createIndex: /^create (?:unique )?index if not exists (\w+) on (\w+)/i,
 };
 
 /**
@@ -193,7 +195,19 @@ export async function applyStatements(statements, query) {
             continue;
         }
 
-        // create table/index if not exists, create or replace function, revoke,
+        // `create index if not exists` toma su candado sobre la tabla ANTES de
+        // ver que el índice ya existe: en una tabla caliente se encolaría en
+        // cada despliegue detrás de cualquier transacción larga.
+        if ((m = RE.createIndex.exec(s))) {
+            const present = await exists(
+                `select 1 from pg_class i join pg_index x on x.indexrelid = i.oid join pg_class t on t.oid = x.indrelid
+                  where i.relname = $1 and t.relname = $2 and i.relnamespace = current_schema()::regnamespace`,
+                [m[1], m[2]]);
+            if (present) saltadas.push(s); else await run(statements[k]);
+            continue;
+        }
+
+        // create table if not exists, create or replace function, revoke,
         // bloques `do` con grants y sentencias de datos idempotentes.
         await run(statements[k]);
     }

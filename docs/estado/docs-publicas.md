@@ -11,7 +11,7 @@
 - `docs.cordhq.app` sirve el árbol `/docs` (español) y `/en/docs` (inglés) del
   mismo proyecto. El ruteo del subdominio vive en `SUBDOMAINS` de
   `src/middleware.ts`; el apex redirige `/docs/*` al subdominio.
-- Contenido: `src/content/docs/{es,en}/**/*.mdx` (118 páginas por idioma) más la
+- Contenido: `src/content/docs/{es,en}/**/*.mdx` (119 páginas por idioma) más la
   referencia de la API (`src/pages/{,en/}docs/desarrolladores/referencia.astro`,
   generada desde `src/lib/api-schema.ts`). Esquema del frontmatter en
   `src/content.config.ts`.

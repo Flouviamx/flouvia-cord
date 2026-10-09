@@ -60,6 +60,17 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
         ],
     },
     {
+        // Un cupón aplica igual a una cotización que a una factura: vive en su
+        // propia categoría en vez de colgarse de una de las dos.
+        id: 'descuentos', label: 'Descuentos', labelEn: 'Discounts',
+        desc: 'Cupones con código, vigencia y límite de usos para tus documentos.',
+        descEn: 'Coupon codes with validity dates and usage limits for your documents.',
+        icon: iconInner('tag'),
+        tabs: [
+            { id: 'cupones', label: 'Cupones', labelEn: 'Coupons', href: '/app/ajustes/cupones', keywords: 'cupon cupones coupon coupons descuento descuentos discount discounts codigo code promocion promotion promo rebaja' },
+        ],
+    },
+    {
         // "Facturación" a secas: el nombre de la sección describe la capacidad,
         // no el carril de un país. CFDI es el rail mexicano y se nombra dentro de
         // la sección cuando aplica, igual que factura comercial en el resto —

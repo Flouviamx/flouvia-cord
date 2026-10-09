@@ -117,9 +117,15 @@ export interface InvoiceItem extends EngineItem {
     tax_rate: number;
     /** Precio efectivo por unidad: negociado si existe, si no el de lista. */
     precio_final: number;
+    /** Base imponible NETA: ya descontado el descuento de documento que le toca. */
     base: number;
     impuesto: number;
     total: number;
+    /**
+     * Descuento de documento repartido a esta línea, ANTES de impuestos: lo que
+     * bajó su base. La base bruta de la línea es `base + descuento`. 0 sin descuento.
+     */
+    descuento: number;
 }
 
 export interface TaxBreakdown {
@@ -130,12 +136,36 @@ export interface TaxBreakdown {
 
 export interface InvoiceTotals {
     lineas: InvoiceItem[];
+    /** Suma de bases NETAS (después del descuento de documento). */
     subtotal: number;
     impuestos: number;
     total: number;
     /** Base imponible e impuesto agrupados por tasa — lo que imprime el PDF. */
     porTasa: TaxBreakdown[];
     ivaIncluido: boolean;
+    /**
+     * Descuento de documento, antes de impuestos: la suma de `lineas[].descuento`.
+     * El subtotal bruto (antes del descuento) es `subtotal + descuentoTotal`.
+     */
+    descuentoTotal: number;
+}
+
+/**
+ * Descuento de DOCUMENTO: una rebaja sobre la venta completa, no sobre un
+ * concepto. Se aplica antes de impuestos y se reparte entre las líneas en
+ * proporción a su importe bruto (precio final × cantidad).
+ *
+ * - `'porcentaje'`: `valor` en puntos porcentuales (10 = 10 %), de 0 a 100.
+ * - `'monto'`: `valor` en la divisa del documento. Se topa en el bruto del
+ *   documento: un descuento nunca deja un total negativo.
+ *
+ * Con `ivaIncluido` los precios capturados ya traen el impuesto, así que el
+ * descuento rebaja ese importe con impuesto y la base se desagrega después: un
+ * "100 de descuento" sobre precios con IVA baja 100 lo que el cliente paga.
+ */
+export interface DescuentoInput {
+    tipo: 'porcentaje' | 'monto';
+    valor: number | string;
 }
 
 /**
@@ -163,6 +193,55 @@ const roundTo = (n: number, decimals: number): number => {
 };
 
 /**
+ * Reparte el descuento de documento entre los importes brutos de las líneas,
+ * en proporción a cada uno. Devuelve cuánto le toca a cada línea, en los mismos
+ * términos que los importes (con impuesto si los precios lo incluyen).
+ *
+ * Con `decimals` el reparto se hace en UNIDADES MÍNIMAS de la divisa por el
+ * método del mayor residuo: la suma de lo repartido es exactamente el descuento
+ * del documento —ni un centavo de más o de menos— y ninguna línea recibe más que
+ * su propio importe. Los empates se resuelven por orden de línea, así que el
+ * mismo documento da siempre el mismo reparto.
+ */
+function repartirDescuento(brutos: number[], d: DescuentoInput | null | undefined, decimals: number | undefined): number[] {
+    const valor = Number(d?.valor);
+    // Mismo criterio que las tasas: un descuento negativo, NaN o de más del
+    // 100 % es un error de programación, no algo que se ajusta en silencio.
+    if (d && ((d.tipo !== 'porcentaje' && d.tipo !== 'monto') || !(valor >= 0 && valor <= (d.tipo === 'monto' ? Infinity : 100)))) {
+        throw new RangeError(`descuento fuera de rango: ${d.tipo} ${d.valor}`);
+    }
+    const bruto = brutos.reduce((s, b) => s + b, 0);
+    if (!d || !(valor > 0) || !(bruto > 0)) return brutos.map(() => 0);
+    const deseado = d.tipo === 'porcentaje' ? bruto * valor / 100 : valor;
+
+    if (decimals === undefined) {
+        const total = Math.min(deseado, bruto);
+        return brutos.map((b) => (total >= bruto ? b : total * b / bruto));
+    }
+
+    const f = 10 ** decimals;
+    const u = brutos.map((b) => Math.round(b * f));
+    const tu = u.reduce((s, x) => s + x, 0);
+    const D = Math.min(Math.round(roundTo(deseado, decimals) * f), tu);
+    // Cociente entero de (descuento × importe) / total. La división en punto
+    // flotante puede redondear hacia arriba un cociente que no es exacto: se
+    // corrige, y el ajuste final por residuo cubre lo que quede.
+    const q = u.map((x) => {
+        const k = Math.floor(D * x / tu);
+        return k * tu > D * x ? k - 1 : k;
+    });
+    let resto = D - q.reduce((s, x) => s + x, 0);
+    // Mayor residuo primero; empate por orden de línea. Si falta, se suma una
+    // unidad a quien tiene cupo; si sobra (importes enormes), se quita al revés.
+    const orden = u.map((_, i) => i).sort((a, b) => (D * u[b] - q[b] * tu) - (D * u[a] - q[a] * tu) || a - b);
+    for (const i of resto < 0 ? orden.reverse() : orden) {
+        if (resto > 0 && q[i] < u[i]) { q[i]++; resto--; }
+        else if (resto < 0 && q[i] > 0) { q[i]--; resto++; }
+    }
+    return q.map((x) => x / f);
+}
+
+/**
  * Totales de una factura con impuesto por línea.
  *
  * `ivaIncluido = true` significa que los precios capturados YA traen el
@@ -172,7 +251,7 @@ const roundTo = (n: number, decimals: number): number => {
  */
 export function calculateInvoiceTotals(
     items: InvoiceItemInput[],
-    opts: { ivaIncluido?: boolean } & RoundingOptions = {},
+    opts: { ivaIncluido?: boolean; descuento?: DescuentoInput | null } & RoundingOptions = {},
 ): InvoiceTotals {
     const ivaIncluido = opts.ivaIncluido === true;
     const decimals = opts.roundLines;
@@ -180,7 +259,7 @@ export function calculateInvoiceTotals(
         throw new RangeError(`calculateInvoiceTotals: roundLines debe ser un entero entre 0 y 4 (recibido: ${decimals}).`);
     }
     const r = (n: number) => (decimals === undefined ? n : roundTo(n, decimals));
-    const lineas: InvoiceItem[] = items.map((raw) => {
+    const previas = items.map((raw) => {
         const it = sanitizeItem(raw);
         const rate = Number(raw.tax_rate ?? 0);
         // Mismo criterio que calculateTotals: una tasa fuera de rango es un
@@ -190,20 +269,38 @@ export function calculateInvoiceTotals(
             throw new RangeError(`calculateInvoiceTotals: tax_rate debe estar entre 0 y 1 (recibido: ${raw.tax_rate}).`);
         }
         const precioFinal = it.precio_negociado ?? it.precio_unitario ?? 0;
-        const bruto = precioFinal * it.cantidad;
+        // Importe bruto en los términos capturados (con impuesto si los precios
+        // lo incluyen). Con redondeo, ya en los decimales de la divisa.
+        const bruto = decimals === undefined ? precioFinal * it.cantidad : r(precioFinal * it.cantidad);
+        return { it, rate, precioFinal, bruto };
+    });
+    // Lo que le toca a cada línea del descuento de documento, en los mismos
+    // términos que su importe bruto. Sin descuento, ceros: la aritmética de
+    // abajo queda idéntica a la de siempre.
+    const rebajas = repartirDescuento(previas.map((p) => p.bruto), opts.descuento, decimals);
+
+    const lineas: InvoiceItem[] = previas.map(({ it, rate, precioFinal, bruto }, i) => {
+        const rebaja = rebajas[i];
+        const neto = rebaja === 0 ? bruto : (decimals === undefined ? bruto - rebaja : r(bruto - rebaja));
         let base: number;
         let impuesto: number;
+        let descuento: number;
         if (decimals === undefined) {
-            base = ivaIncluido ? bruto / (1 + rate) : bruto;
-            impuesto = ivaIncluido ? bruto - base : base * rate;
+            base = ivaIncluido ? neto / (1 + rate) : neto;
+            impuesto = ivaIncluido ? neto - base : base * rate;
+            descuento = ivaIncluido ? rebaja / (1 + rate) : rebaja;
         } else {
             // Con redondeo, el impuesto SIEMPRE es base × tasa redondeado —
             // también con precio con impuesto incluido—, que es lo que el PAC y
             // la AEAT recalculan por su cuenta. Desagregar `bruto − base`
             // podía dejar el impuesto un centavo distinto del que el proveedor
             // fiscal calcula para esa misma base.
-            base = ivaIncluido ? r(r(bruto) / (1 + rate)) : r(bruto);
+            base = ivaIncluido ? r(neto / (1 + rate)) : neto;
             impuesto = r(base * rate);
+            // Lo que bajó la base: base bruta desagregada menos la neta. Así
+            // `base + descuento` es exactamente la base que tendría la línea
+            // sin descuento.
+            descuento = rebaja === 0 ? 0 : (ivaIncluido ? r(r(bruto / (1 + rate)) - base) : rebaja);
         }
         return {
             ...it,
@@ -212,11 +309,13 @@ export function calculateInvoiceTotals(
             base,
             impuesto,
             total: r(base + impuesto),
+            descuento,
         };
     });
 
     const subtotal = r(lineas.reduce((sum, l) => sum + l.base, 0));
     const impuestos = r(lineas.reduce((sum, l) => sum + l.impuesto, 0));
+    const descuentoTotal = r(lineas.reduce((sum, l) => sum + l.descuento, 0));
 
     // Agrupado por tasa, en orden ascendente: el exento primero, como se lee en
     // cualquier factura. Se agrupa sobre el número crudo, no sobre el
@@ -244,6 +343,7 @@ export function calculateInvoiceTotals(
         total: r(subtotal + impuestos),
         porTasa: [...mapa.values()].sort((a, b) => a.tasa - b.tasa),
         ivaIncluido,
+        descuentoTotal,
     };
 }
 
@@ -326,13 +426,16 @@ export interface DocumentTotals extends InvoiceTotals {
  * y cambiar su aritmética los reescribiría en silencio; `calculateInvoiceTotals`
  * sigue siendo el caso sin retenciones y esta función lo envuelve, no lo repite.
  *
- * `total = subtotal + impuestos − retenciones`.
+ * `total = subtotal + impuestos − retenciones`, con `subtotal` ya neto del
+ * descuento de documento (`descuento`, ver DescuentoInput).
  */
 export function calculateDocumentTotals(
     items: InvoiceItemInput[],
-    opts: { ivaIncluido?: boolean; retenciones?: RetencionInput[] } & RoundingOptions = {},
+    opts: { ivaIncluido?: boolean; retenciones?: RetencionInput[]; descuento?: DescuentoInput | null } & RoundingOptions = {},
 ): DocumentTotals {
-    const base = calculateInvoiceTotals(items, { ivaIncluido: opts.ivaIncluido, roundLines: opts.roundLines });
+    // Las retenciones se calculan sobre las bases YA descontadas: el descuento
+    // baja el valor de la operación, y con él lo que se retiene.
+    const base = calculateInvoiceTotals(items, { ivaIncluido: opts.ivaIncluido, roundLines: opts.roundLines, descuento: opts.descuento });
     const rnd = (n: number) => (opts.roundLines === undefined ? n : roundTo(n, opts.roundLines));
 
     const retenciones: RetencionApplied[] = (opts.retenciones ?? []).map((r) => {

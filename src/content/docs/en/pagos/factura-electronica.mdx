@@ -1,0 +1,134 @@
+---
+title: "European e-invoicing: Factur-X, XRechnung, and Peppol"
+seoTitle: "European e-invoicing: Factur-X, XRechnung, and Peppol"
+description: "Download each invoice as Factur-X, XRechnung, or Peppol BIS (EN 16931), attach it to the email, and complete the data each format requires."
+lastUpdated: "2026-10-09"
+reviewedBy: "Cord product and operations"
+appliesToMarkets: [ES, DE, FR]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Business established in the European Union", "An issued invoice", "Complete tax profile in Settings › Tax profile"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">European e-invoicing</h1>
+  <p class="page-subtitle">The same invoice, in the structured formats your clients' accounts payable systems read across Europe.</p>
+</header>
+
+If your business is established in the European Union, every invoice issued in Cord is
+also available as an **e-invoice** under the European standard **EN 16931**. It is not a
+different document: it has the same number, the same date, and the same amounts as the
+PDF, written so your client's system can process it without keying it in.
+
+<Callout type="info">
+This feature is new and may not be enabled on your account yet. If you don't see it, contact us.
+</Callout>
+
+## Formats
+
+- **Factur-X (PDF):** the invoice PDF with the XML inside (EN 16931 profile). It opens
+  like any PDF, and systems that accept Factur-X or ZUGFeRD also read it. It is the usual
+  format in France.
+- **XRechnung (UBL) and XRechnung (CII):** the format required by the German public
+  sector and accepted by many companies in Germany. UBL is the most common; CII is there
+  in case your client asks for it.
+- **Peppol BIS 3.0 (UBL):** the format of the Peppol network, used across much of Europe.
+
+<Callout type="warning">
+Cord **generates** these files, lets you download them, and can attach them to the
+invoice email. It **does not send them** over the Peppol network or through a French
+e-invoicing platform. If your client asks to receive them over Peppol, download them and
+upload them to your access provider.
+</Callout>
+
+## Set up your data once
+
+<Steps>
+
+1. In **Settings › Tax profile**, **European e-invoicing** section, fill in the **billing
+   contact** and the **contact phone**. XRechnung requires a contact with name, phone, and
+   email (your business email is used).
+2. Add your **electronic address**: the scheme (for example GLN, SIRET, or your VAT number)
+   and the identifier. Peppol requires it; XRechnung uses your email if there is none.
+3. If you have them, add your **company registration number** and your bank's **BIC**.
+   The IBAN on the invoice is the one in **Settings › Payments**; XRechnung requires it to
+   state how to pay.
+4. On each client that needs it, open the **E-invoicing** section and enter their
+   **electronic address** and **buyer reference**. In Germany, for public bodies, the
+   reference is the **Leitweg-ID** and it is mandatory.
+
+</Steps>
+
+When you create an invoice you can also enter the **buyer reference** and the **purchase
+order** in the editor summary. If you leave the reference empty, the client's is used.
+Peppol requires at least one of the two.
+
+## Download
+
+Open the issued invoice. In the right column, the **E-invoice** section lists every format
+that invoice can already produce, ready to download. For the others, it says which data is
+missing and links to the place where you fix it.
+
+Your client can also download the available formats from the invoice's public link, next
+to the PDF.
+
+<Callout type="info">
+An issued invoice keeps the data it was issued with. If you correct your contact, your
+electronic address, or the client's, the change applies to the **next** invoices; the
+issued one is not rewritten.
+</Callout>
+
+## Attach to the email
+
+In **Settings › Tax profile › Attach to invoice emails** you choose what goes with the email:
+
+- **Automatic:** Factur-X in France, PDF plus XRechnung XML in Germany, and the PDF only
+  elsewhere.
+- **PDF only.**
+- **Factur-X PDF:** replaces the regular PDF (it looks the same and carries the XML inside).
+- **PDF + XRechnung XML.**
+
+If an invoice is missing data for the chosen format, the email goes out with the regular
+PDF and the invoice tells you what is missing. Sending never stops because of this.
+
+## Taxes and exemptions
+
+Each line is classified with the European VAT category:
+
+- with a rate above zero, **standard or reduced rate**;
+- at 0%, the **reason** you chose on the exempt profile in **Settings › Taxes** (reverse
+  charge, intra-community supply, export, not subject to VAT, zero rated, or an exemption
+  of the VAT Directive). In Spain, the Verifactu reason is used;
+- at 0% without a reason, Cord infers it: the issuer's small-business scheme, a client in
+  another EU country with a VAT number (reverse charge), a client outside the EU (export),
+  or a domestic exemption.
+
+A **document discount** appears as it does on the PDF: each line with its amount before
+the discount and the discount subtracted in the totals, split by VAT rate, so the total
+matches the invoice to the cent.
+
+## When it cannot be generated
+
+Cord does not produce an e-invoice that differs from the real invoice. There is no
+electronic version for:
+
+- drafts, voided invoices, pro formas, and test documents;
+- invoices with **withholdings** (for example Spanish IRPF): the European standard does
+  not support them;
+- invoices with IGIC or IPSI (Canary Islands, Ceuta, and Melilla);
+- older invoices whose totals are not the exact sum of their lines;
+- a supply **not subject** to VAT mixed with lines of another category: issue them
+  separately.
+
+## Common problems
+
+- **"XRechnung requires the buyer reference":** enter it on the client or on the invoice
+  before issuing it.
+- **"Peppol requires your participant identifier":** add your electronic address in
+  **Settings › Tax profile** with a scheme other than email.
+- **"XRechnung requires payment instructions":** add your IBAN in **Settings › Payments**.
+
+## Related
+
+- [Invoicing by country](/en/docs/pagos/facturacion)
+- [Create, issue, and collect invoices](/en/docs/pagos/facturas-emitidas)
+- [Recurring invoices](/en/docs/pagos/facturas-recurrentes)

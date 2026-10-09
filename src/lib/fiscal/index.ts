@@ -94,6 +94,11 @@ export interface FiscalTotals {
   /** Retenciones aplicadas al documento — se RESTAN de subtotal+taxes para llegar a `total`. */
   retenciones?: FiscalRetencion[];
   retencionTotal?: number;
+  /**
+   * Descuento de documento antes de impuestos: la suma de `lines[].discount`.
+   * `subtotal` ya es neto; el subtotal bruto es `subtotal + discountTotal`.
+   */
+  discountTotal?: number;
 }
 
 // Contrato canónico propiedad de Cord. Los adapters regulatorios traducen este

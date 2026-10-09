@@ -6,7 +6,8 @@ import { jsonForScript } from '../../lib/escape';
 import BrandHeader from './BrandHeader.astro';
 import { resolveBrandProfile, brandStyle } from '../../lib/brand-profile';
 import '../../styles/brand-surface.css';
-import { money, lineTotal, quoteSubtotal, quoteTotal, quoteTaxBreakdown, quoteRetenciones } from '../../lib/queries';
+import { money, lineTotal, quoteSubtotal, quoteTotal, quoteTaxBreakdown, quoteRetenciones, quoteDescuento } from '../../lib/queries';
+import { etiquetaDescuento } from '../../lib/descuentos';
 import { getCountryProfile } from '../../lib/countries';
 import { currencyDecimals } from '../../lib/currency';
 import { taxBreakdownRows } from '../../lib/tax-components';
@@ -44,6 +45,10 @@ const banner = (ORG.portalBanner ?? '').trim();
 const bienvenida = (ORG.portalBienvenida ?? '').trim();
 const folio = q.folio as string;
 const total = money(quoteTotal(q));
+// Descuento de documento: el subtotal que se lee es el BRUTO y el renglón de
+// descuento lo baja antes de los impuestos (`quoteSubtotal` ya es neto).
+const DESCUENTO = quoteDescuento(q);
+const DESCUENTO_LABEL = etiquetaDescuento(q.descuento, L);
 const viva = !yaAprobada && !yaRechazada;
 // El nombre del impuesto sale del perfil del país del EMISOR. Antes era
 // `paisCode === 'MX' ? null : 'Tax'`, así que a un negocio en Londres le decía
@@ -176,6 +181,7 @@ import { iconInner } from '../../lib/icons';
 
 <div class="q-card" data-brand-surface style={brandStyle(resolveBrandProfile(ORG.brandProfile), ORG.colorMarca, ORG.colorSecundario)} data-token={q.token} data-folio={folio} data-iva={ORG.ivaPct} data-iva-incluido={q.iva_incluido ? '1' : ''} data-currency={ORG.moneda || 'MXN'} data-pais={ORG.paisCode || 'MX'} data-org={ORG.nombre} data-init={yaAprobada ? 'approved' : yaRechazada ? 'rejected' : 'review'} data-demo={esDemo ? '1' : undefined} data-solo-lectura={soloLectura ? '1' : undefined} data-status={q.status}>
     <script type="application/json" id="qRetenciones" is:inline set:html={jsonForScript((q.retenciones || []).map((r: any) => ({ nombre: r.nombre, tasa: r.tasa, tipo: r.tipo })))} />
+    <script type="application/json" id="qDescuento" is:inline set:html={jsonForScript(q.descuento ? { tipo: q.descuento.tipo, valor: q.descuento.valor } : null)} />
     {esDemo && <script type="application/json" id="qDemo" is:inline set:html={demoRuntimeJson} />}
     {ORG.esPrueba && (
         <div class="q-test-ribbon" role="status">
@@ -315,7 +321,8 @@ import { iconInner } from '../../lib/icons';
             </div>
         ))}
         <div class="qi-subtotals" data-tax-label={TAX_LABEL}>
-            <div class="qt-row" data-total="subtotal"><span>{t(L, 'q.subtotal')}</span><span class="editorial">{money(quoteSubtotal(q))}</span></div>
+            <div class="qt-row" data-total="subtotal"><span>{t(L, 'q.subtotal')}</span><span class="editorial">{money(quoteSubtotal(q) + DESCUENTO)}</span></div>
+            <div class="qt-row qt-desc" data-total="desc" hidden={!(DESCUENTO > 0)}><span>{DESCUENTO_LABEL}</span><span class="editorial">−{money(DESCUENTO)}</span></div>
             {TAX_ROWS.map((tr) => (
                 <div class="qt-row" data-total="tax"><span>{tr.label}</span><span class="editorial">{money(tr.impuesto)}</span></div>
             ))}
@@ -919,7 +926,7 @@ import { iconInner } from '../../lib/icons';
             precio_unitario: l.precio,
             tax_rate: l.taxRate ?? fallbackRate,
         }));
-        return calculateDocumentTotals(items, { ivaIncluido, retenciones: qRetenciones, roundLines: currencyDecimals(QCURRENCY) });
+        return calculateDocumentTotals(items, { ivaIncluido, retenciones: qRetenciones, roundLines: currencyDecimals(QCURRENCY), descuento: qDescuento });
     }
 
     // ── Aprobación parcial: selección de líneas + total en vivo ──
@@ -934,6 +941,11 @@ import { iconInner } from '../../lib/icons';
     const ivaIncluido = card?.dataset.ivaIncluido === '1';
     let qRetenciones: { nombre: string; tasa: number; tipo?: string }[] = [];
     try { qRetenciones = JSON.parse(document.getElementById('qRetenciones')?.textContent || '[]'); } catch { /* deja [] */ }
+    // Descuento de documento: en la vista previa de una aprobación parcial se
+    // vuelve a aplicar sobre lo marcado, igual que el servidor al firmar (un
+    // porcentaje rebaja lo aprobado; un monto se topa en su bruto).
+    let qDescuento: { tipo: 'porcentaje' | 'monto'; valor: number } | null = null;
+    try { qDescuento = JSON.parse(document.getElementById('qDescuento')?.textContent || 'null'); } catch { /* deja null */ }
     const moneyFmt = qMoney;
     const picks = Array.from(document.querySelectorAll<HTMLInputElement>('.qi-pick-cb'));
     const approveBtn = document.getElementById('qApproveBtn') as HTMLButtonElement | null;
@@ -979,7 +991,7 @@ import { iconInner } from '../../lib/icons';
                     });
                     try {
                         // Mismo redondeo por línea que el servidor al firmar.
-                        const totals = calculateDocumentTotals(items, { ivaIncluido, retenciones: qRetenciones, roundLines: currencyDecimals(QCURRENCY) });
+                        const totals = calculateDocumentTotals(items, { ivaIncluido, retenciones: qRetenciones, roundLines: currencyDecimals(QCURRENCY), descuento: qDescuento });
                         tot.textContent = moneyFmt(totals.total);
                     } catch {
                         // Una tasa corrupta no debe tumbar la vista previa — el
@@ -1325,7 +1337,13 @@ import { iconInner } from '../../lib/icons';
         const tot = demoTotales(aceptadas);
         const box = document.querySelector('.qi-subtotals');
         const pon = (el: Element | null | undefined, n: number) => { if (el) el.textContent = moneyFmt(n); };
-        pon(box?.querySelector('[data-total="subtotal"] .editorial'), tot.subtotal);
+        pon(box?.querySelector('[data-total="subtotal"] .editorial'), tot.subtotal + tot.descuentoTotal);
+        const filaDesc = box?.querySelector<HTMLElement>('[data-total="desc"]');
+        if (filaDesc) {
+            filaDesc.hidden = !(tot.descuentoTotal > 0);
+            const v = filaDesc.querySelector('.editorial');
+            if (v) v.textContent = '−' + moneyFmt(tot.descuentoTotal);
+        }
         pon(box?.querySelector('[data-total="grand"] .editorial'), tot.total);
         const filasTasa = Array.from(box?.querySelectorAll('[data-total="tax"] .editorial') ?? []);
         const tasas = tot.porTasa.filter((x) => x.impuesto > 0);
@@ -1633,7 +1651,19 @@ import { iconInner } from '../../lib/icons';
                 const el = box.querySelector(`[data-total="${rol}"] .editorial`);
                 if (el) el.textContent = moneyFmt(valor);
             };
-            set('subtotal', Number(p.subtotal));
+            // Con descuento, el subtotal que se lee es el BRUTO y el renglón de
+            // descuento (dibujado por el SSR, aquí solo se muestra u oculta) lo
+            // baja antes de los impuestos.
+            const desc = p.descuento && Number(p.descuento.monto) > 0 ? p.descuento : null;
+            set('subtotal', Number(p.subtotal) + (desc ? Number(desc.monto) : 0));
+            const filaDesc = box.querySelector<HTMLElement>('[data-total="desc"]');
+            if (filaDesc) {
+                filaDesc.hidden = !desc;
+                if (desc) {
+                    filaDesc.children[0].textContent = String(desc.etiqueta || '');
+                    filaDesc.children[1].textContent = '−' + moneyFmt(Number(desc.monto));
+                }
+            }
             set('grand', Number(p.total));
 
             // Las filas de impuesto y retención se REEMPLAZAN: su número puede
@@ -2515,6 +2545,10 @@ import { iconInner } from '../../lib/icons';
 .qi-subtotals .qt-row .editorial { color: #6b7280; font-size: 0.87rem; }
 .qi-subtotals .qt-ret,
 .qi-subtotals .qt-ret .editorial { color: #b45309; }
+/* El renglón de descuento existe siempre (el parche en vivo lo muestra u
+   oculta): `display: flex` le ganaría al atributo `hidden`. */
+.qi-subtotals .qt-row[hidden] { display: none; }
+.qi-subtotals .qt-desc .editorial { color: #047857; }
 .q-msg { display: flex; flex-direction: column; gap: 3px; max-width: 80%; padding: 0.65rem 0.9rem; font-size: 0.86rem; }
 .q-msg.theirs { align-self: flex-start; background: #f3f4f6; color: #111; border-radius: 14px 14px 14px 3px; }
 .q-msg.mine { align-self: flex-end; background: #0a192f; color: #fff; border-radius: 14px 14px 3px 14px; }

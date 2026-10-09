@@ -13,8 +13,8 @@
 //
 //   XSD        UBL 2.1 y CII D16B (de la configuración KoSIT) y Factur-X 1.09
 //   CEN        schematron EN 16931 v1.3.16 de CEN/TC 434 (UBL y CII)
-//   KoSIT      validador 1.5.0 + configuración XRechnung 3.0.2 (la que usa la
-//              administración alemana: XSD + CEN + reglas BR-DE)
+//   KoSIT      validador 1.6.3 + configuración XRechnung 3.0.2 de 2026-08-31
+//              (la que usa la administración alemana: XSD + CEN + BR-DE)
 //   Peppol     Peppol BIS Billing 3.0, release mayo 2026 (3.0.21): reglas
 //              PEPPOL-EN16931 y su copia de las reglas CEN
 //   Factur-X   schematron Factur-X 1.09 EN16931 (FNFE-MPE)
@@ -52,14 +52,17 @@ const TOOLS = process.env.EINVOICE_TOOLS_DIR ? resolve(process.env.EINVOICE_TOOL
 // ── Artefactos fijados ───────────────────────────────────────────────────────
 // Cada uno: de dónde sale, su huella y qué parte del archivo se usa.
 const ARTEFACTS = {
+    // Validador KoSIT y la configuración XRechnung vigente (2026-08-31: XRechnung
+    // 3.0.2 sobre el schematron CEN 1.3.16). La configuración de 2024 traía una
+    // lista VATEX anterior y rechazaba VATEX-EU-135-1, que hoy es válido.
     kosit: {
-        url: 'https://github.com/itplr-kosit/validator/releases/download/v1.5.0/validator-1.5.0-distribution.zip',
-        sha256: 'ac78fb3e89d6daa81770049b004bd1408cad81100b885dd1d8da2cd169bd679f',
-        extract: ['validationtool-1.5.0-standalone.jar'],
+        url: 'https://repo1.maven.org/maven2/org/kosit/validator/1.6.3/validator-1.6.3-standalone.jar',
+        sha256: '799e64befca97d4080e03608c80b85dd5a5ecc5f4ae4f35d1116ec2855b9a7c9',
+        extract: false,
     },
     xrechnung: {
-        url: 'https://github.com/itplr-kosit/validator-configuration-xrechnung/releases/download/release-2024-06-20/validator-configuration-xrechnung_3.0.2_2024-06-20.zip',
-        sha256: '128e59bd2a6ccd0d8796313cfd794480035da6f87998dcb157b8e6af5a1e4069',
+        url: 'https://github.com/itplr-kosit/validator-configuration-xrechnung/releases/download/v2026-08-31/xrechnung-3.0.2-validator-configuration-2026-08-31.zip',
+        sha256: '2530cd107c414511c5d0462ec10f886910395abfca820db82e83d70bf01221a8',
         extract: null,
     },
     cenUbl: {
@@ -333,7 +336,8 @@ async function main() {
     const dirs = {};
     for (const [id, a] of Object.entries(ARTEFACTS)) dirs[id] = a.extract === false ? null : unpack(id, paths[id]);
 
-    const KOSIT_JAR = join(dirs.kosit, 'validationtool-1.5.0-standalone.jar');
+    // El jar autónomo de KoSIT trae Saxon HE: sirve también para los schematron.
+    const KOSIT_JAR = paths.kosit;
     const XR = dirs.xrechnung;
     const UBL_XSD = {
         Invoice: join(XR, 'resources/ubl/2.1/xsd/maindoc/UBL-Invoice-2.1.xsd'),

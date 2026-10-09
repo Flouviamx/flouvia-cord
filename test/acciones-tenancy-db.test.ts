@@ -40,7 +40,8 @@ beforeAll(async () => {
     await m.db.exec(`
         create table clientes(id uuid primary key default gen_random_uuid(), org_id uuid not null, empresa text not null, contacto text, email text,
             telefono text, rfc text, terminos_default text, limite_credito numeric, nivel text, descuento_pct numeric, regimen_fiscal text,
-            uso_cfdi text, cp_fiscal text, country_code text, direccion_line1 text, direccion_line2 text, ciudad text, region text);
+            uso_cfdi text, cp_fiscal text, country_code text, direccion_line1 text, direccion_line2 text, ciudad text, region text,
+            einvoice_address text, buyer_reference text);
         create table productos(id uuid primary key default gen_random_uuid(), org_id uuid not null, sku text, nombre text not null, unidad text,
             descripcion text, precio_lista numeric, costo numeric, activo boolean, precios_volumen jsonb, tax_rate numeric,
             clave_sat text, clave_unidad_sat text);

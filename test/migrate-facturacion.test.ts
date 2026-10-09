@@ -27,6 +27,8 @@ const BASE = `
         es_default boolean not null default false, activo boolean not null default true, kind text not null default 'consumo');
     create table cotizacion_items (id serial primary key, tax_rate numeric);
     create table clientes (id uuid primary key, org_id uuid not null references orgs(id) on delete cascade, empresa text);
+    create table cotizaciones (id uuid primary key, org_id uuid not null references orgs(id) on delete cascade, descuento numeric not null default 0);
+    create table documento_recurrencias (id uuid primary key, org_id uuid not null references orgs(id) on delete cascade);
 `;
 
 const ORG_ES = '00000000-0000-4000-8000-0000000000e5';
@@ -96,6 +98,25 @@ describe('migración de despliegue de facturación', () => {
             expect(funciones.map((f) => f.proname)).toEqual(['cord_serie_en_uso', 'cord_verifactu_multiples_ot', 'cord_verifactu_registro_inmutable']);
             expect((await db.query(`select 1 from verifactu_envio_estado`)).rows).toEqual([]);
 
+            // Portal y cobro agrupado: tablas con RLS forzada y el resolutor del token.
+            const rls = (await db.query<{ relname: string }>(`select relname from pg_class
+                where relname in ('pagos_agrupados', 'pago_agrupado_documentos', 'cobro_automatico_estado', 'documento_reembolso_asignaciones')
+                  and relrowsecurity and relforcerowsecurity order by relname`)).rows.map((r) => r.relname);
+            expect(rls).toEqual(['cobro_automatico_estado', 'documento_reembolso_asignaciones', 'pago_agrupado_documentos', 'pagos_agrupados']);
+            expect((await db.query(`select * from cord_resolve_portal('corto')`)).rows).toEqual([]);
+
+            // Descuentos y cupones (db/deploy/2026-10-08-descuentos.sql).
+            const descuentos = (await db.query<{ c: string }>(`select table_name || '.' || column_name as c from information_schema.columns
+                where column_name in ('descuento_def', 'descuento_total') or (column_name = 'descuento' and table_name <> 'cotizaciones')`)).rows.map((r) => r.c).sort();
+            expect(descuentos).toEqual([
+                'cotizaciones.descuento_def', 'documento_recurrencias.descuento',
+                'documentos_fiscales.descuento', 'documentos_fiscales.descuento_total',
+            ]);
+            const cupones = (await db.query<{ proname: string }>(`select proname from pg_proc where proname in ('cord_cupon_redimir', 'cord_cupon_liberar') order by proname`)).rows;
+            expect(cupones.map((f) => f.proname)).toEqual(['cord_cupon_liberar', 'cord_cupon_redimir']);
+            const rlsCupones = (await db.query<{ relname: string }>(`select relname from pg_class where relname in ('cupones', 'cupon_redenciones') and relrowsecurity and relforcerowsecurity order by relname`)).rows;
+            expect(rlsCupones.map((r) => r.relname)).toEqual(['cupon_redenciones', 'cupones']);
+
             // Canadá: la QST suelta pasa a la combinada, y la tasa plana la sigue.
             expect((await db.query<{ nombre: string; tasa: string }>(`select nombre, tasa::text from impuestos where org_id = '${ORG_CA}'`)).rows)
                 .toEqual([{ nombre: 'GST 5% + QST 9.975% (QC)', tasa: '14.975' }]);
@@ -109,7 +130,7 @@ describe('migración de despliegue de facturación', () => {
 
             const segunda = await migrar(db);
             // Nada que tome ACCESS EXCLUSIVE sobre una tabla existente.
-            const bloqueantes = segunda.ejecutadas.filter((s: string) => /^\s*alter table|^\s*drop (trigger|policy)|^\s*create (trigger|policy)/i.test(s));
+            const bloqueantes = segunda.ejecutadas.filter((s: string) => /^\s*alter table|^\s*drop (trigger|policy)|^\s*create (trigger|policy|(unique )?index)/i.test(s));
             expect(bloqueantes).toEqual([]);
             // El perfil que el negocio borró no vuelve.
             expect(await causas()).toEqual(['E2', 'E5', 'S2']);

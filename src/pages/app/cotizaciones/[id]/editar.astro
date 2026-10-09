@@ -7,6 +7,7 @@ import { getCountryProfile } from '../../../../lib/countries';
 import { buildTaxOptions, defaultTaxRate, retencionesFrom } from '../../../../lib/impuestos';
 import { currentLocale } from '../../../../lib/context';
 import { t } from '../../../../i18n/app';
+import DiscountControl from '../../../../components/app/DiscountControl.astro';
 import '../../../../styles/editor.css';
 
 const L = currentLocale();
@@ -113,6 +114,7 @@ import { iconInner } from '../../../../lib/icons';
             <section class="ed-summary">
                 <div class="section-head"><h2>{t(L, 'edv.resumen')}</h2></div>
                 <div class="sum-line"><span>{t(L, 'edv.subtotal')}</span><span class="editorial" id="sumSubtotal">$0.00</span></div>
+                <DiscountControl initial={q.descuento ?? null} />
                 <div class="sum-field" style="flex-direction: row; align-items: center; justify-content: space-between; margin-top: 0.5rem; margin-bottom: -0.5rem;">
                     <label for="ivaIncluido" style="margin:0; cursor: pointer; color: var(--color-text);">{TAX_INCLUDED_LABEL}</label>
                     <label class="s-toggle" title={TAX_INCLUDED_LABEL}>
@@ -157,6 +159,7 @@ import { iconInner } from '../../../../lib/icons';
 
 <script type="application/json" id="edvBoot" is:inline set:html={jsonForScript({
     catalogo, aprobMargenMin: ORG.aprobMargenMin, qItems: q.items, qId: q.id, qStatus: q.status, T: EVT,
+    clienteId: q.cliente_id ?? null,
     quoteCurrency: q.baseCurrency || ORG.moneda || 'MXN', quoteFiscalCurrency: q.fiscalCurrency || ORG.moneda || 'MXN',
     taxOptions: TAX_OPTIONS, defaultTaxRate: DEFAULT_TAX_RATE, retenciones: RETENCIONES,
     taxLabel: TAX_LABEL, multiTax: MULTI_TAX,
@@ -172,6 +175,7 @@ import { iconInner } from '../../../../lib/icons';
     import { calculateDocumentTotals } from '../../../../../packages/elements/src/engine';
     import { currencyDecimals } from '../../../../lib/currency';
     import { canonicalTaxRate, taxBreakdownRows, taxOptionIndex } from '../../../../lib/tax-components';
+    import { wireDiscountControl } from '../../../../lib/discount-client';
 
     const BOOT = JSON.parse(document.getElementById('edvBoot')?.textContent || '{}');
     const { catalogo, aprobMargenMin, qItems, qId, qStatus, T, quoteCurrency } = BOOT;
@@ -226,6 +230,14 @@ import { iconInner } from '../../../../lib/icons';
     const fmt = cordMoney;
     const fmtPct = (n) => Number.isFinite(n) ? Math.round(n) + '%' : '—';
     const margenPct = (costo, precio) => (costo > 0 && precio > 0) ? (precio - costo) / precio * 100 : null;
+    // Descuento de documento: definición o cupón, en la divisa de la cotización.
+    const descuento = wireDiscountControl(document.querySelector('[data-editor="quote"] [data-discount-control]'), {
+        getCurrency: () => CORD_CURRENCY,
+        getClienteId: () => BOOT.clienteId || null,
+        getDocumento: () => ({ cotizacion_id: qId }),
+        fmt: () => fmt,
+        onChange: () => recalc(),
+    });
 
     const catMap = Object.fromEntries(catalogo.map(p => [p.id, p]));
 
@@ -259,12 +271,18 @@ import { iconInner } from '../../../../lib/icons';
                 tax_rate: l.taxRate ?? DEFAULT_TAX,
             })),
             // Mismo redondeo por línea que el servidor, en la divisa de la cotización.
-            { ivaIncluido, retenciones: BOOT.retenciones || [], roundLines: currencyDecimals(quoteCurrency || 'MXN') },
+            {
+                ivaIncluido, retenciones: BOOT.retenciones || [], roundLines: currencyDecimals(quoteCurrency || 'MXN'),
+                descuento: descuento.engine(),
+            },
         );
         const realSubtotal = totals.subtotal;
         const total = totals.total;
 
-        document.getElementById('sumSubtotal').textContent = fmt(realSubtotal);
+        // Con descuento, el subtotal que se lee es el BRUTO y el renglón de
+        // descuento lo baja antes de los impuestos.
+        document.getElementById('sumSubtotal').textContent = fmt(realSubtotal + totals.descuentoTotal);
+        descuento.render(totals.descuentoTotal);
         document.getElementById('sumTotal').textContent = fmt(total);
 
         // Desglose por tasa + retenciones — una retención se RESTA, y se
@@ -401,6 +419,8 @@ import { iconInner } from '../../../../lib/icons';
         const payload = {
             action: action,
             iva_incluido: document.getElementById('ivaIncluido') ? document.getElementById('ivaIncluido').checked : false,
+            // Definición o código, nunca el importe: el servidor lo recalcula.
+            ...descuento.payload(),
             items: lines.map(l => ({
                 producto_id: l.id || null,
                 descripcion: l.nombre || T.lineaLibreDefault,

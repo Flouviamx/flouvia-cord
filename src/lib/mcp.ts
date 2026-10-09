@@ -34,6 +34,28 @@ import { WEBHOOK_EVENT_TYPES, isWebhookEventType } from '../../packages/elements
 import { loadDocsIndex, searchDocs } from './docs-search';
 import { isISODate } from './rango';
 import { TERM_CODES } from './payment-terms';
+import { leerDescuentoBody } from './descuentos';
+
+// Descuento de documento en las herramientas de escritura: el modelo pasa la
+// DEFINICIÓN o un código de cupón; el importe lo calcula Cord.
+const DESCUENTO_INPUT = {
+    descuento: {
+        type: 'object',
+        description: 'Descuento sobre todo el documento, antes de impuestos (opcional): { tipo: "porcentaje" | "monto", valor }. Con porcentaje, 10 = 10 %; con monto, el importe en la divisa del documento.',
+        properties: { tipo: { type: 'string', enum: ['porcentaje', 'monto'] }, valor: { type: 'number' } },
+        required: ['tipo', 'valor'],
+    },
+    cupon: { type: 'string', description: 'Código de un cupón del negocio (opcional). Cord valida vigencia, divisa y usos; si viene, manda sobre descuento.' },
+};
+
+function descuentoDeArgs(args: any) {
+    const pedido = leerDescuentoBody({
+        ...(args?.descuento !== undefined ? { descuento: args.descuento } : {}),
+        ...(args?.cupon !== undefined ? { cupon: args.cupon } : {}),
+    });
+    if ('error' in pedido) throw new McpToolError(pedido.error);
+    return pedido.presente ? pedido.solicitud : null;
+}
 
 // ── Texto de TERCEROS que viaja al modelo ───────────────────────────────────
 // `eventos.detalle` de tipo comment/counter es texto LIBRE que escribe cualquier
@@ -355,6 +377,7 @@ export const MCP_TOOLS: McpToolDef[] = [
                     precio_negociado: { type: 'number', description: 'Precio con descuento (opcional)' },
                 }, ['descripcion', 'cantidad', 'precio_unitario']),
             },
+            ...DESCUENTO_INPUT,
         }, ['items']),
         outputSchema: out({
             id: { type: 'string' }, folio: { type: 'string' },
@@ -367,12 +390,14 @@ export const MCP_TOOLS: McpToolDef[] = [
         scope: 'write',
         handler: async (args, ctx) => idempotentTool(ctx, 'crear_cotizacion_borrador', args, async () => {
             const orgId = await getActiveOrgId();
+            const descuento = descuentoDeArgs(args);
             try {
                 const r = await createCotizacion(orgId, {
                     cliente_id: args?.cliente_id || null,
                     notas: args?.notas || null,
                     items: Array.isArray(args?.items) ? args.items : [],
                     send: false,
+                    ...(descuento ? { descuento: descuento.manual, cupon: descuento.cupon } : {}),
                 }, { origin: ctx.origin, ip: ctx.ip, actor: `mcp:${ctx.keyId}` });
                 return { id: r.id, folio: r.folio, link_publico: await publicDocumentUrl(orgId, 'q', r.token), estado: 'borrador' };
             } catch (e) {
@@ -435,6 +460,7 @@ export const MCP_TOOLS: McpToolDef[] = [
             moneda: { type: 'string', description: 'Divisa de la venta, ISO 4217 (opcional; default la contable del negocio)' },
             vence: { type: 'string', description: 'Fecha de vencimiento YYYY-MM-DD (opcional)' },
             notas: { type: 'string', description: 'Notas para el cliente (opcional)' },
+            ...DESCUENTO_INPUT,
         }, ['cliente_id', 'items']),
         outputSchema: out({ id: { type: 'string' }, estado: { type: 'string' } }),
         // Escritura acotada a 'draft' A PROPÓSITO: timbrar es dinero real e
@@ -464,6 +490,7 @@ export const MCP_TOOLS: McpToolDef[] = [
                 currency: typeof args?.moneda === 'string' ? args.moneda : undefined,
                 dueDate: vence || null,
                 notes: typeof args?.notas === 'string' ? args.notas.slice(0, 1000) : null,
+                descuento: descuentoDeArgs(args),
             });
             if (!result.ok) throw new McpToolError(result.error || 'No se pudo crear el borrador.');
             return { id: result.documentId, estado: 'borrador' };

@@ -184,7 +184,7 @@ export interface EInvoiceProblem {
     code: string;
     es: string;
     en: string;
-    /** Dónde se corrige: Ajustes › Datos fiscales, Ajustes › Cobros, el cliente, la factura o el catálogo de impuestos. */
+    /** Dónde se corrige: Ajustes › Perfil fiscal, Ajustes › Cobros, el cliente, la factura o el catálogo de impuestos. */
     fix?: 'fiscal' | 'cobros' | 'cliente' | 'factura' | 'impuestos';
 }
 
@@ -585,12 +585,12 @@ export function assessEInvoice(src: EInvoiceSource): EInvoiceAssessment {
         delete seller.vatId;
         delete buyer.vatId;
         if (!seller.legalId && !seller.taxRegistrationId) {
-            problems.push(p('o_legal_id', 'Para una operación no sujeta al IVA, la factura identifica al emisor por su número de registro mercantil. Agrégalo en Ajustes › Datos fiscales.', 'For a supply not subject to VAT, the invoice identifies the issuer by its company registration number. Add it in Settings › Tax profile.', 'fiscal'));
+            problems.push(p('o_legal_id', 'Para una operación no sujeta al IVA, la factura identifica al emisor por su número de registro mercantil. Agrégalo en Ajustes › Perfil fiscal.', 'For a supply not subject to VAT, the invoice identifies the issuer by its company registration number. Add it in Settings › Tax profile.', 'fiscal'));
         }
     }
     const needsSellerVatOrTax = ['S', 'Z', 'E', 'AE'].some((c) => categories.has(c as VatCategory));
     if (needsSellerVatOrTax && !seller.vatId && !seller.taxRegistrationId) {
-        problems.push(p('seller_vat', 'Falta el número de IVA del emisor. Agrégalo en Ajustes › Datos fiscales.', 'The issuer VAT number is missing. Add it in Settings › Tax profile.', 'fiscal'));
+        problems.push(p('seller_vat', 'Falta el número de IVA del emisor. Agrégalo en Ajustes › Perfil fiscal.', 'The issuer VAT number is missing. Add it in Settings › Tax profile.', 'fiscal'));
     }
     if ((categories.has('K') || categories.has('G')) && !seller.vatId) {
         problems.push(p('seller_vat_intl', 'Una exportación o entrega intracomunitaria necesita el número de IVA del emisor (con prefijo de país).', 'An export or intra-community supply needs the issuer VAT number (with country prefix).', 'fiscal'));
@@ -724,7 +724,7 @@ export function formatProblems(format: EInvoiceFormat, assessment: EInvoiceAsses
         }
         // BR-DE-2, -5, -6, -7: contacto del vendedor con nombre, teléfono y correo.
         if (!inv.seller.contact?.name || !inv.seller.contact?.phone || !inv.seller.contact?.email) {
-            out.push(p('seller_contact', 'XRechnung pide un contacto del emisor con nombre, teléfono y correo. Complétalo en Ajustes › Datos fiscales.', 'XRechnung requires an issuer contact with name, phone and email. Complete it in Settings › Tax profile.', 'fiscal'));
+            out.push(p('seller_contact', 'XRechnung pide un contacto del emisor con nombre, teléfono y correo. Complétalo en Ajustes › Perfil fiscal.', 'XRechnung requires an issuer contact with name, phone and email. Complete it in Settings › Tax profile.', 'fiscal'));
         } else if ((inv.seller.contact.phone.match(/\d/g) || []).length < 3) {
             out.push(p('seller_phone', 'El teléfono del emisor necesita al menos tres dígitos.', 'The issuer phone needs at least three digits.', 'fiscal'));
         }
@@ -744,7 +744,7 @@ export function formatProblems(format: EInvoiceFormat, assessment: EInvoiceAsses
         }
         // PEPPOL-EN16931-R020 y R010: direcciones electrónicas de las dos partes.
         if (!inv.seller.electronicAddress || inv.seller.electronicAddress.scheme === 'EM') {
-            out.push(p('seller_endpoint', 'Peppol pide tu identificador de participante (por ejemplo 0088 GLN o el NIF-IVA). Agrégalo en Ajustes › Datos fiscales.', 'Peppol requires your participant identifier (for example a 0088 GLN or your VAT number). Add it in Settings › Tax profile.', 'fiscal'));
+            out.push(p('seller_endpoint', 'Peppol pide tu identificador de participante (por ejemplo 0088 GLN o el NIF-IVA). Agrégalo en Ajustes › Perfil fiscal.', 'Peppol requires your participant identifier (for example a 0088 GLN or your VAT number). Add it in Settings › Tax profile.', 'fiscal'));
         }
         if (!inv.buyer.electronicAddress || inv.buyer.electronicAddress.scheme === 'EM') {
             out.push(p('buyer_endpoint', 'Peppol pide el identificador de participante del cliente. Agrégalo en el cliente.', "Peppol requires the client's participant identifier. Add it on the client.", 'cliente'));

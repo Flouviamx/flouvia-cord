@@ -33,6 +33,10 @@ import { basename, join, relative } from 'node:path';
 const ROOT = new URL('..', import.meta.url).pathname;
 const API_DIR = join(ROOT, 'src/pages/api');
 const ACTIONS_DIR = join(ROOT, 'src/lib/actions');
+// El cobro agrupado (portal, cobro automático) crea sus intentos en un módulo
+// compartido: la ruta que lo importa hereda la obligación, igual que con una
+// acción de dominio.
+const COBROS_DIR = join(ROOT, 'src/lib/cobros');
 
 // ── Excepciones, con motivo. Solo pueden ENCOGER. ───────────────────────────
 const EXENTOS = new Map([
@@ -53,6 +57,9 @@ const CREA_DINERO = [
     /\/v1\/customers\b/,
     /application_fee_amount/,
     /application_fee_percent/,
+    // Guardar un método para cobrarlo después (cobro automático) también es
+    // dinero: el intento de mañana sale de lo que se autoriza aquí.
+    /\/v1\/setup_intents/,
 ];
 
 // CREA un objeto nuevo: la ruta del proveedor termina en la colección, sin id.
@@ -188,11 +195,15 @@ const marcados = [];
 // Una acción de dominio que mueve dinero cumple el contrato en su archivo, y la
 // ruta que la importa hereda la obligación del rate limit.
 const accionesDinero = [];
-for (const ruta of existsSync(ACTIONS_DIR) ? archivos(ACTIONS_DIR) : []) {
+const modulosDinero = [
+    ...(existsSync(ACTIONS_DIR) ? archivos(ACTIONS_DIR).map((ruta) => ({ ruta, prefijo: 'actions' })) : []),
+    ...(existsSync(COBROS_DIR) ? archivos(COBROS_DIR).map((ruta) => ({ ruta, prefijo: 'cobros' })) : []),
+];
+for (const { ruta, prefijo } of modulosDinero) {
     const rel = relative(ROOT, ruta);
     const crudo = readFileSync(ruta, 'utf8');
     if (!CREA_DINERO.some((re) => re.test(crudo))) continue;
-    accionesDinero.push(new RegExp(`actions/${basename(ruta).replace(/\.m?ts$/, '')}['"]`));
+    accionesDinero.push(new RegExp(`${prefijo}/${basename(ruta).replace(/\.m?ts$/, '')}['"]`));
     const codigo = enmascarar(crudo);
     const faltan = [];
     if (HACE_QUERY.test(codigo) && !CARRILES.test(codigo)) faltan.push('carril de tenencia');
@@ -226,7 +237,7 @@ for (const ruta of archivos(API_DIR)) {
 
 // Otros consumidores de una acción de dinero fuera de las rutas (MCP, flujos).
 for (const ruta of archivos(join(ROOT, 'src/lib'))) {
-    if (ruta.startsWith(ACTIONS_DIR)) continue;
+    if (ruta.startsWith(ACTIONS_DIR) || ruta.startsWith(COBROS_DIR)) continue;
     const rel = relative(ROOT, ruta);
     const crudo = readFileSync(ruta, 'utf8');
     if (!accionesDinero.some((re) => re.test(crudo))) continue;

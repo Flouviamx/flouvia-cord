@@ -21,6 +21,7 @@ import DatePicker from '../../../components/app/DatePicker.astro';
 import AccessGate from '../../../components/app/AccessGate.astro';
 import PlanGate from '../../../components/app/PlanGate.astro';
 import FlagSelect from '../../../components/ui/FlagSelect';
+import DiscountControl from '../../../components/app/DiscountControl.astro';
 import {
     getProductos, getClientes, getOrg, getKitsForEditor, getImpuestos,
     getFacturaDetalle, getMyMembership,
@@ -87,6 +88,15 @@ const TAX_INCLUDED_LABEL = t(L, 'ed.iva_incluido').replace('{tax}', TAX_LABEL);
 // que encender el interruptor al reabrirlo volvería a desagregar el impuesto de
 // un precio que ya no lo trae.
 const DEFAULT_IVA_INCLUIDO = !draft && Boolean(ORG.ivaIncluidoDefecto);
+
+// Descuento del borrador. Sus líneas se guardaron sin impuesto: un monto que se
+// capturó sobre precios con impuesto se reabre como su equivalente sin
+// impuesto (lo que de verdad bajó la base), igual que hace el servidor.
+const DRAFT_DESCUENTO = draft?.descuento
+    ? (draft.descuento.tipo === 'monto' && draft.descuento.iva_incluido
+        ? { tipo: 'monto' as const, valor: draft.descuentoTotal, codigo: draft.descuento.codigo }
+        : draft.descuento)
+    : null;
 
 const catalogo = productos.filter((p: any) => p.activo);
 const kitSumaLista = (k: any) => k.items.reduce((s: number, it: any) => s + (it.productoId && it.precio ? it.precio * it.cantidad : 0), 0);
@@ -173,7 +183,11 @@ const BOOT = {
         id: null,
         nombre: l.descripcion,
         unidad: 'pieza',
-        lista: l.precioUnitario,
+        // Con descuento de documento el snapshot guarda el unitario NETO; el
+        // editor captura el bruto y vuelve a aplicar el descuento al guardar.
+        lista: l.descuento > 0 && l.cantidad > 0
+            ? Math.round((l.subtotal + l.descuento) / l.cantidad * 1e6) / 1e6
+            : l.precioUnitario,
         negociado: null,
         cantidad: l.cantidad,
         // La tasa CONGELADA del concepto: dividir importes ya redondeados no la
@@ -401,6 +415,7 @@ import { iconInner } from '../../../lib/icons';
                         <span>{L === 'en' ? 'Subtotal' : 'Subtotal'}</span>
                         <span class="editorial" id="sumSubtotal">—</span>
                     </div>
+                    <DiscountControl initial={DRAFT_DESCUENTO} />
                     <div id="sumTaxes"></div>
 
                     <div class="sum-field sum-field-row">
@@ -554,6 +569,7 @@ import { iconInner } from '../../../lib/icons';
     import { canonicalTaxRate, taxBreakdownRows, taxOptionIndex } from '../../../lib/tax-components';
     import { termDueDate } from '../../../lib/payment-terms';
     import { wireTermPicker } from '../../../lib/term-picker-client';
+    import { wireDiscountControl } from '../../../lib/discount-client';
 
     const raiz = document.querySelector('[data-editor="invoice"]') as HTMLElement | null;
     const bootEl = document.getElementById('edBoot');
@@ -665,6 +681,15 @@ import { iconInner } from '../../../lib/icons';
         // temprano difieren por un centavo y nadie sabe cuál es el bueno.
         const ivaIncluidoEl = $('ivaIncluido') as HTMLInputElement;
         let ultimoTotal = 0;
+        // Descuento de documento: definición o cupón; el importe lo calcula el
+        // motor aquí para el resumen y otra vez en el servidor al guardar.
+        const descuento = wireDiscountControl(raiz.querySelector('[data-discount-control]'), {
+            getCurrency: () => currency,
+            getClienteId: () => ($('clientSelect') as HTMLSelectElement | null)?.value || null,
+            getDocumento: () => ({ documento_id: activeDraftId }),
+            fmt: () => fmt,
+            onChange: () => recalc(),
+        });
 
         const recalc = () => {
             const totals = calculateDocumentTotals(
@@ -676,11 +701,17 @@ import { iconInner } from '../../../lib/icons';
                     tax_rate: l.taxRate,
                 })),
                 // Mismo redondeo por línea que `buildLines` al guardar.
-                { ivaIncluido: ivaIncluidoEl.checked, retenciones: BOOT.retenciones, roundLines: currencyDecimals(currency) },
+                {
+                    ivaIncluido: ivaIncluidoEl.checked, retenciones: BOOT.retenciones, roundLines: currencyDecimals(currency),
+                    descuento: descuento.engine(),
+                },
             );
             ultimoTotal = totals.total;
 
-            $('sumSubtotal')!.textContent = fmt(totals.subtotal);
+            // Con descuento, el subtotal que se lee arriba es el BRUTO y el
+            // renglón de descuento lo baja antes de los impuestos.
+            $('sumSubtotal')!.textContent = fmt(totals.subtotal + totals.descuentoTotal);
+            descuento.render(totals.descuentoTotal);
             $('sumTotal')!.textContent = fmt(totals.total);
             // Desglose por tasa: una línea por tipo. Con una sola tasa se ve
             // igual que antes; con varias es la única forma de cuadrar.
@@ -984,6 +1015,7 @@ import { iconInner } from '../../../lib/icons';
             refmt();
             render();          // todos los importes se reformatean
             refreshFx();
+            void descuento.revalidate();   // un cupón de monto es de UNA divisa
         });
         document.querySelectorAll('.fx-cush-chip').forEach((chip) => {
             chip.addEventListener('click', () => {
@@ -1065,6 +1097,7 @@ import { iconInner } from '../../../lib/icons';
             buyer_reference: ($('buyerReference') as HTMLInputElement).value.trim() || (activeDraftId ? '' : undefined),
             purchase_order: ($('purchaseOrder') as HTMLInputElement).value.trim() || (activeDraftId ? '' : undefined),
             iva_incluido: ivaIncluidoEl.checked,
+            ...descuento.payload(),
             fx_buffer_pct: currency === BOOT.orgCurrency ? 0 : Number(($('fxBuffer') as HTMLInputElement).value) || 0,
             items: lines.map((l) => ({
                 producto_id: l.id,
@@ -1116,6 +1149,8 @@ import { iconInner } from '../../../lib/icons';
             $('issueRecipient')!.textContent = email || ($client.value ? T.sinCorreoCorto : T.eligeClienteEntrega);
         };
         $client.addEventListener('change', refreshRecipient);
+        // Un cupón limitado por cliente se vuelve a validar con el nuevo.
+        $client.addEventListener('change', () => { if ($client.value && $client.value !== '__NEW__') void descuento.revalidate(); });
 
         const issueDialog = $('issueConfirm') as HTMLDialogElement;
         let pendingSend = true;

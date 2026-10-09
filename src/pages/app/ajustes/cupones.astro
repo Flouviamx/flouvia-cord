@@ -1,0 +1,310 @@
+---
+import SettingsSection from '../../../components/app/settings/SettingsSection.astro';
+// Ajustes › Descuentos › Cupones. Códigos que el equipo aplica en el editor de
+// cotizaciones y facturas (y que el cotizador embebible acepta del comprador).
+//
+// Un cupón de porcentaje sirve en cualquier divisa; uno de monto, solo en la
+// suya (regla 21: un "100" sin divisa no es dinero). El código, el tipo, el
+// valor y la divisa no se editan después de crearlo: un documento que ya lo
+// lleva conserva su importe. La vigencia se lee en la zona horaria del negocio.
+import SettingsShell from '../../../components/app/SettingsShell.astro';
+import DatePicker from '../../../components/app/DatePicker.astro';
+import { getOrg } from '../../../lib/queries';
+import { getActiveOrgId } from '../../../lib/db';
+import { currentLocale } from '../../../lib/context';
+import { listarCupones } from '../../../lib/cupones';
+import { listOfferedCurrencies, normalizeCurrency } from '../../../lib/currency';
+import { fmtCalendarDate, moneyIn } from '../../../lib/fmt-server';
+
+const L = currentLocale();
+const en = L === 'en';
+const ORG = await getOrg();
+const CUPONES = await listarCupones(await getActiveOrgId());
+const MONEDA_ORG = normalizeCurrency(ORG.moneda);
+const MONEDAS = listOfferedCurrencies(MONEDA_ORG);
+const pct = (v: number) => `${new Intl.NumberFormat(en ? 'en-US' : 'es-MX', { maximumFractionDigits: 2 }).format(v)}${en ? '%' : ' %'}`;
+const valorTexto = (c: (typeof CUPONES)[number]) => (c.tipo === 'porcentaje' ? pct(c.valor) : moneyIn(c.valor, c.moneda || MONEDA_ORG));
+const vigencia = (c: (typeof CUPONES)[number]) => {
+    if (c.vigente_desde && c.vigente_hasta) return `${fmtCalendarDate(c.vigente_desde)} – ${fmtCalendarDate(c.vigente_hasta)}`;
+    if (c.vigente_hasta) return `${en ? 'Until' : 'Hasta el'} ${fmtCalendarDate(c.vigente_hasta)}`;
+    if (c.vigente_desde) return `${en ? 'From' : 'Desde el'} ${fmtCalendarDate(c.vigente_desde)}`;
+    return en ? 'No end date' : 'Sin fecha de fin';
+};
+const usos = (c: (typeof CUPONES)[number]) => {
+    const total = c.max_usos !== null ? `${c.usos} / ${c.max_usos}` : String(c.usos);
+    const porCliente = c.max_usos_por_cliente !== null
+        ? (en ? ` · ${c.max_usos_por_cliente} per client` : ` · ${c.max_usos_por_cliente} por cliente`)
+        : '';
+    return `${total} ${en ? (c.usos === 1 ? 'use' : 'uses') : (c.usos === 1 ? 'uso' : 'usos')}${porCliente}`;
+};
+const I18N = {
+    crearErr: en ? 'The coupon could not be created.' : 'No se pudo crear el cupón.',
+    guardarErr: en ? 'The coupon could not be saved.' : 'No se pudo guardar el cupón.',
+    eliminarTitulo: en ? 'Delete coupon' : 'Eliminar cupón',
+    eliminarBody: en ? 'The code stops working in new documents. This cannot be undone.' : 'El código deja de funcionar en documentos nuevos. No se puede deshacer.',
+    eliminar: en ? 'Delete' : 'Eliminar',
+    nuevo: en ? 'New coupon' : 'Nuevo cupón',
+    editar: en ? 'Edit coupon' : 'Editar cupón',
+    crear: en ? 'Create coupon' : 'Crear cupón',
+    guardar: en ? 'Save' : 'Guardar',
+};
+---
+
+<SettingsShell title={en ? 'Coupons — Settings' : 'Cupones — Ajustes'} tab="cupones" perm="ajustes"
+    intro={en
+        ? 'Discount codes your team applies to quotes and invoices, and that buyers can enter in your embedded quote builder. The discount is applied before tax and spread across the lines.'
+        : 'Códigos de descuento que tu equipo aplica en cotizaciones y facturas, y que tus compradores pueden capturar en el cotizador embebible. El descuento se aplica antes de impuestos y se reparte entre las líneas.'}>
+
+    <SettingsSection icon="tag" class="s-block">
+        <Fragment slot="heading">{en ? 'Coupons' : 'Cupones'}</Fragment>
+        <div class="s-body" id="cupMeta" data-i18n={JSON.stringify(I18N)}>
+            <div class="cup-actions-row">
+                <button class="dev-new" id="cupNew">{I18N.nuevo}</button>
+            </div>
+            <div class="cup-list" id="cupList">
+                {CUPONES.length === 0 && (
+                    <p class="cup-empty">{en
+                        ? 'You have no coupons yet. Create one with a code like WELCOME10 and share it with your clients, or apply it yourself from the editor.'
+                        : 'Todavía no tienes cupones. Crea uno con un código como BIENVENIDA10 y compártelo con tus clientes, o aplícalo tú desde el editor.'}</p>
+                )}
+                {CUPONES.map((c) => (
+                    <div class:list={['cup-row', { off: !c.activo }]} data-id={c.id} data-cupon={JSON.stringify(c)}>
+                        <span class="cup-code">{c.codigo}</span>
+                        <span class="cup-body">
+                            <span class="cup-value editorial">{valorTexto(c)}</span>
+                            {c.nombre && <span class="cup-name">{c.nombre}</span>}
+                            <span class="cup-meta">{vigencia(c)} · {usos(c)}</span>
+                        </span>
+                        <label class="s-toggle cup-toggle" title={en ? 'Active' : 'Activo'}>
+                            <input type="checkbox" data-activo={c.id} checked={c.activo} aria-label={en ? `Active: ${c.codigo}` : `Activo: ${c.codigo}`} />
+                            <span class="s-toggle-track"><span class="s-toggle-thumb"></span></span>
+                        </label>
+                        <button class="imp-setdef" data-edit={c.id}>{en ? 'Edit' : 'Editar'}</button>
+                        <button class="key-revoke" data-del={c.id}>{I18N.eliminar}</button>
+                    </div>
+                ))}
+            </div>
+            <p class="dev-note">{en
+                ? 'A deactivated coupon cannot be applied to new documents; documents that already carry it keep it. A coupon is counted as used when the invoice is issued or the quote is approved, and the use is returned if the invoice is voided. Once used, a coupon cannot be deleted — deactivate it instead.'
+                : 'Un cupón desactivado ya no se puede aplicar en documentos nuevos; los que ya lo llevan lo conservan. Un uso se cuenta cuando la factura se emite o la cotización se aprueba, y se devuelve si la factura se anula. Un cupón que ya se usó no se puede eliminar: desactívalo.'}</p>
+        </div>
+    </SettingsSection>
+</SettingsShell>
+
+<dialog id="cupDlg" class="kdlg">
+    <div class="kdlg-inner">
+        <h4 id="cupDlgTitle">{I18N.nuevo}</h4>
+        <div class="s-row cup-gap">
+            <div class="s-field">
+                <label for="cCodigo">{en ? 'Code' : 'Código'}</label>
+                <input class="s-input cup-mono" id="cCodigo" maxlength="32" autocomplete="off" spellcheck="false"
+                    placeholder={en ? 'WELCOME10' : 'BIENVENIDA10'} />
+            </div>
+            <div class="s-field">
+                <label for="cNombre">{en ? 'Name (optional)' : 'Nombre (opcional)'}</label>
+                <input class="s-input" id="cNombre" maxlength="80" placeholder={en ? 'New client promotion' : 'Promoción de bienvenida'} />
+            </div>
+        </div>
+        <div class="s-row cup-gap">
+            <div class="s-field">
+                <label for="cTipo">{en ? 'Discount' : 'Descuento'}</label>
+                <select class="s-input" id="cTipo">
+                    <option value="porcentaje">{en ? 'Percentage' : 'Porcentaje'}</option>
+                    <option value="monto">{en ? 'Fixed amount' : 'Monto fijo'}</option>
+                </select>
+            </div>
+            <div class="s-field">
+                <label for="cValor">{en ? 'Value' : 'Valor'}</label>
+                <input class="s-input" id="cValor" type="number" min="0" step="0.01" inputmode="decimal" />
+            </div>
+            <div class="s-field" id="cMonedaRow" hidden>
+                <label for="cMoneda">{en ? 'Currency' : 'Divisa'}</label>
+                <select class="s-input" id="cMoneda">
+                    {MONEDAS.map((m) => <option value={m} selected={m === MONEDA_ORG}>{m}</option>)}
+                </select>
+            </div>
+        </div>
+        <div class="s-row cup-gap">
+            <div class="s-field">
+                <span class="s-label">{en ? 'Valid from' : 'Válido desde'}</span>
+                <DatePicker id="cDesde" clearable ariaLabel={en ? 'Valid from' : 'Válido desde'} />
+            </div>
+            <div class="s-field">
+                <span class="s-label">{en ? 'Valid until' : 'Válido hasta'}</span>
+                <DatePicker id="cHasta" clearable ariaLabel={en ? 'Valid until' : 'Válido hasta'} />
+            </div>
+        </div>
+        <div class="s-row cup-gap">
+            <div class="s-field">
+                <label for="cMaxUsos">{en ? 'Total uses (optional)' : 'Usos en total (opcional)'}</label>
+                <input class="s-input" id="cMaxUsos" type="number" min="1" step="1" inputmode="numeric" placeholder={en ? 'Unlimited' : 'Sin límite'} />
+            </div>
+            <div class="s-field">
+                <label for="cMaxCliente">{en ? 'Uses per client (optional)' : 'Usos por cliente (opcional)'}</label>
+                <input class="s-input" id="cMaxCliente" type="number" min="1" step="1" inputmode="numeric" placeholder={en ? 'Unlimited' : 'Sin límite'} />
+            </div>
+        </div>
+        <p class="dev-note" id="cInmutable" hidden>{en
+            ? 'The code, type, value, and currency cannot change once the coupon exists. For a different value, create another coupon.'
+            : 'El código, el tipo, el valor y la divisa no cambian una vez creado el cupón. Para otro valor, crea otro cupón.'}</p>
+        <div class="wh-dlg-actions">
+            <button type="button" class="api-btn-ghost" id="cupCancel">{en ? 'Cancel' : 'Cancelar'}</button>
+            <button type="button" class="api-btn-solid" id="cupSave">{I18N.crear}</button>
+        </div>
+    </div>
+</dialog>
+
+<style>
+    .cup-actions-row { display: flex; justify-content: flex-end; }
+    .dev-new { font-family: var(--font-sans); font-size: 0.8rem; font-weight: 600; color: #fff; background: var(--color-blue-deep); border: none; border-radius: 9px; padding: 8px 14px; cursor: pointer; transition: transform 0.3s var(--ease-spring); }
+    .dev-new:hover { transform: translateY(-1px); }
+    .cup-empty { font-size: 0.84rem; color: var(--color-text-muted); margin: 0; padding: 0.6rem 0; line-height: 1.55; max-width: 62ch; }
+    .cup-list { display: flex; flex-direction: column; margin-top: -0.5rem; }
+    .cup-row { display: grid; grid-template-columns: auto 1fr auto auto auto; align-items: center; gap: 1rem; padding: 1rem 0.3rem; border-bottom: 1px solid var(--color-border); }
+    .cup-row.off .cup-code, .cup-row.off .cup-value { opacity: 0.5; }
+    .cup-code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.4px; color: var(--color-blue-deep); background: rgba(10,25,47,0.07); padding: 5px 10px; border-radius: 8px; white-space: nowrap; }
+    .cup-body { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0.3rem 0.8rem; min-width: 0; }
+    .cup-value { font-size: 0.95rem; color: var(--color-text); }
+    .cup-name { font-size: 0.86rem; font-weight: 600; color: var(--color-text); }
+    .cup-meta { font-size: 0.76rem; color: var(--color-text-muted); flex-basis: 100%; }
+    .cup-mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; text-transform: uppercase; }
+    .cup-gap { margin-bottom: 1rem; }
+    .s-label { font-size: 0.78rem; font-weight: 600; color: var(--color-text-muted); }
+    .imp-setdef { font-family: var(--font-sans); font-size: 0.72rem; font-weight: 600; color: var(--color-text-muted); background: none; border: 1px solid var(--color-border); border-radius: 8px; padding: 6px 11px; cursor: pointer; white-space: nowrap; transition: border-color 0.25s, color 0.25s; }
+    .imp-setdef:hover { border-color: var(--color-blue-deep); color: var(--color-blue-deep); }
+    .key-revoke { font-family: var(--font-sans); font-size: 0.76rem; font-weight: 600; color: var(--color-text-muted); background: none; border: 1px solid var(--color-border); border-radius: 8px; padding: 6px 12px; cursor: pointer; transition: border-color 0.25s, color 0.25s; }
+    .key-revoke:hover { border-color: var(--color-danger); color: var(--color-danger); }
+    .dev-note { font-size: 0.78rem; color: var(--color-text-muted); line-height: 1.5; margin: 0; }
+
+    .kdlg { border: none; border-radius: 16px; padding: 0; max-width: 560px; width: 92vw; box-shadow: 0 40px 90px -30px rgba(10,25,47,0.5); overflow: visible; }
+    .kdlg::backdrop { background: rgba(10,25,47,0.45); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
+    @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+        .kdlg::backdrop { background: rgba(10,25,47,0.6); }
+    }
+    .kdlg-inner { padding: 1.6rem; }
+    .kdlg-inner h4 { font-size: 1.15rem; font-weight: 700; margin: 0 0 1rem; }
+    .wh-dlg-actions { display: flex; justify-content: flex-end; gap: 0.6rem; margin-top: 1.4rem; }
+    .api-btn-ghost { font-family: var(--font-sans); font-size: 0.84rem; font-weight: 600; color: var(--color-text-muted); background: none; border: 1px solid var(--color-border); border-radius: 9px; padding: 9px 16px; cursor: pointer; }
+    .api-btn-solid { font-family: var(--font-sans); font-size: 0.84rem; font-weight: 600; color: #fff; background: var(--color-blue-deep); border: none; border-radius: 9px; padding: 9px 18px; cursor: pointer; }
+    .api-btn-solid:disabled { opacity: 0.6; cursor: wait; }
+    .s-input:disabled { opacity: 0.6; cursor: not-allowed; }
+    @media (max-width: 600px) {
+        .cup-actions-row .dev-new { width: 100%; min-height: 46px; }
+        .cup-row { grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "code body toggle" "edit edit edit" "del del del"; gap: .65rem .8rem; padding: 1rem 0; }
+        .cup-code { grid-area: code; }
+        .cup-body { grid-area: body; }
+        .cup-toggle { grid-area: toggle; }
+        .imp-setdef { grid-area: edit; width: 100%; min-height: 44px; }
+        .key-revoke { grid-area: del; width: 100%; min-height: 44px; }
+        .kdlg { width: 100%; max-width: none; max-height: calc(100dvh - 16px); margin: 0; inset: auto 0 0; border-radius: 20px 20px 0 0; }
+        .kdlg-inner { padding: 1.25rem max(1rem, env(safe-area-inset-left)) max(1.25rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-right)); overflow-y: auto; }
+        .kdlg .s-input { min-height: 46px; font-size: 16px; }
+        .kdlg .wh-dlg-actions { display: grid; grid-template-columns: 1fr 1fr; }
+        .kdlg .wh-dlg-actions button { width: 100%; min-height: 46px; }
+    }
+</style>
+
+<script>
+    function initCupones() {
+        const dlg = document.getElementById('cupDlg') as HTMLDialogElement | null;
+        const newBtn = document.getElementById('cupNew');
+        if (!dlg || !newBtn) return;
+        const T = JSON.parse((document.getElementById('cupMeta') as HTMLElement | null)?.dataset.i18n || '{}');
+        const $ = <E extends HTMLElement>(id: string) => document.getElementById(id) as E;
+        const toast = (msg: string) => (window as any).cordToast?.(msg, 'error');
+        const tipo = $<HTMLSelectElement>('cTipo');
+        const valor = $<HTMLInputElement>('cValor');
+        const monedaRow = $<HTMLElement>('cMonedaRow');
+        const syncTipo = () => {
+            monedaRow.hidden = tipo.value !== 'monto';
+            valor.max = tipo.value === 'porcentaje' ? '100' : '';
+        };
+        tipo.addEventListener('change', syncTipo);
+        const setFecha = (id: string, v: string) => {
+            const el = $<HTMLInputElement>(id);
+            el.value = v;
+            el.dispatchEvent(new Event('change', { bubbles: true }));
+        };
+        let editando: string | null = null;
+
+        const abrir = (c: any | null) => {
+            editando = c?.id ?? null;
+            $('cupDlgTitle').textContent = c ? T.editar : T.nuevo;
+            $('cupSave').textContent = c ? T.guardar : T.crear;
+            $<HTMLInputElement>('cCodigo').value = c?.codigo ?? '';
+            $<HTMLInputElement>('cNombre').value = c?.nombre ?? '';
+            tipo.value = c?.tipo ?? 'porcentaje';
+            valor.value = c ? String(c.valor) : '';
+            if (c?.moneda) $<HTMLSelectElement>('cMoneda').value = c.moneda;
+            $<HTMLInputElement>('cMaxUsos').value = c?.max_usos ?? '';
+            $<HTMLInputElement>('cMaxCliente').value = c?.max_usos_por_cliente ?? '';
+            setFecha('cDesde', c?.vigente_desde ?? '');
+            setFecha('cHasta', c?.vigente_hasta ?? '');
+            // Lo que define el importe no se edita: un documento que ya lleva el
+            // cupón conserva lo que descontó.
+            for (const id of ['cCodigo', 'cTipo', 'cValor', 'cMoneda']) $<HTMLInputElement>(id).disabled = !!c;
+            $('cInmutable').hidden = !c;
+            syncTipo();
+            dlg.showModal();
+            (c ? $<HTMLInputElement>('cNombre') : $<HTMLInputElement>('cCodigo')).focus();
+        };
+
+        newBtn.addEventListener('click', () => abrir(null));
+        $('cupCancel').addEventListener('click', () => dlg.close());
+        $<HTMLInputElement>('cCodigo').addEventListener('input', (e) => {
+            const el = e.target as HTMLInputElement;
+            el.value = el.value.toUpperCase().replace(/[^A-Z0-9_-]/g, '');
+        });
+
+        $('cupSave').addEventListener('click', async () => {
+            const btn = $<HTMLButtonElement>('cupSave');
+            const codigo = $<HTMLInputElement>('cCodigo').value.trim();
+            if (!editando && !codigo) { $<HTMLInputElement>('cCodigo').focus(); return; }
+            if (!editando && !(Number(valor.value) > 0)) { valor.focus(); return; }
+            const comunes = {
+                nombre: $<HTMLInputElement>('cNombre').value.trim() || null,
+                vigente_desde: $<HTMLInputElement>('cDesde').value || null,
+                vigente_hasta: $<HTMLInputElement>('cHasta').value || null,
+                max_usos: $<HTMLInputElement>('cMaxUsos').value || null,
+                max_usos_por_cliente: $<HTMLInputElement>('cMaxCliente').value || null,
+            };
+            const body = editando
+                ? { id: editando, ...comunes }
+                : { ...comunes, codigo, tipo: tipo.value, valor: Number(valor.value), moneda: tipo.value === 'monto' ? $<HTMLSelectElement>('cMoneda').value : null };
+            btn.disabled = true;
+            try {
+                const res = await fetch('/api/cupones', { method: editando ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+                const d = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(d.error || (editando ? T.guardarErr : T.crearErr));
+                location.reload();
+            } catch (err: any) { toast(err.message || T.crearErr); btn.disabled = false; }
+        });
+
+        document.querySelectorAll<HTMLButtonElement>('[data-edit]').forEach((b) => b.addEventListener('click', () => {
+            const row = b.closest('.cup-row') as HTMLElement | null;
+            try { abrir(JSON.parse(row?.dataset.cupon || 'null')); } catch { /* fila sin datos: nada que editar */ }
+        }));
+
+        document.querySelectorAll<HTMLInputElement>('[data-activo]').forEach((chk) => chk.addEventListener('change', async () => {
+            const row = chk.closest('.cup-row') as HTMLElement | null;
+            try {
+                const res = await fetch('/api/cupones', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: chk.dataset.activo, activo: chk.checked }) });
+                const d = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(d.error || T.guardarErr);
+                row?.classList.toggle('off', !chk.checked);
+            } catch (err: any) { chk.checked = !chk.checked; toast(err.message || T.guardarErr); }
+        }));
+
+        document.querySelectorAll<HTMLButtonElement>('[data-del]').forEach((b) => b.addEventListener('click', async () => {
+            if (!await (window as any).cordConfirm({ title: T.eliminarTitulo, body: T.eliminarBody, danger: true, confirmText: T.eliminar })) return;
+            try {
+                const res = await fetch('/api/cupones', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: b.dataset.del }) });
+                const d = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(d.error || T.guardarErr);
+                (b.closest('.cup-row') as HTMLElement | null)?.remove();
+            } catch (err: any) { toast(err.message || T.guardarErr); }
+        }));
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initCupones);
+    else initCupones();
+</script>

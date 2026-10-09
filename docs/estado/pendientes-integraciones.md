@@ -22,6 +22,7 @@
 | **WhatsApp Business** | Nivel 1 en producción (número + token + plantilla) | Prueba con número real; registro integrado de Meta | André | Verificación de negocio en Meta |
 | **Gmail** | Envío desde el Gmail del negocio y complemento en producción (28 sep 2026); conexión e inserción probadas | Registrar el regreso en Google Cloud; verificación y ficha de Marketplace | André | Verificación de Google |
 | **Mercado Pago** | En producción en México, pago real confirmado; app `7210198958457914` | Renovar el Client Secret; igualas y contracargos | André, luego Claude | Nada para México |
+| **Cord Payments: portal, cobro automático, SEPA y ACH** | Construido (8 oct 2026); falta encenderlo en Stripe | Eventos del webhook, métodos en la plataforma, prueba de punta a punta | André | Nada |
 
 ---
 
@@ -391,6 +392,35 @@ de este proyecto) con `create_application`, `save_webhook`, `get_credentials`,
 `notifications_history`, `create_test_user` y `search_documentation`. Si no carga en
 una conversación, `claude mcp login mercadopago-mcp-server` desde una terminal
 interactiva y recargar la ventana.
+
+---
+
+## Cord Payments: portal del cliente, cobro automático, SEPA y ACH
+
+**Hecho (8 oct, código):** portal `/portal/[token]` con pago de varias facturas,
+cobro automático con reintentos, domiciliación SEPA (EUR) y ACH (USD) en la
+factura y el portal. Detalle en `docs/estado/cobros-facturacion.md`.
+
+**Falta, operativo (en el dashboard de Stripe de la plataforma):**
+- [ ] En el endpoint de webhooks de **cuentas conectadas**, agregar los eventos
+  `payment_intent.processing`, `payment_intent.canceled`,
+  `setup_intent.succeeded` y `mandate.updated`. Sin `processing` un débito no se
+  marca "en proceso" hasta que el cron lo concilia; sin `mandate.updated` un
+  mandato revocado se descubre en el siguiente cargo rechazado.
+- [ ] En Ajustes › Métodos de pago de la plataforma, habilitar **SEPA Direct
+  Debit** y **ACH Direct Debit** para cuentas conectadas: Stripe exige que la
+  plataforma tenga el método antes de pedir la capacidad por un negocio.
+- [ ] Prueba de punta a punta en modo de prueba: cuenta conectada de España con
+  la domiciliación encendida, IBAN de prueba `ES0700120345030000067890`, cobro
+  desde `/i` y desde el portal; cuenta de EE. UU. con la cuenta de prueba
+  `000123456789` / `110000000`; activar el cobro automático con la tarjeta
+  `4000002760003184` (siempre pide autenticación: debe detenerse y pedir pagar
+  desde el portal) y con `4000000000009995` (fondos insuficientes: debe
+  programar el reintento). Los números de prueba se reconfirman en
+  docs.stripe.com/testing antes de usarlos.
+- [ ] Decidir la tarifa de Cord para débito bancario si algún día se cobra
+  comisión fuera de MXN: hoy `FEE_SCHEDULES` no tiene método de débito y la
+  domiciliación no se ofrece donde hay comisión.
 
 ---
 

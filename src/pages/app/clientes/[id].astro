@@ -9,6 +9,10 @@ import { getCountryProfile } from '../../../lib/countries';
 import { memberCan } from '../../../lib/permissions';
 import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
+import { getActiveOrgId } from '../../../lib/db';
+import { estadoPortalCliente } from '../../../lib/cobros/portal';
+import { etiquetaMetodo } from '../../../lib/cobros/metodos';
+import { fmtDateLong } from '../../../lib/fmt-server';
 import '../../../styles/modal.css';
 
 const L = currentLocale();
@@ -23,6 +27,12 @@ const [c, ME, EC, ORG] = await Promise.all([
     getCliente(id ?? ''), getMyMembership(), getEstadoCuentaCliente(id ?? ''), getOrg(),
 ]);
 if (!c) return Astro.redirect('/app/clientes');
+const PORTAL = await estadoPortalCliente(await getActiveOrgId(), c.id);
+const PORTAL_MOTIVO: Record<string, string> = {
+    metodo_invalido: t(L, 'cdet.portal_motivo_metodo'), bloqueado: t(L, 'cdet.portal_motivo_bloqueado'),
+    mandato_revocado: t(L, 'cdet.portal_motivo_mandato'), requiere_autenticacion: t(L, 'cdet.portal_motivo_autenticacion'),
+    agotado: t(L, 'cdet.portal_motivo_agotado'),
+};
 // El identificador fiscal del CLIENTE se nombra como en SU país (un cliente
 // español de un negocio mexicano tiene NIF, no RFC); si no lo tiene guardado,
 // como en el país del negocio.
@@ -222,6 +232,56 @@ import { iconInner } from '../../../lib/icons';
                 </div>
             </section>
 
+            {PORTAL && (
+                <section class="dc-side-block dc-portal" id="dcPortal" data-id={c.id}
+                    data-i18n={JSON.stringify({
+                        copiado: t(L, 'cdet.portal_copiado'), enviado: t(L, 'cdet.portal_enviado'),
+                        rotarTitulo: t(L, 'cdet.portal_rotar'), rotarBody: t(L, 'cdet.portal_rotar_body'),
+                        apagarTitulo: t(L, 'cdet.portal_apagar'), apagarBody: t(L, 'cdet.portal_apagar_body'),
+                        autopayTitulo: t(L, 'cdet.portal_autopay_off'), autopayBody: t(L, 'cdet.portal_autopay_off_body'),
+                        error: t(L, 'cdet.portal_error'),
+                    })}>
+                    <div class="sec-head"><h2 class="sec-title">{t(L, 'cdet.portal_titulo')}</h2></div>
+                    <p class="dc-portal-desc">{t(L, 'cdet.portal_desc')}</p>
+                    {PORTAL.url ? (
+                        <Fragment>
+                            <div class="dc-portal-link">
+                                <input type="text" readonly value={PORTAL.url} id="dcPortalUrl" aria-label={t(L, 'cdet.portal_titulo')} />
+                                <button type="button" class="dc-btn-ghost" data-portal="copiar">{t(L, 'cdet.portal_copiar')}</button>
+                            </div>
+                            {canEdit && (
+                                <div class="dc-portal-acts">
+                                    {c.email && <button type="button" class="dc-portal-act" data-portal="enviar">{t(L, 'cdet.portal_enviar')}</button>}
+                                    <a class="dc-portal-act" href={PORTAL.url} target="_blank" rel="noopener noreferrer">{t(L, 'cdet.portal_abrir')}</a>
+                                    <button type="button" class="dc-portal-act" data-portal="rotar">{t(L, 'cdet.portal_rotar')}</button>
+                                    <button type="button" class="dc-portal-act dc-portal-danger" data-portal="apagar">{t(L, 'cdet.portal_apagar')}</button>
+                                </div>
+                            )}
+                        </Fragment>
+                    ) : canEdit && (
+                        <button type="button" class="dc-btn-ghost" data-portal="crear">{t(L, 'cdet.portal_crear')}</button>
+                    )}
+                    <div class="dc-kv-list dc-portal-autopay">
+                        <div class="dc-kv">
+                            <span class="dc-kv-label">{t(L, 'cdet.portal_autopay')}</span>
+                            <span>{PORTAL.autopay.activo ? etiquetaMetodo(PORTAL.autopay.metodo, L) : t(L, 'cdet.portal_autopay_inactivo')}</span>
+                        </div>
+                        {PORTAL.detenido.map((e) => (
+                            <p class="dc-portal-warn">{e.motivo === 'reintento' && e.siguienteAt
+                                ? tf('cdet.portal_reintento', { moneda: e.currency, fecha: fmtDateLong(e.siguienteAt), n: String(e.intentos) })
+                                : tf('cdet.portal_detenido', { moneda: e.currency, motivo: PORTAL_MOTIVO[e.motivo] ?? e.motivo })}</p>
+                        ))}
+                        {!PORTAL.autopay.activo && PORTAL.autopay.desactivado?.motivo && PORTAL_MOTIVO[PORTAL.autopay.desactivado.motivo] && (
+                            <p class="dc-portal-warn">{tf('cdet.portal_apagado_por', { motivo: PORTAL_MOTIVO[PORTAL.autopay.desactivado.motivo] })}</p>
+                        )}
+                        {!PORTAL.autopay.activo && <p class="dc-portal-hint">{t(L, 'cdet.portal_autopay_hint')}</p>}
+                        {PORTAL.autopay.activo && canEdit && (
+                            <button type="button" class="dc-portal-act dc-portal-danger" data-portal="autopay_off">{t(L, 'cdet.portal_autopay_off')}</button>
+                        )}
+                    </div>
+                </section>
+            )}
+
             <section class="dc-side-block">
                 <div class="sec-head"><h2 class="sec-title">{c.fiscalCompleto ? t(L, 'cdet.fiscal_completo') : t(L, 'cdet.fiscal_incompleto')}</h2></div>
                 <span class:list={['dc-fiscal-badge', { on: c.fiscalCompleto }]}>{c.fiscalCompleto ? t(L, 'cdet.fiscal_completo') : t(L, 'cdet.fiscal_incompleto')}</span>
@@ -269,6 +329,46 @@ import { iconInner } from '../../../lib/icons';
         document.dispatchEvent(new CustomEvent('clientmodal:open', { detail: { data: el.dataset } }));
     });
     document.addEventListener('clientmodal:saved', () => { window.location.reload(); });
+
+    // ── Portal del cliente ────────────────────────────────────────────────
+    const portal = document.getElementById('dcPortal');
+    if (portal) {
+        const P = JSON.parse(portal.dataset.i18n || '{}');
+        const accion = async (accion: string) => {
+            const res = await fetch('/api/clientes/portal', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ cliente_id: portal.dataset.id, accion }),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.error || P.error);
+            return data;
+        };
+        const CONFIRMAR: Record<string, [string, string]> = {
+            rotar: [P.rotarTitulo, P.rotarBody], apagar: [P.apagarTitulo, P.apagarBody], autopay_off: [P.autopayTitulo, P.autopayBody],
+        };
+        portal.addEventListener('click', async (e) => {
+            const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('button[data-portal]');
+            if (!btn) return;
+            const que = btn.dataset.portal || '';
+            if (que === 'copiar') {
+                const url = (document.getElementById('dcPortalUrl') as HTMLInputElement | null)?.value || '';
+                await navigator.clipboard?.writeText(url).catch(() => {});
+                (window as any).cordToast?.(P.copiado);
+                return;
+            }
+            const conf = CONFIRMAR[que];
+            if (conf && !(await (window as any).cordConfirm({ title: conf[0], body: conf[1], danger: true, confirmText: conf[0] }))) return;
+            btn.disabled = true;
+            try {
+                await accion(que);
+                if (que === 'enviar') { (window as any).cordToast?.(P.enviado); btn.disabled = false; return; }
+                window.location.reload();
+            } catch (err: any) {
+                (window as any).cordToast?.(err.message || P.error, 'error');
+                btn.disabled = false;
+            }
+        });
+    }
 
     const btnDel = document.getElementById('dcDelete');
     btnDel?.addEventListener('click', async () => {
@@ -320,6 +420,26 @@ import { iconInner } from '../../../lib/icons';
         .ec-kpis { grid-template-columns: 1fr; gap: 0.9rem; }
         .ec-aging { grid-template-columns: repeat(2, 1fr); }
     }
+
+    .dc-portal-desc { margin: 0 0 0.9rem; font-size: 0.8rem; line-height: 1.5; color: var(--color-text-muted); }
+    .dc-portal-link { display: flex; gap: 0.5rem; align-items: center; }
+    .dc-portal-link input {
+        flex: 1; min-width: 0; font: inherit; font-size: 0.78rem; color: var(--color-text);
+        background: #f5f5f7; border: 1px solid transparent; border-radius: 10px; padding: 9px 10px;
+    }
+    .dc-portal-link input:focus { outline: none; border-color: rgba(10, 25, 47, 0.15); }
+    .dc-portal-acts { display: flex; flex-wrap: wrap; gap: 0.25rem 0.9rem; margin-top: 0.6rem; }
+    .dc-portal-act {
+        display: inline-flex; align-items: center; min-height: 36px; padding: 0; border: 0; background: none;
+        font: inherit; font-size: 0.8rem; font-weight: 600; color: var(--color-blue-deep, #0a192f); cursor: pointer; text-decoration: none;
+    }
+    .dc-portal-act:hover { text-decoration: underline; text-underline-offset: 4px; }
+    .dc-portal-act:disabled { opacity: 0.5; cursor: wait; }
+    .dc-portal-danger { color: var(--color-danger, #b42318); }
+    .dc-portal-autopay { margin-top: 1.1rem; padding-top: 1rem; border-top: 1px solid var(--color-border); }
+    .dc-portal-warn { margin: 0.4rem 0 0; font-size: 0.78rem; line-height: 1.5; color: #b45309; }
+    .dc-portal-hint { margin: 0.4rem 0 0; font-size: 0.76rem; line-height: 1.5; color: var(--color-text-muted); }
+    @media (max-width: 880px) { .dc-portal-act { min-height: 44px; } }
 
     .detail-grid { display: grid; grid-template-columns: 1fr 300px; gap: 3rem; align-items: start; }
     .d-main { display: flex; flex-direction: column; min-width: 0; gap: 2.2rem; }

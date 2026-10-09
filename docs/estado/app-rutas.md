@@ -72,6 +72,11 @@ Implementación local apagada por defecto, pendiente de DNS/TLS real.
                    propia. Misma política de enmarcado (src/lib/embed-frame.ts) y misma
                    regla de rieles (publicInvoicePayability). Consulta GET /api/i/[token]
                    cada 30 s mientras está abierta y emite status_changed y cord:paid.
+/portal/[token]  → portal del cliente: sus facturas, saldo por divisa, pago de varias a
+                   la vez y cobro automático (src/lib/cobros/portal.ts). El token es
+                   credencial portadora: middleware fija no-store, noindex y
+                   no-referrer, y la página va SIN analítica. Solo en cordhq.app,
+                   nunca en el dominio propio del negocio. export const prerender = false.
 /.well-known/security.txt → RFC 9116, Expires siempre ~6 meses adelante.
 
 # Dev Blog (Subdominio dev.cordhq.app)
@@ -287,6 +292,18 @@ APIs de cobros (ago 2026)
                                              PUBLIC_API_PREFIXES: sin él el middleware
                                              responde 401 y la factura no se puede
                                              pagar (ver regla 33).
+/api/portal/[token]/{payment-intent,autopay}
+                                             carril público del portal: pagar varias
+                                             facturas (un intento, reparto guardado)
+                                             y activar/confirmar/apagar el cobro
+                                             automático. limitPublicPayment; también en
+                                             PUBLIC_API_PREFIXES.
+/api/clientes/portal                  POST   el negocio crea, rota, apaga o envía el link
+                                             del portal y apaga el cobro automático.
+/api/billing/connect/domiciliacion    PATCH  enciende SEPA/ACH (pide la capacidad) y el
+                                             permiso de cobro automático.
+/api/cron/cobro-automatico            GET    cobra lo vencido de los clientes con cobro
+                                             automático y concilia cobros abiertos.
 /api/stripe/webhook                   POST   plataforma Y cuentas conectadas, con
                                              secreto separado. Falla cerrado sin
                                              secreto; un evento firmado con el de
@@ -434,6 +451,10 @@ APIs de cobros (ago 2026)
                    hace POST /api/recurrencias con
                    `fromDocumentoId` (copia el snapshot inmutable de líneas, no
                    el catálogo, que pudo cambiar de precio).
+                   Emisor de la UE (oct 2026): sección "Factura electrónica"
+                   con la descarga de cada formato EN 16931 que el documento
+                   admite y, para los demás, qué falta y dónde se corrige
+                   (`einvoiceSummary()`); dice que Cord no transmite por Peppol.
 /app/facturas/recurrentes → (ago 2026) lista de `documento_recurrencias`: pausar/
                    reanudar/eliminar. Pausar se permite SIEMPRE, incluso sin
                    plan — un downgrade no puede dejar a alguien sin poder
@@ -522,6 +543,12 @@ APIs de cobros (ago 2026)
 /api/orgs        → POST crea una org (el servidor genera el id — reemplaza a
                    /api/orgs/provision, que tenía un IDOR cross-tenant real).
 /api/fiscal/documents/[id]/{pdf,xml} → descarga autenticada y acotada al `org_id`.
+                   También `{facturx,xrechnung,xrechnung-cii,peppol}` (oct 2026):
+                   la factura electrónica europea del snapshot; 409 con lo que
+                   falta si el documento no la admite. Mismos formatos en
+                   /api/i/[token]/documents/[format] (la página pública solo
+                   enlaza los disponibles). Ver "Factura electrónica europea"
+                   en `cobros-facturacion.md`.
 /api/fiscal/verifactu-cert → POST multipart {p12,password} sube y valida el
                    certificado de Verifactu (España); DELETE lo desconecta. Solo
                    subir un certificado que `parsePkcs12()` valida enciende

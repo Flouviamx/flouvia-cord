@@ -25,6 +25,7 @@ import { publicInvoiceGuidance, publicInvoiceContact, publicInvoicePayability } 
 import { MP_MARK } from '../../lib/brand-marks';
 import { isEuCountry } from '../../lib/countries';
 import { einvoiceSummary, EINVOICE_LABELS } from '../../lib/fiscal/einvoice/server';
+import { etiquetaDescuento } from '../../lib/descuentos';
 
 const { token } = Astro.params;
 const f = await getFacturaByToken(token ?? '');
@@ -46,6 +47,11 @@ const impuestosPorNombre = taxDisplayRows(f.lineas, f.pais, {
     region: f.emisor?.address?.region, decimals: currencyDecimals(f.currency || 'MXN'),
     taxLabel: getCountryProfile(f.pais).taxLabel,
 });
+// Descuento de documento: cada concepto se muestra a su importe BRUTO y el
+// descuento aparece en los totales, antes de los impuestos (cuyas bases ya son
+// netas). Sin descuento, la tabla es la de siempre.
+const hayDescuento = f.descuentoTotal > 0;
+const brutoDe = (l: (typeof f.lineas)[number]) => l.subtotal + (hayDescuento ? l.descuento : 0);
 const regresoDePago = Astro.url.searchParams.get('pagado') === '1' && f.estado !== 'paid';
 const guidance = publicInvoiceGuidance({ ...f, puedePagar, regresoDePago }, L);
 const contact = publicInvoiceContact(f.org.email, f.org.telefono, f.numero ?? '', L);
@@ -191,8 +197,8 @@ import { iconInner } from '../../lib/icons';
                             <tr>
                                 <td>{l.descripcion}</td>
                                 <td class="iv-num">{l.cantidad}</td>
-                                <td class="iv-num editorial">{moneyFull(l.precioUnitario)}</td>
-                                <td class="iv-num editorial">{moneyFull(l.subtotal)}</td>
+                                <td class="iv-num editorial">{moneyFull(hayDescuento && l.cantidad > 0 ? brutoDe(l) / l.cantidad : l.precioUnitario)}</td>
+                                <td class="iv-num editorial">{moneyFull(brutoDe(l))}</td>
                             </tr>
                         ))}
                     </tbody>
@@ -200,7 +206,10 @@ import { iconInner } from '../../lib/icons';
             </section>
 
             <section class="iv-totals">
-                <div class="iv-row"><span>{t(L, 'fact.p_subtotal')}</span><span class="editorial">{moneyFull(f.subtotal)}</span></div>
+                <div class="iv-row"><span>{t(L, 'fact.p_subtotal')}</span><span class="editorial">{moneyFull(f.subtotal + f.descuentoTotal)}</span></div>
+                {hayDescuento && (
+                    <div class="iv-row"><span>{etiquetaDescuento(f.descuento, L)}</span><span class="editorial">−{moneyFull(f.descuentoTotal)}</span></div>
+                )}
                 {f.impuestos > 0 && (impuestosPorNombre
                     ? impuestosPorNombre.map((row) => (
                         <div class="iv-row"><span>{row.nombre} {fmtTaxPct(row.tasa)}</span><span class="editorial">{moneyFull(row.impuesto)}</span></div>

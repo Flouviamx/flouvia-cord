@@ -1,5 +1,6 @@
 ---
-import { money, lineTotal, quoteSubtotal, quoteTotal, quoteTaxBreakdown, quoteRetenciones } from '../../lib/queries';
+import { money, lineTotal, quoteSubtotal, quoteTotal, quoteTaxBreakdown, quoteRetenciones, quoteDescuento } from '../../lib/queries';
+import { etiquetaDescuento } from '../../lib/descuentos';
 import { getCountryProfile } from '../../lib/countries';
 import { currencyDecimals } from '../../lib/currency';
 import { taxBreakdownRows } from '../../lib/tax-components';
@@ -25,6 +26,8 @@ const TAX_ROWS = taxBreakdownRows(quoteTaxBreakdown(q), {
     decimals: currencyDecimals(q.baseCurrency || ORG.moneda || 'MXN'),
 });
 const TAX_ID_LABEL = PROFILE.taxIdLabel;
+// Descuento de documento: subtotal BRUTO arriba y el descuento antes de impuestos.
+const DESCUENTO = quoteDescuento(q);
 // Fuera de México el identificador se captura en el perfil fiscal
 // (`fiscal_metadata.tax_id`): el SIREN de París o la USt-IdNr. de Berlín no
 // viven en `rfc`, y el PDF los omitía aunque el negocio ya los hubiera guardado.
@@ -129,7 +132,10 @@ const darkLogo = profile.logoDark || printLogo;
 
         <!-- Totales -->
         <section class="doc-totals">
-            <div><span>{t(L, 'imp.subtotal')}</span><span class="editorial">{money(quoteSubtotal(q))}</span></div>
+            <div><span>{t(L, 'imp.subtotal')}</span><span class="editorial">{money(quoteSubtotal(q) + DESCUENTO)}</span></div>
+            {DESCUENTO > 0 && (
+                <div><span>{etiquetaDescuento(q.descuento, L)}</span><span class="editorial">−{money(DESCUENTO)}</span></div>
+            )}
             {TAX_ROWS.map((tr) => (
                 <div><span>{tr.label}</span><span class="editorial">{money(tr.impuesto)}</span></div>
             ))}

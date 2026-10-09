@@ -6,11 +6,15 @@
 // veraPDF examinan.
 //
 // Los importes se arman como los arma Cord al emitir (`invoices.ts`): base de
-// la línea = cantidad × precio redondeado, menos el descuento de documento
-// repartido; impuesto = base × tasa redondeado POR LÍNEA; totales = sumas.
+// la línea = cantidad × precio redondeado; impuesto = base × tasa redondeado
+// POR LÍNEA; totales = sumas. Las muestras con descuento de documento pasan por
+// el MOTOR real (`calculateDocumentTotals`, el mismo reparto por mayor residuo
+// que usa `buildLines`), no por una imitación: lo que se valida es lo que Cord
+// guarda.
 //
-// Sin imports de valor: Node las carga con `--experimental-strip-types`.
+// Node las carga con `--experimental-strip-types` (el motor no tiene imports).
 
+import { calculateDocumentTotals, type DescuentoInput } from '../../packages/elements/src/engine';
 import type { FiscalLineItem, FiscalParty } from '../../src/lib/fiscal/index';
 import type { EInvoiceFormat, EInvoiceSource } from '../../src/lib/fiscal/einvoice/model';
 import type { InvoicePdfInput } from '../../src/lib/fiscal/invoice-pdf';
@@ -33,13 +37,30 @@ export function sampleLine(description: string, quantity: number, unitPrice: num
     };
 }
 
-/** Reparte un descuento de documento en proporción al importe bruto; el resto de céntimos, a la última línea. */
-export function allocateDiscount(lines: { quantity: number; unitPrice: number }[], fraction: number): number[] {
-    const gross = lines.map((l) => cents(l.quantity * l.unitPrice));
-    const total = Math.round(gross.reduce((s, g) => s + g, 0) * fraction);
-    const parts = gross.map((g) => Math.floor(g * fraction));
-    parts[parts.length - 1] += total - parts.reduce((s, x) => s + x, 0);
-    return parts.map((c) => c / 100);
+/**
+ * Líneas con descuento de documento por el motor, mapeadas al contrato fiscal
+ * exactamente como `buildLines` (src/lib/fiscal/invoices.ts).
+ */
+export function engineLines(
+    items: { description: string; quantity: number; unitPrice: number; taxRate: number; unitKey?: string; exemptionReason?: string }[],
+    opts: { descuento: DescuentoInput; ivaIncluido?: boolean },
+): FiscalLineItem[] {
+    const totals = calculateDocumentTotals(
+        items.map((i) => ({ descripcion: i.description, cantidad: i.quantity, precio_unitario: i.unitPrice, tax_rate: i.taxRate })),
+        { ivaIncluido: !!opts.ivaIncluido, roundLines: 2, descuento: opts.descuento },
+    );
+    return totals.lineas.map((l, i) => ({
+        description: items[i].description,
+        quantity: l.cantidad,
+        unitPrice: Math.round((l.cantidad ? l.base / l.cantidad : l.base) * 1e6) / 1e6,
+        taxRate: l.tax_rate,
+        subtotal: round2(l.base),
+        taxAmount: round2(l.impuesto),
+        total: round2(l.total),
+        ...(l.descuento > 0 ? { discount: round2(l.descuento) } : {}),
+        ...(items[i].unitKey ? { unitKey: items[i].unitKey } : {}),
+        ...(items[i].exemptionReason ? { exemptionReason: items[i].exemptionReason } : {}),
+    }));
 }
 
 function totals(lines: FiscalLineItem[]) {
@@ -104,12 +125,6 @@ function sample(id: string, title: string, formats: EInvoiceFormat[], categories
 
 const ALL: EInvoiceFormat[] = ['facturx', 'xrechnung', 'xrechnung-cii', 'peppol'];
 
-const discountBase = [
-    { description: 'Conseil stratégique', quantity: 6, unitPrice: 180, taxRate: 0.2, unitKey: 'DAY' },
-    { description: 'Ouvrage « Méthodes »', quantity: 3, unitPrice: 39.9, taxRate: 0.055 },
-    { description: 'Atelier collectif', quantity: 1, unitPrice: 450, taxRate: 0.2 },
-];
-const discountParts = allocateDiscount(discountBase, 0.1);
 
 export const EINVOICE_SAMPLES: EInvoiceSample[] = [
     sample('fr-b2b', 'Francia, B2B nacional con dos tasas', ALL, ['S', 'S', 'S'], {
@@ -191,8 +206,27 @@ export const EINVOICE_SAMPLES: EInvoiceSample[] = [
         issuedAt: '2026-10-08T10:00:00Z', timeZone: 'Europe/Paris', dueDate: '2026-11-07', paymentTermsCode: 'net30',
         buyerReference: 'DUP-FORM-2026',
         issuer: FR_SELLER, recipient: FR_BUYER,
-        lines: discountBase.map((l, i) => sampleLine(l.description, l.quantity, l.unitPrice, l.taxRate, { discount: discountParts[i], unitKey: l.unitKey })),
+        lines: engineLines([
+            { description: 'Conseil stratégique', quantity: 6, unitPrice: 180, taxRate: 0.2, unitKey: 'DAY' },
+            { description: 'Ouvrage « Méthodes »', quantity: 3, unitPrice: 39.9, taxRate: 0.055 },
+            { description: 'Atelier collectif', quantity: 1, unitPrice: 450, taxRate: 0.2 },
+        ], { descuento: { tipo: 'porcentaje', valor: 10 } }),
         iban: 'FR7630006000011234567890189', bic: 'AGRIFRPP',
+    }),
+    sample('discount-ttc', 'Cupón de 50 € sobre precios con IVA incluido, alemán con tres tasas', ALL, ['E', 'S', 'S'], {
+        ...ISSUED, invoiceNumber: 'RE2026-000050', documentType: 'commercial_invoice', countryCode: 'DE',
+        issuedAt: '2026-10-08T09:00:00Z', timeZone: 'Europe/Berlin', dueDate: '2026-11-07', paymentTermsCode: 'net30',
+        buyerReference: 'KH-2026-0817', purchaseOrder: '4500012399',
+        issuer: DE_SELLER, recipient: DE_BUYER,
+        // La línea exenta también recibe su parte del cupón: el grupo E lleva su
+        // propio descuento de documento (BG-20 con categoría E).
+        lines: engineLines([
+            { description: 'Schreibtischlampe', quantity: 3, unitPrice: 89.99, taxRate: 0.19 },
+            { description: 'Fachbuch Lichtplanung', quantity: 2, unitPrice: 34.9, taxRate: 0.07 },
+            { description: 'Montage vor Ort', quantity: 1.5, unitPrice: 76.5, taxRate: 0.19, unitKey: 'HUR' },
+            { description: 'Versicherungsvermittlung', quantity: 1, unitPrice: 25, taxRate: 0, exemptionReason: 'VATEX-EU-135-1' },
+        ], { descuento: { tipo: 'monto', valor: 50 }, ivaIncluido: true }),
+        iban: 'DE89370400440532013000', bic: 'COBADEFFXXX',
     }),
     sample('rounding', 'Redondeo con muchas líneas y precios de tres o cuatro decimales (DE)', ALL, ['S', 'S'], {
         ...ISSUED, invoiceNumber: 'RE2026-000049', documentType: 'commercial_invoice', countryCode: 'DE',

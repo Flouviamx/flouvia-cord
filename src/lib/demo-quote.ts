@@ -172,6 +172,7 @@ export function getDemoQuote(now: Date = new Date()) {
         iva_incluido: true,
         taxRateFallback: TAX_RATE,
         retenciones: [] as NonNullable<Quote['retenciones']>,
+        descuento: null,
         anticipoPct: null,
         esRecurrente: false,
         items,

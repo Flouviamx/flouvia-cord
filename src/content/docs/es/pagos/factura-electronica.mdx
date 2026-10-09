@@ -1,0 +1,135 @@
+---
+title: "Factura electrónica europea: Factur-X, XRechnung y Peppol"
+seoTitle: "Factura electrónica europea: Factur-X, XRechnung y Peppol"
+description: "Descarga cada factura como Factur-X, XRechnung o Peppol BIS (EN 16931), adjúntala al correo y completa los datos que cada formato exige."
+lastUpdated: "2026-10-09"
+reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [ES, DE, FR]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Negocio establecido en la Unión Europea", "Una factura emitida", "Perfil fiscal completo en Ajustes › Perfil fiscal"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Factura electrónica europea</h1>
+  <p class="page-subtitle">La misma factura, en los formatos estructurados que leen los sistemas de cuentas por pagar de tus clientes en Europa.</p>
+</header>
+
+Si tu negocio está en la Unión Europea, cada factura emitida en Cord se puede obtener
+también como **factura electrónica** según la norma europea **EN 16931**. No es otro
+documento: tiene el mismo folio, la misma fecha y los mismos importes que el PDF,
+escritos para que el sistema de tu cliente la procese sin capturarla a mano.
+
+<Callout type="info">
+Esta función es nueva y puede no estar habilitada todavía en tu cuenta. Si no la ves, escríbenos.
+</Callout>
+
+## Formatos
+
+- **Factur-X (PDF):** el PDF de la factura con el XML dentro (perfil EN 16931). Se abre
+  como cualquier PDF y además lo leen los sistemas que aceptan Factur-X o ZUGFeRD. Es
+  el formato habitual en Francia.
+- **XRechnung (UBL) y XRechnung (CII):** el formato que exige la administración pública
+  alemana y que aceptan muchas empresas en Alemania. UBL es el más común; CII existe
+  por si tu cliente lo pide.
+- **Peppol BIS 3.0 (UBL):** el formato de la red Peppol, usado en buena parte de Europa.
+
+<Callout type="warning">
+Cord **genera** estos archivos, te deja descargarlos y puede adjuntarlos al correo de la
+factura. **No los envía** por la red Peppol ni por una plataforma de facturación
+electrónica francesa. Si tu cliente te pide recibirlos por Peppol, descárgalos y súbelos
+a tu proveedor de acceso.
+</Callout>
+
+## Prepara tus datos una vez
+
+<Steps>
+
+1. En **Ajustes › Perfil fiscal**, sección **Factura electrónica europea**, completa el
+   **contacto de facturación** y su **teléfono**. XRechnung exige un contacto con nombre,
+   teléfono y correo (se usa el correo de tu negocio).
+2. Agrega tu **dirección electrónica**: el esquema (por ejemplo GLN, SIRET o tu NIF-IVA)
+   y el identificador. Peppol la exige; XRechnung usa tu correo si no hay otra.
+3. Si lo tienes, agrega tu **número de registro mercantil** y el **BIC** de tu banco. El
+   IBAN que aparece en la factura es el de **Ajustes › Cobros**; XRechnung lo exige para
+   indicar cómo pagar.
+4. En cada cliente que lo necesite, abre la sección **Factura electrónica** y captura su
+   **dirección electrónica** y su **referencia del comprador**. En Alemania, para la
+   administración pública, la referencia es el **Leitweg-ID** y es obligatoria.
+
+</Steps>
+
+Al crear una factura también puedes capturar la **referencia del comprador** y la
+**orden de compra** en el resumen del editor. Si dejas la referencia vacía, se usa la del
+cliente. Peppol pide al menos una de las dos.
+
+## Descargar
+
+Abre la factura emitida. En la columna derecha, la sección **Factura electrónica** lista
+cada formato que esa factura ya puede generar, listo para descargar. Para los que no,
+dice qué dato falta y enlaza al lugar donde se corrige.
+
+Tu cliente también puede descargar los formatos disponibles desde el link público de la
+factura, junto al PDF.
+
+<Callout type="info">
+Una factura emitida conserva los datos con que se emitió. Si corriges tu contacto, tu
+dirección electrónica o la del cliente, el cambio aplica a las **siguientes** facturas;
+la ya emitida no se reescribe.
+</Callout>
+
+## Adjuntar al correo
+
+En **Ajustes › Perfil fiscal › Adjuntar al correo de cada factura** eliges qué viaja con
+el correo:
+
+- **Automático:** Factur-X en Francia, PDF más XML de XRechnung en Alemania y solo el
+  PDF en el resto.
+- **Solo el PDF.**
+- **PDF Factur-X:** sustituye al PDF normal (se ve igual y lleva el XML dentro).
+- **PDF + XML de XRechnung.**
+
+Si a una factura le falta un dato del formato elegido, el correo sale con el PDF de
+siempre y la factura te dice qué falta. El envío nunca se detiene por esto.
+
+## Impuestos y exenciones
+
+Cada concepto se clasifica con la categoría de IVA europea:
+
+- con tasa mayor que cero, **tipo normal o reducido**;
+- al 0 %, la **causa** que elegiste en el perfil exento de **Ajustes › Impuestos**
+  (inversión del sujeto pasivo, entrega intracomunitaria, exportación, no sujeta,
+  tipo cero o una exención de la Directiva del IVA). En España se usa la causa de
+  Verifactu;
+- al 0 % sin causa, Cord la deduce: franquicia del emisor, cliente de otro país de la UE
+  con número de IVA (inversión del sujeto pasivo), cliente fuera de la UE (exportación) o
+  exención nacional.
+
+Un **descuento de documento** aparece como en el PDF: cada concepto con su importe antes
+del descuento y el descuento restado en los totales, separado por tasa de IVA, de modo
+que el total coincide al céntimo con el de la factura.
+
+## Cuándo no se puede generar
+
+Cord no genera una factura electrónica que no coincida con la factura real. No hay
+versión electrónica para:
+
+- borradores, facturas anuladas, proformas y documentos de prueba;
+- facturas con **retenciones** (por ejemplo IRPF): la norma europea no las contempla;
+- facturas con IGIC o IPSI (Canarias, Ceuta y Melilla);
+- facturas antiguas cuyos totales no son la suma exacta de sus conceptos;
+- una operación **no sujeta** al IVA mezclada con conceptos de otra categoría: emítelas
+  por separado.
+
+## Problemas comunes
+
+- **"XRechnung pide la referencia del comprador":** captúrala en el cliente o en la
+  factura antes de emitirla.
+- **"Peppol pide tu identificador de participante":** agrega tu dirección electrónica en
+  **Ajustes › Perfil fiscal** con un esquema distinto del correo.
+- **"XRechnung pide cómo pagar":** agrega tu IBAN en **Ajustes › Cobros**.
+
+## Relacionado
+
+- [Facturación fiscal por país](/docs/pagos/facturacion)
+- [Crear, emitir y cobrar facturas](/docs/pagos/facturas-emitidas)
+- [Facturas recurrentes](/docs/pagos/facturas-recurrentes)

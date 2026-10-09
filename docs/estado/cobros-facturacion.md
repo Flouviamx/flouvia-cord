@@ -79,6 +79,71 @@ marcado pagado por el webhook). La app de México (MLM) conecta vendedores de ot
 país: se confirmó el mismo día con un vendedor de prueba de Colombia (MCO), así que
 no hace falta una app por país.
 
+## Portal del cliente, cobro agrupado, cobro automático y domiciliación — oct 2026
+
+Código en `src/lib/cobros/`; esquema en la sección "PORTAL DEL CLIENTE…" de
+`db/schema.sql`, espejo de `db/deploy/2026-10-08-cobros-portal.sql`.
+
+- **Portal** (`/portal/[token]`, `src/lib/cobros/portal.ts`): un link POR CLIENTE
+  con sus facturas emitidas, el saldo por divisa (nunca sumado entre divisas), el
+  pago de varias a la vez y el cobro automático. El token (32 bytes) es la
+  credencial: `cord_resolve_portal` lo traduce y la consulta vuelve a `withOrgTx`.
+  La ruta va sin referrer, sin caché, sin indexar y SIN analítica; vive en
+  `cordhq.app` y nunca en el dominio propio del negocio (ese solo sirve `/q` e
+  `/i`). El negocio lo crea, rota, apaga o envía desde la ficha del cliente
+  (`/api/clientes/portal`, con auditoría). Solo aparecen las facturas con
+  `cliente_id`.
+- **Cobro agrupado** (`agrupados.ts`): un PaymentIntent paga varias facturas. El
+  reparto se decide al crear el cobro con el saldo REAL de cada factura (el
+  navegador solo elige cuáles) y queda en `pago_agrupado_documentos`; el webhook
+  lo aplica con `applyPayment` por factura, idempotente por el mismo índice
+  `(documento_id, stripe_payment_intent_id)`. El intento NO lleva `documento_id`:
+  si lo llevara, `settleInvoiceFromIntent` le aplicaría el cobro completo a una
+  sola factura. Una comisión por cobro (la llave de `comisiones` es el PI).
+- **Reembolsos repartidos** (`allocateInvoiceRefund` en `reconciliation.ts`):
+  devolver parte de un cobro que pagó varias facturas se asigna de la última
+  aplicada a la primera, completo o nada; sin reparto, un reembolso solo cuenta
+  si su cobro pagó una sola factura (todo lo anterior a oct 2026).
+- **Domiciliación** (`metodos.ts`): SEPA Direct Debit en EUR para ES/DE/FR y ACH
+  en USD para EE. UU. La enciende el negocio en Ajustes › Cobros
+  (`/api/billing/connect/domiciliacion`), que pide la capacidad
+  (`sepa_debit_payments` / `us_bank_account_ach_payments`) a la cuenta conectada;
+  `orgs.stripe_capacidades` guarda su estado desde `account.updated`, y solo una
+  capacidad `active` se ofrece. Donde Cord cobra comisión (hoy MXN) solo se
+  ofrece tarjeta: la comisión es de tarjeta y no hay tarifa aprobada para débito.
+  Un débito queda días en `processing`: `documentos_fiscales.pago_en_proceso_pi`
+  bloquea cobrar otra vez y anular, y `/i` y el portal lo dicen. Stripe manda al
+  titular el aviso de cada cargo SEPA y la confirmación del mandato ACH (por eso
+  el Customer lleva el correo del cliente). ACH no admite reembolsos parciales.
+- **Cobro automático** (`automatico.ts`, cron `/api/cron/cobro-automatico`
+  diario 14:15 UTC): lo ACTIVA el cliente en su portal con un SetupIntent (o al
+  pagar, marcando "guardar"). El consentimiento lo registra el servidor (fecha,
+  IP, navegador) como PENDIENTE con el id del intento, y solo se activa cuando el
+  proveedor confirma ESE método de ESE Customer. Se cobran, en UN cargo por
+  cliente y divisa, las facturas vencidas desde el día de la autorización y
+  emitidas al menos un día antes; el método tiene que cubrir la divisa. El
+  correo de la factura le avisa al cliente fecha y método del cargo. El negocio
+  solo puede apagarlo (por cliente en su ficha, o para todos en Ajustes).
+- **Reintentos** (`reintentos.ts`, pura y probada): un rechazo duro (robada,
+  fraude, mandato revocado) apaga el método y no se reintenta; datos vencidos o
+  inválidos piden otro método; autenticación requerida pide pagar desde el
+  portal; fondos insuficientes esperan al siguiente 1 o 16 del mes; el resto en
+  2, 4 y 7 días; máximo 4 intentos con tarjeta. Un débito solo se reintenta por
+  fondos, 2 veces y dentro de 30 (SEPA) o 40 (ACH) días, los mismos topes que
+  aplica el proveedor. Un rechazo cuenta una vez aunque lleguen el error síncrono
+  y el webhook. Al cliente le llega un correo con su portal; al negocio, una
+  tarea cuando el cobro se detiene.
+- **Respuesta incierta**: sin respuesta del proveedor el cobro queda `creado` sin
+  intento (el índice `uq_pagos_agrupados_automatico_vivo` impide abrir otro) y
+  la siguiente corrida reintenta con la MISMA clave de idempotencia; después de
+  20 horas se cancela (si el cargo hubiera salido, su webhook ya lo habría
+  ligado). El cron también concilia cobros sin webhook o con un débito de más de
+  3 días en proceso.
+- **Eventos del webhook** que este carril necesita en el scope de cuentas
+  conectadas: `payment_intent.processing`, `payment_intent.canceled`,
+  `setup_intent.succeeded` y `mandate.updated` (ver
+  `pendientes-integraciones.md`).
+
 ## Términos de pago, claves SAT y CFDI a extranjeros — oct 2026
 
 - **Términos de pago:** `contado` o `net<N>` = N días naturales. Se ofrecen `net7`,
@@ -108,6 +173,168 @@ no hace falta una app por país.
 - **Despliegue:** `scripts/migrate-catalogo-fiscal.mjs` corre en el `buildCommand` de
   Vercel antes del build (columnas de `db/catalogo-fiscal.sql` + función y vista extraídas
   de `db/schema.sql`). Si falla, el despliegue se detiene.
+
+## Descuentos de documento y cupones — oct 2026
+
+- **Qué es:** una rebaja sobre la venta completa (`porcentaje` de 0 a 100 o
+  `monto` en la divisa del documento), ANTES de impuestos. La aplica el motor
+  (`calculateDocumentTotals`, opción `descuento`) y la reparte entre las líneas
+  en proporción a su importe bruto; con `roundLines` el reparto es en unidades
+  mínimas por mayor residuo (la suma por línea es exactamente el descuento y
+  ninguna línea queda negativa). Un monto se topa en el bruto. Con precios que
+  incluyen impuesto, el monto rebaja lo que paga el cliente y la base se
+  desagrega después. Las retenciones se calculan sobre las bases descontadas.
+- **Contrato de datos:** el navegador y la API mandan la DEFINICIÓN
+  (`descuento: {tipo, valor}`) o un código (`cupon`), nunca un importe; el cupón
+  manda sobre el manual (`src/lib/descuentos.ts`, `leerDescuentoBody`). Sin
+  ninguna de las dos llaves, una edición conserva el descuento guardado.
+  Cotización: `cotizaciones.descuento` = importe antes de impuestos (la hoja lo
+  exporta y su `subtotal` es el bruto) y `descuento_def` = definición. Factura:
+  `documentos_fiscales.descuento_total` y `descuento` (definición, con
+  `cupon_id`); cada concepto del snapshot lleva `discount` y su `subtotal` sigue
+  siendo la base NETA (`unitPrice` también es neto). `cotizacion_items.descuento_pct`
+  no se usa: Shopify y la contabilidad lo aplican por línea.
+- **Cupones** (`cupones`, Ajustes › Descuentos › Cupones, permiso `ajustes`):
+  código `[A-Z0-9_-]{3,32}` único por organización, vigencia en la zona horaria
+  del negocio, divisa obligatoria para un monto, tope global y por cliente.
+  Código, tipo, valor y divisa no se editan; un cupón usado no se borra, se
+  desactiva. El editor valida con `POST /api/cupones/validar` (permiso `cotizar`).
+- **Ciclo de vida** (`src/lib/cupones.ts`): vigencia y `activo` se revisan al
+  APLICAR; un cupón ya aplicado a un documento se conserva al editarlo. El uso se
+  registra cuando el documento se vuelve vinculante, con `cord_cupon_redimir`
+  (bloquea la fila del cupón): la factura al emitirse —ANTES de reservar folio—
+  y la cotización al aprobarse, en la misma transacción que la aprobación. Si los
+  usos se agotaron, no se emite ni se aprueba (el vendedor lo ve en el historial).
+  La factura de una cotización reusa su redención. Anular la factura, borrar el
+  borrador o rechazar la cotización la libera (`cord_cupon_liberar`). Un
+  descuento manual cuenta para el tope de aprobación; un cupón no.
+- **Rieles:** CFDI con `items[].discount` y ValorUnitario bruto (Facturapi:
+  "monto total de descuento aplicado a este concepto"; Anexo 20: Importe −
+  Descuento = base, y la base de un traslado debe ser mayor que cero, por eso un
+  concepto que el descuento deja en cero se rechaza antes del PAC). Verifactu
+  declara la base neta. La nota de crédito prorratea el `discount`. El PDF
+  muestra el importe bruto por concepto y "Descuento (CÓDIGO)" en los totales.
+- **Copias:** duplicar o repetir una factura copia el precio BRUTO y el
+  descuento aparte; una recurrencia lleva solo un descuento manual
+  (`documento_recurrencias.descuento`). Aprobación parcial y factura de una
+  cotización vuelven a aplicar la definición sobre lo aprobado.
+- **Despliegue:** `db/deploy/2026-10-08-descuentos.sql`. Lo verifican
+  `test/engine-descuento.test.ts`, `test/cupones-db.test.ts` y
+  `test/descuento-fiscal.test.ts`.
+
+## Factura electrónica europea (Factur-X, XRechnung, Peppol) — oct 2026
+
+- **Qué es:** la MISMA factura que el PDF, escrita para una máquina según
+  EN 16931-1. Tres formatos, para emisores establecidos en la UE:
+  **Factur-X** perfil EN 16931 (PDF/A-3b con `factur-x.xml` CII incrustado como
+  `Alternative`; también es ZUGFeRD 2.x EN 16931), **XRechnung 3.0** (UBL por
+  defecto, CII opcional; `urn:cen.eu:en16931:2017#compliant#urn:xeinkauf.de:kosit:xrechnung_3.0`)
+  y **Peppol BIS Billing 3.0** (UBL). Código en `src/lib/fiscal/einvoice/`:
+  `model.ts` arma el modelo semántico y dice qué falta, `cii.ts`/`ubl.ts`
+  serializan, `facturx.ts` + `src/lib/pdf/pdfa.ts` hacen el PDF/A, `server.ts`
+  lo lee de la base.
+- **Sin transmisión.** Cord genera, deja descargar y adjunta al correo. No envía
+  por la red Peppol ni por una plataforma de facturación electrónica francesa
+  (PA/PDP): decisión de producto. Ajustes y el detalle de la factura lo dicen;
+  ninguna pantalla ofrece un envío que no existe (regla 15).
+- **Fuente única: el snapshot.** El modelo se arma SOLO con lo congelado al
+  emitir (`issuer_snapshot`, `recipient_snapshot`, `line_items_snapshot`,
+  totales, `buyer_reference`, `purchase_order`, `payee_account`). Los importes
+  no se recalculan: se toman y se comprueba que cuadren al céntimo
+  (BR-CO-10/13/14/15, BR-S-08). Un documento que no cuadra (anterior al
+  redondeo por línea) no se genera: serían dos facturas distintas con el mismo
+  número. El IVA de cada tasa es la suma de los impuestos YA redondeados por
+  línea, lo que dice el PDF; EN 16931 lo admite mientras difiera menos de una
+  unidad de base × tasa (BR-CO-17, tolerancia del schematron CEN 1.3.16) y, si
+  no, es el problema `vat_rounding`.
+- **Categorías (UNTDID 5305):** tasa > 0 → S. Al 0 % manda la causa del
+  concepto: España traduce su causa de Verifactu (E2→G, E5→K, S2→AE, N1→O,
+  N2→AE con empresario de la UE u O fuera, resto E con su mención); el resto de
+  la UE usa la clasificación VATEX que el negocio elige en su perfil exento
+  (Ajustes › Impuestos; lista en `EU_EXEMPTION_INFO` de `exemption.ts`,
+  restricción `chk_impuestos_exemption_reason`). Sin causa se deriva:
+  franquicia (FR art. 293 B → VATEX-FR-FRANCHISE; DE § 19 UStG) → E; cliente
+  de otro Estado miembro con NIF-IVA en ambos lados → AE; cliente fuera de la
+  UE → G (no O: O obliga a quitar el NIF-IVA del vendedor, BR-O-02, y prohíbe
+  cualquier otra categoría en el documento, BR-O-11..14); nacional → E. El PDF
+  cita el precepto de una exención VATEX (Directiva 2006/112/CE, art. 226.11),
+  el mismo texto que viaja como BT-120.
+- **Descuento de documento:** la línea lleva su importe BRUTO (BT-131 =
+  `subtotal + discount`, como la tabla del PDF) y el descuento va como
+  AllowanceCharge de documento (BG-20, motivo 95) **uno por categoría y tasa**,
+  así cada grupo del desglose cuadra: BT-116 = Σ BT-131 − Σ BT-92 del grupo y
+  BT-109 = BT-106 − BT-107 = el `subtotal` de Cord. Lo prueban dos muestras que
+  pasan por el motor real (10 % y un cupón de 50 € sobre precios con IVA en tres
+  categorías) contra KoSIT, CEN y Peppol.
+- **Otras decisiones con fuente:** fecha de expedición en la zona del emisor
+  (la del PDF). Alemania sin fecha de prestación → BT-72 = fecha de factura (§ 14
+  Abs. 4 Nr. 6 UStG, lo mismo que dice el PDF). Entrega intracomunitaria →
+  BT-72 y la dirección completa del cliente como BG-15 (BR-IC-11/12; XRechnung
+  pide ciudad y CP, BR-DE-10/11). Divisa contable distinta → BT-6 y BT-111 con
+  la `fx_rate` congelada (art. 230 de la Directiva). Pago: IBAN de
+  `payee_account` → 58 (SEPA, EUR) o 30; nota de crédito → `1` (instrumento no
+  definido): XRechnung (BR-DE-1) y Peppol entre empresas alemanas (DE-R-001)
+  exigen el grupo también en un 381 y Cord no tiene la cuenta del comprador.
+  Francia entre profesionales → notas PMD, PMT y AAB (art. L441-9/10 C. com.;
+  BR-FR-05). El identificador fiscal se re-deriva con `checkTaxId`: TVA/SIREN/
+  SIRET (TVA calculada del SIREN), USt-IdNr o Steuernummer (BT-32), NIF español
+  con prefijo ES.
+- **Falla cerrado** (`assessEInvoice`, lista con texto es/en y dónde se corrige):
+  borrador, anulada, documento de prueba, proforma, emisor fuera de la UE,
+  IGIC/IPSI, **retenciones** (EN 16931 no las tiene: BT-115 menor que el total
+  rompería BR-CO-16), divisa con tres decimales, totales o líneas que no
+  cuadran, O mezclada, faltantes de identidad. Cada formato pide además lo suyo
+  (`formatProblems`): XRechnung la referencia del comprador (BR-DE-15), contacto
+  con nombre, teléfono y correo (BR-DE-2/5/6/7), ciudad y CP del cliente y el
+  IBAN en una factura; Peppol la referencia u orden de compra (R003), las dos
+  direcciones electrónicas sin `EM` (R010/R020) y, entre empresas alemanas, el IBAN.
+- **Datos nuevos:** Ajustes › Perfil fiscal (solo UE) guarda en
+  `orgs.fiscal_metadata` `contact_name`, `contact_phone`, `einvoice_address`
+  ("esquema EAS:id", validado contra la lista de BR-CL-25), `legal_registration_id`,
+  `bic` y `einvoice_email`. El cliente: `clientes.einvoice_address` y
+  `buyer_reference` (la que toman sus facturas por defecto). La factura:
+  `documentos_fiscales.buyer_reference`/`purchase_order` (editor, POST
+  /api/facturas, update_draft, /api/v1/facturas) y `payee_account` (IBAN
+  CIFRADO, terminación, BIC y titular vigentes al emitir; nunca en el snapshot,
+  que la API y la página pública exponen). La unidad (BT-130) sale del producto
+  en todos los países (`resolveLineUnitKey`). Despliegue:
+  `db/deploy/2026-10-08-einvoice.sql`.
+- **Superficies:** `/api/fiscal/documents/[id]/{facturx,xrechnung,xrechnung-cii,peppol}`
+  y el mismo `[format]` en `/api/i/[token]/documents/` (409 con lo que falta).
+  El detalle de la factura lista los formatos disponibles y lo que falta para
+  los demás; la página pública solo enlaza los disponibles. Correo
+  (`buildInvoiceAttachments`): `facturx` sustituye el PDF por el Factur-X;
+  `xrechnung` agrega el XML al PDF; `off` deja solo el PDF. Por defecto Francia
+  → `facturx`, Alemania → `xrechnung`, resto → `off`. Si la factura no admite
+  el formato, sale el PDF de siempre: el correo nunca falla por esto.
+- **PDF/A-3b:** el Factur-X es el PDF de siempre dibujado igual y ensamblado
+  aparte (`createInvoicePdf({ assemble })`; sin `assemble` sale byte a byte el
+  PDF anterior). Fuentes Liberation 2.1.4 (OFL, métricamente compatibles con
+  Helvetica/Times) incrustadas en subconjunto con cmap (3,1) y `/Widths` del
+  programa de fuente, perfil sRGB como OutputIntent, XMP con `pdfaid` y la
+  extensión de Factur-X, fecha de metadatos = fecha de expedición (determinista).
+  Las tablas AFM de `writer.ts` difieren de Helvetica real en pocos glifos de
+  Latin-1 (ß, í en regular; €, «, », ß en negrita): desplazan medio punto un
+  texto alineado a la derecha que los contenga, en los dos PDF; no se corrigen
+  porque cambiarían el PDF de siempre.
+- **Verificación:** `test/einvoice.test.ts` (rápido) y
+  `npm run security:einvoice` (`scripts/einvoice-check.mjs`): once muestras
+  (`test/helpers/einvoice-samples.ts`) en cada formato contra XSD UBL 2.1/CII
+  D16B/Factur-X, schematron CEN 1.3.16, KoSIT 1.6.3 + XRechnung 3.0.2
+  (configuración 2026-08-31), Peppol BIS 3.0.21 (reglas propias y su copia de
+  CEN, vía phive-rules-peppol 4.6.3), schematron Factur-X 1.09 y veraPDF
+  (Mustang 2.26), más siete controles negativos que cada validador debe
+  rechazar. Artefactos con URL y SHA-256 fijos en `.cache/einvoice/` o
+  `EINVOICE_TOOLS_DIR`; sin Java/xmllint/red se omite con aviso salvo con
+  `EINVOICE_VALIDATION_REQUIRED=1`. Avisos aceptados, no errores:
+  PEPPOL-EN16931-R008 del schematron Factur-X (`ApplicableHeaderTradeDelivery`
+  vacío: el XSD lo exige aunque no haya entrega), BR-DE-TMP-32 de XRechnung
+  (recomienda fecha de prestación cuando el emisor no es alemán y no la
+  capturó) y el aviso aritmético de Mustang en la muestra de redondeo (recalcula
+  el IVA por tasa en vez de sumar el redondeado por línea; dentro de BR-CO-17).
+- **Pendiente:** transmisión (Peppol Access Point, PA francesa), XRechnung para
+  la administración con Leitweg-ID validado (hoy texto libre), retenciones,
+  IGIC/IPSI, Order-X, perfil EXTENDED, y correr `security:einvoice` en CI.
 
 ## Facturación internacional — ago 2026
 

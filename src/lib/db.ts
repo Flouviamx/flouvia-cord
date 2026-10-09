@@ -400,6 +400,17 @@ export async function resolvePublicInvoice(token: string): Promise<{ id: string;
     return row ? { id: row.id as string, orgId: row.org_id as string } : null;
 }
 
+/**
+ * Portal del cliente (`/portal/[token]`): el token resuelve (cliente,
+ * organización) con una función estrecha y la consulta vuelve a withOrgTx.
+ * Igual que la factura, el token nunca es la credencial de la query.
+ */
+export async function resolvePortal(token: string): Promise<{ clienteId: string; orgId: string } | null> {
+    if (!/^[A-Za-z0-9_-]{32,128}$/.test(token)) return null;
+    const [row] = await sql`select cliente_id, org_id from cord_resolve_portal(${token})`;
+    return row ? { clienteId: row.cliente_id as string, orgId: row.org_id as string } : null;
+}
+
 // Carril público para la captura móvil de identidad. La credencial cruda nunca
 // se persiste ni se coloca en app.capture_token; Postgres solo compara sha256.
 export async function withCaptureToken<T extends DbRow[][] = DbRow[][]>(
