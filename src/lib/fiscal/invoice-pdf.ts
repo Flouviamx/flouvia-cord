@@ -22,6 +22,7 @@ import {
   type Align, type FontKey, type RGB,
 } from '../pdf/writer';
 import type { FiscalLineItem, FiscalParty, FiscalRetencion } from './index';
+import type { RepresentacionImpresa } from './latam/representacion';
 import { termDays } from '../payment-terms';
 
 export interface InvoicePdfInput {
@@ -83,6 +84,12 @@ export interface InvoicePdfInput {
   creditNoteOfNumber?: string | null;
   /** Registro Verifactu (España) ya encadenado — `provider_data.verifactu` de SpainVerifactuProvider. */
   verifactu?: { qrUrl: string; huella: string; leyenda: string; leyendaCorta: string; etiquetaQr?: string } | null;
+  /**
+   * Representación impresa de un riel fiscal de LatAm (ARCA…): título y letra,
+   * datos de la autorización, QR y leyendas que la norma del país exige.
+   * `provider_data.latam.representacion`, leída con representacionDe().
+   */
+  autoridad?: RepresentacionImpresa | null;
   /** Instrucciones de pago (link, banco). Se imprime tal cual. */
   paymentInstructions?: string | null;
   /** Condiciones generales del negocio (orgs.pdf_condiciones), iguales en cada documento. */
@@ -381,7 +388,9 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
   }
 
   const headRight = PAGE_W - MARGIN - 220;
-  doc.text(input.documentType === 'proforma' ? tx('proforma') : input.creditNoteOfNumber ? tx('creditNote') : tx('invoice'), headRight, 42, {
+  const tituloDoc = input.autoridad?.titulo
+    ?? (input.documentType === 'proforma' ? tx('proforma') : input.creditNoteOfNumber ? tx('creditNote') : tx('invoice'));
+  doc.text(tituloDoc, headRight, 42, {
     size: 9, font: 'bold', color: headerInk, align: 'right', width: 220, tracking: 2.4,
   });
   doc.text(truncateText(input.invoiceNumber, 220, 19, 'bold'), headRight, 66, {
@@ -435,6 +444,42 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
       ly += 11.5;
     }
     y = ly + clear;
+  }
+
+  // ── Riel fiscal de LatAm: datos de la autorización, QR y letra ────────────
+  // Lo arma el riel al autorizar (latam/representacion.ts): este documento solo
+  // lo dibuja. QR a la izquierda (RG 4892/2020 en Argentina) y, a su derecha,
+  // el recuadro con la letra y los datos que la autoridad exige impresos.
+  if (input.autoridad) {
+    const a = input.autoridad;
+    const qrSize = a.qrUrl ? mmAPuntos(30) : 0;
+    const textX = MARGIN + (qrSize ? qrSize + 18 : 0);
+    const textW = contentW - (textX - MARGIN);
+    let ay = y;
+    if (a.letra) {
+      doc.rect(textX, ay, 30, 30, { fill: WHITE, stroke: INK, lineWidth: 1, radius: 3 });
+      doc.text(a.letra, textX, ay + 21, { size: 18, font: 'bold', color: INK, align: 'center', width: 30 });
+      if (a.codigo) doc.text(a.codigo, textX + 38, ay + 19, { size: 7.5, font: 'bold', color: MUTED, tracking: 0.8 });
+      ay += 40;
+    }
+    const half = Math.floor(a.filas.length / 2 + 0.5);
+    const colW2 = (textW - 16) / 2;
+    a.filas.forEach((f, i) => {
+      const col = i < half ? 0 : 1;
+      const row = col ? i - half : i;
+      const fx = textX + col * (colW2 + 16);
+      doc.text(truncateText(`${f.k}: ${f.v}`, colW2, 8, 'regular'), fx, ay + row * 11.5, { size: 8, color: INK });
+    });
+    ay += half * 11.5 + 4;
+    if (a.qrUrl) {
+      drawQr(doc, a.qrUrl, MARGIN, y, qrSize);
+      if (a.qrLeyenda) {
+        for (const [i, line] of wrapText(a.qrLeyenda, qrSize + 10, 6.8).entries()) {
+          doc.text(line, MARGIN, y + qrSize + 9 + i * 8, { size: 6.8, color: MUTED, align: 'center', width: qrSize });
+        }
+      }
+    }
+    y = Math.max(ay, y + qrSize + (a.qrLeyenda ? 20 : 6)) + 14;
   }
 
   // ── Emisor y cliente, en dos columnas ──────────────────────────────────────
@@ -718,6 +763,7 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
     smallBusiness ? { title: tx('legalNotice'), body: smallBusiness } : null,
     isIntraCommunity ? { title: tx('legalNotice'), body: reverseChargeNotice(issuerCountry, lang) } : null,
     exemptionNotes.length ? { title: tx('legalNotice'), body: exemptionNotes.join(' ') } : null,
+    ...(input.autoridad?.leyendas ?? []).map((body) => ({ title: tx('legalNotice'), body })),
     frenchB2b ? { title: tx('legalNotice'), body: FR_B2B_NOTICE } : null,
     input.documentNotes ? { title: isCreditNote ? tx('reason') : tx('notes'), body: input.documentNotes } : null,
     input.notes ? { title: tx('conditions'), body: input.notes } : null,
@@ -745,7 +791,9 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
   // ── Pie legal y numeración, en TODAS las páginas ───────────────────────────
   // Este texto es la diferencia entre una factura comercial y una fiscal: se
   // conserva palabra por palabra y nunca se omite.
-  const disclaimer = input.documentType === 'proforma'
+  const disclaimer = input.autoridad?.pie
+    ? input.autoridad.pie
+    : input.documentType === 'proforma'
     ? tx('disclaimerProforma')
     : input.countryCode.toUpperCase() === 'MX' && ['cfdi_40', 'cfdi_egreso'].includes(input.documentType || 'cfdi_40')
     ? tx('disclaimerCfdi')

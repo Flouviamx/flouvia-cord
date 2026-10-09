@@ -7,8 +7,10 @@ import { after } from '../after';
 import { dispatchEvent } from '../webhooks';
 import { clientEventData, clientPrevData } from '../event-payloads';
 import { type ActionContext, type ActionOutcome, auditAction, done, fromResponse, isUuid } from './outcome';
+import { CONDICIONES_IVA_RECEPTOR } from '../fiscal/latam/arca/constantes';
 
 const NIVELES = ['estandar', 'plata', 'oro', 'distribuidor'];
+const CONDICIONES_IVA_IDS = new Set(CONDICIONES_IVA_RECEPTOR.map((c) => c.id));
 
 export function cleanClientInput(input: Record<string, any>) {
     const countryRaw = String(input.country_code ?? '').trim().toUpperCase();
@@ -31,6 +33,9 @@ export function cleanClientInput(input: Record<string, any>) {
         direccion_line2: String(input.direccion_line2 ?? '').trim().slice(0, 200) || null,
         ciudad: String(input.ciudad ?? '').trim().slice(0, 100) || null,
         region: String(input.region ?? '').trim().slice(0, 100) || null,
+        // Condición frente al IVA (Argentina): CondicionIVAReceptorId de ARCA.
+        // Fuera del catálogo se descarta en vez de guardarse a medias.
+        condicion_iva: CONDICIONES_IVA_IDS.has(Number(input.condicion_iva)) ? Number(input.condicion_iva) : null,
     };
 }
 
@@ -88,12 +93,12 @@ export async function createClient(ctx: ActionContext, input: Record<string, any
             insert into clientes (
                 org_id, empresa, contacto, email, telefono, rfc, terminos_default, limite_credito,
                 nivel, descuento_pct, regimen_fiscal, uso_cfdi, cp_fiscal,
-                country_code, direccion_line1, direccion_line2, ciudad, region
+                country_code, direccion_line1, direccion_line2, ciudad, region, condicion_iva
             )
             values (
                 ${ctx.orgId}, ${c.empresa}, ${c.contacto}, ${c.email}, ${c.telefono}, ${c.rfc}, ${c.terminos}, ${c.limite},
                 ${c.nivel}, ${c.descuento}, ${c.regimen_fiscal}, ${c.uso_cfdi}, ${c.cp_fiscal},
-                ${c.country_code}, ${c.direccion_line1}, ${c.direccion_line2}, ${c.ciudad}, ${c.region}
+                ${c.country_code}, ${c.direccion_line1}, ${c.direccion_line2}, ${c.ciudad}, ${c.region}, ${c.condicion_iva}
             )
             returning *`);
     } catch (error) {
@@ -132,7 +137,8 @@ async function writeClientUpdate(ctx: ActionContext, id: string, c: ClientInput)
             nivel = ${c.nivel}, descuento_pct = ${c.descuento},
             regimen_fiscal = ${c.regimen_fiscal}, uso_cfdi = ${c.uso_cfdi}, cp_fiscal = ${c.cp_fiscal},
             country_code = ${c.country_code}, direccion_line1 = ${c.direccion_line1},
-            direccion_line2 = ${c.direccion_line2}, ciudad = ${c.ciudad}, region = ${c.region}
+            direccion_line2 = ${c.direccion_line2}, ciudad = ${c.ciudad}, region = ${c.region},
+            condicion_iva = ${c.condicion_iva}
         where id = ${id} and org_id = ${ctx.orgId}
         returning *`);
     if (!rows.length) return NO_ENCONTRADO;
@@ -162,6 +168,7 @@ function clientRowToInput(c: Record<string, any>): Record<string, unknown> {
         terminos: c.terminos_default, limite: c.limite_credito, nivel: c.nivel, descuento_pct: c.descuento_pct,
         regimen_fiscal: c.regimen_fiscal, uso_cfdi: c.uso_cfdi, cp_fiscal: c.cp_fiscal, country_code: c.country_code,
         direccion_line1: c.direccion_line1, direccion_line2: c.direccion_line2, ciudad: c.ciudad, region: c.region,
+        condicion_iva: c.condicion_iva,
     };
 }
 

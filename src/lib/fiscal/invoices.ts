@@ -60,6 +60,7 @@ import type {
 } from './index';
 import { resolveLineSatKeys } from './sat-claves';
 import { exemptionReasonFor } from './exemption';
+import { railDeDocumento } from './latam/rieles';
 
 export interface DraftLineInput {
   descripcion: string;
@@ -765,14 +766,18 @@ async function finalizeReservedInvoice(orgId: string, documentId: string): Promi
   // Un reintento que encuentra el registro Verifactu ya encadenado se fecha con
   // el del registro: la fecha de expedición que viajó a la AEAT (y que imprime
   // el QR) no puede diferir de la del documento.
-  const registradaAt = (response.rawProviderData as any)?.verifactu?.emitidaAt;
+  const registradaAt = (response.rawProviderData as any)?.verifactu?.emitidaAt ?? (response.success ? response.issuedAt : undefined);
   const issuedAtFinal = typeof registradaAt === 'string' && Number.isFinite(Date.parse(registradaAt)) ? registradaAt : issuedAt;
+  // Rieles con numeración propia (ARCA): el número legal lo asigna la
+  // autoridad y reemplaza al folio interno reservado arriba.
+  if (response.success && response.invoiceNumber) invoiceNumber = response.invoiceNumber;
   await withOrgTx(orgId,
     ...(head.credit_note_of ? [invoiceBalanceLock(orgId, String(head.credit_note_of))] : []),
     sql`
     update documentos_fiscales
        set status = ${response.success ? 'issued' : 'error'},
            lifecycle = ${response.success ? 'open' : 'draft'},
+           invoice_number = ${invoiceNumber},
            provider = ${response.provider},
            provider_document_id = ${response.documentId || null},
            fiscal_id = ${response.fiscalId ?? null},
@@ -915,6 +920,13 @@ export async function voidInvoice(
   const country = String(doc.country_code || 'MX').toUpperCase();
   const regulatory = isFiscalDocument(String(doc.document_type || documentTypeFor(country)), country, String(doc.provider));
   if (checkOnly && (country !== 'MX' || !regulatory)) return { ok: false, error: 'La consulta de cancelación solo aplica al CFDI de México.' };
+  // Rieles donde lo autorizado no se anula ante la autoridad (Argentina): se
+  // compensa con nota de crédito. Se dice ANTES de cerrar los cobros en vuelo
+  // de un documento que va a seguir vigente.
+  const railDoc = railDeDocumento(doc.document_type);
+  if (railDoc && !railDoc.anulable && !(doc.sandbox_of || doc.provider_data?.simulado === true)) {
+    return { ok: false, requiresCreditNote: true, error: `En ${railDoc.pais === 'AR' ? 'Argentina' : 'este país'} un comprobante autorizado por ${railDoc.autoridad} no se anula: emite una nota de crédito por el importe que quieras compensar.` };
+  }
 
   // Antes de pedir la cancelación al proveedor fiscal, se cierra todo cobro en
   // vuelo de ESTA factura. Antes no se tocaba: el cliente con /i abierto
@@ -1097,7 +1109,10 @@ export async function createCreditNote(
   const country = String(doc.country_code || 'MX').toUpperCase();
 
   const regulatory = isFiscalDocument(String(doc.document_type || documentTypeFor(country)), country, String(doc.provider));
-  const creditType = regulatory ? (country === 'MX' ? 'cfdi_egreso' : 'verifactu_credit_note') : 'commercial_credit_note';
+  const railNc = railDeDocumento(doc.document_type);
+  const creditType = regulatory
+    ? (country === 'MX' ? 'cfdi_egreso' : railNc ? railNc.documentos.notaCredito : 'verifactu_credit_note')
+    : 'commercial_credit_note';
   const publicToken = newInvoiceToken();
   const [, inserted] = await withOrgTx(orgId, invoiceBalanceLock(orgId, documentId), sql`
     insert into documentos_fiscales (

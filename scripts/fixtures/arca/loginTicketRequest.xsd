@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Esquema del TRA (LoginTicketRequest.xml) del WSAA, transcrito de
+  "Especificación Técnica del WebService de Autenticación y Autorización"
+  (ARCA, Especificacion_Tecnica_WSAA_1.2.2.pdf, apartado "Generación del
+  documento del TRA"), descargado el 2026-10-08 de
+  https://www.afip.gob.ar/ws/WSAA/Especificacion_Tecnica_WSAA_1.2.2.pdf
+
+  Dos correcciones de transcripción, ambas porque el texto publicado NO es un
+  XSD válido tal cual:
+    - el PDF pega atributos sin espacio (minOccurs="1"maxOccurs="1",
+      use="optional"default="1.0"), lo que no es XML bien formado;
+    - el patrón de serviceType aparece como "[az,AZ][az,AZ,\,_,09]*": el PDF
+      perdió los guiones de los rangos. Literal, ese patrón rechaza "wsfe" (la
+      'w' no está en la clase), que es justo el servicio que el propio manual
+      del desarrollador (WSAA 20.2.19, cap. 7) pide en cada ejemplo. Se restaura
+      la intención evidente: [a-z,A-Z][a-z,A-Z,\-,_,0-9]*.
+-->
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <xsd:element name="loginTicketRequest" type="loginTicketRequest" />
+  <xsd:complexType name="loginTicketRequest">
+    <xsd:sequence>
+      <xsd:element name="header" type="headerType" minOccurs="1" maxOccurs="1" />
+      <xsd:element name="service" type="serviceType" minOccurs="1" maxOccurs="1" />
+    </xsd:sequence>
+    <xsd:attribute name="version" type="xsd:decimal" use="optional" default="1.0" />
+  </xsd:complexType>
+  <xsd:complexType name="headerType">
+    <xsd:sequence>
+      <xsd:element name="source" type="xsd:string" minOccurs="0" maxOccurs="1" />
+      <xsd:element name="destination" type="xsd:string" minOccurs="0" maxOccurs="1" />
+      <xsd:element name="uniqueId" type="xsd:unsignedInt" minOccurs="1" maxOccurs="1" />
+      <xsd:element name="generationTime" type="xsd:dateTime" minOccurs="1" maxOccurs="1" />
+      <xsd:element name="expirationTime" type="xsd:dateTime" minOccurs="1" maxOccurs="1" />
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:simpleType name="serviceType">
+    <xsd:restriction base="xsd:string">
+      <xsd:pattern value="[a-z,A-Z][a-z,A-Z,\-,_,0-9]*" />
+      <xsd:minLength value="3" />
+      <xsd:maxLength value="32" />
+    </xsd:restriction>
+  </xsd:simpleType>
+</xsd:schema>

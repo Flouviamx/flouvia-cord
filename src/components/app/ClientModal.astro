@@ -29,6 +29,7 @@ import { flagSrc } from '../../lib/flags';
 import Icon from '../Icon.astro';
 import { jsonForScript } from '../../lib/escape';
 import TermPicker from './TermPicker.astro';
+import { CONDICIONES_IVA_RECEPTOR } from '../../lib/fiscal/latam/arca/constantes';
 
 interface Props {
     showDelete?: boolean;
@@ -40,6 +41,9 @@ const ORG = await getOrg();
 const ORG_COUNTRY = String(ORG.countryCode || 'MX').toUpperCase();
 const ORG_CURRENCY = String(ORG.moneda || getCountryProfile(ORG_COUNTRY, L).currency).toUpperCase();
 const orgIsMx = ORG_COUNTRY === 'MX';
+// Argentina: ARCA exige la condición frente al IVA del receptor en cada
+// factura (RG 5616/2024); sin ella, un cliente con CUIT no se puede facturar.
+const orgIsAr = ORG_COUNTRY === 'AR';
 
 // El cliente puede ser de CUALQUIER país, no solo de los que Cord ofrece al
 // darse de alta (regla 28: esto valida un dato ya guardado, no un catálogo
@@ -238,6 +242,22 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
                 </div>
             </section>
 
+            {orgIsAr && (
+                <section class="cm-sec" id="cmFiscalAr" aria-labelledby="cmSecFiscalAr">
+                    <header class="cm-sec-h"><span class="cm-sec-i"><Icon name="document" size={15} /></span><h3 id="cmSecFiscalAr">{L === 'en' ? 'VAT status (ARCA)' : 'Condición frente al IVA (ARCA)'}</h3></header>
+                    <div class="m-field">
+                        <label for="cmCondIva">{L === 'en' ? "Customer's VAT status" : 'Condición frente al IVA del cliente'}</label>
+                        <select class="m-input" id="cmCondIva">
+                            <option value="">{L === 'en' ? 'Not set (final consumer if no CUIT)' : 'Sin indicar (consumidor final si no tiene CUIT)'}</option>
+                            {CONDICIONES_IVA_RECEPTOR.map((c) => <option value={String(c.id)}>{L === 'en' ? c.nombreEn : c.nombre}</option>)}
+                        </select>
+                        <span class="m-hint">{L === 'en'
+                            ? 'ARCA requires it on every invoice and it decides whether you issue an A or a B invoice.'
+                            : 'ARCA la exige en cada factura y decide si corresponde Factura A o B.'}</span>
+                    </div>
+                </section>
+            )}
+
             {orgIsMx && (
                 <section class="cm-sec" id="cmFiscal" aria-labelledby="cmSecFiscal">
                     <header class="cm-sec-h"><span class="cm-sec-i"><Icon name="document" size={15} /></span><h3 id="cmSecFiscal">{t(L, 'cmod.fiscal_summary')}</h3></header>
@@ -398,11 +418,13 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
         const regionLabelEl = document.getElementById('cmRegionLabel')!;
         const cpLabel = document.getElementById('cmCpLabel')!;
         const fiscal = document.getElementById('cmFiscal');
+        const fiscalAr = document.getElementById('cmFiscalAr');
         const cfdiExt = document.getElementById('cmCfdiExt');
         const input = (id: string) => document.getElementById(id) as HTMLInputElement;
         const select = (id: string) => document.getElementById(id) as HTMLSelectElement | null;
 
         let editId: string | null = null;
+        let currentCondIva: string | null = null;
         // La lada sigue al país del cliente mientras la persona no la elija a mano:
         // un cliente en Madrid con el celular de su gerente en México es normal.
         let ccTouched = false;
@@ -503,6 +525,7 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
             fillRegion(c, opts.keepRegion ? regionPending : '');
             if (!ccTouched) setCc(c);
             if (fiscal) fiscal.hidden = c !== 'MX';
+            if (fiscalAr) fiscalAr.hidden = c !== 'AR';
             if (cfdiExt) {
                 cfdiExt.hidden = c === 'MX';
                 const pais = select('cmCountry')?.selectedOptions[0]?.textContent?.trim() || c;
@@ -549,6 +572,7 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
         function openModal(data?: DOMStringMap) {
             errorEl.textContent = '';
             editId = data?.id ?? null;
+            currentCondIva = data?.condicionIva ?? null;
             title.textContent = editId ? (I.i18nEditar || '') : (I.i18nNuevo || '');
             if (btnDelete) btnDelete.hidden = !(editId && canDelete);
             btnSave.disabled = false;
@@ -560,6 +584,7 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
             input('cmDescuento').value = data?.descuento ?? '';
             if (select('cmRegimen')) select('cmRegimen')!.value = data?.regimen ?? '';
             if (select('cmUso')) select('cmUso')!.value = data?.uso ?? '';
+            if (select('cmCondIva')) select('cmCondIva')!.value = data?.condicionIva ?? '';
             input('cmCp').value = data?.cp ?? '';
             input('cmDireccion1').value = data?.direccion1 ?? '';
             input('cmDireccion2').value = data?.direccion2 ?? '';
@@ -622,6 +647,8 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
                 // Régimen y uso del CFDI solo existen para un receptor mexicano.
                 regimen_fiscal: fiscal && !fiscal.hidden ? select('cmRegimen')!.value : '',
                 uso_cfdi: fiscal && !fiscal.hidden ? select('cmUso')!.value : '',
+                // Sin el bloque (otro país u organización) se conserva lo guardado.
+                condicion_iva: fiscalAr && !fiscalAr.hidden ? select('cmCondIva')!.value : (editId ? (currentCondIva ?? '') : ''),
                 cp_fiscal: input('cmCp').value,
                 country_code: country(),
                 direccion_line1: input('cmDireccion1').value,

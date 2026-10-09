@@ -1,0 +1,344 @@
+---
+// Ajustes › Datos fiscales › Factura electrónica con ARCA (Argentina).
+//
+// Tres piezas que el negocio aporta (certificado de su CUIT, punto de venta y
+// condición frente al IVA) y un estado honesto: mientras falte cualquiera, o
+// mientras Cord no tenga ARCA activo, las facturas siguen como documento
+// comercial y aquí se dice exactamente eso (regla 15). Sin ARCA activo en el
+// despliegue no se ofrece ningún control: no hay consumidor que lo lea.
+//
+// El certificado y la llave viajan una sola vez (multipart a /api/fiscal/arca)
+// y nunca vuelven: la pantalla solo conoce el resumen (vigencia, CUIT).
+import type { EstadoArca } from '../../../lib/fiscal/latam/arca/estado';
+import { CONDICIONES_EMISOR } from '../../../lib/fiscal/latam/arca/constantes';
+
+interface Props { estado: EstadoArca; locale: 'es' | 'en'; }
+const { estado, locale } = Astro.props;
+const en = locale === 'en';
+
+const FALTANTE: Record<string, [string, string]> = {
+    cuit: ['la CUIT de tu negocio (arriba, en Identidad de facturación)', 'your business CUIT (above, under Invoice identity)'],
+    punto_venta: ['el punto de venta', 'the point of sale'],
+    condicion_emisor: ['tu condición frente al IVA', 'your VAT status'],
+    concepto: ['qué vendes', 'what you sell'],
+    certificado: ['el certificado de ARCA', 'the ARCA certificate'],
+    certificado_vencido: ['un certificado vigente (el actual venció)', 'a valid certificate (the current one expired)'],
+    certificado_cuit: ['un certificado a nombre de tu CUIT', 'a certificate issued to your CUIT'],
+};
+const faltantes = estado.faltantes.map((f) => FALTANTE[f]?.[en ? 1 : 0] ?? f);
+const prueba = estado.entorno === 'homologacion';
+const cred = estado.credencial;
+const caduca = cred?.caduca?.slice(0, 10) ?? '';
+const titulo = !estado.habilitado
+    ? (en ? 'Coming soon' : 'Próximamente')
+    : estado.listo
+        ? (prueba ? (en ? 'Connected to the ARCA test environment' : 'Conectado al ambiente de pruebas de ARCA') : (en ? 'Electronic invoicing with ARCA active' : 'Factura electrónica con ARCA activa'))
+        : (en ? 'Not connected yet' : 'Aún sin conectar');
+const sub = estado.listo
+    ? (prueba
+        ? (en ? 'Invoices are authorized in the test environment and have no tax validity.' : 'Las facturas se autorizan en el ambiente de pruebas y no tienen validez fiscal.')
+        : (en ? `Certificate valid until ${caduca} · CUIT ${cred?.identificador}` : `Certificado vigente hasta ${caduca} · CUIT ${cred?.identificador}`))
+    : (en ? `Missing: ${faltantes.join(', ')}.` : `Falta: ${faltantes.join(', ')}.`);
+const A = estado.ajustes;
+---
+
+<div class="arca" data-arca data-entorno={estado.entorno}>
+    <p class="arca-intro">{en
+        ? 'Argentina requires every invoice to be authorized by ARCA, which assigns its number and its CAE. Connect your ARCA certificate so Cord requests that authorization for each invoice and prints the CAE and the QR code on the PDF. Until then, invoices are issued as commercial documents without tax validity.'
+        : 'En Argentina cada factura debe autorizarla ARCA, que le asigna su número y su CAE. Conecta el certificado de ARCA de tu negocio para que Cord pida esa autorización en cada factura e imprima el CAE y el código QR en el PDF. Mientras tanto, las facturas se emiten como documento comercial sin validez fiscal.'}</p>
+
+    <div class="arca-state" data-on={estado.listo ? '1' : '0'} data-arca-state>
+        <span class="arca-dot" aria-hidden="true"></span>
+        <span class="arca-state-info">
+            <span class="arca-state-title" data-arca-title>{titulo}</span>
+            <span class="arca-state-sub" data-arca-sub>{estado.habilitado
+                ? sub
+                : (en ? 'Electronic invoicing with ARCA is not available in Cord yet. Your invoices are still issued as commercial documents; we will let you know when you can connect it.' : 'La factura electrónica con ARCA todavía no está disponible en Cord. Tus facturas se siguen emitiendo como documento comercial; te avisaremos cuando puedas conectarla.')}</span>
+            {estado.habilitado && cred?.verificacionError && (
+                <span class="arca-state-err" data-arca-verif>{cred.verificacionError}</span>
+            )}
+        </span>
+        {estado.habilitado && (
+            <button type="button" class="arca-btn-ghost" data-arca-remove style={cred ? '' : 'display:none'}>
+                {en ? 'Disconnect' : 'Desconectar'}
+            </button>
+        )}
+    </div>
+
+    {estado.habilitado && (
+        <Fragment>
+            <div class="arca-grid">
+                <div class="s-field">
+                    <label for="arcaPv">{en ? 'Point of sale (web service)' : 'Punto de venta (web service)'}</label>
+                    <input class="s-input" id="arcaPv" type="number" inputmode="numeric" min="1" max="99998" step="1" value={A.puntoVenta ?? ''} placeholder="1" />
+                </div>
+                <div class="s-field">
+                    <label for="arcaCond">{en ? 'VAT status' : 'Condición frente al IVA'}</label>
+                    <select class="s-input" id="arcaCond">
+                        <option value="" selected={!A.condicionEmisor}>{en ? 'Choose…' : 'Elige…'}</option>
+                        {CONDICIONES_EMISOR.map((c) => <option value={c.id} selected={A.condicionEmisor === c.id}>{en ? c.nombreEn : c.nombre}</option>)}
+                    </select>
+                </div>
+                <div class="s-field">
+                    <label for="arcaConcepto">{en ? 'What you sell' : 'Qué vendes'}</label>
+                    <select class="s-input" id="arcaConcepto">
+                        <option value="" selected={!A.concepto}>{en ? 'Choose…' : 'Elige…'}</option>
+                        <option value="1" selected={A.concepto === 1}>{en ? 'Products' : 'Productos'}</option>
+                        <option value="2" selected={A.concepto === 2}>{en ? 'Services' : 'Servicios'}</option>
+                        <option value="3" selected={A.concepto === 3}>{en ? 'Products and services' : 'Productos y servicios'}</option>
+                    </select>
+                </div>
+                <div class="s-field">
+                    <label for="arcaIibb">{en ? 'Gross income tax number (optional)' : 'Ingresos Brutos (opcional)'}</label>
+                    <input class="s-input" id="arcaIibb" value={A.ingresosBrutos ?? ''} maxlength="40" autocomplete="off" />
+                </div>
+                <div class="s-field">
+                    <label for="arcaInicio">{en ? 'Start of activities (optional)' : 'Inicio de actividades (opcional)'}</label>
+                    <input class="s-input" id="arcaInicio" type="date" value={A.inicioActividades ?? ''} />
+                </div>
+            </div>
+            <p class="arca-hint">{en
+                ? 'Create the point of sale in ARCA as "Factura electrónica - Web services" before using it here. Services also print the billed period and the payment due date on the invoice.'
+                : 'Crea el punto de venta en ARCA como "Factura electrónica - Web services" antes de usarlo aquí. En servicios, la factura informa también el período facturado y el vencimiento del pago.'}</p>
+            <div class="arca-actions">
+                <button type="button" class="arca-btn-solid" data-arca-save>{en ? 'Save ARCA settings' : 'Guardar ajustes de ARCA'}</button>
+                <span class="arca-msg" data-arca-msg-ajustes></span>
+            </div>
+
+            <div class="arca-cert">
+                <span class="arca-cert-title">{en ? 'ARCA certificate' : 'Certificado de ARCA'}</span>
+                <div class="arca-mode" role="radiogroup" aria-label={en ? 'Certificate format' : 'Formato del certificado'}>
+                    <label><input type="radio" name="arcaModo" value="pem" checked /> {en ? 'Certificate + private key' : 'Certificado + llave privada'}</label>
+                    <label><input type="radio" name="arcaModo" value="p12" /> {en ? '.p12 / .pfx file' : 'Archivo .p12 / .pfx'}</label>
+                </div>
+                <div class="arca-files" data-arca-pem>
+                    <label class="arca-drop">
+                        <input type="file" id="arcaCrt" accept=".crt,.pem,.cer" />
+                        <span class="arca-drop-ico">.crt</span>
+                        <span class="arca-drop-t">{en ? 'Certificate' : 'Certificado'}</span>
+                        <span class="arca-drop-s" data-arca-name="arcaCrt">{en ? 'Issued by ARCA for your CUIT' : 'El que emitió ARCA para tu CUIT'}</span>
+                    </label>
+                    <label class="arca-drop">
+                        <input type="file" id="arcaKey" accept=".key,.pem" />
+                        <span class="arca-drop-ico">.key</span>
+                        <span class="arca-drop-t">{en ? 'Private key' : 'Llave privada'}</span>
+                        <span class="arca-drop-s" data-arca-name="arcaKey">{en ? 'The one you used for the request' : 'La que usaste para pedirlo'}</span>
+                    </label>
+                </div>
+                <div class="arca-files is-single" data-arca-p12 hidden>
+                    <label class="arca-drop">
+                        <input type="file" id="arcaP12" accept=".p12,.pfx" />
+                        <span class="arca-drop-ico">.p12</span>
+                        <span class="arca-drop-t">{en ? 'Certificate with key' : 'Certificado con llave'}</span>
+                        <span class="arca-drop-s" data-arca-name="arcaP12">{en ? 'Choose your .p12/.pfx file' : 'Elige tu archivo .p12/.pfx'}</span>
+                    </label>
+                </div>
+                <div class="s-field arca-pass">
+                    <label for="arcaPass">{en ? 'Key password (if it has one)' : 'Contraseña de la llave (si tiene)'}</label>
+                    <input class="s-input" id="arcaPass" type="password" autocomplete="off" />
+                </div>
+                <div class="arca-actions">
+                    <button type="button" class="arca-btn-solid" data-arca-upload>{en ? 'Upload certificate' : 'Subir certificado'}</button>
+                    <span class="arca-msg" data-arca-msg-cert></span>
+                </div>
+            </div>
+        </Fragment>
+    )}
+</div>
+
+<style>
+    .arca-intro { font-size: 0.82rem; color: var(--color-text-muted); line-height: 1.55; margin: 0 0 1.1rem; }
+    .arca-state { display: flex; align-items: center; gap: 11px; border: 1px solid var(--color-border); border-radius: 10px; padding: 12px 14px; margin-bottom: 1.2rem; }
+    .arca-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--color-text-muted); flex-shrink: 0; }
+    .arca-state[data-on="1"] .arca-dot { background: var(--color-ok); box-shadow: 0 0 0 3px rgba(16,185,129,0.18); }
+    .arca-state-info { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+    .arca-state-title { font-size: 0.86rem; font-weight: 600; color: var(--color-text); }
+    .arca-state-sub { font-size: 0.76rem; color: var(--color-text-muted); line-height: 1.45; }
+    .arca-state-err { font-size: 0.76rem; color: var(--color-err, #c0392b); line-height: 1.45; }
+    .arca-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.9rem 1rem; }
+    .arca-hint { font-size: 0.76rem; color: var(--color-text-muted); line-height: 1.5; margin: 0.8rem 0 0; }
+    .arca-cert { border-top: 1px solid var(--color-border); margin-top: 1.4rem; padding-top: 1.2rem; }
+    .arca-cert-title { display: block; font-size: 0.84rem; font-weight: 600; color: var(--color-text); margin-bottom: 0.7rem; }
+    .arca-mode { display: flex; flex-wrap: wrap; gap: 0.5rem 1.2rem; font-size: 0.8rem; color: var(--color-text); margin-bottom: 0.9rem; }
+    .arca-mode label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; min-height: 32px; }
+    .arca-files { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .arca-files.is-single { grid-template-columns: minmax(0, 260px); }
+    .arca-files[hidden] { display: none; }
+    .arca-drop { display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; border: 1.5px dashed var(--color-border); border-radius: 12px; padding: 1.2rem 1rem; cursor: pointer; background: var(--color-bg-soft); transition: border-color 0.2s, background 0.2s; }
+    .arca-drop:hover { border-color: var(--color-blue-deep); }
+    .arca-drop.has-file { border-style: solid; border-color: var(--color-ok); background: rgba(16,185,129,0.06); }
+    .arca-drop input { display: none; }
+    .arca-drop:focus-within { outline: 2px solid var(--color-blue-deep); outline-offset: 2px; }
+    .arca-drop-ico { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.04em; color: var(--color-blue-deep); }
+    .arca-drop-t { font-size: 0.82rem; font-weight: 600; color: var(--color-text); }
+    .arca-drop-s { font-size: 0.72rem; color: var(--color-text-muted); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .arca-pass { max-width: 50%; margin-top: 1rem; }
+    .arca-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 0.7rem; margin-top: 1.1rem; }
+    .arca-btn-solid { font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; color: #fff; background: var(--color-blue-deep); border: none; border-radius: 999px; padding: 9px 18px; cursor: pointer; transition: transform 0.2s var(--ease-spring), opacity 0.2s; }
+    .arca-btn-solid:hover { transform: scale(1.02); }
+    .arca-btn-solid:active { transform: scale(0.98); }
+    .arca-btn-solid:disabled { opacity: 0.6; cursor: progress; transform: none; }
+    .arca-btn-ghost { font-family: var(--font-sans); font-size: 0.78rem; font-weight: 600; color: var(--color-text); background: transparent; border: 1px solid var(--color-border); border-radius: 999px; padding: 7px 14px; cursor: pointer; }
+    .arca-msg { font-size: 0.78rem; line-height: 1.45; }
+    .arca-msg.ok { color: var(--color-ok); }
+    .arca-msg.err { color: var(--color-err, #c0392b); }
+    @media (max-width: 880px) {
+        .arca-grid, .arca-files { grid-template-columns: 1fr; }
+        .arca-pass { max-width: none; }
+        .arca-btn-solid, .arca-btn-ghost { min-height: 44px; }
+    }
+</style>
+
+<script>
+    // Etiquetas de lo que falta: el servidor manda códigos, la pantalla los dice.
+    const FALTANTE: Record<string, [string, string]> = {
+        cuit: ['la CUIT de tu negocio (arriba, en Identidad de facturación)', 'your business CUIT (above, under Invoice identity)'],
+        punto_venta: ['el punto de venta', 'the point of sale'],
+        condicion_emisor: ['tu condición frente al IVA', 'your VAT status'],
+        concepto: ['qué vendes', 'what you sell'],
+        certificado: ['el certificado de ARCA', 'the ARCA certificate'],
+        certificado_vencido: ['un certificado vigente (el actual venció)', 'a valid certificate (the current one expired)'],
+        certificado_cuit: ['un certificado a nombre de tu CUIT', 'a certificate issued to your CUIT'],
+    };
+
+    function initArca() {
+        const root = document.querySelector<HTMLElement>('[data-arca]');
+        if (!root) return;
+        const en = document.documentElement.lang === 'en';
+        const i = en ? 1 : 0;
+        const q = <T extends Element>(s: string) => root.querySelector<T>(s);
+        const state = q<HTMLElement>('[data-arca-state]');
+        const title = q<HTMLElement>('[data-arca-title]');
+        const sub = q<HTMLElement>('[data-arca-sub]');
+        const removeBtn = q<HTMLButtonElement>('[data-arca-remove]');
+        const saveBtn = q<HTMLButtonElement>('[data-arca-save]');
+        const uploadBtn = q<HTMLButtonElement>('[data-arca-upload]');
+        if (!state || !saveBtn || !uploadBtn) return;
+
+        const flash = (sel: string, text: string, ok: boolean, sticky = false) => {
+            const el = q<HTMLElement>(sel);
+            if (!el) return;
+            el.textContent = text;
+            el.className = 'arca-msg ' + (ok ? 'ok' : 'err');
+            if (ok && !sticky) setTimeout(() => { el.textContent = ''; el.className = 'arca-msg'; }, 5000);
+        };
+
+        // Repinta el estado con la vista que devuelve /api/fiscal/arca.
+        const pintar = (v: any) => {
+            const prueba = v.entorno === 'homologacion';
+            state.setAttribute('data-on', v.listo ? '1' : '0');
+            if (title) title.textContent = v.listo
+                ? (prueba ? (en ? 'Connected to the ARCA test environment' : 'Conectado al ambiente de pruebas de ARCA') : (en ? 'Electronic invoicing with ARCA active' : 'Factura electrónica con ARCA activa'))
+                : (en ? 'Not connected yet' : 'Aún sin conectar');
+            if (sub) sub.textContent = v.listo
+                ? (prueba
+                    ? (en ? 'Invoices are authorized in the test environment and have no tax validity.' : 'Las facturas se autorizan en el ambiente de pruebas y no tienen validez fiscal.')
+                    : (en ? `Certificate valid until ${v.credencial?.caduca} · CUIT ${v.credencial?.identificador}` : `Certificado vigente hasta ${v.credencial?.caduca} · CUIT ${v.credencial?.identificador}`))
+                : (en ? 'Missing: ' : 'Falta: ') + (v.faltantes || []).map((f: string) => FALTANTE[f]?.[i] ?? f).join(', ') + '.';
+            const verif = q<HTMLElement>('[data-arca-verif]');
+            if (verif) verif.remove();
+            if (v.credencial?.verificacion_error) {
+                const e = document.createElement('span');
+                e.className = 'arca-state-err';
+                e.setAttribute('data-arca-verif', '');
+                e.textContent = v.credencial.verificacion_error;
+                sub?.after(e);
+            }
+            if (removeBtn) removeBtn.style.display = v.credencial ? '' : 'none';
+        };
+
+        // Formato del certificado: .crt + .key, o un .p12/.pfx.
+        const pem = q<HTMLElement>('[data-arca-pem]');
+        const p12 = q<HTMLElement>('[data-arca-p12]');
+        root.querySelectorAll<HTMLInputElement>('input[name="arcaModo"]').forEach((r) => r.addEventListener('change', () => {
+            const esP12 = r.value === 'p12' && r.checked;
+            if (pem) pem.hidden = esP12;
+            if (p12) p12.hidden = !esP12;
+        }));
+        root.querySelectorAll<HTMLInputElement>('input[type="file"]').forEach((input) => input.addEventListener('change', () => {
+            const f = input.files?.[0];
+            const name = q<HTMLElement>(`[data-arca-name="${input.id}"]`);
+            if (name && f) name.textContent = f.name;
+            input.closest('.arca-drop')?.classList.toggle('has-file', !!f);
+        }));
+
+        saveBtn.addEventListener('click', async () => {
+            const val = (id: string) => (document.getElementById(id) as HTMLInputElement | HTMLSelectElement | null)?.value ?? '';
+            const body = {
+                punto_venta: val('arcaPv') === '' ? undefined : Number(val('arcaPv')),
+                condicion_emisor: val('arcaCond') || undefined,
+                concepto: val('arcaConcepto') === '' ? undefined : Number(val('arcaConcepto')),
+                ingresos_brutos: val('arcaIibb'),
+                inicio_actividades: val('arcaInicio'),
+            };
+            saveBtn.disabled = true;
+            try {
+                const res = await fetch('/api/fiscal/arca', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+                const d = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(d.error || '');
+                pintar(d);
+                flash('[data-arca-msg-ajustes]', d.aviso || (en ? 'ARCA settings saved.' : 'Ajustes de ARCA guardados.'), !d.aviso, !!d.aviso);
+            } catch (err: any) {
+                flash('[data-arca-msg-ajustes]', err?.message || (en ? 'Could not save the ARCA settings' : 'No se pudieron guardar los ajustes de ARCA'), false);
+            } finally { saveBtn.disabled = false; }
+        });
+
+        uploadBtn.addEventListener('click', async () => {
+            const modoP12 = !!root.querySelector<HTMLInputElement>('input[name="arcaModo"][value="p12"]:checked');
+            const pass = (document.getElementById('arcaPass') as HTMLInputElement | null)?.value ?? '';
+            const fd = new FormData();
+            if (modoP12) {
+                const f = (document.getElementById('arcaP12') as HTMLInputElement | null)?.files?.[0];
+                if (!f) { flash('[data-arca-msg-cert]', en ? 'Choose your .p12/.pfx file first.' : 'Elige primero tu archivo .p12/.pfx.', false); return; }
+                fd.append('p12', f);
+                fd.append('password', pass);
+            } else {
+                const crt = (document.getElementById('arcaCrt') as HTMLInputElement | null)?.files?.[0];
+                const key = (document.getElementById('arcaKey') as HTMLInputElement | null)?.files?.[0];
+                if (!crt || !key) { flash('[data-arca-msg-cert]', en ? 'Choose the certificate and its private key.' : 'Elige el certificado y su llave privada.', false); return; }
+                fd.append('crt', crt);
+                fd.append('key', key);
+                if (pass) fd.append('key_password', pass);
+            }
+            uploadBtn.disabled = true;
+            const orig = uploadBtn.textContent;
+            uploadBtn.textContent = en ? 'Uploading…' : 'Subiendo…';
+            try {
+                const res = await fetch('/api/fiscal/arca', { method: 'POST', body: fd });
+                const d = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(d.error || '');
+                const passIn = document.getElementById('arcaPass') as HTMLInputElement | null;
+                if (passIn) passIn.value = '';
+                pintar(d);
+                flash('[data-arca-msg-cert]', d.aviso || (en ? 'Certificate uploaded.' : 'Certificado cargado.'), !d.aviso, !!d.aviso);
+                if (!d.aviso) (window as any).cordToast?.(en ? 'ARCA certificate uploaded' : 'Certificado de ARCA cargado', 'ok');
+            } catch (err: any) {
+                flash('[data-arca-msg-cert]', err?.message || (en ? 'Could not upload the certificate' : 'No se pudo subir el certificado'), false);
+            } finally { uploadBtn.disabled = false; uploadBtn.textContent = orig; }
+        });
+
+        removeBtn?.addEventListener('click', async () => {
+            const ok = await (window as any).cordConfirm?.({
+                title: en ? 'Disconnect ARCA' : 'Desconectar ARCA',
+                body: en
+                    ? 'New invoices will be issued as commercial documents, without ARCA authorization, until you upload a certificate again. Disconnect?'
+                    : 'Las facturas nuevas se emitirán como documento comercial, sin autorización de ARCA, hasta que subas un certificado de nuevo. ¿Desconectar?',
+                danger: true,
+                confirmText: en ? 'Disconnect' : 'Desconectar',
+            });
+            if (!ok) return;
+            removeBtn.disabled = true;
+            try {
+                const res = await fetch('/api/fiscal/arca', { method: 'DELETE' });
+                const d = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(res.status === 409 && typeof d.error === 'string' ? d.error : '');
+                pintar(d);
+                flash('[data-arca-msg-cert]', en ? 'ARCA certificate disconnected.' : 'Certificado de ARCA desconectado.', true);
+            } catch (err: any) {
+                flash('[data-arca-msg-cert]', err?.message || (en ? 'Could not disconnect the certificate' : 'No se pudo desconectar el certificado'), false);
+            } finally { removeBtn.disabled = false; }
+        });
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initArca);
+    else initArca();
+</script>

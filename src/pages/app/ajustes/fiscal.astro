@@ -8,6 +8,8 @@ import { caProvinceCode, getCountryProfile, US_STATES, CA_PROVINCES } from '../.
 import { verifactuEnvioConfig } from '../../../lib/fiscal/verifactu/sif';
 import { declaracionResponsableONull, DECLARACION_RUTA } from '../../../lib/fiscal/verifactu/declaracion';
 import { incidenciasVerifactu } from '../../../lib/fiscal/verifactu/incidencias';
+import ArcaSettings from '../../../components/app/settings/ArcaSettings.astro';
+import { estadoArca } from '../../../lib/fiscal/latam/arca/estado';
 import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
 const ORG = await getOrg();
@@ -16,6 +18,8 @@ const isMx = ORG.countryCode === 'MX';
 const isUs = ORG.countryCode === 'US';
 const isCa = ORG.countryCode === 'CA';
 const isEs = ORG.countryCode === 'ES';
+// Argentina: factura electrónica autorizada por ARCA (rieles fiscales de LatAm).
+const ARCA = ORG.countryCode === 'AR' ? await estadoArca(ORG.id).catch(() => null) : null;
 const verifactuOn = ORG.verifactuModo === 'verifactu';
 // Certificado cargado no es lo mismo que registrar: con el envío a la AEAT
 // apagado no se encadena nada, y la pantalla no puede decir "activo".
@@ -48,7 +52,7 @@ import { iconInner } from '../../../lib/icons';
         : (L === 'en'
             ? `Configure the identity shown on invoices issued in ${PROFILE.name}.`
             : `Configura la identidad que aparecerá en tus facturas emitidas en ${PROFILE.name}.`)} save>
-    {!isMx && (
+    {!isMx && !ARCA?.listo && (
         <div class="fiscal-capability">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('alert-circle')}></svg>
             <div>
@@ -298,6 +302,13 @@ import { iconInner } from '../../../lib/icons';
                     ))}
                 </div>
             )}
+        </SettingsSection>
+    )}
+
+    {ARCA && (
+        <SettingsSection icon="shield" class="s-block">
+            <Fragment slot="heading">{L === 'en' ? 'Electronic invoicing with ARCA' : 'Factura electrónica con ARCA'}</Fragment>
+            <ArcaSettings estado={ARCA} locale={L === 'en' ? 'en' : 'es'} />
         </SettingsSection>
     )}
 </SettingsShell>

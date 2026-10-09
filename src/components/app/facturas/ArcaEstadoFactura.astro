@@ -1,0 +1,61 @@
+---
+// Estado de la factura ante ARCA (Argentina), en el panel lateral de
+// /app/facturas/[id]: CAE y su vencimiento, observaciones, o por qué no se
+// autorizó. Lee el último intento del riel (fiscal_rail_comprobantes); si la
+// factura nunca pasó por ARCA (documento comercial) no dibuja nada.
+import { ultimoIntento } from '../../../lib/fiscal/latam/comprobantes';
+
+interface Props { orgId: string; documentoId: string; locale: 'es' | 'en'; }
+const { orgId, documentoId, locale } = Astro.props;
+const en = locale === 'en';
+const intento = orgId ? await ultimoIntento(orgId, documentoId, 'arca').catch(() => null) : null;
+
+const TITULO: Record<string, [string, string]> = {
+    autorizado: ['Autorizada por ARCA', 'Authorized by ARCA'],
+    pendiente: ['Esperando la confirmación de ARCA', 'Waiting for ARCA to confirm'],
+    incierto: ['Esperando la confirmación de ARCA', 'Waiting for ARCA to confirm'],
+    rechazado: ['ARCA no autorizó la factura', 'ARCA did not authorize the invoice'],
+    descartado: ['ARCA no registró este intento', 'ARCA did not register this attempt'],
+};
+const titulo = intento ? (TITULO[intento.estado]?.[en ? 1 : 0] ?? intento.estado) : '';
+const vence = intento?.autorizacionVence
+    ? new Intl.DateTimeFormat(en ? 'en-US' : 'es-AR', { dateStyle: 'medium', timeZone: 'UTC' }).format(new Date(`${intento.autorizacionVence}T00:00:00Z`))
+    : null;
+const observaciones = (intento?.observaciones ?? []).map((o) => o.mensaje || o.msg).filter(Boolean) as string[];
+const prueba = intento?.entorno === 'homologacion';
+---
+
+{intento && (
+    <section class="fd-meta-section arca-fe">
+        <div class="arca-fe-head"><h2>ARCA</h2></div>
+        <div class={`arca-fe-state is-${intento.estado}`}>
+            <span class="arca-fe-dot" aria-hidden="true"></span>
+            <span class="arca-fe-copy">
+                <strong>{titulo}</strong>
+                {intento.estado === 'autorizado' && intento.autorizacion && (
+                    <small>CAE {intento.autorizacion}{vence ? (en ? ` · valid until ${vence}` : ` · vence el ${vence}`) : ''}</small>
+                )}
+                {intento.estado !== 'autorizado' && intento.errorMensaje && <small>{intento.errorMensaje}</small>}
+                {prueba && <small>{en ? 'ARCA test environment: no tax validity.' : 'Ambiente de pruebas de ARCA: sin validez fiscal.'}</small>}
+            </span>
+        </div>
+        {observaciones.length > 0 && (
+            <ul class="arca-fe-obs">
+                {observaciones.map((o) => <li>{o}</li>)}
+            </ul>
+        )}
+    </section>
+)}
+
+<style>
+    .arca-fe-head h2 { font-size: 0.82rem; font-weight: 600; margin: 0 0 0.6rem; color: var(--color-text); }
+    .arca-fe-state { display: flex; gap: 0.6rem; align-items: flex-start; }
+    .arca-fe-dot { width: 7px; height: 7px; margin-top: 0.35rem; border-radius: 50%; background: var(--color-text-muted); flex-shrink: 0; }
+    .arca-fe-state.is-autorizado .arca-fe-dot { background: var(--color-ok); }
+    .arca-fe-state.is-pendiente .arca-fe-dot, .arca-fe-state.is-incierto .arca-fe-dot { background: #d97706; }
+    .arca-fe-state.is-rechazado .arca-fe-dot { background: var(--color-err, #dc2626); }
+    .arca-fe-copy { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .arca-fe-copy strong { font-size: 0.82rem; color: var(--color-text); }
+    .arca-fe-copy small { font-size: 0.75rem; color: var(--color-text-muted); line-height: 1.45; overflow-wrap: anywhere; }
+    .arca-fe-obs { margin: 0.6rem 0 0; padding-left: 1.1rem; font-size: 0.75rem; color: var(--color-text-muted); line-height: 1.45; }
+</style>

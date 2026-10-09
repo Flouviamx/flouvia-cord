@@ -26,6 +26,7 @@ const BASE = `
         nombre text not null, tipo text not null default 'iva', tasa numeric not null default 0,
         es_default boolean not null default false, activo boolean not null default true, kind text not null default 'consumo');
     create table cotizacion_items (id serial primary key, tax_rate numeric);
+    create table clientes (id uuid primary key, org_id uuid not null references orgs(id) on delete cascade);
 `;
 
 const ORG_ES = '00000000-0000-4000-8000-0000000000e5';
