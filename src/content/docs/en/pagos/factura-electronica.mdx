@@ -1,7 +1,7 @@
 ---
 title: "E-invoicing: Factur-X, XRechnung, Peppol, and Facturae"
 seoTitle: "E-invoicing: Factur-X, XRechnung, Peppol, and Facturae"
-description: "Download each invoice as Factur-X, XRechnung, or Peppol BIS (EN 16931), or as Facturae in Spain, attach it to the email, and get ready for e-invoicing between businesses with the AEAT."
+description: "Download each invoice as Factur-X, XRechnung, or Peppol BIS (EN 16931), or as Facturae in Spain, attach it to the email, issue it through an approved platform in France, and get ready for e-invoicing between businesses with the AEAT."
 lastUpdated: "2026-10-09"
 reviewedBy: "Cord product and operations"
 appliesToMarkets: [ES, DE, FR]
@@ -37,9 +37,10 @@ This feature is new and may not be enabled on your account yet. If you don't see
 
 <Callout type="warning">
 Cord **generates** these files, lets you download them, and can attach them to the
-invoice email. It **does not send them** over the Peppol network, through a French
-e-invoicing platform, or to FACe. If your client asks to receive them over Peppol,
-download them and upload them to your access provider.
+invoice email. It **does not send them** over the Peppol network or to FACe. If your
+client asks to receive them over Peppol, download them and upload them to your access
+provider. In France, Cord does transmit them through an approved platform: see
+[E-invoicing in France](#e-invoicing-in-france).
 </Callout>
 
 ## Set up your data once
@@ -193,6 +194,58 @@ These will not go through the public solution:
   with their regional tax authorities that have not been published yet;
 - credit notes for a simplified invoice.
 
+## E-invoicing in France
+
+Since **1 September 2026** every business established in France must be able to
+**receive** e-invoices through an approved platform (PA), and large and mid-sized
+companies must also **issue** them and **report** their other transactions
+(e-reporting). Small and micro businesses issue and report from **1 September 2027**.
+
+Cord issues and reports for you, from the invoices you already issue:
+
+- an invoice to another business established in France (with a SIREN) travels as
+  **Factur-X** through the platform, and Cord shows on the invoice each status the
+  platform reports: submitted, received by your client's platform, approved, rejected…;
+- a sale to a **consumer** is reported in the daily summary, and an invoice to a
+  **business in another country**, one by one;
+- if your VAT is due on payment (services without the option to pay VAT on debits), Cord
+  reports **each payment** you record.
+
+<Callout type="info">
+**Coming soon.** Issuing through an approved platform is not active in Cord yet. Your
+invoices already carry the mentions the reform requires, and **Settings › Tax profile**
+and each invoice's detail say whether it has everything or what is missing.
+</Callout>
+
+French invoices already carry the four new mentions: the **client's SIREN**, the
+**transaction category** (goods, services or both), the **option to pay VAT on debits**
+if you took it, and the **delivery address** when it is not the client's.
+
+<Steps>
+
+1. In **Settings › Tax profile**, fill in your **SIREN** (or your VAT number, which
+   contains it) and, under **E-invoicing in France**, your **VAT regime**, whether you
+   opted to pay VAT **on debits**, and whether lines typed by hand are **goods or
+   services**.
+2. In the catalog, choose each product's **type**: a product is a supply of goods; a
+   service, subscription or license is a supply of services.
+3. If you deliver somewhere other than the client's address, enter the **delivery
+   address** in the invoice editor.
+4. Once the feature is active, click **Register with the platform** and, on its page,
+   verify your identity and sign the mandate. Cord only transmits what you issue after
+   the registration is complete.
+
+</Steps>
+
+<Callout type="warning">
+Cord **only issues**. To receive your suppliers' invoices you need your own reception
+platform, mandatory since 1 September 2026; registering in Cord does not change it.
+</Callout>
+
+If your client or a platform **rejects** an invoice, the invoice says so with the
+reason. It is not corrected: cancel it with a **credit note** (it is an accounting
+cancellation and is not transmitted) and issue a new invoice with the right data.
+
 ## Leitweg-ID
 
 The Leitweg-ID identifies a German public body and ends with **two check digits**. Cord
@@ -231,6 +284,9 @@ electronic version for:
   purchase order or the public body, and correct it on the client.
 - **"Facturae requires the client's tax ID":** enter it on the client; the Facturae is not
   generated without it.
+- **"Each line must say whether it is goods or a service"** (France): choose the
+  product's type or, for lines typed by hand, the option in **Settings › Tax profile**.
+  An issued invoice keeps its lines: it applies to the next ones.
 
 ## Related
 
