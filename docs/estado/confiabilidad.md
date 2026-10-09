@@ -90,7 +90,7 @@ La actualización documental no debe desplegar el worktree compartido completo.
    `last_used_at`; TTL/cookie se deslizan con throttle de 5 min. Sin migración.
    Falta aceptación integrada de login, múltiples organizaciones, retorno de
    Billing y flujos OAuth de vinculación (no se modificaron esos handlers).
-5. **Eventos, CI y operación:** cuatro workflows versionados; `.gitignore` ignora
+5. **Eventos, CI y operación:** seis workflows versionados; `.gitignore` ignora
    `.github/workflows/*` y cada uno entra con una excepción explícita.
    - `cord-reliability.yml` — PR, push a main y manual: `npm ci` en app y
      Elements, `agents:check`, pruebas/contratos (`test:payments`, que incluye
@@ -98,6 +98,15 @@ La actualización documental no debe desplegar el worktree compartido completo.
      secretos LIVE ni migraciones. En verde en GitHub desde sep 2026.
    - `elements.yml` — solo si cambia `packages/elements/**`: tipos, build,
      exports contra `api-report.json`, `attw` y `publint`. En verde desde sep 2026.
+   - `einvoice.yml` — solo si cambia algo que entra en la factura electrónica
+     europea (`src/lib/fiscal/**`, `src/lib/pdf/**`, el motor de totales, las
+     muestras o el check): `security:einvoice` con
+     `EINVOICE_VALIDATION_REQUIRED=1` contra XSD, CEN, KoSIT/XRechnung, Peppol,
+     Factur-X y veraPDF. Java 21 y xmllint; los ~85 MB de artefactos fijados por
+     SHA-256 quedan en caché con la huella del script. Fuera de
+     `test:payments` a propósito: sin Java ni red no se puede correr ahí.
+   - `publish-packages.yml` — manual y solo desde main: publica Elements, Node,
+     CLI y Python con provenance.
    - `status-probe.yml` — sonda horaria de disponibilidad (ver `cord-ops.md`).
    - `cord-crons.yml` — los 17 crons de Cord, cada hora, con la misma tabla de
      horarios de `vercel.json`. `cron/tareas` (recordatorio de tareas, oct 2026)
