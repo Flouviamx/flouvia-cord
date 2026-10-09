@@ -36,8 +36,15 @@ import { EAS_SCHEMES, checkLeitwegId, leitwegProblem, splitEInvoiceAddress } fro
 export type VatCategory = 'S' | 'L' | 'M' | ZeroVatCategory;
 /** Categorías con tasa propia: un grupo del desglose por tasa. */
 export const RATED_CATEGORIES: ReadonlySet<VatCategory> = new Set(['S', 'L', 'M']);
-export type EInvoiceFormat = 'facturx' | 'xrechnung' | 'xrechnung-cii' | 'peppol';
-export const EINVOICE_FORMATS: readonly EInvoiceFormat[] = ['facturx', 'xrechnung', 'xrechnung-cii', 'peppol'];
+/**
+ * Formatos de factura electrónica que Cord genera: los cuatro de EN 16931 que
+ * arma este modelo y Facturae 3.2.2 (`facturae.ts`), solo para emisores
+ * españoles, que además declara retenciones.
+ */
+export type EInvoiceFormat = 'facturx' | 'xrechnung' | 'xrechnung-cii' | 'peppol' | 'facturae';
+export type En16931Format = Exclude<EInvoiceFormat, 'facturae'>;
+export const EN16931_FORMATS: readonly En16931Format[] = ['facturx', 'xrechnung', 'xrechnung-cii', 'peppol'];
+export const EINVOICE_FORMATS: readonly EInvoiceFormat[] = [...EN16931_FORMATS, 'facturae'];
 
 export function isEInvoiceFormat(value: unknown): value is EInvoiceFormat {
     return typeof value === 'string' && (EINVOICE_FORMATS as readonly string[]).includes(value);
@@ -463,7 +470,7 @@ export function assessEInvoice(src: EInvoiceSource): EInvoiceAssessment {
     // Las retenciones (IRPF) no existen en EN 16931: un "importe a pagar" menor
     // que el total rompería BR-CO-16 o declararía un pago que no es.
     if (Number(src.retencionTotal) > 0) {
-        problems.push(p('withholding', 'Esta factura tiene retenciones y la factura electrónica europea no las admite. Emite sin retención para generarla.', 'This invoice has withholdings, which European e-invoices do not support. Issue it without withholding to generate one.'));
+        problems.push(p('withholding', 'Esta factura tiene retenciones y Factur-X, XRechnung y Peppol no las admiten: EN 16931 no tiene dónde declararlas, y restarlas como descuento o anticipo falsearía la base o el importe a pagar. En España, la Facturae sí las declara.', 'This invoice has withholdings and Factur-X, XRechnung and Peppol do not support them: EN 16931 has no place to declare them, and subtracting them as a discount or prepayment would misstate the base or the amount due. In Spain, Facturae does declare them.'));
     }
     const currency = normalizeCurrency(src.currency, '');
     if (!currency) problems.push(p('currency', 'La divisa del documento no es válida.', 'The document currency is not valid.'));
@@ -762,7 +769,7 @@ export function unitPrice(netAmount: number, quantity: number): number {
 }
 
 /** Lo que además pide cada formato. Vacío = se puede generar. */
-export function formatProblems(format: EInvoiceFormat, assessment: EInvoiceAssessment): EInvoiceProblem[] {
+export function formatProblems(format: En16931Format, assessment: EInvoiceAssessment): EInvoiceProblem[] {
     const out = [...assessment.problems];
     const inv = assessment.invoice;
     if (!inv) return out;

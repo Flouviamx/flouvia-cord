@@ -271,6 +271,13 @@ export const PATCH: APIRoute = async ({ request }) => {
         if ((EINVOICE_EMAIL_MODES as readonly string[]).includes(mode)) currentFiscalMetadata.einvoice_email = mode;
         else delete currentFiscalMetadata.einvoice_email;
     }
+    // España: firmar la Facturae (XAdES-EPES) con el certificado electrónico que
+    // el negocio subió para Verifactu. Opt-in explícito: es una firma en su
+    // nombre. Lo lee `facturaeSigner()` en cada descarga y en el correo.
+    if (body.fiscal_facturae_firma !== undefined) {
+        if (body.fiscal_facturae_firma === true || body.fiscal_facturae_firma === 'true') currentFiscalMetadata.facturae_firma = true;
+        else delete currentFiscalMetadata.facturae_firma;
+    }
 
     const vigDias = body.vigencia_default_dias !== undefined ? clamp(Math.round(Number(body.vigencia_default_dias) || 0), 1, 365) : actual.vigencia_default_dias;
     const termDef = body.terminos_default !== undefined ? normalizeTerm(body.terminos_default) : actual.terminos_default;

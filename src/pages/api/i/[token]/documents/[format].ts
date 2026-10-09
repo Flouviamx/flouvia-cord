@@ -16,8 +16,8 @@ const privacyHeaders = {
 export const GET: APIRoute = async ({ params, request }) => {
     const token = params.token ?? '';
     const format = params.format ?? '';
-    // pdf/xml de siempre y la factura electrónica europea del mismo documento
-    // (facturx, xrechnung, xrechnung-cii, peppol), que se genera del snapshot.
+    // pdf/xml de siempre y la factura electrónica del mismo documento (facturx,
+    // xrechnung, xrechnung-cii, peppol y, en España, facturae), que se genera del snapshot.
     if (!['pdf', 'xml'].includes(format) && !isEInvoiceFormat(format)) {
         return new Response('Documento no encontrado', { status: 404, headers: privacyHeaders });
     }

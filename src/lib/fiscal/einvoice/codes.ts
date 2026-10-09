@@ -146,13 +146,16 @@ export function normalizeBic(value: unknown): string | null {
  * (`fiscal_metadata.einvoice_email`).
  *   - facturx: el PDF adjunto ES el Factur-X (PDF/A-3 con el XML dentro).
  *   - xrechnung: el PDF de siempre MÁS el XML de XRechnung.
+ *   - facturae: el PDF de siempre MÁS la Facturae (firmada si el negocio lo
+ *     activó). Solo emisores en España; nunca es el valor por defecto: el
+ *     RD 238/2026 todavía no es exigible y el cliente B2B no la espera.
  *   - off: solo el PDF.
  * Sin valor guardado manda el país: Francia → facturx (la factura electrónica
  * B2B francesa parte de Factur-X), Alemania → xrechnung (la E-Rechnung
  * obligatoria entre empresas desde 2025), el resto → off.
  */
-export type EInvoiceEmailMode = 'off' | 'facturx' | 'xrechnung';
-export const EINVOICE_EMAIL_MODES: readonly EInvoiceEmailMode[] = ['off', 'facturx', 'xrechnung'];
+export type EInvoiceEmailMode = 'off' | 'facturx' | 'xrechnung' | 'facturae';
+export const EINVOICE_EMAIL_MODES: readonly EInvoiceEmailMode[] = ['off', 'facturx', 'xrechnung', 'facturae'];
 
 export function einvoiceEmailMode(country: string, stored: unknown): EInvoiceEmailMode {
     const v = String(stored ?? '');
