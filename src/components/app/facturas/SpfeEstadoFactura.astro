@@ -1,0 +1,80 @@
+---
+// Estado de la factura ante la solución pública de facturación electrónica de
+// la AEAT (factura electrónica entre empresarios), en el panel lateral de
+// /app/facturas/[id]. Mientras el riel no esté activo dice "Próximamente" y si
+// la factura ya tiene lo que pide la AEAT (o qué le falta); activo, el estado
+// de su envío, del cobro comunicado y lo que informó el cliente. Una factura
+// que no va por la SPFE (cliente extranjero, proforma, borrador) no dibuja nada.
+import { estadoSpfeFactura } from '../../../lib/fiscal/spfe/estado';
+import { SPFE_MOTIVOS_RECHAZO } from '../../../lib/fiscal/spfe/normativa';
+import { t, type AppLocale } from '../../../i18n/app';
+
+interface Props { orgId: string; documentoId: string; locale: AppLocale; }
+const { orgId, documentoId, locale: L } = Astro.props;
+const e = orgId ? await estadoSpfeFactura(orgId, documentoId).catch(() => null) : null;
+
+const fecha = (iso: string | null) => iso
+    ? new Intl.DateTimeFormat(L === 'en' ? 'en-GB' : 'es-ES', { dateStyle: 'medium', timeZone: 'UTC' }).format(new Date(`${iso.slice(0, 10)}T00:00:00Z`))
+    : '';
+const alta = e?.alta ?? null;
+const tituloAlta = alta ? t(L, `spfe.${alta.tipo === 'baja' ? 'baja' : 'alta'}.${alta.estado}` as any) : '';
+const cobro = e?.cobro ?? null;
+const lineaCobro = cobro ? `${t(L, `spfe.estado.${cobro.tipo}` as any)}: ${t(L, `spfe.msg.${cobro.estado}` as any)}` : '';
+const dest = e?.destinatario ?? null;
+const motivo = dest?.motivo ? SPFE_MOTIVOS_RECHAZO[dest.motivo][L === 'en' ? 'en' : 'es'] : null;
+---
+
+{e && (
+    <section class="fd-meta-section spfe-fe">
+        <div class="spfe-fe-head"><h2>{t(L, 'spfe.titulo')}</h2></div>
+        {!alta ? (
+            <div class="spfe-fe-state is-proximamente">
+                <span class="spfe-fe-dot" aria-hidden="true"></span>
+                <span class="spfe-fe-copy">
+                    {e.riel === 'activo' ? (
+                        <strong>{e.faltantes.length ? t(L, 'spfe.falta') : t(L, 'spfe.alta.pendiente')}</strong>
+                    ) : (
+                        <Fragment>
+                            <strong>{t(L, 'spfe.proximamente')}</strong>
+                            <small>{t(L, 'spfe.proximamente_desc')}</small>
+                            {e.faltantes.length === 0
+                                ? <small class="spfe-fe-ok">{t(L, 'spfe.lista')}</small>
+                                : <small>{t(L, 'spfe.falta')}</small>}
+                        </Fragment>
+                    )}
+                </span>
+            </div>
+        ) : (
+            <div class={`spfe-fe-state is-${alta.estado}`}>
+                <span class="spfe-fe-dot" aria-hidden="true"></span>
+                <span class="spfe-fe-copy">
+                    <strong>{tituloAlta}</strong>
+                    {alta.csv && alta.estado === 'admitido' && <small>{t(L, 'spfe.csv')}: {alta.csv}</small>}
+                    {alta.error && alta.estado !== 'admitido' && <small>{alta.error}</small>}
+                    {cobro && <small>{lineaCobro}{cobro.error && cobro.estado === 'rechazado' ? ` · ${cobro.error}` : ''}</small>}
+                    {dest && <small>{t(L, `spfe.cliente.${dest.codigo}` as any)} · {fecha(dest.fecha)}{motivo ? ` · ${motivo}` : ''}</small>}
+                    {e.entorno === 'pruebas' && <small>{t(L, 'spfe.pruebas')}</small>}
+                </span>
+            </div>
+        )}
+        {!alta && e.faltantes.length > 0 && (
+            <ul class="spfe-fe-obs">
+                {e.faltantes.map((p) => <li>{L === 'en' ? p.en : p.es}</li>)}
+            </ul>
+        )}
+    </section>
+)}
+
+<style>
+    .spfe-fe-head h2 { font-size: 0.82rem; font-weight: 600; margin: 0 0 0.6rem; color: var(--color-text); }
+    .spfe-fe-state { display: flex; gap: 0.6rem; align-items: flex-start; }
+    .spfe-fe-dot { width: 7px; height: 7px; margin-top: 0.35rem; border-radius: 50%; background: var(--color-text-muted); flex-shrink: 0; }
+    .spfe-fe-state.is-admitido .spfe-fe-dot { background: var(--color-ok); }
+    .spfe-fe-state.is-pendiente .spfe-fe-dot, .spfe-fe-state.is-incierto .spfe-fe-dot, .spfe-fe-state.is-descartado .spfe-fe-dot { background: #d97706; }
+    .spfe-fe-state.is-rechazado .spfe-fe-dot { background: var(--color-err, #dc2626); }
+    .spfe-fe-copy { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .spfe-fe-copy strong { font-size: 0.82rem; color: var(--color-text); }
+    .spfe-fe-copy small { font-size: 0.75rem; color: var(--color-text-muted); line-height: 1.45; overflow-wrap: anywhere; }
+    .spfe-fe-copy .spfe-fe-ok { color: var(--color-ok); }
+    .spfe-fe-obs { margin: 0.6rem 0 0; padding-left: 1.1rem; font-size: 0.75rem; color: var(--color-text-muted); line-height: 1.45; }
+</style>

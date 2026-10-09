@@ -1,0 +1,71 @@
+---
+// Ajustes › Datos fiscales (España): la factura electrónica entre empresarios
+// por la solución pública de la AEAT. Sin controles: no hay nada que el
+// negocio elija (la ley la hace obligatoria y Cord usa el certificado que ya
+// subió para Verifactu). Dice el estado real del riel —"Próximamente" mientras
+// la AEAT no publique su servicio—, las fechas de la obligación y lo que
+// necesita atención cuando el riel esté activo.
+import type { EstadoSpfeOrg } from '../../../lib/fiscal/spfe/estado';
+import { SPFE_MOTIVOS_RECHAZO } from '../../../lib/fiscal/spfe/normativa';
+import { t, type AppLocale } from '../../../i18n/app';
+
+interface Props { estado: EstadoSpfeOrg; locale: AppLocale; }
+const { estado: e, locale: L } = Astro.props;
+const activo = e.riel === 'activo';
+---
+
+<p class="spfe-intro">{t(L, 'spfe.ajustes.intro')}</p>
+
+<div class:list={['spfe-state', { 'is-on': activo }]}>
+    <span class="spfe-dot" aria-hidden="true"></span>
+    <span class="spfe-info">
+        <span class="spfe-title">{activo ? t(L, 'spfe.ajustes.activo') : t(L, 'spfe.ajustes.proximamente')}</span>
+        <span class="spfe-sub">
+            {activo ? `${t(L, 'spfe.ajustes.en_cola')}: ${e.enCola}` : t(L, 'spfe.ajustes.proximamente_desc')}
+        </span>
+        {activo && e.entorno === 'pruebas' && <span class="spfe-sub">{t(L, 'spfe.pruebas')}</span>}
+    </span>
+</div>
+
+<p class="spfe-note">{e.certificado ? t(L, 'spfe.ajustes.cert_ok') : t(L, 'spfe.ajustes.cert_falta')}</p>
+<p class="spfe-note">{t(L, 'spfe.ajustes.irpf')}</p>
+
+<div class="spfe-plazos">
+    <span class="spfe-plazos-t">{t(L, 'spfe.ajustes.plazos')}</span>
+    <ul>
+        <li>{t(L, 'spfe.ajustes.plazo_grandes')}</li>
+        <li>{t(L, 'spfe.ajustes.plazo_resto')}</li>
+        <li>{t(L, 'spfe.ajustes.plazo_estados')}</li>
+    </ul>
+</div>
+
+{e.incidencias.length > 0 && (
+    <div class="spfe-inc">
+        <span class="spfe-plazos-t">{t(L, 'spfe.ajustes.incidencias')}</span>
+        {e.incidencias.map((inc) => (
+            <a class="spfe-inc-row" href={`/app/facturas/${inc.documentoId}`}>
+                <strong>{inc.numero}</strong>
+                <small>{inc.tipo === 'rechazo_cliente'
+                    ? `${t(L, 'spfe.ajustes.rechazo_cliente')}${inc.motivo && (inc.motivo === '01' || inc.motivo === '02') ? ` · ${SPFE_MOTIVOS_RECHAZO[inc.motivo][L === 'en' ? 'en' : 'es']}` : ''}`
+                    : (inc.motivo ?? t(L, 'spfe.msg.rechazado'))}</small>
+            </a>
+        ))}
+    </div>
+)}
+
+<style>
+    .spfe-intro { font-size: 0.82rem; color: var(--color-text-muted); line-height: 1.55; margin: 0 0 1.1rem; }
+    .spfe-state { display: flex; gap: 0.7rem; align-items: flex-start; padding: 0.9rem 1rem; border-radius: 14px; background: var(--color-bg-subtle, #f5f5f7); }
+    .spfe-dot { width: 8px; height: 8px; margin-top: 0.4rem; border-radius: 50%; background: #d97706; flex-shrink: 0; }
+    .spfe-state.is-on .spfe-dot { background: var(--color-ok); }
+    .spfe-info { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+    .spfe-title { font-size: 0.86rem; font-weight: 600; color: var(--color-text); }
+    .spfe-sub { font-size: 0.78rem; color: var(--color-text-muted); line-height: 1.5; }
+    .spfe-note { font-size: 0.78rem; color: var(--color-text-muted); line-height: 1.5; margin: 0.9rem 0 0; }
+    .spfe-plazos, .spfe-inc { margin-top: 1rem; }
+    .spfe-plazos-t { display: block; font-size: 0.78rem; font-weight: 600; color: var(--color-text); margin-bottom: 0.35rem; }
+    .spfe-plazos ul { margin: 0; padding-left: 1.1rem; font-size: 0.78rem; color: var(--color-text-muted); line-height: 1.55; }
+    .spfe-inc-row { display: flex; flex-direction: column; gap: 2px; padding: 0.5rem 0; border-top: 1px solid var(--color-border, rgba(10, 25, 47, 0.08)); text-decoration: none; }
+    .spfe-inc-row strong { font-size: 0.8rem; color: var(--color-text); }
+    .spfe-inc-row small { font-size: 0.75rem; color: var(--color-text-muted); }
+</style>
