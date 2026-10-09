@@ -23,11 +23,13 @@ describe('emisión desde la cotización', () => {
                       linea_clave_sat: null, linea_clave_unidad_sat: null, clave_sat: '43231500', clave_unidad_sat: null, producto_unidad: 'hora' },
                 ],
             ])
+            // La venta no está en ninguna factura global.
+            .mockResolvedValueOnce([[]])
             .mockResolvedValueOnce([[], [{ id: 'doc-1' }]]);
         m.finalize.mockResolvedValue({ emitted: false, status: 'error', error: 'x' });
         await emitFiscalDocument('org-a', 'quote-1');
         expect(m.tx.mock.calls[0][2].text).toContain('ci.clave_sat as linea_clave_sat');
-        const reserve = m.tx.mock.calls[1][2];
+        const reserve = m.tx.mock.calls[2][2];
         const snapshot = JSON.parse(reserve.values.find((v: unknown) => typeof v === 'string' && v.startsWith('[{"description"')));
         expect(snapshot.map((l: any) => [l.productKey, l.unitKey])).toEqual([['78101800', 'E48'], ['43231500', 'HUR']]);
         expect(m.finalize).toHaveBeenCalledWith('org-a', 'doc-1');

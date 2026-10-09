@@ -1589,7 +1589,9 @@ function rowToFactura(r: any) {
         cotizacionId: (r.cotizacion_id as string) || null,
         clienteId: (r.cliente_id as string) || null,
         folio: (r.folio as string) || null,
-        cliente: (r.empresa as string) || null,
+        // La factura global no tiene cliente: su receptor es el genérico del SAT.
+        cliente: (r.empresa as string) || (r.informacion_global ? 'PUBLICO EN GENERAL' : null),
+        esGlobal: !!r.informacion_global,
         invoiceNumber: (r.invoice_number as string) || null,
         currency: (r.currency as string) || null,
         total,
@@ -1664,7 +1666,7 @@ export async function getFacturas(filters: FacturaFilters = {}) {
                d.fiscal_id, d.invoice_number, d.currency, d.total as invoice_total,
                d.lifecycle, d.status, d.amount_paid, d.amount_remaining, d.due_date,
                d.public_token, d.sent_at, d.credit_note_of,
-               d.provider_data, d.pdf_url, d.xml_url, d.created_at,
+               d.provider_data, d.pdf_url, d.xml_url, d.created_at, d.informacion_global,
                (d.lifecycle = 'open' and d.due_date is not null and d.due_date < current_date) as vencida,
                case when d.lifecycle = 'open' and d.due_date is not null and d.due_date < current_date
                     then current_date - d.due_date else null end as dias_vencida,
@@ -1884,20 +1886,33 @@ export async function getFacturaByToken(token: string) {
 /** Detalle de una factura para el vendedor, con sus snapshots y pagos. */
 export async function getFacturaDetalle(id: string) {
     const orgId = await getActiveOrgId();
-    const [rows, pagos] = await withOrgTx(orgId,
+    const [rows, pagos, ventasGlobal] = await withOrgTx(orgId,
         sql`select d.*, c.folio,
                    coalesce(cl.empresa, cq.empresa) as empresa,
-                   coalesce(cl.email, cq.email) as cliente_email
+                   coalesce(cl.email, cq.email) as cliente_email,
+                   sa.invoice_number as sustituye_numero, sp.invoice_number as sustituida_numero,
+                   (select r.id from documentos_fiscales r where r.sustituye_a = d.id and r.org_id = d.org_id
+                      and r.lifecycle <> 'void' limit 1) as sustituto_vivo,
+                   exists (select 1 from documentos_fiscales n where n.credit_note_of = d.id and n.org_id = d.org_id
+                            and n.lifecycle <> 'void') as has_credit_notes
               from documentos_fiscales d
               left join cotizaciones c on c.id = d.cotizacion_id
               left join clientes cl on cl.id = d.cliente_id
               left join clientes cq on cq.id = c.cliente_id
+              left join documentos_fiscales sa on sa.id = d.sustituye_a and sa.org_id = d.org_id
+              left join documentos_fiscales sp on sp.id = d.sustituida_por and sp.org_id = d.org_id
              where d.id = ${id} and d.org_id = ${orgId}
              limit 1`,
         sql`select id, monto, currency, metodo, referencia, nota, aplicado_at
               from documento_pagos
              where documento_id = ${id} and org_id = ${orgId}
-             order by aplicado_at asc`);
+             order by aplicado_at asc`,
+        // Ventas que documenta una factura global (vacío en cualquier otra).
+        sql`select g.cotizacion_id, g.folio, g.liberada_at, c.total
+              from factura_global_ventas g
+              left join cotizaciones c on c.id = g.cotizacion_id and c.org_id = g.org_id
+             where g.documento_id = ${id} and g.org_id = ${orgId}
+             order by g.created_at asc, g.folio asc`);
     const r = rows[0];
     if (!r) return null;
     return {
@@ -1933,6 +1948,22 @@ export async function getFacturaDetalle(id: string) {
         motivoAnulacion: (r.void_reason as string) || null,
         acreditado: num(r.amount_credited), reembolsado: num(r.amount_refunded), porDevolver: num(r.refund_due),
         cancelacionEstado: String(r.provider_data?.cancelacion?.status || ''),
+        cancelacionMotivo: String(r.provider_data?.cancelacion?.motive || ''),
+        // México: CFDI global, sustitución y datos del CFDI fijados a mano.
+        informacionGlobal: (r.informacion_global as { periodicidad: string; meses: string; anio: number; forma_pago: string; desde?: string; hasta?: string } | null) || null,
+        ventasGlobal: ventasGlobal.map((v: any) => ({
+            cotizacionId: String(v.cotizacion_id), folio: String(v.folio || ''),
+            total: v.total === null || v.total === undefined ? null : num(v.total), liberada: !!v.liberada_at,
+        })),
+        sustituyeA: r.sustituye_a ? { id: String(r.sustituye_a), numero: (r.sustituye_numero as string) || null } : null,
+        sustituidaPor: r.sustituida_por ? { id: String(r.sustituida_por), numero: (r.sustituida_numero as string) || null } : null,
+        sustitutoVivo: (r.sustituto_vivo as string) || null,
+        tieneNotasCredito: !!r.has_credit_notes,
+        cfdiUso: (r.cfdi_uso as string) || null,
+        cfdiFormaPago: (r.cfdi_forma_pago as string) || null,
+        metodoPagoCfdi: (r.provider_data?.payment_method as string) || null,
+        formaPagoCfdi: (r.provider_data?.payment_form as string) || null,
+        providerData: (r.provider_data as Record<string, unknown>) || {},
         pagos: pagos.map((pg: any) => ({
             id: pg.id as string,
             monto: num(pg.monto),

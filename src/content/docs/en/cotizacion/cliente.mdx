@@ -80,7 +80,7 @@ a **CFDI tax data (Mexico)** section appears with two CFDI 4.0 fields:
 
 ## Behavior and edge cases
 
-- **Incomplete tax data:** the quote is still commercially valid. In Mexico, without an RFC the CFDI is issued to "público en general" (the general public); with an RFC but no regime, Cord uses 601. Check RFC, postal code, and regime against the client's tax certificate before stamping.
+- **Incomplete tax data:** the quote is still commercially valid. In Mexico, without an RFC the CFDI is issued with the generic general-public RFC (XAXX010101000); with an RFC but no regime, Cord uses 601. Check RFC, postal code, and regime against the client's tax certificate before stamping.
 - **Changing the client after sending** isn't possible with **Modify and resend**: duplicate the quote and send it to the right client.
 - **Editing the profile** doesn't rewrite fiscal documents already issued: they keep the recipient data they were issued with.
 - **Credit limit:** if the client has one, their profile shows how much open balance they have against it. It's a signal for you, not a block.
@@ -97,7 +97,7 @@ a **CFDI tax data (Mexico)** section appears with two CFDI 4.0 fields:
 
 **The tier discount wasn't applied.** It only lowers catalog products; free lines have no list price.
 
-**The CFDI was issued to "público en general".** The client had no RFC when you stamped.
+**The CFDI was issued with the generic RFC (XAXX010101000).** The client had no RFC when you stamped.
 
 ## Related
 

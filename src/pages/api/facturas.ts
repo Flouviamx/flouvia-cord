@@ -10,7 +10,7 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { getActiveOrgId, logAudit, reqIp } from '../../lib/db';
 import { requirePerm, getFacturas, invalidateMoneyCaches } from '../../lib/queries';
-import { createInvoiceDraft, parseInvoiceItems, parseServiceDates, MAX_INVOICE_ITEMS } from '../../lib/fiscal/invoices';
+import { createInvoiceDraft, parseInvoiceItems, parseServiceDates, MAX_INVOICE_ITEMS, parseCfdiOverrides } from '../../lib/fiscal/invoices';
 import { requireEntitlement } from '../../lib/org-entitlements';
 import { currentUserId } from '../../lib/context';
 import { invoicingFeatureFor } from '../../lib/fiscal/gate';
@@ -67,6 +67,7 @@ export const POST: APIRoute = async ({ request }) => {
         bufferPct: Number(body.fx_buffer_pct) || 0,
         ivaIncluido: body.iva_incluido === true,
         createdBy: currentUserId(),
+        ...parseCfdiOverrides(body),
     });
     // Un fallo de FX o del catálogo de impuestos es 503 (regla 22 aplicada al
     // impuesto: no se inventa la tasa, se dice que no se pudo confirmar); el

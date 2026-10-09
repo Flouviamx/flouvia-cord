@@ -32,6 +32,22 @@ describe('detalle de la actividad de una factura', () => {
         expect(invoiceEventDetail('created', 'Error al emitir: desconocido', 'en')).toBe('Issuing failed: unknown');
     });
 
+    it('traduce la sustitución, la factura global y el motivo del SAT', () => {
+        expect(invoiceEventDetail('void', 'Anulada: 02 · Comprobante emitido con errores sin relación', 'en'))
+            .toBe('Voided: 02 · Issued with errors, without a replacement');
+        expect(invoiceEventDetail('void', 'Anulada: 02 · Comprobante emitido con errores sin relación — Cliente equivocado', 'en'))
+            .toBe('Voided: 02 · Issued with errors, without a replacement — Cliente equivocado');
+        expect(invoiceEventDetail('void', 'Anulada: 04 · Operación nominativa relacionada en una factura global', 'es'))
+            .toBe('Anulada: 04 · Operación nominativa relacionada en una factura global');
+        expect(invoiceEventDetail('void', 'Sustituida por F-000002', 'en')).toBe('Replaced by F-000002');
+        expect(invoiceEventDetail('issued', 'Sustituye a F-000001', 'en')).toBe('Replaces F-000001');
+        expect(invoiceEventDetail('created', 'Borrador que sustituye a la factura original', 'en')).toBe('Draft replacing the original invoice');
+        expect(invoiceEventDetail('created', 'Factura global con 1 venta(s)', 'en')).toBe('Global invoice with 1 sale');
+        expect(invoiceEventDetail('created', 'Factura global con 12 venta(s)', 'en')).toBe('Global invoice with 12 sales');
+        expect(invoiceEventDetail('payment', 'Pago de $100.00 MXN recibido en una factura ya sustituida: aplícalo a la que la sustituye o devuélvelo', 'en'))
+            .toBe('Payment of $100.00 MXN received on an invoice that was already replaced: apply it to the replacement or refund it');
+    });
+
     it('deja pasar tal cual un detalle que no reconoce', () => {
         expect(invoiceEventDetail('uncollectible', 'Cliente en quiebra', 'en')).toBe('Cliente en quiebra');
         expect(invoiceEventDetail('sent', '', 'en')).toBe('');

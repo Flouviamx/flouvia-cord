@@ -1,5 +1,7 @@
 // /api/facturas/[id] — ciclo de vida de una factura.
-//   PATCH { action: 'finalize' | 'finalize_and_send' | 'send' | 'duplicate' | 'payment' | 'void' | 'credit_note' | 'uncollectible' | 'retry_complements' }
+//   PATCH { action: 'finalize' | 'finalize_and_send' | 'send' | 'duplicate' | 'payment' | 'void' | 'credit_note' | 'uncollectible' | 'retry_complements' | 'substitute' }
+//   México: `void` lleva `motivo` = clave del SAT (02, 03, 04; el 01 lo pide la
+//   sustitución) y `substitute` crea el borrador que sustituye a un CFDI emitido.
 //   DELETE                                     → { ok }  (solo borradores)
 //
 // Cada acción es explícita y unidireccional. En particular `void` NO cae a
@@ -10,7 +12,10 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { sql, getActiveOrgId, logAudit, reqIp, withOrgTx } from '../../../lib/db';
 import { requirePerm, invalidateMoneyCaches, getFacturaDetalle } from '../../../lib/queries';
-import { createInvoiceDraft, finalizeInvoice, voidInvoice, createCreditNote, updateInvoiceDraft, parseInvoiceItems, parseServiceDates, MAX_INVOICE_ITEMS } from '../../../lib/fiscal/invoices';
+import { createInvoiceDraft, finalizeInvoice, voidInvoice, createCreditNote, updateInvoiceDraft, parseInvoiceItems, parseServiceDates, parseCfdiOverrides, MAX_INVOICE_ITEMS } from '../../../lib/fiscal/invoices';
+import { createSubstitutionDraft } from '../../../lib/fiscal/sustitucion';
+import { isMotivoCancelacion } from '../../../lib/fiscal/cfdi-catalogos';
+import { isFiscalDocument } from '../../../lib/fiscal/document-kind';
 import { applyPayment, manualPaymentMethod } from '../../../lib/fiscal/payments';
 import { requireEntitlement } from '../../../lib/org-entitlements';
 import { dispatchInvoiceEvent } from '../../../lib/webhooks';
@@ -33,7 +38,9 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
  * por el total y sacarla de la cartera sin permiso de cobranza.
  */
 export function invoiceActionPermission(action: string): 'cobranza' | 'cotizar' {
-    return ['payment', 'uncollectible', 'void', 'cancellation_status', 'credit_note', 'retry_complements'].includes(action)
+    // Sustituir un CFDI termina cancelando el original ante el SAT: es tan
+    // irreversible como anularlo.
+    return ['payment', 'uncollectible', 'void', 'cancellation_status', 'credit_note', 'retry_complements', 'substitute'].includes(action)
         ? 'cobranza'
         : 'cotizar';
 }
@@ -59,10 +66,16 @@ export const PATCH: APIRoute = async ({ params, request }) => {
     const limitado = strictLimitResponse(await strictRateLimit(`factura-patch:${orgId}`, 120, 60));
     if (limitado) return limitado;
     const [own] = await withOrgTx(orgId, sql`
-        select id, lifecycle, status, total, amount_remaining, invoice_number, currency
+        select id, lifecycle, status, total, amount_remaining, invoice_number, currency,
+               country_code, document_type, provider, sustituida_por, sustituye_a
           from documentos_fiscales where id = ${id} and org_id = ${orgId}`);
     if (!own.length) return json({ error: 'Factura no encontrada' }, 404);
     const doc = own[0];
+    // Emitir un sustituto cancela el CFDI original: pide también cobranza.
+    if ((action === 'finalize' || action === 'finalize_and_send') && doc.sustituye_a) {
+        const sinCobranza = await requirePerm('cobranza');
+        if (sinCobranza) return sinCobranza;
+    }
 
     switch (action) {
         case 'update_draft': return updateDraft(orgId, id, body, request);
@@ -72,7 +85,8 @@ export const PATCH: APIRoute = async ({ params, request }) => {
         case 'duplicate': return duplicate(orgId, id, request);
         case 'payment': return payment(orgId, id, body, request);
         case 'void':
-        case 'cancellation_status': return voidIt(orgId, id, body, request);
+        case 'cancellation_status': return voidIt(orgId, id, body, request, doc);
+        case 'substitute': return substitute(orgId, id, request);
         case 'credit_note': return creditNote(orgId, id, body, request);
         case 'uncollectible': return uncollectible(orgId, id, doc, request);
         case 'retry_complements': {
@@ -136,6 +150,7 @@ async function updateDraft(orgId: string, id: string, body: any, request: Reques
         notes: String(body.notas ?? '').trim().slice(0, 1000) || null,
         bufferPct: Number(body.fx_buffer_pct) || 0,
         ivaIncluido: body.iva_incluido === true,
+        ...parseCfdiOverrides(body),
     });
     if (!result.ok) {
         // Igual que al crear: un fallo de FX o del catálogo de impuestos es 503 y
@@ -173,7 +188,45 @@ async function finalize(orgId: string, id: string, request: Request) {
     });
     invalidateMoneyCaches(orgId);
     after(dispatchInvoiceEvent(orgId, id, 'invoice.finalized'));
-    return json({ ok: true, numero: result.invoiceNumber, token: result.publicToken, fiscal_id: result.fiscalId });
+    // Sustitución: el sustituto ya existe; la cancelación del original puede
+    // quedar pendiente de aceptación. Se informa aparte, sin fallar la emisión.
+    if (result.substitution) {
+        await logAudit(orgId, {
+            accion: 'factura.sustituida', entidad: 'factura', entidad_id: result.substitution.originalId,
+            detalle: `Sustituida por ${result.invoiceNumber || id} · cancelación ${result.substitution.cancellationStatus || 'sin confirmar'}`,
+            ip: reqIp(request),
+        });
+        if (result.substitution.ok && result.substitution.cancellationStatus === 'accepted') {
+            after(dispatchInvoiceEvent(orgId, result.substitution.originalId, 'invoice.voided'));
+        }
+    }
+    return json({
+        ok: true, numero: result.invoiceNumber, token: result.publicToken, fiscal_id: result.fiscalId,
+        ...(result.substitution ? { sustitucion: {
+            original_id: result.substitution.originalId,
+            cancelacion: result.substitution.cancellationStatus ?? null,
+            ...(result.substitution.ok ? {} : { error: result.substitution.error }),
+        } } : {}),
+    });
+}
+
+/**
+ * México: crea el borrador que SUSTITUYE a un CFDI emitido (relación 04). Se
+ * edita en el editor de facturas; al emitirlo, Cord cancela el original con el
+ * motivo 01 (fiscal/sustitucion.ts). Si ya existe el borrador, responde 409
+ * con su id para continuar en él.
+ */
+async function substitute(orgId: string, id: string, request: Request) {
+    const subscriptionDenied = await requireEntitlement(orgId, 'cfdi');
+    if (subscriptionDenied) return subscriptionDenied;
+    const result = await createSubstitutionDraft(orgId, id, { createdBy: currentUserId() });
+    if (!result.ok) return json({ error: result.error, id: result.documentId ?? null }, 409);
+    await logAudit(orgId, {
+        accion: 'factura.sustitucion_borrador', entidad: 'factura', entidad_id: result.documentId as string,
+        detalle: `Sustituye a ${id}`, ip: reqIp(request),
+    });
+    invalidateMoneyCaches(orgId);
+    return json({ ok: true, id: result.documentId });
 }
 
 /**
@@ -296,8 +349,17 @@ async function payment(orgId: string, id: string, body: any, request: Request) {
     return json({ ok: true, pagado: result.amountPaid, saldo: result.amountRemaining, estado: result.lifecycle });
 }
 
-async function voidIt(orgId: string, id: string, body: any, request: Request) {
-    const result = await voidInvoice(orgId, id, String(body.motivo ?? '').trim() || undefined, body.action === 'cancellation_status');
+async function voidIt(orgId: string, id: string, body: any, request: Request, doc: any) {
+    const checkOnly = body.action === 'cancellation_status';
+    const motivo = String(body.motivo ?? '').trim();
+    // México: la pantalla manda la clave del motivo del SAT, no texto libre.
+    // Un CFDI ya sustituido se cancela siempre con el 01 (lo pone voidInvoice).
+    const country = String(doc.country_code || 'MX').toUpperCase();
+    const cfdi = country === 'MX' && isFiscalDocument(String(doc.document_type || 'cfdi_40'), country, String(doc.provider || ''));
+    if (cfdi && !checkOnly && doc.status === 'issued' && !doc.sustituida_por && !isMotivoCancelacion(motivo)) {
+        return json({ error: 'Elige el motivo de cancelación del SAT.' }, 400);
+    }
+    const result = await voidInvoice(orgId, id, motivo || undefined, checkOnly);
     invalidateMoneyCaches(orgId);
     if (!result.ok) {
         // 409, no 400: la petición es válida, el estado de la factura es el que

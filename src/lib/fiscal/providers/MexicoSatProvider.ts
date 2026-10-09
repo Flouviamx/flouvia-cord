@@ -1,6 +1,9 @@
 import type { FiscalProvider, FiscalCancelRequest, FiscalCancelResponse, FiscalDocumentRequest, FiscalDocumentResponse } from '../index';
 import { mexicoItems } from './mexico-items';
 import { toAlpha3 } from '../../countries';
+import { PERIODICIDADES, PUBLICO_EN_GENERAL, RFC_GENERICO_NACIONAL, esNombrePublicoGeneral, isFormaPago } from '../cfdi-catalogos';
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // Proveedor fiscal de México: timbra CFDI 4.0 vía Facturapi (facturapi.io).
 //
@@ -24,8 +27,15 @@ function authHeader(key: string): string {
   return 'Basic ' + Buffer.from(`${key}:`).toString('base64');
 }
 
-/** Receptor en el formato de Facturapi; el mismo para el ingreso y su complemento de pago. */
-function facturapiCustomer(c: FiscalDocumentRequest['recipient']):
+/**
+ * Receptor en el formato de Facturapi; el mismo para el ingreso y su complemento de pago.
+ *
+ * `issuerZip` es el código postal del EMISOR (el LugarExpedicion del CFDI): el
+ * Anexo 20 exige que un receptor con RFC genérico XAXX010101000 declare como
+ * DomicilioFiscalReceptor ese mismo código postal, y régimen 616. Antes se
+ * mandaba el del cliente o "00000", que el SAT rechaza.
+ */
+function facturapiCustomer(c: FiscalDocumentRequest['recipient'], issuerZip?: string):
   | { ok: true; customer: Record<string, unknown>; generico: boolean; extranjero: boolean; foreignCountry: string | null }
   | { ok: false; error: string } {
   // ── Receptor extranjero ────────────────────────────────────────────────
@@ -50,6 +60,16 @@ function facturapiCustomer(c: FiscalDocumentRequest['recipient']):
   // NumRegIdTrib: el identificador fiscal del país del cliente, sin espacios
   // (el SAT lo valida contra el formato de ese país); hasta 40 caracteres.
   const foreignTaxId = extranjero ? String(c.taxId || '').replace(/\s/g, '').toUpperCase().slice(0, 40) : '';
+  const lugarExpedicion = String(issuerZip || '').trim();
+  if (generico && !/^\d{5}$/.test(lugarExpedicion)) {
+    return { ok: false, error: 'Para facturar a un cliente sin RFC, el CFDI declara el código postal fiscal de tu negocio. Captúralo en Ajustes › Datos fiscales.' };
+  }
+  // "PUBLICO EN GENERAL" con el RFC genérico obliga al SAT a exigir el nodo de
+  // factura global (Anexo 20, InformacionGlobal). Un comprobante individual a
+  // un cliente sin RFC lleva el nombre del cliente; la global tiene su carril.
+  if (generico && esNombrePublicoGeneral(c.legalName)) {
+    return { ok: false, error: 'Una factura a "PUBLICO EN GENERAL" solo se emite como factura global. Usa el nombre de tu cliente o emite la factura global del periodo.' };
+  }
 
   const customer = extranjero
     ? {
@@ -63,11 +83,12 @@ function facturapiCustomer(c: FiscalDocumentRequest['recipient']):
         ...(c.email ? { email: String(c.email) } : {}),
       }
     : {
-        legal_name: String(c.legalName || 'PÚBLICO EN GENERAL').toUpperCase().slice(0, 254),
-        tax_id: generico ? 'XAXX010101000' : rfc,
-        // 616 = Sin obligaciones fiscales (genérico); 601 = Persona Moral (default con RFC).
-        tax_system: c.taxSystem || (generico ? '616' : '601'),
-        address: { zip: String(c.address?.postalCode || '00000') },
+        legal_name: String(c.legalName || 'CLIENTE').toUpperCase().slice(0, 254),
+        tax_id: generico ? RFC_GENERICO_NACIONAL : rfc,
+        // Con el RFC genérico el SAT exige 616 (Sin obligaciones fiscales), sin
+        // importar lo que diga la ficha; con RFC real, el del cliente o 601.
+        tax_system: generico ? '616' : (c.taxSystem || '601'),
+        address: { zip: generico ? lugarExpedicion : String(c.address?.postalCode || '00000') },
         ...(c.email ? { email: String(c.email) } : {}),
       };
   return { ok: true, customer, generico, extranjero, foreignCountry };
@@ -184,12 +205,40 @@ export class MexicoSatProvider implements FiscalProvider {
       };
     }
 
-    const receptor = facturapiCustomer(request.recipient);
+    // ── Factura global ─────────────────────────────────────────────────────
+    // Guía de llenado del CFDI global 4.0: receptor XAXX010101000 "PUBLICO EN
+    // GENERAL", régimen 616, uso S01, DomicilioFiscalReceptor = LugarExpedicion,
+    // método PUE y nodo InformacionGlobal (Facturapi: objeto `global`).
+    const global = request.global;
+    const issuerZip = String(request.issuer?.address?.postalCode || '').trim();
+    if (global) {
+      const periodicity = PERIODICIDADES[global.periodicidad as keyof typeof PERIODICIDADES]?.facturapi;
+      if (!periodicity || !/^(0[1-9]|1[0-8])$/.test(global.meses) || !Number.isInteger(global.anio)) {
+        return { success: false, provider: 'facturapi', documentId: request.documentId, error: 'El periodo de la factura global no es válido.' };
+      }
+      if (!/^\d{5}$/.test(issuerZip)) {
+        return { success: false, provider: 'facturapi', documentId: request.documentId,
+          error: 'La factura global declara el código postal fiscal de tu negocio. Captúralo en Ajustes › Datos fiscales.' };
+      }
+      if (!isFormaPago(request.cfdi?.paymentForm)) {
+        return { success: false, provider: 'facturapi', documentId: request.documentId, error: 'Elige la forma de pago de la factura global.' };
+      }
+    }
+    const receptor = global
+      ? { ok: true as const, generico: true, extranjero: false, foreignCountry: null,
+          customer: { legal_name: PUBLICO_EN_GENERAL, tax_id: RFC_GENERICO_NACIONAL, tax_system: '616', address: { zip: issuerZip } } }
+      : facturapiCustomer(request.recipient, issuerZip);
     if (!receptor.ok) return { success: false, provider: 'facturapi', documentId: request.documentId, error: receptor.error };
     const { customer, generico, extranjero, foreignCountry } = receptor;
+    // Sustitución (relación 04): el UUID del comprobante que este reemplaza.
+    const substitutes = !global && request.substitutesFiscalId ? String(request.substitutesFiscalId) : '';
+    if (substitutes && !UUID_RE.test(substitutes)) {
+      return { success: false, provider: 'facturapi', documentId: request.documentId,
+        error: 'La factura que se sustituye no tiene un folio fiscal válido.' };
+    }
 
     const isCreditNote = ['cfdi_egreso', 'credit_note'].includes(request.documentType || '');
-    if (isCreditNote && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(request.relatedFiscalId || '')) {
+    if (isCreditNote && !UUID_RE.test(request.relatedFiscalId || '')) {
       return { success: false, provider: 'facturapi', documentId: request.documentId,
         error: 'La nota de crédito necesita el folio fiscal de la factura original.' };
     }
@@ -224,6 +273,8 @@ export class MexicoSatProvider implements FiscalProvider {
     const body = {
       type: isCreditNote ? 'E' : 'I',
       ...(isCreditNote ? { related_documents: [{ relationship: '01', documents: [request.relatedFiscalId] }] } : {}),
+      ...(!isCreditNote && substitutes ? { related_documents: [{ relationship: '04', documents: [substitutes] }] } : {}),
+      ...(global ? { global: { periodicity: PERIODICIDADES[global.periodicidad as keyof typeof PERIODICIDADES].facturapi, months: global.meses, year: global.anio } } : {}),
       customer,
       items,
       currency,
@@ -232,7 +283,8 @@ export class MexicoSatProvider implements FiscalProvider {
         : {}),
       use: isCreditNote && !sinEfectos ? 'G02' : cfdiUse,
       payment_form: request.cfdi?.paymentForm || '03', // 03 = Transferencia electrónica
-      payment_method: request.cfdi?.paymentMethod || 'PUE',
+      // La global es SIEMPRE PUE (Guía de llenado del CFDI global).
+      payment_method: global ? 'PUE' : (request.cfdi?.paymentMethod || 'PUE'),
       // Facturapi documenta esta llave como la protección oficial contra
       // duplicados al reintentar la misma petición.
       idempotency_key: request.idempotencyKey,
@@ -299,6 +351,8 @@ export class MexicoSatProvider implements FiscalProvider {
           payment_form: body.payment_form,
           // Auditoría: con qué residencia fiscal se timbró a un extranjero.
           ...(extranjero ? { receptor_extranjero: foreignCountry } : {}),
+          ...(substitutes ? { sustituye_uuid: substitutes } : {}),
+          ...(global ? { global: { periodicidad: global.periodicidad, meses: global.meses, anio: global.anio } } : {}),
         },
       };
     } catch (err: any) {
@@ -331,9 +385,13 @@ export class MexicoSatProvider implements FiscalProvider {
     const key = request?.providerApiKey || FACTURAPI_KEY;
     if (!key) return { success: false, status: 'unknown', error: 'Falta la credencial del emisor para consultar la cancelación.' };
     const motive = MexicoSatProvider.cancelMotive(request?.reason);
+    // Motivo 01: el folio fiscal del comprobante que ya sustituyó a este
+    // (Facturapi: parámetro `substitution`, acepta su ID o el UUID).
+    const substitution = motive === '01' && UUID_RE.test(String(request?.substitution || '')) ? String(request?.substitution) : '';
     const url = `${FACTURAPI_BASE}/invoices/${encodeURIComponent(documentId)}`;
+    const deleteUrl = `${url}?motive=${motive}${substitution ? `&substitution=${encodeURIComponent(substitution)}` : ''}`;
     const read = async (method: 'GET' | 'DELETE'): Promise<FiscalCancelResponse> => {
-      const res = await fetch(method === 'DELETE' ? `${url}?motive=${motive}` : url, {
+      const res = await fetch(method === 'DELETE' ? deleteUrl : url, {
         method, headers: { Authorization: authHeader(key) }, signal: AbortSignal.timeout(25000),
       });
       const data = await res.json().catch(() => null);
@@ -347,13 +405,14 @@ export class MexicoSatProvider implements FiscalProvider {
           ? data.cancellation_status : 'unknown';
       return { success: status !== 'unknown', status,
         ...(status === 'unknown' ? { error: 'El estado fiscal aún no está confirmado.' } : {}),
-        rawProviderData: { status, invoice_status: data.status, cancellation_status: data.cancellation_status, motive, checked_at: new Date().toISOString() } };
+        rawProviderData: { status, invoice_status: data.status, cancellation_status: data.cancellation_status, motive,
+          ...(substitution ? { substitution } : {}), checked_at: new Date().toISOString() } };
     };
     try {
       // Consultar primero también recupera un DELETE aceptado cuya respuesta se perdió.
       const current = await read('GET');
       if (!current.success || request?.checkOnly || ['accepted', 'pending', 'verifying'].includes(current.status || '')) return current;
-      if (motive === '01') return { success: false, status: current.status,
+      if (motive === '01' && !substitution) return { success: false, status: current.status,
         error: 'El motivo 01 requiere una factura de sustitución; usa el flujo de sustitución fiscal.' };
       return await read('DELETE');
     } catch {

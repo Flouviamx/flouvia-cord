@@ -37,6 +37,7 @@ import { listOfferedCurrencies } from '../../../lib/currency';
 import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
 import { satLineI18n } from '../../../lib/sat-line-i18n';
+import { FORMAS_PAGO, USOS_CFDI } from '../../../lib/fiscal/cfdi-catalogos';
 import { normalizeTerm, termDueDate } from '../../../lib/payment-terms';
 import '../../../styles/modal.css';
 import '../../../styles/editor.css';
@@ -250,6 +251,9 @@ import { iconInner } from '../../../lib/icons';
     <div data-editor="invoice">
         <script type="application/json" id="edBoot" is:inline set:html={jsonForScript(BOOT)} />
 
+        {draft?.sustituyeA && (
+            <p class="ed-sust" role="status">{t(L, 'fsust.editor_banner').replace('{numero}', draft.sustituyeA.numero ?? '—')}</p>
+        )}
         <div class="editor-grid">
             <div class="ed-main">
                 <!-- Armar con IA — el mismo endpoint que el editor de cotizaciones:
@@ -383,13 +387,33 @@ import { iconInner } from '../../../lib/icons';
                 <section class="ed-block">
                     <div class="section-head"><h2>{L === 'en' ? 'Document type' : 'Tipo de documento'}</h2></div>
                     <label for="documentMode">{L === 'en' ? 'Issuance' : 'Emisión'}</label>
-                    <select id="documentMode" class="ed-select">
+                    <select id="documentMode" class="ed-select" disabled={!!draft?.sustituyeA}>
                         <option value="commercial" selected={!fiscalSelected}>{['MX', 'ES'].includes(country) ? 'Proforma' : (L === 'en' ? 'Commercial invoice' : 'Factura comercial')}</option>
                         {(selectableFiscal || fiscalSelected) && <option value="fiscal" selected={fiscalSelected} disabled={!selectableFiscal}>{isMx ? 'CFDI 4.0' : 'VERI*FACTU'}</option>}
                     </select>
                     <p class="add-hint">{L === 'en'
                         ? 'Commercial documents are included in Free. Integrated fiscal issuance requires Starter and an enabled fiscal setup. A pro forma does not replace a tax invoice.'
                         : 'Los documentos comerciales están incluidos en Gratis. La emisión fiscal integrada requiere Starter y configuración fiscal habilitada. Una proforma no sustituye una factura fiscal.'}</p>
+                    {isMx && (
+                        <div class="ed-cfdi" id="cfdiBlock" hidden={!fiscalSelected}>
+                            <h3 class="ed-cfdi-title">{t(L, 'fcfdi.titulo')}</h3>
+                            <label for="cfdiUso">{t(L, 'fcfdi.uso')}</label>
+                            <select id="cfdiUso" class="ed-select">
+                                <option value="">{t(L, 'fcfdi.uso_auto')}</option>
+                                {Object.entries(USOS_CFDI).map(([clave, u]) => (
+                                    <option value={clave} selected={draft?.cfdiUso === clave}>{clave} · {L === 'en' ? u.en : u.es}</option>
+                                ))}
+                            </select>
+                            <label for="cfdiForma">{t(L, 'fcfdi.forma')}</label>
+                            <select id="cfdiForma" class="ed-select">
+                                <option value="">{t(L, 'fcfdi.forma_auto')}</option>
+                                {Object.entries(FORMAS_PAGO).map(([clave, fp]) => (
+                                    <option value={clave} selected={draft?.cfdiFormaPago === clave}>{clave} · {L === 'en' ? fp.en : fp.es}</option>
+                                ))}
+                            </select>
+                            <p class="ed-cfdi-hint">{t(L, 'fcfdi.forma_ayuda')}</p>
+                        </div>
+                    )}
                 </section>
 
                 <!-- Notas -->
@@ -591,6 +615,11 @@ import { iconInner } from '../../../lib/icons';
         const refmt = () => { fmt = createMoney({ currency }); };
 
         const $ = (id: string) => document.getElementById(id);
+        // Datos del CFDI: solo tienen sentido si el documento se timbra.
+        $('documentMode')?.addEventListener('change', (e) => {
+            const bloque = $('cfdiBlock');
+            if (bloque) bloque.hidden = (e.target as HTMLSelectElement).value !== 'fiscal';
+        });
         const $lines = $('lines')!;
         const $empty = $('linesEmpty')!;
         // Clave SAT por línea (solo México): sub-fila bajo cada concepto.
@@ -1079,6 +1108,11 @@ import { iconInner } from '../../../lib/icons';
             service_date_end: ($('serviceDateEnd') as HTMLInputElement).value || undefined,
             notas: ($('notas') as HTMLTextAreaElement).value.trim() || undefined,
             iva_incluido: ivaIncluidoEl.checked,
+            // México: uso y forma de pago del CFDI ('' = automáticos).
+            ...(document.getElementById('cfdiUso') ? {
+                cfdi_uso: ($('cfdiUso') as HTMLSelectElement).value,
+                cfdi_forma_pago: ($('cfdiForma') as HTMLSelectElement).value,
+            } : {}),
             fx_buffer_pct: currency === BOOT.orgCurrency ? 0 : Number(($('fxBuffer') as HTMLInputElement).value) || 0,
             items: lines.map((l) => ({
                 producto_id: l.id,
@@ -1214,3 +1248,15 @@ import { iconInner } from '../../../lib/icons';
         if (currency !== BOOT.orgCurrency) refreshFx();
     }
 </script>
+
+<style>
+    /* México: datos del CFDI y aviso de sustitución. */
+    .ed-sust {
+        margin: 0 0 1.4rem; padding: 12px 16px; border-radius: 12px;
+        background: rgba(10, 25, 47, 0.05); color: var(--color-text); font-size: 0.84rem; line-height: 1.5;
+    }
+    .ed-cfdi { display: flex; flex-direction: column; gap: 0.45rem; margin-top: 1.4rem; }
+    .ed-cfdi[hidden] { display: none; }
+    .ed-cfdi-title { margin: 0 0 0.2rem; font-size: 0.86rem; font-weight: 650; color: var(--color-text); }
+    .ed-cfdi-hint { margin: 0.2rem 0 0; font-size: 0.74rem; line-height: 1.5; color: var(--color-text-muted); }
+</style>

@@ -67,6 +67,9 @@ export function mexicoItems(request: FiscalDocumentRequest) {
         // se rechaza aquí, con el concepto nombrado, en vez de llegar al PAC.
         product_key: satKey(line.productKey, DEFAULT_PRODUCT_KEY, isProductKey, line.description),
         unit_key: satKey(line.unitKey, DEFAULT_UNIT_KEY, isUnitKey, line.description),
+        // NoIdentificacion: en la factura global, el folio de la venta (Guía de
+        // llenado del CFDI global). Facturapi lo recibe como `sku`.
+        ...(line.identification ? { sku: String(line.identification).slice(0, 100) } : {}),
         price, tax_included: false,
         taxes: [
           { type: 'IVA', rate: line.taxRate, factor: line.taxRate === 0 ? 'Exento' : 'Tasa' },

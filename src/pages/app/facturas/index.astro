@@ -19,7 +19,7 @@ import { getFacturas, getFacturasResumen, getMyMembership, money } from '../../.
 import { memberCan } from '../../../lib/permissions';
 import { getActiveOrgId } from '../../../lib/db';
 import { checkEntitlement } from '../../../lib/org-entitlements';
-import { invoicingFeatureFor } from '../../../lib/fiscal/gate';
+import { invoicingFeatureFor, orgCountry } from '../../../lib/fiscal/gate';
 import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
 
@@ -35,6 +35,8 @@ const feature = await invoicingFeatureFor(orgId);
 // Regla 17: el gate se evalúa aquí también, no solo en el endpoint.
 const entitlementCheck = hasPerm ? await checkEntitlement(orgId, feature) : null;
 const hasAccess = hasPerm && (entitlementCheck?.ok ?? false);
+// La factura global (ventas al público en general) es un CFDI de México.
+const esMx = hasAccess ? (await orgCountry(orgId)) === 'MX' : false;
 
 const url = Astro.url;
 const filtros = {
@@ -100,6 +102,7 @@ import { iconInner } from '../../../lib/icons';
             </form>
             <a class="fac-rec-link" href={exportHref}>{L === 'en' ? 'Export CSV' : 'Exportar CSV'}</a>
             <a class="fac-rec-link" href="/app/facturas/recurrentes">{t(L, 'rec.ver')}</a>
+            {canCrear && esMx && <a class="fac-rec-link" href="/app/facturas/global">{t(L, 'fglob.boton')}</a>}
             {canCrear && (
                 <a class="fac-new-link" href="/app/facturas/nueva">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" set:html={iconInner('plus')}></svg>
