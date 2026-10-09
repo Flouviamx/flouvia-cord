@@ -48,6 +48,9 @@ function tradeParty(tag: string, party: EnParty, allowEmail: boolean, withContac
     const endpoint = endpointOf(party, allowEmail);
     const c = party.contact;
     return group(tag, [
+        // BT-29 / BT-46 con su esquema (en Francia, el SIRET: 0009). En el XSD
+        // los identificadores van antes del nombre.
+        ...(party.identifiers ?? []).map((x) => (x.scheme ? el('ram:GlobalID', x.id, { schemeID: x.scheme }) : el('ram:ID', x.id))),
         el('ram:Name', party.name),
         party.legalId ? group('ram:SpecifiedLegalOrganization', [el('ram:ID', party.legalId.id, { schemeID: party.legalId.scheme })]) : '',
         withContact && c ? group('ram:DefinedTradeContact', [
@@ -80,7 +83,11 @@ export function serializeCii(inv: En16931Invoice, profile: CiiProfile): string {
         group('ram:AssociatedDocumentLineDocument', [el('ram:LineID', l.id)]),
         group('ram:SpecifiedTradeProduct', [el('ram:Name', l.name)]),
         group('ram:SpecifiedLineTradeAgreement', [
-            group('ram:NetPriceProductTradePrice', [el('ram:ChargeAmount', decimal(l.netPrice, 10))]),
+            // Francia: precio bruto (BT-148) igual al neto, y el neto con seis
+            // decimales como máximo (BR-FR-DEC-03). Cord no aplica rebajas por
+            // unidad: la línea ya es su importe neto.
+            inv.frPrices ? group('ram:GrossPriceProductTradePrice', [el('ram:ChargeAmount', decimal(l.netPrice, 6))]) : '',
+            group('ram:NetPriceProductTradePrice', [el('ram:ChargeAmount', decimal(l.netPrice, inv.frPrices ? 6 : 10))]),
         ]),
         group('ram:SpecifiedLineTradeDelivery', [el('ram:BilledQuantity', decimal(l.quantity, 6), { unitCode: l.unitCode })]),
         group('ram:SpecifiedLineTradeSettlement', [
@@ -132,6 +139,10 @@ export function serializeCii(inv: En16931Invoice, profile: CiiProfile): string {
             el('ram:BasisAmount', amount(v.taxable)),
             el('ram:CategoryCode', v.category),
             el('ram:ExemptionReasonCode', v.exemptionCode),
+            // BT-8 (UNTDID 2475): 5 = fecha de la factura, la opción por la TVA
+            // sobre los débitos. En CII vive en cada grupo del desglose y debe
+            // ser el mismo en todos (Annexe 7 de la DGFiP, S1.13).
+            el('ram:DueDateTypeCode', inv.vatPointDateCode === 'invoice' ? '5' : undefined),
             // En el DESGLOSE la tasa va siempre, también con O (0): BR-O-05/06
             // solo la prohíben en línea y descuento, y XRechnung la exige en
             // todo grupo (BR-DE-14).
@@ -171,7 +182,10 @@ export function serializeCii(inv: En16931Invoice, profile: CiiProfile): string {
     return '<?xml version="1.0" encoding="UTF-8"?>\n'
         + `<rsm:CrossIndustryInvoice ${NS}>`
         + group('rsm:ExchangedDocumentContext', [
-            xr ? group('ram:BusinessProcessSpecifiedDocumentContextParameter', [el('ram:ID', BUSINESS_PROCESS)]) : '',
+            // BT-23: XRechnung declara el proceso de Peppol; el Factur-X de un
+            // emisor francés, su cadre de facturation (BR-FR-08).
+            xr ? group('ram:BusinessProcessSpecifiedDocumentContextParameter', [el('ram:ID', BUSINESS_PROCESS)])
+                : inv.businessProcess ? group('ram:BusinessProcessSpecifiedDocumentContextParameter', [el('ram:ID', inv.businessProcess)]) : '',
             group('ram:GuidelineSpecifiedDocumentContextParameter', [el('ram:ID', CII_GUIDELINE[profile])]),
         ])
         + group('rsm:ExchangedDocument', [

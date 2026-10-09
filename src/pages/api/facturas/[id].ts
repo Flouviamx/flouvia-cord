@@ -15,7 +15,7 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { sql, getActiveOrgId, logAudit, reqIp, withOrgTx } from '../../../lib/db';
 import { requirePerm, invalidateMoneyCaches, getFacturaDetalle } from '../../../lib/queries';
-import { createInvoiceDraft, finalizeInvoice, voidInvoice, createCreditNote, createDebitNote, updateInvoiceDraft, parseInvoiceItems, parseInvoiceReferences, parseServiceDates, parseCfdiOverrides, MAX_INVOICE_ITEMS } from '../../../lib/fiscal/invoices';
+import { createInvoiceDraft, finalizeInvoice, voidInvoice, createCreditNote, createDebitNote, updateInvoiceDraft, parseInvoiceItems, parseInvoiceReferences, parseServiceDates, parseCfdiOverrides, MAX_INVOICE_ITEMS, parseDeliveryAddress } from '../../../lib/fiscal/invoices';
 import { createSubstitutionDraft } from '../../../lib/fiscal/sustitucion';
 import { isMotivoCancelacion } from '../../../lib/fiscal/cfdi-catalogos';
 import { isFiscalDocument } from '../../../lib/fiscal/document-kind';
@@ -161,6 +161,8 @@ async function updateDraft(orgId: string, id: string, body: any, request: Reques
         // EE. UU.: el cálculo de sales tax de la vista previa (solo se reusa si coincide).
         usTaxCalculoId: body.us_tax_calculo_id,
         ...parseInvoiceReferences(body),
+        // Dirección de entrega de los bienes (Francia: mención obligatoria si difiere).
+        ...parseDeliveryAddress(body),
         ...parseCfdiOverrides(body),
         descuento: descuento.presente ? descuento.solicitud : undefined,
     });

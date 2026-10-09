@@ -1,0 +1,203 @@
+---
+// Ajustes › Datos fiscales (Francia): la emisión por plataforma autorizada.
+// Dice el estado real del riel ("Próximamente" mientras esté apagado), el del
+// alta del negocio con el enlace donde verifica su identidad y firma el
+// mandato (el único lugar donde se nombra la plataforma: ahí el negocio firma
+// con ella, excepción de la regla 14), que la recepción la lleva su propia
+// plataforma, y lo que necesita atención.
+import type { EstadoPaOrg } from '../../../lib/fiscal/transmision/estado';
+import { ETIQUETA_REGIMEN } from '../../../lib/fiscal/transmision/periodos';
+import { ESTADOS_DGFIP } from '../../../lib/fiscal/transmision/estados';
+import type { AppLocale } from '../../../i18n/app';
+
+interface Props { estado: EstadoPaOrg; locale: AppLocale; }
+const { estado: e, locale: L } = Astro.props;
+const en = L === 'en';
+const a = e.alta;
+const ALTA: Record<string, { es: string; en: string }> = {
+    solicitando: { es: 'Pidiendo el alta…', en: 'Requesting registration…' },
+    incierto: { es: 'Alta pedida, esperando confirmación de la plataforma', en: 'Registration requested, waiting for the platform to confirm' },
+    en_curso: { es: 'Alta en curso: falta verificar tu identidad y firmar el mandato', en: 'Registration in progress: verify your identity and sign the mandate' },
+    accion_requerida: { es: 'La plataforma necesita algo de ti para terminar el alta', en: 'The platform needs something from you to finish the registration' },
+    completada: { es: 'Alta completada: Cord emite y declara por ti', en: 'Registration complete: Cord issues and reports for you' },
+    cancelada: { es: 'Alta cancelada', en: 'Registration cancelled' },
+    rechazada: { es: 'La plataforma no aceptó el alta', en: 'The platform did not accept the registration' },
+    descartada: { es: 'El alta no llegó a crearse', en: 'The registration was not created' },
+};
+const TIPO: Record<string, { es: string; en: string }> = {
+    factura: { es: 'Factura', en: 'Invoice' },
+    cobro: { es: 'Cobro', en: 'Payment' },
+    reporte_factura: { es: 'Declaración de factura con el extranjero', en: 'International invoice report' },
+    reporte_transacciones: { es: 'Declaración de ventas a particulares', en: 'Consumer sales report' },
+    reporte_pago_factura: { es: 'Declaración de cobro', en: 'Payment report' },
+    reporte_pago_transacciones: { es: 'Declaración de cobros del día', en: 'Daily payments report' },
+};
+const puedePedir = e.activo && (!a || ['cancelada', 'rechazada', 'descartada'].includes(a.estado)) && !e.faltaPerfil;
+const enlaceVisible = a?.enlace && ['en_curso', 'accion_requerida'].includes(a.estado);
+const fecha = (iso: string | null) => (iso ? new Intl.DateTimeFormat(en ? 'en-GB' : 'es-ES', { dateStyle: 'medium' }).format(new Date(iso)) : '');
+---
+
+<p class="frpa-intro">{en
+    ? 'Since 1 September 2026, invoices between businesses established in France travel through an approved platform (PA), and sales to consumers and with other countries are reported (e-reporting). Cord issues through the platform and reports for you, from the invoices you already issue.'
+    : 'Desde el 1 de septiembre de 2026 las facturas entre empresas establecidas en Francia viajan por una plataforma autorizada (PA), y las ventas a particulares y con el extranjero se declaran (e-reporting). Cord emite por la plataforma y declara por ti, desde las facturas que ya emites.'}</p>
+
+<div class:list={['frpa-state', { 'is-on': e.activo && a?.estado === 'completada', 'is-warn': a && ['accion_requerida', 'rechazada', 'incierto'].includes(a.estado) }]}>
+    <span class="frpa-dot" aria-hidden="true"></span>
+    <span class="frpa-info">
+        {!e.activo ? (
+            <Fragment>
+                <span class="frpa-title">{en ? 'Coming soon' : 'Próximamente'}</span>
+                <span class="frpa-sub">{en
+                    ? 'Issuing through an approved platform is not active in Cord yet. Your invoices already carry the mentions the reform requires.'
+                    : 'La emisión por plataforma autorizada todavía no está activa en Cord. Tus facturas ya llevan las menciones que exige la reforma.'}</span>
+            </Fragment>
+        ) : a ? (
+            <Fragment>
+                <span class="frpa-title">{ALTA[a.estado]?.[en ? 'en' : 'es'] ?? a.estado}</span>
+                <span class="frpa-sub">SIREN {a.siren} · {ETIQUETA_REGIMEN[a.regimen]?.[en ? 'en' : 'es']}{a.completadaAt ? ` · ${fecha(a.completadaAt)}` : ''}</span>
+                {a.error && a.estado !== 'completada' && <span class="frpa-sub">{a.error}</span>}
+            </Fragment>
+        ) : (
+            <Fragment>
+                <span class="frpa-title">{en ? 'Not registered yet' : 'Todavía sin alta'}</span>
+                <span class="frpa-sub">{en
+                    ? 'Register your business with the platform Cord uses. You verify your identity and sign the mandate on its page.'
+                    : 'Da de alta tu negocio en la plataforma con que emite Cord. Verificas tu identidad y firmas el mandato en su página.'}</span>
+            </Fragment>
+        )}
+        {e.activo && e.entorno === 'preproduccion' && <span class="frpa-sub">{en ? 'Platform test environment: nothing sent has tax effect.' : 'Entorno de pruebas de la plataforma: nada de lo que se envía tiene efecto fiscal.'}</span>}
+    </span>
+</div>
+
+{enlaceVisible && (
+    <div class="frpa-actions">
+        <a class="frpa-btn" href={a!.enlace!} target="_blank" rel="noopener noreferrer">{en ? `Verify identity and sign the mandate with ${e.plataforma}` : `Verificar identidad y firmar el mandato con ${e.plataforma}`}</a>
+        <button type="button" class="frpa-btn-ghost" data-frpa-actualizar>{en ? 'Refresh status' : 'Actualizar estado'}</button>
+    </div>
+)}
+
+{e.activo && e.faltaPerfil && (!a || ['cancelada', 'rechazada', 'descartada'].includes(a.estado)) && (
+    <p class="frpa-note is-warn">{en ? e.faltaPerfil.en : e.faltaPerfil.es}</p>
+)}
+
+{puedePedir && (
+    <form class="frpa-form" data-frpa-alta>
+        <span class="frpa-t">{en ? 'Legal representative (optional)' : 'Representante legal (opcional)'}</span>
+        <div class="frpa-row">
+            <input class="s-input" name="representante_nombre" maxlength="100" autocomplete="given-name" placeholder={en ? 'First name' : 'Nombre'} />
+            <input class="s-input" name="representante_apellido" maxlength="100" autocomplete="family-name" placeholder={en ? 'Last name' : 'Apellido'} />
+            <input class="s-input" name="representante_cargo" maxlength="100" autocomplete="organization-title" placeholder={en ? 'Position (e.g. Président)' : 'Cargo (p. ej. Président)'} />
+        </div>
+        <span class="frpa-sub">{en
+            ? 'Cord creates your registration with your SIREN, VAT regime and address from Tax details. Then you verify your identity and sign the mandate on the platform page.'
+            : 'Cord crea tu alta con tu SIREN, tu régimen de TVA y tu dirección de Datos fiscales. Después verificas tu identidad y firmas el mandato en la página de la plataforma.'}</span>
+        <div class="frpa-actions">
+            <button type="submit" class="frpa-btn">{en ? 'Register with the platform' : 'Darme de alta en la plataforma'}</button>
+            <span class="frpa-msg" data-frpa-msg role="status" aria-live="polite"></span>
+        </div>
+    </form>
+)}
+
+<p class="frpa-note">{en
+    ? 'Cord only issues. To receive your suppliers’ invoices you need your reception platform, mandatory for every business established in France since 1 September 2026; registering here does not change it.'
+    : 'Cord solo emite. Para recibir las facturas de tus proveedores necesitas tu plataforma de recepción, obligatoria para toda empresa establecida en Francia desde el 1 de septiembre de 2026; darte de alta aquí no la cambia.'}</p>
+
+{e.activo && a?.estado === 'completada' && (
+    <ul class="frpa-cifras">
+        <li><strong>{e.enCola}</strong> {en ? 'queued' : 'en cola'}</li>
+        {e.sinConfirmar > 0 && <li class="is-warn"><strong>{e.sinConfirmar}</strong> {en ? 'without confirmation from the platform' : 'sin confirmación de la plataforma'}</li>}
+        {e.vencidos > 0 && <li class="is-err"><strong>{e.vencidos}</strong> {en ? 'reports past their deadline' : 'declaraciones con el plazo vencido'}</li>}
+        {e.pausada && <li class="is-warn">{en ? 'Paused: the platform did not serve the last request; it retries on its own.' : 'En pausa: la plataforma no atendió la última petición; se reintenta sola.'}</li>}
+    </ul>
+)}
+
+{e.incidencias.length > 0 && (
+    <div class="frpa-inc">
+        <span class="frpa-t">{en ? 'Needs attention' : 'Necesita atención'}</span>
+        {e.incidencias.map((inc) => {
+            const titulo = inc.tipo === 'estado'
+                ? `${inc.numero ?? ''} · ${ESTADOS_DGFIP[inc.estado]?.[en ? 'en' : 'es'] ?? inc.estado} (${inc.estado})`
+                : `${inc.numero ? `${inc.numero} · ` : ''}${TIPO[inc.tipo]?.[en ? 'en' : 'es'] ?? inc.tipo}${inc.estado === 'incierto' ? (en ? ' · no confirmation' : ' · sin confirmación') : ''}`;
+            return inc.documentoId ? (
+                <a class="frpa-inc-row" href={`/app/facturas/${inc.documentoId}`}><strong>{titulo}</strong>{inc.mensaje && <small>{inc.mensaje}</small>}</a>
+            ) : (
+                <div class="frpa-inc-row"><strong>{titulo}</strong>{inc.mensaje && <small>{inc.mensaje}</small>}{inc.limite && <small>{en ? 'Deadline' : 'Plazo'}: {inc.limite}</small>}</div>
+            );
+        })}
+    </div>
+)}
+
+<script>
+    const en = document.documentElement.lang?.startsWith('en');
+    const msg = document.querySelector<HTMLElement>('[data-frpa-msg]');
+    const decir = (texto: string, ok: boolean) => { if (msg) { msg.textContent = texto; msg.dataset.ok = ok ? '1' : ''; } };
+    async function pedir(body: Record<string, unknown>) {
+        const res = await fetch('/api/fiscal/plataforma', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        const d = await res.json().catch(() => ({}));
+        if (!res.ok) {
+            throw new Error(d.error === 'reauthentication_required'
+                ? (en ? 'For security, sign in again and retry.' : 'Por seguridad, vuelve a iniciar sesión y reintenta.')
+                : d.error || (en ? 'It could not be done. Try again.' : 'No se pudo. Intenta de nuevo.'));
+        }
+        return d;
+    }
+    document.querySelector<HTMLFormElement>('[data-frpa-alta]')?.addEventListener('submit', async (ev) => {
+        ev.preventDefault();
+        const form = ev.currentTarget as HTMLFormElement;
+        const btn = form.querySelector<HTMLButtonElement>('button[type="submit"]');
+        const fd = new FormData(form);
+        if (btn) btn.disabled = true;
+        decir(en ? 'Requesting…' : 'Pidiendo el alta…', true);
+        try {
+            const d = await pedir({
+                accion: 'alta',
+                representante_nombre: String(fd.get('representante_nombre') || ''),
+                representante_apellido: String(fd.get('representante_apellido') || ''),
+                representante_cargo: String(fd.get('representante_cargo') || ''),
+            });
+            if (d.enlace) window.open(d.enlace, '_blank', 'noopener');
+            location.reload();
+        } catch (err: any) {
+            decir(err?.message || '', false);
+            if (btn) btn.disabled = false;
+        }
+    });
+    document.querySelector<HTMLButtonElement>('[data-frpa-actualizar]')?.addEventListener('click', async (ev) => {
+        const btn = ev.currentTarget as HTMLButtonElement;
+        btn.disabled = true;
+        try { await pedir({ accion: 'actualizar' }); location.reload(); }
+        catch (err: any) { (window as any).cordToast?.(err?.message || '', 'err'); btn.disabled = false; }
+    });
+</script>
+
+<style>
+    .frpa-intro { font-size: 0.82rem; color: var(--color-text-muted); line-height: 1.55; margin: 0 0 1.1rem; }
+    .frpa-state { display: flex; gap: 0.7rem; align-items: flex-start; padding: 0.9rem 1rem; border-radius: 14px; background: var(--color-bg-subtle, #f5f5f7); }
+    .frpa-dot { width: 8px; height: 8px; margin-top: 0.4rem; border-radius: 50%; background: #d97706; flex-shrink: 0; }
+    .frpa-state.is-on .frpa-dot { background: var(--color-ok); }
+    .frpa-state.is-warn .frpa-dot { background: var(--color-danger, #dc2626); }
+    .frpa-info { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+    .frpa-title { font-size: 0.86rem; font-weight: 600; color: var(--color-text); }
+    .frpa-sub { font-size: 0.78rem; color: var(--color-text-muted); line-height: 1.5; overflow-wrap: anywhere; }
+    .frpa-note { font-size: 0.78rem; color: var(--color-text-muted); line-height: 1.5; margin: 0.9rem 0 0; }
+    .frpa-note.is-warn { color: var(--color-danger, #dc2626); }
+    .frpa-form { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1rem; }
+    .frpa-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5rem; }
+    @media (max-width: 720px) { .frpa-row { grid-template-columns: 1fr; } }
+    .frpa-t { display: block; font-size: 0.78rem; font-weight: 600; color: var(--color-text); }
+    .frpa-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.7rem; margin-top: 0.9rem; }
+    .frpa-btn { display: inline-flex; align-items: center; min-height: 44px; font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; color: #fff; background: var(--color-blue-deep); border: none; border-radius: 999px; padding: 0 18px; cursor: pointer; text-decoration: none; transition: transform 0.2s var(--ease-spring); }
+    .frpa-btn:hover { transform: scale(1.02); }
+    .frpa-btn:disabled { opacity: 0.6; cursor: wait; transform: none; }
+    .frpa-btn-ghost { min-height: 44px; font-family: var(--font-sans); font-size: 0.78rem; font-weight: 600; color: var(--color-text-muted); background: none; border: 1px solid var(--color-border); border-radius: 999px; padding: 0 14px; cursor: pointer; }
+    .frpa-msg { font-size: 0.78rem; font-weight: 600; color: var(--color-danger, #dc2626); }
+    .frpa-msg[data-ok="1"] { color: var(--color-text-muted); }
+    .frpa-cifras { display: flex; flex-wrap: wrap; gap: 0.4rem 1.2rem; margin: 1rem 0 0; padding: 0; list-style: none; font-size: 0.78rem; color: var(--color-text-muted); }
+    .frpa-cifras strong { color: var(--color-text); }
+    .frpa-cifras .is-warn strong, .frpa-cifras li.is-warn { color: #b45309; }
+    .frpa-cifras .is-err strong { color: var(--color-danger, #dc2626); }
+    .frpa-inc { margin-top: 1rem; }
+    .frpa-inc-row { display: flex; flex-direction: column; gap: 2px; padding: 0.5rem 0; border-top: 1px solid var(--color-border, rgba(10, 25, 47, 0.08)); text-decoration: none; min-height: 44px; }
+    .frpa-inc-row strong { font-size: 0.8rem; color: var(--color-text); }
+    .frpa-inc-row small { font-size: 0.75rem; color: var(--color-text-muted); line-height: 1.45; overflow-wrap: anywhere; }
+</style>

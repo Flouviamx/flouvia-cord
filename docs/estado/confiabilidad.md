@@ -108,7 +108,7 @@ La actualización documental no debe desplegar el worktree compartido completo.
    - `publish-packages.yml` — manual y solo desde main: publica Elements, Node,
      CLI y Python con provenance.
    - `status-probe.yml` — sonda horaria de disponibilidad (ver `cord-ops.md`).
-   - `cord-crons.yml` — los 19 crons de Cord, cada hora, con la misma tabla de
+   - `cord-crons.yml` — los 20 crons de Cord, cada hora, con la misma tabla de
      horarios de `vercel.json`. `cron/tareas` (recordatorio de tareas, oct 2026)
      vive SOLO aquí: corre cada hora y él mismo decide en qué organizaciones ya
      son las 8:00 locales. Existe porque el plan Hobby de Vercel solo

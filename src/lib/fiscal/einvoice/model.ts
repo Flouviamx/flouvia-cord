@@ -17,7 +17,7 @@
 // oficial CEN/TC 434 v1.3.16 (UBL y CII), XRechnung 3.0.2 (configuración del
 // validador KoSIT), Peppol BIS Billing 3.0.21 y Factur-X 1.07.2/1.09.
 
-import type { FiscalLineItem, FiscalParty } from '../index';
+import type { FiscalAddress, FiscalLineItem, FiscalParty } from '../index';
 import { getCountryProfile, isEuCountry, spainTaxTerritory } from '../../countries';
 import { currencyDecimals, normalizeCurrency } from '../../currency';
 import { checkTaxId } from '../../../../packages/elements/src/fiscal/tax-id';
@@ -26,6 +26,7 @@ import { docLangFor, termText, type DocLang } from '../invoice-pdf';
 import { EU_EXEMPTION_INFO, EXEMPTION_INFO, isEuExemptionCode, isExemptionReason, type ZeroVatCategory } from '../exemption';
 import { ibanValido } from '../../payout-fields';
 import { EAS_SCHEMES, checkLeitwegId, leitwegProblem, splitEInvoiceAddress } from './codes';
+import { cadreDe, decimales, entregaDistinta, fluxFr, sirenDe, tasaFrancesa, FR_INVOICE_ID, type CadreFacturation, type FluxFr } from './fr-ctc';
 
 /**
  * UNTDID 5305 en EN 16931: S, las categorías de tipo cero/exención y, para
@@ -89,6 +90,12 @@ export interface EInvoiceSource {
     iban?: string | null;
     bic?: string | null;
     accountName?: string | null;
+    /**
+     * Dirección de entrega de los bienes cuando no es la del cliente
+     * (`documentos_fiscales.delivery_address`, congelada al emitir). Va como
+     * BG-15; en Francia es mención obligatoria si difiere (Annexe 7, G6.16).
+     */
+    deliveryAddress?: FiscalAddress | null;
 }
 
 export interface EnAddress {
@@ -108,6 +115,8 @@ export interface EnParty {
     taxRegistrationId?: string;
     /** BT-30 / BT-47. */
     legalId?: { id: string; scheme?: string };
+    /** BT-29 / BT-46: identificadores de la parte (en Francia, el SIRET con esquema 0009). */
+    identifiers?: { id: string; scheme?: string }[];
     /** BT-34 / BT-49. */
     electronicAddress?: { scheme: string; id: string };
     address: EnAddress;
@@ -179,6 +188,24 @@ export interface En16931Invoice {
     /** BG-16. */
     paymentMeans?: { code: string; iban?: string; bic?: string; accountName?: string; remittance?: string };
     paymentTerms?: string;
+    /**
+     * Francia: cadre de facturation (BT-23, B1/S1/M1). Solo lo escribe el
+     * Factur-X: Peppol y XRechnung fijan su propio proceso en BT-23.
+     */
+    businessProcess?: CadreFacturation;
+    /**
+     * BT-8: la TVA es exigible en la fecha de la factura (opción "débits").
+     * CII lo escribe con UNTDID 2475 código 5 y UBL con UNTDID 2005 código 3.
+     */
+    vatPointDateCode?: 'invoice';
+    /** Francia: tratamiento de la operación (nota BAR). */
+    frFlux?: FluxFr;
+    /**
+     * Francia: el precio bruto (BT-148, obligatorio en el flujo 1 completo,
+     * Annexe 1 de la DGFiP) y el neto con seis decimales como máximo
+     * (BR-FR-DEC-03). Cord no aplica rebajas por unidad: bruto = neto.
+     */
+    frPrices?: boolean;
     allowances: EnAllowance[];
     lines: EnLine[];
     vat: EnVatBreakdown[];
@@ -260,7 +287,7 @@ export function frVatFromSiren(siren: string): string {
     return `FR${String(key).padStart(2, '0')}${siren}`;
 }
 
-interface PartyIds { vatId?: string; taxRegistrationId?: string; legalId?: { id: string; scheme?: string } }
+interface PartyIds { vatId?: string; taxRegistrationId?: string; legalId?: { id: string; scheme?: string }; identifiers?: { id: string; scheme?: string }[] }
 
 /**
  * Qué es cada identificador. Cord guarda UN `taxId` por parte; el estándar
@@ -271,14 +298,19 @@ interface PartyIds { vatId?: string; taxRegistrationId?: string; legalId?: { id:
 export function partyIds(party: FiscalParty, role: 'seller' | 'buyer', smallBusiness = false): PartyIds {
     const cc = clean(party.address?.countryCode).toUpperCase();
     const out: PartyIds = {};
-    // El registro mercantil capturado a mano. En Francia su forma dice qué es
-    // (SIREN 9 dígitos → esquema 0002, SIRET 14 → 0009); en el resto se
-    // declara sin esquema, que el estándar admite.
+    // El registro mercantil capturado a mano. En Francia su forma dice qué es:
+    // el registro LEGAL (BT-30/BT-47) es el SIREN con esquema 0002, y un SIRET
+    // de 14 dígitos es el identificador del establecimiento (BT-29/BT-46,
+    // esquema 0009) cuyo SIREN son sus 9 primeros dígitos (Annexe 7 de la
+    // DGFiP, G1.63 y G1.80; BR-FR-09 y BR-FR-10). En el resto se declara sin
+    // esquema, que el estándar admite.
     const legal = clean(party.legalRegistrationId?.id);
+    const frSiret = cc === 'FR' && !party.legalRegistrationId?.scheme && /^\d{14}$/.test(legal);
     const legalScheme = clean(party.legalRegistrationId?.scheme)
-        || (cc === 'FR' && /^\d{9}$/.test(legal) ? '0002' : cc === 'FR' && /^\d{14}$/.test(legal) ? '0009' : '');
-    const explicit = legal ? { id: legal, ...(legalScheme ? { scheme: legalScheme } : {}) } : undefined;
+        || (cc === 'FR' && (/^\d{9}$/.test(legal) || frSiret) ? '0002' : '');
+    const explicit = legal ? { id: frSiret ? legal.slice(0, 9) : legal, ...(legalScheme ? { scheme: legalScheme } : {}) } : undefined;
     if (explicit) out.legalId = explicit;
+    if (frSiret) out.identifiers = [{ id: legal, scheme: '0009' }];
     const raw = clean(party.taxId);
     if (!raw) return out;
     const checked = checkTaxId(cc, raw);
@@ -291,7 +323,8 @@ export function partyIds(party: FiscalParty, role: 'seller' | 'buyer', smallBusi
                 out.legalId ??= { id: normalized.slice(4), scheme: '0002' };
             } else if (kind === 'siren' || kind === 'siret') {
                 const siren = normalized.slice(0, 9);
-                out.legalId ??= kind === 'siren' ? { id: siren, scheme: '0002' } : { id: normalized, scheme: '0009' };
+                out.legalId ??= { id: siren, scheme: '0002' };
+                if (kind === 'siret' && !out.identifiers) out.identifiers = [{ id: normalized, scheme: '0009' }];
                 // Un vendedor que repercute TVA tiene número intracomunitario, y
                 // su clave se calcula del SIREN con la fórmula oficial. En
                 // franquicia no lo usa: el SIREN va como registro fiscal.
@@ -658,6 +691,26 @@ export function assessEInvoice(src: EInvoiceSource): EInvoiceAssessment {
         problems.push(p('buyer_vat_ae', 'La inversión del sujeto pasivo necesita el número de IVA del cliente.', "Reverse charge needs the client's VAT number.", 'cliente'));
     }
 
+    // ── Francia: menciones de la reforma (fr-ctc.ts) ──
+    // La categoría de la operación sale de la naturaleza de cada línea; sin
+    // ella el documento es anterior a la reforma y se escribe como antes.
+    const flux = fluxFr(src.issuer, src.recipient);
+    const cadre = flux ? cadreDe(lines) : null;
+    if (flux && cadre) {
+        // La dirección electrónica del emisor es obligatoria (BR-FR-13); sin
+        // una propia, la de su SIREN en el annuaire (esquema 0225). La del
+        // cliente francés DEBE ser "SIREN" o "SIREN_sufijo" con esquema 0225
+        // (BR-FR-12 y BR-FR-21): la que capturó el negocio si cumple, si no
+        // la de su SIREN, que el annuaire resuelve a su plataforma.
+        const sellerSiren = sirenDe(src.issuer)?.siren;
+        if (!seller.electronicAddress && sellerSiren) seller.electronicAddress = { scheme: '0225', id: sellerSiren };
+        if (flux === 'B2B') {
+            const buyerSiren = sirenDe(src.recipient)?.siren;
+            const ea = buyer.electronicAddress;
+            if (buyerSiren && !(ea?.scheme === '0225' && ea.id.startsWith(buyerSiren))) buyer.electronicAddress = { scheme: '0225', id: buyerSiren };
+        }
+    }
+
     // ── Fechas, periodo y entrega ──
     const issueDate = src.issuedAt ? isoDayIn(src.issuedAt, src.timeZone) : '';
     const serviceStart = calendarDay(src.serviceDate);
@@ -672,9 +725,24 @@ export function assessEInvoice(src: EInvoiceSource): EInvoiceAssessment {
     // la dirección completa y no solo el país: XRechnung pide ciudad y código
     // postal en cuanto hay dirección de entrega (BR-DE-10, BR-DE-11).
     if (categories.has('K') && !deliveryDate && !period) deliveryDate = issueDate;
-    const delivery = deliveryDate || categories.has('K')
-        ? { ...(deliveryDate ? { date: deliveryDate } : {}), ...(categories.has('K') && buyerCountry ? { address: { ...buyer.address } } : {}) }
+    // La dirección de entrega capturada en la factura (BG-15) se declara si
+    // difiere de la del cliente y la operación no es solo de servicios: en
+    // Francia es mención obligatoria en ese caso y no se transmite para una
+    // prestación de servicios (Annexe 7 de la DGFiP, G6.16).
+    const entrega = src.deliveryAddress && entregaDistinta(src.deliveryAddress, src.recipient?.address) && cadre !== 'S1'
+        ? enAddress({ legalName: '', address: src.deliveryAddress })
+        : null;
+    if (entrega && (!entrega.line1 || !entrega.city || !entrega.postalCode || !entrega.country)) {
+        problems.push(p('delivery_address', 'Completa la dirección de entrega de la factura (calle, ciudad, código postal y país).', 'Complete the invoice delivery address (street, city, postal code and country).', 'factura'));
+    }
+    const deliveryAddress = entrega ?? (categories.has('K') && buyerCountry ? { ...buyer.address } : undefined);
+    const delivery = deliveryDate || deliveryAddress
+        ? { ...(deliveryDate ? { date: deliveryDate } : {}), ...(deliveryAddress ? { address: deliveryAddress } : {}) }
         : undefined;
+    // BT-8: con la opción por la TVA sobre los débitos, la de un servicio es
+    // exigible en la fecha de la factura (G1.43, G1.67). Una venta de bienes
+    // la devenga con la entrega, con o sin opción: no lleva el código.
+    const vatOnDebits = !!src.issuer?.vatOnDebits && (cadre === 'S1' || cadre === 'M1');
 
     // ── Divisa contable del IVA (BT-6 / BT-111): Directiva, art. 230 ──
     const ledger = normalizeCurrency(src.ledgerCurrency ?? '', '');
@@ -712,7 +780,11 @@ export function assessEInvoice(src: EInvoiceSource): EInvoiceAssessment {
 
     const notes: { text: string; subject?: string }[] = [
         ...(clean(src.notes) ? [{ text: clean(src.notes) }] : []),
-        ...(issuerCountry === 'FR' && clean(src.recipient?.taxId) ? FR_B2B_NOTES : []),
+        ...(issuerCountry === 'FR' && (clean(src.recipient?.taxId) || flux === 'B2B') ? FR_B2B_NOTES : []),
+        // Qué tratamiento espera la factura (BR-FR-20): entre empresas
+        // francesas, facturación electrónica (B2B), que además obliga al
+        // SIREN del cliente y a su dirección 0225 (BR-FR-11, BR-FR-21).
+        ...(flux === 'B2B' && cadre ? [{ subject: 'BAR', text: 'B2B' }] : []),
     ];
 
     const invoice: En16931Invoice | null = problems.length ? null : {
@@ -737,6 +809,9 @@ export function assessEInvoice(src: EInvoiceSource): EInvoiceAssessment {
         ...(period ? { period } : {}),
         ...(paymentMeans ? { paymentMeans } : {}),
         ...(paymentTerms ? { paymentTerms } : {}),
+        ...(cadre ? { businessProcess: cadre, frPrices: true } : {}),
+        ...(flux ? { frFlux: flux } : {}),
+        ...(vatOnDebits ? { vatPointDateCode: 'invoice' as const } : {}),
         allowances,
         lines: enLines,
         vat,
@@ -819,6 +894,46 @@ export function formatProblems(format: En16931Format, assessment: EInvoiceAssess
         if (inv.seller.address.country === 'DE' && inv.buyer.address.country === 'DE' && !inv.paymentMeans) {
             out.push(p('iban', 'Peppol pide, entre empresas alemanas, cómo pagar: agrega tu IBAN en Ajustes › Cobros.', 'Between German companies Peppol requires payment instructions: add your IBAN in Settings › Payments.', 'cobros'));
         }
+    }
+    return out;
+}
+
+/**
+ * Lo que además pide transmitir la factura por una plataforma autorizada
+ * francesa: las reglas BR-FR del flujo 2 (XP Z12-012 v1.4, schematron FNFE
+ * v1.4.0.04) que dependen de datos que Cord captura. Solo se transmite una
+ * operación entre empresas francesas (B2B); el resto se reporta. Vacío = se
+ * puede transmitir el Factur-X tal cual.
+ */
+export function frCtcProblems(src: EInvoiceSource, assessment: EInvoiceAssessment): EInvoiceProblem[] {
+    const out = formatProblems('facturx', assessment);
+    const flux = fluxFr(src.issuer, src.recipient);
+    if (flux !== 'B2B') {
+        out.push(p('fr_not_b2b', 'Solo se transmite por la plataforma una factura entre empresas establecidas en Francia; esta operación se declara por e-reporting.', 'Only invoices between businesses established in France go through the platform; this transaction is declared through e-reporting.'));
+        return out;
+    }
+    const lines = Array.isArray(src.lines) ? src.lines : [];
+    if (!cadreDe(lines)) {
+        out.push(p('fr_operation_category', 'Falta decir si cada concepto es un bien o un servicio: es la categoría de la operación que exige la factura electrónica francesa. Elígelo en el producto o, para los conceptos sin producto, en Ajustes › Perfil fiscal.', 'Each line must say whether it is goods or a service: it is the transaction category French e-invoicing requires. Choose it on the product or, for lines without a product, in Settings › Tax profile.', 'fiscal'));
+    }
+    if (!sirenDe(src.issuer)) {
+        out.push(p('fr_seller_siren', 'Falta el SIREN de tu negocio en Ajustes › Perfil fiscal (o tu número de TVA, que lo contiene).', "Your business SIREN is missing in Settings › Tax profile (or your TVA number, which contains it).", 'fiscal'));
+    }
+    if (!FR_INVOICE_ID.test(String(src.invoiceNumber || ''))) {
+        out.push(p('fr_invoice_number', 'El número de factura solo puede tener letras, dígitos y los signos + - _ /, hasta 35 caracteres. Ajusta el prefijo en Ajustes › Perfil fiscal.', 'The invoice number may only contain letters, digits and + - _ /, up to 35 characters. Adjust the prefix in Settings › Tax profile.', 'fiscal'));
+    }
+    if (lines.some((l) => !tasaFrancesa(Number(l.taxRate) || 0))) {
+        out.push(p('fr_vat_rate', 'Un concepto lleva una tasa de TVA que no existe en Francia (20, 10, 5.5, 2.1 % y las de ultramar). Corrígela en Ajustes › Impuestos.', 'A line carries a VAT rate that does not exist in France (20, 10, 5.5, 2.1% and the overseas ones). Fix it in Settings › Taxes.', 'impuestos'));
+    }
+    if (lines.some((l) => decimales(Number(l.quantity)) > 4)) {
+        out.push(p('fr_quantity', 'Una cantidad lleva más de cuatro decimales; la factura electrónica francesa admite cuatro.', 'A quantity has more than four decimals; French e-invoices allow four.', 'factura'));
+    }
+    const inv = assessment.invoice;
+    if (inv && inv.currency !== 'EUR' && inv.taxCurrency !== 'EUR') {
+        out.push(p('fr_tax_currency', 'Una factura en otra divisa debe declarar la TVA en euros: lleva tu contabilidad en EUR para transmitirla.', 'An invoice in another currency must state the VAT in euros: keep your books in EUR to transmit it.', 'fiscal'));
+    }
+    if (inv && inv.typeCode === '381' && !inv.preceding?.issueDate) {
+        out.push(p('fr_credit_note_ref', 'La nota de crédito debe citar la factura que corrige con su fecha.', 'The credit note must cite the invoice it corrects, with its date.'));
     }
     return out;
 }

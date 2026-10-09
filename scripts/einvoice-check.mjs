@@ -21,6 +21,19 @@
 //   veraPDF    PDF/A-3b del Factur-X, vía Mustang 2.26 (que además vuelve a
 //              validar el XML incrustado)
 //
+// Y las facturas de la reforma francesa (muestras con `frCtc`: servicios con
+// la opción por los débitos, bienes y servicios con entrega en otra dirección,
+// bienes en USD y avoir), cuyo Factur-X pasa además por los validadores que
+// publica FNFE-MPE para el flujo 2 de las plataformas autorizadas:
+//
+//   XSD        Factur-X 1.09.2 EN16931 (paquete FR CTC v1.4.0.04)
+//   BR-FR      schematron BR-FR-Flux2 v1.4.0.04 (04/09/2026): las reglas BR-FR
+//              de la norma AFNOR XP Z12-012 v1.4, todas fatales
+//   Factur-X   el schematron Factur-X 1.09.2 EN16931 del mismo paquete
+//
+// La DGFiP (especificaciones externas v3.2) publica el XSD y las reglas de
+// gestión, no un schematron: el de FNFE-MPE es el que implementa la norma.
+//
 // Y las Facturae 3.2.2 de emisores españoles (`FACTURAE_SAMPLES`: IRPF, tipos
 // mezclados con descuento, IGIC, IPSI, intracomunitaria, exportación y
 // rectificativa), sin firmar y firmadas con un certificado de prueba:
@@ -129,6 +142,14 @@ const ARTEFACTS = {
         url: 'https://uri.etsi.org/01903/v1.3.2/XAdES01903v132-201601.xsd',
         sha256: '5d491d4031fc98cdc2b515810c70578e9c52dfdc132f1ffa4a267a51084fcb68',
         extract: false,
+    },
+    // Reforma francesa: schematrons BR-FR del flujo 2 v1.4.0.04 (FNFE-MPE,
+    // 04/09/2026) con el XSD y el schematron Factur-X 1.09.2 que los acompañan.
+    // Las entradas __MACOSX/ del ZIP quedan fuera por el filtro de prefijo.
+    fnfe: {
+        url: 'https://fnfe-mpe.org/wp-content/uploads/2026/09/2026_09_04_FNFE_SCHEMATRONS_FR_CTC_V1.4.0.04.zip',
+        sha256: '9fddfbbb081ec969374dcefd24615fb1d736fdd974155890fc24a413afd0c01e',
+        extract: ['2026_09_04_FNFE_SCHEMATRONS_FR_CTC_V1.4.0.04/Factur-X_1.09.2.fixFR04/EN16931/'],
     },
 };
 
@@ -443,14 +464,18 @@ async function main() {
     const CII_XSD = join(XR, 'resources/cii/16b/xsd/CrossIndustryInvoice_100pD16B.xsd');
     const FX = join(dirs.facturx, 'facturx/xsd_and_schematron/facturx-en16931');
     const PEPPOL = join(dirs.peppol, 'external/schematron/openpeppol/2026.5/xslt');
+    const FNFE = join(dirs.fnfe, '2026_09_04_FNFE_SCHEMATRONS_FR_CTC_V1.4.0.04/Factur-X_1.09.2.fixFR04/EN16931');
     const XSLT = {
         'cen-ubl': join(dirs.cenUbl, 'xslt/EN16931-UBL-validation.xslt'),
         'cen-cii': join(dirs.cenCii, 'xslt/EN16931-CII-validation.xslt'),
         peppol: join(PEPPOL, 'PEPPOL-EN16931-UBL.xslt'),
         'peppol-cen': join(PEPPOL, 'CEN-EN16931-UBL.xslt'),
         'facturx-sch': join(FX, 'FACTUR-X_EN16931.xslt'),
+        brfr: join(FNFE, '2xslt/BR-FR-Flux2-Schematron-CII.xslt'),
+        'facturx-fr': join(FNFE, '2xslt/FACTUR-X_EN16931.xslt'),
     };
-    for (const f of [KOSIT_JAR, UBL_XSD.Invoice, UBL_XSD.CreditNote, CII_XSD, join(FX, 'Factur-X_EN16931.xsd'), ...Object.values(XSLT)]) {
+    const FNFE_XSD = join(FNFE, '1xsd/Factur-X_EN16931.xsd');
+    for (const f of [KOSIT_JAR, UBL_XSD.Invoice, UBL_XSD.CreditNote, CII_XSD, join(FX, 'Factur-X_EN16931.xsd'), FNFE_XSD, ...Object.values(XSLT)]) {
         if (!existsSync(f)) throw new Error(`artefacto incompleto: falta ${f}`);
     }
     const FACTURAE_XSD = facturaeSchemas(paths);
@@ -468,7 +493,7 @@ async function main() {
 
     const RUN = join(CACHE, 'run');
     rmSync(RUN, { recursive: true, force: true });
-    const D = { xrUbl: join(RUN, 'xrechnung-ubl'), xrCii: join(RUN, 'xrechnung-cii'), peppol: join(RUN, 'peppol'), fxXml: join(RUN, 'facturx-xml'), fxPdf: join(RUN, 'facturx-pdf'), fe: join(RUN, 'facturae'), feSigned: join(RUN, 'facturae-firmada') };
+    const D = { xrUbl: join(RUN, 'xrechnung-ubl'), xrCii: join(RUN, 'xrechnung-cii'), peppol: join(RUN, 'peppol'), fxXml: join(RUN, 'facturx-xml'), fxPdf: join(RUN, 'facturx-pdf'), fe: join(RUN, 'facturae'), feSigned: join(RUN, 'facturae-firmada'), frCtc: join(RUN, 'fr-ctc') };
     for (const d of Object.values(D)) mkdirSync(d, { recursive: true });
 
     const generationErrors = [];
@@ -491,6 +516,8 @@ async function main() {
                 const { pdf, xml } = buildFacturX(samplePdfInput(s.source), inv, fonts);
                 put(D.fxXml, `${s.id}.xml`, xml, meta);
                 put(D.fxPdf, `${s.id}.pdf`, pdf, meta);
+                // El mismo XML que va dentro del PDF, contra las reglas francesas.
+                if (s.frCtc) put(D.frCtc, `${s.id}.xml`, xml, { ...meta, format: 'fr-ctc' });
             }
         }
     }
@@ -534,6 +561,17 @@ async function main() {
     negative(D.peppol, 'fr-b2b.xml', 'neg-total.xml', once(/(<cbc:PayableAmount currencyID="EUR">)1344\.00</, (_m, open) => `${open}1345.00<`), ['cen-ubl', 'peppol-cen'], 'importe a pagar que no cuadra (BR-CO-16)');
     negative(D.fxXml, 'fr-b2b.xml', 'neg-xsd.xml', (s) => s.replace('<ram:SellerTradeParty>', '<ram:SellerTradePartyX>').replace('</ram:SellerTradeParty>', '</ram:SellerTradePartyX>'), ['xsd'], 'elemento fuera del esquema');
     negative(D.fxXml, 'fr-b2b.xml', 'neg-total.xml', once(/<ram:GrandTotalAmount>1344\.00</, '<ram:GrandTotalAmount>1345.00<'), ['facturx-sch', 'cen-cii'], 'total con IVA que no cuadra (BR-CO-15)');
+    // Reforma francesa: sin categoría de la operación (BR-FR-08), sin la mención
+    // de la indemnización por cobro (BR-FR-05, nota PMT), con una tasa que
+    // Francia no tiene (BR-FR-16) y con la dirección del cliente fuera del
+    // esquema 0225 del annuaire (BR-FR-13).
+    negative(D.frCtc, 'fr-ctc-services.xml', 'neg-sin-cadre.xml', once(/<ram:BusinessProcessSpecifiedDocumentContextParameter>[\s\S]*?<\/ram:BusinessProcessSpecifiedDocumentContextParameter>/, ''), ['brfr'], 'sin cadre de facturation (BR-FR-08)');
+    negative(D.frCtc, 'fr-ctc-services.xml', 'neg-sin-pmt.xml', once(/<ram:IncludedNote>(?:(?!<\/ram:IncludedNote>)[\s\S])*?<ram:SubjectCode>PMT<\/ram:SubjectCode><\/ram:IncludedNote>/, ''), ['brfr'], 'sin la indemnización forfaitaire de cobro (BR-FR-05)');
+    negative(D.frCtc, 'fr-ctc-services.xml', 'neg-tasa.xml', (s) => s.replace(/<ram:RateApplicablePercent>20(\.0+)?<\/ram:RateApplicablePercent>/g, '<ram:RateApplicablePercent>19</ram:RateApplicablePercent>'), ['brfr'], 'tasa de TVA que Francia no tiene (BR-FR-16)');
+    negative(D.frCtc, 'fr-ctc-services.xml', 'neg-bt49.xml', (s) => {
+        const at = s.indexOf('<ram:BuyerTradeParty>');
+        return s.slice(0, at) + s.slice(at).replace(/<ram:URIID schemeID="0225">/, '<ram:URIID schemeID="0009">');
+    }, ['brfr'], 'dirección del cliente fuera del annuaire (BR-FR-13)');
     negative(D.fxPdf, 'fr-b2b.pdf', 'neg-pdfa.pdf', (s) => s.replace('/OutputIntents', '/OutputIntentX'), ['verapdf'], 'PDF sin OutputIntent (ISO 19005-3, 6.2.4.2)');
     // IGIC (categoría L): una causa de exención en su desglose la prohíbe BR-AF-10.
     negative(D.peppol, 'igic.xml', 'neg-igic-exencion.xml', (s) => s.replace(
@@ -579,6 +617,9 @@ async function main() {
         async () => record('peppol', await schematron(KOSIT_JAR, XSLT.peppol, D.peppol, join(SVRL, 'peppol'))),
         async () => record('peppol-cen', await schematron(KOSIT_JAR, XSLT['peppol-cen'], D.peppol, join(SVRL, 'peppol-cen'))),
         async () => record('facturx-sch', await schematron(KOSIT_JAR, XSLT['facturx-sch'], D.fxXml, join(SVRL, 'facturx'))),
+        async () => record('xsd', await xsd(filesIn(D.frCtc), () => FNFE_XSD)),
+        async () => record('brfr', await schematron(KOSIT_JAR, XSLT.brfr, D.frCtc, join(SVRL, 'br-fr'))),
+        async () => record('facturx-fr', await schematron(KOSIT_JAR, XSLT['facturx-fr'], D.frCtc, join(SVRL, 'facturx-fr'))),
         // Una corrida por carpeta: el informe se nombra por el archivo y UBL y CII comparten nombres.
         async () => record('kosit', await kosit(KOSIT_JAR, XR, filesIn(D.xrUbl), join(CACHE, 'kosit', 'ubl'))),
         async () => record('kosit', await kosit(KOSIT_JAR, XR, filesIn(D.xrCii), join(CACHE, 'kosit', 'cii'))),
@@ -590,8 +631,8 @@ async function main() {
     await pool(jobs, Math.max(2, Math.min(4, Math.floor(availableParallelism() / 2))));
 
     // ── Veredicto ──
-    const VALIDATORS = ['xsd', 'cen-ubl', 'cen-cii', 'kosit', 'peppol', 'peppol-cen', 'facturx-sch', 'verapdf', 'xmldsig'];
-    const LABEL = { xsd: 'XSD', 'cen-ubl': 'CEN UBL', 'cen-cii': 'CEN CII', kosit: 'KoSIT XRechnung', peppol: 'Peppol', 'peppol-cen': 'Peppol CEN', 'facturx-sch': 'Factur-X', verapdf: 'veraPDF + Mustang', xmldsig: 'XMLDSig (JDK)' };
+    const VALIDATORS = ['xsd', 'cen-ubl', 'cen-cii', 'kosit', 'peppol', 'peppol-cen', 'facturx-sch', 'brfr', 'facturx-fr', 'verapdf', 'xmldsig'];
+    const LABEL = { xsd: 'XSD', 'cen-ubl': 'CEN UBL', 'cen-cii': 'CEN CII', kosit: 'KoSIT XRechnung', peppol: 'Peppol', 'peppol-cen': 'Peppol CEN', 'facturx-sch': 'Factur-X', brfr: 'BR-FR', 'facturx-fr': 'Factur-X 1.09.2', verapdf: 'veraPDF + Mustang', xmldsig: 'XMLDSig (JDK)' };
     const failures = [];
     const warningIds = new Map();
     const rel = (f) => f.slice(RUN.length + 1);
@@ -628,6 +669,7 @@ async function main() {
         'facturx-pdf': ['verapdf'],
         facturae: ['xsd'],
         'facturae-firmada': ['xsd', 'xmldsig'],
+        'fr-ctc': ['xsd', 'brfr', 'facturx-fr'],
     };
     for (const f of Object.keys(written)) {
         const group = basename(dirname(f));

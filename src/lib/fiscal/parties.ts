@@ -37,6 +37,10 @@ export function partiesFrom(head: any, issuerCountry: string): { issuer: FiscalP
       taxSystem: head.org_tax_system ? String(head.org_tax_system) : undefined,
       ...((issuerCountry === 'FR' || issuerCountry === 'DE') && fiscalMetadata.vat_regime === 'small_business'
         ? { vatRegime: 'small_business' as const } : {}),
+      // Francia: la opción por pagar la TVA sobre los débitos (art. 269-2-c del
+      // CGI) es una mención de la factura desde la reforma (BT-8) y decide qué
+      // cobros se reportan; se congela con el emisor.
+      ...(issuerCountry === 'FR' && fiscalMetadata.fr_tva_debits === 'true' ? { vatOnDebits: true } : {}),
       ...(issuerCountry === 'CA' && fiscalMetadata.qst_number
         ? { extraTaxIds: [{ kind: 'qst' as const, value: fiscalMetadata.qst_number }] } : {}),
       email: head.org_email ? String(head.org_email) : undefined,

@@ -25,7 +25,7 @@ import { buildFacturX } from './facturx';
 import { assessFacturae, type FacturaeSource } from './facturae';
 import { signFacturae, type FacturaeSigner } from './xades';
 import { credencialesFirma } from '../verifactu/cert';
-import type { FiscalLineItem, FiscalParty, FiscalRetencion } from '../index';
+import type { FiscalAddress, FiscalLineItem, FiscalParty, FiscalRetencion } from '../index';
 
 export interface EInvoiceFile {
     filename: string;
@@ -76,6 +76,7 @@ export function sourceFromRow(doc: any): FacturaeSource {
         issuer: (doc.issuer_snapshot || {}) as FiscalParty,
         recipient: (doc.recipient_snapshot || {}) as FiscalParty,
         lines: (Array.isArray(doc.line_items_snapshot) ? doc.line_items_snapshot : []) as FiscalLineItem[],
+        deliveryAddress: doc.delivery_address && typeof doc.delivery_address === 'object' ? doc.delivery_address as FiscalAddress : null,
         ...payee(doc),
     };
 }

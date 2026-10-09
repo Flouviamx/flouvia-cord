@@ -36,6 +36,8 @@ function party(tag: string, p: EnParty, allowEmail: boolean): string {
     const c = p.contact;
     return group(tag, [group('cac:Party', [
         endpoint ? el('cbc:EndpointID', endpoint.id, { schemeID: endpoint.scheme }) : '',
+        // BT-29 / BT-46 (en Francia, el SIRET con esquema 0009).
+        ...(p.identifiers ?? []).map((x) => group('cac:PartyIdentification', [el('cbc:ID', x.id, { schemeID: x.scheme })])),
         group('cac:PostalAddress', [
             el('cbc:StreetName', a.line1),
             el('cbc:AdditionalStreetName', a.line2),
@@ -80,9 +82,12 @@ export function serializeUbl(inv: En16931Invoice, profile: UblProfile): string {
     // admite una sola nota salvo entre dos empresas alemanas
     // (PEPPOL-EN16931-R002): varias se unen en una, sin códigos.
     const bothDe = inv.seller.address.country === 'DE' && inv.buyer.address.country === 'DE';
-    const notes = profile === 'peppol' && inv.notes.length > 1 && !bothDe
-        ? [inv.notes.map((n) => n.text).join('\n')]
-        : inv.notes.map((n) => (n.subject ? `#${n.subject}#${n.text}` : n.text));
+    // La nota BAR (tratamiento en la red francesa, BR-FR-20) es un dato de
+    // enrutamiento: en la nota única de Peppol no se mezcla con el texto.
+    const peppolNotes = inv.notes.filter((n) => n.subject !== 'BAR');
+    const notes = profile === 'peppol' && peppolNotes.length > 1 && !bothDe
+        ? [peppolNotes.map((n) => n.text).join('\n')]
+        : (profile === 'peppol' ? peppolNotes : inv.notes).map((n) => (n.subject ? `#${n.subject}#${n.text}` : n.text));
     const pm = inv.paymentMeans;
 
     const head = [
@@ -96,7 +101,12 @@ export function serializeUbl(inv: En16931Invoice, profile: UblProfile): string {
         el('cbc:DocumentCurrencyCode', cur),
         el('cbc:TaxCurrencyCode', inv.taxCurrency),
         el('cbc:BuyerReference', inv.buyerReference),
-        inv.period ? group('cac:InvoicePeriod', [el('cbc:StartDate', inv.period.start), el('cbc:EndDate', inv.period.end)]) : '',
+        // BG-14 y BT-8 (UNTDID 2005: 3 = fecha de la factura, la opción por la
+        // TVA sobre los débitos; Annexe 7 de la DGFiP, G1.43).
+        inv.period || inv.vatPointDateCode ? group('cac:InvoicePeriod', [
+            el('cbc:StartDate', inv.period?.start), el('cbc:EndDate', inv.period?.end),
+            el('cbc:DescriptionCode', inv.vatPointDateCode === 'invoice' ? '3' : undefined),
+        ]) : '',
         inv.purchaseOrder ? group('cac:OrderReference', [el('cbc:ID', inv.purchaseOrder)]) : '',
         inv.preceding ? group('cac:BillingReference', [group('cac:InvoiceDocumentReference', [
             el('cbc:ID', inv.preceding.number),

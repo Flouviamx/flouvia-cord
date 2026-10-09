@@ -10,9 +10,10 @@ import { generateKeyPairSync, createHash, verify as verifySignature } from 'node
 import forge from 'node-forge';
 import { EINVOICE_SAMPLES, FACTURAE_SAMPLES, CANARIAS_SELLER, CEUTA_SELLER, DE_SELLER, FR_SELLER, sampleLine, samplePdfInput } from './helpers/einvoice-samples';
 import {
-    assessEInvoice, calendarDay, formatProblems, frVatFromSiren, isEInvoiceFormat, isoDayIn, lineVat, partyIds, unitPrice,
+    assessEInvoice, calendarDay, formatProblems, frCtcProblems, frVatFromSiren, isEInvoiceFormat, isoDayIn, lineVat, partyIds, unitPrice,
     RATED_CATEGORIES, type EInvoiceSource,
 } from '../src/lib/fiscal/einvoice/model';
+import { cadreDe, decimales, entregaDistinta, fluxFr, sirenDe, tasaFrancesa } from '../src/lib/fiscal/einvoice/fr-ctc';
 import { serializeUbl, UBL_CUSTOMIZATION, UBL_PROFILE_ID } from '../src/lib/fiscal/einvoice/ubl';
 import { serializeCii, CII_GUIDELINE } from '../src/lib/fiscal/einvoice/cii';
 import { buildFacturX, FACTURX_FILENAME } from '../src/lib/fiscal/einvoice/facturx';
@@ -587,5 +588,133 @@ describe('firma XAdES-EPES de la Facturae (política v3.1)', () => {
 
     it('el emisor del certificado en RFC 2253, con las comas escapadas', () => {
         expect(issuerNameRfc2253(certDer)).toBe('CN=Firma de prueba,O=Prueba\\, S.L.,C=ES');
+    });
+});
+
+describe('Francia: menciones de la reforma (CTC) en el Factur-X', () => {
+    const fr = (id: string) => byId(id);
+    const cii = (src: EInvoiceSource) => serializeCii(assessEInvoice(src).invoice!, 'facturx-en16931');
+    const ubl = (src: EInvoiceSource) => serializeUbl(assessEInvoice(src).invoice!, 'peppol');
+    const codes = (src: EInvoiceSource) => frCtcProblems(src, assessEInvoice(src)).map((x) => x.code);
+
+    it('las muestras francesas se pueden transmitir tal cual', () => {
+        const ctc = EINVOICE_SAMPLES.filter((x) => x.frCtc);
+        expect(ctc.map((x) => x.id)).toEqual(['fr-ctc-services', 'fr-ctc-mixte', 'fr-ctc-biens-usd', 'fr-ctc-avoir']);
+        for (const x of ctc) expect(codes(x.source), x.id).toEqual([]);
+    });
+
+    it('categoría de la operación (BT-23) desde la naturaleza de cada línea: S1, M1, B1', () => {
+        expect(assessEInvoice(fr('fr-ctc-services').source).invoice?.businessProcess).toBe('S1');
+        expect(assessEInvoice(fr('fr-ctc-mixte').source).invoice?.businessProcess).toBe('M1');
+        expect(assessEInvoice(fr('fr-ctc-biens-usd').source).invoice?.businessProcess).toBe('B1');
+        expect(cii(fr('fr-ctc-mixte').source)).toContain('<ram:BusinessProcessSpecifiedDocumentContextParameter><ram:ID>M1</ram:ID>');
+        // XRechnung conserva su propio proceso en BT-23.
+        expect(serializeCii(assessEInvoice(fr('fr-ctc-mixte').source).invoice!, 'xrechnung')).not.toContain('<ram:ID>M1</ram:ID>');
+        expect(cadreDe([])).toBeNull();
+        expect(cadreDe([{ nature: 'goods' }, {}])).toBeNull();
+    });
+
+    it('sin naturaleza declarada el documento se escribe como antes de la reforma', () => {
+        const xml = cii(fr('fr-b2b').source);
+        expect(xml).not.toContain('BusinessProcessSpecifiedDocumentContextParameter');
+        expect(xml).not.toContain('<ram:SubjectCode>BAR</ram:SubjectCode>');
+        expect(xml).not.toContain('GrossPriceProductTradePrice');
+        expect(codes(fr('fr-b2b').source)).toContain('fr_operation_category');
+    });
+
+    it('opción por los débitos (BT-8): código 5 en CII y 3 en UBL, solo con servicios', () => {
+        expect(cii(fr('fr-ctc-services').source)).toContain('<ram:DueDateTypeCode>5</ram:DueDateTypeCode>');
+        expect(ubl(fr('fr-ctc-services').source)).toContain('<cac:InvoicePeriod><cbc:DescriptionCode>3</cbc:DescriptionCode></cac:InvoicePeriod>');
+        // Una venta de bienes devenga la TVA con la entrega, con o sin opción.
+        expect(cii(fr('fr-ctc-biens-usd').source)).not.toContain('DueDateTypeCode');
+        const sinOpcion = clone(fr('fr-ctc-services').source);
+        sinOpcion.issuer = { ...sinOpcion.issuer!, vatOnDebits: false };
+        expect(cii(sinOpcion)).not.toContain('DueDateTypeCode');
+    });
+
+    it('nota BAR "B2B" (BR-FR-20), fuera de la nota única de Peppol', () => {
+        expect(cii(fr('fr-ctc-services').source)).toContain('<ram:IncludedNote><ram:Content>B2B</ram:Content><ram:SubjectCode>BAR</ram:SubjectCode></ram:IncludedNote>');
+        expect(ubl(fr('fr-ctc-services').source)).not.toContain('B2B');
+    });
+
+    it('cliente por SIRET: SIREN como registro legal (0002) y SIRET como identificador (0009)', () => {
+        const buyer = fr('fr-ctc-mixte').source.recipient!;
+        expect(partyIds(buyer, 'buyer')).toMatchObject({ legalId: { id: '552100554', scheme: '0002' }, identifiers: [{ id: '55210055400013', scheme: '0009' }] });
+        const xml = cii(fr('fr-ctc-mixte').source);
+        expect(xml).toContain('<ram:BuyerTradeParty><ram:GlobalID schemeID="0009">55210055400013</ram:GlobalID>');
+        // Su dirección electrónica, la de su SIREN en el annuaire (BR-FR-12/21).
+        expect(assessEInvoice(fr('fr-ctc-mixte').source).invoice?.buyer.electronicAddress).toEqual({ scheme: '0225', id: '552100554' });
+        expect(sirenDe(buyer)).toEqual({ siren: '552100554', siret: '55210055400013' });
+    });
+
+    it('una dirección del cliente fuera del annuaire se sustituye por la de su SIREN', () => {
+        const src = clone(fr('fr-ctc-services').source);
+        src.recipient = { ...src.recipient!, electronicAddress: { scheme: 'EM', id: 'achats@dupont.fr' } };
+        expect(assessEInvoice(src).invoice?.buyer.electronicAddress).toEqual({ scheme: '0225', id: '404833048' });
+    });
+
+    it('dirección de entrega: solo si difiere del cliente y nunca en una prestación de servicios', () => {
+        expect(cii(fr('fr-ctc-mixte').source)).toContain('<ram:LineOne>ZA des Trois Moulins, lot 7</ram:LineOne>');
+        const servicios = clone(fr('fr-ctc-services').source);
+        servicios.deliveryAddress = { line1: '1 rue Neuve', city: 'Lyon', postalCode: '69001', countryCode: 'FR' };
+        expect(cii(servicios)).not.toContain('1 rue Neuve');
+        const misma = clone(fr('fr-ctc-mixte').source);
+        misma.deliveryAddress = { ...misma.recipient!.address! };
+        expect(cii(misma)).not.toContain('ShipToTradeParty');
+        const incompleta = clone(fr('fr-ctc-mixte').source);
+        incompleta.deliveryAddress = { line1: 'Entrepôt', countryCode: 'FR' };
+        expect(assessEInvoice(incompleta).problems.map((x) => x.code)).toContain('delivery_address');
+        expect(entregaDistinta(null, misma.recipient!.address)).toBe(false);
+    });
+
+    it('precio bruto (BT-148) y neto con seis decimales como máximo (BR-FR-DEC-03)', () => {
+        const xml = cii(fr('fr-ctc-mixte').source);
+        expect(xml).toContain('<ram:GrossPriceProductTradePrice><ram:ChargeAmount>245.5</ram:ChargeAmount></ram:GrossPriceProductTradePrice><ram:NetPriceProductTradePrice><ram:ChargeAmount>245.5</ram:ChargeAmount>');
+        for (const m of xml.matchAll(/<ram:ChargeAmount>([^<]+)</g)) expect(decimales(Number(m[1]))).toBeLessThanOrEqual(6);
+    });
+
+    it('qué operación va por la plataforma: B2B entre empresas francesas, el resto se reporta', () => {
+        const seller = fr('fr-ctc-services').source.issuer!;
+        expect(fluxFr(seller, fr('fr-ctc-services').source.recipient)).toBe('B2B');
+        expect(fluxFr(seller, { legalName: 'Mme Durand', address: { countryCode: 'FR' } })).toBe('B2C');
+        expect(fluxFr(seller, { legalName: 'Acme GmbH', taxId: 'DE136695976', address: { countryCode: 'DE' } })).toBe('B2BINT');
+        expect(fluxFr(seller, { legalName: 'John Doe', address: { countryCode: 'US' } })).toBe('B2C');
+        expect(fluxFr({ legalName: 'X', address: { countryCode: 'ES' } }, seller)).toBeNull();
+        const b2c = clone(fr('fr-ctc-services').source);
+        b2c.recipient = { legalName: 'Mme Durand', address: { line1: '2 rue Basse', city: 'Lyon', postalCode: '69002', countryCode: 'FR' } };
+        expect(codes(b2c)).toContain('fr_not_b2b');
+    });
+
+    it('falla cerrado con el motivo: naturaleza, SIREN, número, tasa, cantidad, divisa', () => {
+        const base = fr('fr-ctc-services').source;
+        const sinNaturaleza = clone(base);
+        sinNaturaleza.lines = sinNaturaleza.lines.map(({ nature: _n, ...l }) => l);
+        expect(codes(sinNaturaleza)).toContain('fr_operation_category');
+
+        const numero = clone(base);
+        numero.invoiceNumber = 'F 2026 #201';
+        expect(codes(numero)).toContain('fr_invoice_number');
+
+        const tasa = clone(base);
+        tasa.lines = tasa.lines.map((l) => ({ ...l, taxRate: 0.19, taxAmount: Math.round(l.subtotal * 19) / 100, total: l.subtotal + Math.round(l.subtotal * 19) / 100 }));
+        expect(codes(tasa)).toContain('fr_vat_rate');
+        expect(tasaFrancesa(0.055)).toBe(true);
+        expect(tasaFrancesa(0.021)).toBe(true);
+        expect(tasaFrancesa(0.19)).toBe(false);
+
+        const cantidad = clone(base);
+        cantidad.lines = [{ ...cantidad.lines[0], quantity: 1.23456 }, ...cantidad.lines.slice(1)];
+        expect(codes(cantidad)).toContain('fr_quantity');
+        expect(decimales(1.2345)).toBe(4);
+        expect(decimales(1e-7)).toBe(7);
+
+        const usd = clone(fr('fr-ctc-biens-usd').source);
+        usd.ledgerCurrency = 'USD';
+        usd.fxRate = null;
+        expect(codes(usd)).toContain('fr_tax_currency');
+
+        const sinSiren = clone(base);
+        sinSiren.issuer = { ...sinSiren.issuer!, taxId: undefined, legalRegistrationId: undefined };
+        expect(codes(sinSiren)).toContain('fr_seller_siren');
     });
 });

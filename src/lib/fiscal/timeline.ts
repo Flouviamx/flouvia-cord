@@ -26,7 +26,8 @@ export type InvoiceEventType =
     | 'void'         // anulada
     | 'credit_note'  // nota de crédito emitida
     | 'uncollectible'
-    | 'verifactu';   // corrección del registro ante la AEAT
+    | 'verifactu'    // corrección del registro ante la AEAT
+    | 'plataforma';  // Francia: envío a la plataforma autorizada y cada estado que notifica
 
 // El timeline ya marca CADA transición del ciclo de vida de la factura, así que
 // es el ancla natural para la analítica del carril: emitir aquí hace que "¿se

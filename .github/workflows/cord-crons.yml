@@ -70,6 +70,8 @@ jobs:
           # dirección que aún no están en la declaración del negocio.
           # spfe (factura electrónica entre empresarios, solución pública de la
           # AEAT) es horario por lo mismo: envía y resuelve por consulta.
+          # fiscal-plataforma (Francia, emisión por plataforma autorizada) es
+          # horario por lo mismo, y consulta las altas en curso si su aviso no llegó.
           TABLA="
           *:*:api/cron/workflows
           *:*:api/cron/tareas
@@ -87,6 +89,7 @@ jobs:
           *:*:api/cron/fiscal-latam
           *:*:api/cron/us-tax
           *:*:api/cron/spfe
+          *:*:api/cron/fiscal-plataforma
           12:*:api/cron/anclas-tiempo
           14:*:api/cron/integraciones
           6:1:api/cron/intereses
