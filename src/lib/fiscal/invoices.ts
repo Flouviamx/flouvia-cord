@@ -554,7 +554,7 @@ export async function updateInvoiceDraft(
   try {
     descuento = await descuentoDelBorrador(orgId, input.descuento, {
       def: descuentoDesdeJson(doc.descuento), total: Number(doc.descuento_total) || 0, currency: String(doc.currency || currency),
-    }, { moneda: currency, clienteId: String(head.cliente_id), documentoId, ivaIncluido: input.ivaIncluido === true });
+    }, { moneda: currency, clienteId: String(head.cliente_id), documentoId: documentId, ivaIncluido: input.ivaIncluido === true });
   } catch (error) {
     if (error instanceof DescuentoError) return { ok: false, error: error.message, status: error.status, code: error.code };
     throw error;
@@ -713,7 +713,7 @@ async function finalizeReservedInvoice(orgId: string, documentId: string): Promi
     const redencion = await redimirCupon(orgId, descuentoDoc, {
       clienteId: head.doc_cliente_id ? String(head.doc_cliente_id) : null,
       cotizacionId: head.cotizacion_id ? String(head.cotizacion_id) : null,
-      documentoId,
+      documentoId: documentId,
       monto: Number(head.descuento_total) || 0,
       moneda: String(head.currency || 'MXN'),
     });

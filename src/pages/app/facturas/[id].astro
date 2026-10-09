@@ -25,6 +25,7 @@ import { getInvoiceTimeline } from '../../../lib/fiscal/timeline';
 import { invoiceEventDetail } from '../../../lib/fiscal/timeline-detail';
 import { fmtRelative } from '../../../lib/fmt-server';
 import { t } from '../../../i18n/app';
+import { etiquetaDescuento } from '../../../lib/descuentos';
 
 export const prerender = false;
 
@@ -110,6 +111,11 @@ const stepIdx = !f ? 0
 const INVOICE_STEPS = L === 'en'
     ? ['Draft', 'Issued', 'Sent', 'Viewed', 'Paid']
     : ['Borrador', 'Emitida', 'Enviada', 'Vista', 'Pagada'];
+
+// Descuento de documento: el concepto se lee a su importe BRUTO y el descuento
+// va en los totales antes de los impuestos (las bases de abajo ya son netas).
+const hayDescuento = (f?.descuentoTotal ?? 0) > 0;
+const brutoLinea = (l: { subtotal: number; descuento: number }) => l.subtotal + (hayDescuento ? l.descuento : 0);
 
 // Desglose por tasa a partir de las líneas del snapshot: es la forma de que una
 // factura con conceptos exentos y gravados cuadre a la vista.
@@ -269,13 +275,16 @@ import { iconInner } from '../../../lib/icons';
                                 <div class="fd-item-row">
                                     <span class="fd-desc">{linea.descripcion}</span>
                                     <span class="fd-qty">{linea.cantidad}</span>
-                                    <span class="editorial fd-price">{money(linea.precioUnitario)}</span>
-                                    <span class="editorial fd-amount">{money(linea.subtotal)}</span>
+                                    <span class="editorial fd-price">{money(hayDescuento && linea.cantidad > 0 ? brutoLinea(linea) / linea.cantidad : linea.precioUnitario)}</span>
+                                    <span class="editorial fd-amount">{money(brutoLinea(linea))}</span>
                                 </div>
                             ))}
 
                             <div class="fd-totals">
-                                <div class="fd-tline"><span>{t(L, 'fact.d_subtotal')}</span><span class="editorial">{money(f.subtotal)}</span></div>
+                                <div class="fd-tline"><span>{t(L, 'fact.d_subtotal')}</span><span class="editorial">{money(f.subtotal + f.descuentoTotal)}</span></div>
+                                {hayDescuento && (
+                                    <div class="fd-tline fd-tax"><span>{etiquetaDescuento(f.descuento, L)}</span><span class="editorial">−{money(f.descuentoTotal)}</span></div>
+                                )}
                                 {tasas.map((row) => (
                                     <div class="fd-tline fd-tax"><span>{row.label}</span><span class="editorial">{money(row.impuesto)}</span></div>
                                 ))}
@@ -598,6 +607,13 @@ import { iconInner } from '../../../lib/icons';
                     return;
                 }
                 if (payload.action === 'duplicate' && data.id) {
+                    // Un cupón que ya no aplica no impide duplicar: la copia sale
+                    // sin él y el servidor lo dice; se lee antes de ir al editor.
+                    if (data.aviso) {
+                        (window as any).cordToast?.(String(data.aviso));
+                        setTimeout(() => { location.href = `/app/facturas/nueva?draft=${data.id}`; }, 2600);
+                        return;
+                    }
                     location.href = `/app/facturas/nueva?draft=${data.id}`;
                     return;
                 }

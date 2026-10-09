@@ -12,6 +12,7 @@ import { buildTaxOptions, defaultTaxRate, retencionesFrom } from '../../../lib/i
 import { currentLocale } from '../../../lib/context';
 import { t, getEditorRuntimeI18n } from '../../../i18n/app';
 import FlagSelect from '../../../components/ui/FlagSelect';
+import DiscountControl from '../../../components/app/DiscountControl.astro';
 import { CURRENCY_FLAG } from '../../../lib/flags';
 import { listOfferedCurrencies } from '../../../lib/currency';
 import '../../../styles/modal.css';
@@ -217,6 +218,7 @@ import { iconInner } from '../../../lib/icons';
                 <div class="sum-count" id="sumCount">{t(L, 'ed.agrega_productos_default')}</div>
                 <div class="sum-line"><span>{t(L, 'ed.subtotal')}</span><span class="editorial" id="sumSubtotal">$0.00</span></div>
                 <div class="sum-line sum-save" id="sumSaveLine" hidden><span>{t(L, 'ed.le_descontaste')}</span><span class="editorial" id="sumSave">$0.00</span></div>
+                <DiscountControl initial={draftQuote?.descuento ?? null} />
                 <div class="sum-field" style="flex-direction: row; align-items: center; justify-content: space-between; margin-top: 0.5rem; margin-bottom: -0.5rem;">
                     <label for="ivaIncluido" style="margin:0; cursor: pointer; color: var(--color-text);">{TAX_INCLUDED_LABEL}</label>
                     <label class="s-toggle" title={t(L, 'ed.iva_incluido_title').replace('{tax}', TAX_LABEL)}>
@@ -338,6 +340,7 @@ import { iconInner } from '../../../lib/icons';
     import { currencyDecimals } from '../../../lib/currency';
     import { canonicalTaxRate, taxBreakdownRows, taxOptionIndex } from '../../../lib/tax-components';
     import { wireTermPicker } from '../../../lib/term-picker-client';
+    import { wireDiscountControl } from '../../../lib/discount-client';
 
     const BOOT = JSON.parse(document.getElementById('edBootQ')?.textContent || '{}');
     const { catalogo, kits, aprobMargenMin, draftQuote, preselectCliente, T, orgCurrency } = BOOT;
@@ -529,6 +532,19 @@ import { iconInner } from '../../../lib/icons';
             .catch(() => {});
     }
 
+    // Descuento de documento (porcentaje, monto o cupón). Se cablea después de
+    // `editorCurrency` y `fmt`, que el control consulta al pintarse.
+    const descuento = wireDiscountControl(document.querySelector('[data-editor="quote"] [data-discount-control]'), {
+        getCurrency: () => editorCurrency(),
+        getClienteId: () => {
+            const v = document.getElementById('clientSelect')?.value;
+            return v && v !== '__NEW__' ? v : null;
+        },
+        getDocumento: () => ({ cotizacion_id: draftQuote ? draftQuote.id : null }),
+        fmt: () => fmt,
+        onChange: () => recalc(),
+    });
+
     let lastTotal = 0;
     const currentTotal = () => lastTotal;
     function recalc() {
@@ -546,13 +562,19 @@ import { iconInner } from '../../../lib/icons';
                 tax_rate: l.taxRate ?? BOOT.defaultTaxRate,
             })),
             // Mismo redondeo por línea que el servidor (divisa del selector).
-            { ivaIncluido, retenciones: BOOT.retenciones || [], roundLines: currencyDecimals(editorCurrency()) },
+            {
+                ivaIncluido, retenciones: BOOT.retenciones || [], roundLines: currencyDecimals(editorCurrency()),
+                descuento: descuento.engine(),
+            },
         );
         const realSubtotal = totals.subtotal;
         const total = totals.total;
         lastTotal = total;
 
-        document.getElementById('sumSubtotal').textContent = fmt(realSubtotal);
+        // Con descuento de documento el subtotal que se lee es el BRUTO; el
+        // renglón de descuento lo baja antes de los impuestos.
+        document.getElementById('sumSubtotal').textContent = fmt(realSubtotal + totals.descuentoTotal);
+        descuento.render(totals.descuentoTotal);
         document.getElementById('sumTotal').textContent = fmt(total);
 
         // Desglose por tasa + retenciones. Una retención se RESTA: se dibuja
@@ -1039,6 +1061,8 @@ import { iconInner } from '../../../lib/icons';
             fiscal_currency,
             fx_buffer_pct,
             iva_incluido: document.getElementById('ivaIncluido') ? document.getElementById('ivaIncluido').checked : false,
+            // Definición o código, nunca el importe: el servidor lo recalcula.
+            ...descuento.payload(),
             items: lines.map(l => ({
                 producto_id: l.id || null,
                 descripcion: l.nombre || 'Línea libre',
@@ -1209,7 +1233,9 @@ import { iconInner } from '../../../lib/icons';
     function scheduleFx() { clearTimeout(fxTimer); fxTimer = setTimeout(refreshFx, 250); }
     // Cambiar de divisa reformatea TODA la cotización, no solo el panel de FX:
     // los importes ya capturados pasan a leerse en la divisa elegida.
-    $fxBase?.addEventListener('change', () => { render(); refreshFx(); });
+    $fxBase?.addEventListener('change', () => { render(); refreshFx(); descuento.revalidate(); });
+    // Un cupón limitado por cliente se vuelve a validar con el cliente nuevo.
+    $client?.addEventListener('change', () => { if ($client.value && $client.value !== '__NEW__') descuento.revalidate(); });
     // Si la moneda inicial (default de la org o del borrador) no es la fiscal,
     // el panel de cobertura FX debe aparecer desde el primer render.
     if ($fxBase && $fxBase.value !== orgCurrency) refreshFx();
