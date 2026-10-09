@@ -51,7 +51,8 @@ export type FeatureKey =
     | 'international_invoicing'
     | 'smtp'
     | 'sso'
-    | 'agent_governance';
+    | 'agent_governance'
+    | 'us_sales_tax';
 
 /** Documentos comerciales desde Free; integración fiscal desde Starter.
  * Los identificadores históricos se conservan para API y configuración. */
@@ -80,6 +81,10 @@ export const FEATURE_MIN_PLAN: Record<FeatureKey, PlanId> = {
     smtp: 'scale',
     sso: 'scale',
     agent_governance: 'scale',
+    // Sales tax de EE. UU. calculado por dirección: cada cálculo y cada venta
+    // registrada tienen un costo por uso que paga Cord (la plataforma), no el
+    // negocio. Por eso vive con la emisión fiscal integrada, desde Starter.
+    us_sales_tax: 'starter',
 };
 
 export const FEATURE_LABEL: Record<FeatureKey, string> = {
@@ -105,6 +110,7 @@ export const FEATURE_LABEL: Record<FeatureKey, string> = {
     smtp: 'Correo desde tu dominio',
     sso: 'SSO empresarial',
     agent_governance: 'Gobernanza de agentes de IA',
+    us_sales_tax: 'Sales tax automático por dirección',
 };
 
 export type LimitedResource = 'active_quotes' | 'products' | 'clients' | 'seats' | 'active_workflows';

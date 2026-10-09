@@ -25,6 +25,8 @@ import { validateTaxId } from './tax-id';
 import { normalizeTerm } from './payment-terms';
 import { descuentoParaMotor, leerDescuentoBody, type DescuentoDef } from './descuentos';
 import { DescuentoError, resolverDescuento } from './cupones';
+import { claimUsTaxCalculo, prepareUsTaxForDocument } from './us-tax/calculo';
+import { UsTaxError } from './us-tax/core';
 
 // El motivo de aprobación lo lee el aprobador: el tope y el total van con la
 // divisa real de la cotización, no con un '$' que puede significar otra cosa.
@@ -115,6 +117,12 @@ export interface NewQuoteInput {
     descuento?: { tipo: 'porcentaje' | 'monto'; valor: number } | null;
     /** Código de cupón del negocio. Si viene, manda sobre `descuento`. */
     cupon?: string | null;
+    /**
+     * EE. UU.: el cálculo de sales tax por dirección que pidió el editor para
+     * su vista previa. Solo se reusa si coincide con este documento; si no, el
+     * servidor calcula el suyo. Las tasas nunca vienen del cliente.
+     */
+    us_tax_calculo_id?: string | null;
 }
 
 export interface CreateQuoteResult {
@@ -308,14 +316,42 @@ export async function createCotizacion(
         }
     }
 
+    // El cliente se resuelve ANTES del impuesto: en EE. UU., con el sales tax
+    // por dirección, la tasa depende de dónde está el cliente.
+    const clienteId = await resolveOrCreateCliente(orgId, input);
+
+    // Sales tax de EE. UU. por dirección (src/lib/us-tax/): la tasa de cada
+    // línea sale de un cálculo real guardado, y `taxCatalogFor` solo la acepta
+    // si existe esa fila. Sin cálculo posible, la cotización no se guarda y
+    // dice qué falta: nunca una tasa inventada (regla 22).
+    let usTaxCalculoId: string | null = null;
+    try {
+        const usTax = await prepareUsTaxForDocument(orgId, {
+            clienteId, currency: monedaVenta, ivaIncluido: iva_incluido, descuento: descuentoParaMotor(descuento),
+            items, calculoId: input.us_tax_calculo_id, requireClient: !!input.send,
+        });
+        if (usTax) {
+            catalogo = await taxCatalogFor(orgId, { usTaxCalculoId: usTax.calculoId });
+            usTaxCalculoId = usTax.calculoId;
+        }
+    } catch (error) {
+        if (error instanceof UsTaxError) throw new QuoteError(error.message, error.status, `us_tax_${error.code}`);
+        if (error instanceof TaxCatalogUnavailableError) throw new QuoteError(error.message, 503);
+        throw error;
+    }
+
     const itemsConImpuesto = items.map((it, i) => {
-        const tax_rate = catalogo.resolve(rawItems[i]?.tax_rate, fallbackRate);
+        const tax_rate = catalogo.resolve(rawItems[i]?.tax_rate, fallbackRate, i);
         // La causa de exención solo se conserva en España y en una línea al 0 %.
         const exemption_reason = exemptionReasonFor(catalogo.country, rawItems[i]?.exemption_reason, tax_rate);
         // Claves SAT de la línea: solo México timbra CFDI. Fuera se descartan
         // en vez de guardarse sin consumidor (regla 15).
         const sat = catalogo.country === 'MX' ? lineSatKeysFrom(rawItems[i]) : { productKey: null, unitKey: null };
-        return { ...it, tax_rate, exemption_reason, clave_sat: sat.productKey, clave_unidad_sat: sat.unitKey };
+        return {
+            ...it, tax_rate, exemption_reason, clave_sat: sat.productKey, clave_unidad_sat: sat.unitKey,
+            // EE. UU.: desglose por jurisdicción del cálculo (null en cualquier otro caso).
+            tax_breakdown: catalogo.breakdown(i),
+        };
     });
     const satError = lineSatKeyError(itemsConImpuesto.map((it) => ({ descripcion: it.descripcion, productKey: it.clave_sat, unitKey: it.clave_unidad_sat })));
     if (satError) throw new QuoteError(satError, 400, 'invalid_request');
@@ -403,7 +439,6 @@ export async function createCotizacion(
             ? Math.round(anticipoPctRaw * 100) / 100 : null);
     const dias = Number(input.vigencia_dias) || 30;
     const vigencia = new Date(); vigencia.setDate(vigencia.getDate() + dias);
-    const clienteId = await resolveOrCreateCliente(orgId, input);
     const status = needsApproval ? 'draft' : (input.send ? 'sent' : 'draft');
     const sentAt = (!needsApproval && input.send) ? new Date().toISOString() : null;
 
@@ -449,14 +484,15 @@ export async function createCotizacion(
             insert into cotizaciones
                 (org_id, cliente_id, folio, status, subtotal, iva, total, terminos, vigencia, notas, sent_at, aprob_estado, aprob_motivo,
                  moneda, base_currency, fiscal_currency, fx_rate, fx_rate_source, fx_locked_until, iva_incluido, anticipo_pct, es_recurrente, creado_por,
-                 retencion_total, retenciones_snapshot, descuento, descuento_def)
+                 retencion_total, retenciones_snapshot, descuento, descuento_def, us_tax_calculo_id)
             values
                 (${orgId}, ${clienteId}, (select ${prefix} || '-' || case when n < 10000 then lpad(n::text, 4, '0') else n::text end
                    from (select coalesce(max(substring(folio from '(\\d+)$')::numeric), 0) + 1 as n
                            from cotizaciones where org_id = ${orgId}) s), ${status}, ${realSubtotal}, ${iva}, ${total},
                  ${terminos}, ${vigencia.toISOString()}, ${input.notas || null}, ${sentAt}, ${aprobEstado}, ${aprobMotivo},
                  ${baseCurrency}, ${baseCurrency}, ${fiscalCurrency}, ${fxRate}, ${fxSource}, ${fxLockedUntil}, ${iva_incluido}, ${anticipoPct}, ${esRecurrente}, ${creadoPor},
-                 ${retencionTotal}, ${retencionesSnapshot}::jsonb, ${descuentoTotal}, ${descuento ? JSON.stringify(descuento) : null}::jsonb)
+                 ${retencionTotal}, ${retencionesSnapshot}::jsonb, ${descuentoTotal}, ${descuento ? JSON.stringify(descuento) : null}::jsonb,
+                 ${usTaxCalculoId}::uuid)
             returning id, public_token, folio`);
     } catch (error) {
         const limit = parsedResourceLimit(error);
@@ -464,6 +500,8 @@ export async function createCotizacion(
         throw error;
     }
     const folio = String(cot.folio);
+    // El cálculo de la vista previa pasa a ser de ESTA venta.
+    await claimUsTaxCalculo(orgId, usTaxCalculoId, `cotizacion:${cot.id}`);
 
     const productosPropios = await productosDeOrg(orgId, itemsConImpuesto.map((it: any) => it.producto_id));
     let orden = 0;
@@ -471,14 +509,15 @@ export async function createCotizacion(
         await withOrgTx(orgId, sql`
             insert into cotizacion_items
                 (cotizacion_id, producto_id, descripcion, cantidad, precio_unitario, precio_negociado, costo_unitario, orden, tax_rate, exemption_reason,
-                 clave_sat, clave_unidad_sat)
+                 clave_sat, clave_unidad_sat, tax_breakdown)
             values
                 (${cot.id}, ${it.producto_id && productosPropios.has(it.producto_id) ? it.producto_id : null}, ${it.descripcion}, ${Number(it.cantidad) || 1},
                  ${Number(it.precio_unitario) || 0},
                  ${it.precio_negociado === null || it.precio_negociado === undefined ? null : Number(it.precio_negociado)},
                  ${Number(it.costo_unitario) || 0},
                  ${orden++}, ${it.tax_rate}, ${it.exemption_reason},
-                 ${it.clave_sat ?? null}, ${it.clave_unidad_sat ?? null})`);
+                 ${it.clave_sat ?? null}, ${it.clave_unidad_sat ?? null},
+                 ${it.tax_breakdown ? JSON.stringify(it.tax_breakdown) : null}::jsonb)`);
     }
 
     await withOrgTx(orgId, sql`
