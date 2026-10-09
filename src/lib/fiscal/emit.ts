@@ -23,6 +23,7 @@ import { effectiveLineSatKeys, resolveLineUnitKey } from './sat-claves';
 import { exemptionReasonFor } from './exemption';
 import { serieCompartida, serieCompartidaMensaje } from './serie';
 import { descuentoDesdeJson, descuentoParaMotor } from '../descuentos';
+import { conDatosNfe, tipoDocumentoBrasil } from './latam/nfe/enrutamiento';
 
 export interface EmitResult {
   emitted: boolean;
@@ -376,7 +377,7 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string, do
     // Las claves SAT son clasificación, no aritmética: la de la LÍNEA gana y lo
     // que falte se lee del producto al timbrar; quedan congeladas en
     // `line_items_snapshot` del documento.
-    sql`select ci.descripcion, ci.cantidad, ci.precio_unitario, ci.precio_negociado, ci.aprobado, ci.tax_rate, ci.exemption_reason,
+    sql`select ci.descripcion, ci.cantidad, ci.precio_unitario, ci.precio_negociado, ci.aprobado, ci.tax_rate, ci.exemption_reason, ci.producto_id,
                ci.clave_sat as linea_clave_sat, ci.clave_unidad_sat as linea_clave_unidad_sat,
                p.clave_sat, p.clave_unidad_sat, p.unidad as producto_unidad
         from cotizacion_items ci
@@ -486,6 +487,14 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string, do
     }, approvedItems[i]?.linea_clave_unidad_sat)),
     ...causaDe(i, l.tax_rate),
   }));
+  // Brasil con la NF-e: los datos de NF-e del producto, y NFS-e (servicios)
+  // o NF-e (mercancías) según los conceptos (latam/nfe/enrutamiento.ts).
+  const linesNfe = await conDatosNfe(orgId, country, approvedItems.map((item: any) => item.producto_id ?? null), lines);
+  if (country === 'BR') {
+    const br = await tipoDocumentoBrasil(orgId, docType, linesNfe, documentMode);
+    if (!br.ok) return { emitted: false, status: 'error', error: br.error };
+    docType = br.docType;
+  }
   const subtotal = round(totals.subtotal);
   const taxes = round(totals.impuestos);
   const total = round(totals.total);
@@ -627,7 +636,7 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string, do
                  ${currency}, ${ledgerCurrency}, ${fxRate}, ${ledgerTotal},
                  ${subtotal}, ${taxes}, ${total}, ${retencionTotal}, ${JSON.stringify(totals.retenciones)}::jsonb,
                  'draft', ${dueDate}::date, 0, ${total}, ${publicToken},
-                 ${JSON.stringify(issuer)}, ${JSON.stringify(recipient)}, ${JSON.stringify(lines)},
+                 ${JSON.stringify(issuer)}, ${JSON.stringify(recipient)}, ${JSON.stringify(linesNfe)},
                  ${idempotencyKey}, 'cord.invoice.v1', ${JSON.stringify(isPartial ? { aprobacion_parcial: true, lineas_facturadas: approvedItems.length, lineas_totales: allItems.length } : {})}::jsonb, now(),
                  ${(head.cliente_buyer_reference as string) || null}, ${payee ? JSON.stringify(payee) : null}::jsonb,
                  ${descuentoTotal}, ${descuento && descuentoTotal > 0 ? JSON.stringify({ ...descuento, ...(head.iva_incluido && descuento.tipo === 'monto' ? { iva_incluido: true } : {}) }) : null}::jsonb

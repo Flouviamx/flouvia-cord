@@ -1,0 +1,212 @@
+[
+  {
+    "titulo": "Manual de Orientação do Contribuinte (MOC) 7.00 - Visão Geral",
+    "version": "versão 7.00",
+    "url": "https://www.nfe.fazenda.gov.br/portal/exibirArquivo.aspx?conteudo=LrBx7WT9PuA=",
+    "sha256": "f664dcf94b77cabb32311620d85a7eb02cdf86adb2d4632ce178af2572dd2ad1",
+    "extracto": "normas/moc70-chave-de-acesso.txt"
+  },
+  {
+    "titulo": "MOC 7.0 Anexo I - Leiaute e Regras de Validação da NF-e e da NFC-e",
+    "version": "versão 7.00",
+    "url": "https://www.nfe.fazenda.gov.br/portal/exibirArquivo.aspx?conteudo=J%2BI%2Bv4eN00E=",
+    "sha256": "5eb4cf2010b10b0b62f78197c4eb64025f24535d4c6e61158bc7806dd008f55d",
+    "extracto": "normas/moc70-anexo1-regras.txt, tabelas/cstat.tsv"
+  },
+  {
+    "titulo": "MOC 7.0 Anexo II - Manual de Especificações Técnicas do DANFE e Código de Barras",
+    "version": "versão 7.00",
+    "url": "https://www.nfe.fazenda.gov.br/portal/exibirArquivo.aspx?conteudo=f%2BNhsSn3/5M=",
+    "sha256": "729c04fd1374188c29eb21ca60342741b24a014003d4c2ff1bbb455bb1a6a60e",
+    "extracto": "normas/moc70-anexo2-danfe-codigo-de-barras.txt"
+  },
+  {
+    "titulo": "MOC 7.0 Anexo III - Manual de Contingência da NF-e (SVC-AN / SVC-RS)",
+    "version": "versão 7.00",
+    "url": "https://www.nfe.fazenda.gov.br/portal/exibirArquivo.aspx?conteudo=cMjGAyYrb/s=",
+    "sha256": "e1cfb9b6c5adc6a67062f66fd1699495fdec5dfdb93025768f87fe3782918dde",
+    "extracto": "normas/moc70-anexo3-svc.txt"
+  },
+  {
+    "titulo": "Schemas XML NF-e - Pacote de Liberação nº 010f (NT 2025.002 v1.50 e NT 2026.007 v1.00)",
+    "version": "v1.04, publicado em 31/08/2026",
+    "url": "https://www.nfe.fazenda.gov.br/portal/exibirArquivo.aspx?conteudo=8ITFuBLltXs=",
+    "sha256": "b8589490a58a09a993a80e6ac4d7ed10f20892061ecfc56719337098d4b95998",
+    "extracto": "xsd/PL_010f_v1.04/"
+  },
+  {
+    "titulo": "Schemas XML NF-e/NFC-e - Pacote de Liberação 010d (CNPJ alfanumérico, NT 2026.004 v1.01): consulta, inutilização e eventos",
+    "version": "v1.03",
+    "url": "https://www.nfe.fazenda.gov.br/portal/exibirArquivo.aspx?conteudo=%2BpBOYTXBtbk=",
+    "sha256": "45ceefe4dfbbfec93958283b650a2f1e1734784f4770d070b9907754de081d9b",
+    "extracto": "xsd/PL_010d_v1.03/"
+  },
+  {
+    "titulo": "Esquema XML NF-e/NFC-e - Pacote de Liberação nº 9q (NT 2025.001 v1.00): raízes enviNFe, retEnviNFe, consReciNFe, procNFe, consStatServ, inutNFe",
+    "version": "9q",
+    "url": "https://www.nfe.fazenda.gov.br/portal/exibirArquivo.aspx?conteudo=0qRvxtvKcj4=",
+    "sha256": "82a26d04a778fc214bf8c6c6e5c65ea577721e32ed5efa9a11a80098b8f9802f",
+    "extracto": "xsd/PL_009q_NT2025_001_v1.00/"
+  },
+  {
+    "titulo": "Esquemas XML NF-e / NFC-e - Evento Cancelamento (e110111)",
+    "version": "atualizado em 21/12/2018",
+    "url": "https://www.nfe.fazenda.gov.br/portal/exibirArquivo.aspx?conteudo=0Yynu2Ck%2BbM=",
+    "sha256": "71ccd5fcc48f9604a2a8965146df45e3b73e96e87942ab3391be0d55cc0df718",
+    "extracto": "xsd/Evento_Canc_PL_v1.01/e110111_v1.00.xsd"
+  },
+  {
+    "titulo": "Esquemas XML NF-e - Carta de Correção Eletrônica (e110110)",
+    "version": "17/05/2011",
+    "url": "https://www.nfe.fazenda.gov.br/portal/exibirArquivo.aspx?conteudo=S8HypghBRdk=",
+    "sha256": "c300695ae3344dcb0c000ec806559e7392c54f7be99599274965050112771f77",
+    "extracto": "xsd/Evento_CCe_PL_v1.01/e110110_v1.00.xsd"
+  },
+  {
+    "titulo": "Nota Técnica 2025.001 - Simplificação Operacional: resposta síncrona do lote de 1 NF-e (rejeição 452), pagamento posterior (tPag 91), E16a-30",
+    "version": "v1.03 corrigido, 29/09/2025",
+    "url": "https://www.nfe.fazenda.gov.br/portal/exibirArquivo.aspx?conteudo=NvuzQGYd6E8=",
+    "sha256": "333b69f71debe5040585b677b574bb13b39362aa7934b904edc59cdf83cded02",
+    "extracto": "normas/nt2025001-sincrono-pagamento-ie.txt"
+  },
+  {
+    "titulo": "Nota Técnica 2025.002 - Reforma Tributária do Consumo (IBS, CBS e IS) na NF-e/NFC-e",
+    "version": "v1.52, 01/10/2026",
+    "url": "https://www.nfe.fazenda.gov.br/portal/exibirArquivo.aspx?conteudo=HXPO8VLbh4o=",
+    "sha256": "54ed893327040a20a4a3c0562d342953542a1dc98e55d73dbe607d6c13d3d416",
+    "extracto": "normas/nt2025002-rtc-ibs-cbs.txt"
+  },
+  {
+    "titulo": "Nota Técnica 2018.005 - Responsável técnico e CSRT",
+    "version": "v1.52, 10/07/2025",
+    "url": "https://www.nfe.fazenda.gov.br/portal/exibirArquivo.aspx?conteudo=vZguLua3oPM=",
+    "sha256": "c2c299ee59397a495c88b7b83826f39ca44e0d070bfeebbb9d9ff61d32a58ec7",
+    "extracto": "normas/nt2018005-responsavel-tecnico-csrt.txt"
+  },
+  {
+    "titulo": "Nota Técnica Conjunta 2025.001 - CNPJ alfanumérico: DV da chave de acesso e código de barras CODE-128 híbrido",
+    "version": "08/05/2025",
+    "url": "https://www.nfe.fazenda.gov.br/portal/exibirArquivo.aspx?conteudo=5ZkvIZt10mQ=",
+    "sha256": "671d546b24ad4682e267fc76a9eeca8f14ad15ead2be20721ee2aec5438cf964",
+    "extracto": "normas/ntc2025001-cnpj-alfa-chave-code128.txt"
+  },
+  {
+    "titulo": "Nota Técnica 2026.010 - DANFE Reforma Tributária",
+    "version": "v1.00, 01/10/2026 (produção 01/12/2026)",
+    "url": "https://www.nfe.fazenda.gov.br/portal/exibirArquivo.aspx?conteudo=ugn4MYF5PLg=",
+    "sha256": "eadc5246235f37a55f8140ddcf84595c8ce77f2d760f111f7b85ddf389b8f484",
+    "extracto": "normas/nt2026010-danfe-rtc.txt"
+  },
+  {
+    "titulo": "Nota Técnica 2026.007",
+    "version": "v1.10, 01/10/2026",
+    "url": "https://www.nfe.fazenda.gov.br/portal/exibirArquivo.aspx?conteudo=fpJlwzhffcQ=",
+    "sha256": "4a9d9de64504f4091c55e3e8a2d499116d4bac1a2009a874a7b9ce26d9fe8b10",
+    "extracto": "xsd/PL_010f_v1.04/ (leiaute)"
+  },
+  {
+    "titulo": "Tabela de Classificação Tributária do IBS e CBS (cClassTrib) e de CST do IBS/CBS",
+    "version": "publicada em 01/10/2026 (hojas cClass y CST de 2026-09-01)",
+    "url": "https://www.nfe.fazenda.gov.br/portal/exibirArquivo.aspx?conteudo=Cd5xq2ZVuEg=",
+    "sha256": "bee3e106d24c06257d31105658679e97e2544dcc3ac61467fbe0ca4f78c6e850",
+    "extracto": "tabelas/cclasstrib.tsv, tabelas/cst-ibscbs.tsv"
+  },
+  {
+    "titulo": "Tabela de CFOP",
+    "version": "publicada em 04/09/2026",
+    "url": "https://www.nfe.fazenda.gov.br/portal/exibirArquivo.aspx?conteudo=74KmX8poGpM=",
+    "sha256": "577e05eec452294945d0e9df1f9bb9b21a4af115938e75ec74cf6a541ae4dacf",
+    "extracto": "tabelas/cfop.tsv"
+  },
+  {
+    "titulo": "Tabela de Meios de Pagamento (tPag)",
+    "version": "publicada em 06/03/2026",
+    "url": "https://www.nfe.fazenda.gov.br/portal/exibirArquivo.aspx?conteudo=uekMIW1ydFM=",
+    "sha256": "f85d4a6d50390f824921703d166d3f2f4ec637b7244fa922248ef14e782d8a2d",
+    "extracto": "tabelas/meios-pagamento.tsv"
+  },
+  {
+    "titulo": "Relação de Serviços Web - ambiente de produção (URL por autorizador; SVAN/SVRS; SVC-AN/SVC-RS)",
+    "version": "consultado em 09/10/2026",
+    "url": "https://www.nfe.fazenda.gov.br/portal/webServices.aspx?tipoConteudo=OUC/YVNWZfo=",
+    "sha256": "f5c77e42677ed5617f11fb722eea4e64f9b9da0a15afb3e2a59390d5668ac039",
+    "extracto": "portal/servicos-web-producao.html"
+  },
+  {
+    "titulo": "Relação de Serviços Web - ambiente de homologação",
+    "version": "consultado em 09/10/2026",
+    "url": "https://hom.nfe.fazenda.gov.br/portal/webServices.aspx?tipoConteudo=OUC/YVNWZfo=",
+    "sha256": "ff9a42cfdc2262d7404d4efa53937e715093bbc0e0044ed6b3212f4376ce10a0",
+    "extracto": "portal/servicos-web-homologacao.html"
+  },
+  {
+    "titulo": "WSDL NFeAutorizacao 4.00 (SEFAZ-MT, produção)",
+    "version": "consultado em 09/10/2026",
+    "url": "https://nfe.sefaz.mt.gov.br/nfews/v2/services/NfeAutorizacao4?wsdl",
+    "sha256": "82186721d25f27f5397bb383d8a890d476933178ecee97c26ac7484f050553c0",
+    "extracto": "wsdl/prod-MT-NFeAutorizacao.wsdl"
+  },
+  {
+    "titulo": "WSDL NFeRetAutorizacao 4.00 (SEFAZ-MT, produção)",
+    "version": "consultado em 09/10/2026",
+    "url": "https://nfe.sefaz.mt.gov.br/nfews/v2/services/NfeRetAutorizacao4?wsdl",
+    "sha256": "6620af41c7b8056b5f8a144e86ac45040ae18416f1cf687cdbbdedd2cf5eba3a",
+    "extracto": "wsdl/prod-MT-NFeRetAutorizacao.wsdl"
+  },
+  {
+    "titulo": "WSDL NfeConsultaProtocolo 4.00 (SEFAZ-MT, produção)",
+    "version": "consultado em 09/10/2026",
+    "url": "https://nfe.sefaz.mt.gov.br/nfews/v2/services/NfeConsulta4?wsdl",
+    "sha256": "2331d5162cf6aca8a95757908d50c414d0018fb98b0017a3ab1067a3be955b29",
+    "extracto": "wsdl/prod-MT-NfeConsultaProtocolo.wsdl"
+  },
+  {
+    "titulo": "WSDL NfeInutilizacao 4.00 (SEFAZ-MT, produção)",
+    "version": "consultado em 09/10/2026",
+    "url": "https://nfe.sefaz.mt.gov.br/nfews/v2/services/NfeInutilizacao4?wsdl",
+    "sha256": "cf82c15d6ee19ee6afa442517ce54f20777f8bb5ca9e3a297d90d929c7c8417d",
+    "extracto": "wsdl/prod-MT-NfeInutilizacao.wsdl"
+  },
+  {
+    "titulo": "WSDL NfeStatusServico 4.00 (SEFAZ-MT, produção)",
+    "version": "consultado em 09/10/2026",
+    "url": "https://nfe.sefaz.mt.gov.br/nfews/v2/services/NfeStatusServico4?wsdl",
+    "sha256": "ec489b550be1d3b466fd69809cccb051e6441900ac45d28c24692b218eec4e7f",
+    "extracto": "wsdl/prod-MT-NfeStatusServico.wsdl"
+  },
+  {
+    "titulo": "WSDL RecepcaoEvento 4.00 (SEFAZ-MT, produção)",
+    "version": "consultado em 09/10/2026",
+    "url": "https://nfe.sefaz.mt.gov.br/nfews/v2/services/RecepcaoEvento4?wsdl",
+    "sha256": "f46c3d2cf31d0c6245c7a2ece3c3ffd20e83ed731fa4f67ed4269e50e1a51283",
+    "extracto": "wsdl/prod-MT-RecepcaoEvento.wsdl"
+  },
+  {
+    "titulo": "Autoridade Certificadora Raiz Brasileira v5 (ICP-Brasil, ITI)",
+    "version": "repositório do ITI",
+    "url": "http://acraiz.icpbrasil.gov.br/credenciadas/RAIZ/ICP-Brasilv5.crt",
+    "sha256": "5bd85f219695dabe6cf3d4bd713d9bd8e41b2323194022acf1acd658daef148a",
+    "extracto": "icp/icp-raiz-v5.crt"
+  },
+  {
+    "titulo": "Autoridade Certificadora Raiz Brasileira v10 (ICP-Brasil, ITI)",
+    "version": "repositório do ITI",
+    "url": "http://acraiz.icpbrasil.gov.br/credenciadas/RAIZ/ICP-Brasilv10.crt",
+    "sha256": "3b3ef39649ba13e10a99bc042cfc112723d8e0503326174f15ab89941a0f33e0",
+    "extracto": "icp/icp-raiz-v10.crt"
+  },
+  {
+    "titulo": "Autoridade Certificadora Raiz Brasileira v11 (ICP-Brasil, ITI)",
+    "version": "repositório do ITI",
+    "url": "http://acraiz.icpbrasil.gov.br/credenciadas/RAIZ/ICP-Brasilv11.crt",
+    "sha256": "1437394beb7eb04180a94c480319f432dc27ca9d6ebc036b73f10e2a17a7d7d8",
+    "extracto": "icp/icp-raiz-v11.crt"
+  },
+  {
+    "titulo": "Autoridade Certificadora Raiz Brasileira v12 (ICP-Brasil, ITI)",
+    "version": "repositório do ITI",
+    "url": "http://acraiz.icpbrasil.gov.br/credenciadas/RAIZ/ICP-Brasilv12.crt",
+    "sha256": "ce6c66c73e41b12881ea8a9b8cb7efef9a482ea012c3cd3b843667e37a7a145c",
+    "extracto": "icp/icp-raiz-v12.crt"
+  }
+]

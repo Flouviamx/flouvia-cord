@@ -1,0 +1,81 @@
+2.2.6. Chave de Acesso
+A composição da chave de acesso da NF-e sofreu alterações ao longo da evolução do sistema, pela
+versão 2.00 da NF-e e pela NT 2018.001.
+
+
+
+                                                                                      Página 18 / 150
+Nota Fiscal Eletrônica
+MOC 7.0 – Visão Geral
+
+
+
+2.2.6.1. Versão 4.00 da NF-e
+A Chave de Acesso de identificação da Nota Fiscal eletrônica é um conjunto de 44 caracteres
+numéricos, formado pela concatenação de campos que se encontram no leiaute da NF-e, seguindo a
+estrutura que pode ser vista na Tabela 2-1.
+                                     Tabela 2-1 – Chave de Acesso da Versão 4.00 da NF-e
+             Posição                        Informação                 Caracteres   Campo             Id
+                1       Código da UF do emitente do Documento Fiscal       02         cUF            B02
+                2       Ano e Mês de emissão da NF-e                       04       AAMM      Extraídos de B09
+                3       CNPJ/CPF do emitente                               14      CNPJ/CPF      C02/C02a
+                4       Modelo do Documento Fiscal                         02        mod             B06
+                5       Série do Documento Fiscal                          03        serie           B07
+                6       Número do Documento Fiscal                         09         nNF            B08
+                7       forma de emissão da NF-e                           01       tpEmis           B22
+                8       Código Numérico que compõe a Chave de Acesso       08         cNF            B03
+                9       Dígito Verificador da Chave de Acesso              01         cDV            B23
+
+O Dígito Verificador (DV) garante a integridade da chave de acesso, protegendo-a principalmente
+contra digitações erradas.
+
+Originalmente, na Chave de Acesso da NF-e deveria ser informado o CNPJ da empresa emitente da
+NF-e, ou o CNPJ da SEFAZ no caso da Nota Fiscal Avulsa. Esta realidade foi alterada a partir da
+versão 4.00 do leiaute da NF-e (NT 2018.001), permitindo, a critério da UF, a identificação na Chave
+de Acesso também de emitente pessoa física (CPF).
+
+Também foi alterado o processo de assinatura da NF-e, que anteriormente somente podia ser feito
+utilizando um Certificado Digital tipo “e-CNPJ”. No caso do Emitente Pessoa Física:
+
+• O CPF deverá constar na Chave de Acesso, precedido por zeros, completando 14 posições;
+• Conforme pode ser visto na Tabela 2-4, está reservada uma faixa do campo Série da NF-e, como
+  forma de identificação do Emitente pessoa física (CPF);
+• A NF-e deverá ser assinada com o Certificado Digital do Emitente, do tipo “e-CPF”.
+
+Com exceção do Código Numérico, todas as demais informações que compõem a Chave de Acesso
+podem ser deduzidas por qualquer pessoa, o que representa um risco importante para a segurança
+das consultas aos dados das NF-e. Para minimizar este risco, o Código Numérico deve ser uma
+sequência totalmente aleatória.
+2.2.6.2. Cálculo do Dígito Verificador da Chave de Acesso da NF-e
+O dígito verificador (DV) da chave de acesso da NF-e é baseado em um cálculo do módulo 11. O
+módulo 11 de um número é calculado multiplicando-se cada algarismo pela sequência de números
+2,3,4,5,6,7,8,9,2,3, ..., posicionados da direita para a esquerda. A somatória dos resultados das
+ponderações dos algarismos é dividida por 11 e o DV (dígito verificador) será a diferença entre o
+divisor (11) e o resto da divisão:
+
+       DV = 11 - (resto da divisão)
+
+Quando o resto da divisão for 0 (zero) ou 1 (um), o DV deverá ser igual a 0 (zero).
+
+Exemplo:
+
+       Consideremos uma chave de acesso com a seguinte sequência de caracteres:
+
+
+ A. CHAVE DE ACESSO     5 2 0 6 0 4 3 3 0 0 9 9 1 1 0 0 2 5 0 6 5 5 0 1 2 0 0 0 0 0 0 7 8 0 0 2 6 7 3 0 1 6 1
+ B. PESOS               4 3 2 9 8 7 6 5 4 3 2 9 8 7 6 5 4 3 2 9 8 7 6 5 4 3 2 9 8 7 6 5 4 3 2 9 8 7 6 5 4 3 2
+
+                                                                                                           Página 19 / 150
+Nota Fiscal Eletrônica
+MOC 7.0 – Visão Geral
+
+
+
+ C. PONDERAÇÃO (A*B) 20 6 0 54 0 28 18 15 0 0 18 81 8 7 0 0 8 15 0 54 40 35 0 5 8 0 0 0 0 0 0 35 32 0 0 18 48 49 18 0 4 18 2
+
+       Somatória das ponderações = 644
+       Dividindo a somatória das ponderações por 11 teremos 644 / 11 = 58 restando 6.
+       DV = 11 - (resto da divisão) = 11 - 6 = 5
+
+       Neste caso o DV da chave de acesso da NF-e é igual a "5", valor este que deverá compor a chave de
+                  acesso, formando uma sequência de 44 caracteres.

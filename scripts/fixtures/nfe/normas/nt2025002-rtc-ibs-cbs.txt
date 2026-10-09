@@ -1,0 +1,119 @@
+ UB12-10     55/65 Não informado grupo de imposto IBS e CBS (grupo: det/imposto/IBSCBS)                          Obrig.   1115 Rejeição: Grupo IBSCBS não informado [nItem: 999]
+                   Exceção 1: Não se aplica à NFe de devolução de mercadorias (tag: finNFe = 4) ou NFe
+                        complementar (tag: finNFe = 2) que referencia NFe com data de emissão anterior a
+                        2026 2027.
+                   Exceção 2: Não se aplica caso informado campo cProdANP (id: LA02) e produto está
+                        presente na Tabela de Combustíveis Sujeitos à Tributação Monofásica (coluna
+                        cProdANP).
+                   Observação 1: implementação em homologação para NFe com data de emissão maior
+                        ou igual a 01/07/2026 e emitente com CRT 3=Regime Normal.
+                   Observação 2: implementação em produção para NFe com data de emissão maior ou
+                        igual a 03/08/2026 e emitente com CRT 3=Regime Normal.
+                   Observação 3: implementação em produção para emitente com CRT com 1=Simples
+                        Nacional, 2=Simples Nacional, excesso sublimite de receita bruta ou 4=Simples
+                        Nacional - Microempreendedor Individual – MEI a partir 04/01/2027.
+                   Observação 2: implementação futura para produção.
+                   Observação 3: Tabela de Combustíveis Sujeitos à Tributação Monofásica publicada na
+                        aba “Documentos”, opção “Diversos” do Portal Nacional da Nota Fiscal Eletrônica.
+
+[...]
+
+ UB16-10     55/65 Valor da Base de cálculo do IBS e CBS (gIBSCBS/vBC) deve ser igual ao somatório de:     Obrig. 1104 Rejeição: Valor da Base de cálculo do IBS e CBS
+                       (+) vProd                                                                                       difere do somatório dos valores que a compõem
+                       (+) vServ                                                                                       [nItem: 999]
+                       (+) vFrete
+                       (+) vSeg
+                       (+) vOutro
+                       (+) vII
+                       (-) vDesc
+                       (-) vPIS
+                       (-) vCOFINS
+                       (-) vICMS
+                       (-) vICMSUFDest
+                       (-) vFCP
+                       (-) vFCPUFDest
+                       (-) vICMSMono
+                       (-) vISSQN
+                       (+) vIS
+                   Exceção 1: Não subtrair o valor do PIS por Substituição Tributária (PIST/vPIS) quando
+                       compor o valor total da NF-e (se indSomaPISST=1);
+                   Exceção 2: Não subtrair o valor do COFINS por Substituição Tributária
+                       (COFINSST/vCOFINS) quando compor o valor total da NF-e (se
+                       indSomaCOFINSST=1).
+                   Nota: Implementação Futura, aguardando orientação normativa.
+ UB18-10     55/65 Se informado grupo de IBS Estadual (gIBSUF):                                            Obrig. 1026 Rejeição: Alíquota do IBS da UF inválida [nItem: 999]
+                   A alíquota de IBS da UF (pIBSUF) deverá ser:
+                     - 0,1% para documento com data de emissão no ano de 2025 e 2026. (Art. 343 da LC
+                       214/25);
+                     - 0,05% para documento com data de emissão no ano de 2027 e 2028. (Art. 344 da LC
+                       214/25);
+
+
+
+                                                                                                                                                             Página 43 / 94
+Nota Fiscal Eletrônica - NF-e
+Reforma Tributária – Lei Complementar nº 214/2025
+NT 2025.002-RTC
+
+  Campo     Modelo                                       Regra de Validação                                     Aplic. Msg                     Descrição Erro
+                      - Alíquota de referência ou específica a ser publicada para anos posteriores a 2028.
+                     Exceção 1: Se o cClassTrib possuir indicador de Tributação Regular, o pIBSUF deve ser
+                        igual a zero.
+                     Exceção 2: A regra não se aplica caso tpNFCredito=04-Redução de valores.
+                     Exceção 2: A regra não se aplica caso:
+                      - Finalidade de devolução de mercadoria (tag: finNFe=4);
+                      - ou Nota de Crédito do tipo “03=Retorno por Recusa Total” (tag: tpNFCredito=03);
+                      - ou Nota de Crédito do tipo “04=Redução de valores” (tag: tpNFCredito=04);
+                      - ou Nota de Crédito do tipo “06=Retorno por Recusa Parcial” (tag: tpNFCredito=06).
+
+[...]
+
+VB01-05 55/65 Se informado grupo gIBSCBS:                                                             Obrig.   1137 Rejeição: Valor total do Item (vItem) não informado
+               - vItem não informado.                                                                               [nItem: 999]
+              Observação 1: Implementação Futura.
+VB01-10 55/65 Se vItem informado:                                                                     Obrig.   1105 Rejeição: Valor total do Item (vItem) difere do
+               Se não é operação de Faturamento Direto para veículos novos (tpOp = nulo ou tpOp <> 2,               somatório dos valores que o compõem [nItem: 999]
+                 id:J02):
+               - Valor total do Item (vItem) deve ser igual ao somatório:
+                 (+) vProd
+                 (-) vDesc
+                 (-) vICMSDeson, se indDeduzDeson=1
+                 (+) vICMSST
+                 (+) vICMSMonoReten
+                 (+) vFCPST
+                 (+) vFrete
+                 (+) vSeg
+                 (+) vOutro
+                 (+) vII
+                 (+) vIPI
+                 (+) vIPIDevol
+                 (+) vServ
+                 (+) vPIS (id: R06, campo: PISST/vPIS), se indSomaPISST=1
+                 (+) vCofins (id: T06, campo: COFINSST/vCOFINS), se indSomaCOFINSST =1 (NT
+                      2020.005)
+                 (+) vIBS
+                 (+) vCBS
+                 (+) vIS
+                 (+) vTotIBSMonoItem
+                 (+) vTotCBSMonoItem
+              Exceção 1: Em 2025 e 2026 não somar vIBS, vCBS, vIS, vTotIBSMonoItem,
+                 vTotCBSMonoItem.
+              Observação 1: Implementação Futura.
+
+[...]
+
+ W60-05     55/65 Se informado grupo IBSCBSTot:                                                              Obrig. 1004 Rejeição: Valor total da NF-e com IBS / CBS / IS
+                     - vNFTot não informado.                                                                             (vNFTot) não informado
+                  Observação: Implementação futura.
+ W60-10     55/65 Se vNFTot informado:                                                                       Obrig. 1094 Rejeição: Total da NFe difere da soma do total dos
+                     - O total geral do DFe (tag: vNFTot) deverá ser a soma do total dos itens (vItem, tag               itens da Nota
+                       VB01).
+                  Observação: Implementação futura.
+
+
+
+
+                                                                                                                                                                Página 71 / 94
+Nota Fiscal Eletrônica - NF-e
+Reforma Tributária – Lei Complementar nº 214/2025
+NT 2025.002-RTC

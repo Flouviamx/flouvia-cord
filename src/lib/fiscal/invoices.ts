@@ -64,6 +64,7 @@ import { exemptionReasonFor } from './exemption';
 import { descuentoDesdeJson, descuentoParaMotor, type DescuentoDef, type DescuentoSolicitud } from '../descuentos';
 import { DescuentoError, liberarCupon, redimirCupon, resolverDescuento } from '../cupones';
 import { railDeDocumento } from './latam/rieles';
+import { conDatosNfe, tipoDocumentoBrasil } from './latam/nfe/enrutamiento';
 import { checkLeitwegId, leitwegProblem, splitEInvoiceAddress } from './einvoice/codes';
 import { currentLocale } from '../context';
 
@@ -546,8 +547,15 @@ export async function createInvoiceDraft(orgId: string, input: CreateDraftInput)
   }
   const { subtotal, taxes, total, retenciones, retencionTotal } = built;
   // México: cada concepto lleva las claves SAT de su producto (sat-claves.ts);
-  // el resto, la unidad.
-  const lines = await withSatKeys(orgId, itemsConTasaValidada, built.lines, country !== 'MX');
+  // el resto, la unidad. Brasil con la NF-e: los datos de NF-e del producto.
+  const lines = await conDatosNfe(orgId, country, itemsConTasaValidada.map((i) => i.productoId),
+    await withSatKeys(orgId, itemsConTasaValidada, built.lines, country !== 'MX'));
+  // Brasil: NFS-e (servicios) o NF-e (mercancías), según los conceptos.
+  if (country === 'BR') {
+    const br = await tipoDocumentoBrasil(orgId, docType, lines, input.documentMode);
+    if (!br.ok) return { ok: false, error: br.error };
+    docType = br.docType;
+  }
 
   const fx = await resolveFxRate(currency, ledgerCurrency, total, country, isFiscalDocument(docType, country));
   if ('error' in fx) return { ok: false, error: fx.error };
@@ -696,8 +704,15 @@ export async function updateInvoiceDraft(
   }
   const { subtotal, taxes, total, retenciones, retencionTotal } = built;
   // México: cada concepto lleva las claves SAT de su producto (sat-claves.ts);
-  // el resto, la unidad.
-  const lines = await withSatKeys(orgId, itemsConTasaValidada, built.lines, country !== 'MX');
+  // el resto, la unidad. Brasil con la NF-e: los datos de NF-e del producto.
+  const lines = await conDatosNfe(orgId, country, itemsConTasaValidada.map((i) => i.productoId),
+    await withSatKeys(orgId, itemsConTasaValidada, built.lines, country !== 'MX'));
+  // Brasil: NFS-e (servicios) o NF-e (mercancías), según los conceptos.
+  if (country === 'BR') {
+    const br = await tipoDocumentoBrasil(orgId, docType, lines, input.documentMode);
+    if (!br.ok) return { ok: false, error: br.error };
+    docType = br.docType;
+  }
 
   const fx = await resolveFxRate(currency, ledgerCurrency, total, country, isFiscalDocument(docType, country));
   if ('error' in fx) return { ok: false, error: fx.error };

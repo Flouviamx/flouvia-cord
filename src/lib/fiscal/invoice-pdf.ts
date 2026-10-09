@@ -23,6 +23,7 @@ import {
 } from '../pdf/writer';
 import type { FiscalLineItem, FiscalParty, FiscalRetencion } from './index';
 import type { RepresentacionImpresa } from './latam/representacion';
+import { createDanfePdf } from './latam/nfe/danfe';
 import { termDays } from '../payment-terms';
 
 export interface InvoicePdfInput {
@@ -337,6 +338,9 @@ function validTimeZone(value: string | null | undefined): string | undefined {
 }
 
 export function createInvoicePdf(input: InvoicePdfInput): Buffer {
+  // Brasil, NF-e: el documento que la norma exige impreso es el DANFE, con su
+  // propio leiaute (MOC Anexo II), no la factura de Cord con un bloque legal.
+  if (input.autoridad?.danfe) return createDanfePdf(input.autoridad.danfe);
   const appearance = resolveBrandProfile(input.brandProfile);
   const fontFamily = appearance.font === 'editorial' ? 'serif' : 'sans';
   const measureText = (text:string,size:number,font:FontKey='regular') => measure(text,size,font,fontFamily);

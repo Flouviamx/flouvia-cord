@@ -72,6 +72,13 @@ export interface RepresentacionImpresa {
      * leyenda de destino. Solo se imprime cuando se pide esa copia.
      */
     cedible?: { leyenda: string; acuseTitulo: string; acuseCampos: string[]; acuseTexto: string };
+    /**
+     * Brasil, NF-e: la norma no pide un bloque dentro de la factura de Cord
+     * sino OTRO documento con su propio leiaute, el DANFE (MOC Anexo II). Con
+     * estos datos invoice-pdf.ts dibuja el DANFE en lugar de la factura
+     * (latam/nfe/danfe.ts).
+     */
+    danfe?: import('./nfe/danfe').DanfeDatos;
 }
 
 const texto = (v: unknown) => (typeof v === 'string' ? v : '');
@@ -137,5 +144,14 @@ export function representacionDe(providerData: unknown): RepresentacionImpresa |
         ...(recuadroDe(r.recuadro) ? { recuadro: recuadroDe(r.recuadro)! } : {}),
         ...(timbreDe(r.timbre) ? { timbre: timbreDe(r.timbre)! } : {}),
         ...(cedibleDe(r.cedible) ? { cedible: cedibleDe(r.cedible)! } : {}),
+        ...(danfeValido(r.danfe) ? { danfe: r.danfe as RepresentacionImpresa['danfe'] } : {}),
     };
+}
+
+/** Forma mínima de los datos del DANFE: chave de 44, número y al menos un ítem. */
+function danfeValido(v: unknown): boolean {
+    if (!v || typeof v !== 'object') return false;
+    const d = v as Record<string, unknown>;
+    return typeof d.chave === 'string' && /^[0-9]{6}[0-9A-Z]{12}[0-9]{26}$/.test(d.chave) && Number.isInteger(d.nNF)
+        && Array.isArray(d.itens) && d.itens.length > 0 && !!d.emit && !!d.dest && !!d.totais;
 }

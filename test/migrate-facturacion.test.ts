@@ -30,6 +30,7 @@ const BASE = `
         es_default boolean not null default false, activo boolean not null default true, kind text not null default 'consumo');
     create table cotizacion_items (id serial primary key, tax_rate numeric);
     create table clientes (id uuid primary key, org_id uuid not null references orgs(id) on delete cascade, empresa text);
+    create table productos (id uuid primary key, org_id uuid not null references orgs(id) on delete cascade, nombre text);
     create table cotizaciones (id uuid primary key, org_id uuid not null references orgs(id) on delete cascade, descuento numeric not null default 0);
     create table documento_recurrencias (id uuid primary key, org_id uuid not null references orgs(id) on delete cascade);
 `;
@@ -127,6 +128,18 @@ describe('migración de despliegue de facturación', () => {
                   and relrowsecurity and relforcerowsecurity order by relname`)).rows.map((r) => r.relname);
             expect(rlsSpfe).toEqual(['spfe_envio_estado', 'spfe_estados_destinatario', 'spfe_mensajes']);
             expect((await db.query(`select 1 from pg_trigger where tgname = 'trg_spfe_mensaje_inmutable'`)).rows).toHaveLength(1);
+
+            // NF-e de Brasil (db/deploy/2026-10-09-nfe.sql): eventos, inutilização y
+            // contingencia con RLS forzada, lo registrado inmutable, y los datos de
+            // NF-e del producto y del cliente.
+            const rlsNfe = (await db.query<{ relname: string }>(`select relname from pg_class
+                where relname in ('nfe_eventos', 'nfe_inutilizacoes', 'nfe_contingencias')
+                  and relrowsecurity and relforcerowsecurity order by relname`)).rows.map((r) => r.relname);
+            expect(rlsNfe).toEqual(['nfe_contingencias', 'nfe_eventos', 'nfe_inutilizacoes']);
+            expect((await db.query(`select 1 from pg_trigger where tgname in ('trg_nfe_evento_inmutable', 'trg_nfe_inutilizacao_inmutable')`)).rows).toHaveLength(2);
+            const nfeColumnas = (await db.query<{ c: string }>(`select table_name || '.' || column_name as c from information_schema.columns
+                where column_name = 'nfe' and table_name in ('productos', 'clientes') order by 1`)).rows.map((r) => r.c);
+            expect(nfeColumnas).toEqual(['clientes.nfe', 'productos.nfe']);
 
             // Canadá: la QST suelta pasa a la combinada, y la tasa plana la sigue.
             expect((await db.query<{ nombre: string; tasa: string }>(`select nombre, tasa::text from impuestos where org_id = '${ORG_CA}'`)).rows)

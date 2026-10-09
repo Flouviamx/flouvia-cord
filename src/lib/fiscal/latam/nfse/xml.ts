@@ -64,16 +64,18 @@ const pemADerB64 = (pem: string) => pem.replace(/-----(BEGIN|END) CERTIFICATE---
 /**
  * Forma canónica (C14N 1.0, subconjunto) del elemento `tag` con `Id`: el
  * namespace por defecto en vigor (`ns`) se declara en el ápice, antes de los
- * atributos. Lanza si el elemento no está en el documento.
+ * atributos. `atributos` son los que el elemento lleva DESPUÉS de `Id`, ya en
+ * forma canónica y en orden (la NF-e: `infNFe Id="…" versao="4.00"`). Lanza
+ * si el elemento no está en el documento.
  */
-export function canonicoDoElemento(xml: string, tag: string, id: string, ns: string): string {
-    const apertura = `<${tag} Id="${escAtributo(id)}">`;
+export function canonicoDoElemento(xml: string, tag: string, id: string, ns: string, atributos = ''): string {
+    const apertura = `<${tag} Id="${escAtributo(id)}"${atributos}>`;
     const inicio = xml.indexOf(apertura);
     if (inicio < 0) throw new Error(`xml: no se encontró <${tag} Id="${id}">`);
     const cierre = xml.indexOf(`</${tag}>`, inicio);
     if (cierre < 0) throw new Error(`xml: <${tag}> sin cierre`);
     const elemento = xml.slice(inicio, cierre + tag.length + 3);
-    return `<${tag} xmlns="${ns}" Id="${escAtributo(id)}">${elemento.slice(apertura.length)}`;
+    return `<${tag} xmlns="${ns}" Id="${escAtributo(id)}"${atributos}>${elemento.slice(apertura.length)}`;
 }
 
 export function signedInfo(id: string, digestB64: string, comNamespace: boolean): string {
@@ -95,8 +97,8 @@ export function signedInfo(id: string, digestB64: string, comNamespace: boolean)
  * Firma el elemento `tag` (con su `Id`) de un documento armado por Cord e
  * inserta `<Signature>` como último hijo de la raíz `raiz`.
  */
-export function assinar(xml: string, opts: { raiz: string; tag: string; id: string; ns: string; certPem: string; keyPem: string }): string {
-    const canonico = canonicoDoElemento(xml, opts.tag, opts.id, opts.ns);
+export function assinar(xml: string, opts: { raiz: string; tag: string; id: string; ns: string; certPem: string; keyPem: string; atributos?: string }): string {
+    const canonico = canonicoDoElemento(xml, opts.tag, opts.id, opts.ns, opts.atributos);
     const digest = createHash('sha1').update(canonico, 'utf8').digest('base64');
     const si = signedInfo(opts.id, digest, true);
     const valor = createSign('RSA-SHA1').update(si, 'utf8').sign(opts.keyPem, 'base64');

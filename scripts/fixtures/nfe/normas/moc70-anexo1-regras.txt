@@ -1,0 +1,111 @@
+   B03-10       55/65 Verificar formação do cNF:                                                     Obrig.   897   Rej.   Rejeição: Código numérico em formato inválido.
+                      cNF não pode ser igual a 00000000, 11111111, 22222222, 33333333,
+                      44444444, 55555555, 66666666, 77777777, 88888888, 99999999, 12345678,
+                      23456789, 34567890, 45678901, 56789012, 67890123, 78901234, 89012345,
+                      90123456, 01234567.
+                      cNF não pode ser igual a nNF (id: B08). (NT 2019.001 v1.00, v1.50)
+
+[...]
+
+  E16a-30        55     Informado destinatário como Contribuinte Isento de Inscrição Estadual          Obrig.   805   Rej.   Rejeição: A SEFAZ do destinatário não permite Contribuinte Isento de
+                        (indIEDest=2-ISENTO) em UF que não permite esta situação nas operações                               Inscrição Estadual
+                        interestaduais (idDest=2), conforme abaixo:
+                          - AM, BA, CE, GO, MG, MS, MT, PA, PE, RN, SE, SP
+                        Exceção 1: Esta regra de validação não se aplica quando houver destaque do
+                        ICMS-ST (campo vICMSST) em pelo menos um item da NF-e
+                        Exceção 2: Esta regra de validação não se aplica quando houver informação
+                        do ICMS-ST retido anteriormente (campo vICMSSTRet) em pelo menos um
+                        item da NF-e
+                        Exceção 3: A regra de validação não se aplica, em produção, para Nota Fiscal
+                        com data de emissão anterior a 01/07/2016
+                        Exceção 4: Esta regra de validação não se aplica nas operações isentas
+                        (CST=40-Isenta ou CSOSN=103-Isento), imunes ou não tributadas (CST=41-
+                        Não tributada, ou CSOSN=300-Imune, ou CSOSN=400-Não tributada pelo
+                        Simples Nacional)
+  E16a-35        55     Informado destinatário como Contribuinte Isento de Inscrição Estadual          Facul.   805   Rej.   Rejeição: A SEFAZ do destinatário não permite Contribuinte Isento de
+                        (indIEDest=2-ISENTO) em UF que não permite esta situação nas operações                               Inscrição Estadual
+                        internas (idDest=1)
+                        Exceção 1: Esta regra de validação não se aplica quando houver destaque do
+                        ICMS-ST (campo vICMSST) em pelo menos um item da NF-e.
+                        Exceção 2: Esta regra de validação não se aplica quando houver informação
+                        do ICMS-ST retido anteriormente (campo vICMSSTRet) em pelo menos um
+                        item da NF-e.
+                        Exceção 3: A regra de validação não se aplica, em produção, para Nota Fiscal
+                        com data de emissão anterior a 01/07/2016.
+                        Exceção 4: Esta regra de validação não se aplica nas operações isentas
+                        (CST=40-Isenta ou CSOSN=103-Isento), imunes ou não tributadas (CST=41-
+                        Não tributada, ou CSOSN=300-Imune, ou CSOSN=400-Não tributada pelo
+                        Simples Nacional) (NT 2015.003)
+  E16a-40        55     Informado indicador de IE do Destinatário não-contribuinte (tag:               Obrig.   696   Rej.   Rejeição: Operação com não contribuinte deve indicar operação com
+                        indIEDest=9) e não é operação com consumidor final (tag: indFinal<>1) em                             consumidor final
+                        operação de saída (tag: tpNF=1) que não é com exterior (tag:idDest<>3). (NT
+                        2019.001 v1.00)
+
+[...]
+
+   I11-10       55/65   Se NF-e Normal (tag:finNFe=1):                                                     Facul.   629   Rej.   Rejeição: Valor do Produto difere do produto Valor Unitário de
+                        - vProd (id:I11) difere de vUnCom (id:I10a) * qCom (id:I10) (*4) (NT 2011/005)                                 Comercialização e Quantidade Comercial [nItem: 999]
+   I11-20       55/65   Se NF-e Normal (tag:finNFe=1):                                                     Facul.   630   Rej.   Rejeição: Valor do Produto difere do produto Valor Unitário de Tributação e
+                        - vProd (id:I11) difere de vUnTrib (id:I14a) * qTrib (id:I14) (*4) (NT 2011/005)                               Quantidade Tributável [nItem: 999]
+   I12-10       55/65   Se informado GTIN da unidade tributável (tag: cEANTrib) <> “SEM GTIN” ou           Obrig.   612   Rej.   Rejeição: GTIN da unidade tributável (cEANTrib) inválido [nItem:999]
+                               Nulo):
+                        - cEANTrib com dígito de controle inválido
+
+                        Observação: Cálculo do dígito verificador em www.gs1.org/check-digit-
+                             calculator (NT 2017.001)
+
+
+
+
+                                                                                                                                                                                           Página 93 / 153
+Nota Fiscal Eletrônica
+MOC 7.0 – Anexo I, Leiaute e Regras de Validação da NF-e e da NFC-e
+
+[...]
+
+  N12a-70        55     Operação com Não Contribuinte (indIEDest=9) e CSOSN difere da                  Obrig.   600   Rej.   Rejeição: CSOSN incompatível na operação com Não Contribuinte [nItem:
+                        relação abaixo:                                                                                      999]
+                          - 102-Tributação SN sem permissão de crédito;
+                          - 103-Tributação SN, com isenção para faixa de receita bruta;
+                          - 300-Imune;
+                          - 400-Não tributada pelo Simples Nacional;
+                          - 500-ICMS cobrado anteriormente por substituição tributária ou por
+                        antecipação;
+                        Exceção 1: A regra de validação acima não se aplica para NF-e de entrada
+                        (tpNF=0-Entrada).
+                        Exceção 2: A regra de validação acima não se aplica nas operações com CFOP
+                        de conserto ou reparo (CFOP 5915, 5916, 6915 e 6916) ou de remessa para
+
+[...]
+
+  NA01-20       55      Não informado grupo de ICMS para a UF de Destino (tag:ICMSUFDest):             Obrig.   694    Rej. Rejeição: Não informado o grupo de ICMS para a UF de destino [nItem: 999]
+                          - Operação Interestadual (idDest=2) e
+                          - Operação com Consumidor Final (indFinal=1) e
+                          - Operação com Não Contribuinte (indIEDest=9) e
+                          - Não é operação de prestação de serviços (não existe tag “ISSQN”).
+                        Exceção 1: Esse grupo não deve ser exigido se o Grupo de Partilha do ICMS
+                        (campo ICMSPart) estiver preenchido.
+                        Exceção 2: A regra de validação não se aplica, em produção, para Nota Fiscal
+                        com data de emissão anterior a 01/07/2016.
+                        Exceção 3: A regra de validação não se aplica para Devolução de Mercadoria
+                        (finNFe=4) que referencie Nota Fiscal com chave de acesso anterior a 2016.
+                        Exceção 4: A regra de validação acima não se aplica para as operações com
+                        CFOP de Retorno de Mercadorias (Tabela CFOP, indRetor=1).
+                        Exceção 5: A regra de validação acima não se aplica nas NF-e de entrada
+                        (tpNF=0).
+                        Exceção 6: A regra de validação acima não se aplica nas operações com
+                        combustíveis (tag:comb) derivados de petróleo com código ANP diferente de:
+                        820101001, 820101010, 810102001, 810102004, 810102002, 810102003,
+                        810101002, 810101001, 810101003, 220101003, 220101004, 220101002,
+                        220101001, 220101005, 220101006, 560101001.
+                        Exceção 7: A regra de validação acima não se aplica se informada UF do local
+                        de entrega (tag: entrega/UF) igual à UF do emitente (tag:
+                        emit/enderEmit/UF).
+                        Exceção 8: A regra de validação acima não se aplica para as operações com
+                        CFOP de Remessa de Mercadoria (Tabela CFOP, indRemes=1).
+
+[...]
+
+(*4) O valor resultante da multiplicação deve ser arredondado para um valor numérico com duas casas decimais. Considerar uma tolerância de R$ 0,01 para mais ou para
+menos na validação.
+2 Idem nota anterior.

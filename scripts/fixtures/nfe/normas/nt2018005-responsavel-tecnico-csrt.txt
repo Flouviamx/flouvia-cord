@@ -1,0 +1,146 @@
+  Código de Segurança do Responsável Técnico - CSRT.
+
+  O CSRT corresponde a um código de segurança alfanumérico (16 a 36 bytes) de conhecimento
+  apenas da Secretaria da Fazenda da Unidade Federada do emitente e da empresa responsável pelo
+  sistema emissor de DF-e.
+
+  A fim de garantir maior segurança no processo de emissão da NF-e e NFC-e, foi incluído o campo
+  “hashCSRT” no grupo de identificação do responsável técnico. Este hash é gerado a partir da
+  concatenação do CSRT da empresa com a chave de acesso da NF-e/NFC-e. Desta forma será
+  possível garantir a autoria do software emissor da NF-e/NFC-e, pois, somente a empresa
+  desenvolvedora do software e o Fisco conhecem o valor válido do CSRT utilizado para a geração do
+  “hashCSRT”. Deverá ser utilizado o algoritmo SHA-1 para a geração do hash.
+
+  Para o estado do Paraná, o CSRT será opcional em homologação até 19/01/2026 e em produção
+  até 23/02/2026. Após essas respectivas datas o idCSRT e hashCSRT serão obrigatórios.
+  Portanto, até a obrigatoriedade, esses campos serão facultativos para as empresas. Somente serão
+  validados em produção o idCSRT e hashCSRT a partir de 01/10/2024, caso estes campo sejam
+  informados..
+
+
+  2.2 Fornecimento do CSRT
+
+  O processo de fornecimento do CSRT para o Responsável Técnico será feito por meio de página
+  web específica da Secretaria da Fazenda da UF de cada emissor. Por meio desta página, o
+  Responsável Técnico deverá solicitar, consultar ou revogar o CSRT. A critério da UF, poderá o CSRT
+  ser fornecido também por Web Service. Cada unidade federada que tenha a intenção de utilizar este
+  código deverá publicar como os contribuintes nela estabelecidos deverão obtê-lo.
+
+  Será possível solicitar somente cinco CSRT por UF. Todavia, se a empresa necessitar de um sexto
+  CSRT deverá indicar, previamente, qual dos outros CSRT válidos deseja revogar, uma vez que a
+  empresa desenvolvedora do software poderá ter simultaneamente, no máximo, 5 CSRT válidos.
+
+
+  2.3 Geração do hashCSRT
+  Os passos para a geração do “hashCSRT” estão descritos a seguir:
+     • Passo 1: Concatenar o CSRT com a chave de acesso da NF-e/NFC-e que está sendo emitida.
+     • Passo 2: Aplicar o algoritmo SHA-1 sobre o resultado da concatenação do passo 1, resultando
+        em um string de 20 bytes hexadecimais.
+     • Passo 3: Converter o resultado do passo anterior para Base64, resultando em uma string de
+                                                                                          Página 8 / 28
+Projeto
+Nota Fiscal Eletrônica
+NT 2018.005
+
+              28 caracteres
+          •   Passo 4: Montar o grupo de identificação da empresa desenvolvedora do software (tag:
+              infRespTec), com a tag “idCSRT” o identificador do CSRT utilizado para a geração do hash e
+              a tag “hashCSRT” o resultado do passo 3
+
+
+
+
+                                                                                             Página 9 / 28
+Projeto
+Nota Fiscal Eletrônica
+NT 2018.005
+
+
+
+  2.4 Exemplo do hashCSRT
+  Considere a situação hipotética de emissão de uma NF-e, e os parâmetros a serem utilizado no
+  cálculo do “hashCSRT” são:
+      • Chave de Acesso: 41180678393592000146558900000006041028190697
+      • CSRT: G8063VRTNDMO886SFNK5LDUDEI24XJ22YIPO
+      • idCSRT: 01
+
+  - Passo 1: Concatenar o CSRT com a chave de acesso da NF-e/NFC-e que está sendo emitida.
+     Resultado:
+  G8063VRTNDMO886SFNK5LDUDEI24XJ22YIPO411806783935920001465589000000060410281
+  90697
+
+  Passo 2: Aplicar o algoritmo SHA-1 sobre o resultado da concatenação do passo 1, gerando uma
+  string de 40 caracteres em hexadecimal.
+      Resultado: <string de 20 bytes hexadecimais>
+      Resultado: 696bfa2de10ce17eaee3ea8123639867c82b8a0c
+
+  - Passo 3: Converter o resultado do passo anterior para Base64, resultando em uma string de 28
+  caracteres (20 bytes).
+         Resultado: 696bfa2de10ce17eaee3ea8123639867c82b8a0c
+         Resultado: aWv6LeEM4X6u4+qBI2OYZ8grigw=
+
+  - Passo 4: Montar o grupo de identificação do responsável técnico (tag: infRespTec).
+     Resultado: <infRespTec>
+                    <CNPJ>99999999999999</CNPJ>
+                    <xContato>Nome do Contato</xContato>
+                    <email>email@empresaficticia.com.br</email>
+                    <fone>41999999999</fone>
+                    <idCSRT>01</idCSRT>
+          <hashCSRT>696bfa2de10ce17eaee3ea8123639867c82b8a0c</hashCSRT>
+                    <hashCSRT>aWv6LeEM4X6u4+qBI2OYZ8grigw=</hashCSRT>
+                </infRespTec>
+
+
+
+
+                                                                                         Página 10 /
+                                                                                         28
+Projeto
+Nota Fiscal Eletrônica
+NT 2018.005
+
+[...]
+
+     ZD01-10   55/65 Não informado o grupo de informações do responsável técnico                     Facult. 972 Rej. Rejeição: Obrigatória as informações do
+                     Observação: Implementação a critério da UF                                                        responsável técnico
+                     Observação: Implementação futura, exceto as UF AM, MS, PE, PR, SC e TO, nas
+                     quais estas regras já estão em vigor em ambiente de teste na data da publicação
+                     da versão 1.30 desta NT, e entrarão em vigor em ambiente de produção no dia 03
+                     de junho de 2019
+     ZD02-10   55/65 Informado CNPJ do responsável técnico inválido                                  Facult. 973 Rej. Rejeição: CNPJ do responsável técnico
+                        – CNPJ com zeros, nulo ou DV inválido                                                          inválido
+                     Observação: Implementação a critério da UF
+                     Observação: Implementação futura, exceto as UF AM, MS, PE, PR, SC e TO, nas
+                     quais estas regras já estão em vigor em ambiente de teste na data da publicação
+                     da versão 1.30 desta NT, e entrarão em vigor em ambiente de produção no dia 03
+                     de junho de 2019
+     ZD07-10   55/65 Obrigatória a informação do identificador do CSRT (tag: idCSRT) e Hash do CSTR Facult. 975  Rej. Rejeição: Obrigatória a informação do
+                     (tag: hashCSRT), todas as UFs                                                                     identificador do CSRT e do Hash do CSRT
+                     Observação: Implementação a critério da UF para os estados que possuem
+                         cadastro de fornecedor de software
+                     Observação 1: Regra válida para o PR, modelo 55, a partir de 19/01/2026 em
+                     homologação e 23/02/2026 em produção
+                     Observação 2: Modelo 65, implementação futura
+                     Exceção 1: Não se aplica para NFF (tpEmis = 3-NFF) e SVC (tpEmis = 7 ou 8)
+
+[...]
+
+  4.5 Protocolo de Autorização na Rejeição por Duplicidade
+  A critério da UF, o sistema autorizador da NF-e e NFC-e poderá retornar o protocolo de autorização da nota, nos casos de duplicidade de NF-
+  e/NFC-e. Porém, isso somente irá acontecer, no caso do hash (tag: DigestValue) da NF-e/NFC-e enviada/rejeitada ser igual a NF-e/NFC-e
+  autorizada. Sendo assim, foi alterada a regra de validação 2B08-20.
+                                                                                                                                                         Página 23 / 28
+Projeto
+Nota Fiscal Eletrônica
+NT 2018.005
+
+
+    Campo-Seq   Modelo                          Regra de Validação                                 Aplic.   Msg   Efeito             Descrição Erro
+     2B08-20     55/65 Acesso BD NFE (Chave: Modelo, UF, CNPJ/CPF Emitente, Série,                 Obrig.   204    Rej. Rejeição: Duplicidade de NF-e
+                          Número):                                                                                       [nRec:999999999999999]
+                         – NF-e já cadastrada e não Cancelada/Denegada
+
+                         Observação 1: Na resposta assíncrona, a SEFAZ pode devolver o nREC
+                           – Número do Recibo do Lote caso tenha condições.
+                         Observação 2: A critério da UF, no caso do DigestValue ser igual a NF-e
+                           autorizada, poderá retornar o protocolo de Autorização.

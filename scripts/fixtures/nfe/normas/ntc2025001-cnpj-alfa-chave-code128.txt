@@ -1,0 +1,350 @@
+A expressão regular que verifica a chave de acesso passa a suportar letras nas 12 primeiras posições do
+CNPJ: [0-9]{6}[A-Z0-9]{12}[0-9]{26}
+
+Observação: Se algumas letras forem vedadas na composição do CNPJ Alfa, isto deve ser considerado
+também para a chave de acesso
+
+Cálculo do DV da Chave de Acesso
+O cálculo do DV da chave de acesso deverá aplicar a mesma lógica da validação do CNPJ Alfa, trocando
+todos os caracteres (44) que compõe a chave (números e letras) pelos números correspondentes da tabela
+ASCII subtraindo 48.
+
+Posteriormente à substituição, deverá ser aplicado o cálculo do Modulo 11 para a totalidade dos dígitos
+resultantes da chave de acesso.
+
+
+
+
+                                                                                                             8
+
+[...]
+
+   6. Padrão do Código de Barras dos Documentos Auxiliares
+O padrão de código de barras a ser impresso no documento auxiliar (DACTE, DANFE, DABPE etc.) é o CODE-
+128C e deverá representar a chave de acesso do DFe em emissão normal ou contingência.
+
+O CODE-128C tem como característica suportar somente números, portanto, não é compatível com uma
+chave de acesso que venha possuir caracteres alfanuméricos nas posições do CNPJ.
+
+O CODE-128C também possui um dígito verificador baseado em um cálculo do módulo 103 considerando a
+soma ponderada dos valores de cada um dos dígitos na mensagem que está sendo codificada, incluindo o
+valor do caractere de início (start).
+
+Para suportar as alterações do CNPJ Alfa será necessário adaptar o padrão de código para geração dos
+documentos auxiliares.
+
+O padrão sugerido a ser adotado é o modelo híbrido, utilizando o CODE 128-C, e na ocorrência de caracteres
+não numéricos, alternando para o CODE-128A que aceita além de números, letras maiúsculas. Esta alteração
+é feita usando o código 100 para alternar os subtipos A e C.
+
+      128A (Code Set A) – ASCII characters 00 a 95 (0–9, A–Z e códigos de controle)
+
+      128C (Code Set C) – 00–99 (codifica pares de números para cada item representado)
+
+O conjunto de caracteres representativos do Código de Barras CODE-128A e CODE-128C encontra-se
+referenciado baixo. Para a sua impressão será considerada a seguinte estrutura de simbolização:
+
+
+
+
+                                                                                                           9
+                                                                                                        Margem
+       Clara: espaço claro que não contém nenhuma marca legível por máquina, localizado à esquerda e à
+       direita do código, a fim de evitar interferência na decodificação da simbologia. A margem clara é
+       chamada também de "área livre", "zona de silêncio" ou "margem de silêncio".
+
+      Start C: inicia a codificação dos dados CODE-128C de acordo com o conjunto de caracteres. O Start
+       C não representa nenhum caractere.
+
+      Dados representados: caracteres representados no código de barras.
+
+      DV: dígito verificador da simbologia.
+
+      Stop: caractere de parada que indica o final do código ao leitor óptico.
+
+O código de barras deverá ser impresso com os padrões próprios residentes das impressoras de não impacto
+(laser ou deskjet) e de impacto (matriciais ou de linhas) a fim de respeitarem os padrões dos referidos códigos:
+
+      A área reservada no Documento Auxiliar;
+
+      Largura mínima total do código de barras (considerando o código de barras da chave de acesso, com 44
+       posições):
+           o   11,5 cm para impressoras de Não Impacto (Laser de Jato de Tinta);
+                       Por conta da mudança para o CNPJ Alfa, o novo padrão de código de barras – combinação do
+                       128-A com 128-C poderá apresentar maior volume de dados para suportar os caracteres não
+                       numéricos, por isso teremos mais barras e necessitando de mais espaço para acomodar essa
+                       informação e manter o código com leitura eficiente nos diversos leitores encontrados no
+                       mercado.
+           o   11,5 cm para impressora de impacto (Matricial e de linha)
+
+      Altura mínima da barra: 0,8 cm;
+
+      Largura mínima da barra: 0,02 cm, conforme explicado a seguir:
+
+      Considerando que para cada símbolo da barra são codificados dois caracteres, então teremos:
+
+      Tamanho do campo = 44 (caracteres) = 44 (símbolos)
+
+      Considerando que cada símbolo possui 11 (módulos) * 44 (símbolos) = 484 posições
+
+      Margem clara = deve ter no mínimo a dimensão de 10 (módulos) * 2 = 20 posições
+
+      Start A = 11 (módulos) = 11 posições
+
+      DV = 11 (módulos) = 11 posições
+
+      Stop = 13 (módulos) = 13 posições
+
+      Tamanho total da simbologia = 484 + 20 + 11 + 11 + 13 = 539 (posições)
+
+    Largura mínima de cada módulo da barra = 11,5 cm / 539 (posições) = 0,02 cm
+
+
+                                                                                                             10
+Cálculo do Dígito Verificador do CODE-128C
+O dígito verificador é baseado em um cálculo do módulo 103 considerando a soma ponderada dos valores de
+cada um dos dígitos na mensagem que está sendo codificada, incluindo o valor do caractere de início (start).
+
+O Code-128-C, que sempre será usado no início do código de barras utiliza o 105 como “Start”.
+Exemplo: consideremos que a chave de acesso fosse apenas de oito caracteres e contivesse o seguinte
+termo: 5225AB83
+                 Código            Valor do Código       Peso              Valor × Peso
+
+
+   START C                                      105             (1)                        105
+
+
+   52                                            52               1                         52
+
+
+   25                                            25               2                         50
+
+
+   CODE A                                       101               3                        303
+
+
+   'A' (ASCII)                                   33               4                        132
+
+
+   'B' (ASCII)                                   34               5                        170
+
+
+   CODE C                                        99               6                        594
+
+
+   83                                            83               7                        581
+
+
+   Soma                                                                                   1987
+
+
+   Resto da divisão por 103                                                 1987 mod 103 = 30
+
+
+
+Então 30 corresponde a “30” conforme tabela de composição dos caracteres do código de barras 128
+
+Na linha valor do caractere foi incluso o valor 103 que corresponde ao valor do caractere de início (start) para
+o padrão Code C.
+
+     O dígito verificador do código será o resto da divisão da somatória dos valores ponderados dividido
+        por 103 (módulo 103).
+Assim o dígito verificador será:
+     Valor da soma ponderada =(1×105)+(1×52)+(2×25)+(3×101)+(4×33)+(5×34)+(6×99)+(7×83) = 1987
+     1987/103 = 19, e resta 30, assim o DV é o código correspondente ao valor 30.
+
+
+
+
+                                                                                                             11
+Representação Simbólica do Código
+Combinação de barras: B=barra preta e S=espaço (barra branca)
+
+
+       Símbolo     Código        Padrão (B/S)                 Larguras
+
+
+  START C         105       BSBSBS                  214111
+
+
+  52              52        BSBSBS                  232111
+
+
+  25              25        BSBSBS                  112231
+
+
+  CODE A          101       BSBSBS                  211132
+
+
+  A               33        BSBSBS                  212122
+
+
+  B               34        BSBSBS                  222121
+
+
+  CODE C          99        BSBSBS                  211222
+
+
+  83              83        BSBSBS                  133111
+
+
+  DV (30)         30        BSBSBS                  222112
+
+
+  STOP            106       BSBSBSB                 2331112
+
+
+
+Orientações para o uso dos caracteres START, CODE e SHIFT
+As seguintes orientações devem ser seguidas para minimizar o comprimento do código de barras.
+Começando da esquerda:
+      1. Use o caractere de início 'C' pois os a chave de acesso dos DFe começarem com quatro ou mais
+         dígitos.
+      2. Considerando que começamos com o 'C' e os dados começarem com um número ímpar de
+         dígitos:
+
+              Insira o código de mudança para o conjunto 'A' (Code A) antes do último dígito ímpar.
+      3. Se quatro ou mais dígitos ocorrerem em sequência enquanto se estiver no conjunto de
+         caracteres 'A':
+
+               Se houver um número par de dígitos no grupo, insira o código de mudança para o
+                conjunto 'C' (Code C) antes do primeiro dígito do grupo.
+               Se houver um número ímpar de dígitos no grupo, insira o código de mudança para o
+                conjunto 'C' (Code C) imediatamente após o primeiro dígito do grupo. O primeiro dígito
+                permanecerá codificado no conjunto 'A'.
+      4. Quando estiver no conjunto de caracteres 'C' e um caractere não numérico ocorrer nos dados,
+         insira o código de mudança para o conjunto 'A' (Code A) antes do caractere não numérico.
+Exemplo para o caso de número ímpar antes de um caractere (começando em 'C'):
+
+
+
+
+                                                                                                        12
+Suponha que você esteja codificando "123A" e começou com o modo 'C'.
+       Você codificaria "12" no modo 'C'.
+       Ao encontrar o "3" (ímpar antes de um caractere não numérico), você inseriria o código "Code A".
+       Então, você codificaria "3" no modo 'A'.
+       Finalmente, você codificaria "A" no modo 'A'.
+O objetivo é sempre otimizar a densidade do código de barras, utilizando o conjunto de caracteres mais
+adequado para o tipo de dado que está sendo codificado em cada momento.
+
+Conjunto de Caracteres Código de Barras CODE-128
+Conjunto de caracteres representativos do Código de Barras pode ser obtido em:
+
+     https://en.wikipedia.org/wiki/Code_128
+     https://www.barcodesinc.com/articles/code128.htm
+
+
+
+
+                                                                                                           13
+Anexo I – Exemplo de validação do CNPJ Alfa em JavaScript
+class CNPJ {
+  static tamanhoCNPJSemDV = 12;
+  static regexCNPJSemDV = /^([A-Z\d]){12}$/;
+  static regexCNPJ = /^([A-Z\d]){12}(\d){2}$/;
+  static regexCaracteresMascara = /[./-]/g;
+  static regexCaracteresNaoPermitidos = /[^A-Z\d./-]/i;
+  static valorBase = "0".charCodeAt(0);
+  static pesosDV = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+  static cnpjZerado = "00000000000000";
+
+  static isValid(cnpj) {
+    if (!this.regexCaracteresNaoPermitidos.test(cnpj)) {
+      let cnpjSemMascara = this.removeMascaraCNPJ(cnpj);
+      if (this.regexCNPJ.test(cnpjSemMascara) && cnpjSemMascara !== this.cnpjZerado) {
+        const dvInformado = cnpjSemMascara.substring(this.tamanhoCNPJSemDV);
+        const dvCalculado = this.calculaDV(cnpjSemMascara.substring(0,
+this.tamanhoCNPJSemDV));
+        return dvInformado === dvCalculado;
+      }
+    }
+    return false;
+  }
+
+  static calculaDV(cnpj) {
+    if (!this.regexCaracteresNaoPermitidos.test(cnpj)) {
+      let cnpjSemMascara = this.removeMascaraCNPJ(cnpj);
+      if (this.regexCNPJSemDV.test(cnpjSemMascara) && cnpjSemMascara !==
+this.cnpjZerado.substring(0, this.tamanhoCNPJSemDV)) {
+        let somatorioDV1 = 0;
+        let somatorioDV2 = 0;
+        for (let i = 0; i < this.tamanhoCNPJSemDV; i++) {
+          const asciiDigito = cnpjSemMascara.charCodeAt(i) - this.valorBase;
+          somatorioDV1 += asciiDigito * this.pesosDV[i + 1];
+          somatorioDV2 += asciiDigito * this.pesosDV[i];
+        }
+        const dv1 = somatorioDV1 % 11 < 2 ? 0 : 11 - (somatorioDV1 % 11);
+        somatorioDV2 += dv1 * this.pesosDV[this.tamanhoCNPJSemDV];
+        const dv2 = somatorioDV2 % 11 < 2 ? 0 : 11 - (somatorioDV2 % 11);
+        return `${dv1}${dv2}`;
+      }
+    }
+    throw new Error("Não é possível calcular o DV pois o CNPJ fornecido é inválido");
+  }
+
+    static removeMascaraCNPJ(cnpj) {
+        return cnpj.replace(this.regexCaracteresMascara, "");
+    }
+
+}
+
+
+
+
+                                                                                         14
+Anexo II – Exemplo de validação da Chave de Acesso em Visual
+Basic .NET
+Public Class ChaveAcesso
+    Private Const TamanhoChaveAcessoSemDV = 43
+    Public Shared Function ValidaDigitoChaveAcesso(ByVal chaveAcesso As String) As
+Boolean
+        'Verifica DV
+        Dim digito As Char = CalculaDigitoVerificadorChaveAcesso(chaveAcesso).ToString()
+        If digito <> chaveAcesso.Substring(43, 1) Then
+             Return False
+        Else
+             Return True
+        End If
+        'Verifica demais informações da chAcesso (UF, CNPJ, AAAAMM emissão, caracteres
+inválidos, ...)
+        ' ...
+        ' ...
+    End Function
+
+
+     Public Shared Function CalculaDigitoVerificadorChaveAcesso(chaveAcesso As String)
+As Integer
+
+     ‘Converte a string em um array de bytes, onde cada byte representa o código ASCII
+     do caractere subtraído de 48
+       Dim chAcessoBytes(TamanhoChaveAcessoSemDV - 1) As Byte
+       For i As Integer = 0 To TamanhoChaveAcessoSemDV - 1
+            chAcessoBytes(i) = CByte(Asc(chaveAcesso(i)) - 48)
+       Next
+
+        Dim soma As Integer = 0
+        Dim peso As Integer = 2 ' multiplicador vai de 9 a 2
+
+        'Começa do final
+        For i As Integer = TamanhoChaveAcessoSemDV - 1 To 0 Step -1
+            soma = soma + Convert.ToInt32(chAcessoBytes(i)) * peso
+
+            peso += 1
+            If peso > 9 Then peso = 2
+        Next
+
+        Dim dv As Integer = 11 - (soma Mod 11)
+        If dv >= 10 Then
+            dv = 0
+        End If
+
+        Return dv
+
+    End Function
+End Class
+
+
+
+
+                                                                                         15

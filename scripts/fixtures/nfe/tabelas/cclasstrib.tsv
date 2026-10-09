@@ -1,0 +1,174 @@
+CST-IBS/CBS	cClassTrib	Nome cClassTrib	Tipo de Alíquota	pRedIBS	pRedCBS	ind_gTribRegular	ind_gCredPresOper	ind_gMonoPadrao	ind_gMonoReten	ind_gMonoRet	ind_gpBioDiferenca	ind_gEstornoCred	dIniVig	dFimVig	indNFe
+000	000001	Situações tributadas integralmente pelo IBS e CBS.	Padrão	0	0	0	0	0	0	0	0	0	2026-01-01		1
+000	000002	Exploração de via	Padrão	0	0	0	0	0	0	0	0	0	2026-01-01		0
+000	000003	Regime automotivo - projetos incentivados (art. 311)	Padrão	0	0	0	1	0	0	0	0	0	2026-01-01		1
+000	000004	Regime automotivo - projetos incentivados (art. 312)	Padrão	0	0	0	1	0	0	0	0	0	2026-01-01		1
+000	000005	Operação com EAC destinado à mistura com gasolina A, mas com saída do biocombustível com destinação diversa	Padrão	0	0	0	0	0	0	0	0	0	2026-01-01		1
+000	000006	Situações tributadas integralmente pelo IBS e CBS realizadas por autônomo	Padrão	0	0	0	0	0	0	0	0	0	2026-01-01		0
+010	010001	Operações do FGTS não realizadas pela Caixa Econômica Federal	Uniforme setorial	0	0	0	0	0	0	0	0	0	2026-01-01		0
+010	010002	Operações do serviço financeiro	Uniforme setorial	0	0	0	0	0	0	0	0	0	2026-01-01		0
+011	011001	Planos de assistência funerária.	Uniforme nacional (referência)	60	60	0	0	0	0	0	0	0	2026-01-01		0
+011	011002	Planos de assistência à saúde	Uniforme nacional (referência)	60	60	0	0	0	0	0	0	0	2026-01-01		0
+011	011003	Intermediação de planos de assistência à saúde	Uniforme nacional (referência)	60	60	0	0	0	0	0	0	0	2026-01-01		0
+011	011004	Concursos e prognósticos	Uniforme nacional (referência)	0	0	0	0	0	0	0	0	0	2026-01-01		0
+011	011005	Planos de assistência à saúde de animais domésticos	Uniforme nacional (referência)	30	30	0	0	0	0	0	0	0	2026-01-01		0
+200	200001	Serviços de transporte de bens até as zonas de processamento de exportação e bens exportados a partir das zonas de processamento de exportação	Padrão	100	100	0	0	0	0	0	0	0	2026-01-01		0
+200	200002	Fornecimento ou importação para produtor rural não contribuinte ou TAC	Padrão	100	100	0	0	0	0	0	0	0	2026-01-01		1
+200	200003	Vendas de produtos destinados à alimentação humana (Anexo I)	Padrão	100	100	0	0	0	0	0	0	0	2026-01-01		1
+200	200004	Fornecimento de dispositivos médicos (Anexo XII)	Padrão	100	100	0	0	0	0	0	0	0	2026-01-01		1
+200	200005	Fornecimento de dispositivos médicos para órgãos da administração pública e entidades de saúde imunes (Anexo IV)	Padrão	100	100	0	0	0	0	0	0	0	2026-01-01		1
+200	200006	Situação de emergência de saúde pública reconhecida pelo Poder público	Padrão	100	100	0	0	0	0	0	0	0	2026-01-01		1
+200	200007	Fornecimento dos dispositivos de acessibilidade próprios para pessoas com deficiência (Anexo XIII)	Padrão	100	100	0	0	0	0	0	0	0	2026-01-01		1
+200	200008	Fornecimento dos dispositivos de acessibilidade próprios para pessoas com deficiência adquiridos por órgãos da administração pública (Anexo V)	Padrão	100	100	0	0	0	0	0	0	0	2026-01-01		1
+200	200009	Fornecimento dos medicamentos registrados na Anvisa	Padrão	100	100	0	0	0	0	0	0	0	2026-01-01		1
+200	200010	Fornecimento dos medicamentos registrados na Anvisa, adquiridos por órgãos da administração pública	Padrão	100	100	0	0	0	0	0	0	0	2026-01-01		1
+200	200011	Fornecimento das composições para nutrição enteral e parenteral quando adquiridas por órgãos da administração pública (Anexo VI)	Padrão	100	100	0	0	0	0	0	0	0	2026-01-01		1
+200	200012	Situação de emergência de saúde pública reconhecida pelo Poder público	Padrão	100	100	0	0	0	0	0	0	0	2026-01-01		1
+200	200013	Fornecimento de tampões higiênicos, absorventes higiênicos internos ou externos	Padrão	100	100	0	0	0	0	0	0	0	2026-01-01		1
+200	200014	Fornecimento dos produtos hortícolas, frutas e ovos (Anexo XV)	Padrão	100	100	0	0	0	0	0	0	0	2026-01-01		1
+200	200015	Venda de automóveis de passageiros de fabricação nacional adquiridos por motoristas profissionais ou pessoas com deficiência	Padrão	100	100	0	0	0	0	0	0	0	2026-01-01		1
+200	200016	Prestação de serviços de pesquisa e desenvolvimento por Instituição Científica, Tecnológica e de Inovação (ICT)	Padrão	100	100	0	0	0	0	0	0	0	2026-01-01		0
+200	200017	Operações relacionadas ao FGTS	Padrão	100	100	0	0	0	0	0	0	0	2026-01-01		0
+200	200018	Operações de resseguro e retrocessão	Padrão	100	100	0	0	0	0	0	0	0	2026-01-01		0
+200	200019	Importador dos serviços financeiros contribuinte	Padrão	100	100	0	0	0	0	0	0	0	2026-01-01		0
+200	200020	Operação praticada por sociedades cooperativas optantes por regime específico do IBS e CBS	Padrão	100	100	0	0	0	0	0	0	0	2026-01-01		1
+200	200021	Serviços de transporte público coletivo de passageiros ferroviário e hidroviário	Padrão	100	100	0	0	0	0	0	0	0	2026-01-01		0
+200	200022	Operação originada fora da ZFM que destine bem material industrializado a contribuinte estabelecido na ZFM	Padrão	100	100	1	0	0	0	0	0	0	2026-01-01		1
+200	200023	Operação realizada por indústria incentivada que destine bem material intermediário para outra indústria incentivada na ZFM	Padrão	100	100	0	0	0	0	0	0	0	2026-01-01		1
+200	200024	Operação originada fora das Áreas de Livre Comércio destinadas a contribuinte estabelecido nas Áreas de Livre Comércio	Padrão	100	100	1	0	0	0	0	0	0	2026-01-01		1
+200	200025	Fornecimento dos serviços de educação relacionados ao Programa Universidade para Todos (Prouni)	Padrão	60	100	0	0	0	0	0	0	0	2026-01-01		0
+200	200026	Locação de imóveis localizados nas zonas reabilitadas	Padrão	80	80	0	0	0	0	0	0	0	2026-01-01		0
+200	200027	Operações de locação, cessão onerosa e arrendamento de bens imóveis	Padrão	70	70	0	0	0	0	0	0	0	2026-01-01		0
+200	200028	Fornecimento dos serviços de educação (Anexo II)	Padrão	60	60	0	0	0	0	0	0	0	2026-01-01		0
+200	200029	Fornecimento dos serviços de saúde humana (Anexo III)	Padrão	60	60	0	0	0	0	0	0	0	2026-01-01		0
+200	200030	Venda dos dispositivos médicos (Anexo IV)	Padrão	60	60	0	0	0	0	0	0	0	2026-01-01		1
+200	200031	Fornecimento dos dispositivos de acessibilidade próprios para pessoas com deficiência (Anexo V)	Padrão	60	60	0	0	0	0	0	0	0	2026-01-01		1
+200	200032	Fornecimento dos medicamentos registrados na Anvisa ou produzidos por farmácias de manipulação, ressalvados os medicamentos sujeitos à alíquota zero	Padrão	60	60	0	0	0	0	0	0	0	2026-01-01		1
+200	200033	Fornecimento das composições para nutrição enteral e parenteral (Anexo VI)	Padrão	60	60	0	0	0	0	0	0	0	2026-01-01		1
+200	200034	Fornecimento dos alimentos destinados ao consumo humano (Anexo VII)	Padrão	60	60	0	0	0	0	0	0	0	2026-01-01		1
+200	200035	Fornecimento dos produtos de higiene pessoal e limpeza (Anexo VIII)	Padrão	60	60	0	0	0	0	0	0	0	2026-01-01		1
+200	200036	Fornecimento de produtos agropecuários, aquícolas, pesqueiros, florestais e extrativistas vegetais in natura	Padrão	60	60	0	0	0	0	0	0	0	2026-01-01		1
+200	200037	Fornecimento de serviços ambientais de conservação ou recuperação da vegetação nativa	Padrão	60	60	0	0	0	0	0	0	0	2026-01-01		0
+200	200038	Fornecimento dos insumos agropecuários e aquícolas (Anexo IX)	Padrão	60	60	0	0	0	0	0	0	0	2026-01-01		1
+200	200039	Fornecimento dos bens e serviços relacionados com produções nacionais artísticas, culturais, de eventos, jornalísticas e audiovisuais (Anexo X)	Padrão	60	60	0	0	0	0	0	0	0	2026-01-01		1
+200	200040	Fornecimento de serviços de comunicação institucional à administração pública	Padrão	60	60	0	0	0	0	0	0	0	2026-01-01		0
+200	200041	Fornecimento de serviço de educação desportiva (art. 141. I)	Padrão	60	60	0	0	0	0	0	0	0	2026-01-01		0
+200	200042	Fornecimento de serviço de gestão e exploração do desporto (art. 141. II)	Padrão	60	60	0	0	0	0	0	0	0	2026-01-01		0
+200	200043	Fornecimento à administração pública dos serviços e dos bens relativos à soberania (Anexo XI)	Padrão	60	60	0	0	0	0	0	0	0	2026-01-01		1
+200	200044	Operações e prestações de serviços de segurança da informação e segurança cibernética desenvolvidos por sociedade que tenha sócio brasileiro (Anexo XI)	Padrão	60	60	0	0	0	0	0	0	0	2026-01-01		0
+200	200045	Operações relacionadas a projetos de reabilitação urbana de zonas históricas e de áreas críticas de recuperação e reconversão urbanística	Padrão	60	60	0	0	0	0	0	0	0	2026-01-01		0
+200	200046	Operações com bens imóveis	Padrão	50	50	0	0	0	0	0	0	0	2026-01-01		0
+200	200047	Bares e Restaurantes	Padrão	40	40	0	0	0	0	0	0	0	2026-01-01		1
+200	200048	Hotelaria, Parques de Diversão e Parques Temáticos	Padrão	40	40	0	0	0	0	0	0	0	2026-01-01		0
+200	200049	Transporte coletivo de passageiros rodoviário, ferroviário e hidroviário	Padrão	40	40	0	0	0	0	0	0	0	2026-01-01		0
+200	200050	Serviços de transporte aéreo regional coletivo de passageiros ou de carga	Padrão	40	40	0	0	0	0	0	0	0	2026-01-01		0
+200	200051	Agências de Turismo	Padrão	40	40	0	0	0	0	0	0	0	2026-01-01		0
+200	200052	Prestação de serviços de profissões intelectuais	Padrão	30	30	0	0	0	0	0	0	0	2026-01-01		0
+200	200053	Fornecimento de medicamentos registrados na Anvisa, quando classificados como soros ou vacinas	Padrão	100	100	0	0	0	0	0	0	0	2026-01-01		1
+200	200054	Fornecimento de bem material pela cooperativa de produção agropecuária a associado não sujeito ao regime regular do IBS e da CBS	Padrão	100	100	0	0	0	0	0	0	1	2026-01-01		1
+200	200055	Fornecimento dos serviços com redução de alíquota de 60% realizado por autônomo	Padrão	60	60	0	0	0	0	0	0	0	2026-01-01		0
+200	200056	Fornecimento dos serviços com redução de alíquota de 30% realizado por autônomo	Padrão	30	30	0	0	0	0	0	0	0	2026-01-01		0
+220	220001	Incorporação imobiliária submetida ao regime especial de tributação	Fixa	0	0	0	0	0	0	0	0	0	2026-01-01	2026-01-01	0
+220	220002	Incorporação imobiliária submetida ao regime especial de tributação	Fixa	0	0	0	0	0	0	0	0	0	2026-01-01	2026-01-01	0
+220	220003	Alienação de imóvel decorrente de parcelamento do solo	Fixa	0	0	0	0	0	0	0	0	0	2026-01-01	2026-01-01	0
+221	221001	Locação, cessão onerosa ou arrendamento de bem imóvel com alíquota sobre a receita bruta	Fixa	0	0	0	0	0	0	0	0	0	2026-01-01		0
+221	221002	Incorporação imobiliária submetida ao regime especial de tributação	Fixa	0	0	0	0	0	0	0	0	0	2026-01-01		0
+221	221003	Incorporação imobiliária submetida ao regime especial de tributação	Fixa	0	0	0	0	0	0	0	0	0	2026-01-01		0
+221	221004	Alienação de imóvel decorrente de parcelamento do solo	Fixa	0	0	0	0	0	0	0	0	0	2026-01-01		0
+222	222001	Transporte internacional de passageiros, caso os trechos de ida e volta sejam vendidos em conjunto	Padrão	0	0	0	0	0	0	0	0	0	2026-01-01		0
+400	400001	Fornecimento de serviços de transporte público coletivo de passageiros rodoviário e metroviário	Sem alíquota	0	0	0	0	0	0	0	0	0	2026-01-01		0
+400	400002	Fornecimento de serviços de transporte público coletivo de passageiros rodoviário e metroviário com medição por quilômetro rodado	Sem alíquota	0	0	0	0	0	0	0	0	0	2026-01-01		0
+400	400003	Bagagens	Sem alíquota	0	0	0	0	0	0	0	0	0	2026-01-01		0
+400	400004	Remessas internacionais	Sem alíquota	0	0	0	0	0	0	0	0	0	2026-01-01		0
+410	410001	Fornecimento de bonificações quando constem no documento fiscal e que não dependam de evento posterior	Sem alíquota	0	0	0	0	0	0	0	0	0	2026-01-01		1
+410	410002	Transferências entre estabelecimentos pertencentes ao mesmo contribuinte	Sem alíquota	0	0	0	0	0	0	0	0	0	2026-01-01		1
+410	410003	Doações sem contraprestação em benefício do doador	Sem alíquota	0	0	0	0	0	0	0	0	0	2026-01-01		1
+410	410004	Exportações de bens e serviços	Sem alíquota	0	0	0	0	0	0	0	0	0	2026-01-01		1
+410	410005	Fornecimentos realizados pela União, pelos Estados, pelo Distrito Federal e pelos Municípios	Sem alíquota	0	0	0	0	0	0	0	0	0	2026-01-01		1
+410	410006	Fornecimentos realizados por entidades religiosas e templos de qualquer culto	Sem alíquota	0	0	0	0	0	0	0	0	0	2026-01-01		1
+410	410007	Fornecimentos realizados por partidos políticos, entidades sindicais e instituições de educação e de assistência social	Sem alíquota	0	0	0	0	0	0	0	0	0	2026-01-01		1
+410	410008	Fornecimentos de livros, jornais, periódicos e do papel destinado a sua impressão	Sem alíquota	0	0	0	0	0	0	0	0	0	2026-01-01		1
+410	410009	Fornecimentos de fonogramas e videofonogramas musicais produzidos no Brasil	Sem alíquota	0	0	0	0	0	0	0	0	0	2026-01-01		1
+410	410010	Fornecimentos de serviço de comunicação nas modalidades de radiodifusão sonora e de sons e imagens de recepção livre e gratuita	Sem alíquota	0	0	0	0	0	0	0	0	0	2026-01-01		0
+410	410011	Fornecimentos de ouro, quando definido em lei como ativo financeiro ou instrumento cambial	Sem alíquota	0	0	0	0	0	0	0	0	0	2026-01-01		0
+410	410012	Fornecimento de condomínio edilício não optante pelo regime regular	Sem alíquota	0	0	0	0	0	0	0	0	0	2026-01-01		1
+410	410013	Exportações de combustíveis	Sem alíquota	0	0	0	0	0	0	0	0	0	2026-01-01		1
+410	410014	Fornecimento de produtor rural não contribuinte	Sem alíquota	0	0	0	0	0	0	0	0	0	2026-01-01		1
+410	410015	Fornecimento por transportador autônomo não contribuinte	Sem alíquota	0	0	0	0	0	0	0	0	0	2026-01-01		0
+410	410016	Fornecimento ou aquisição de resíduos sólidos	Sem alíquota	0	0	0	1	0	0	0	0	0	2026-01-01		1
+410	410017	Aquisição de bem móvel com crédito presumido sob condição de revenda realizada	Sem alíquota	0	0	0	0	0	0	0	0	0	2026-01-01		1
+410	410018	Operações relacionadas aos fundos garantidores e executores de políticas públicas	Sem alíquota	0	0	0	0	0	0	0	0	0	2026-01-01		0
+410	410019	Exclusão da gorjeta na base de cálculo no fornecimento de alimentação	Sem alíquota	0	0	0	0	0	0	0	0	0	2026-01-01		1
+410	410020	Exclusão do valor de intermediação na base de cálculo no fornecimento de alimentação	Sem alíquota	0	0	0	0	0	0	0	0	0	2026-01-01		1
+410	410021	Contribuição de que trata o art. 149-A da Constituição Federal	Sem alíquota	0	0	0	0	0	0	0	0	0	2026-01-01		0
+410	410022	Consolidação da propriedade do bem pelo credor	Sem alíquota	0	0	0	0	0	0	0	0	0	2026-01-01		1
+410	410023	Alienação de bens móveis ou imóveis que tenham sido objeto de garantia em que o prestador da garantia não seja contribuinte	Sem alíquota	0	0	0	0	0	0	0	0	0	2026-01-01		1
+410	410024	Consolidação da propriedade do bem pelo grupo de consórcio	Sem alíquota	0	0	0	0	0	0	0	0	0	2026-01-01		1
+410	410025	Alienação de bem que tenha sido objeto de garantia em que o prestador da garantia não seja contribuinte	Sem alíquota	0	0	0	0	0	0	0	0	0	2026-01-01		1
+410	410026	Doação com anulação de crédito	Sem alíquota	0	0	0	0	0	0	0	0	1	2026-01-01		1
+410	410027	Exportação de serviço ou de bem imaterial	Sem alíquota	0	0	0	0	0	0	0	0	0	2026-01-01		1
+410	410028	Operações com bens imóveis realizadas por pessoas físicas não consideradas contribuintes	Sem alíquota	0	0	0	0	0	0	0	0	0	2026-01-01		0
+410	410029	Operações acobertadas somente pelo ICMS	Sem alíquota	0	0	0	0	0	0	0	0	0	2026-01-01		1
+410	410030	Estorno de crédito por perecimento, deteriorização, roubo, furto ou extravio.	Sem alíquota	0	0	0	0	0	0	0	0	1	2026-01-01		1
+410	410031	Fornecimento em período anterior ao início de vigência de incidências de CBS e IBS	Sem alíquota	0	0	0	0	0	0	0	0	0	2026-01-01		1
+410	410032	Tributos incidentes na operação que não integram a base de cálculo do IBS e da CBS	Sem alíquota	0	0	0	0	0	0	0	0	0	2026-01-01		0
+410	410033	Operações de Fundos de Investimento Imobiliário (FII) e Fundos de Investimento nas Cadeias Produtivas do Agronegócio (Fiagro)	Sem alíquota	0	0	0	0	0	0	0	0	0	2026-01-01		0
+410	410034	Operações de fundos de investimento	Sem alíquota	0	0	0	0	0	0	0	0	0	2026-01-01		0
+410	410035	Fornecimento realizado por nanoempreendedor	Sem alíquota	0	0	0	0	0	0	0	0	0	2026-01-01		1
+410	410036	Descontos financeiros em nota fatura	Sem alíquota	0	0	0	0	0	0	0	0	0	2026-01-01		0
+410	410037	Importação os bens materiais sem incidência de IBS e CBS	Sem alíquota	0	0	0	0	0	0	0	0	0	2026-01-01		0
+410	410999	Operações não onerosas sem previsão de tributação, não especificadas anteriormente	Sem alíquota	0	0	0	0	0	0	0	0	0	2026-01-01		1
+510	510001	Operações, sujeitas a diferimento, com energia elétrica, relativas à importação, geração, comercialização, distribuição e transmissão	Sem alíquota	0	0	0	0	0	0	0	0	0	2026-01-01		1
+515	515001	Operações, sujeitas a diferimento, com insumos agropecuários e aquícolas (Anexo IX)	Padrão	60	60	0	0	0	0	0	0	0	2026-01-01		1
+550	550001	Exportações de bens materiais	Sem alíquota	0	0	1	0	0	0	0	0	0	2026-01-01		1
+550	550002	Regime de Trânsito	Sem alíquota	0	0	1	0	0	0	0	0	0	2026-01-01		0
+550	550003	Regimes de Depósito (art. 85)	Sem alíquota	0	0	1	0	0	0	0	0	0	2026-01-01		1
+550	550004	Regimes de Depósito (art. 87)	Sem alíquota	0	0	1	0	0	0	0	0	0	2026-01-01		1
+550	550005	Regimes de Depósito (art. 87, Parágrafo único)	Sem alíquota	0	0	1	0	0	0	0	0	0	2026-01-01		1
+550	550006	Regimes de Permanência Temporária com suspensão total	Sem alíquota	0	0	1	0	0	0	0	0	0	2026-01-01		1
+550	550007	Regimes de Aperfeiçoamento (Recof)	Sem alíquota	0	0	1	0	0	0	0	0	0	2026-01-01		1
+550	550008	Importação de bens para o Regime de Repetro-Temporário	Sem alíquota	0	0	1	0	0	0	0	0	0	2026-01-01		1
+550	550009	GNL-Temporário	Sem alíquota	0	0	1	0	0	0	0	0	0	2026-01-01		1
+550	550010	Repetro-Permanente	Sem alíquota	0	0	1	0	0	0	0	0	0	2026-01-01		1
+550	550011	Repetro-Industrialização	Sem alíquota	0	0	1	0	0	0	0	0	0	2026-01-01		1
+550	550012	Repetro-Nacional	Sem alíquota	0	0	1	0	0	0	0	0	0	2026-01-01		1
+550	550013	Repetro-Entreposto	Sem alíquota	0	0	1	0	0	0	0	0	0	2026-01-01		1
+550	550014	Zona de Processamento de Exportação	Sem alíquota	0	0	1	0	0	0	0	0	0	2026-01-01		1
+550	550015	Regime Tributário para Incentivo à Modernização e à Ampliação da Estrutura Portuária	Sem alíquota	0	0	1	0	0	0	0	0	0	2026-01-01		1
+550	550016	Regime Especial de Incentivos para o Desenvolvimento da Infraestrutura	Sem alíquota	0	0	1	0	0	0	0	0	0	2026-01-01		1
+550	550017	Regime Tributário para Incentivo à Atividade Naval - Renaval (Art. 107, I)	Sem alíquota	0	0	1	0	0	0	0	0	0	2026-01-01		1
+550	550018	Desoneração da aquisição de bens de capital	Sem alíquota	0	0	1	0	0	0	0	0	0	2026-01-01		1
+550	550019	Importação de bem material por indústria incentivada para utilização na ZFM	Sem alíquota	0	0	1	0	0	0	0	0	0	2026-01-01		1
+550	550020	Áreas de livre comércio	Sem alíquota	0	0	1	0	0	0	0	0	0	2026-01-01		1
+550	550021	Industrialização destinada a exportações	Sem alíquota	0	0	1	0	0	0	0	0	0	2026-01-01		1
+550	550022	Regime Especial de Incentivos para a Produção de Hidrogênio de Baixa Emissão de Carbono (Rehidro)	Sem alíquota	0	0	1	0	0	0	0	0	0	2026-01-01		1
+550	550023	Operações com hidrocarbonetos líquidos derivados de petróleo não combustíveis ou de gás natural, inclusive nafta	Sem alíquota	0	0	1	0	0	0	0	0	0	2026-01-01		1
+550	550024	Regime Tributário para Incentivo à Atividade Naval - Renaval (Art. 107, II)	Sem alíquota	0	0	1	0	0	0	0	0	0	2026-01-01		0
+550	550025	Regime Tributário para Incentivo à Atividade Naval - Renaval (Art. 107, III)	Sem alíquota	0	0	1	0	0	0	0	0	0	2026-01-01		0
+550	550026	Regimes de admissão temporária com suspensão total do pagamento dos tributos (ZFM)	Sem alíquota	0	0	1	0	0	0	0	0	0	2026-01-01		1
+550	550027	Regimes de Aperfeiçoamento (Drawback)	Sem alíquota	0	0	1	0	0	0	0	0	0	2026-01-01		1
+550	550028	Regimes de Aperfeiçoamento (Admissão temporária)	Sem alíquota	0	0	1	0	0	0	0	0	0	2026-01-01		1
+550	550029	Zona de Processamento de Exportação	Sem alíquota	0	0	1	0	0	0	0	0	0	2026-01-01		1
+620	620001	Tributação monofásica sobre combustíveis	Uniforme setorial	0	0	0	0	1	0	0	0	0	2026-01-01		1
+620	620002	Tributação monofásica com responsabilidade pela retenção sobre combustíveis	Uniforme setorial	0	0	0	0	1	1	0	0	0	2026-01-01		1
+620	620003	Tributação monofásica com responsabilidade de retenção de tributos por terceiros	Uniforme setorial	0	0	0	0	0	0	0	0	0	2026-01-01		1
+620	620004	Tributação monofásica sobre mistura de EAC com gasolina A em percentual superior ao obrigatório	Uniforme setorial	0	0	0	0	0	0	1	1	0	2026-01-01		1
+620	620005	Tributação monofásica sobre mistura de EAC com gasolina A em percentual inferior ao obrigatório	Uniforme setorial	0	0	0	0	0	0	1	1	0	2026-01-01		1
+620	620006	Tributação monofásica sobre combustíveis cobrada anteriormente	Uniforme setorial	0	0	0	0	0	0	1	0	0	2026-01-01		1
+620	620007	Perecimento, deteriorização, roubo, furto ou extravio no regime monofásico	Sem alíquota	0	0	0	0	0	0	0	0	0	2026-01-01		1
+800	800001	Fusão, cisão ou incorporação	Sem alíquota	0	0	0	0	0	0	0	0	0	2026-01-01		1
+800	800002	Transferência de crédito do associado, inclusive as cooperativas singulares	Sem alíquota	0	0	0	0	0	0	0	0	0	2026-01-01		1
+810	810001	Crédito presumido de IBS sobre o valor apurado nos fornecimentos a partir da ZFM	Sem alíquota	0	0	0	0	0	0	0	0	0	2026-01-01		1
+811	811001	Anulação de Crédito por Saídas Imunes/Isentas	Sem alíquota	0	0	0	0	0	0	0	0	0	2026-01-01		1
+811	811002	Débitos de notas fiscais não processadas na apuração	Sem alíquota	0	0	0	0	0	0	0	0	0	2026-01-01		1
+811	811003	Desenquadramento do Simples Nacional	Sem alíquota	0	0	0	0	0	0	0	0	0	2026-01-01		1
+820	820001	Documento com informações de fornecimento de serviços de planos de assistência à saúde elencados no art. 234 da Lei Complementar nº214, de 2025	Sem alíquota	0	0	0	0	0	0	0	0	0	2026-01-01		0
+820	820002	Documento com informações de fornecimento de serviços de planos de assistência funerária	Sem alíquota	0	0	0	0	0	0	0	0	0	2026-01-01		0
+820	820003	Documento com informações de fornecimento de serviços de planos de assistência à saúde de animais domésticos	Sem alíquota	0	0	0	0	0	0	0	0	0	2026-01-01		0
+820	820004	Documento com informações de prestação de serviços de consursos de prognósticos	Sem alíquota	0	0	0	0	0	0	0	0	0	2026-01-01		0
+820	820005	Documento com informações de alienação de bens imóveis	Sem alíquota	0	0	0	0	0	0	0	0	0	2026-01-01		0
+820	820006	Documento com informações de fornecimento de serviços de exploração de via	Sem alíquota	0	0	0	0	0	0	0	0	0	2026-01-01		0
+820	820007	Documento com informações de fornecimento de serviços financeiros	Sem alíquota	0	0	0	0	0	0	0	0	0	2026-01-01		0
+820	820008	Documento com informações de fornecimento de serviço continuado, mas com tributação realizada em fatura anterior	Sem alíquota	0	0	0	0	0	0	0	0	0	2026-01-01		0
+820	820009	Fornecimentos declarados e tributados em outro documento	Sem alíquota	0	0	0	0	0	0	0	0	0	2026-01-01		0
+830	830001	Documento com exclusão da BC da CBS e do IBS de energia elétrica fornecida pela distribuidora à UC	Sem alíquota	0	0	0	0	0	0	0	0	0	2026-01-01		1

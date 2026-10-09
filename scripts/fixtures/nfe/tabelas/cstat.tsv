@@ -1,0 +1,891 @@
+100	Autorizado o uso da NF-e	MOC 7.0 Anexo I 4.4
+101	Cancelamento de NF-e homologado	MOC 7.0 Anexo I 4.4
+102	Inutilização de número homologado	MOC 7.0 Anexo I 4.4
+103	Lote recebido com sucesso	MOC 7.0 Anexo I 4.4
+104	Lote processado	MOC 7.0 Anexo I 4.4
+105	Lote em processamento	MOC 7.0 Anexo I 4.4
+106	Lote não localizado	MOC 7.0 Anexo I 4.4
+107	Serviço em Operação	MOC 7.0 Anexo I 4.4
+108	Serviço Paralisado Momentaneamente (curto prazo)	MOC 7.0 Anexo I 4.4
+109	Serviço Paralisado sem Previsão	MOC 7.0 Anexo I 4.4
+110	Uso Denegado	MOC 7.0 Anexo I 4.4
+111	Consulta cadastro com uma ocorrência	MOC 7.0 Anexo I 4.4
+112	Consulta cadastro com mais de uma ocorrência	MOC 7.0 Anexo I 4.4
+124	EPEC Autorizado	MOC 7.0 Anexo I 4.4
+128	Lote de Evento Processado	MOC 7.0 Anexo I 4.4
+135	Evento registrado e vinculado a NF-e	MOC 7.0 Anexo I 4.4
+136	Evento registrado, mas não vinculado a NF-e	MOC 7.0 Anexo I 4.4
+137	Nenhum documento localizado para o Destinatário	MOC 7.0 Anexo I 4.4
+138	Documento localizado para o Destinatário	MOC 7.0 Anexo I 4.4
+139	Pedido de Download processado	MOC 7.0 Anexo I 4.4
+140	Download disponibilizado	MOC 7.0 Anexo I 4.4
+142	Ambiente de Contingência EPEC bloqueado para o Emitente	MOC 7.0 Anexo I 4.4
+150	Autorizado o uso da NF-e, autorização fora de prazo	MOC 7.0 Anexo I 4.4
+151	Cancelamento de NF-e homologado fora de prazo	MOC 7.0 Anexo I 4.4
+201	Rejeição: Número máximo de numeração a inutilizar ultrapassou o limite	MOC 7.0 Anexo I 4.4
+203	Rejeição: Emissor não habilitado para emissão da NF-e	MOC 7.0 Anexo I 4.4
+204	Rejeição: Duplicidade de NF-e [nRec:999999999999999]	MOC 7.0 Anexo I 4.4
+205	Rejeição: NF-e está denegada na base de dados da SEFAZ [nRec:999999999999999]	MOC 7.0 Anexo I 4.4
+206	Rejeição: NF-e já está inutilizada na Base de Dados da SEFAZ	MOC 7.0 Anexo I 4.4
+207	Rejeição: CNPJ do emitente inválido	MOC 7.0 Anexo I 4.4
+208	Rejeição: CNPJ do destinatário inválido	MOC 7.0 Anexo I 4.4
+209	Rejeição: IE do emitente inválida	MOC 7.0 Anexo I 4.4
+210	Rejeição: IE do destinatário inválida	MOC 7.0 Anexo I 4.4
+211	Rejeição: IE do substituto inválida	MOC 7.0 Anexo I 4.4
+212	Rejeição: Data de emissão NF-e posterior a data de recebimento	MOC 7.0 Anexo I 4.4
+213	Rejeição: CNPJ-Base do Emitente difere do CNPJ-Base do Certificado Digital	MOC 7.0 Anexo I 4.4
+214	Rejeição: Tamanho da mensagem excedeu o limite estabelecido	MOC 7.0 Anexo I 4.4
+215	Rejeição: Falha no schema XML	MOC 7.0 Anexo I 4.4
+217	Rejeição: NF-e não consta na base de dados da SEFAZ	MOC 7.0 Anexo I 4.4
+218	Rejeição: NF-e já está cancelada na base de dados da SEFAZ [nRec:999999999999999]	MOC 7.0 Anexo I 4.4
+219	Rejeição: Circulação da NF-e verificada	MOC 7.0 Anexo I 4.4
+220	Rejeição: Destinatário com identificação igual à identificação do emitente	MOC 7.0 Anexo I 4.4
+221	Rejeição: Confirmado o recebimento da NF-e pelo destinatário	MOC 7.0 Anexo I 4.4
+222	Rejeição: Protocolo de Autorização de Uso difere do cadastrado	MOC 7.0 Anexo I 4.4
+223	Rejeição: CNPJ/CPF do transmissor do lote difere do CNPJ/CPF do transmissor da consulta	MOC 7.0 Anexo I 4.4
+224	Rejeição: A faixa inicial é maior que a faixa final	MOC 7.0 Anexo I 4.4
+225	Rejeição: Falha no Schema XML do lote de NFe	MOC 7.0 Anexo I 4.4
+226	Rejeição: Código da UF do Emitente diverge da UF autorizadora	MOC 7.0 Anexo I 4.4
+227	Rejeição: CPF do Emitente difere do CPF do Certificado Digital	MOC 7.0 Anexo I 4.4
+228	Rejeição: Data de Emissão muito atrasada	MOC 7.0 Anexo I 4.4
+229	Rejeição: IE do emitente não informada	MOC 7.0 Anexo I 4.4
+230	Rejeição: IE do emitente não cadastrada	MOC 7.0 Anexo I 4.4
+231	Rejeição: IE do emitente não vinculada ao CNPJ	MOC 7.0 Anexo I 4.4
+232	Rejeição: IE do destinatário não informada	MOC 7.0 Anexo I 4.4
+233	Rejeição: IE do destinatário não cadastrada	MOC 7.0 Anexo I 4.4
+234	Rejeição: IE do destinatário não vinculada ao CNPJ	MOC 7.0 Anexo I 4.4
+235	Rejeição: Inscrição SUFRAMA inválida	MOC 7.0 Anexo I 4.4
+236	Rejeição: Chave de Acesso com dígito verificador inválido	MOC 7.0 Anexo I 4.4
+237	Rejeição: CPF do destinatário inválido	MOC 7.0 Anexo I 4.4
+239	Rejeição: Versão do arquivo XML não suportada (NT 2108.004)	MOC 7.0 Anexo I 4.4
+240	Rejeição: Irregularidade Fiscal do Emitente	MOC 7.0 Anexo I 4.4
+241	Rejeição: Um número da faixa já foi utilizado	MOC 7.0 Anexo I 4.4
+243	Rejeição: XML Mal Formado	MOC 7.0 Anexo I 4.4
+244	Rejeição: Processo de Emissão pelo Contribuinte incompatível com a Série da NF	MOC 7.0 Anexo I 4.4
+245	Rejeição: CNPJ Emitente não cadastrado	MOC 7.0 Anexo I 4.4
+246	Rejeição: CNPJ Destinatário não cadastrado	MOC 7.0 Anexo I 4.4
+247	Rejeição: Sigla da UF do Emitente diverge da UF autorizadora	MOC 7.0 Anexo I 4.4
+248	Rejeição: UF do Recibo diverge da UF autorizadora	MOC 7.0 Anexo I 4.4
+249	Rejeição: UF da Chave de Acesso diverge da UF autorizadora	MOC 7.0 Anexo I 4.4
+250	Rejeição: UF diverge da UF autorizadora	MOC 7.0 Anexo I 4.4
+251	Rejeição: UF/Município destinatário não pertence a SUFRAMA	MOC 7.0 Anexo I 4.4
+252	Rejeição: Ambiente informado diverge do Ambiente de recebimento	MOC 7.0 Anexo I 4.4
+253	Rejeição: Digito Verificador da chave de acesso composta inválida	MOC 7.0 Anexo I 4.4
+254	Rejeição: NF-e complementar não possui NF referenciada	MOC 7.0 Anexo I 4.4
+255	Rejeição: NF-e complementar possui mais de uma NF referenciada	MOC 7.0 Anexo I 4.4
+256	Rejeição: Uma NF-e da faixa já está inutilizada na Base de dados da SEFAZ	MOC 7.0 Anexo I 4.4
+257	Rejeição: Solicitante não habilitado para emissão da NF-e	MOC 7.0 Anexo I 4.4
+258	Rejeição: CNPJ da consulta inválido	MOC 7.0 Anexo I 4.4
+259	Rejeição: CNPJ da consulta não cadastrado como contribuinte na UF	MOC 7.0 Anexo I 4.4
+260	Rejeição: IE da consulta inválida	MOC 7.0 Anexo I 4.4
+261	Rejeição: IE da consulta não cadastrada como contribuinte na UF	MOC 7.0 Anexo I 4.4
+262	Rejeição: UF não fornece consulta por CPF	MOC 7.0 Anexo I 4.4
+263	Rejeição: CPF da consulta inválido	MOC 7.0 Anexo I 4.4
+264	Rejeição: CPF da consulta não cadastrado como contribuinte na UF	MOC 7.0 Anexo I 4.4
+265	Rejeição: Sigla da UF da consulta difere da UF do Web Service	MOC 7.0 Anexo I 4.4
+266	Rejeição: Série utilizada não permitida no Web Service	MOC 7.0 Anexo I 4.4
+267	Rejeição: Chave de Acesso referenciada inexistente [nRef: xxx]	MOC 7.0 Anexo I 4.4
+268	Rejeição: NF Complementar referencia uma outra NF-e Complementar	MOC 7.0 Anexo I 4.4
+269	Rejeição: CNPJ/CPF Emitente da NF Complementar difere do CNPJ/CPF da NF Referenciada	MOC 7.0 Anexo I 4.4
+270	Rejeição: Código Município do Fato Gerador de ICMS inexistente	MOC 7.0 Anexo I 4.4
+271	Rejeição: Código Município do Fato Gerador: difere da UF do emitente	MOC 7.0 Anexo I 4.4
+272	Rejeição: Código Município do Emitente inexistente	MOC 7.0 Anexo I 4.4
+273	Rejeição: Código Município do Emitente: difere da UF do emitente	MOC 7.0 Anexo I 4.4
+274	Rejeição: Código Município do Destinatário inexistente	MOC 7.0 Anexo I 4.4
+275	Rejeição: Código Município do Destinatário: difere da UF do Destinatário	MOC 7.0 Anexo I 4.4
+276	Rejeição: Código Município do Local de Retirada inexistente	MOC 7.0 Anexo I 4.4
+277	Rejeição: Código Município do Local de Retirada: difere da UF do Local de Retirada	MOC 7.0 Anexo I 4.4
+278	Rejeição: Código Município do Local de Entrega inexistente	MOC 7.0 Anexo I 4.4
+279	Rejeição: Código Município do Local de Entrega: difere da UF do Local de Entrega	MOC 7.0 Anexo I 4.4
+280	Rejeição: Certificado Transmissor inválido	MOC 7.0 Anexo I 4.4
+281	Rejeição: Certificado Transmissor Data Validade	MOC 7.0 Anexo I 4.4
+282	Rejeição: Certificado Transmissor sem CNPJ/CPF	MOC 7.0 Anexo I 4.4
+283	Rejeição: Certificado Transmissor - erro Cadeia de Certificação	MOC 7.0 Anexo I 4.4
+284	Rejeição: Certificado Transmissor revogado	MOC 7.0 Anexo I 4.4
+285	Rejeição: Certificado Transmissor difere ICP-Brasil	MOC 7.0 Anexo I 4.4
+286	Rejeição: Certificado Transmissor erro no acesso a LCR	MOC 7.0 Anexo I 4.4
+287	Rejeição: Código Município do Fato Gerador de ISSQN inexistente [nItem:nnn]	MOC 7.0 Anexo I 4.4
+288	Rejeição: Código Município do Fato Gerador do Transporte inexistente	MOC 7.0 Anexo I 4.4
+289	Rejeição: Código da UF informada diverge da UF solicitada	MOC 7.0 Anexo I 4.4
+290	Rejeição: Certificado Assinatura inválido	MOC 7.0 Anexo I 4.4
+291	Rejeição: Certificado Assinatura Data Validade	MOC 7.0 Anexo I 4.4
+292	Rejeição: Certificado de Assinatura sem CNPJ/CPF	MOC 7.0 Anexo I 4.4
+293	Rejeição: Certificado Assinatura - erro Cadeia de Certificação	MOC 7.0 Anexo I 4.4
+294	Rejeição: Certificado Assinatura revogado	MOC 7.0 Anexo I 4.4
+295	Rejeição: Certificado Assinatura difere ICP-Brasil	MOC 7.0 Anexo I 4.4
+296	Rejeição: Certificado Assinatura erro no acesso a LCR	MOC 7.0 Anexo I 4.4
+297	Rejeição: Assinatura difere do calculado	MOC 7.0 Anexo I 4.4
+298	Rejeição: Assinatura difere do padrão do Sistema	MOC 7.0 Anexo I 4.4
+300	Rejeição: Tipo da IE do Destinatário	NT2025.001-.1.03corrigido
+301	Uso Denegado: Irregularidade fiscal do emitente	MOC 7.0 Anexo I 4.4
+302	Uso Denegado: Irregularidade fiscal do destinatário	MOC 7.0 Anexo I 4.4
+303	Uso Denegado: Destinatário não habilitado a operar na UF	MOC 7.0 Anexo I 4.4
+304	Rejeição: Pedido de Cancelamento para NF-e com evento da Suframa	MOC 7.0 Anexo I 4.4
+305	Rejeição: Destinatário bloqueado na UF [NT 2019.001]	MOC 7.0 Anexo I 4.4
+306	Rejeição: IE do destinatário não está ativa na UF [NT 2019.001]	MOC 7.0 Anexo I 4.4
+315	Rejeição: Data de Emissão anterior ao início da autorização de Nota Fiscal na UF	MOC 7.0 Anexo I 4.4
+316	Rejeição: Chave de Acesso referenciada com a mesma Chave de Acesso da Nota Fiscal atual [nOcor:nnn]	MOC 7.0 Anexo I 4.4
+317	Rejeição: NF modelo 1 referenciada com data de emissão inválida [nOcor:nnn]	MOC 7.0 Anexo I 4.4
+318	Rejeição: Contranota de Produtor sem Nota Fiscal referenciada	MOC 7.0 Anexo I 4.4
+319	Rejeição: Contranota de Produtor não pode referenciar somente Nota Fiscal de entrada	MOC 7.0 Anexo I 4.4
+320	Rejeição: Contranota de Produtor referencia somente NF de outro emitente	MOC 7.0 Anexo I 4.4
+321	Rejeição: NF-e de devolução de mercadoria não possui documento fiscal referenciado	MOC 7.0 Anexo I 4.4
+322	Rejeição: NF de produtor referenciada com data de emissão inválida [nOcor:nnn]	MOC 7.0 Anexo I 4.4
+323	Rejeição: CNPJ autorizado para download inválido	MOC 7.0 Anexo I 4.4
+324	Rejeição: CNPJ do destinatário já autorizado para download	MOC 7.0 Anexo I 4.4
+325	Rejeição: CPF autorizado para download inválido	MOC 7.0 Anexo I 4.4
+326	Rejeição: CPF do destinatário já autorizado para download	MOC 7.0 Anexo I 4.4
+327	Rejeição: CFOP inválido para Nota Fiscal com finalidade de devolução de mercadoria[nItem:nnn]	MOC 7.0 Anexo I 4.4
+328	Rejeição: CFOP de devolução de mercadoria para NF-e que não tem finalidade de devolução de mercadoria [nItem:nnn]	MOC 7.0 Anexo I 4.4
+329	Rejeição: Número da DI /DSI inválido	MOC 7.0 Anexo I 4.4
+330	Rejeição: Informar o Valor da AFRMM na importação por via marítima	MOC 7.0 Anexo I 4.4
+331	Rejeição: Informar o CNPJ do adquirente ou do encomendante nesta forma de importação	MOC 7.0 Anexo I 4.4
+332	Rejeição: CNPJ do adquirente ou do encomendante da importação inválido	MOC 7.0 Anexo I 4.4
+333	Rejeição: Informar a UF do adquirente ou do encomendante nesta forma de importação	MOC 7.0 Anexo I 4.4
+334	Rejeição: Número do processo de drawback não informado na importação	MOC 7.0 Anexo I 4.4
+335	Rejeição: Número do processo de drawback na importação inválido	MOC 7.0 Anexo I 4.4
+336	Rejeição: Informado o grupo de exportação no item em operação que não é com exterior [nItem: nnn]	MOC 7.0 Anexo I 4.4
+337	Rejeição: NFC-e para emitente pessoa física	MOC 7.0 Anexo I 4.4
+338	Rejeição: Número do processo de drawback não informado na exportação	MOC 7.0 Anexo I 4.4
+339	Rejeição: Número do processo de drawback na exportação inválido	MOC 7.0 Anexo I 4.4
+340	Rejeição: Não informado o grupo de exportação indireta no item	MOC 7.0 Anexo I 4.4
+341	Rejeição: Número do registro de exportação inválido	MOC 7.0 Anexo I 4.4
+342	Rejeição: Chave de Acesso informada na Exportação Indireta com DV inválido	MOC 7.0 Anexo I 4.4
+343	Rejeição: Modelo da NF-e informada na Exportação Indireta diferente de 55	MOC 7.0 Anexo I 4.4
+344	Rejeição: Duplicidade de NF-e informada na Exportação Indireta (Chave de Acesso informada mais de uma vez)	MOC 7.0 Anexo I 4.4
+345	Rejeição: Chave de Acesso informada na Exportação Indireta não consta como NF-e referenciada	MOC 7.0 Anexo I 4.4
+346	Rejeição: Somatório das quantidades informadas na Exportação Indireta não corresponde a quantidade total do item	MOC 7.0 Anexo I 4.4
+347	Rejeição: Informada IE do substituto tributário em operação que não é interestadual	MOC 7.0 Anexo I 4.4
+348	Rejeição: NFC-e com grupo RECOPI	MOC 7.0 Anexo I 4.4
+349	Rejeição: Número RECOPI não informado	MOC 7.0 Anexo I 4.4
+350	Rejeição: Número RECOPI inválido	MOC 7.0 Anexo I 4.4
+351	Rejeição: Valor do ICMS da Operação no CST=51 difere do produto BC e Alíquota [ nItem: 999]	MOC 7.0 Anexo I 4.4
+352	Rejeição: Valor do ICMS Diferido no CST=51 difere do produto Valor ICMS Operação e percentual diferimento [nItem: 999]	MOC 7.0 Anexo I 4.4
+353	Rejeição: Valor do ICMS no CST=51 não corresponde a diferença do ICMS operação e ICMS diferido [nItem: 999]	MOC 7.0 Anexo I 4.4
+354	Rejeição: Informado grupo de devolução de tributos para NF-e que não tem finalidade de devolução de mercadoria	MOC 7.0 Anexo I 4.4
+355	Rejeição: Informar o local de saída do Pais no caso da exportação	MOC 7.0 Anexo I 4.4
+356	Rejeição: Informar o local de saída do Pais somente no caso da exportação	MOC 7.0 Anexo I 4.4
+357	Rejeição: Chave de Acesso do grupo de Exportação Indireta inexistente [nRef: xxx]	MOC 7.0 Anexo I 4.4
+358	Rejeição: Chave de Acesso do grupo de Exportação Indireta cancelada ou denegada [nRef: xxx ]	MOC 7.0 Anexo I 4.4
+359	Rejeição: NF-e de venda a Órgão Público sem informar a Nota de Empenho	MOC 7.0 Anexo I 4.4
+360	Rejeição: NF-e com Nota de Empenho inválida para a UF.	MOC 7.0 Anexo I 4.4
+361	Rejeição: NF-e com Nota de Empenho inexistente na UF.	MOC 7.0 Anexo I 4.4
+362	Rejeição: Venda de combustível sem informação do Transportador	MOC 7.0 Anexo I 4.4
+363	Rejeição: IE do substituto tributário idêntica à IE do emitente ou do destinatário	MOC 7.0 Anexo I 4.4
+364	Rejeição: Total do valor da dedução do ISS difere do somatório dos itens	MOC 7.0 Anexo I 4.4
+365	Rejeição: Total de outras retenções difere do somatório dos itens	MOC 7.0 Anexo I 4.4
+366	Rejeição: Total do desconto incondicionado ISS difere do somatório dos itens	MOC 7.0 Anexo I 4.4
+367	Rejeição: Total do desconto condicionado ISS difere do somatório dos itens	MOC 7.0 Anexo I 4.4
+368	Rejeição: Total de ISS retido difere do somatório dos itens	MOC 7.0 Anexo I 4.4
+369	Rejeição: Não informado o grupo avulsa na emissão pelo Fisco	MOC 7.0 Anexo I 4.4
+370	Rejeição: Processo de emissão pelo Fisco com Tipo de Emissão inválido	MOC 7.0 Anexo I 4.4
+372	Rejeição: Destinatário com identificação de estrangeiro com caracteres inválidos	MOC 7.0 Anexo I 4.4
+373	Rejeição: Descrição do primeiro item diferente de NOTA FISCAL EMITIDA EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL [nItem:nnn]	MOC 7.0 Anexo I 4.4
+374	Rejeição: CFOP incompatível com o grupo de tributação [nItem: nnn]	MOC 7.0 Anexo I 4.4
+375	Rejeição: NF-e com lançamento relativo a Cupom Fiscal referencia uma NFC-e [nItem: nnn]	MOC 7.0 Anexo I 4.4
+376	Rejeição: Data do Desembaraço Aduaneiro inválida [nItem: nnn]	MOC 7.0 Anexo I 4.4
+377	Rejeição: Código de País do destinatário inexistente	MOC 7.0 Anexo I 4.4
+378	Rejeição: Grupo de Combustível sem a informação de Encerrante [nItem: nnn]	MOC 7.0 Anexo I 4.4
+379	Rejeição: Grupo de Encerrante na NF-e (modelo 55) para CFOP diferente de venda de combustível para consumidor final [nItem:nnn]	MOC 7.0 Anexo I 4.4
+380	Rejeição: Valor do Encerrante final não é superior ao Encerrante inicial [nItem: nnn]	MOC 7.0 Anexo I 4.4
+381	Rejeição: Grupo de tributação ICMS90, informando dados do ICMS-ST [nItem:nnn]	MOC 7.0 Anexo I 4.4
+382	Rejeição: CFOP não permitido para o CST informado [nItem:nnn]	MOC 7.0 Anexo I 4.4
+383	Rejeição: Item com CSOSN indevido [nItem: nnn]	MOC 7.0 Anexo I 4.4
+384	Rejeição: CSOSN não permitido para a UF [nItem: nnn]	MOC 7.0 Anexo I 4.4
+385	Rejeição: Grupo de tributação ICMSSN900, informando dados do ICMS-ST [nItem: nnn]	MOC 7.0 Anexo I 4.4
+386	Rejeição: CFOP não permitido para o CSOSN informado [nItem: nnn]	MOC 7.0 Anexo I 4.4
+387	Rejeição: Código de Enquadramento Legal do IPI inválido [nItem: nnn]	MOC 7.0 Anexo I 4.4
+388	Rejeição: Código de Situação Tributária do IPI incompatível com o Código de Enquadramento Legal do IPI [nItem: nnn]	MOC 7.0 Anexo I 4.4
+389	Rejeição: Código Município ISSQN inexistente [nItem:nnn]	MOC 7.0 Anexo I 4.4
+390	Rejeição: Nota Fiscal com grupo de devolução de Tributos [nItem: nnn]	MOC 7.0 Anexo I 4.4
+391	Rejeição: Não informados os dados do cartão de crédito / débito nas Formas de Pagamento da Nota Fiscal	MOC 7.0 Anexo I 4.4
+392	Rejeição: Não informados os dados da operação de pagamento por cartão de crédito / débito	MOC 7.0 Anexo I 4.4
+393	Rejeição: NF-e com o grupo de Informações Suplementares	MOC 7.0 Anexo I 4.4
+394	Rejeição: Nota Fiscal sem a informação do QR-Code	MOC 7.0 Anexo I 4.4
+395	Rejeição: Endereço do site da UF da Consulta via QR-Code diverge do previsto	MOC 7.0 Anexo I 4.4
+396	Rejeição: Parâmetro do QR-Code inexistente: [Nome do parâmetro do QR Code: xxx)]	MOC 7.0 Anexo I 4.4
+397	Rejeição: Parâmetro do QR-Code divergente da Nota Fiscal: [Nome do parâmetro do QR Code:: xxx)]	MOC 7.0 Anexo I 4.4
+398	Rejeição: Parâmetro Versão informada no QR-Code diverge do previsto (“2”)	MOC 7.0 Anexo I 4.4
+399	Rejeição: Parâmetro de Identificação do destinatário no QR-Code para Nota Fiscal sem identificação do destinatário	MOC 7.0 Anexo I 4.4
+400	Rejeição: Parâmetro do QR-Code não está no formato hexadecimal: [Nome do parâmetro do QR Code: xxx)]	MOC 7.0 Anexo I 4.4
+401	Rejeição: CPF do emitente inválido	MOC 7.0 Anexo I 4.4
+402	Rejeição: XML da área de dados com codificação diferente de UTF-8	MOC 7.0 Anexo I 4.4
+403	Rejeição: O grupo de informações da NF-e avulsa é de uso exclusivo do Fisco	MOC 7.0 Anexo I 4.4
+404	Rejeição: Uso de prefixo de namespace não permitido	MOC 7.0 Anexo I 4.4
+407	Rejeição: CPF do Emitente somente no serviço de Nota Fiscal Avulsa no site do Fisco	MOC 7.0 Anexo I 4.4
+408	Rejeição: Evento não disponível para Autor pessoa física	MOC 7.0 Anexo I 4.4
+410	Rejeição: UF informada no campo cUF não é atendida pelo WebService (NT 2018.004)	MOC 7.0 Anexo I 4.4
+417	Rejeição: Total do ICMS superior ao valor limite estabelecido	MOC 7.0 Anexo I 4.4
+418	Rejeição: Total do ICMS ST superior ao valor limite estabelecido	MOC 7.0 Anexo I 4.4
+434	Rejeição: NF-e sem indicativo do intermediador (NT 2020.006)	MOC 7.0 Anexo I 4.4
+435	Rejeição: NF-e não pode ter o indicativo do intermediador (NT 2020.006)	MOC 7.0 Anexo I 4.4
+436	Rejeição: Informado 99-Outros como meio de pagamento (NT 2020.006)	MOC 7.0 Anexo I 4.4
+437	Rejeição: CNPJ da instituição de pagamento inválido (NT 2020.006)	MOC 7.0 Anexo I 4.4
+438	Rejeição: Obrigatória as informações do intermediador da transação para operação por site de terceiros (NT 2020.006)	MOC 7.0 Anexo I 4.4
+439	Rejeição: Informações do intermediador da transação para operação por site de terceiros preenchido indevidamente (NT 2020.006)	MOC 7.0 Anexo I 4.4
+440	Rejeição: CNPJ do intermediador da transação inválido (NT 2020.006)	MOC 7.0 Anexo I 4.4
+443	Rejeição: Código da bandeira de	NT2025.001-.1.03corrigido
+444	Rejeição: NFC-e com qrCode na	NT2025.001-.1.03corrigido
+445	Rejeição: Parâmetro assinatura não	NT2025.001-.1.03corrigido
+450	Rejeição: Modelo da NF-e diferente de 55	MOC 7.0 Anexo I 4.4
+451	Rejeição: Processo de Emissão pelo Fisco incompatível com a Série da NF	MOC 7.0 Anexo I 4.4
+452	Rejeição: Solicitada resposta assíncrona	NT2025.001-.1.03corrigido
+453	Rejeição: Ano de inutilização não pode ser superior ao Ano atual	MOC 7.0 Anexo I 4.4
+454	Rejeição: Ano de inutilização não pode ser inferior a 2006	MOC 7.0 Anexo I 4.4
+455	Rejeição: Órgão Autor do evento diferente da UF da Chave de Acesso	MOC 7.0 Anexo I 4.4
+459	Rejeição: Cancelamento de Evento inexistente	NT2025.002-.1.52
+460	Rejeição: Protocolo do Evento difere do cadastrado	NT2025.002-.1.52
+461	Rejeição: Informado campos de percentual de GLP e/ou GLGNn e/ou GLGNi para produto diferente de GLP [nItem: 999]	MOC 7.0 Anexo I 4.4
+462	Rejeição: Código Identificador do CSC no QR-Code não cadastrado na SEFAZ	MOC 7.0 Anexo I 4.4
+463	Rejeição: Código Identificador do CSC no QR-Code foi revogado pela empresa	MOC 7.0 Anexo I 4.4
+464	Rejeição: Código de Hash no QR-Code difere do calculado	MOC 7.0 Anexo I 4.4
+465	Rejeição: Número de Controle da FCI inexistente	MOC 7.0 Anexo I 4.4
+466	Rejeição: Evento com Tipo de Autor incompatível	MOC 7.0 Anexo I 4.4
+467	Rejeição: Dados da NF-e divergentes do EPEC [tag: xxxx]	MOC 7.0 Anexo I 4.4
+468	Rejeição: NF-e com Tipo Emissão = 4, sem EPEC correspondente	MOC 7.0 Anexo I 4.4
+471	Rejeição: Informado NCM=00 indevidamente	MOC 7.0 Anexo I 4.4
+472	Rejeição: CPF consultado difere do CPF do Certificado Digital	MOC 7.0 Anexo I 4.4
+474	Rejeição: Parâmetro assinatura deve	NT2025.001-.1.03corrigido
+476	Rejeição: Código da UF diverge da UF da primeira NF-e do Lote	MOC 7.0 Anexo I 4.4
+477	Rejeição: Código do órgão diverge do órgão do primeiro evento do Lote	MOC 7.0 Anexo I 4.4
+478	Rejeição: Local da entrega não informado para faturamento direto de veículos novos	MOC 7.0 Anexo I 4.4
+479	Rejeição: Data de Emissão anterior a data de credenciamento ou anterior a Data de Abertura do estabelecimento	MOC 7.0 Anexo I 4.4
+480	Rejeição: Código Município do Emitente diverge do cadastrado na UF	MOC 7.0 Anexo I 4.4
+481	Rejeição: Código Regime Tributário do emitente diverge do cadastro na SEFAZ	MOC 7.0 Anexo I 4.4
+482	Rejeição: Código do Município do Destinatário diverge do cadastrado na UF	MOC 7.0 Anexo I 4.4
+483	Rejeição: Valor do desconto maior que valor do produto [nItem: nnn]	MOC 7.0 Anexo I 4.4
+484	Rejeição: Chave de Acesso com tipo de emissão diferente de 4 (posição 35 da Chave de Acesso)	MOC 7.0 Anexo I 4.4
+485	Rejeição: Duplicidade de numeração do EPEC (Modelo, CNPJ ou CPF, Série e Número)	MOC 7.0 Anexo I 4.4
+486	Rejeição: Não informado o Grupo de Autorização para UF que exige a identificação do Escritório de Contabilidade na Nota Fiscal	MOC 7.0 Anexo I 4.4
+487	Rejeição: Escritório de Contabilidade não cadastrado na SEFAZ	MOC 7.0 Anexo I 4.4
+488	Rejeição: Vendas do Emitente incompatíveis com o Porte da Empresa	MOC 7.0 Anexo I 4.4
+489	Rejeição: CNPJ informado inválido (DV ou zeros)	MOC 7.0 Anexo I 4.4
+490	Rejeição: CPF informado inválido (DV ou zeros)	MOC 7.0 Anexo I 4.4
+494	Rejeição: Chave de Acesso inexistente [chNFe:99999999999999999999999999999999999999999999]	MOC 7.0 Anexo I 4.4
+495	Rejeição: CPF do Emitente com Série incompatível	MOC 7.0 Anexo I 4.4
+501	Rejeição: Prazo de cancelamento superior ao previsto na Legislação	MOC 7.0 Anexo I 4.4
+502	Rejeição: Erro na Chave de Acesso - Campo Id não corresponde à concatenação dos campos correspondentes	MOC 7.0 Anexo I 4.4
+503	Rejeição: CNPJ do emitente com Série incompatível	MOC 7.0 Anexo I 4.4
+504	Rejeição: Data de Entrada/Saída posterior ao permitido	MOC 7.0 Anexo I 4.4
+505	Rejeição: Data de Entrada/Saída anterior ao permitido	MOC 7.0 Anexo I 4.4
+506	Rejeição: Data de Saída menor que a Data de Emissão	MOC 7.0 Anexo I 4.4
+508	Rejeição: CST incompatível na operação com Não Contribuinte [nItem: 999]	MOC 7.0 Anexo I 4.4
+509	Rejeição: Informado código de município diferente de “9999999” para operação com o exterior	MOC 7.0 Anexo I 4.4
+510	Rejeição: Operação com Exterior e Código País destinatário é 1058 (Brasil) ou não informado	MOC 7.0 Anexo I 4.4
+511	Rejeição: Não é de Operação com Exterior e Código País destinatário difere de 1058 (Brasil)	MOC 7.0 Anexo I 4.4
+512	Rejeição: CNPJ do Local de Retirada inválido	MOC 7.0 Anexo I 4.4
+513	Rejeição: Código Município do Local de Retirada deve ser 9999999 para UF retirada = “EX”.	MOC 7.0 Anexo I 4.4
+514	Rejeição: CNPJ do Local de Entrega inválido	MOC 7.0 Anexo I 4.4
+515	Rejeição: Código Município do Local de Entrega deve ser 9999999 para UF entrega = “EX”.	MOC 7.0 Anexo I 4.4
+516	Rejeição: Falha no schema XML – inexiste a tag raiz esperada para a mensagem	MOC 7.0 Anexo I 4.4
+517	Rejeição: Falha no schema XML – inexiste atributo versao na tag raiz da mensagem	MOC 7.0 Anexo I 4.4
+518	Rejeição: CFOP de entrada para NF-e de saída	MOC 7.0 Anexo I 4.4
+519	Rejeição: CFOP de saída para NF-e de entrada	MOC 7.0 Anexo I 4.4
+520	Rejeição: CFOP de Operação com Exterior e UF destinatário difere de “EX”	MOC 7.0 Anexo I 4.4
+521	Rejeição: Operação Interna e UF do emitente difere da UF do destinatário/remetente contribuinte do ICMS	MOC 7.0 Anexo I 4.4
+522	Rejeição: Chave de Acesso referenciada com UF inválida[nOcor:nnn]	MOC 7.0 Anexo I 4.4
+523	Rejeição: CFOP não é de Operação Estadual e UF emitente igual à UF destinatário [nItem: 999]	MOC 7.0 Anexo I 4.4
+524	Rejeição: Chave de Acesso referenciada com Ano-Mês inválido [nOcor: 999]	MOC 7.0 Anexo I 4.4
+525	Rejeição: CFOP de Importação e não informado dados da DI [nItem: 999]	MOC 7.0 Anexo I 4.4
+526	Rejeição: Consulta a uma Chave de Acesso muito antiga	MOC 7.0 Anexo I 4.4
+527	Rejeição: Operação de Exportação com informação de ICMS incompatível	MOC 7.0 Anexo I 4.4
+528	Rejeição: Valor do ICMS difere do produto BC e Alíquota [nItem: 999]	MOC 7.0 Anexo I 4.4
+529	Rejeição: CST incompatível na operação com Contribuinte Isento de Inscrição Estadual [nItem: 999]	MOC 7.0 Anexo I 4.4
+530	Rejeição: Operação com tributação de ISSQN sem informar a Inscrição Municipal	MOC 7.0 Anexo I 4.4
+531	Rejeição: Total da BC ICMS difere do somatório dos itens	MOC 7.0 Anexo I 4.4
+532	Rejeição: Total do ICMS difere do somatório dos itens	MOC 7.0 Anexo I 4.4
+533	Rejeição: Total da BC ICMS-ST difere do somatório dos itens	MOC 7.0 Anexo I 4.4
+534	Rejeição: Total do ICMS-ST difere do somatório dos itens	MOC 7.0 Anexo I 4.4
+535	Rejeição: Total do Frete difere do somatório dos itens	MOC 7.0 Anexo I 4.4
+536	Rejeição: Total do Seguro difere do somatório dos itens	MOC 7.0 Anexo I 4.4
+537	Rejeição: Total do Desconto difere do somatório dos itens	MOC 7.0 Anexo I 4.4
+538	Rejeição: Total do IPI difere do somatório dos itens	MOC 7.0 Anexo I 4.4
+539	Rejeição: Duplicidade de NF-e com diferença na Chave de Acesso [chNFe: 99999999999999999999999999999999999999999999][nRec:999999999999999]	MOC 7.0 Anexo I 4.4
+540	Rejeição: CPF do Local de Retirada inválido	MOC 7.0 Anexo I 4.4
+541	Rejeição: CPF do Local de Entrega inválido	MOC 7.0 Anexo I 4.4
+542	Rejeição: CNPJ do Transportador inválido	MOC 7.0 Anexo I 4.4
+543	Rejeição: CPF do Transportador inválido	MOC 7.0 Anexo I 4.4
+544	Rejeição: IE do Transportador inválida	MOC 7.0 Anexo I 4.4
+547	Rejeição: Chave de Acesso referenciada com Dígito Verificador inválido[nOcor:nnn]	MOC 7.0 Anexo I 4.4
+548	Rejeição: NF modelo 1 referenciada com data de emissão inválida [nOcor:nnn]	MOC 7.0 Anexo I 4.4
+549	Rejeição: CNPJ da NF referenciada de produtor inválido [nOcor: 999]	MOC 7.0 Anexo I 4.4
+550	Rejeição: CPF da NF referenciada de produtor inválido.	MOC 7.0 Anexo I 4.4
+551	Rejeição: IE da NF referenciada de produtor inválido.	MOC 7.0 Anexo I 4.4
+552	Rejeição: Chave de Acesso referenciada com CNPJ/CPF inválido[nOcor:nnn]	MOC 7.0 Anexo I 4.4
+553	Rejeição: Tipo autorizador do recibo diverge do Órgão Autorizador.	MOC 7.0 Anexo I 4.4
+554	Rejeição: IE do Emitente informada como ISENTO indevidamente	MOC 7.0 Anexo I 4.4
+556	Rejeição: Justificativa de entrada em contingência não deve ser informada para tipo de emissão normal	MOC 7.0 Anexo I 4.4
+557	Rejeição: A Justificativa de entrada em contingência deve ser informada	MOC 7.0 Anexo I 4.4
+558	Rejeição: Data de entrada em contingência posterior a data de recebimento	MOC 7.0 Anexo I 4.4
+559	Rejeição: UF do Transportador não informada	MOC 7.0 Anexo I 4.4
+560	Rejeição: CNPJ base/CPF do emitente difere do CNPJ base/CPF da primeira NF-e do lote recebido	MOC 7.0 Anexo I 4.4
+561	Rejeição: Mês de Emissão informado na Chave de Acesso difere do Mês de Emissão da NF-e	MOC 7.0 Anexo I 4.4
+562	Rejeição: Código Numérico informado na Chave de Acesso difere do Código Numérico da NF-e [chNFe:99999999999999999999999999999999999999999999	MOC 7.0 Anexo I 4.4
+563	Rejeição: Já existe pedido de Inutilização com a mesma faixa de inutilização	MOC 7.0 Anexo I 4.4
+564	Rejeição: Total do Produto / Serviço difere do somatório dos itens	MOC 7.0 Anexo I 4.4
+565	Rejeição: Falha no schema XML – inexiste a tag raiz esperada para o lote de NF-e	MOC 7.0 Anexo I 4.4
+568	Rejeição: Falha no schema XML – inexiste atributo versao na tag raiz do lote de NF-e	MOC 7.0 Anexo I 4.4
+569	Rejeição: Data de entrada em contingência muito atrasada	MOC 7.0 Anexo I 4.4
+570	Rejeição: Tipo de Emissão 3, 6 ou 7 só é válido nas contingências SCAN/SVC	MOC 7.0 Anexo I 4.4
+571	Rejeição: Processo de emissão pelo Fisco com Certificado de Transmissão incompatível	MOC 7.0 Anexo I 4.4
+572	Rejeição: Erro Atributo ID do evento não corresponde a concatenação dos campos (“ID” + tpEvento + chNFe + nSeqEvento)	MOC 7.0 Anexo I 4.4
+573	Rejeição: Duplicidade de Evento	MOC 7.0 Anexo I 4.4
+574	Rejeição: O autor do evento diverge do emissor da NF-e	MOC 7.0 Anexo I 4.4
+575	Rejeição: O autor do evento diverge do destinatário da NF-e	MOC 7.0 Anexo I 4.4
+576	Rejeição: O autor do evento não é um órgão autorizado a gerar o evento	MOC 7.0 Anexo I 4.4
+577	Rejeição: A data do evento não pode ser menor que a data de emissão da NF-e	MOC 7.0 Anexo I 4.4
+578	Rejeição: A data do evento não pode ser maior que a data do processamento	MOC 7.0 Anexo I 4.4
+579	Rejeição: A data do evento não pode ser menor que a data de autorização para NF-e não emitida em contingência	MOC 7.0 Anexo I 4.4
+580	Rejeição: O evento exige uma NF-e autorizada	MOC 7.0 Anexo I 4.4
+583	Rejeição: Valor da assinatura do	NT2025.001-.1.03corrigido
+587	Rejeição: Usar somente o namespace padrão da NF-e	MOC 7.0 Anexo I 4.4
+588	Rejeição: Não é permitida a presença de caracteres de edição no início/fim da mensagem ou entre as tags da mensagem	MOC 7.0 Anexo I 4.4
+589	Rejeição: Número do NSU informado superior ao maior NSU do Ambiente Nacional	MOC 7.0 Anexo I 4.4
+590	Rejeição: Informado CST para emissor do Simples Nacional (CRT=1)	MOC 7.0 Anexo I 4.4
+591	Rejeição: Informado CSOSN para emissor que não é do Simples Nacional (CRT diferente de 1)	MOC 7.0 Anexo I 4.4
+592	Rejeição: A NF-e deve ter pelo menos um item de produto sujeito ao ICMS.	MOC 7.0 Anexo I 4.4
+593	Rejeição: CNPJ-Base consultado difere do CNPJ-Base do Certificado Digital	MOC 7.0 Anexo I 4.4
+594	Rejeição: O número de sequencia do evento informado é maior que o permitido	MOC 7.0 Anexo I 4.4
+595	Rejeição: Obrigatória a informação da justificativa do evento.	MOC 7.0 Anexo I 4.4
+596	Rejeição: Evento apresentado fora do prazo: [prazo vigente]	MOC 7.0 Anexo I 4.4
+597	Rejeição: CFOP de Importação e não informado dados de IPI	MOC 7.0 Anexo I 4.4
+598	Rejeição: NF-e emitida em ambiente de homologação com Razão Social do destinatário diferente de NF-E EMITIDA EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL	MOC 7.0 Anexo I 4.4
+599	Rejeição: CFOP de Importação e não informado dados de II [nItem: 999]	MOC 7.0 Anexo I 4.4
+600	Rejeição: CSOSN incompatível na operação com Não Contribuinte [nItem: 999]	MOC 7.0 Anexo I 4.4
+601	Rejeição: Total do II difere do somatório dos itens	MOC 7.0 Anexo I 4.4
+602	Rejeição: Total do PIS difere do somatório dos itens sujeitos ao ICMS	MOC 7.0 Anexo I 4.4
+603	Rejeição: Total da COFINS difere do somatório dos itens sujeitos ao ICMS	MOC 7.0 Anexo I 4.4
+604	Rejeição: Total do vOutro difere do somatório dos itens	MOC 7.0 Anexo I 4.4
+605	Rejeição: Total do vServ difere do somatório do vProd dos itens sujeitos ao ISSQN	MOC 7.0 Anexo I 4.4
+606	Rejeição: Total do vBC do ISS difere do somatório dos itens	MOC 7.0 Anexo I 4.4
+607	Rejeição: Total do ISS difere do somatório dos itens	MOC 7.0 Anexo I 4.4
+608	Rejeição: Total do PIS difere do somatório dos itens sujeitos ao ISSQN	MOC 7.0 Anexo I 4.4
+609	Rejeição: Total da COFINS difere do somatório dos itens sujeitos ao ISSQN	MOC 7.0 Anexo I 4.4
+610	Rejeição: Total da NF difere do somatório dos Valores compõe o valor Total da NF.	MOC 7.0 Anexo I 4.4
+611	Rejeição: GTIN (cEAN) inválido [nItem:999]	MOC 7.0 Anexo I 4.4
+612	Rejeição: GTIN da unidade tributável (cEANTrib) inválido [nItem:999]	MOC 7.0 Anexo I 4.4
+613	Rejeição: Chave de Acesso difere da existente em BD	MOC 7.0 Anexo I 4.4
+614	Rejeição: Chave de Acesso inválida (Código UF inválido)	MOC 7.0 Anexo I 4.4
+615	Rejeição: Chave de Acesso inválida (Ano < 06 ou Ano maior que Ano Corrente)	MOC 7.0 Anexo I 4.4
+616	Rejeição: Chave de Acesso inválida (Mês < 1 ou Mês > 12)	MOC 7.0 Anexo I 4.4
+617	Rejeição: Chave de Acesso inválida (CNPJ/CPF zerado ou dígito inválido)	MOC 7.0 Anexo I 4.4
+618	Rejeição: Chave de Acesso inválida (modelo diferente de 55 e 65)	MOC 7.0 Anexo I 4.4
+619	Rejeição: Chave de Acesso inválida (número NF = 0)	MOC 7.0 Anexo I 4.4
+621	Rejeição: CPF Emitente não cadastrado	MOC 7.0 Anexo I 4.4
+622	Rejeição: IE emitente não vinculada ao CPF	MOC 7.0 Anexo I 4.4
+623	Rejeição: CPF Destinatário não cadastrado	MOC 7.0 Anexo I 4.4
+624	Rejeição: IE Destinatário não vinculada ao CPF	MOC 7.0 Anexo I 4.4
+625	Rejeição: Inscrição SUFRAMA deve ser informada na venda com isenção para ZFM [nItem: 999]	MOC 7.0 Anexo I 4.4
+626	Rejeição: CFOP de operação isenta para ZFM diferente do previsto [nItem: 999]	MOC 7.0 Anexo I 4.4
+627	Rejeição: O valor do ICMS desonerado deve ser informado [nItem: 999]	MOC 7.0 Anexo I 4.4
+628	Rejeição: Total da NF superior ao valor limite estabelecido pela SEFAZ [Limite]	MOC 7.0 Anexo I 4.4
+629	Rejeição: Valor do Produto difere do produto Valor Unitário de Comercialização e Quantidade Comercial [nItem: 999]	MOC 7.0 Anexo I 4.4
+630	Rejeição: Valor do Produto difere do produto Valor Unitário de Tributação e Quantidade Tributável [nItem: 999]	MOC 7.0 Anexo I 4.4
+631	Rejeição: CNPJ-Base do Destinatário difere do CNPJ-Base do Certificado Digital	MOC 7.0 Anexo I 4.4
+632	Rejeição: Solicitação fora de prazo, a NF-e não está mais disponível para download	MOC 7.0 Anexo I 4.4
+633	Rejeição: NF-e indisponível para download devido a ausência de Manifestação do Destinatário	MOC 7.0 Anexo I 4.4
+634	Rejeição: Destinatário da NF-e não tem o mesmo CNPJ raiz do solicitante do download	MOC 7.0 Anexo I 4.4
+635	Rejeição: NF-e com mesmo número e série já transmitida e aguardando processamento	MOC 7.0 Anexo I 4.4
+636	Rejeição: O tipo do evento de cancelamento não corresponde ao tipo do evento a ser cancelado	MOC 7.0 Anexo I 4.4
+638	Rejeição: A quantidade de Pedidos de Prorrogação 1º prazo excede o valor limite de 20 Pedidos de Prorrogação autorizados e sem resposta do Fisco	MOC 7.0 Anexo I 4.4
+639	Rejeição: A quantidade de Pedidos de Prorrogação 2° prazo excede o valor limite de 20 Pedidos de Prorrogação autorizados e sem resposta do Fisco.	MOC 7.0 Anexo I 4.4
+640	Rejeição: CNPJ/CPF do interessado não possui permissão para consultar esta NF-e	MOC 7.0 Anexo I 4.4
+641	Rejeição: A data do evento não pode ser menor que a data de autorização para o evento	MOC 7.0 Anexo I 4.4
+650	Rejeição: Evento de "Ciência da Emissão" para NF-e Cancelada ou Denegada	MOC 7.0 Anexo I 4.4
+651	Rejeição: Evento de "Desconhecimento da Operação" para NF-e Cancelada ou Denegada	MOC 7.0 Anexo I 4.4
+652	Rejeição: NF-e para emitente pessoa física	MOC 7.0 Anexo I 4.4
+653	Rejeição: NF-e Cancelada, arquivo indisponível para download	MOC 7.0 Anexo I 4.4
+654	Rejeição: NF-e Denegada, arquivo indisponível para download	MOC 7.0 Anexo I 4.4
+655	Rejeição: Evento de Ciência da Emissão informado após a manifestação final do destinatário	MOC 7.0 Anexo I 4.4
+656	Rejeição: Consumo indevido pelo aplicativo da empresa [det: DESC_ERRO]	MOC 7.0 Anexo I 4.4
+657	Rejeição: Código do Órgão diverge do órgão autorizador	MOC 7.0 Anexo I 4.4
+658	Rejeição: UF do destinatário da Chave de Acesso diverge da UF autorizadora	MOC 7.0 Anexo I 4.4
+659	Rejeição: Ano-Mês da Data de Emissão diverge do Ano_Mês da Chave de Acesso	MOC 7.0 Anexo I 4.4
+660	Rejeição: CFOP de Combustível e não informado grupo de combustível da NF-e [nItem: nnn]	MOC 7.0 Anexo I 4.4
+661	Rejeição: NF-e já existente para o número do EPEC informado	MOC 7.0 Anexo I 4.4
+662	Rejeição: Numeração do EPEC está inutilizada na Base de Dados da SEFAZ	MOC 7.0 Anexo I 4.4
+663	Rejeição: Alíquota do ICMS com valor superior a 4 por cento na operação de saída interestadual com produtos importados [nItem: 999]	MOC 7.0 Anexo I 4.4
+678	Rejeição: NF referenciada com UF diferente da NF-e complementar	MOC 7.0 Anexo I 4.4
+679	Rejeição: Chave de Acesso referenciada com Modelo inválido[nOcor:nnn]	MOC 7.0 Anexo I 4.4
+680	Rejeição: Chave de Acesso referenciada em duplicidade na NF-e [nOcor:nnn]	MOC 7.0 Anexo I 4.4
+681	Rejeição: Duplicidade de NF Modelo 1 referenciada (CNPJ, Modelo, Série e Número) [nOcor: nnn]	MOC 7.0 Anexo I 4.4
+682	Rejeição: Duplicidade de NF de Produtor referenciada (IE, Modelo, Série e Número) [nOcor: 999]	MOC 7.0 Anexo I 4.4
+683	Rejeição: Chave de Acesso referenciada com Número inválido[nOcor:nnn]	MOC 7.0 Anexo I 4.4
+684	Rejeição: Duplicidade de Cupom Fiscal referenciado (Modelo, Número de Ordem e COO) [nOcor: 999]	MOC 7.0 Anexo I 4.4
+685	Rejeição: Total do Valor Aproximado dos Tributos difere do somatório dos itens	MOC 7.0 Anexo I 4.4
+686	Rejeição: NF Complementar referencia uma NF-e cancelada	MOC 7.0 Anexo I 4.4
+687	Rejeição: NF Complementar referencia uma NF-e denegada	MOC 7.0 Anexo I 4.4
+688	Rejeição: NF referenciada de Produtor com IE inexistente [nRef: xxx]	MOC 7.0 Anexo I 4.4
+689	Rejeição: NF referenciada de Produtor com IE não vinculada ao CNPJ/CPF informado [nRef: xxx]	MOC 7.0 Anexo I 4.4
+690	Rejeição: Pedido de Cancelamento para NF-e com CT-e ou MDF-e	MOC 7.0 Anexo I 4.4
+691	Rejeição: Chave de Acesso da NF-e diverge da Chave de Acesso do EPEC [Chave EPEC: xxxxxxxxx]	MOC 7.0 Anexo I 4.4
+692	Rejeição: Existe EPEC registrado para esta Série e Número [Chave EPEC: xxxxxxxxxxx]	MOC 7.0 Anexo I 4.4
+693	Rejeição: Alíquota de ICMS superior à definida para a operação interestadual [nItem: 999]	MOC 7.0 Anexo I 4.4
+694	Rejeição: Não informado o grupo de ICMS para a UF de destino [nItem: 999]	MOC 7.0 Anexo I 4.4
+695	Rejeição: Informado indevidamente o grupo de ICMS para a UF de destino [nItem:999]	MOC 7.0 Anexo I 4.4
+696	Rejeição: Operação com não contribuinte deve indicar operação com consumidor final	MOC 7.0 Anexo I 4.4
+697	Rejeição: Alíquota interestadual do ICMS com origem diferente do previsto [nItem:999]	MOC 7.0 Anexo I 4.4
+698	Rejeição: Alíquota interestadual do ICMS incompatível com as UF envolvidas na operação [nItem:999]	MOC 7.0 Anexo I 4.4
+699	Rejeição: Percentual do ICMS Interestadual para a UF de destino difere do previsto para o ano da Data de Emissão [nItem: 999]	MOC 7.0 Anexo I 4.4
+701	Rejeição: Não informado Nota Fiscal referenciada (CFOP de Exportação Indireta) [nItem: nnn]	MOC 7.0 Anexo I 4.4
+702	Rejeição: NFC-e não é aceita pela UF do Emitente	MOC 7.0 Anexo I 4.4
+703	Rejeição: Data-Hora de Emissão posterior ao horário de recebimento	MOC 7.0 Anexo I 4.4
+704	Rejeição: NFC-e com Data-Hora de emissão atrasada	MOC 7.0 Anexo I 4.4
+705	Rejeição: NFC-e com data de entrada/saída	MOC 7.0 Anexo I 4.4
+706	Rejeição: NFC-e para operação de entrada	MOC 7.0 Anexo I 4.4
+707	Rejeição: NFC-e para operação interestadual ou com o exterior	MOC 7.0 Anexo I 4.4
+708	Rejeição: NFC-e não pode referenciar documento fiscal	MOC 7.0 Anexo I 4.4
+709	Rejeição: NFC-e com formato de DANFE inválido	MOC 7.0 Anexo I 4.4
+710	Rejeição: NF-e com formato de DANFE inválido	MOC 7.0 Anexo I 4.4
+711	Rejeição: NF-e com contingência off-line	MOC 7.0 Anexo I 4.4
+712	Rejeição: NFC-e com contingência off-line para a UF	MOC 7.0 Anexo I 4.4
+713	Rejeição: Tipo de Emissão diferente de 6 ou 7 para contingência da SVC acessada	MOC 7.0 Anexo I 4.4
+714	Rejeição: NFC-e com contingência inválida (tpEmis=2, 4 (a critério da UF) ou 5)	MOC 7.0 Anexo I 4.4
+715	Rejeição: NFC-e com finalidade inválida	MOC 7.0 Anexo I 4.4
+716	Rejeição: NFC-e em operação não destinada a consumidor final	MOC 7.0 Anexo I 4.4
+717	Rejeição: NFC-e em operação não presencial	MOC 7.0 Anexo I 4.4
+718	Rejeição: NFC-e não deve informar IE de Substituto Tributário	MOC 7.0 Anexo I 4.4
+719	Rejeição: NF-e sem a identificação do destinatário	MOC 7.0 Anexo I 4.4
+720	Rejeição: Na operação com Exterior deve ser informada tag idEstrangeiro	MOC 7.0 Anexo I 4.4
+721	Rejeição: Informado idEstrangeiro e Operação não é com consumidor final.	MOC 7.0 Anexo I 4.4
+722	Rejeição: CFOP de Transporte Inexistente	MOC 7.0 Anexo I 4.4
+724	Rejeição: NF-e sem o nome do destinatário	MOC 7.0 Anexo I 4.4
+725	Rejeição: NFC-e com CFOP inválido[nItem:nnn]	MOC 7.0 Anexo I 4.4
+726	Rejeição: NF-e sem a informação de endereço do destinatário	MOC 7.0 Anexo I 4.4
+727	Rejeição: Operação com Exterior e UF diferente de EX	MOC 7.0 Anexo I 4.4
+728	Rejeição: NF-e sem informação da IE do destinatário	MOC 7.0 Anexo I 4.4
+729	Rejeição: NFC-e com informação da IE do destinatário	MOC 7.0 Anexo I 4.4
+730	Rejeição: NFC-e com Inscrição Suframa	MOC 7.0 Anexo I 4.4
+731	Rejeição: CFOP de operação com Exterior e idDest <> 3	MOC 7.0 Anexo I 4.4
+732	Rejeição: CFOP de operação interestadual e idDest <> 2	MOC 7.0 Anexo I 4.4
+733	Rejeição: CFOP de operação interna e idDest <> 1	MOC 7.0 Anexo I 4.4
+734	Rejeição: NFC-e com Unidade de Comercialização inválida [nItem: 999]	MOC 7.0 Anexo I 4.4
+735	Rejeição: NFC-e com Unidade de Tributação inválida [nItem: 999]	MOC 7.0 Anexo I 4.4
+736	Rejeição: NFC-e com grupo de Veículos novos	MOC 7.0 Anexo I 4.4
+737	Rejeição: Pagamento com cartão de crédito em sistema de automação não integrado	MOC 7.0 Anexo I 4.4
+738	Rejeição: NFC-e com grupo de Armamentos	MOC 7.0 Anexo I 4.4
+739	Rejeição: Código de País do ISSQN Inexistente	MOC 7.0 Anexo I 4.4
+740	Rejeição: Item com Repasse de ICMS retido por Substituto Tributário [nItem: nnn]	MOC 7.0 Anexo I 4.4
+741	Rejeição: NFC-e com Partilha de ICMS entre UF	MOC 7.0 Anexo I 4.4
+742	Rejeição: NFC-e com grupo do IPI	MOC 7.0 Anexo I 4.4
+743	Rejeição: NFC-e com grupo do II	MOC 7.0 Anexo I 4.4
+745	Rejeição: NF-e sem grupo do PIS	MOC 7.0 Anexo I 4.4
+746	Rejeição: NFC-e com grupo do PIS-ST	MOC 7.0 Anexo I 4.4
+748	Rejeição: NF-e sem grupo da COFINS	MOC 7.0 Anexo I 4.4
+749	Rejeição: NFC-e com grupo da COFINS-ST	MOC 7.0 Anexo I 4.4
+750	Rejeição: NFC-e com valor total superior ao permitido para destinatário não identificado (Código) [Limite]	MOC 7.0 Anexo I 4.4
+751	Rejeição: NFC-e com valor total superior ao permitido para destinatário não identificado (Nome) [Limite]	MOC 7.0 Anexo I 4.4
+752	Rejeição: NFC-e com valor total superior ao permitido para destinatário não identificado (Endereço) [Limite]	MOC 7.0 Anexo I 4.4
+753	Rejeição: NFC-e com Frete	MOC 7.0 Anexo I 4.4
+754	Rejeição: NFC-e com dados do Transportador	MOC 7.0 Anexo I 4.4
+755	Rejeição: NFC-e com dados de Retenção do ICMS no Transporte	MOC 7.0 Anexo I 4.4
+756	Rejeição: NFC-e com dados do veículo de Transporte	MOC 7.0 Anexo I 4.4
+757	Rejeição: NFC-e com dados de Reboque do veículo de Transporte	MOC 7.0 Anexo I 4.4
+758	Rejeição: NFC-e com dados do Vagão de Transporte	MOC 7.0 Anexo I 4.4
+759	Rejeição: NFC-e com dados da Balsa de Transporte	MOC 7.0 Anexo I 4.4
+760	Rejeição: NFC-e com dados de cobrança (Fatura, Duplicata)	MOC 7.0 Anexo I 4.4
+761	Rejeição: Código de Produto ANP inexistente [nItem: 999]	MOC 7.0 Anexo I 4.4
+762	Rejeição: NFC-e com dados de compras (Empenho, Pedido, Contrato)	MOC 7.0 Anexo I 4.4
+763	Rejeição: NFC-e com dados de aquisição de Cana	MOC 7.0 Anexo I 4.4
+765	Rejeição: Lote só poderá conter NF-e ou NFC-e	MOC 7.0 Anexo I 4.4
+766	Rejeição: Item com CST indevido [nItem:nnn]	MOC 7.0 Anexo I 4.4
+770	Rejeição: CFOP Inexistente [nItem:nnn]	MOC 7.0 Anexo I 4.4
+771	Rejeição: Informado idEstrangeiro em operação interestadual	MOC 7.0 Anexo I 4.4
+772	Rejeição: Operação Interestadual e UF de destino igual à UF de origem	MOC 7.0 Anexo I 4.4
+773	Rejeição: Operação Interna e UF de destino difere da UF de origem	MOC 7.0 Anexo I 4.4
+774	Rejeição: NFC-e com indicador de item não participante do total [nItem: 999]	MOC 7.0 Anexo I 4.4
+775	Rejeição: Modelo da NFC-e diferente de 65	MOC 7.0 Anexo I 4.4
+776	Rejeição: Solicitada resposta síncrona para	NT2025.001-.1.03corrigido
+777	Rejeição: Obrigatória a informação do NCM completo (redação dada pela NT 2013/005 v 1.20) [nItem: 999]	MOC 7.0 Anexo I 4.4
+778	Rejeição: Informado NCM inexistente[nItem:nnn]	MOC 7.0 Anexo I 4.4
+779	Rejeição: NFC-e com NCM incompatível [nItem: 999]	MOC 7.0 Anexo I 4.4
+780	Rejeição: Total da NFC-e superior ao valor limite estabelecido pela SEFAZ [Limite]	MOC 7.0 Anexo I 4.4
+781	Rejeição: Emissor não habilitado para emissão da NFC-e	MOC 7.0 Anexo I 4.4
+783	Rejeição: NFC-e não é autorizada pela SVC	MOC 7.0 Anexo I 4.4
+784	Rejeição: NFC-e não permite o evento de Carta de Correção	MOC 7.0 Anexo I 4.4
+785	Rejeição: NFC-e com entrega a domicílio não permitida pela UF	MOC 7.0 Anexo I 4.4
+786	Rejeição: NFC-e de entrega a domicílio sem dados do Transportador	MOC 7.0 Anexo I 4.4
+787	Rejeição: NFC-e de entrega a domicílio sem a identificação do destinatário	MOC 7.0 Anexo I 4.4
+788	Rejeição: NFC-e de entrega a domicílio sem o endereço do destinatário	MOC 7.0 Anexo I 4.4
+789	Rejeição: NFC-e para destinatário contribuinte de ICMS	MOC 7.0 Anexo I 4.4
+790	Rejeição: Operação com Exterior para destinatário Contribuinte de ICMS	MOC 7.0 Anexo I 4.4
+791	Rejeição: NF-e com indicação de destinatário isento de IE, com a informação da IE do destinatário	MOC 7.0 Anexo I 4.4
+792	Rejeição: Informada a IE do destinatário para operação com destinatário no Exterior	MOC 7.0 Anexo I 4.4
+793	Rejeição: Valor do ICMS relativo ao Fundo de Combate à Pobreza na UF de destino difere do calculado [nItem: 999]	MOC 7.0 Anexo I 4.4
+794	Rejeição: NF-e com indicativo de NFC-e com entrega a domicílio	MOC 7.0 Anexo I 4.4
+795	Rejeição: Total do ICMS desonerado difere do somatório dos itens	MOC 7.0 Anexo I 4.4
+797	Rejeição: Data de vencimento da	NT2025.001-.1.03corrigido
+798	Rejeição: Valor total do ICMS relativo Fundo de Combate à Pobreza (FCP) da UF de destino difere do somatório do valor dos itens	MOC 7.0 Anexo I 4.4
+799	Rejeição: Valor total do ICMS Interestadual da UF de destino difere do somatório dos itens	MOC 7.0 Anexo I 4.4
+800	Rejeição: Valor total do ICMS Interestadual da UF do remetente difere do somatório dos itens	MOC 7.0 Anexo I 4.4
+805	Rejeição: A SEFAZ do destinatário não permite Contribuinte Isento de Inscrição Estadual	MOC 7.0 Anexo I 4.4
+806	Rejeição: Operação com ICMS-ST sem informação do CEST [nItem: 999]	MOC 7.0 Anexo I 4.4
+807	Rejeição: NFC-e com grupo de ICMS para a UF do destinatário	MOC 7.0 Anexo I 4.4
+811	Rejeição: Pedido de Prorrogação deferido impede o cancelamento da NF-e	MOC 7.0 Anexo I 4.4
+812	Rejeição: Regime Tributário SN, com excesso de sublimite não é permitido para Emitentes desta UF	MOC 7.0 Anexo I 4.4
+813	Rejeição: QR-Code com sequência de escape para o e-comercial. Usar CDATA	MOC 7.0 Anexo I 4.4
+814	Rejeição: Nota Fiscal com grupo de comércio exterior	MOC 7.0 Anexo I 4.4
+815	Rejeição: Valor do ICMS Interestadual para UF de Destino difere do calculado [nItem: 999] (Valor Informado: XXX, Valor Calculado:XXX)	MOC 7.0 Anexo I 4.4
+816	Rejeição: Valor do ICMS Interestadual para UF do Remetente difere do calculado [nItem: 999] (Valor Informado: XXX, Valor Calculado:XXX)	MOC 7.0 Anexo I 4.4
+817	Rejeição: Unidade Tributável incompatível com o NCM informado na operação com Comércio Exterior [nItem: 999]	MOC 7.0 Anexo I 4.4
+827	Rejeição: Obrigatório informar o tipo de autorização	MOC 7.0 Anexo I 4.4
+828	Rejeição: Não permitido informar o campo tipo de autorização	MOC 7.0 Anexo I 4.4
+829	Rejeição: Condição de uso não informado para o tipo de autorização de uso	MOC 7.0 Anexo I 4.4
+830	Rejeição: Não permitido preencher o campo Condição de Uso	MOC 7.0 Anexo I 4.4
+850	Rejeição: Data de vencimento da parcela não informada ou menor que a Data de vencimento da parcela anterior [nOcor: 999]	MOC 7.0 Anexo I 4.4
+851	Rejeição: Soma do valor das parcelas difere do Valor Líquido da Fatura	MOC 7.0 Anexo I 4.4
+852	Rejeição: Número da parcela inválido ou não informado [nOcor: 999]	MOC 7.0 Anexo I 4.4
+853	Rejeição: Dados de cobrança não	NT2025.001-.1.03corrigido
+854	Rejeição: Unidade Tributável (tag:uTrib) incompatível com produto informado [nItem: 999]	MOC 7.0 Anexo I 4.4
+855	Rejeição: Somatório percentuais de GLP derivado do petróleo, GLGNn e GLGNi diferente de 100 [nItem: 999].	MOC 7.0 Anexo I 4.4
+856	Rejeição: Campo valor de partida não preenchido para produto GLP [nItem: 999].	MOC 7.0 Anexo I 4.4
+857	Rejeição: Informado Duplicata Mercantil como Forma de Pagamento	MOC 7.0 Anexo I 4.4
+858	Rejeição: Grupo de Tributação informado indevidamente [nItem: 999]	MOC 7.0 Anexo I 4.4
+859	Rejeição: Total do FCP retido anteriormente por Substituição Tributária difere do somatório dos itens	MOC 7.0 Anexo I 4.4
+860	Rejeição: Valor do FCP informado difere de base de cálculo*alíquota [nItem: 999]	MOC 7.0 Anexo I 4.4
+861	Rejeição: Total do FCP difere do somatório dos itens	MOC 7.0 Anexo I 4.4
+862	Rejeição: Total do FCP ST difere do somatório dos itens	MOC 7.0 Anexo I 4.4
+863	Rejeição: Total do IPI devolvido difere do somatório dos itens	MOC 7.0 Anexo I 4.4
+864	Rejeição: NF-e com indicativo de Operação presencial, fora do estabelecimento e não informada NF referenciada	MOC 7.0 Anexo I 4.4
+865	Rejeição: Total dos pagamentos menor que o total da nota	MOC 7.0 Anexo I 4.4
+866	Rejeição: Ausência de troco quando o valor dos pagamentos informados for maior que o total da nota	MOC 7.0 Anexo I 4.4
+868	Rejeição: Grupos Veiculo Transporte e Reboque não devem ser informados	MOC 7.0 Anexo I 4.4
+869	Rejeição: Valor do troco incorreto	MOC 7.0 Anexo I 4.4
+870	Rejeição: Data de validade incompatível com data de fabricação [nItem: 999]	MOC 7.0 Anexo I 4.4
+871	Rejeição: O campo Meio de Pagamento deve ser preenchido com a opção Sem Pagamento	MOC 7.0 Anexo I 4.4
+873	Rejeição: Operação com medicamentos e não informado os campos de rastreabilidade [nItem: 999]	MOC 7.0 Anexo I 4.4
+874	Rejeição: Percentual de FCP inválido [nItem: 999]	MOC 7.0 Anexo I 4.4
+875	Rejeição: Percentual de FCPST inválido [nItem: 999]	MOC 7.0 Anexo I 4.4
+876	Rejeição: Operação interestadual para Consumidor Final e valor do FCP informado em campo diferente de vFCPUFDest (id:NA13) [nItem: 999]	MOC 7.0 Anexo I 4.4
+877	Rejeição: Data de fabricação maior que a data de processamento [nItem: 999]	MOC 7.0 Anexo I 4.4
+878	Rejeição: Endereço do site da UF da Consulta por chave de acesso diverge do previsto	MOC 7.0 Anexo I 4.4
+879	Rejeição: Informado item “Produzido em Escala NÃO Relevante” e não informado CNPJ do Fabricante [nItem: 999]	MOC 7.0 Anexo I 4.4
+880	Rejeição: Percentual de FCP igual a zero [nItem: 999]	MOC 7.0 Anexo I 4.4
+881	Rejeição: Percentual de FCPST igual a zero [nItem: 999]	MOC 7.0 Anexo I 4.4
+882	Rejeição: GTIN (cEAN) com prefixo inválido [nItem:999]	MOC 7.0 Anexo I 4.4
+883	Rejeição: GTIN (cEAN) sem informação [nItem: 999]	MOC 7.0 Anexo I 4.4
+884	Rejeição: GTIN da unidade tributável (cEANTrib) com prefixo inválido [nItem:999]	MOC 7.0 Anexo I 4.4
+885	Rejeição: GTIN informado, mas não informado o GTIN da unidade tributável [nItem:999]	MOC 7.0 Anexo I 4.4
+886	Rejeição: GTIN da unidade tributável informado, mas não informado o GTIN [nItem:999]	MOC 7.0 Anexo I 4.4
+888	Rejeição: GTIN da unidade tributável (cEANTrib) sem informação [nItem:999]	MOC 7.0 Anexo I 4.4
+889	Rejeição: Obrigatória a informação do GTIN para o produto [nItem: 999]	MOC 7.0 Anexo I 4.4
+890	Rejeição: GTIN inexistente no Cadastro Centralizado de GTIN (CCG) [nItem:999]	MOC 7.0 Anexo I 4.4
+891	Rejeição: GTIN incompatível com a NCM [nItem:999; NCM esperada: 99999999]	MOC 7.0 Anexo I 4.4
+892	Rejeição: GTIN incompatível com CEST [nItem:999; CEST esperado: 9999999]	MOC 7.0 Anexo I 4.4
+893	Rejeição: GTIN da unidade tributável diverge do GTIN Contido cadastrado no CCG [nItem:999; GTIN Contido esperado: 99999999999999]	MOC 7.0 Anexo I 4.4
+894	Rejeição: GTIN da unidade tributável inexistente no Cadastro Centralizado de GTIN (CCG) [nItem:999]	MOC 7.0 Anexo I 4.4
+895	Rejeição: GTIN da unidade tributável incompatível com a NCM [nItem:999; NCM esperada: 99999999]	MOC 7.0 Anexo I 4.4
+896	Rejeição: GTIN da unidade tributável incompatível com CEST [nItem:999; CEST esperado: 9999999]	MOC 7.0 Anexo I 4.4
+899	Rejeição: Informado incorretamente o campo meio de pagamento	MOC 7.0 Anexo I 4.4
+900	Rejeição: Data de vencimento da parcela não informada ou menor que Data de Emissão [nOcor: 999]	MOC 7.0 Anexo I 4.4
+901	Rejeição: Valor do Desconto da Fatura maior que Valor Original da Fatura	MOC 7.0 Anexo I 4.4
+902	Rejeição: Valor Liquido da Fatura difere do Valor Original menos o Valor do Desconto	MOC 7.0 Anexo I 4.4
+903	Rejeição Versão informada no QR-Code (“100”) não é mais válida para a data de emissão	MOC 7.0 Anexo I 4.4
+904	Rejeição: Informado indevidamente campo valor de pagamento	MOC 7.0 Anexo I 4.4
+905	Rejeição: Campos do grupo Fatura não informados	MOC 7.0 Anexo I 4.4
+906	Rejeição: Não informados os campos para informações do ICMS Efetivo. [nItem: nnn] [ NT 2018.005]	MOC 7.0 Anexo I 4.4
+910	Rejeição: Chave de Acesso NF-e Substituta inválida (<nome do campo>) [NT 2018.004]	MOC 7.0 Anexo I 4.4
+911	Rejeição: Chave de Acesso NF-e Substituta incorreta (<nome do campo>) [NT 2018.004]	MOC 7.0 Anexo I 4.4
+912	Rejeição: NF-e Substituta inexistente [NT 2018.004]	MOC 7.0 Anexo I 4.4
+913	Rejeição: NF-e Substituta Denegada ou Cancelada [NT 2018.004]	MOC 7.0 Anexo I 4.4
+914	Rejeição: Data de emissão da NF-e Substituta maior que 2 horas da data de emissão da NF-e a ser cancelada [NT 2018.004]	MOC 7.0 Anexo I 4.4
+915	Rejeição: Valor total da NF-e Substituta difere do valor da NF-e a ser cancelada [NT 2018.004]	MOC 7.0 Anexo I 4.4
+916	Rejeição: Valor total do ICMS da NF-e Substituta difere do valor da NF-e a ser cancelada [NT 2018.004]	MOC 7.0 Anexo I 4.4
+917	Rejeição: Identificação do destinatário da NF-e Substituta difere da identificação do destinatário da NF-e a ser cancelada. [NT 2018.004]	MOC 7.0 Anexo I 4.4
+918	Rejeição: Quantidade de itens da NF-e Substituta difere da quantidade de itens da NF-e a ser cancelada. [NT 2018.004]	MOC 7.0 Anexo I 4.4
+919	Rejeição: Item da NF-e Substituta difere do mesmo item da NF-e a ser cancelada. [NT 2018.004]	MOC 7.0 Anexo I 4.4
+920	Rejeição: Tipo de Emissão inválido no Cancelamento por Substituição [NT 2018.004]	MOC 7.0 Anexo I 4.4
+922	Rejeição: Contranota de Produtor só pode referenciar NF-e ou NF de Produtor Modelo 4 [NT 2019.001]	MOC 7.0 Anexo I 4.4
+923	Rejeição: Referenciado documento de operação interna em operação interestadual ou com o exterior [NT 2019.001]	MOC 7.0 Anexo I 4.4
+924	Rejeição: Informado Cupom Fiscal referenciado. [NT 2019.001]	MOC 7.0 Anexo I 4.4
+925	Rejeição: NF-e com identificação de estrangeiro e inscrição estadual informada para destinatário [NT 2019.001]	MOC 7.0 Anexo I 4.4
+926	Rejeição: Operação com Exterior e país de destino igual a Brasil. [NT 2019.001]	MOC 7.0 Anexo I 4.4
+927	Rejeição: Número do item fora da ordem sequencial. [NT 2019.001]	MOC 7.0 Anexo I 4.4
+928	Rejeição: Informado código de benefício fiscal para CST sem benefício fiscal [nItem: nnn] [NT 2019.001]	MOC 7.0 Anexo I 4.4
+929	Rejeição: Informado CST de diferimento sem as informações de diferimento [nItem: nnn] [NT 2019.001]	MOC 7.0 Anexo I 4.4
+930	Rejeição: CST com benefício fiscal e não informado o código de benefício fiscal [nItem: nnn] [NT 2019.001]	MOC 7.0 Anexo I 4.4
+931	Rejeição: CST não corresponde ao tipo de código de benefício fiscal [nItem: nnn] [NT 2019.001]	MOC 7.0 Anexo I 4.4
+932	Rejeição: Informada modalidade de determinação da BC da ST como MVA e não informado o campo pMVAST [nItem: nnn] [NT 2019.001]	MOC 7.0 Anexo I 4.4
+933	Rejeição: Informada modalidade de determinação da BC da ST diferente de MVA e informado o campo pMVAST [nItem: nnn] [NT 2019.001]	MOC 7.0 Anexo I 4.4
+934	Rejeição: Não informado valor do ICMS desonerado ou o Motivo de desoneração [nItem: nnn] [NT 2019.001]	MOC 7.0 Anexo I 4.4
+935	Rejeição: Valor total da Base de Cálculo superior ao valor limite estabelecido [Valor Limite: R$ XXX.XXX,XX] (valor definido pela UF) [NT 2019.001]	MOC 7.0 Anexo I 4.4
+936	Rejeição: Razão Social do emitente diverge do informado no cadastro da SEFAZ	MOC 7.0 Anexo I 4.4
+938	Rejeição: Não informada BCST, pST e ICMSST retido na operação anterior [nItem: 999] [NT 2018.005]	MOC 7.0 Anexo I 4.4
+946	Rejeição: Informado código de benefício fiscal incorreto ou inexistente na UF [nItem: nnn]	MOC 7.0 Anexo I 4.4
+960	Rejeição: Obrigatório o preenchimento de Grupo de	NT2025.002-.1.52
+966	Rejeição: Obrigatório o preenchimento da origem da	NT2025.002-.1.52
+970	Rejeição: Código de País inexistente [local de retirada/entrega] [NT 2018.005]	MOC 7.0 Anexo I 4.4
+971	Rejeição: IE inválida [local de retirada/entrega] [NT 2018.005]	MOC 7.0 Anexo I 4.4
+972	Rejeição: Obrigatória as informações do responsável técnico [NT 2018.005]	MOC 7.0 Anexo I 4.4
+973	Rejeição: CNPJ do responsável técnico inválido [NT 2018.005]	MOC 7.0 Anexo I 4.4
+974	Rejeição: CNPJ do responsável técnico diverge do cadastrado [NT 2018.005]	MOC 7.0 Anexo I 4.4
+975	Rejeição: Obrigatória a informação do identificador do CSRT e do Hash do CSRT [NT 2018.005]	MOC 7.0 Anexo I 4.4
+976	Rejeição: Identificador do CSRT não cadastrado na SEFAZ [NT 2018.005]	MOC 7.0 Anexo I 4.4
+977	Rejeição: Identificador do CSRT revogado [NT 2018.005]	MOC 7.0 Anexo I 4.4
+978	Rejeição: Hash do CSRT diverge do calculado [NT 2018.005]	MOC 7.0 Anexo I 4.4
+999	Rejeição: Erro não catalogado (informar a mensagem de erro capturado no tratamento da exceção)	MOC 7.0 Anexo I 4.4
+1000	Rejeição: Município do fato gerador do IBS informado	NT2025.002-.1.52
+1001	Rejeição: NF-e com finalidade de débito ou crédito	NT2025.002-.1.52
+1002	Rejeição: NF-e sem informação de ICMS / ISSQN	NT2025.002-.1.52
+1003	Rejeição: NF-e de crédito faz referência a documento	NT2025.002-.1.52
+1004	Rejeição: Valor total da NF-e com IBS / CBS / IS	NT2025.002-.1.52
+1005	Rejeição: Operação presencial fora do estabelecimento	NT2025.002-.1.52
+1006	Rejeição: NFCe com grupo de compra governamental	NT2025.002-.1.52
+1007	Rejeição: CST do IBS/CBS informado não permite	NT2025.002-.1.52
+1008	Rejeição: Nota de compra governamental e alíquota	NT2025.002-.1.52
+1009	Rejeição: Não informado tipo de nota de débito	NT2025.002-.1.52
+1010	Rejeição: NF-e com referenciamento de documento a	NT2025.002-.1.52
+1011	Rejeição: Não é permitido uso do Imposto Seletivo	NT2025.002-.1.52
+1012	Rejeição: É exigido o uso do Imposto Seletivo para	NT2025.002-.1.52
+1013	Rejeição: É exigido o uso do Imposto Seletivo para	NT2025.002-.1.52
+1014	Rejeição: CST do Imposto Seletivo informado	NT2025.002-.1.52
+1015	Rejeição: Classificação Tributária do Imposto Seletivo	NT2025.002-.1.52
+1016	Rejeição: CST do Imposto Seletivo obriga informação	NT2025.002-.1.52
+1017	Rejeição: Obrigatório informação de alíquota	NT2025.002-.1.52
+1018	Rejeição: Unidade tributável (uTrib) e Quantidade	NT2025.002-.1.52
+1019	Rejeição: Valor do Imposto Seletivo difere do	NT2025.002-.1.52
+1020	Rejeição: CST do IBS/CBS informado inexistente	NT2025.002-.1.52
+1021	Rejeição: Grupo gIBSCBS informado indevidamente	NT2025.002-.1.52
+1022	Rejeição: Grupo gIBSCBS não informado [nItem: 999]	NT2025.002-.1.52
+1023	Rejeição: Classificação Tributária do IBS/CBS	NT2025.002-.1.52
+1024	Rejeição: Rejeição: Classificação Tributária do IBS e	NT2025.002-.1.52
+1025	Rejeição: cClassTrib do IBS/CBS não permitido neste	NT2025.002-.1.52
+1026	Rejeição: Alíquota do IBS da UF inválida [nItem: 999]	NT2025.002-.1.52
+1027	Rejeição: NF referenciada informada indevidamente	NT2025.002-.1.52
+1028	Rejeição: CST do IBS/CBS informado não permite	NT2025.002-.1.52
+1029	Rejeição: CST do IBS/CBS informado não permite	NT2025.002-.1.52
+1030	Rejeição: CST do IBS/CBS informado obriga	NT2025.002-.1.52
+1031	Rejeição: Valor do Diferimento da UF difere do	NT2025.002-.1.52
+1032	Rejeição: CST do IBS/CBS informado não permite	NT2025.002-.1.52
+1033	Rejeição: Não informado o grupo de redução de	NT2025.002-.1.52
+1034	Rejeição: Percentual de redução de alíquota da UF	NT2025.002-.1.52
+1035	Rejeição: Valor da Alíquota Efetiva do IBS da UF	NT2025.002-.1.52
+1036	Rejeição: Alíquota do IBS do Município inválida [nItem:	NT2025.002-.1.52
+1037	Rejeição: Alíquota da CBS inválida [nItem: 999]	NT2025.002-.1.52
+1038	Rejeição: DFeReferenciado não informado [nItem: 999]	NT2025.002-.1.52
+1039	Rejeição: nItem do DFeReferenciado informado	NT2025.002-.1.52
+1040	Rejeição: Valor do Tributo Regular da UF difere do	NT2025.002-.1.52
+1041	Rejeição: Valor do IBS da UF difere do calculado	NT2025.002-.1.52
+1042	Rejeição: NF-e com referenciamento a nível de item	NT2025.002-.1.52
+1043	Rejeição: Índice de mistura do Biocombustível inferior	NT2025.002-.1.52
+1044	Rejeição: CST do IBS/CBS informado obriga	NT2025.002-.1.52
+1045	Rejeição: Valor do Diferimento do Município difere do	NT2025.002-.1.52
+1046	Rejeição: Percentual de redução de alíquota do	NT2025.002-.1.52
+1047	Rejeição: Valor da Alíquota Efetiva do IBS do	NT2025.002-.1.52
+1048	Rejeição: nItem do DFeReferenciado não informado	NT2025.002-.1.52
+1049	Rejeição: Não é permitido o uso de Crédito Presumido	NT2025.002-.1.52
+1050	Rejeição: Crédito Presumido para a CBS informado	NT2025.002-.1.52
+1051	Rejeição: Valor do Tributo Regular do Município difere	NT2025.002-.1.52
+1052	Rejeição: Valor do IBS Municipal difere do calculado	NT2025.002-.1.52
+1053	Rejeição: Crédito Presumido para o IBS informado	NT2025.002-.1.52
+1054	Rejeição: Crédito Presumido para o IBS não	NT2025.002-.1.52
+1055	Rejeição: Código de Crédito Presumido (cCredPres)	NT2025.002-.1.52
+1056	Rejeição: Valor do Crédito Presumido em condição	NT2025.002-.1.52
+1058	Rejeição: Crédito Presumido para a CBS não	NT2025.002-.1.52
+1059	Rejeição: Índice de mistura do Biocombustível	NT2025.002-.1.52
+1060	Rejeição: Valor do Crédito Presumido da CBS	NT2025.002-.1.52
+1061	Rejeição: CST do IBS/CBS informado obriga	NT2025.002-.1.52
+1062	Rejeição: Valor do Diferimento da CBS difere do	NT2025.002-.1.52
+1063	Rejeição: Percentual de redução de alíquota da CBS	NT2025.002-.1.52
+1064	Rejeição: Valor da Alíquota Efetiva da CBS calculado	NT2025.002-.1.52
+1065	Rejeição: Classificação Tributária do IBS e da CBS	NT2025.002-.1.52
+1066	Rejeição: CST do IBS e da CBS informado no grupo	NT2025.002-.1.52
+1067	Rejeição: Classificação Tributária do IBS e da CBS	NT2025.002-.1.52
+1068	Rejeição: Valor do Tributo Regular da CBS difere do	NT2025.002-.1.52
+1069	Rejeição: Valor da CBS difere do calculado [nItem:	NT2025.002-.1.52
+1070	Rejeição: Valor do IBS monofásico difere do calculado	NT2025.002-.1.52
+1071	Rejeição: Valor da CBS monofásico difere do	NT2025.002-.1.52
+1072	Rejeição: DFe/Item referenciado em duplicidade [nItem:	NT2025.002-.1.52
+1073	Rejeição: Total de IS informado indevidamente	NT2025.002-.1.52
+1074	Rejeição: Não informado o grupo de redução de	NT2025.002-.1.52
+1075	Rejeição: Total do Imposto Seletivo difere da soma dos	NT2025.002-.1.52
+1076	Rejeição: Total da BC do IBS e da CBS difere da soma	NT2025.002-.1.52
+1077	Rejeição: Total de Diferimento do IBS UF difere da	NT2025.002-.1.52
+1078	Rejeição: Total Devolvido do IBS UF difere da soma	NT2025.002-.1.52
+1079	Rejeição: Não informado o grupo de redução de	NT2025.002-.1.52
+1080	Rejeição: Total de IBS UF difere da soma dos itens	NT2025.002-.1.52
+1081	Rejeição: Total de Diferimento do IBS Municipal difere	NT2025.002-.1.52
+1082	Rejeição: Total Devolvido do IBS Municipal difere da	NT2025.002-.1.52
+1083	Rejeição: CST do IBS/CBS informado não permite	NT2025.002-.1.52
+1084	Rejeição: Total de IBS Municipal difere da soma dos	NT2025.002-.1.52
+1085	Rejeição: Total do IBS difere da soma do vIBS dos itens	NT2025.002-.1.52
+1086	Rejeição: Total de Crédito Presumido do IBS UF difere	NT2025.002-.1.52
+1087	Rejeição: Total de Crédito Presumido da CBS difere da	NT2025.002-.1.52
+1088	Rejeição: Total de Diferimento da CBS difere da soma	NT2025.002-.1.52
+1089	Rejeição: Total Devolvido da CBS difere da soma dos	NT2025.002-.1.52
+1090	Rejeição: CST do IBS/CBS informado não permite	NT2025.002-.1.52
+1091	Rejeição: Total de CBS difere da soma dos itens	NT2025.002-.1.52
+1092	Rejeição: Total do IBS monofásico difere da soma dos	NT2025.002-.1.52
+1093	Rejeição: Total da CBS monofásica difere da soma dos	NT2025.002-.1.52
+1094	Rejeição: Total da NFe difere da soma do total dos	NT2025.002-.1.52
+1095	Rejeição: Chave de acesso referenciada deve existir e	NT2025.002-.1.52
+1096	Rejeição: Número de item não existe na NFe	NT2025.002-.1.52
+1097	Rejeição: O valor do IBS do item não pode ser maior que o valor	NT2025.002-.1.52
+1098	Rejeição: O valor da CBS do item não pode ser maior que o	NT2025.002-.1.52
+1099	Rejeição: Não é permitido o uso do código indicador do	NT2025.002-.1.52
+1100	Rejeição: A quantidade de consumo imobilizada não pode ser	NT2025.002-.1.52
+1101	Rejeição: A quantidade do item a ser imobilizado consumido	NT2025.002-.1.52
+1102	Rejeição: Código indicador do local de operação de	NT2025.002-.1.52
+1103	Rejeição: Valor da Base de cálculo do Imposto	NT2025.002-.1.52
+1104	Rejeição: Valor da Base de cálculo do IBS e CBS	NT2025.002-.1.52
+1105	Rejeição: Valor total do Item (vItem) difere do	NT2025.002-.1.52
+1106	Rejeição: Não informado grupo de combustível para	NT2025.002-.1.52
+1107	Rejeição: Valor do Crédito Presumido do IBS não	NT2025.002-.1.52
+1108	Rejeição: Não informada a Tributação Monofásica	NT2025.002-.1.52
+1109	Rejeição: Informada indevidamente a Tributação	NT2025.002-.1.52
+1110	Rejeição: Local de Retirada não informado	NT2025.002-.1.52
+1111	Rejeição: Grupo de Devolução do IBS da UF	NT2025.002-.1.52
+1112	Rejeição: Grupo de Devolução do IBS do Município	NT2025.002-.1.52
+1113	Rejeição: Autor do Evento de Cancelamento diverge do	NT2025.002-.1.52
+1114	Rejeição: Classificação Tributária do IBS e da CBS	NT2025.002-.1.52
+1115	Rejeição: Grupo IBSCBS não informado [nItem: 999]	NT2025.002-.1.52
+1116	Rejeição: Grupo gIBSCBSMono não informado [nItem:	NT2025.002-.1.52
+1117	Rejeição: Total de IS não informado	NT2025.002-.1.52
+1118	Rejeição: Total de IBS e CBS informado indevidamente	NT2025.002-.1.52
+1119	Rejeição: Total de IBS e CBS não informado	NT2025.002-.1.52
+1120	Rejeição: Total do IBS monofásico sujeito à retenção	NT2025.002-.1.52
+1121	Rejeição: Total da CBS monofásica sujeita à retenção	NT2025.002-.1.52
+1122	Rejeição: Total do IBS monofásico retido anteriormente	NT2025.002-.1.52
+1123	Rejeição: Total da CBS monofásica retida	NT2025.002-.1.52
+1124	Rejeição: Valor do Crédito Presumido da CBS não	NT2025.002-.1.52
+1125	Rejeição: Não informada a Tributação Monofásica	NT2025.002-.1.52
+1126	Rejeição: Informada indevidamente a Tributação	NT2025.002-.1.52
+1127	Rejeição: Não informada a Tributação Monofásica de	NT2025.002-.1.52
+1128	Rejeição: Informada indevidamente a Tributação	NT2025.002-.1.52
+1129	Rejeição: Valor do IBS ou da CBS deve ser maior que	NT2025.002-.1.52
+1130	Rejeição: Mais de um documento fiscal referenciado	NT2025.002-.1.52
+1131	Rejeição: Grupo de transferência de crédito informado	NT2025.002-.1.52
+1132	Rejeição: Grupo de transferência de crédito não	NT2025.002-.1.52
+1133	Rejeição: Finalidade de Emissão da Nota Fiscal	NT2025.002-.1.52
+1134	Rejeição: CST do IBS/CBS informado não permite	NT2025.002-.1.52
+1135	Rejeição: CST do IBS/CBS informado exige a	NT2025.002-.1.52
+1136	Rejeição: Não é possível repetir o Tipo de	NT2025.002-.1.52
+1137	Rejeição: Valor total do Item (vItem) não informado	NT2025.002-.1.52
+1138	Rejeição: Não é permitido o uso de Crédito Presumido	NT2025.002-.1.52
+1139	Rejeição: Tipo de nota de débito informado	NT2025.002-.1.52
+1141	Rejeição: Grupo de informações da composição do	NT2025.002-.1.52
+1142	Rejeição: Soma dos valores de IBS e CBS em	NT2025.002-.1.52
+1143	Rejeição: NF-e referenciada de pagamento	NT2025.002-.1.52
+1144	Rejeição: Grupo de informações da composição do	NT2025.002-.1.52
+1145	Rejeição: Tipo de nota de crédito só pode ser usado a	NT2025.002-.1.52
+1146	Rejeição: NF-e referenciada de pagamento	NT2025.002-.1.52
+1147	Rejeição: NF-e referenciada de pagamento	NT2025.002-.1.52
+1148	Rejeição: Não informado o grupo de informações	NT2025.002-.1.52
+1149	Rejeição: Informado indevidamente o grupo de	NT2025.002-.1.52
+1150	Rejeição: Valor do IBS do Item (vIBS) difere do	NT2025.002-.1.52
+1151	Rejeição: Grupo gIBSCBSMono informado	NT2025.002-.1.52
+1152	Rejeição: Tipo de Operação incompatível com NF-e de	NT2025.002-.1.52
+1153	Rejeição: NFC-e com data de previsão de entrega	NT2025.002-.1.52
+1154	Rejeição: Data de previsão de entrega posterior ao	NT2025.002-.1.52
+1155	Rejeição: Data de previsão de entrega anterior ao	NT2025.002-.1.52
+1156	Rejeição: Data de previsão de entrega não permitida	NT2025.002-.1.52
+1157	Rejeição: Data de previsão de entrega não permitida	NT2025.002-.1.52
+1158	Rejeição: Tipo de Nota de Crédito não permite o grupo	NT2025.002-.1.52
+1159	Rejeição: Tipo de Nota de Crédito exige o grupo para	NT2025.002-.1.52
+1160	Rejeição: Ano e mês referência do período de	NT2025.002-.1.52
+1161	Rejeição: Tipo de Operação incompatível com NF-e de	NT2025.002-.1.52
+1162	Rejeição: Tipo de Operação incompatível com NF-e de	NT2025.002-.1.52
+1163	Rejeição: Tipo de nota de crédito informado	NT2025.002-.1.52
+1164	Rejeição: Não informado tipo de nota de crédito	NT2025.002-.1.52
+1165	Rejeição: Não é permitido informar a classificação para	NT2025.002-.1.52
+1166	Rejeição: Classificação para subapuração do IBS na	NT2025.002-.1.52
+1167	Rejeição: Classificação para subapuração do IBS na	NT2025.002-.1.52
+1168	Rejeição: Tipo de Nota de Débito incompatível com o	NT2025.002-.1.52
+1169	Rejeição: Grupo de Ajuste de Competência informado	NT2025.002-.1.52
+1170	Rejeição: Grupo de Ajuste de Competência não	NT2025.002-.1.52
+1171	Rejeição: Valor do IBS ou da CBS deve ser maior que	NT2025.002-.1.52
+1172	Rejeição: Grupo de Estorno de Crédito informado	NT2025.002-.1.52
+1173	Rejeição: Grupo de Estorno de Crédito não informado	NT2025.002-.1.52
+1174	Rejeição: Valor do IBS ou da CBS deve ser maior que	NT2025.002-.1.52
+1175	Rejeição: Grupo de Crédito Presumido na Operação	NT2025.002-.1.52
+1176	Rejeição: Total do IBS estornado difere da soma dos	NT2025.002-.1.52
+1177	Rejeição: Total da CBS estornada difere da soma dos	NT2025.002-.1.52
+1178	Rejeição: Órgão do Autor do Evento de Cancelamento	NT2025.002-.1.52
+1185	Rejeição: Município do Emitente não pertence à área	NT2025.002-.1.52
+1186	Rejeição: Inscrição do emitente na Suframa com dígito	NT2025.002-.1.52
+1187	Rejeição: Grupo de Devolução da CBS informado	NT2025.002-.1.52
+1188	Rejeição: Percentual de devolução da CBS não	NT2025.002-.1.52
+1189	Rejeição: Valor da CBS devolvida difere do calculado	NT2025.002-.1.52
+1190	Rejeição: Inscrição do emitente na Suframa não	NT2025.002-.1.52
+1191	Rejeição: Grupo de operações em áreas incentivadas	NT2025.002-.1.52
+1192	Rejeição: Número do processo na Suframa não	NT2025.002-.1.52
+1193	Rejeição: Emitente das NFe Referenciadas deve ser o	NT2025.002-.1.52
+1194	Rejeição: Destintário da NF-e deve ser o igual ao	NT2025.002-.1.52
+1195	Rejeição: Referenciado indevidamente DFe anterior em	NT2025.002-.1.52
+1196	Rejeição: Não referenciado DFe anterior em operação	NT2025.002-.1.52
+1197	Rejeição: Referenciado mais de um DFe anterior em	NT2025.002-.1.52
+1198	Rejeição: Não referenciado DFe anterior em operação	NT2025.002-.1.52
+1199	Rejeição: Referenciado indevidamente DFe anterior em	NT2025.002-.1.52
+1200	Rejeição: cClassTrib incompatível com o tipo de Nota	NT2025.002-.1.52
+1201	Rejeição: cClassTrib incompatível com o tipo de Nota	NT2025.002-.1.52
+1202	Rejeição: cClassTrib incompatível com a finalidade da	NT2025.002-.1.52
+1203	Rejeição: DFe referenciado em operação com ente	NT2025.002-.1.52
+1204	Rejeição: DFe referenciado em operação com ente	NT2025.002-.1.52
+1205	Rejeição: DFe referenciado em operação com ente	NT2025.002-.1.52
+1206	Rejeição: DFe referenciado em operação com ente	NT2025.002-.1.52
+1207	Rejeição: DFe referenciado em operação com ente	NT2025.002-.1.52
+1208	Rejeição: DFe referenciado em operação com ente	NT2025.002-.1.52
+1209	Rejeição: DFe referenciado em operação com ente	NT2025.002-.1.52
+1210	Rejeição: DFe referenciado em operação com ente	NT2025.002-.1.52
+1211	Rejeição: DFe referenciado em operação com ente	NT2025.002-.1.52
+1212	Rejeição: DFe referenciado em operação com ente	NT2025.002-.1.52
+1213	Rejeição: DFe referenciado em operação com ente	NT2025.002-.1.52
+1214	Rejeição: DFe referenciado em operação com ente	NT2025.002-.1.52
+1215	Rejeição: DFe referenciado em operação com ente	NT2025.002-.1.52
+1216	Rejeição: DFe referenciado em operação com ente	NT2025.002-.1.52
+1217	Rejeição: DFe referenciado em operação com ente	NT2025.002-.1.52
+1218	Rejeição: Valor da CBS para operação fora de áreas	NT2025.002-.1.52
+1219	Rejeição: Tributação Monofásica Ad Rem do IBS	NT2025.002-.1.52
+1220	Rejeição: Não informada Tributação Monofásica Ad	NT2025.002-.1.52
+1221	Rejeição: Valor do IBS Monofásico Padrão Ad Rem	NT2025.002-.1.52
+1222	Rejeição: Valor do IBS Monofásico Ad Rem com	NT2025.002-.1.52
+1223	Rejeição: Valor do IBS Monofásico Ad Rem retido	NT2025.002-.1.52
+1224	Rejeição: Não informado o grupo de informações	NT2025.002-.1.52
+1225	Rejeição: Informado indevidamente o grupo de	NT2025.002-.1.52
+1226	Rejeição: Quantidade de Biocombustível (EAC) a	NT2025.002-.1.52
+1227	Rejeição: Valor do IBS Monofásico Ad Rem	NT2025.002-.1.52
+1228	Rejeição: Tributação Monofásica Ad Valorem do IBS	NT2025.002-.1.52
+1229	Rejeição: Não informada Tributação Monofásica Ad	NT2025.002-.1.52
+1230	Rejeição: Não informada a Tributação Monofásica	NT2025.002-.1.52
+1231	Rejeição: Informada indevidamente a Tributação	NT2025.002-.1.52
+1232	Rejeição: Valor do IBS Monofásico Padrão Ad	NT2025.002-.1.52
+1233	Rejeição: Valor do IBS Monofásico Padrão Ad	NT2025.002-.1.52
+1234	Rejeição: Valor do IBS Monofásico Padrão Ad	NT2025.002-.1.52
+1235	Rejeição: Não informada a Tributação Monofásica de	NT2025.002-.1.52
+1236	Rejeição: Informada indevidamente a Tributação	NT2025.002-.1.52
+1237	Rejeição: Valor do IBS Monofásico Ad Valorem com	NT2025.002-.1.52
+1238	Rejeição: Não informada a Tributação Monofásica	NT2025.002-.1.52
+1239	Rejeição: Informada indevidamente a Tributação	NT2025.002-.1.52
+1240	Rejeição: Valor do IBS Monofásico Ad Valorem retido	NT2025.002-.1.52
+1241	Rejeição: Não informado o grupo de informações	NT2025.002-.1.52
+1242	Rejeição: Informado indevidamente o grupo de	NT2025.002-.1.52
+1243	Rejeição: Quantidade de Biocombustível (EAC) a	NT2025.002-.1.52
+1244	Rejeição: Valor do IBS Monofásico Ad Valorem	NT2025.002-.1.52
+1245	Rejeição: Tributação Monofásica Ad Rem da CBS	NT2025.002-.1.52
+1246	Rejeição: Não informada Tributação Monofásica Ad	NT2025.002-.1.52
+1247	Rejeição: Não informada a Tributação Monofásica	NT2025.002-.1.52
+1248	Rejeição: Informada indevidamente a Tributação	NT2025.002-.1.52
+1249	Rejeição: Valor da CBS Monofásica Padrão Ad Rem	NT2025.002-.1.52
+1250	Rejeição: Não informada a Tributação Monofásica de	NT2025.002-.1.52
+1251	Rejeição: Informada indevidamente a Tributação	NT2025.002-.1.52
+1252	Rejeição: Valor da CBS Monofásica Ad Rem com	NT2025.002-.1.52
+1253	Rejeição: Não informada a Tributação Monofásica	NT2025.002-.1.52
+1254	Rejeição: Informada indevidamente a Tributação	NT2025.002-.1.52
+1255	Rejeição: Valor da CBS Monofásica Ad Rem retido	NT2025.002-.1.52
+1256	Rejeição: Quantidade de Biocombustível (EAC) a	NT2025.002-.1.52
+1257	Rejeição: Valor da CBS Monofásica Ad Rem	NT2025.002-.1.52
+1258	Rejeição: Tributação Monofásica Ad Valorem da CBS	NT2025.002-.1.52
+1259	Rejeição: Não informada Tributação Monofásica Ad	NT2025.002-.1.52
+1260	Rejeição: Não informada a Tributação Monofásica	NT2025.002-.1.52
+1261	Rejeição: Informada indevidamente a Tributação	NT2025.002-.1.52
+1262	Rejeição: Valor da CBS Monofásica Padrão Ad	NT2025.002-.1.52
+1263	Rejeição: Não informada a Tributação Monofásica de	NT2025.002-.1.52
+1264	Rejeição: Informada indevidamente a Tributação	NT2025.002-.1.52
+1265	Rejeição: Valor da CBS Monofásica Ad Valorem com	NT2025.002-.1.52
+1266	Rejeição: Não informada a Tributação Monofásica	NT2025.002-.1.52
+1267	Rejeição: Informada indevidamente a Tributação	NT2025.002-.1.52
+1268	Rejeição: Valor da CBS Monofásica Ad Valorem retido	NT2025.002-.1.52
+1269	Rejeição: Não informado o grupo de informações	NT2025.002-.1.52
+1270	Rejeição: Informado indevidamente o grupo de	NT2025.002-.1.52
+1271	Rejeição: Quantidade de Biocombustível (EAC) a	NT2025.002-.1.52
+1272	Rejeição: Valor da CBS Monofásica Ad Valorem	NT2025.002-.1.52

@@ -16,7 +16,7 @@
 // los scripts de contrato y la UI.
 
 /** Identificador estable del riel. Es parte de la clave de las tablas `fiscal_rail_*`. */
-export type RailId = 'arca' | 'nfse' | 'sunat' | 'sii' | 'dian';
+export type RailId = 'arca' | 'nfse' | 'sunat' | 'sii' | 'dian' | 'nfe';
 
 /**
  * Entorno de la autoridad. `homologacion` es el ambiente de pruebas de la
@@ -124,6 +124,22 @@ export const RIELES: Readonly<Record<RailId, RailDefinicion>> = {
         // Prefijo y consecutivo de la resolución de numeración de la DIAN.
         numeracionPropia: true,
     },
+    // Brasil: NF-e modelo 55 (venta de mercancías) ante la SEFAZ autorizadora
+    // del estado del emisor (src/lib/fiscal/latam/nfe/). Convive con la NFS-e:
+    // un documento es de uno u otro riel según sus conceptos
+    // (latam/nfe/enrutamiento.ts). Va DESPUÉS de `nfse` a propósito:
+    // railDePais('BR') sigue devolviendo la NFS-e, como antes.
+    nfe: {
+        id: 'nfe',
+        pais: 'BR',
+        autoridad: 'SEFAZ',
+        documentos: { factura: 'nfe_invoice', notaCredito: 'nfe_credit_note' },
+        envPrefijo: 'NFE',
+        // Cancelación (evento 110111) dentro de las 24 horas de la autorización.
+        anulable: true,
+        // El emisor numera (serie + nNF) y la SEFAZ autoriza ese número.
+        numeracionPropia: true,
+    },
 };
 
 const LISTA = Object.values(RIELES);
@@ -132,6 +148,12 @@ const LISTA = Object.values(RIELES);
 export function railDePais(country: unknown): RailDefinicion | null {
     const code = String(country ?? '').trim().toUpperCase();
     return LISTA.find((r) => r.pais === code) ?? null;
+}
+
+/** Todos los rieles del país del emisor (Brasil tiene dos: NFS-e y NF-e). */
+export function rielesDePais(country: unknown): RailDefinicion[] {
+    const code = String(country ?? '').trim().toUpperCase();
+    return LISTA.filter((r) => r.pais === code);
 }
 
 /** Riel al que pertenece un `document_type` persistido. */

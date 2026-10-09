@@ -91,6 +91,11 @@ export async function resolverPendientesDeOrg(orgId: string, rail: RailId, deadl
             const { finalizeInvoice } = await import('../invoices');
             return { orgId, ...(await resolverIntentosDeOrg(orgId, config.entorno, intentos, deadline, (id) => finalizeInvoice(orgId, id))) };
         }
+        case 'nfe': {
+            const { resolverIntentosDeOrg } = await import('./nfe/autorizacao');
+            const { finalizeInvoice } = await import('../invoices');
+            return { orgId, ...(await resolverIntentosDeOrg(orgId, config.entorno, intentos, deadline, (id) => finalizeInvoice(orgId, id))) };
+        }
         case 'sunat': {
             const { contextoSunat, resolverPorConsulta } = await import('./sunat/autorizacion');
             const { emisorSunat } = await import('./sunat/estado');

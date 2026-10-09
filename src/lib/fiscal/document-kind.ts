@@ -2,7 +2,7 @@ import { getEffectivePlan } from '../org-entitlements';
 import { sql, withOrgTx } from '../db';
 import { planIncludes, type PlanId } from '../entitlements';
 import { verifactuEnvioConfig } from './verifactu/sif';
-import { DOCUMENTOS_DE_RIELES, esNotaCreditoDeRail, railDePais } from './latam/rieles';
+import { DOCUMENTOS_DE_RIELES, esNotaCreditoDeRail, railDePais, rielesDePais } from './latam/rieles';
 import { railListo } from './latam/estado';
 
 export type InvoiceMode = 'commercial' | 'fiscal';
@@ -46,8 +46,14 @@ export async function documentTypeForOrg(orgId: string, country: string, mode?: 
     ready = org?.verifactu_modo === 'verifactu' && verifactuEnvioConfig().habilitado;
   }
   const rail = railDePais(country);
-  // El mismo estado que decide si el proveedor del riel autoriza.
-  if (rail && planIncludes(plan, 'cfdi')) ready = await railListo(orgId, rail.id);
+  // El mismo estado que decide si el proveedor del riel autoriza. Brasil tiene
+  // dos rieles (NFS-e y NF-e): basta con que uno esté listo; qué documento
+  // nace lo decide después latam/nfe/enrutamiento.ts según sus conceptos.
+  if (rail && planIncludes(plan, 'cfdi')) {
+    for (const r of rielesDePais(country)) {
+      if (await railListo(orgId, r.id)) { ready = true; break; }
+    }
+  }
   return selectDocumentType(country, plan, mode, ready);
 }
 

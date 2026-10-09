@@ -2,6 +2,7 @@ import type { FiscalProvider } from './index';
 import { MexicoSatProvider } from './providers/MexicoSatProvider';
 import { SpainVerifactuProvider } from './providers/SpainVerifactuProvider';
 import { ArgentinaArcaProvider } from './providers/ArgentinaArcaProvider';
+import { BrazilNfeProvider } from './providers/BrazilNfeProvider';
 import { BrazilNfseProvider } from './providers/BrazilNfseProvider';
 import { PeruSunatProvider } from './providers/PeruSunatProvider';
 import { ColombiaDianProvider } from './providers/ColombiaDianProvider';
@@ -20,6 +21,9 @@ export class FiscalFactory {
     // Rieles de LatAm con integración directa (src/lib/fiscal/latam/). Mismo
     // contrato que Verifactu: sin la cuenta lista degradan a "commercial_only".
     new ArgentinaArcaProvider(),
+    // Brasil tiene dos rieles: la NF-e (mercancías) atiende solo los
+    // documentos `nfe_*` y va antes; todo lo demás de BR sigue en la NFS-e.
+    new BrazilNfeProvider(),
     new BrazilNfseProvider(),
     new ColombiaDianProvider(),
     new PeruSunatProvider(),
@@ -33,7 +37,7 @@ export class FiscalFactory {
     // El documento persistido manda, incluso después de cambiar plan/país.
     if (['proforma', 'commercial_credit_note'].includes(documentType || '')
       || documentType === 'commercial_invoice') return new CommercialInvoiceProvider();
-    const provider = this.providers.find(p => p.supports(countryCode));
+    const provider = this.providers.find(p => p.supports(countryCode, documentType));
     if (!provider) {
       throw new Error(`No existe proveedor fiscal soportado para el país: ${countryCode}`);
     }

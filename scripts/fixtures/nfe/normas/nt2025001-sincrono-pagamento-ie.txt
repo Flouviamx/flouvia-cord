@@ -1,0 +1,37 @@
+GAP03a-2 Solicitada resposta síncrona para UF que não disponibiliza este atendimento              Facult.        776   Rejeição: Solicitada resposta síncrona para
+         (indSinc=1)                                                                                                      UF que não disponibiliza este
+                                                                                                                          atendimento
+GAP03a-3 Solicitação de resposta assíncrona (indSinc=0) para lote com somente 1 (uma) NF-e.       Obrig.         452   Rejeição: Solicitada resposta assíncrona
+         (NT 2025.001)                                                                                                    para Lote com somente 1 (uma) NF-e
+         Observação: Implantação em produção em 13/10/25.
+
+
+
+
+                                                                                                                                                        Página 8 / 15
+Sistema Nota Fiscal Eletrônica
+NT2025.001 – Simplificação Operacional: Leiaute QR-Code, Resposta Assíncrona Lote 1 NF-e
+
+[...]
+
+E16a-30 55   Informado destinatário como Contribuinte Isento de Inscrição Estadual (indIEDest=2- Obrig. 805 Rejeição: A SEFAZ do destinatário não
+             ISENTO) em UF que não permite esta situação nas operações internas e interestaduais                permite Contribuinte Isento de
+             (idDest=1 ou 2), conforme segue: AL, AM, BA, CE, DF, ES, GO, MG, MS, MT, PB, PE,                   Inscrição Estadual
+             RJ, RN, RS, SE, SP.
+             Observação 1: Regra de validação conforme configuração da UF do Destinatário
+                 (permite ou não permite Contribuinte Isento de Inscrição Estadual).
+             Observação 2: No caso das operações internas, a implantação da RV em produção foi
+                 adiada para 13/10/25.
+             Exceção 1: Esta regra de validação não se aplica quando houver destaque do ICMS-ST
+                 (campo vICMSST) em pelo menos um item da NF-e.
+             Exceção 2: Esta regra de validação não se aplica quando houver informação do ICMS-
+                 ST retido anteriormente (campo vICMSSTRet) em pelo menos um item da NF-e.
+             Exceção 3: A regra de validação não se aplica, em produção, para Nota Fiscal com data
+                 de emissão anterior a 01/07/2016.
+             Exceção 4: Esta regra de validação não se aplica nas operações isentas (CST=40-Isenta
+
+[...]
+
+YA03-30 55/65 Informado o campo Meio de Pagamento igual a sem pagamento (tag:tPag=90, id:YA02) Facult. 904 Rejeição: Informado indevidamente
+              ou pagamento posterior (tag:tPag=91, id:YA02) e informado campo Valor do Pagamento Obrig.             campo valor de pagamento
+              diferente de zero (tag:vPag<>0, id:YA03). (NT 2017.002)

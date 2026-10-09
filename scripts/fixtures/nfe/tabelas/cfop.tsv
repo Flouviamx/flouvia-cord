@@ -1,0 +1,620 @@
+CFOP	Início de vigência	Fim de vigência	indNFe	indComunica	indTransp	indDevol	indRetor	indAnula	indRemes	indComb	indExcIBSCBS	Título do CFOP
+1101	2006-01-01		1	0	0	0	0	0	0	0	0	Compra para industrialização ou produção rural.
+1102	2006-01-01		1	0	0	0	0	0	0	0	0	Compra para comercialização.
+1111	2006-01-01		1	0	0	0	0	0	0	0	0	Compra para industrialização de mercadoria recebida anteriormente em consignação industrial.
+1113	2006-01-01		1	0	0	0	0	0	0	0	0	Compra para comercialização, de mercadoria recebida anteriormente em consignação mercantil.
+1116	2006-01-01		1	0	0	0	0	0	0	0	0	Compra para industrialização ou produção rural originada de encomenda para recebimento futuro.
+1117	2006-01-01		1	0	0	0	0	0	0	0	0	Compra para comercialização originada de encomenda para recebimento futuro.
+1118	2006-01-01		1	0	0	0	0	0	0	0	0	Compra de mercadoria para comercialização pelo adquirente originário, entregue pelo vendedor remetente ao destinatário, em venda à ordem.
+1120	2006-01-01		1	0	0	0	0	0	0	0	0	Compra para industrialização ou produção rural, em venda à ordem, já recebida do vendedor remetente.
+1121	2006-01-01		1	0	0	0	0	0	0	0	0	Compra para comercialização, em venda à ordem, já recebida do vendedor remetente.
+1122	2006-01-01		1	0	0	0	0	0	0	0	0	Compra para industrialização em que a mercadoria foi remetida pelo fornecedor ao industrializador sem transitar pelo estabelecimento adquirente.
+1124	2006-01-01		1	0	0	0	0	0	0	0	0	Industrialização efetuada por outra empresa.
+1125	2006-01-01		1	0	0	0	0	0	0	0	0	Industrialização efetuada por outra empresa quando a mercadoria remetida para utilização no processo de industrialização não transitou pelo estabelecimento adquirente da mercadoria.
+1126	2006-01-01		1	0	0	0	0	0	0	0	0	Compra para utilização na prestação de serviço sujeita ao ICMS.
+1128	2006-01-01		1	0	0	0	0	0	0	0	0	Compra para utilização na prestação de serviço sujeita ao ISSQN.
+1131	2018-01-01		1	0	0	0	0	0	0	0	0	Entrada de mercadoria, com previsão de posterior ajuste ou fixação de preço, em ato cooperativo.
+1132	2018-01-01		1	0	0	0	0	0	0	0	0	Fixação de preço de produção do estabelecimento produtor, inclusive quando remetidas anteriormente com previsão de posterior ajuste ou fixação de preço, em ato cooperativo, para comercialização.
+1135	2018-01-01		1	0	0	0	0	0	0	0	0	Fixação de preço de produção do estabelecimento produtor, inclusive quando remetidas anteriormente com previsão de posterior ajuste ou fixação de preço, em ato cooperativo, para industrialização.
+1151	2006-01-01		1	0	0	0	0	0	0	0	0	Transferência para industrialização ou produção rural.
+1152	2006-01-01		1	0	0	0	0	0	0	0	0	Transferência para comercialização.
+1153	2006-01-01		1	0	0	0	0	0	0	0	0	Transferência de energia elétrica para distribuição.
+1154	2006-01-01		1	0	0	0	0	0	0	0	0	Transferência para utilização na prestação de serviço.
+1159	2018-09-01		1	0	0	0	0	0	0	0	0	Entrada decorrente do fornecimento de produto ou mercadoria em ato cooperativo.
+1201	2006-01-01		1	0	0	1	0	0	0	0	0	Devolução de venda de produção do estabelecimento.
+1202	2006-01-01		1	0	0	1	0	0	0	0	0	Devolução de venda de mercadoria adquirida ou recebida de terceiros, ou qualquer devolução de mercadoria efetuada pelo MEI com exceção das classificadas nos códigos 1.503, 1.504, 1.505 e 1.506.
+1203	2006-01-01		1	0	0	1	0	0	0	0	0	Devolução de venda de produção do estabelecimento, destinada à Zona Franca de Manaus ou Áreas de Livre Comércio.
+1204	2006-01-01		1	0	0	1	0	0	0	0	0	Devolução de venda de mercadoria adquirida ou recebida de terceiros, destinada à Zona Franca de Manaus ou Áreas de Livre Comércio.
+1205	2006-01-01		1	0	0	0	0	1	0	0	0	Anulação de valor relativo à prestação de serviço de comunicação.
+1206	2006-01-01		1	0	0	0	0	1	0	0	0	Anulação de valor relativo à prestação de serviço de transporte.
+1207	2006-01-01		1	0	0	0	0	1	0	0	0	Anulação de valor relativo à venda de energia elétrica.
+1208	2006-01-01		1	0	0	1	0	0	0	0	0	Devolução de produção do estabelecimento, remetida em transferência.
+1209	2006-01-01		1	0	0	1	0	0	0	0	0	Devolução de mercadoria adquirida ou recebida de terceiros, remetida em transferência.
+1212	2006-01-01		1	0	0	1	0	0	0	0	0	Devolução de venda no mercado interno de mercadoria industrializada e insumo importado sob o Regime Aduaneiro Especial de Entreposto Industrial sob Controle Informatizado do Sistema Público de Escrituração Digital (Recof-Sped).
+1213	2018-01-01		1	0	0	1	0	0	0	0	0	Devolução de remessa de produção do estabelecimento, com previsão de posterior ajuste ou fixação de preço, em ato cooperativo.
+1214	2018-01-01		1	0	0	1	0	0	0	0	0	Devolução referente à fixação de preço de produção do estabelecimento produtor em ato cooperativo.
+1215	2019-05-01		1	0	0	1	0	0	0	0	0	Devolução de fornecimento de produção do estabelecimento em ato cooperativo.
+1216	2019-05-01		1	0	0	1	0	0	0	0	0	Devolução de fornecimento de mercadoria adquirida ou recebida de terceiros em ato cooperativo.
+1251	2006-01-01		1	0	0	0	0	0	0	0	0	Compra de energia elétrica para distribuição ou comercialização.
+1252	2006-01-01		1	0	0	0	0	0	0	0	0	Compra de energia elétrica por estabelecimento industrial.
+1253	2006-01-01		1	0	0	0	0	0	0	0	0	Compra de energia elétrica por estabelecimento comercial.
+1254	2006-01-01		1	0	0	0	0	0	0	0	0	Compra de energia elétrica por estabelecimento prestador de serviço de transporte.
+1255	2006-01-01		1	0	0	0	0	0	0	0	0	Compra de energia elétrica por estabelecimento prestador de serviço de comunicação.
+1256	2006-01-01		1	0	0	0	0	0	0	0	0	Compra de energia elétrica por estabelecimento de produtor rural.
+1257	2006-01-01		1	0	0	0	0	0	0	0	0	Compra de energia elétrica para consumo por demanda contratada.
+1301	2006-01-01		1	0	0	0	0	0	0	0	0	Aquisição de serviço de comunicação para execução de serviço da mesma natureza.
+1302	2006-01-01		1	0	0	0	0	0	0	0	0	Aquisição de serviço de comunicação por estabelecimento industrial.
+1303	2006-01-01		1	0	0	0	0	0	0	0	0	Aquisição de serviço de comunicação por estabelecimento comercial.
+1304	2006-01-01		1	0	0	0	0	0	0	0	0	Aquisição de serviço de comunicação por estabelecimento de prestador de serviço de transporte.
+1305	2006-01-01		1	0	0	0	0	0	0	0	0	Aquisição de serviço de comunicação por estabelecimento de geradora ou de distribuidora de energia elétrica.
+1306	2006-01-01		1	0	0	0	0	0	0	0	0	Aquisição de serviço de comunicação por estabelecimento de produtor rural.
+1351	2006-01-01		1	0	0	0	0	0	0	0	0	Aquisição de serviço de transporte para execução de serviço da mesma natureza.
+1352	2006-01-01		1	0	0	0	0	0	0	0	0	Aquisição de serviço de transporte por estabelecimento industrial.
+1353	2006-01-01		1	0	0	0	0	0	0	0	0	Aquisição de serviço de transporte por estabelecimento comercial.
+1354	2006-01-01		1	0	0	0	0	0	0	0	0	Aquisição de serviço de transporte por estabelecimento de prestador de serviço de comunicação.
+1355	2006-01-01		1	0	0	0	0	0	0	0	0	Aquisição de serviço de transporte por estabelecimento de geradora ou de distribuidora de energia elétrica.
+1356	2006-01-01		1	0	0	0	0	0	0	0	0	Aquisição de serviço de transporte por estabelecimento de produtor rural.
+1360	2006-01-01		1	0	0	0	0	0	0	0	0	Aquisição de serviço de transporte por contribuinte substituto em relação ao serviço de transporte.
+1401	2006-01-01		1	0	0	0	0	0	0	0	0	Compra para industrialização ou produção rural em operação com mercadoria sujeita ao regime de substituição tributária.
+1403	2006-01-01		1	0	0	0	0	0	0	0	0	Compra para comercialização em operação com mercadoria sujeita ao regime de substituição tributária.
+1406	2006-01-01		1	0	0	0	0	0	0	0	0	Compra de bem para o ativo imobilizado cuja mercadoria está sujeita ao regime de substituição tributária.
+1407	2006-01-01		1	0	0	0	0	0	0	0	0	Compra de mercadoria para uso ou consumo cuja mercadoria está sujeita ao regime de substituição tributária.
+1408	2006-01-01		1	0	0	0	0	0	0	0	0	Transferência para industrialização ou produção rural em operação com mercadoria sujeita ao regime de substituição tributária.
+1409	2006-01-01		1	0	0	0	0	0	0	0	0	Transferência para comercialização em operação com mercadoria sujeita ao regime de substituição tributária.
+1410	2006-01-01		1	0	0	1	0	0	0	0	0	Devolução de venda de produção do estabelecimento em operação com produto sujeito ao regime de substituição tributária.
+1411	2006-01-01		1	0	0	1	0	0	0	0	0	Devolução de venda de mercadoria adquirida ou recebida de terceiros em operação com mercadoria sujeita ao regime de substituição tributária.
+1414	2006-01-01		1	0	0	0	1	0	0	0	0	Retorno de produção do estabelecimento, remetida para venda fora do estabelecimento em operação com produto sujeito ao regime de substituição tributária.
+1415	2006-01-01		1	0	0	0	1	0	0	0	0	Retorno de mercadoria adquirida ou recebida de terceiros, remetida para venda fora do estabelecimento em operação com mercadoria sujeita ao regime de substituição tributária.
+1451	2006-01-01		1	0	0	0	0	0	0	0	0	Entrada de animal - Sistema de Integração e Parceria Rural.
+1452	2006-01-01		1	0	0	0	0	0	0	0	0	Entrada de insumo - Sistema de Integração e Parceria Rural.
+1453	2019-12-01		1	0	0	0	1	0	0	0	0	Retorno do animal ou da produção - Sistema de Integração e Parceria Rural.
+1454	2019-12-01		1	0	0	0	1	0	0	0	0	Retorno simbólico do animal ou da produção - Sistema de Integração e Parceria Rural.
+1455	2019-12-01		1	0	0	0	1	0	0	0	0	Retorno de insumo não utilizado na produção - Sistema de Integração e Parceria Rural.
+1456	2019-12-01		1	0	0	0	0	0	0	0	0	Entrada referente à remuneração do produtor no Sistema de Integração e Parceria Rural.
+1501	2006-01-01		1	0	0	0	0	0	0	0	0	Entrada de mercadoria recebida com fim específico de exportação.
+1503	2006-01-01		1	0	0	1	0	0	0	0	0	Entrada decorrente de devolução de produto remetido com fim específico de exportação, de produção do estabelecimento.
+1504	2006-01-01		1	0	0	1	0	0	0	0	0	Entrada decorrente de devolução, inclusive simbólica, de mercadoria remetida com fim específico de exportação, adquirida ou recebida de terceiros.
+1505	2006-01-01		1	0	0	1	0	0	0	0	0	Entrada decorrente de devolução, inclusive simbólica, de mercadorias remetidas para formação de lote de exportação, de produtos industrializados ou produzidos pelo próprio estabelecimento.
+1506	2006-01-01		1	0	0	1	0	0	0	0	0	Entrada decorrente de devolução, inclusive simbólica, de mercadorias adquiridas ou recebidas de terceiros, remetidas para formação de lote de exportação.
+1551	2006-01-01		1	0	0	0	0	0	0	0	1	Compra de bem para o ativo imobilizado.
+1552	2006-01-01		1	0	0	0	0	0	0	0	1	Transferência de bem do ativo imobilizado.
+1553	2006-01-01		1	0	0	1	0	0	0	0	1	Devolução de venda de bem do ativo imobilizado.
+1554	2006-01-01		1	0	0	0	1	0	0	0	1	Retorno de bem do ativo imobilizado remetido para uso fora do estabelecimento.
+1555	2006-01-01		1	0	0	0	0	0	0	0	1	Entrada de bem do ativo imobilizado de terceiro, remetido para uso no estabelecimento.
+1556	2006-01-01		1	0	0	0	0	0	0	0	1	Compra de material para uso ou consumo.
+1557	2006-01-01		1	0	0	0	0	0	0	0	1	Transferência de material para uso ou consumo.
+1601	2006-01-01		1	0	0	0	0	0	0	0	0	Recebimento, por transferência, de crédito de ICMS.
+1602	2006-01-01		1	0	0	0	0	0	0	0	0	Recebimento, por transferência, de saldo credor de ICMS de outro estabelecimento da mesma empresa, para compensação de saldo devedor de ICMS.
+1603	2006-01-01		1	0	0	0	0	0	0	0	0	Ressarcimento de ICMS retido por substituição tributária.
+1604	2006-01-01		1	0	0	0	0	0	0	0	0	Lançamento do crédito relativo à compra de bem para o ativo imobilizado.
+1605	2006-01-01		1	0	0	0	0	0	0	0	0	Recebimento, por transferência, de saldo devedor de ICMS de outro estabelecimento da mesma empresa.
+1651	2006-01-01		1	0	0	0	0	0	0	2	0	Compra de combustíveis ou lubrificantes para industrialização subsequente.
+1652	2006-01-01		1	0	0	0	0	0	0	2	0	Compra de combustíveis ou lubrificantes para comercialização.
+1653	2006-01-01		1	0	0	0	0	0	0	2	0	Compra de combustíveis ou lubrificantes por consumidor ou usuário final.
+1657	2020-02-01		1	0	0	0	1	0	0	2	0	Retorno de remessa de combustíveis ou lubrificantes para venda fora do estabelecimento.
+1658	2006-01-01		1	0	0	0	0	0	0	2	0	Transferência de combustíveis ou lubrificantes para industrialização.
+1659	2006-01-01		1	0	0	0	0	0	0	2	0	Transferência de combustíveis ou lubrificantes para comercialização.
+1660	2006-01-01		1	0	0	1	0	0	0	2	0	Devolução de venda de combustíveis ou lubrificantes destinados à industrialização subsequente.
+1661	2006-01-01		1	0	0	1	0	0	0	2	0	Devolução de venda de combustíveis ou lubrificantes destinados à comercialização.
+1662	2006-01-01		1	0	0	1	0	0	0	2	0	Devolução de venda de combustíveis ou lubrificantes destinados a consumidor ou usuário final.
+1663	2006-01-01		1	0	0	0	0	0	0	1	0	Entrada de combustíveis ou lubrificantes para armazenagem.
+1664	2006-01-01		1	0	0	0	1	0	0	1	0	Retorno de combustíveis ou lubrificantes remetidos para armazenagem.
+1901	2006-01-01		1	0	0	0	0	0	0	0	0	Entrada para industrialização por encomenda.
+1902	2006-01-01		1	0	0	0	1	0	0	0	0	Retorno de mercadoria remetida para industrialização por encomenda.
+1903	2006-01-01		1	0	0	0	1	0	0	0	0	Entrada de mercadoria remetida para industrialização e não aplicada no referido processo.
+1904	2006-01-01		1	0	0	0	1	0	0	0	0	Retorno de remessa para venda fora do estabelecimento, ou qualquer entrada e retorno de remessa efetuada pelo MEI com exceção dos classificados nos códigos 1.202, 1.503, 1.504, 1.505 e 1.506.
+1905	2006-01-01		1	0	0	0	0	0	0	0	0	Entrada de mercadoria recebida para depósito em depósito fechado, armazém geral ou outro estabelecimento da mesma empresa ou de terceiro.
+1906	2006-01-01		1	0	0	0	1	0	0	0	0	Retorno de mercadoria remetida para depósito fechado, armazém geral ou outro estabelecimento, da mesma empresa ou de terceiro.
+1907	2006-01-01		1	0	0	0	1	0	0	0	0	Retorno simbólico de mercadoria remetida para depósito fechado, armazém geral ou outro estabelecimento da mesma empresa ou de terceiro.
+1908	2006-01-01		1	0	0	0	0	0	0	0	1	Entrada de bem por conta de contrato de comodato ou locação.
+1909	2006-01-01		1	0	0	0	1	0	0	0	1	Retorno de bem remetido por conta de contrato de comodato ou locação.
+1910	2006-01-01		1	0	0	0	0	0	0	0	0	Entrada de bonificação, doação ou brinde.
+1911	2006-01-01		1	0	0	0	0	0	0	0	0	Entrada de amostra grátis.
+1912	2006-01-01		1	0	0	0	0	0	0	0	1	Entrada de mercadoria ou bem recebido para demonstração ou mostruário.
+1913	2006-01-01		1	0	0	0	1	0	0	0	1	Retorno de mercadoria ou bem remetido para demonstração, mostruário ou treinamento.
+1914	2006-01-01		1	0	0	0	1	0	0	0	1	Retorno de mercadoria ou bem remetido para exposição ou feira.
+1915	2006-01-01		1	0	0	0	0	0	0	0	1	Entrada de mercadoria ou bem recebido para conserto ou reparo.
+1916	2006-01-01		1	0	0	0	1	0	0	0	1	Retorno de mercadoria ou bem remetido para conserto ou reparo.
+1917	2006-01-01		1	0	0	0	0	0	0	0	0	Entrada de mercadoria recebida em consignação mercantil ou industrial.
+1918	2006-01-01		1	0	0	1	0	0	0	0	1	Devolução de mercadoria remetida em consignação mercantil ou industrial.
+1919	2006-01-01		1	0	0	1	0	0	0	0	0	Devolução simbólica de mercadoria vendida ou utilizada em processo industrial, remetida anteriormente em consignação mercantil ou industrial.
+1920	2006-01-01		1	0	0	0	0	0	0	0	0	Entrada de embalagens, bombonas, vasilhames, sacarias, pallets ou assemelhados.
+1921	2006-01-01		1	0	0	0	1	0	0	0	1	Retorno de embalagens, bombonas, vasilhames, sacarias, pallets ou assemelhados.
+1922	2006-01-01		1	0	0	0	0	0	0	0	0	Lançamento efetuado a título de simples faturamento decorrente de compra para recebimento futuro.
+1923	2006-01-01		1	0	0	0	0	0	0	0	0	Entrada de mercadoria recebida do vendedor remetente, em venda à ordem.
+1924	2006-01-01		1	0	0	0	0	0	0	0	0	Entrada para industrialização por conta e ordem do adquirente da mercadoria, quando esta não transitar pelo estabelecimento do adquirente.
+1925	2006-01-01		1	0	0	0	1	0	0	0	0	Retorno de mercadoria remetida para industrialização por conta e ordem do adquirente da mercadoria, quando esta não transitar pelo estabelecimento do adquirente.
+1926	2006-01-01		1	0	0	0	0	0	0	0	0	Lançamento efetuado a título de reclassificação de mercadoria decorrente de formação de kit ou de sua desagregação.
+1931	2006-01-01		1	0	0	0	0	0	0	0	0	Lançamento efetuado pelo tomador do serviço de transporte quando a responsabilidade de retenção do imposto for atribuída ao remetente ou alienante da mercadoria, pelo serviço de transporte realizado por transportador autônomo ou por transportador não inscrito na unidade da Federação onde iniciado o serviço.
+1932	2006-01-01		1	0	0	0	0	0	0	0	0	Aquisição de serviço de transporte iniciado em unidade da Federação diversa daquela onde inscrito o prestador.
+1933	2006-01-01		1	0	0	0	0	0	0	0	0	Aquisição de serviço sujeito ao ISSQN.
+1934	2006-01-01		1	0	0	0	0	0	0	0	0	Entrada simbólica de mercadoria recebida para depósito em depósito fechado ou armazém geral.
+1949	2006-01-01		1	0	0	0	0	0	0	0	0	Outra entrada de mercadoria ou prestação de serviço não especificada.
+2101	2006-01-01		1	0	0	0	0	0	0	0	0	Compra para industrialização ou produção rural.
+2102	2006-01-01		1	0	0	0	0	0	0	0	0	Compra para comercialização.
+2111	2006-01-01		1	0	0	0	0	0	0	0	0	Compra para industrialização de mercadoria recebida anteriormente em consignação industrial.
+2113	2006-01-01		1	0	0	0	0	0	0	0	0	Compra para comercialização, de mercadoria recebida anteriormente em consignação mercantil.
+2116	2006-01-01		1	0	0	0	0	0	0	0	0	Compra para industrialização ou produção rural originada de encomenda para recebimento futuro.
+2117	2006-01-01		1	0	0	0	0	0	0	0	0	Compra para comercialização originada de encomenda para recebimento futuro.
+2118	2006-01-01		1	0	0	0	0	0	0	0	0	Compra de mercadoria para comercialização pelo adquirente originário, entregue pelo vendedor remetente ao destinatário, em venda à ordem.
+2120	2006-01-01		1	0	0	0	0	0	0	0	0	Compra para industrialização ou produção rural, em venda à ordem, já recebida do vendedor remetente.
+2121	2006-01-01		1	0	0	0	0	0	0	0	0	Compra para comercialização, em venda à ordem, já recebida do vendedor remetente.
+2122	2006-01-01		1	0	0	0	0	0	0	0	0	Compra para industrialização em que a mercadoria foi remetida pelo fornecedor ao industrializador sem transitar pelo estabelecimento adquirente.
+2124	2006-01-01		1	0	0	0	0	0	0	0	0	Industrialização efetuada por outra empresa.
+2125	2006-01-01		1	0	0	0	0	0	0	0	0	Industrialização efetuada por outra empresa quando a mercadoria remetida para utilização no processo de industrialização não transitou pelo estabelecimento adquirente da mercadoria.
+2126	2006-01-01		1	0	0	0	0	0	0	0	0	Compra para utilização na prestação de serviço sujeita ao ICMS.
+2128	2006-01-01		1	0	0	0	0	0	0	0	0	Compra para utilização na prestação de serviço sujeita ao ISSQN.
+2131	2018-01-01		1	0	0	0	0	0	0	0	0	Entrada de mercadoria, com previsão de posterior ajuste ou fixação de preço, em ato cooperativo.
+2132	2018-01-01		1	0	0	0	0	0	0	0	0	Fixação de preço de produção do estabelecimento produtor, inclusive quando remetidas anteriormente com previsão de posterior ajuste ou fixação de preço, em ato cooperativo, para comercialização.
+2135	2018-01-01		1	0	0	0	0	0	0	0	0	Fixação de preço de produção do estabelecimento produtor, inclusive quando remetidas anteriormente com previsão de posterior ajuste ou fixação de preço, em ato cooperativo, para industrialização.
+2151	2006-01-01		1	0	0	0	0	0	0	0	0	Transferência para industrialização ou produção rural.
+2152	2006-01-01		1	0	0	0	0	0	0	0	0	Transferência para comercialização.
+2153	2006-01-01		1	0	0	0	0	0	0	0	0	Transferência de energia elétrica para distribuição.
+2154	2006-01-01		1	0	0	0	0	0	0	0	0	Transferência para utilização na prestação de serviço.
+2159	2018-09-01		1	0	0	0	0	0	0	0	0	Entrada decorrente do fornecimento de produto ou mercadoria em ato cooperativo.
+2201	2006-01-01		1	0	0	1	0	0	0	0	0	Devolução de venda de produção do estabelecimento.
+2202	2006-01-01		1	0	0	1	0	0	0	0	0	Devolução de venda de mercadoria adquirida ou recebida de terceiros, ou qualquer devolução de mercadoria efetuada pelo MEI com exceção das classificadas nos códigos 2.503, 2.504, 2.505 e 2.506.
+2203	2006-01-01		1	0	0	1	0	0	0	0	0	Devolução de venda de produção do estabelecimento, destinada à Zona Franca de Manaus ou Áreas de Livre Comércio.
+2204	2006-01-01		1	0	0	1	0	0	0	0	0	Devolução de venda de mercadoria adquirida ou recebida de terceiros, destinada à Zona Franca de Manaus ou Áreas de Livre Comércio.
+2205	2006-01-01		1	0	0	0	0	1	0	0	0	Anulação de valor relativo à prestação de serviço de comunicação.
+2206	2006-01-01		1	0	0	0	0	1	0	0	0	Anulação de valor relativo à prestação de serviço de transporte.
+2207	2006-01-01		1	0	0	0	0	1	0	0	0	Anulação de valor relativo à venda de energia elétrica.
+2208	2006-01-01		1	0	0	1	0	0	0	0	0	Devolução de produção do estabelecimento, remetida em transferência.
+2209	2006-01-01		1	0	0	1	0	0	0	0	0	Devolução de mercadoria adquirida ou recebida de terceiros, remetida em transferência.
+2212	2006-01-01		1	0	0	1	0	0	0	0	0	Devolução de venda no mercado interno de mercadoria industrializada e insumo importado sob o Regime Aduaneiro Especial de Entreposto Industrial sob Controle Informatizado do Sistema Público de Escrituração Digital (Recof-Sped).
+2213	2018-01-01		1	0	0	1	0	0	0	0	0	Devolução de remessa de produção do estabelecimento, com previsão de posterior ajuste ou fixação de preço, em ato cooperativo.
+2214	2018-01-01		1	0	0	1	0	0	0	0	0	Devolução referente à fixação de preço de produção do estabelecimento produtor, em ato cooperativo.
+2215	2019-05-01		1	0	0	1	0	0	0	0	0	Devolução de fornecimento de produção do estabelecimento em ato cooperativo.
+2216	2019-05-01		1	0	0	1	0	0	0	0	0	Devolução de fornecimento de mercadoria adquirida ou recebida de terceiros em ato cooperativo.
+2251	2006-01-01		1	0	0	0	0	0	0	0	0	Compra de energia elétrica para distribuição ou comercialização.
+2252	2006-01-01		1	0	0	0	0	0	0	0	0	Compra de energia elétrica por estabelecimento industrial.
+2253	2006-01-01		1	0	0	0	0	0	0	0	0	Compra de energia elétrica por estabelecimento comercial.
+2254	2006-01-01		1	0	0	0	0	0	0	0	0	Compra de energia elétrica por estabelecimento prestador de serviço de transporte.
+2255	2006-01-01		1	0	0	0	0	0	0	0	0	Compra de energia elétrica por estabelecimento prestador de serviço de comunicação.
+2256	2006-01-01		1	0	0	0	0	0	0	0	0	Compra de energia elétrica por estabelecimento de produtor rural.
+2257	2006-01-01		1	0	0	0	0	0	0	0	0	Compra de energia elétrica para consumo por demanda contratada.
+2301	2006-01-01		1	0	0	0	0	0	0	0	0	Aquisição de serviço de comunicação para execução de serviço da mesma natureza.
+2302	2006-01-01		1	0	0	0	0	0	0	0	0	Aquisição de serviço de comunicação por estabelecimento industrial.
+2303	2006-01-01		1	0	0	0	0	0	0	0	0	Aquisição de serviço de comunicação por estabelecimento comercial.
+2304	2006-01-01		1	0	0	0	0	0	0	0	0	Aquisição de serviço de comunicação por estabelecimento de prestador de serviço de transporte.
+2305	2006-01-01		1	0	0	0	0	0	0	0	0	Aquisição de serviço de comunicação por estabelecimento de geradora ou de distribuidora de energia elétrica.
+2306	2006-01-01		1	0	0	0	0	0	0	0	0	Aquisição de serviço de comunicação por estabelecimento de produtor rural.
+2351	2006-01-01		1	0	0	0	0	0	0	0	0	Aquisição de serviço de transporte para execução de serviço da mesma natureza.
+2352	2006-01-01		1	0	0	0	0	0	0	0	0	Aquisição de serviço de transporte por estabelecimento industrial.
+2353	2006-01-01		1	0	0	0	0	0	0	0	0	Aquisição de serviço de transporte por estabelecimento comercial.
+2354	2006-01-01		1	0	0	0	0	0	0	0	0	Aquisição de serviço de transporte por estabelecimento de prestador de serviço de comunicação.
+2355	2006-01-01		1	0	0	0	0	0	0	0	0	Aquisição de serviço de transporte por estabelecimento de geradora ou de distribuidora de energia elétrica.
+2356	2006-01-01		1	0	0	0	0	0	0	0	0	Aquisição de serviço de transporte por estabelecimento de produtor rural.
+2401	2006-01-01		1	0	0	0	0	0	0	0	0	Compra para industrialização ou produção rural em operação com mercadoria sujeita ao regime de substituição tributária.
+2403	2006-01-01		1	0	0	0	0	0	0	0	0	Compra para comercialização em operação com mercadoria sujeita ao regime de substituição tributária.
+2406	2006-01-01		1	0	0	0	0	0	0	0	0	Compra de bem para o ativo imobilizado cuja mercadoria está sujeita ao regime de substituição tributária.
+2407	2006-01-01		1	0	0	0	0	0	0	0	0	Compra de mercadoria para uso ou consumo cuja mercadoria está sujeita ao regime de substituição tributária.
+2408	2006-01-01		1	0	0	0	0	0	0	0	0	Transferência para industrialização ou produção rural em operação com mercadoria sujeita ao regime de substituição tributária.
+2409	2006-01-01		1	0	0	0	0	0	0	0	0	Transferência para comercialização em operação com mercadoria sujeita ao regime de substituição tributária.
+2410	2006-01-01		1	0	0	1	0	0	0	0	0	Devolução de venda de produção do estabelecimento em operação com produto sujeito ao regime de substituição tributária.
+2411	2006-01-01		1	0	0	1	0	0	0	0	0	Devolução de venda de mercadoria adquirida ou recebida de terceiros em operação com mercadoria sujeita ao regime de substituição tributária.
+2414	2006-01-01		1	0	0	0	1	0	0	0	0	Retorno de produção do estabelecimento, remetida para venda fora do estabelecimento em operação com produto sujeito ao regime de substituição tributária.
+2415	2006-01-01		1	0	0	0	1	0	0	0	0	Retorno de mercadoria adquirida ou recebida de terceiros, remetida para venda fora do estabelecimento em operação com mercadoria sujeita ao regime de substituição tributária.
+2451	2019-12-01		1	0	0	0	0	0	0	0	0	Entrada de animal - Sistema de Integração e Parceria Rural.
+2452	2019-12-01		1	0	0	0	0	0	0	0	0	Entrada de insumo - Sistema de Integração e Parceria Rural.
+2453	2019-12-01		1	0	0	0	1	0	0	0	0	Retorno do animal ou da produção - Sistema de Integração e Parceria Rural.
+2454	2019-12-01		1	0	0	0	1	0	0	0	0	Retorno simbólico do animal ou da produção - Sistema de Integração e Parceria Rural.
+2455	2019-12-01		1	0	0	0	1	0	0	0	0	Retorno de insumo não utilizado na produção - Sistema de Integração e Parceria Rural.
+2456	2019-12-01		1	0	0	0	0	0	0	0	0	Entrada referente à remuneração do produtor no Sistema de Integração e Parceria Rural.
+2501	2006-01-01		1	0	0	0	0	0	0	0	0	Entrada de mercadoria recebida com fim específico de exportação.
+2503	2006-01-01		1	0	0	1	0	0	0	0	0	Entrada decorrente de devolução de produto remetido com fim específico de exportação, de produção do estabelecimento.
+2504	2006-01-01		1	0	0	1	0	0	0	0	0	Entrada decorrente de devolução, inclusive simbólica, de mercadoria remetida com fim específico de exportação, adquirida ou recebida de terceiros.
+2505	2006-01-01		1	0	0	1	0	0	0	0	0	Entrada decorrente de devolução, inclusive simbólica, de mercadorias remetidas para formação de lote de exportação, de produtos industrializados ou produzidos pelo próprio estabelecimento.
+2506	2006-01-01		1	0	0	1	0	0	0	0	0	Entrada decorrente de devolução, inclusive simbólica, de mercadorias adquiridas ou recebidas de terceiros, remetidas para formação de lote de exportação.
+2551	2006-01-01		1	0	0	0	0	0	0	0	1	Compra de bem para o ativo imobilizado.
+2552	2006-01-01		1	0	0	0	0	0	0	0	1	Transferência de bem do ativo imobilizado.
+2553	2006-01-01		1	0	0	1	0	0	0	0	1	Devolução de venda de bem do ativo imobilizado.
+2554	2006-01-01		1	0	0	0	1	0	0	0	1	Retorno de bem do ativo imobilizado remetido para uso fora do estabelecimento.
+2555	2006-01-01		1	0	0	0	0	0	0	0	1	Entrada de bem do ativo imobilizado de terceiro, remetido para uso no estabelecimento.
+2556	2006-01-01		1	0	0	0	0	0	0	0	1	Compra de material para uso ou consumo.
+2557	2006-01-01		1	0	0	0	0	0	0	0	1	Transferência de material para uso ou consumo.
+2603	2006-01-01		1	0	0	0	0	0	0	0	0	Ressarcimento de ICMS retido por substituição tributária.
+2651	2006-01-01		1	0	0	0	0	0	0	2	0	Compra de combustíveis ou lubrificantes para industrialização subsequente.
+2652	2006-01-01		1	0	0	0	0	0	0	2	0	Compra de combustíveis ou lubrificantes para comercialização.
+2653	2006-01-01		1	0	0	0	0	0	0	2	0	Compra de combustíveis ou lubrificantes por consumidor ou usuário final.
+2657	2020-02-01		1	0	0	0	1	0	0	2	0	Retorno de remessa de combustíveis ou lubrificantes para venda fora do estabelecimento.
+2658	2006-01-01		1	0	0	0	0	0	0	2	0	Transferência de combustíveis ou lubrificantes para industrialização.
+2659	2006-01-01		1	0	0	0	0	0	0	2	0	Transferência de combustíveis ou lubrificantes para comercialização.
+2660	2006-01-01		1	0	0	1	0	0	0	2	0	Devolução de venda de combustíveis ou lubrificantes destinados à industrialização subsequente.
+2661	2006-01-01		1	0	0	1	0	0	0	2	0	Devolução de venda de combustíveis ou lubrificantes destinados à comercialização.
+2662	2006-01-01		1	0	0	1	0	0	0	2	0	Devolução de venda de combustíveis ou lubrificantes destinados a consumidor ou usuário final.
+2663	2006-01-01		1	0	0	0	0	0	0	1	0	Entrada de combustíveis ou lubrificantes para armazenagem.
+2664	2006-01-01		1	0	0	0	1	0	0	1	0	Retorno de combustíveis ou lubrificantes remetidos para armazenagem.
+2901	2006-01-01		1	0	0	0	0	0	0	0	0	Entrada para industrialização por encomenda.
+2902	2006-01-01		1	0	0	0	1	0	0	0	0	Retorno de mercadoria remetida para industrialização por encomenda.
+2903	2006-01-01		1	0	0	0	1	0	0	0	0	Entrada de mercadoria remetida para industrialização e não aplicada no referido processo.
+2904	2006-01-01		1	0	0	0	1	0	0	0	0	Retorno de remessa para venda fora do estabelecimento, ou qualquer entrada e retorno de remessa efetuada pelo MEI com exceção dos classificados nos códigos 2.202, 2.503, 2.504, 2.505 e 2.506.
+2905	2006-01-01		1	0	0	0	0	0	0	0	0	Entrada de mercadoria recebida para depósito em depósito fechado, armazém geral ou outro estabelecimento da mesma empresa ou de terceiro.
+2906	2006-01-01		1	0	0	0	1	0	0	0	0	Retorno de mercadoria remetida para depósito fechado, armazém geral ou outro estabelecimento da mesma empresa ou de terceiro.
+2907	2006-01-01		1	0	0	0	1	0	0	0	0	Retorno simbólico de mercadoria remetida para depósito fechado, armazém geral ou outro estabelecimento da mesma empresa ou de terceiro.
+2908	2006-01-01		1	0	0	0	0	0	0	0	1	Entrada de bem por conta de contrato de comodato ou locação.
+2909	2006-01-01		1	0	0	0	1	0	0	0	1	Retorno de bem remetido por conta de contrato de comodato ou locação.
+2910	2006-01-01		1	0	0	0	0	0	0	0	0	Entrada de bonificação, doação ou brinde.
+2911	2006-01-01		1	0	0	0	0	0	0	0	0	Entrada de amostra grátis.
+2912	2006-01-01		1	0	0	0	0	0	0	0	1	Entrada de mercadoria ou bem recebido para demonstração ou mostruário.
+2913	2006-01-01		1	0	0	0	1	0	0	0	1	Retorno de mercadoria ou bem remetido para demonstração, mostruário ou treinamento.
+2914	2006-01-01		1	0	0	0	1	0	0	0	1	Retorno de mercadoria ou bem remetido para exposição ou feira.
+2915	2006-01-01		1	0	0	0	0	0	0	0	1	Entrada de mercadoria ou bem recebido para conserto ou reparo.
+2916	2006-01-01		1	0	0	0	1	0	0	0	1	Retorno de mercadoria ou bem remetido para conserto ou reparo.
+2917	2006-01-01		1	0	0	0	0	0	0	0	0	Entrada de mercadoria recebida em consignação mercantil ou industrial.
+2918	2006-01-01		1	0	0	1	0	0	0	0	1	Devolução de mercadoria remetida em consignação mercantil ou industrial.
+2919	2006-01-01		1	0	0	1	0	0	0	0	0	Devolução simbólica de mercadoria vendida ou utilizada em processo industrial, remetida anteriormente em consignação mercantil ou industrial.
+2920	2006-01-01		1	0	0	0	0	0	0	0	0	Entrada de embalagens, bombonas, vasilhames, sacarias, pallets ou assemelhados.
+2921	2006-01-01		1	0	0	0	1	0	0	0	1	Retorno de embalagens, bombonas, vasilhames, sacarias, pallets ou assemelhados.
+2922	2006-01-01		1	0	0	0	0	0	0	0	0	Lançamento efetuado a título de simples faturamento decorrente de compra para recebimento futuro.
+2923	2006-01-01		1	0	0	0	0	0	0	0	0	Entrada de mercadoria recebida do vendedor remetente, em venda à ordem.
+2924	2006-01-01		1	0	0	0	0	0	0	0	0	Entrada para industrialização por conta e ordem do adquirente da mercadoria, quando esta não transitar pelo estabelecimento do adquirente.
+2925	2006-01-01		1	0	0	0	1	0	0	0	0	Retorno de mercadoria remetida para industrialização por conta e ordem do adquirente da mercadoria, quando esta não transitar pelo estabelecimento do adquirente.
+2931	2006-01-01		1	0	0	0	0	0	0	0	0	Lançamento efetuado pelo tomador do serviço de transporte quando a responsabilidade de retenção do imposto for atribuída ao remetente ou alienante da mercadoria, pelo serviço de transporte realizado por transportador autônomo ou por transportador não inscrito na unidade da Federação onde iniciado o serviço.
+2932	2006-01-01		1	0	0	0	0	0	0	0	0	Aquisição de serviço de transporte iniciado em unidade da Federação diversa daquela onde inscrito o prestador.
+2933	2006-01-01		1	0	0	0	0	0	0	0	0	Aquisição de serviço sujeito ao ISSQN.
+2934	2006-01-01		1	0	0	0	0	0	0	0	0	Entrada simbólica de mercadoria recebida para depósito em depósito fechado ou armazém geral.
+2949	2006-01-01		1	0	0	0	0	0	0	0	0	Outra entrada de mercadoria ou prestação de serviço não especificada.
+3101	2006-01-01		1	0	0	0	0	0	0	0	0	Compra para industrialização ou produção rural.
+3102	2006-01-01		1	0	0	0	0	0	0	0	0	Compra para comercialização.
+3126	2006-01-01		1	0	0	0	0	0	0	0	1	Compra para utilização na prestação de serviço sujeita ao ICMS.
+3127	2006-01-01		1	0	0	0	0	0	0	0	1	Compra para industrialização sob o regime de “drawback”.
+3128	2006-01-01		1	0	0	0	0	0	0	0	1	Compra para utilização na prestação de serviço sujeita ao ISSQN.
+3129	2006-01-01		1	0	0	0	0	0	0	0	0	Compra para industrialização sob o Regime Aduaneiro Especial de Entreposto Industrial sob Controle Informatizado do Sistema Público de Escrituração Digital (Recof-Sped).
+3201	2006-01-01		1	0	0	1	0	0	0	0	0	Devolução de venda de produção do estabelecimento.
+3202	2006-01-01		1	0	0	1	0	0	0	0	0	Devolução de venda de mercadoria adquirida ou recebida de terceiros.
+3205	2006-01-01		1	0	0	0	0	1	0	0	0	Anulação de valor relativo à prestação de serviço de comunicação.
+3206	2006-01-01		1	0	0	0	0	1	0	0	0	Anulação de valor relativo à prestação de serviço de transporte.
+3207	2006-01-01		1	0	0	0	0	1	0	0	0	Anulação de valor relativo à venda de energia elétrica.
+3211	2006-01-01		1	0	0	1	0	0	0	0	0	Devolução de venda de produção do estabelecimento sob o regime de “drawback”.
+3212	2006-01-01		1	0	0	1	0	0	0	0	0	Devolução de venda no mercado externo de mercadoria industrializada sob o Regime Aduaneiro Especial de Entreposto Industrial sob Controle Informatizado do Sistema Público de Escrituração Digital (Recof-Sped).
+3251	2006-01-01		1	0	0	0	0	0	0	0	0	Compra de energia elétrica para distribuição ou comercialização.
+3301	2006-01-01		1	0	0	0	0	0	0	0	0	Aquisição de serviço de comunicação para execução de serviço da mesma natureza.
+3351	2006-01-01		1	0	0	0	0	0	0	0	0	Aquisição de serviço de transporte para execução de serviço da mesma natureza.
+3352	2006-01-01		1	0	0	0	0	0	0	0	0	Aquisição de serviço de transporte por estabelecimento industrial.
+3353	2006-01-01		1	0	0	0	0	0	0	0	0	Aquisição de serviço de transporte por estabelecimento comercial.
+3354	2006-01-01		1	0	0	0	0	0	0	0	0	Aquisição de serviço de transporte por estabelecimento de prestador de serviço de comunicação.
+3355	2006-01-01		1	0	0	0	0	0	0	0	0	Aquisição de serviço de transporte por estabelecimento de geradora ou de distribuidora de energia elétrica.
+3356	2006-01-01		1	0	0	0	0	0	0	0	0	Aquisição de serviço de transporte por estabelecimento de produtor rural.
+3503	2006-01-01		1	0	0	1	0	0	0	0	0	Devolução de mercadoria exportada que tenha sido recebida com fim específico de exportação.
+3551	2006-01-01		1	0	0	0	0	0	0	0	1	Compra de bem para o ativo imobilizado.
+3552	2021-06-01		1	0	0	0	0	0	0	0	0	Entrada de produto destinado para uso ou consumo de bordo, em embarcações ou aeronaves exclusivamente em tráfego internacional com destino ao exterior.
+3553	2006-01-01		1	0	0	1	0	0	0	0	1	Devolução de venda de bem do ativo imobilizado.
+3556	2006-01-01		1	0	0	0	0	0	0	0	1	Compra de material para uso ou consumo.
+3651	2006-01-01		1	0	0	0	0	0	0	1	0	Compra de combustíveis ou lubrificantes para industrialização subsequente.
+3652	2006-01-01		1	0	0	0	0	0	0	1	0	Compra de combustíveis ou lubrificantes para comercialização.
+3653	2006-01-01		1	0	0	0	0	0	0	1	1	Compra de combustíveis ou lubrificantes por consumidor ou usuário final.
+3667	2021-06-01		1	0	0	0	0	0	0	2	0	Entrada de combustíveis ou lubrificantes para consumo final, em embarcações ou aeronaves exclusivamente em tráfego internacional com destino ao exterior.
+3930	2006-01-01		1	0	0	0	0	0	0	0	0	Lançamento efetuado a título de entrada de bem sob amparo de regime especial aduaneiro de admissão temporária.
+3949	2006-01-01		1	0	0	0	0	0	0	0	0	Outra entrada de mercadoria ou prestação de serviço não especificada.
+5101	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de produção do estabelecimento.
+5102	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de mercadoria adquirida ou recebida de terceiros, ou qualquer venda de mercadoria efetuada pelo MEI com exceção das saídas classificadas nos códigos 5.501, 5.502, 5.504 e 5.505.
+5103	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de produção do estabelecimento, efetuada fora do estabelecimento.
+5104	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de mercadoria adquirida ou recebida de terceiros, efetuada fora do estabelecimento.
+5105	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de produção do estabelecimento que não deva por ele transitar.
+5106	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de mercadoria adquirida ou recebida de terceiros, que não deva por ele transitar.
+5109	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de produção do estabelecimento, destinada à Zona Franca de Manaus ou Áreas de Livre Comércio.
+5110	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de mercadoria adquirida ou recebida de terceiros, destinada à Zona Franca de Manaus ou Áreas de Livre Comércio.
+5111	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de produção do estabelecimento remetida anteriormente em consignação industrial.
+5112	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de mercadoria adquirida ou recebida de terceiros remetida anteriormente em consignação industrial.
+5113	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de produção do estabelecimento remetida anteriormente em consignação mercantil.
+5114	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de mercadoria adquirida ou recebida de terceiros remetida anteriormente em consignação mercantil.
+5115	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de mercadoria adquirida ou recebida de terceiros, recebida anteriormente em consignação mercantil.
+5116	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de produção do estabelecimento originada de encomenda para entrega futura.
+5117	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de mercadoria adquirida ou recebida de terceiros, originada de encomenda para entrega futura.
+5118	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de produção do estabelecimento industrial ou rural, entregue ao destinatário por conta e ordem do adquirente originário, em venda à ordem.
+5119	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de mercadoria adquirida ou recebida de terceiros entregue ao destinatário por conta e ordem do adquirente originário, em venda à ordem.
+5120	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de mercadoria adquirida ou recebida de terceiros entregue ao destinatário pelo vendedor remetente, em venda à ordem.
+5122	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de produção do estabelecimento remetida para industrialização, por conta e ordem do adquirente, sem transitar pelo estabelecimento do adquirente.
+5123	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de mercadoria adquirida ou recebida de terceiros remetida para industrialização, por conta e ordem do adquirente, sem transitar pelo estabelecimento do adquirente.
+5124	2006-01-01		1	0	0	0	0	0	0	0	0	Industrialização efetuada para outra empresa.
+5125	2006-01-01		1	0	0	0	0	0	0	0	0	Industrialização efetuada para outra empresa quando a mercadoria recebida para utilização no processo de industrialização não transitar pelo estabelecimento adquirente da mercadoria.
+5129	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de mercadoria industrializada e de insumo importado sob o amparo do Regime Aduaneiro Especial de Entreposto Industrial sob Controle Informatizado do Sistema Público de Escrituração Digital (Recof-Sped).
+5131	2018-01-01		1	0	0	0	0	0	0	0	0	Remessa de produção do estabelecimento, com previsão de posterior ajuste ou fixação de preço, em ato cooperativo.
+5132	2018-01-01		1	0	0	0	0	0	0	0	0	Fixação de preço de produção do estabelecimento, inclusive quando remetidas anteriormente com previsão de posterior ajuste ou fixação de preço, em ato cooperativo.
+5151	2006-01-01		1	0	0	0	0	0	0	0	0	Transferência de produção do estabelecimento.
+5152	2006-01-01		1	0	0	0	0	0	0	0	0	Transferência de mercadoria adquirida ou recebida de terceiros.
+5153	2006-01-01		1	0	0	0	0	0	0	0	0	Transferência de energia elétrica.
+5155	2006-01-01		1	0	0	0	0	0	0	0	0	Transferência de produção do estabelecimento para depósito em depósito fechado, armazém geral ou outro estabelecimento da mesma empresa ou de terceiro, que não deva por ele transitar.
+5156	2006-01-01		1	0	0	0	0	0	0	0	0	Transferência de mercadoria adquirida ou recebida de terceiros para depósito em depósito fechado, armazém geral ou outro estabelecimento da mesma empresa ou de terceiro, que não deva por ele transitar.
+5159	2018-09-01		1	0	0	0	0	0	0	0	0	Fornecimento de produção do estabelecimento em ato cooperativo.
+5160	2018-09-01		1	0	0	0	0	0	0	0	0	Fornecimento de mercadoria adquirida ou recebida de terceiros em ato cooperativo.
+5201	2006-01-01		1	0	0	1	0	0	0	0	0	Devolução de compra para industrialização ou produção rural.
+5202	2006-01-01		1	0	0	1	0	0	0	0	0	Devolução de compra para comercialização, ou qualquer devolução de mercadorias efetuada pelo MEI com exceção das classificadas no código 5.503.
+5205	2006-01-01		1	0	0	0	0	1	0	0	0	Anulação de valor relativo à aquisição de serviço de comunicação.
+5206	2006-01-01		1	0	0	0	0	1	0	0	0	Anulação de valor relativo à aquisição de serviço de transporte.
+5207	2006-01-01		1	0	0	0	0	1	0	0	0	Anulação de valor relativo à compra de energia elétrica.
+5208	2006-01-01		1	0	0	1	0	0	0	0	0	Devolução de mercadoria recebida em transferência para industrialização ou produção rural.
+5209	2006-01-01		1	0	0	1	0	0	0	0	0	Devolução de mercadoria recebida em transferência para comercialização.
+5210	2006-01-01		1	0	0	1	0	0	0	0	0	Devolução de compra para utilização na prestação de serviço.
+5213	2018-01-01		1	0	0	1	0	0	0	0	0	Devolução de entrada, inclusive simbólica, de mercadoria com previsão de posterior ajuste ou fixação de preço, em ato cooperativo.
+5214	2018-01-01		1	0	0	1	0	0	0	0	0	Devolução referente à fixação de preço de produção do estabelecimento produtor, inclusive quando remetidas anteriormente com previsão de posterior ajuste ou fixação de preço, em ato cooperativo, para comercialização.
+5215	2018-01-01		1	0	0	1	0	0	0	0	0	Devolução referente à fixação de preço de produção do estabelecimento produtor, inclusive quando remetidas anteriormente com previsão de posterior ajuste ou fixação de preço, em ato cooperativo, para industrialização.
+5216	2019-05-01		1	0	0	1	0	0	0	0	0	Devolução de entrada decorrente do fornecimento de produto ou mercadoria em ato cooperativo.
+5251	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de energia elétrica para distribuição ou comercialização.
+5252	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de energia elétrica para estabelecimento industrial.
+5253	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de energia elétrica para estabelecimento comercial.
+5254	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de energia elétrica para estabelecimento prestador de serviço de transporte.
+5255	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de energia elétrica para estabelecimento prestador de serviço de comunicação.
+5256	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de energia elétrica para estabelecimento de produtor rural.
+5257	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de energia elétrica para consumo por demanda contratada.
+5258	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de energia elétrica a não contribuinte.
+5301	2006-01-01		0	1	0	0	0	0	0	0	0	Prestação de serviço de comunicação para execução de serviço da mesma natureza.
+5302	2006-01-01		0	1	0	0	0	0	0	0	0	Prestação de serviço de comunicação a estabelecimento industrial.
+5303	2006-01-01		0	1	0	0	0	0	0	0	0	Prestação de serviço de comunicação a estabelecimento comercial.
+5304	2006-01-01		0	1	0	0	0	0	0	0	0	Prestação de serviço de comunicação a estabelecimento de prestador de serviço de transporte.
+5305	2006-01-01		0	1	0	0	0	0	0	0	0	Prestação de serviço de comunicação a estabelecimento de geradora ou de distribuidora de energia elétrica.
+5306	2006-01-01		0	1	0	0	0	0	0	0	0	Prestação de serviço de comunicação a estabelecimento de produtor rural.
+5307	2006-01-01		0	1	0	0	0	0	0	0	0	Prestação de serviço de comunicação a não contribuinte.
+5351	2006-01-01		0	0	1	0	0	0	0	0	0	Prestação de serviço de transporte para execução de serviço da mesma natureza.
+5352	2006-01-01		0	0	1	0	0	0	0	0	0	Prestação de serviço de transporte a estabelecimento industrial.
+5353	2006-01-01		0	0	1	0	0	0	0	0	0	Prestação de serviço de transporte a estabelecimento comercial.
+5354	2006-01-01		0	0	1	0	0	0	0	0	0	Prestação de serviço de transporte a estabelecimento de prestador de serviço de comunicação.
+5355	2006-01-01		0	0	1	0	0	0	0	0	0	Prestação de serviço de transporte a estabelecimento de geradora ou de distribuidora de energia elétrica.
+5356	2006-01-01		0	0	1	0	0	0	0	0	0	Prestação de serviço de transporte a estabelecimento de produtor rural.
+5357	2006-01-01		0	0	1	0	0	0	0	0	0	Prestação de serviço de transporte a não contribuinte.
+5359	2006-01-01		0	0	1	0	0	0	0	0	0	Prestação de serviço de transporte a contribuinte ou a não contribuinte quando a mercadoria transportada está dispensada de emissão de nota fiscal.
+5360	2006-01-01		0	0	1	0	0	0	0	0	0	Prestação de serviço de transporte a contribuinte substituto em relação ao serviço de transporte.
+5401	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de produção do estabelecimento em operação com produto sujeito ao regime de substituição tributária, na condição de contribuinte substituto.
+5402	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de produção do estabelecimento de produto sujeito ao regime de substituição tributária, em operação entre contribuintes substitutos do mesmo produto.
+5403	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de mercadoria adquirida ou recebida de terceiros em operação com mercadoria sujeita ao regime de substituição tributária, na condição de contribuinte substituto.
+5405	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de mercadoria adquirida ou recebida de terceiros em operação com mercadoria sujeita ao regime de substituição tributária, na condição de contribuinte substituído.
+5408	2006-01-01		1	0	0	0	0	0	0	0	0	Transferência de produção do estabelecimento em operação com produto sujeito ao regime de substituição tributária.
+5409	2006-01-01		1	0	0	0	0	0	0	0	0	Transferência de mercadoria adquirida ou recebida de terceiros em operação com mercadoria sujeita ao regime de substituição tributária.
+5410	2006-01-01		1	0	0	1	0	0	0	0	0	Devolução de compra para industrialização ou produção rural em operação com mercadoria sujeita ao regime de substituição tributária.
+5411	2006-01-01		1	0	0	1	0	0	0	0	0	Devolução de compra para comercialização em operação com mercadoria sujeita ao regime de substituição tributária.
+5412	2006-01-01		1	0	0	1	0	0	0	0	0	Devolução de bem do ativo imobilizado, em operação com mercadoria sujeita ao regime de substituição tributária.
+5413	2006-01-01		1	0	0	1	0	0	0	0	0	Devolução de mercadoria destinada para uso ou consumo, em operação com mercadoria sujeita ao regime de substituição tributária.
+5414	2006-01-01		1	0	0	0	0	0	1	0	0	Remessa de produção do estabelecimento para venda fora do estabelecimento em operação com produto sujeito ao regime de substituição tributária.
+5415	2006-01-01		1	0	0	0	0	0	1	0	0	Remessa de mercadoria adquirida ou recebida de terceiros para venda fora do estabelecimento, em operação com mercadoria sujeita ao regime de substituição tributária.
+5451	2006-01-01		1	0	0	0	0	0	1	0	0	Remessa de animal - Sistema de Integração e Parceria Rural.
+5452	2019-12-01		1	0	0	0	0	0	1	0	0	Remessa de insumo - Sistema de Integração e Parceria Rural.
+5453	2019-12-01		1	0	0	0	1	0	0	0	0	Retorno de animal ou da produção - Sistema de Integração e Parceria Rural.
+5454	2019-12-01		1	0	0	0	1	0	0	0	0	Retorno simbólico de animal ou da produção - Sistema de Integração e Parceria Rural.
+5455	2019-12-01		1	0	0	0	1	0	0	0	0	Retorno de insumos não utilizados na produção - Sistema de Integração e Parceria Rural.
+5456	2019-12-01		1	0	0	0	0	0	0	0	0	Saída referente à remuneração do produtor - Sistema de Integração e Parceria Rural.
+5501	2006-01-01		1	0	0	0	0	0	1	0	0	Remessa de produção do estabelecimento, com fim específico de exportação.
+5502	2006-01-01		1	0	0	0	0	0	1	0	0	Remessa de mercadoria adquirida ou recebida de terceiros, com fim específico de exportação.
+5503	2006-01-01		1	0	0	1	0	0	0	0	0	Devolução de mercadoria recebida com fim específico de exportação.
+5504	2006-01-01		1	0	0	0	0	0	1	0	0	Remessa de mercadorias para formação de lote de exportação, de produtos industrializados ou produzidos pelo próprio estabelecimento.
+5505	2006-01-01		1	0	0	0	0	0	1	0	0	Remessa de mercadorias, adquiridas ou recebidas de terceiros, para formação de lote de exportação.
+5551	2006-01-01		1	0	0	0	0	0	0	0	1	Venda de bem do ativo imobilizado.
+5552	2006-01-01		1	0	0	0	0	0	0	0	1	Transferência de bem do ativo imobilizado.
+5553	2006-01-01		1	0	0	1	0	0	0	0	1	Devolução de compra de bem para o ativo imobilizado.
+5554	2006-01-01		1	0	0	0	0	0	1	0	1	Remessa de bem do ativo imobilizado para uso fora do estabelecimento.
+5555	2006-01-01		1	0	0	1	0	0	0	0	1	Devolução de bem do ativo imobilizado de terceiro, recebido para uso no estabelecimento.
+5556	2006-01-01		1	0	0	1	0	0	0	0	1	Devolução de compra de material para uso ou consumo.
+5557	2006-01-01		1	0	0	0	0	0	0	0	1	Transferência de material para uso ou consumo.
+5601	2006-01-01		1	0	0	0	0	0	0	0	0	Transferência de crédito de ICMS acumulado.
+5602	2006-01-01		1	0	0	0	0	0	0	0	0	Transferência de saldo credor de ICMS para outro estabelecimento da mesma empresa, destinado à compensação de saldo devedor de ICMS.
+5603	2006-01-01		1	0	0	0	0	0	0	0	0	Ressarcimento de ICMS retido por substituição tributária.
+5605	2006-01-01		1	0	0	0	0	0	0	0	0	Transferência de saldo devedor de ICMS para outro estabelecimento da mesma empresa.
+5606	2006-01-01		1	0	0	0	0	0	0	0	0	Utilização de saldo credor de ICMS para extinção por compensação de débitos fiscais.
+5651	2006-01-01		1	0	0	0	0	0	0	2	0	Venda de combustíveis ou lubrificantes de produção do estabelecimento destinados à industrialização subsequente.
+5652	2006-01-01		1	0	0	0	0	0	0	2	0	Venda de combustíveis ou lubrificantes de produção do estabelecimento destinados à comercialização.
+5653	2006-01-01		1	0	0	0	0	0	0	1	0	Venda de combustíveis ou lubrificantes de produção do estabelecimento destinados a consumidor ou usuário final.
+5654	2006-01-01		1	0	0	0	0	0	0	2	0	Venda de combustíveis ou lubrificantes adquiridos ou recebidos de terceiros destinados à industrialização subsequente.
+5655	2006-01-01		1	0	0	0	0	0	0	2	0	Venda de combustíveis ou lubrificantes adquiridos ou recebidos de terceiros destinados à comercialização.
+5656	2006-01-01		1	0	0	0	0	0	0	1	0	Venda de combustíveis ou lubrificantes adquiridos ou recebidos de terceiros destinados a consumidor ou usuário final.
+5657	2006-01-01		1	0	0	0	0	0	1	2	0	Remessa de combustíveis ou lubrificantes adquiridos ou recebidos de terceiros para venda fora do estabelecimento.
+5658	2006-01-01		1	0	0	0	0	0	0	2	0	Transferência de combustíveis ou lubrificantes de produção do estabelecimento.
+5659	2006-01-01		1	0	0	0	0	0	0	2	0	Transferência de combustíveis ou lubrificantes adquiridos ou recebidos de terceiros.
+5660	2006-01-01		1	0	0	1	0	0	0	2	0	Devolução de compra de combustíveis ou lubrificantes adquiridos para industrialização subsequente.
+5661	2006-01-01		1	0	0	1	0	0	0	2	0	Devolução de compra de combustíveis ou lubrificantes adquiridos para comercialização.
+5662	2006-01-01		1	0	0	1	0	0	0	2	0	Devolução de compra de combustíveis ou lubrificantes adquiridos por consumidor ou usuário final.
+5663	2006-01-01		1	0	0	0	0	0	1	1	0	Remessa para armazenagem de combustíveis ou lubrificantes.
+5664	2006-01-01		1	0	0	0	1	0	0	1	0	Retorno de combustíveis ou lubrificantes recebidos para armazenagem.
+5665	2006-01-01		1	0	0	0	1	0	0	1	0	Retorno simbólico de combustíveis ou lubrificantes recebidos para armazenagem.
+5666	2006-01-01		1	0	0	0	0	0	1	2	0	Remessa por conta e ordem de terceiros de combustíveis ou lubrificantes recebidos para armazenagem.
+5667	2006-01-01		1	0	0	0	0	0	0	1	0	Venda de combustíveis ou lubrificantes a consumidor ou usuário final estabelecido em outra unidade da Federação.
+5901	2006-01-01		1	0	0	0	0	0	1	0	0	Remessa para industrialização por encomenda.
+5902	2006-01-01		1	0	0	0	1	0	0	0	0	Retorno de mercadoria utilizada na industrialização por encomenda.
+5903	2006-01-01		1	0	0	0	1	0	0	0	0	Retorno de mercadoria recebida para industrialização e não aplicada no referido processo.
+5904	2006-01-01		1	0	0	0	0	0	1	0	0	Remessa para venda fora do estabelecimento, ou qualquer remessa efetuada pelo MEI com exceção das classificadas nos códigos 5.502 e 5.505.
+5905	2006-01-01		1	0	0	0	0	0	1	0	0	Remessa para depósito fechado, armazém geral ou outro estabelecimento da mesma empresa ou de terceiro.
+5906	2006-01-01		1	0	0	0	1	0	0	0	0	Retorno de mercadoria depositada em depósito fechado, armazém geral ou outro estabelecimento da mesma empresa ou de terceiro.
+5907	2006-01-01		1	0	0	0	1	0	0	0	0	Retorno simbólico de mercadoria depositada em depósito fechado, armazém geral ou outro estabelecimento da mesma empresa ou de terceiro.
+5908	2006-01-01		1	0	0	0	0	0	1	0	1	Remessa de bem por conta de contrato de comodato ou locação.
+5909	2006-01-01		1	0	0	0	1	0	0	0	1	Retorno de bem recebido por conta de contrato de comodato ou locação.
+5910	2006-01-01		1	0	0	0	0	0	1	0	0	Remessa em bonificação, doação ou brinde.
+5911	2006-01-01		1	0	0	0	0	0	1	0	0	Remessa de amostra grátis.
+5912	2006-01-01		1	0	0	0	0	0	1	0	1	Remessa de mercadoria ou bem para demonstração, mostruário ou treinamento.
+5913	2006-01-01		1	0	0	0	1	0	0	0	1	Retorno de mercadoria ou bem recebido para demonstração ou mostruário.
+5914	2006-01-01		1	0	0	0	0	0	1	0	1	Remessa de mercadoria ou bem para exposição ou feira.
+5915	2006-01-01		1	0	0	0	0	0	1	0	1	Remessa de mercadoria ou bem para conserto ou reparo.
+5916	2006-01-01		1	0	0	0	1	0	0	0	1	Retorno de mercadoria ou bem recebido para conserto ou reparo.
+5917	2006-01-01		1	0	0	0	0	0	1	0	0	Remessa de mercadoria em consignação mercantil ou industrial.
+5918	2006-01-01		1	0	0	1	0	0	0	0	0	Devolução de mercadoria recebida em consignação mercantil ou industrial.
+5919	2006-01-01		1	0	0	1	0	0	0	0	0	Devolução simbólica de mercadoria vendida ou utilizada em processo industrial, recebida anteriormente em consignação mercantil ou industrial.
+5920	2006-01-01		1	0	0	0	0	0	1	0	0	Remessa de embalagens, bombonas, vasilhames, sacarias, pallets, containers ou assemelhados.
+5921	2006-01-01		1	0	0	1	0	0	0	0	1	Devolução de embalagens, bombonas, vasilhames, sacarias, pallets, containers ou assemelhados.
+5922	2006-01-01		1	0	0	0	0	0	0	0	0	Lançamento efetuado a título de simples faturamento decorrente de venda para entrega futura.
+5923	2006-01-01		1	0	0	0	0	0	1	0	0	Remessa de mercadoria por conta e ordem de terceiros, em venda à ordem ou em operações com armazém geral ou depósito fechado.
+5924	2006-01-01		1	0	0	0	0	0	1	0	0	Remessa para industrialização por conta e ordem do adquirente da mercadoria, quando esta não transitar pelo estabelecimento do adquirente.
+5925	2006-01-01		1	0	0	0	1	0	0	0	0	Retorno de mercadoria recebida para industrialização por conta e ordem do adquirente da mercadoria, quando aquela não transitar pelo estabelecimento do adquirente.
+5926	2006-01-01		1	0	0	0	0	0	0	0	0	Lançamento efetuado a título de reclassificação de mercadoria decorrente de formação de kit ou de sua desagregação.
+5927	2006-01-01		1	0	0	0	0	0	0	0	0	Lançamento efetuado a título de baixa de estoque decorrente de perda, roubo, deterioração.
+5928	2006-01-01		1	0	0	0	0	0	0	0	0	Lançamento efetuado a título de baixa de estoque decorrente do encerramento da atividade do estabelecimento da empresa ou transferência por venda do fundo de comércio.
+5929	2006-01-01		1	0	0	0	0	0	0	0	0	Lançamento efetuado em decorrência de emissão de documento fiscal relativo à operação ou prestação também acobertada por documento fiscal do varejo.
+5931	2006-01-01		1	0	1	0	0	0	0	0	0	Lançamento efetuado em decorrência da responsabilidade de retenção do imposto por substituição tributária, atribuída ao remetente ou alienante da mercadoria, pelo serviço de transporte realizado por transportador autônomo ou por transportador não inscrito na unidade da Federação onde iniciado o serviço.
+5932	2006-01-01		1	0	1	0	0	0	0	0	0	Prestação de serviço de transporte iniciada em unidade da Federação diversa daquela onde inscrito o prestador.
+5933	2006-01-01		1	0	0	0	0	0	0	0	0	Prestação de serviço sujeita ao ISSQN.
+5934	2006-01-01		1	0	0	0	0	0	1	0	0	Remessa simbólica de mercadoria depositada em armazém geral ou depósito fechado.
+5949	2006-01-01		1	0	0	0	0	0	0	0	0	Outra saída de mercadoria ou prestação de serviço não especificada.
+6101	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de produção do estabelecimento.
+6102	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de mercadoria adquirida ou recebida de terceiros, ou qualquer venda de mercadoria efetuada pelo MEI com exceção das saídas classificadas nos códigos 6.501, 6.502, 6.504 e 6.505.
+6103	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de produção do estabelecimento, efetuada fora do estabelecimento.
+6104	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de mercadoria adquirida ou recebida de terceiros, efetuada fora do estabelecimento.
+6105	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de produção do estabelecimento armazenada em depósito fechado, armazém geral ou outro estabelecimento da mesma empresa ou de terceiro, que não deva por ele transitar.
+6106	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de mercadoria adquirida ou recebida de terceiros armazenada em depósito fechado, armazém geral ou outro estabelecimento da mesma empresa ou de terceiro, que não deva por ele transitar.
+6107	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de produção do estabelecimento, destinada a não contribuinte.
+6108	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de mercadoria adquirida ou recebida de terceiros, destinada a não contribuinte.
+6109	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de produção do estabelecimento, destinada à Zona Franca de Manaus ou Áreas de Livre Comércio.
+6110	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de mercadoria adquirida ou recebida de terceiros, destinada à Zona Franca de Manaus ou Áreas de Livre Comércio.
+6111	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de produção do estabelecimento remetida anteriormente em consignação industrial.
+6112	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de mercadoria adquirida ou recebida de terceiros remetida anteriormente em consignação industrial.
+6113	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de produção do estabelecimento remetida anteriormente em consignação mercantil.
+6114	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de mercadoria adquirida ou recebida de terceiros remetida anteriormente em consignação mercantil.
+6115	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de mercadoria adquirida ou recebida de terceiros, recebida anteriormente em consignação mercantil.
+6116	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de produção do estabelecimento originada de encomenda para entrega futura.
+6117	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de mercadoria adquirida ou recebida de terceiros, originada de encomenda para entrega futura.
+6118	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de produção do estabelecimento industrial ou rural, entregue ao destinatário por conta e ordem do adquirente originário, em venda à ordem.
+6119	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de mercadoria adquirida ou recebida de terceiros entregue ao destinatário por conta e ordem do adquirente originário, em venda à ordem.
+6120	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de mercadoria adquirida ou recebida de terceiros entregue ao destinatário pelo vendedor remetente, em venda à ordem.
+6122	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de produção do estabelecimento remetida para industrialização, por conta e ordem do adquirente, sem transitar pelo estabelecimento do adquirente.
+6123	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de mercadoria adquirida ou recebida de terceiros remetida para industrialização, por conta e ordem do adquirente, sem transitar pelo estabelecimento do adquirente.
+6124	2006-01-01		1	0	0	0	0	0	0	0	0	Industrialização efetuada para outra empresa.
+6125	2006-01-01		1	0	0	0	0	0	0	0	0	Industrialização efetuada para outra empresa quando a mercadoria recebida para utilização no processo de industrialização não transitar pelo estabelecimento adquirente da mercadoria.
+6129	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de mercadoria industrializada e de insumo importado sob o amparo do Regime Aduaneiro Especial de Entreposto Industrial sob Controle Informatizado do Sistema Público de Escrituração Digital (Recof-Sped).
+6131	2018-01-01		1	0	0	0	0	0	0	0	0	Remessa de produção do estabelecimento, com previsão de posterior ajuste ou fixação de preço, em ato cooperativo.
+6132	2018-01-01		1	0	0	0	0	0	0	0	0	Fixação de preço de produção do estabelecimento, inclusive quando remetidas anteriormente com previsão de posterior ajuste ou fixação de preço, em ato cooperativo.
+6151	2006-01-01		1	0	0	0	0	0	0	0	0	Transferência de produção do estabelecimento.
+6152	2006-01-01		1	0	0	0	0	0	0	0	0	Transferência de mercadoria adquirida ou recebida de terceiros.
+6153	2006-01-01		1	0	0	0	0	0	0	0	0	Transferência de energia elétrica.
+6155	2006-01-01		1	0	0	0	0	0	0	0	0	Transferência de produção do estabelecimento armazenada em depósito fechado, armazém geral ou outro estabelecimento da mesma empresa ou de terceiro, que não deva por ele transitar.
+6156	2006-01-01		1	0	0	0	0	0	0	0	0	Transferência de mercadoria adquirida ou recebida de terceiros armazenada em depósito fechado, armazém geral ou outro estabelecimento da mesma empresa ou de terceiro, que não deva por ele transitar.
+6159	2018-09-01		1	0	0	0	0	0	0	0	0	Fornecimento de produção do estabelecimento em ato cooperativo.
+6160	2018-09-01		1	0	0	0	0	0	0	0	0	Fornecimento de mercadoria adquirida ou recebida de terceiros em ato cooperativo.
+6201	2006-01-01		1	0	0	1	0	0	0	0	0	Devolução de compra para industrialização ou produção rural.
+6202	2006-01-01		1	0	0	1	0	0	0	0	0	Devolução de compra para comercialização, ou qualquer devolução de mercadoria efetuada pelo MEI com exceção das classificadas no código 6.503.
+6205	2006-01-01		1	0	0	0	0	1	0	0	0	Anulação de valor relativo à aquisição de serviço de comunicação.
+6206	2006-01-01		1	0	0	0	0	1	0	0	0	Anulação de valor relativo à aquisição de serviço de transporte.
+6207	2006-01-01		1	0	0	0	0	1	0	0	0	Anulação de valor relativo à compra de energia elétrica.
+6208	2006-01-01		1	0	0	1	0	0	0	0	0	Devolução de mercadoria recebida em transferência para industrialização ou produção rural.
+6209	2006-01-01		1	0	0	1	0	0	0	0	0	Devolução de mercadoria recebida em transferência para comercialização.
+6210	2006-01-01		1	0	0	1	0	0	0	0	0	Devolução de compra para utilização na prestação de serviço.
+6213	2018-01-01		1	0	0	1	0	0	0	0	0	Devolução de entrada, inclusive simbólica, de mercadoria, com previsão de posterior ajuste ou fixação de preço, em ato cooperativo.
+6214	2018-01-01		1	0	0	1	0	0	0	0	0	Devolução referente à fixação de preço de produção do estabelecimento produtor, inclusive quando remetidas anteriormente com previsão de posterior ajuste ou fixação de preço, em ato cooperativo, para comercialização.
+6215	2018-01-01		1	0	0	1	0	0	0	0	0	Devolução referente à fixação de preço de produção do estabelecimento produtor, inclusive quando remetidas anteriormente com previsão de posterior ajuste ou fixação de preço, em ato cooperativo, para industrialização.
+6216	2019-05-01		1	0	0	1	0	0	0	0	0	Devolução de entrada decorrente do fornecimento de produto ou mercadoria em ato cooperativo.
+6251	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de energia elétrica para distribuição ou comercialização.
+6252	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de energia elétrica para estabelecimento industrial.
+6253	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de energia elétrica para estabelecimento comercial.
+6254	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de energia elétrica para estabelecimento prestador de serviço de transporte.
+6255	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de energia elétrica para estabelecimento prestador de serviço de comunicação.
+6256	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de energia elétrica para estabelecimento de produtor rural.
+6257	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de energia elétrica para consumo por demanda contratada.
+6258	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de energia elétrica a não contribuinte.
+6301	2006-01-01		0	1	0	0	0	0	0	0	0	Prestação de serviço de comunicação para execução de serviço da mesma natureza.
+6302	2006-01-01		0	1	0	0	0	0	0	0	0	Prestação de serviço de comunicação a estabelecimento industrial.
+6303	2006-01-01		0	1	0	0	0	0	0	0	0	Prestação de serviço de comunicação a estabelecimento comercial.
+6304	2006-01-01		0	1	0	0	0	0	0	0	0	Prestação de serviço de comunicação a estabelecimento de prestador de serviço de transporte.
+6305	2006-01-01		0	1	0	0	0	0	0	0	0	Prestação de serviço de comunicação a estabelecimento de geradora ou de distribuidora de energia elétrica.
+6306	2006-01-01		0	1	0	0	0	0	0	0	0	Prestação de serviço de comunicação a estabelecimento de produtor rural.
+6307	2006-01-01		0	1	0	0	0	0	0	0	0	Prestação de serviço de comunicação a não contribuinte.
+6351	2006-01-01		0	0	1	0	0	0	0	0	0	Prestação de serviço de transporte para execução de serviço da mesma natureza.
+6352	2006-01-01		0	0	1	0	0	0	0	0	0	Prestação de serviço de transporte a estabelecimento industrial.
+6353	2006-01-01		0	0	1	0	0	0	0	0	0	Prestação de serviço de transporte a estabelecimento comercial.
+6354	2006-01-01		0	0	1	0	0	0	0	0	0	Prestação de serviço de transporte a estabelecimento de prestador de serviço de comunicação.
+6355	2006-01-01		0	0	1	0	0	0	0	0	0	Prestação de serviço de transporte a estabelecimento de geradora ou de distribuidora de energia elétrica.
+6356	2006-01-01		0	0	1	0	0	0	0	0	0	Prestação de serviço de transporte a estabelecimento de produtor rural.
+6357	2006-01-01		0	0	1	0	0	0	0	0	0	Prestação de serviço de transporte a não contribuinte.
+6359	2006-01-01		0	0	1	0	0	0	0	0	0	Prestação de serviço de transporte a contribuinte ou a não contribuinte quando a mercadoria transportada está dispensada de emissão de nota fiscal.
+6360	2006-01-01		0	0	1	0	0	0	0	0	0	Prestação de serviço de transporte a contribuinte substituto em relação ao serviço de transporte.
+6401	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de produção do estabelecimento em operação com produto sujeito ao regime de substituição tributária, na condição de contribuinte substituto.
+6402	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de produção do estabelecimento de produto sujeito ao regime de substituição tributária, em operação entre contribuintes substitutos do mesmo produto.
+6403	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de mercadoria adquirida ou recebida de terceiros em operação com mercadoria sujeita ao regime de substituição tributária, na condição de contribuinte substituto.
+6404	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de mercadoria sujeita ao regime de substituição tributária, cujo imposto já tenha sido retido anteriormente.
+6408	2006-01-01		1	0	0	0	0	0	0	0	0	Transferência de produção do estabelecimento em operação com produto sujeito ao regime de substituição tributária.
+6409	2006-01-01		1	0	0	0	0	0	0	0	0	Transferência de mercadoria adquirida ou recebida de terceiros em operação com mercadoria sujeita ao regime de substituição tributária.
+6410	2006-01-01		1	0	0	1	0	0	0	0	0	Devolução de compra para industrialização ou produção rural em operação com mercadoria sujeita ao regime de substituição tributária.
+6411	2006-01-01		1	0	0	1	0	0	0	0	0	Devolução de compra para comercialização em operação com mercadoria sujeita ao regime de substituição tributária.
+6412	2006-01-01		1	0	0	1	0	0	0	0	0	Devolução de bem do ativo imobilizado, em operação com mercadoria sujeita ao regime de substituição tributária.
+6413	2006-01-01		1	0	0	1	0	0	0	0	0	Devolução de mercadoria destinada para uso ou consumo, em operação com mercadoria sujeita ao regime de substituição tributária.
+6414	2006-01-01		1	0	0	0	0	0	1	0	0	Remessa de produção do estabelecimento para venda fora do estabelecimento em operação com produto sujeito ao regime de substituição tributária.
+6415	2006-01-01		1	0	0	0	0	0	1	0	0	Remessa de mercadoria adquirida ou recebida de terceiros para venda fora do estabelecimento, em operação com mercadoria sujeita ao regime de substituição tributária.
+6451	2019-12-01		1	0	0	0	0	0	1	0	0	Remessa de animal - Sistema de Integração e Parceria Rural.
+6452	2019-12-01		1	0	0	0	0	0	1	0	0	Remessa de insumo - Sistema de Integração e Parceria Rural.
+6453	2019-12-01		1	0	0	0	1	0	0	0	0	Retorno de animal ou da produção - Sistema de Integração e Parceria Rural.
+6454	2019-12-01		1	0	0	0	1	0	0	0	0	Retorno simbólico de animal ou da produção - Sistema de Integração e Parceria Rural.
+6455	2019-12-01		1	0	0	0	1	0	0	0	0	Retorno de insumos não utilizados na produção - Sistema de Integração e Parceria Rural.
+6456	2019-12-01		1	0	0	0	0	0	0	0	0	Saída referente à remuneração do produtor - Sistema de Integração e Parceria Rural.
+6501	2006-01-01		1	0	0	0	0	0	1	0	0	Remessa de produção do estabelecimento, com fim específico de exportação.
+6502	2006-01-01		1	0	0	0	0	0	1	0	0	Remessa de mercadoria adquirida ou recebida de terceiros, com fim específico de exportação.
+6503	2006-01-01		1	0	0	1	0	0	0	0	0	Devolução de mercadoria recebida com fim específico de exportação.
+6504	2006-01-01		1	0	0	0	0	0	1	0	0	Remessa de mercadorias para formação de lote de exportação, de produtos industrializados ou produzidos pelo próprio estabelecimento.
+6505	2006-01-01		1	0	0	0	0	0	1	0	0	Remessa de mercadorias, adquiridas ou recebidas de terceiros, para formação de lote de exportação.
+6551	2006-01-01		1	0	0	0	0	0	0	0	1	Venda de bem do ativo imobilizado.
+6552	2006-01-01		1	0	0	0	0	0	0	0	1	Transferência de bem do ativo imobilizado.
+6553	2006-01-01		1	0	0	1	0	0	0	0	1	Devolução de compra de bem para o ativo imobilizado.
+6554	2006-01-01		1	0	0	0	0	0	1	0	1	Remessa de bem do ativo imobilizado para uso fora do estabelecimento.
+6555	2006-01-01		1	0	0	1	0	0	0	0	1	Devolução de bem do ativo imobilizado de terceiro, recebido para uso no estabelecimento.
+6556	2006-01-01		1	0	0	1	0	0	0	0	1	Devolução de compra de material para uso ou consumo.
+6557	2006-01-01		1	0	0	0	0	0	0	0	1	Transferência de material para uso ou consumo.
+6603	2006-01-01		1	0	0	0	0	0	0	0	0	Ressarcimento de ICMS retido por substituição tributária.
+6651	2006-01-01		1	0	0	0	0	0	0	2	0	Venda de combustíveis ou lubrificantes de produção do estabelecimento destinados à industrialização subsequente.
+6652	2006-01-01		1	0	0	0	0	0	0	2	0	Venda de combustíveis ou lubrificantes de produção do estabelecimento destinados à comercialização.
+6653	2006-01-01		1	0	0	0	0	0	0	2	0	Venda de combustíveis ou lubrificantes de produção do estabelecimento destinados a consumidor ou usuário final.
+6654	2006-01-01		1	0	0	0	0	0	0	2	0	Venda de combustíveis ou lubrificantes adquiridos ou recebidos de terceiros destinados à industrialização subsequente.
+6655	2006-01-01		1	0	0	0	0	0	0	2	0	Venda de combustíveis ou lubrificantes adquiridos ou recebidos de terceiros destinados à comercialização.
+6656	2006-01-01		1	0	0	0	0	0	0	2	0	Venda de combustíveis ou lubrificantes adquiridos ou recebidos de terceiros destinados a consumidor ou usuário final.
+6657	2006-01-01		1	0	0	0	0	0	1	2	0	Remessa de combustíveis ou lubrificantes adquiridos ou recebidos de terceiros para venda fora do estabelecimento.
+6658	2006-01-01		1	0	0	0	0	0	0	2	0	Transferência de combustíveis ou lubrificantes de produção do estabelecimento.
+6659	2006-01-01		1	0	0	0	0	0	0	2	0	Transferência de combustíveis ou lubrificantes adquiridos ou recebidos de terceiros.
+6660	2006-01-01		1	0	0	1	0	0	0	2	0	Devolução de compra de combustíveis ou lubrificantes adquiridos para industrialização subsequente.
+6661	2006-01-01		1	0	0	1	0	0	0	2	0	Devolução de compra de combustíveis ou lubrificantes adquiridos para comercialização.
+6662	2006-01-01		1	0	0	1	0	0	0	2	0	Devolução de compra de combustíveis ou lubrificantes adquiridos por consumidor ou usuário final.
+6663	2006-01-01		1	0	0	0	0	0	1	1	0	Remessa para armazenagem de combustíveis ou lubrificantes.
+6664	2006-01-01		1	0	0	0	1	0	0	1	0	Retorno de combustíveis ou lubrificantes recebidos para armazenagem.
+6665	2006-01-01		1	0	0	0	1	0	0	1	0	Retorno simbólico de combustíveis ou lubrificantes recebidos para armazenagem.
+6666	2006-01-01		1	0	0	0	0	0	1	2	0	Remessa por conta e ordem de terceiros de combustíveis ou lubrificantes recebidos para armazenagem.
+6667	2006-01-01		1	0	0	0	0	0	0	2	0	Venda de combustíveis ou lubrificantes a consumidor ou usuário final estabelecido em outra unidade da Federação diferente da que ocorrer o consumo.
+6901	2006-01-01		1	0	0	0	0	0	1	0	0	Remessa para industrialização por encomenda.
+6902	2006-01-01		1	0	0	0	1	0	0	0	0	Retorno de mercadoria utilizada na industrialização por encomenda.
+6903	2006-01-01		1	0	0	0	1	0	0	0	0	Retorno de mercadoria recebida para industrialização e não aplicada no referido processo.
+6904	2006-01-01		1	0	0	0	0	0	1	0	0	Remessa para venda fora do estabelecimento, ou qualquer remessa efetuada pelo MEI com exceção das classificadas nos códigos 6.502 e 6.505.
+6905	2006-01-01		1	0	0	0	0	0	1	0	0	Remessa para depósito fechado, armazém geral ou outro estabelecimento da mesma empresa ou de terceiro.
+6906	2006-01-01		1	0	0	0	1	0	0	0	0	Retorno de mercadoria depositada em depósito fechado, armazém geral ou outro estabelecimento da mesma empresa ou de terceiro.
+6907	2006-01-01		1	0	0	0	1	0	0	0	0	Retorno simbólico de mercadoria depositada em depósito fechado, armazém geral ou outro estabelecimento da mesma empresa ou de terceiro.
+6908	2006-01-01		1	0	0	0	0	0	1	0	1	Remessa de bem por conta de contrato de comodato ou locação.
+6909	2006-01-01		1	0	0	0	1	0	0	0	1	Retorno de bem recebido por conta de contrato de comodato ou locação.
+6910	2006-01-01		1	0	0	0	0	0	1	0	0	Remessa em bonificação, doação ou brinde.
+6911	2006-01-01		1	0	0	0	0	0	1	0	0	Remessa de amostra grátis.
+6912	2006-01-01		1	0	0	0	0	0	1	0	1	Remessa de mercadoria ou bem para demonstração, mostruário ou treinamento.
+6913	2006-01-01		1	0	0	0	1	0	0	0	1	Retorno de mercadoria ou bem recebido para demonstração ou mostruário.
+6914	2006-01-01		1	0	0	0	0	0	1	0	1	Remessa de mercadoria ou bem para exposição ou feira.
+6915	2006-01-01		1	0	0	0	0	0	1	0	1	Remessa de mercadoria ou bem para conserto ou reparo.
+6916	2006-01-01		1	0	0	0	1	0	0	0	1	Retorno de mercadoria ou bem recebido para conserto ou reparo.
+6917	2006-01-01		1	0	0	0	0	0	1	0	0	Remessa de mercadoria em consignação mercantil ou industrial.
+6918	2006-01-01		1	0	0	1	0	0	0	0	0	Devolução de mercadoria recebida em consignação mercantil ou industrial.
+6919	2006-01-01		1	0	0	1	0	0	0	0	0	Devolução simbólica de mercadoria vendida ou utilizada em processo industrial, recebida anteriormente em consignação mercantil ou industrial.
+6920	2006-01-01		1	0	0	0	0	0	1	0	0	Remessa de embalagens, bombonas, vasilhames, sacarias, pallets, containers ou assemelhados.
+6921	2006-01-01		1	0	0	1	0	0	0	0	1	Devolução de embalagens, bombonas, vasilhames, sacarias, pallets, containers ou assemelhados.
+6922	2006-01-01		1	0	0	0	0	0	0	0	0	Lançamento efetuado a título de simples faturamento decorrente de venda para entrega futura.
+6923	2006-01-01		1	0	0	0	0	0	1	0	0	Remessa de mercadoria por conta e ordem de terceiros, em venda à ordem ou em operações com armazém geral ou depósito fechado.
+6924	2006-01-01		1	0	0	0	0	0	1	0	0	Remessa para industrialização por conta e ordem do adquirente da mercadoria, quando esta não transitar pelo estabelecimento do adquirente.
+6925	2006-01-01		1	0	0	0	1	0	0	0	0	Retorno de mercadoria recebida para industrialização por conta e ordem do adquirente da mercadoria, quando aquela não transitar pelo estabelecimento do adquirente.
+6929	2006-01-01		1	0	0	0	0	0	0	0	0	Lançamento efetuado em decorrência de emissão de documento fiscal relativo à operação ou prestação também acobertada por documento fiscal do varejo.
+6931	2006-01-01		1	0	1	0	0	0	0	0	0	Lançamento efetuado em decorrência da responsabilidade de retenção do imposto por substituição tributária, atribuída ao remetente ou alienante da mercadoria, pelo serviço de transporte realizado por transportador autônomo ou por transportador não inscrito na unidade da Federação onde iniciado o serviço.
+6932	2006-01-01		1	0	1	0	0	0	0	0	0	Prestação de serviço de transporte iniciada em unidade da Federação diversa daquela onde inscrito o prestador.
+6933	2006-01-01		1	0	0	0	0	0	0	0	0	Prestação de serviço sujeita ao ISSQN.
+6934	2006-01-01		1	0	0	0	0	0	1	0	0	Remessa simbólica de mercadoria depositada em armazém geral ou depósito fechado.
+6949	2006-01-01		1	0	0	0	0	0	0	0	0	Outra saída de mercadoria ou prestação de serviço não especificada.
+7101	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de produção do estabelecimento.
+7102	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de mercadoria adquirida ou recebida de terceiros.
+7105	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de produção do estabelecimento armazenada em depósito fechado, armazém geral ou outro estabelecimento da mesma empresa ou de terceiro, que não deva por ele transitar.
+7106	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de mercadoria adquirida ou recebida de terceiros armazenada em depósito fechado, armazém geral ou outro estabelecimento da mesma empresa ou de terceiro, que não deva por ele transitar.
+7127	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de produção do estabelecimento sob o regime de “drawback”.
+7129	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de produção do estabelecimento ao mercado externo de mercadoria industrializada sob o amparo do Regime Aduaneiro Especial de Entreposto Industrial sob Controle Informatizado do Sistema Público de Escrituração Digital (Recof-Sped).
+7201	2006-01-01		1	0	0	1	0	0	0	0	0	Devolução de compra para industrialização ou produção rural.
+7202	2006-01-01		1	0	0	1	0	0	0	0	0	Devolução de compra para comercialização.
+7205	2006-01-01		1	0	0	0	0	1	0	0	0	Anulação de valor relativo à aquisição de serviço de comunicação.
+7206	2006-01-01		1	0	0	0	0	1	0	0	0	Anulação de valor relativo à aquisição de serviço de transporte.
+7207	2006-01-01		1	0	0	0	0	1	0	0	0	Anulação de valor relativo à compra de energia elétrica.
+7210	2006-01-01		1	0	0	1	0	0	0	0	0	Devolução de compra para utilização na prestação de serviço.
+7211	2006-01-01		1	0	0	1	0	0	0	0	0	Devolução de compras para industrialização sob o regime de “drawback”.
+7212	2006-01-01		1	0	0	1	0	0	0	0	0	Devolução de compras para industrialização sob o regime de Regime Aduaneiro Especial de Entreposto Industrial sob Controle Informatizado do Sistema Público de Escrituração Digital (Recof-Sped).
+7251	2006-01-01		1	0	0	0	0	0	0	0	0	Venda de energia elétrica para o exterior.
+7301	2006-01-01		0	1	0	0	0	0	0	0	0	Prestação de serviço de comunicação para execução de serviço da mesma natureza.
+7358	2006-01-01		0	0	1	0	0	0	0	0	0	Prestação de serviço de transporte.
+7501	2006-01-01		1	0	0	0	0	0	0	0	0	Exportação de mercadorias recebidas com fim específico de exportação.
+7504	2018-09-01		1	0	0	0	0	0	0	0	0	Exportação de mercadoria que foi objeto de formação de lote de exportação.
+7551	2006-01-01		1	0	0	0	0	0	0	0	1	Venda de bem do ativo imobilizado.
+7552	2021-06-01		1	0	0	0	0	0	0	0	0	Saída de produto destinado para uso ou consumo de bordo, em embarcações ou aeronaves exclusivamente em tráfego internacional com destino ao exterior.
+7553	2006-01-01		1	0	0	1	0	0	0	0	1	Devolução de compra de bem para o ativo imobilizado.
+7556	2006-01-01		1	0	0	1	0	0	0	0	1	Devolução de compra de material para uso ou consumo.
+7651	2006-01-01		1	0	0	0	0	0	0	2	0	Venda de combustíveis ou lubrificantes de produção do estabelecimento.
+7654	2006-01-01		1	0	0	0	0	0	0	2	0	Venda de combustíveis ou lubrificantes adquiridos ou recebidos de terceiros.
+7667	2006-01-01		1	0	0	0	0	0	0	2	0	Saída de combustíveis ou lubrificantes a consumidor ou usuário final.
+7930	2006-01-01		1	0	0	0	0	0	0	0	0	Lançamento efetuado a título de devolução de bem cuja entrada tenha ocorrido sob amparo de regime especial aduaneiro de admissão temporária.
+7949	2006-01-01		1	0	0	0	0	0	0	0	0	Outra saída de mercadoria ou prestação de serviço não especificada.

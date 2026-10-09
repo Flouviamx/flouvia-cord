@@ -1,0 +1,437 @@
+2.1. Cálculo do Dígito Verificador do CODE-128C
+O dígito verificador é baseado em um cálculo do módulo 103 considerando a soma ponderada dos
+valores de cada um dos dígitos na mensagem que está sendo codificada, incluindo o valor do caractere
+de início (start).
+
+Exemplo: consideremos que a chave de acesso fosse apenas de oito caracteres e contivesse o
+seguinte número: 09758364
+              Chave de acesso                          START          09            75    83    64
+              Sequência                           A                    1             2     3     4
+              Valor do caractere                  B      105           9            75    83    64
+              Valor Ponderado (A X B)             C      105           9            150   249   256
+
+        •    Na linha valor do caractere foi incluso o valor 105 que corresponde ao valor do caractere
+             de início (start) para o padrão Code C.
+        •    Excetuando o caractere de start, os demais valores dos caracteres coincidem com os
+             valores da chave de acesso, isto porque estamos utilizando o padrão Code C de codificação
+             que é exclusivamente numérico.
+        •    O dígito verificador do código será o resto da divisão da somatória dos valores ponderados
+             dividido por 103 (módulo 103).
+Assim o dígito verificador será:
+        •    Valor da soma ponderada = (1x105)+(1x9)+(2x75)+(3x83)+(4x64) = 769
+        •    769/103 = 7 resta 48, assim o DV é 48
+
+2.2. Representação Simbólica do Código
+    START        09          75          83          64        DV = 48       STOP
+B S B S B S B S B S B S B S B S B S B S B S B S B S B S B S B S B S B S B S B S B S B
+2 1 1 2 3 2 2 2 1 2 1 3 2 4 1 2 1 1 1 1 4 2 1 2 1 1 1 4 2 2 3 1 3 1 2 1 2 3 3 1 1 1 2
+A sequência de barras está descrita na tabela do Anexo III.01 deste manual.
+     B = barra preta
+     S = espaço ou barra branca
+A numeração acima indica quantas vezes a barra deverá ser impressa no símbolo.
+
+                                                                                                      Página 7 / 28
+Nota Fiscal Eletrônica
+MOC 7.0 – Anexo II, Manual de Especificações Técnicas do DANFE e Código de Barras
+
+[...]
+
+3.1. Campos do DANFE
+Os campos do DANFE deverão representar o conteúdo das respectivas TAG XML da NF-e, quando
+conhecidos no momento da solicitação de autorização de uso. Não poderão ser impressas informações
+que não constem do arquivo da NF-e.
+
+O conteúdo dos campos poderá ser impresso em mais de uma linha desde que a leitura possa ser
+feita de forma clara.
+
+O item 3.8 deste manual traz a sugestão de tamanhos a serem seguidos para cada campo, que
+garantem a legibilidade prevista na legislação. Embora os tamanhos descritos no item 3.8 não sejam
+obrigatórios, o DANFE deverá ser impresso conforme um dos modelos permitidos (conforme o item
+3.6.3) e utilizando-se os tamanhos mínimos de fonte descritos no item 3.7.
+
+O DANFE deverá conter todos os campos previstos no modelo adotado, com exceção dos campos
+não obrigatórios do quadro “Dados dos Produtos/Serviços”, conforme disposto no item 3.1.7.
+
+As regras estabelecidas para a impressão dos campos aplicam-se também para a impressão das
+folhas adicionais do DANFE.
+
+3.1.1. Chave de Acesso
+A chave de acesso será impressa em onze blocos de quatro dígitos cada, com a seguinte máscara:
+                     9999 9999 9999 9999 9999 9999 9999 9999 9999 9999 9999
+
+
+                                                                                       Página 8 / 28
+Nota Fiscal Eletrônica
+MOC 7.0 – Anexo II, Manual de Especificações Técnicas do DANFE e Código de Barras
+
+3.1.2. Dados da NF-e
+No caso de emissão de NF-e normal ou em contingência SVC-XX, os campos 1 e 2 serão preenchidos
+conforme o item 3.9.1;
+No caso de emissão de NF-e em contingência FS ou FS-DA, os campos 1 e 2 serão preenchidos
+conforme o item 3.9.2. Observando que no Campo 2, o Código de Barras Adicional “Dados da NF-e”
+será impresso em nove blocos de quatro dígitos cada, com a seguinte máscara: 9999 9999 9999 9999
+9999 9999 9999 9999 9999;
+No caso de emissão de NF-e em contingência EPEC, os campos 1 e 2 serão preenchidos conforme o
+item 3.9.3.
+
+3.1.3. Dados do Emitente
+Deverá conter a identificação do emitente, composta no mínimo por:
+      • nome ou razão social;
+      • endereço completo (logradouro, número, complemento, bairro, município, UF, CEP); e
+      • telefone.
+Opcionalmente poderá conter logotipo, desde que sua inclusão não prejudique a exibição das
+informações obrigatórias.
+
+
+3.1.4. Informações do local de retirada (NT 2018.005)
+
+Caso haja preenchimento do grupo F - Local de retirada, fica possibilitada a exibição de informações
+no DANFE em área especifica, conforme sugestão de modelo abaixo:
+
+
+
+
+3.1.5. Informações do local de entrega (NT 2018.005)
+Caso haja preenchimento do grupo G - Local de entrega, fica possibilitada a exibição de informações
+no DANFE em área especifica, conforme sugestão de modelo abaixo:
+
+
+
+
+3.1.6. Quadro Fatura/Duplicatas
+Poderá conter linhas divisórias internas separando as informações. Poderão ser acrescidas ao quadro
+outras informações relativas ao assunto, além das informações contidas no grupo de Dados de
+                                                                                         Página 9 / 28
+Nota Fiscal Eletrônica
+MOC 7.0 – Anexo II, Manual de Especificações Técnicas do DANFE e Código de Barras
+
+Cobrança da NF-e, desde que estas informações adicionais também estejam contidas no arquivo da
+NF-e.
+
+3.1.7. Quadro Dados dos Produtos / Serviços
+As informações adicionais de produto (TAG <infAdProd>) deverão constar impressas no DANFE logo
+abaixo do item ao qual se referirem.
+
+As informações relativas ao Fundo de Combate à Pobreza (FCP) devem ser informadas:
+•       No campo de "Informações Adicionais do Produto, tag: infAdProd", os valores informados por
+item nos campos (vBCFCP, pFCP, vFCP, vBCFCPST, pFCPST, vFCPST), quando existirem.
+
+Sempre que o conteúdo de um mesmo item for impresso utilizando-se mais de uma linha do quadro
+de “Dados dos Produtos/Serviços”, deverá ser aplicado um destaque divisório que identifique quais
+linhas foram utilizadas para cada item, a fim de distinguir com clareza um item do outro. O destaque
+divisório pode ser aplicado com o uso de linha (pontilhadas, continuas, ou tracejada), espaçamento
+duplo entre linhas, sombreamento ou qualquer outro recurso ou efeito semelhante que resulte no
+destaque divisório.
+
+Exemplo de destaque divisório com linha tracejada:
+   Cód. Produto                  Descrição do Produto/Serviço                          NCM
+   123            Camisa Social Masculina Manga Longa                               61099000
+                  EAN 7890123456789
+   124            Camisa Social Masculina Manga Curta                               61099000
+                  EAN 7890123456790
+   125            Camiseta Polo                                                     61099000
+                  EAN 7890123456790
+
+
+
+
+                                                                                          Página 10 / 28
+Nota Fiscal Eletrônica
+MOC 7.0 – Anexo II, Manual de Especificações Técnicas do DANFE e Código de Barras
+
+Exemplo de destaque divisório com espaço duplo:
+   Cód. Produto                  Descrição do Produto/Serviço                          NCM
+   123            Camisa Social Masculina Manga Longa                               61099000
+                  EAN 7890123456789
+
+    124                Camisa Social Masculina Manga Curta                          61099000
+                       EAN 7890123456790
+
+    125                Camiseta Polo                                                61099000
+                       EAN 7890123456790
+
+Exemplo de destaque divisório com sombreamento:
+   Cód. Produto                  Descrição do Produto/Serviço                          NCM
+   123            Camisa Social Masculina Manga Longa                               61099000
+                  EAN 7890123456789
+
+    124                Camisa Social Masculina Manga Curta                          61099000
+                       EAN 7890123456790
+
+    125                Camiseta Polo                                                61099000
+                       EAN 7890123456790
+
+Essa exigência também se aplica no caso da utilização de uma mesma coluna para aposição de outro
+campo, conforme o item 3.2.
+
+Deve-se utilizar o quadro “Dados dos Produtos/Serviços” para detalhar as operações que não
+caracterizem circulação de mercadorias ou prestações de serviços, e que exijam emissão de
+documentos fiscais (como transferência de créditos ou apropriação de incentivos fiscais, por exemplo).
+
+Nas situações em que o valor unitário comercial for diferente do valor unitário tributável, ambas as
+informações deverão estar expressas e identificadas no DANFE, podendo ser utilizada uma das linhas
+adicionais previstas, ou o campo de informações adicionais.
+
+Independentemente do descrito no item 3.3, o contribuinte poderá suprimir colunas do quadro “Dados
+dos Produtos/Serviços” que não se apliquem a suas atividades e acrescentar outras do seu interesse.
+A inserção destas colunas será realizada à direita da coluna “Descrição dos Produtos/Serviços”. A
+ordem das colunas remanescentes deverá ser respeitada.
+
+As seguintes colunas não poderão ser suprimidas:
+       • Código dos Produtos/Serviços;
+       • Descrição dos Produtos/Serviços;
+       • NCM;
+       • CST;
+       • CFOP;
+       • Unidade;
+       • Quantidade;
+       • Valor Unitário;
+       • Valor Total;
+       • Base de Cálculo do ICMS próprio;
+       • Valor do ICMS próprio; e
+       • Alíquota do ICMS.
+
+3.1.8. Informações Complementares
+Deverá conter todas as Informações Adicionais da NF-e incluídas nas TAGs <infAdFisco> e <infCpl>,
+ficando facultada a impressão das informações adicionais contidas nas TAGs <obsCont>. Na hipótese
+
+                                                                                          Página 11 / 28
+Nota Fiscal Eletrônica
+MOC 7.0 – Anexo II, Manual de Especificações Técnicas do DANFE e Código de Barras
+
+de insuficiência de espaço no quadro de “informações complementares”, a impressão destas deverá
+ser continuada no verso ou na folha seguinte, neste mesmo quadro ou no quadro “Dados dos
+Produtos/Serviços”.
+
+As empresas remetentes devem informar, no campo de “Informações Complementares”, os valores
+descritos no grupo de tributação do ICMS para a UF de destino. (NT 2015.003)
+
+Exemplo 1 de preenchimento do DANFE (1ª situação da sistemática de cálculo descrita a seguir):
+  INFORMAÇÕES COMPLEMENTARES:
+  Valores totais do ICMS Interestadual: DIFAL da UF destino R$216,00 + FCP
+  R$40,00; DIFAL da UF Origem R$324,00.
+
+
+
+
+Exemplo 2 de preenchimento do DANFE (2ª situação da sistemática de cálculo descrita a seguir):
+  INFORMAÇÕES COMPLEMENTARES:
+  Valores totais do ICMS Interestadual: DIFAL da UF destino R$156,00 + FCP
+  R$40,00; DIFAL da UF Origem R$234,00.
+
+
+
+
+As informações relativas ao Fundo de Combate à Pobreza (FCP) devem ser informadas:
+•       Os valores de totais do FCP (id: W04b e W06a) devem ser informados em "Informações
+Adicionais de Interesse do Fisco, campo “infAdFisco", quando existirem."
+
+
+
+3.1.9. Reservado ao Fisco
+O contribuinte não deverá preencher este quadro, sendo seu preenchimento de uso exclusivo do fisco,
+exceto, a critério da UF, quanto à orientação de impressão do teor das tags contidas no XML de retorno
+de autorização da NF-e. Em caso de utilização de formulário de segurança provido de estampa fiscal,
+esse quadro não estará presente."
+
+3.1.10.           Quadro do Transportador
+O campo identificação da Modalidade do Frete (id: X02, tag:modFrete) deverá ser preenchido com um
+dos seguintes códigos (NT 2016/002) (Atualizado NT 2108.005):
+
+        0=Contratação do Frete por conta do Remetente (CIF);
+        1=Contratação do Frete por conta do Destinatário (FOB);
+        2=Contratação do Frete por conta de Terceiros;
+        3=Transporte Próprio por conta do Remetente;
+        4=Transporte Próprio por conta do Destinatário;
+        9=Sem Ocorrência de Transporte.
+
+
+
+Exemplo de preenchimento:
+   Nome / Razão Social                                               Frete por Conta   Código ANTT
+                                                                     0 – Remetente
+
+
+
+
+                                                                                                Página 12 / 28
+Nota Fiscal Eletrônica
+MOC 7.0 – Anexo II, Manual de Especificações Técnicas do DANFE e Código de Barras
+
+3.2. Possibilidade de Uso de Uma Mesma Coluna Com Mais de Um Campo
+     no Quadro “Dados dos Produtos/Serviços”
+É permitida a utilização de uma mesma coluna para aposição de outro campo no quadro “Dados dos
+Produtos/Serviços” do DANFE.
+
+A utilização de uma mesma coluna para mais de um campo implicará na ocupação de duas linhas do
+“Dados dos Produtos/Serviços” para cada item da NF-e, além das linhas adicionais previstas para
+descrever as informações adicionais de produto/serviço (TAG <infAdProd>).
+
+Deverá ser observada a necessidade de aposição de destaque divisório dos diferentes itens do quadro
+“Dados dos Produtos/Serviços”, conforme descrito no item 3.1.7.
+Os campos que podem ser colocados na mesma coluna são:
+        •    “Código do Produto/Serviço” com “NCM/SH”;
+        •    “CST” com “CFOP”;
+        •    “CSOSN” com “CFOP”;
+        •    “Quantidade” com “Unidade”;
+        •    “Valor Unitário” com “Desconto”;
+        •    “Valor Total” com “Base de Cálculo do ICMS”;
+        •    “Base de Cálculo do ICMS por Substituição Tributária” com “Valor do ICMS por Substituição
+             Tributária”;
+        •    “Valor do ICMS Próprio” com “Valor do IPI”;
+        •    “Alíquota do ICMS” com “Alíquota do IPI”.
+A utilização de uma mesma coluna para mais de um campo não se aplicará para a aposição do campo
+Descrição dos Produtos e/ou Serviços, podendo-se, neste caso, utilizar mais linhas para aposição de
+seu conteúdo.
+
+3.3. Supressões e Modificações Permitidas
+Além das supressões e inclusões de colunas tratadas no item 3.1.7 poderão ser feitas ainda as
+seguintes alterações:
+
+3.3.1. Bloco de Canhoto
+Caso o emitente não utilize o bloco de Canhoto, poderá aumentar o quadro “Dados dos
+Produtos/Serviços” suprimindo os campos do referido bloco e deslocando para cima os campos
+seguintes. Estes ajustes deverão ser feitos no mesmo valor da redução obtida com a eliminação do
+quadro Fatura e de sua descrição.
+
+Para a impressão de DANFE que não utilizar formulário de segurança, o bloco de canhoto poderá ser
+deslocado para a extremidade inferior do formulário, sem alterações nas demais dimensões e
+disposições de campos e quadros.
+Essas alterações serão admitidas somente no formato retrato.
+
+3.3.2. Quadro “Fatura/Duplicatas”
+O quadro “fatura/duplicatas” poderá ser suprimido, caso o contribuinte não utilize esses documentos;
+ou reduzido, desde que contenha todos os dados das respectivas TAGs.
+
+O valor obtido com a eliminação ou redução do quadro “fatura/duplicatas” deverá ser acrescido na
+altura do quadro “Dados dos Produtos/Serviços”, deslocando para cima os campos seguintes ao
+quadro Fatura e anteriores ao quadro a ser aumentado.
+
+Essas alterações poderão ser feitas tanto nos formatos retrato quanto paisagem.
+
+
+
+
+                                                                                          Página 13 / 28
+Nota Fiscal Eletrônica
+MOC 7.0 – Anexo II, Manual de Especificações Técnicas do DANFE e Código de Barras
+
+3.3.3. Quadro “Cálculo do ISSQN”
+Caso não se aplique às suas operações, o emitente poderá suprimir os campos do bloco “Cálculo do
+ISSQN” e efetuar os seguintes ajustes:
+• Aumentar a altura do quadro “Dados dos Produtos/Serviços” no mesmo valor da redução obtida
+   com a eliminação dos campos do referido bloco.
+• Aumentar a altura do campo “Informações Complementares” e do quadro “Reservado ao Fisco” no
+   mesmo valor da redução obtida com a eliminação dos campos do bloco “Cálculo do ISSQN”.
+
+3.4. Verso do DANFE
+Até 50% do verso de qualquer folha do DANFE poderá ser utilizado para continuação dos dados do
+quadro “Dados dos Produtos/Serviços”, do campo “Informações Complementares” ou para uma
+combinação de ambos. O restante do verso deverá ser deixado sem nenhum tipo de impressão.
+Sempre que o verso do DANFE for utilizado, a informação “CONTINUA NO VERSO” deverá constar
+no anverso, ao final dos quadros “Dados dos Produtos/Serviços” e “Informações Complementares”,
+conforme a utilização.
+
+3.5. Folhas Adicionais
+O DANFE poderá ser emitido em mais de uma folha.
+
+Cada uma das folhas adicionais deverá conter, na parte superior, no mínimo as seguintes informações,
+impressas na mesma disposição e tamanho definidos para a primeira folha:
+• Dados de Identificação do Emitente;
+• As descrições “DANFE” em destaque, e “Documento Auxiliar da Nota Fiscal Eletrônica”;
+• O número e a série da NF-e, o tipo de operação, se Entrada ou Saída, além do número total de
+   folhas e o número de ordem de cada folha;
+• Código(s) de Barras;
+• Campos Natureza da Operação e Chave de Acesso; e
+• Demais campos de identificação do Emitente: Inscrição Estadual, Inscrição Estadual do Substituto
+   Tributário e CNPJ.
+
+A área restante das folhas adicionais poderá ser utilizada exclusivamente para apor:
+• Os demais itens da NF-e que não couberem na primeira folha do DANFE, mantendo-se as mesmas
+   colunas com a mesma disposição e largura utilizadas na primeira folha; e/ou
+• As demais informações complementares da NF-e que não couberem no campo próprio da primeira
+   folha do DANFE.
+
+3.6. Formulário
+Para a impressão do DANFE poderá ser utilizado qualquer tipo de papel, com exceção de papel jornal,
+desde que seja garantido o contraste necessário para assegurar leitura dos códigos de barras sem
+problemas.
+
+3.6.1. Tamanho do Papel
+A impressão do DANFE poderá ser efetuada tanto em modo retrato quanto em modo paisagem,
+utilizando-se formulários de tamanho mínimo A-4 e máximo Ofício II (230 x 330 mm).
+Em caso de uso de folha de tamanho superior ao tamanho A-4 o espaço excedente deverá ser alocado
+da seguinte maneira:
+• Na horizontal, para aumentar a largura dos campos; e
+• Na vertical, somente para aumentar a altura:
+             o   do quadro “Dados dos Produtos/Serviços”; ou
+             o   simultaneamente dos campos “Informações Complementares” e “Reservado ao Fisco”;
+                 ou, ainda,
+             o   de uma combinação destas duas opções.
+
+                                                                                        Página 14 / 28
+Nota Fiscal Eletrônica
+MOC 7.0 – Anexo II, Manual de Especificações Técnicas do DANFE e Código de Barras
+
+3.6.2. Margem Lateral no Formulário
+As Margens entre o corpo impresso do DANFE e o final do formulário (ou a linha de picote) deverão
+ter, no mínimo, 0,2 cm e, no máximo, 0,8 cm em cada lateral (inclusive nas margens superior e inferior).
+
+3.6.3. Modelos de DANFE Permitidos
+É opção do contribuinte a utilização em folhas soltas ou formulário contínuo, pré-impresso ou em
+branco. Poderão ser utilizados os formatos a seguir, devendo a disposição de campos
+obrigatoriamente obedecer ao disposto no respectivo anexo:
+• Tamanho A-4 em modo retrato:
+             o   Folhas Soltas – Anexo III.02
+             o   Formulário Contínuo – Anexo III.03
+• Tamanho A-4 em modo paisagem:
+             o   Folhas Soltas – Anexo III.04
+             o   Formulário Contínuo – Anexo III.05
+
+3.7. Padrões de Caracteres (Tipos de Fontes)
+Todos os caracteres deverão estar impressos na fonte Times New Roman ou na fonte Courier New. A
+impressão dos dados variáveis feitas por Impressoras de Impacto (Matricial e de Linha) deverá estar
+entre 10 e 17 CPP (Caracteres por Polegada).
+
+3.7.1. Descritivo dos Blocos de Campos
+Deverá ter tamanho mínimo de cinco (5) pontos, impresso em negrito em caixa alta (maiúsculas).
+
+3.7.2. Descritivo dos Campos do Quadro “Dados dos Produtos/Serviços”
+Deverá ser impresso em caixa alta (maiúsculas), com tamanho mínimo de cinco (5) pontos.
+
+3.7.3. Descritivo dos Demais Campos
+Deverá ser impresso em caixa alta (maiúsculas) e ter tamanho mínimo de seis (6) pontos.
+
+3.7.4. Conteúdo do Bloco de Campos de Identificação do Documento
+O conteúdo dos campos “DANFE”, “entrada ou saída”, “número”, “série” e “folhas do documento”
+deverá ser impresso em caixa alta (maiúsculas). Além disto:
+•   a descrição “DANFE” deverá estar impressa em negrito e ter tamanho mínimo de doze (12)
+    pontos, ou 10 CPP;
+•   a série e número da NF-e, o número de ordem da folha, o total de folhas do DANFE e o número
+    identificador do tipo de operação (se “ENTRADA” ou “SAÍDA”, conforme tag “tpNF”) deverão estar
+    impressos em negrito e ter tamanho mínimo de dez (10) pontos, ou 10 CPP;
+•   a identificação “DOCUMENTO AUXILIAR DA NOTA FISCAL ELETRÔNICA” e as descrições do
+    tipo de operação, “ENTRADA” ou “SAÍDA” deverão ter tamanho mínimo de oito (8) pontos, ou 17
+    CPP.
+
+3.7.5. Conteúdo do Campo Chave de Acesso.
+Deverá ser impresso em formato negrito.
+
+3.7.6. Conteúdo do Quadro Dados do Emitente
+Deverá estar impresso em negrito. A razão social e/ou nome fantasia deverá ter tamanho mínimo de
+doze (12) pontos, ou 17 CPP e os demais dados do emitente, endereço, município, CEP, fone/fax
+deverão ter tamanho mínimo de oito (8) pontos, ou 17 CPP.
+
+
+                                                                                            Página 15 / 28
+Nota Fiscal Eletrônica
+MOC 7.0 – Anexo II, Manual de Especificações Técnicas do DANFE e Código de Barras
+
+3.7.7. Conteúdo dos Campos do Quadro “Dados dos Produtos/Serviços”
+Deverá ter tamanho mínimo de seis (6) pontos, ou 17 CPP.
+
+3.7.8. Conteúdo do Campo Informações Complementares
+Deverá ter tamanho mínimo de seis (6) pontos, ou 17 CPP.
+
+3.7.9. Conteúdo dos Demais Campos
+Deverá ter tamanho mínimo de dez (10) pontos, ou 17 CPP.

@@ -1,0 +1,442 @@
+Projeto Nota Fiscal
+Eletrônica
+Nota Técnica 2026.010
+DANFE Reforma Tributária
+
+
+
+Versão 1.00 – Outubro 2026
+Projeto
+Nota Fiscal Eletrônica
+NT 2026.010 – DANFE Reforma Tributária
+
+
+
+  Sumário
+
+  Controle de Versões........................................................................................................................3
+  Histórico de Alterações / Cronograma .............................................................................................3
+  1          Resumo ...........................................................................................................................4
+  2          Visão Geral .....................................................................................................................4
+  3          Diretrizes da alteração.....................................................................................................4
+  4          Descrição das alterações do leiaute do DANFE ..............................................................4
+  5          Modelos de referência .....................................................................................................6
+
+
+
+
+                                                                                                                                 Página 2 / 9
+Projeto
+Nota Fiscal Eletrônica
+NT 2026.010 – DANFE Reforma Tributária
+
+
+
+  Controle de Versões
+     Versão         Publicação           Descrição
+
+      1.00         Outubro/2026          Publicação da NT.
+
+
+
+
+  Histórico de Alterações / Cronograma
+    Versão                            Histórico de atualizações   Implantação   Implantação
+                                                                     Teste       Produção
+     1.00     Alteração do Leiaute do DANFE                            -        01/12/2026
+
+
+
+
+                                                                                   Página 3 / 9
+  1 Resumo
+   Esta Nota Técnica especifica as alterações no leiaute de impressão do Documento Auxiliar da
+   Nota Fiscal Eletrônica (DANFE), modelo 55, necessárias à representação dos tributos instituídos
+   pela Reforma Tributária do Consumo: o Imposto sobre Bens e Serviços (IBS), a Contribuição
+   sobre Bens e Serviços (CBS) e o Imposto Seletivo (IS), nos termos da Emenda Constitucional
+   132/2023 e da Lei Complementar 214/2025.
+
+   O objetivo é acomodar os novos campos preservando ao máximo a estrutura do DANFE atual,
+   sem prejudicar a legibilidade do documento pelo destinatário. As alterações aqui descritas
+   aplicam-se à representação em papel (e em PDF) da NF-e, cujos campos são definidos no
+   Manual de Orientação do Contribuinte (MOC) e nos schemas da NF-e.
+
+   Recomenda-se que empresas e desenvolvedores observem os prazos de implantação previstos
+   na legislação e no cronograma do projeto NF-e, considerando a implantação faseada dos novos
+   tributos (item 2).
+
+2 Visão Geral
+   A Reforma Tributária substitui, de forma gradual, tributos atuais por um modelo de IVA dual.
+   Para fins de representação no DANFE, importam três tributos:
+
+     1.      CBS (Contribuição sobre Bens e Serviços) — tributo federal que substitui PIS e COFINS.
+     2.      IBS (Imposto sobre Bens e Serviços) — tributo de competência compartilhada entre
+             Estados/DF e Municípios, que substitui ICMS e ISS. Possui duas parcelas com destaque
+             próprio: IBS UF (estadual) e IBS Municipal.
+     3.      IS (Imposto Seletivo) — tributo federal incidente sobre bens e serviços prejudiciais à
+             saúde ou ao meio ambiente, com base de cálculo própria.
+   A LC 214/2025 estabelece a cobrança de forma escalonada, o que exige que o leiaute comporte,
+   de forma discreta, tanto a fase de teste quanto a fase efetiva:
+
+
+     •       Em 2026 (fase de teste) – as alíquotas são fixas, conforme determinado pela EC
+             132/2023 (0,1% para o IBS estadual e 0,9% para a CBS).
+     •       A partir de 2027 — passa a haver cobrança efetiva, com o IBS à alíquota estadual de
+             0,05% e municipal de 0,05% no biênio 2027–2028 (art. 344), e a CBS conforme
+             legislação vigente.
+
+3 Diretrizes da alteração
+   A proposta orienta-se por três diretrizes, na ordem de prioridade adotada pelo grupo de trabalho:
+      • Mínima ruptura com o modelo atual. Reaproveitar as seções e colunas já existentes;
+      • Legibilidade humana. Cada valor impresso deve ser inequívoco: o leitor precisa identificar
+         de qual tributo se trata sem decorar posições.
+      • Compatibilidade com o papel A4. O documento deve continuar comportando notas com
+         muitos itens sem redução excessiva de fonte ou aumento do número de páginas.
+   Esta NT define um leiaute de referência principal, na orientação retrato (vertical), e um leiaute
+   alternativo, na orientação paisagem (horizontal), para os casos em que o emitente disponha de
+   mais largura útil. Ambos representam os mesmos campos; mudam apenas a disposição.
+
+4 Descrição das alterações do leiaute do DANFE
+4.1. Novo bloco de totais “Total do IBS/CBS/IS”
+   Na área de totais da nota, imediatamente após o bloco “Total do ICMS/IPI”, é inserido um novo
+   bloco intitulado “Total do IBS/CBS/IS”. O bloco consolida os totais dos novos tributos.
+          Campo impresso                                 Tag (XML) — ID
+          Valor da CBS                                   vCBS – W56
+          Valor do IBS UF                                vIBSUF – W41
+          Valor do IBS Município                         vIBSMun – W46
+
+
+                                                                                                   Página 4 / 9
+        Valor do Imposto Seletivo                       vIS – W33
+        Valor do IBS Monofásico                         vIBSMono – W58
+        Valor da CBS Monofásica                         vCBSMono – W59
+        Valor do IBS Monofásico por Retenção            vIBSMonoReten – W59a
+        Valor da CBS Monofásica por Retenção            vCBSMonoReten – W59b
+
+
+
+4.2. Campos incluídos no bloco de identificação do emitente
+   O novo modelo passa a apresentar, no quadro de identificação do emitente, o Código do Regime
+   Tributário e reserva área para o Tipo de Regime de Apuração do IBS e da CBS. A correspondência
+   com o leiaute XML é a seguinte:
+        Campo impresso                                  Tag (XML) — ID
+        Código do Regime Tributário                     CRT – C21
+        Tipo de Regime de Apuração do IBS e da CBS      tag/ID a ser publicada em NT futura
+
+
+4.3. Novos campos no quadro “Dados dos Produtos/Serviços”
+   No detalhamento dos itens, o modelo incorpora a identificação da classificação tributária e as
+   bases, alíquotas e valores dos tributos da Reforma Tributária. Os campos abaixo correspondem
+   diretamente ao Grupo UB do leiaute da NF-e:
+        Campo impresso                                  Tag (XML) — ID
+        Classificação Tributária do IBS/CBS             cClassTrib – UB14
+        Base de Cálculo IBS/CBS                         vBC – UB16
+                                                        pIBSUF – UB18;
+        Alíquota IBS UF                                 Observação: se gIBSUF/gRed informado:
+                                                        pAliqEfet – UB28
+        Valor IBS UF                                    vIBSUF – UB35
+                                                        pIBSMun – UB37;
+        Alíquota IBS Município                          Observação: se gIBSMun/gRed informado:
+                                                        pAliqEfet – UB47
+        Valor IBS Município                             vIBSMun – UB54
+                                                        pCBS – UB56;
+        Alíquota CBS                                     Observação: se gCBS/gRed informado: pAliqEfet
+                                                         – UB66
+        Valor CBS                                       vCBS – UB67
+        Base de Cálculo do IS                           vBCIS – UB05
+        Alíquota do IS                                  pIS – UB06
+        Valor do IS                                     vIS – UB11
+
+
+   Observação: Regra de impressão das alíquotas: quando houver redução de alíquota (ind_gRed
+   = 1) ou compra governamental (gCompraGov), hipóteses em que o grupo gRed é informado, o
+   DANFE deverá exibir a alíquota efetiva (pAliqEfet) para IBS UF, IBS Município e CBS. Na ausência
+   do grupo gRed, deverá exibir a alíquota vigente (pIBSUF, pIBSMun ou pCBS). Para o Imposto
+   Seletivo, permanece a alíquota pIS – UB06.
+
+4.4. Campos e quadros facultativos no DANFE
+   O DANFE poderá conter quadros e campos de exibição facultativa ou condicionada. Quando a
+   informação correspondente não existir no XML, ou quando o grupo não se aplicar à operação, o
+   campo não deverá ser preenchido. Nos modelos desta NT, esses campos e quadros estão
+   identificados em azul e com borda tracejada.
+
+   A faculdade de exibição não autoriza a criação, inferência ou impressão de informação inexistente
+   no XML. Para os quadros cuja supressão já é prevista no MOC, permanecem aplicáveis as regras
+   de aproveitamento do espaço previstas no Manual do DANFE.
+
+                                                                                                         Página 5 / 9
+      Quadro / campo facultativo               Tag (XML) — ID                 Condição / referência
+                                                                              Pode ser suprimido quando o
+      Canhoto                                  Sem tag própria                emitente não utilizar o bloco de
+                                                                              canhoto.
+                                                                              Campo reservado. Não imprimir
+      Tipo de Regime de Apuração do IBS e
+                                               Sem tag/ID publicada           conteúdo enquanto não houver
+      da CBS
+                                                                              definição da origem da informação.
+                                               cobr – Y01; dup – Y07; nDup    Pode ser suprimido quando o
+      Fatura / Duplicatas                      – Y08; dVenc – Y09; vDup –     contribuinte não utilizar esses
+                                               Y10                            documentos.
+                                                                              Exibição        condicionada       à
+      Valor do FCP                             vFCP – W04h                    existência/aplicabilidade         da
+                                                                              informação no XML.
+                                                                              Exibição        condicionada       à
+      Valor do FCP retido por ST               vFCPST – W06a                  existência/aplicabilidade         da
+                                                                              informação no XML.
+                                                                              Exibição condicionada à existência da
+      Valor do DIFAL na UF de destino          vICMSUFDest – W04e
+                                                                              informação no XML.
+                                                                              Exibição condicionada à existência da
+      Valor do FCP na UF de destino            vFCPUFDest – W04c
+                                                                              informação no XML.
+                                                                              Base quantitativa     da   tributação
+      BC (quantidade) do ICMS monofásico       qBCMono – W06b.1
+                                                                              monofásica.
+                                                                              Exibição condicionada à existência da
+      Valor do ICMS monofásico                 vICMSMono – W06c
+                                                                              informação no XML.
+      BC (quantidade) do ICMS monofásico                                      Base quantitativa sujeita à retenção
+                                               qBCMonoReten – W06c.1
+      por retenção                                                            na monofasia.
+      Valor do    ICMS      monofásico   por                                  Exibição condicionada à existência da
+                                               vICMSMonoReten – W06d
+      retenção                                                                informação no XML.
+                                                                              Exibir quando informado o grupo de
+      Valor do IBS monofásico                  vIBSMono – W58
+                                                                              monofasia (gMono – W57).
+                                                                              Exibir quando informado o grupo de
+      Valor da CBS monofásica                  vCBSMono – W59
+                                                                              monofasia (gMono – W57).
+                                                                              Exibir quando houver tributação
+      Valor do IBS monofásico por retenção     vIBSMonoReten – W59a
+                                                                              monofásica sujeita a retenção.
+      Valor da     CBS      monofásica   por                                  Exibir quando houver tributação
+                                               vCBSMonoReten – W59b
+      retenção                                                                monofásica sujeita a retenção.
+                                               IM – C19; ISSQNtot – W17;      Pode ser suprimido quando não se
+      Cálculo do ISSQN                         vServ – W18; vBC – W19;        aplicar às operações do emitente,
+                                               vISS – W20                     conforme o MOC.
+                                                                              No modelo proposto, a exibição
+      Transportador         /      Volumes     transp – X01; modFrete – X02   detalhada fica condicionada à
+      Transportados                            e campos do Grupo X            existência     de     dados      de
+                                                                              transporte/volumes a apresentar.
+                                                                              No modelo proposto, a exibição
+      QR Code                                  qrCode – ZX02                  detalhada fica condicionada à
+                                                                              existência de dados de QR Code.
+
+
+
+4.5. QR Code no DANFE modelo 55
+  O Grupo ZX – Informações Suplementares da Nota Fiscal, incluindo os campos qrCode (ZX02) e
+  urlChave (ZX03), já possui utilização prevista para a NF-e, modelo 55, nas hipóteses atualmente
+  contempladas pela documentação técnica. Em breve, será publicada alteração específica na Nota
+  Técnica correspondente, de forma a prever expressamente a utilização do QR Code também nos
+  demais formatos de impressão do DANFE da NF-e, inclusive nas orientações retrato (tpImp=1) e
+  paisagem (tpImp=2).
+
+  A referida alteração estabelecerá as condições de preenchimento dos campos do Grupo ZX, bem
+  como as respectivas regras de formação e validação do QR Code, que deverá permitir o acesso
+  à consulta pública da NF-e.
+
+5 Modelos de referência
+                                                                                                                      Página 6 / 9
+Acompanham esta NT dois arquivos com os modelos de leiaute prontos, para uso como
+   referência de implementação:
+
+●   DANFE - Modelo55 - Vertical — Leiaute de referência principal
+●   DANFE - Modelo55 - Horizontal — Leiaute alternativo
+
+Os valores exibidos nos modelos são fictícios e servem apenas para ilustrar a disposição dos
+    campos.
+
+
+
+
+                                                                                          Página 7 / 9
+RECEBEMOS DE EMPRESA EXEMPLO LTDA OS PRODUTOS/SERVIÇOS CONSTANTES DA NOTA FISCAL ELETRÔNICA INDICADA AO LADO
+                                                                                                                                                                                                                                 NF-e
+                                                                                                                                                                                                                            Nº 000.000.001
+DATA DE RECEBIMENTO                                           IDENTIFICAÇÃO E ASSINATURA DO RECEBEDOR                                                                                                                         SÉRIE 001
+
+
+
+
+                                                                                               DANFE
+                                                                             DOCUMENTO AUXILIAR DA NOTA FISCAL ELETRÔNICA
+              EMPRESA EXEMPLO LTDA
+                  Rua Exemplo, 100 – Bairro XYZ                                                                                    CHAVE DE ACESSO
+                   Cidade/PR – CEP 00000-000
+                                                                                                                                                    0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000
+                      Fone: (00) 0000-0000                                                0 - ENTRADA 1 - SAÍDA
+                                                                                             Nº 000.000.001                        Consulte a autenticidade no portal nacional da NF-e www.nfe.fazenda.gov.br/portal ou no site da SEFAZ autorizadora
+                                                                                           SÉRIE 001 FOLHA 1/1
+NATUREZA DA OPERAÇÃO                                                                                                               PROTOCOLO DE AUTORIZAÇÃO DE USO
+DESCRIÇÃO DA OPERAÇÃO                                                                                                                                                                                000000000000000 – 00/00/0000 00:00:00
+
+INSCRIÇÃO ESTADUAL                                                           INSCRIÇÃO ESTADUAL DO SUBSTITUTO TRIBUTÁRIO                                              CNPJ / CPF
+000.00000-00                                                                 000.00000-00                                                                                                                                        00.000.000/0000-00
+
+CÓDIGO DO REGIME TRIBUTÁRIO                                                                                         TIPO DE REGIME DE APURAÇÃO DO IBS E DA CBS
+3 - REGIME NORMAL
+
+
+DESTINATÁRIO / REMETENTE
+NOME / RAZÃO SOCIAL                                                                                                                     CNPJ / CPF                                                          DATA DE EMISSÃO
+Cliente Exemplo S/A                                                                                                                     11.111.111/0001-11                                                  00/00/0000
+ENDEREÇO                                                                                                      BAIRRO / DISTRITO                                              CEP                            DATA DE ENTRADA / SAÍDA
+Av. Cliente, 200                                                                                              Centro                                                         11111-111                      00/00/0000
+MUNICÍPIO                                                                 FONE / FAX                               UF                   INSCRIÇÃO ESTADUAL                                                  HORA DE SAÍDA
+Cidade                                                                    (00) 0000-0000                           PR                   111.11111-11                                                        00:00
+
+FATURA / DUPLICATAS
+FATURA/DUPLICATA                   VENCIMENTO             VALOR              FATURA/DUPLICATA                     VENCIMENTO             VALOR                      FATURA/DUPLICATA                     VENCIMENTO                  VALOR
+000                                00/00                  0,00               000                                  00/00                  0,00                       000                                  00/00                       0,00
+
+TOTAL DOS PRODUTOS E TOTAL DA NOTA
+VALOR TOTAL DOS PRODUTOS                               VALOR DO FRETE                                VALOR DO SEGURO                                    DESCONTO                                         OUTRAS DESPESAS
+0,00                                                   0,00                                          0,00                                               0,00                                             0,00
+VALOR TOTAL DA NOTA
+0,00
+
+TOTAL DO ICMS / IPI
+BASE DE CÁLCULO DO ICMS                                VALOR DO ICMS                                 BASE DE CÁLCULO DO ICMS ST                         VALOR DO ICMS ST                                 VALOR DO IPI
+0,00                                                   0,00                                          0,00                                               0,00                                             0,00
+VALOR DO FCP                                                  VALOR DO FCP RETIDO POR ST                          VALOR DO DIFAL NA UF DE DESTINO                                   VALOR DO FCP NA UF DE DESTINO
+0,00                                                          0,00                                                0,00                                                              0,00
+BC DO ICMS MONOFÁSICO                                         VALOR DO ICMS MONOFÁSICO                            BC DO ICMS MONOFÁSICO POR RETENÇÃO                                VALOR DO ICMS MONOFÁSICO POR RETENÇÃO
+0,00                                                          0,00                                                0,00                                                              0,00
+
+TOTAL DO IBS / CBS / IS
+VALOR DA CBS                                                       VALOR DO IBS UF                                          VALOR DO IBS MUNICÍPIO                                           VALOR DO IMPOSTO SELETIVO
+0,00                                                               0,00                                                     0,00                                                             0,00
+VALOR DO IBS MONOFÁSICO                                       VALOR DA CBS MONOFÁSICA                VALOR DO IBS MONOFÁSICO POR RETENÇÃO                                                  VALOR DA CBS MONOFÁSICA POR RETENÇÃO
+0,00                                                          0,00                                   0,00                                                                                  0,00
+
+CÁLCULO DO ISSQN
+INSCRIÇÃO MUNICIPAL                                                  VALOR TOTAL DOS SERVIÇOS                                BASE DE CÁLCULO DO ISSQN                                        VALOR DO ISSQN
+—                                                                    0,00                                                    0,00                                                            0,00
+
+TRANSPORTADOR / VOLUMES TRANSPORTADOS
+RAZÃO SOCIAL                                                              FRETE POR CONTA                CÓDIGO ANTT                         PLACA DO VEÍCULO                      UF                   CNPJ / CPF
+Transportadora Exemplo                                                    0 - Remetente                  —                                   AAA0A00                               PR                   22.222.222/0001-22
+ENDEREÇO                                                                                        MUNICÍPIO                                                      UF                  INSCRIÇÃO ESTADUAL
+Rod. Exemplo, km 10                                                                             Cidade                                                         PR                  333.33333-33
+QUANTIDADE                                 ESPÉCIE                                     MARCA                                 NUMERAÇÃO                                       PESO BRUTO                               PESO LÍQUIDO
+1                                          Volume                                      —                                     001                                             0,00 kg                                  0,00 kg
+
+DADOS DOS PRODUTOS / SERVIÇOS
+                                                       CST /
+    DESCRIÇÃO DO PRODUTO / SERVIÇO                                     QTD / UN          VLR UNIT           VLR TOTAL               BASES DE CÁLCULO                         ALÍQUOTAS                              VALOR DOS TRIBUTOS
+                                                       CFOP
+Produto Exemplo 1                                    CST.....000     000.000.000,00   0.000.000.000,00   0.000.000.000,00      ICMS..........0.000.000.000,00       ICMS……0,00% / CBS....0,00%          ICMS…....0.000.000,00 / CBS..0.000.000,00
+[informações adicionais do item]                     CFOP..0000           [UN]                                                 IBS / CBS...0.000.000.000,00         IBS UF…..0,00% / IPI…..0,00%        IBS UF…..0.000.000,00 / IPI….0.000.000,00
+                                                                                                                               IS................0.000.000.000,00   IBS MUN..0,00% / IS…....0,00%       IBS MUN..0.000.000,00 / IS…..0.000.000,00
+       [NCM 012345678] [cClassTrib 012345678]                                                                                  IPI...............0.000.000.000,00
+Produto Exemplo 2                                    CST.....000     000.000.000,00   0.000.000.000,00   0.000.000.000,00      ICMS..........0.000.000.000,00       ICMS……0,00% / CBS....0,00%          ICMS…....0.000.000,00 / CBS..0.000.000,00
+[informações adicionais do item]                     CFOP..0000           [UN]                                                 IBS / CBS...0.000.000.000,00         IBS UF…..0,00% / IPI…..0,00%        IBS UF…..0.000.000,00 / IPI….0.000.000,00
+                                                                                                                               IS................0.000.000.000,00   IBS MUN..0,00% / IS…....0,00%       IBS MUN..0.000.000,00 / IS…..0.000.000,00
+                                                                                                                               IPI...............0.000.000.000,00
+       [NCM 012345678] [cClassTrib 012345678]
+
+
+DADOS ADICIONAIS                                                                                                                                                                                                         QR CODE
+INFORMAÇÕES COMPLEMENTARES                                                                                  RESERVADO AO FISCO
+Documento emitido a título de exemplo de leiaute (Reforma Tributária – IBS/CBS/IS).
+
+
+
+
+                                                                                                                                                                                                                                     Página 8 / 9
+                                                                                                                                      DANFE
+                                                                                                                     DOCUMENTO AUXILIAR DA NOTA FISCAL ELETRÔNICA
+                               EMPRESA EXEMPLO LTDA
+                                   Rua Exemplo, 100 – Bairro XYZ                                                                                                              CHAVE DE ACESSO
+                                    Cidade/PR – CEP 00000-000
+
+
+
+
+                                                                                                                                                                                                                                                                                                                                         RECEBEMOS DE EMPRESA EXEMPLO LTDA OS PRODUTOS/SERVIÇOS CONSTANTES DA NOTA FISCAL ELETRÔNICA INDICADA AO LADO
+                                                                                                                                                                                                                    0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000
+
+
+
+
+                                                                                                                                                                                                                                                                                                                                                                                                                                                           IDENTIFICAÇÃO E ASSINATURA DO RECEBEDOR
+                                       Fone: (00) 0000-0000                                                                     0 - ENTRADA 1 - SAÍDA
+                                                                                                                                    Nº 000.000.001                            Consulte a autenticidade no portal nacional da NF-e www.nfe.fazenda.gov.br/portal ou no site da SEFAZ autorizadora
+                                                                                                                                 SÉRIE 001 FOLHA 1/1
+NATUREZA DA OPERAÇÃO                                                                                                                                                          PROTOCOLO DE AUTORIZAÇÃO DE USO
+DESCRIÇÃO DA OPERAÇÃO                                                                                                                                                                                                                                                                      000000000000000 – 00/00/0000 00:00:00
+INSCRIÇÃO ESTADUAL                                                                                             INSC. ESTADUAL DO SUBST. TRIBUTÁRIO                                                                          CNPJ/CPF
+000.00000-00                                                                                                   000.00000-00                                                                                                                                                                                       00.000.000/0000-00
+CÓDIGO DO REGIME TRIBUTÁRIO                                                                                                                                 TIPO DE REGIME DE APURAÇÃO DO IBS E DA CBS
+3 - REGIME NORMAL
+DESTINATÁRIO / REMETENTE
+NOME / RAZÃO SOCIAL                                                                                                                                                                  CNPJ / CPF                                                                                  DATA DE EMISSÃO
+Cliente Exemplo S/A                                                                                                                                                                  11.111.111/0001-11                                                                          00/00/0000
+ENDEREÇO                                                                                                                                           BAIRRO / DISTRITO                                                                   CEP                                       DATA DE ENTRADA / SAÍDA
+Av. Cliente, 200                                                                                                                                   Centro                                                                              11111-111                                 00/00/0000
+MUNICÍPIO                                                                                           FONE / FAX                                          UF                           INSCRIÇÃO ESTADUAL                                                                          HORA DE SAÍDA
+Cidade                                                                                              (00) 0000-0000                                      PR                           111.11111-11                                                                                00:00
+FATURA / DUPLICATAS
+FATURA/DUPLICATA                          VENCIMENTO                         VALOR                     FATURA/DUPLICATA                                VENCIMENTO                      VALOR                            FATURA/DUPLICATA                                    VENCIMENTO                         VALOR
+000                                       00/00                              0,00                      000                                             00/00                           0,00                             000                                                 00/00                              0,00
+
+TOTAL DOS PRODUTOS E TOTAL DA NOTA
+VALOR TOTAL DOS PRODUTOS                                                 VALOR DO FRETE                                                VALOR DO SEGURO                                                    DESCONTO                                                          OUTRAS DESPESAS ACESSÓRIAS
+0,00                                                                     0,00                                                          0,00                                                               0,00                                                              0,00
+VALOR TOTAL DA NOTA
+0,00
+TOTAL DO ICMS / IPI
+BASE DE CÁLCULO DO ICMS                                                  VALOR DO ICMS                                                 BASE DE CÁLCULO DO ICMS ST                                         VALOR DO ICMS ST                                                  VALOR DO IPI
+0,00                                                                     0,00                                                          0,00                                                               0,00                                                              0,00
+VALOR DO FCP                                                                     VALOR DO FCP RETIDO POR ST                                            VALOR DO DIFAL NA UF DE DESTINO                                                          VALOR DO FCP NA UF DE DESTINO
+0,00                                                                             0,00                                                                  0,00                                                                                     0,00
+BC DO ICMS MONOFÁSICO                                                            VALOR DO ICMS MONOFÁSICO                                              BC DO ICMS MONOFÁSICO POR RETENÇÃO                                                       VALOR DO ICMS MONOFÁSICO POR RETENÇÃO
+0,00                                                                             0,00                                                                  0,00                                                                                     0,00
+TOTAL DO IBS / CBS / IS
+VALOR DA CBS                                                                          VALOR DO IBS UF                                                                         VALOR DO IBS MUNICÍPIO                                                        VALOR DO IMPOSTO SELETIVO
+0,00                                                                                  0,00                                                                                    0,00                                                                          0,00
+VALOR DO IBS MONOFÁSICO                                                          VALOR DA CBS MONOFÁSICA                                                       VALOR DO IBS MONOFÁSICO POR RETENÇÃO                                                      VALOR DA CBS MONOFÁSICA POR RETENÇÃO
+0,00                                                                             0,00                                                                          0,00                                                                                      0,00
+CÁLCULO DO ISSQN
+INSCRIÇÃO MUNICIPAL                                                                          VALOR TOTAL DOS SERVIÇOS                                                  BASE DE CÁLCULO DO ISSQN                                                              VALOR DO ISSQN
+—                                                                                            0,00                                                                      0,00                                                                                  0,00
+TRANSPORTADOR / VOLUMES TRANSPORTADOS
+RAZÃO SOCIAL                                                                                        FRETE POR CONTA                            CÓDIGO ANTT                                  PLACA DO VEÍCULO                                   UF                          CNPJ / CPF
+Transportadora Exemplo                                                                              0 - Remente                                —                                            AAA0A00                                            PR                          22.222.222/0001-22
+ENDEREÇO                                                                                                                         MUNICÍPIO                                                                        UF                           INSCRIÇÃO ESTADUAL
+Rod. Exemplo, km 10                                                                                                              Cidade                                                                           PR                           333.33333-33
+QUANTIDADE                                          ESPÉCIE                                                           MARCA                                            NUMERAÇÃO                                                       PESO BRUTO                                             PESO LÍQUIDO
+1                                                   Volume                                                            —                                                001                                                             0,00 kg                                                0,00 kg
+DADOS DOS PRODUTOS / SERVIÇOS
+
+
+
+
+                                                                                                                                                                                                                                                                                                                                                                                                                                                               DATA DE RECEBIMENTO
+                                                                                                                 CST /
+                                 DESCRIÇÃO DO PRODUTO / SERVIÇO                                                                     QTD / UN                VLR UNIT               VLR TOTAL                 BASES DE CÁLCULO                              ALÍQUOTAS                                    VALOR DOS TRIBUTOS
+                                                                                                                 CFOP
+Descrição do Produto Exemplo 1                                                                               CST.....000        000.000.000,00       0.000.000.000,00         0.000.000.000,00        ICMS..........0.000.000.000,00        ICMS…….0,00% / CBS...0,00%                   ICMS…….0.000.000,00 / CBS..0.000.000,00
+[informações adicionais do item]                                                                             CFOP..0000              [UN]                                                             IBS / CBS...0.000.000.000,00          IBS UF…..0,00% / IPI…...0,00%                IBS UF......0.000.000,00 / IPI….0.000.000,00
+                                                                                                                                                                                                      IS................0.000.000.000,00    IBS MUN..0,00% / IS…....0,00%                IBS MUN...0.000.000,00 / IS…..0.000.000,00
+[NCM 012345678] [cClassTrib 012345678]                                                                                                                                                                IPI...............0.000.000.000,00
+Descrição do Produto Exemplo 2                                                                               CST.....000        000.000.000,00       0.000.000.000,00         0.000.000.000,00        ICMS..........0.000.000.000,00        ICMS…….0,00% / CBS...0,00%                   ICMS…….0.000.000,00 / CBS..0.000.000,00
+[informações adicionais do item]                                                                             CFOP..0000              [UN]                                                             IBS / CBS...0.000.000.000,00          IBS UF…..0,05% / IPI…...0,00%                IBS UF......0.000.000,00 / IPI….0.000.000,00
+                                                                                                                                                                                                      IS................0.000.000.000,00    IBS MUN..0,05% / IS…....0,00%                IBS MUN...0.000.000,00 / IS…..0.000.000,00
+[NCM 012345678] [cClassTrib 012345678]                                                                                                                                                                IPI...............0.000.000.000,00
+
+DADOS ADICIONAIS                                                                                                                                                                                                                                                                                              QR CODE
+INFORMAÇÕES COMPLEMENTARES                                                                                                                               RESERVADO AO FISCO
+Documento emitido a título de exemplo de leiaute (Reforma Tributária – IBS/CBS/IS).
+
+
+
+
+                                                                                                                                                                                                                                                                                                                                                                                                                                                        Nº 000.000.001
+                                                                                                                                                                                                                                                                                                                                                                                                                                                          SÉRIE 001
+                                                                                                                                                                                                                                                                                                                                                                                                       NF-e
+                                                                                                                                                                                                                                                                                                                                        Página 9 / 9
+

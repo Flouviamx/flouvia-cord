@@ -69,6 +69,12 @@ export interface FiscalLineItem {
    * concepto documenta (NoIdentificacion del CFDI). Ausente en un concepto normal.
    */
   identification?: string;
+  /**
+   * Brasil, NF-e: datos de NF-e del producto del catálogo (NCM, CFOP, origen,
+   * unidad, régimen del ICMS…), congelados al guardar el borrador. Solo con el
+   * riel NF-e encendido (src/lib/fiscal/latam/nfe/produto.ts).
+   */
+  nfe?: import('./latam/nfe/produto').ProdutoNfe;
 }
 
 export interface FiscalRetencion {
@@ -195,7 +201,8 @@ export interface FiscalCancelResponse {
 }
 
 export interface FiscalProvider {
-  supports(countryCode: string): boolean;
+  /** `documentType`: el persistido, cuando el país tiene más de un riel (Brasil: NFS-e y NF-e). */
+  supports(countryCode: string, documentType?: string): boolean;
   issueDocument(request: FiscalDocumentRequest): Promise<FiscalDocumentResponse>;
   cancelDocument(documentId: string, request?: FiscalCancelRequest): Promise<FiscalCancelResponse>;
 }
