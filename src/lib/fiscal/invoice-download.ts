@@ -64,7 +64,7 @@ export async function downloadInvoiceDocument(orgId: string, id: string, format:
   const doc = await loadInvoiceDocumentRow(orgId, id, publicToken);
   if (!doc || doc.status !== 'issued') return new Response('Documento no encontrado', { status: 404 });
 
-  // Factura electrónica europea (Factur-X, XRechnung, Peppol): se genera del
+  // Factura electrónica (Factur-X, XRechnung, Peppol, Facturae): se genera del
   // mismo snapshot. Si el documento no califica, se dice qué falta (409).
   if (einvoice) {
     const { renderEInvoice } = await import('./einvoice/server');

@@ -16,7 +16,8 @@
 
 import { calculateDocumentTotals, type DescuentoInput } from '../../packages/elements/src/engine';
 import type { FiscalLineItem, FiscalParty } from '../../src/lib/fiscal/index';
-import type { EInvoiceFormat, EInvoiceSource } from '../../src/lib/fiscal/einvoice/model';
+import type { En16931Format, EInvoiceSource } from '../../src/lib/fiscal/einvoice/model';
+import type { FacturaeSource } from '../../src/lib/fiscal/einvoice/facturae';
 import type { InvoicePdfInput } from '../../src/lib/fiscal/invoice-pdf';
 
 const cents = (n: number) => Math.round((Number(n) + Number.EPSILON) * 100);
@@ -105,6 +106,32 @@ const US_BUYER: FiscalParty = {
     address: { line1: '500 Market Street', city: 'San Francisco', postalCode: '94105', region: 'CA', countryCode: 'US' },
 };
 
+// España fuera del territorio del IVA: Canarias (IGIC, provincias 35 y 38) y
+// Ceuta y Melilla (IPSI, 51 y 52). `region` es el código INE de la provincia,
+// el mismo que guarda Ajustes › Perfil fiscal.
+export const CANARIAS_SELLER: FiscalParty = {
+    legalName: 'Atlántico Digital SL', taxId: 'B35001239', email: 'facturas@atlanticodigital.es',
+    contactName: 'Nayra Santana', phone: '+34 928 123 456',
+    electronicAddress: { scheme: '0088', id: '8437000000006' },
+    address: { line1: 'Calle Triana 12', city: 'Las Palmas de Gran Canaria', postalCode: '35002', region: '35', countryCode: 'ES' },
+};
+const CANARIAS_BUYER: FiscalParty = {
+    legalName: 'Hoteles Teide SA', taxId: 'A38007894', email: 'proveedores@hotelesteide.es',
+    electronicAddress: { scheme: '0088', id: '8437000000013' },
+    address: { line1: 'Avenida de Anaga 40', city: 'Santa Cruz de Tenerife', postalCode: '38001', region: '38', countryCode: 'ES' },
+};
+export const CEUTA_SELLER: FiscalParty = {
+    legalName: 'Estrecho Servicios SL', taxId: 'B51004562', email: 'admin@estrechoservicios.es',
+    contactName: 'Hamid Mohamed', phone: '+34 956 123 456',
+    electronicAddress: { scheme: '0088', id: '8437000000020' },
+    address: { line1: 'Paseo del Revellín 5', city: 'Ceuta', postalCode: '51001', region: '51', countryCode: 'ES' },
+};
+const MADRID_BUYER: FiscalParty = {
+    legalName: 'Distribuciones Centro SL', taxId: 'B28003218', email: 'cuentas@dcentro.es',
+    electronicAddress: { scheme: '9920', id: 'ESB28003218' },
+    address: { line1: 'Calle de Alcalá 100', city: 'Madrid', postalCode: '28009', region: '28', countryCode: 'ES' },
+};
+
 const ISSUED = { status: 'issued', lifecycle: 'open', currency: 'EUR' } as const;
 
 // ── Muestras ───────────────────────────────────────────────────────────────
@@ -114,16 +141,16 @@ export interface EInvoiceSample {
     title: string;
     source: EInvoiceSource;
     /** Formatos que la muestra DEBE poder generar. */
-    formats: EInvoiceFormat[];
+    formats: En16931Format[];
     /** Categorías UNTDID 5305 esperadas en el desglose, en orden. */
     categories: string[];
 }
 
-function sample(id: string, title: string, formats: EInvoiceFormat[], categories: string[], src: Omit<EInvoiceSource, 'subtotal' | 'taxTotal' | 'total'>): EInvoiceSample {
+function sample(id: string, title: string, formats: En16931Format[], categories: string[], src: Omit<EInvoiceSource, 'subtotal' | 'taxTotal' | 'total'>): EInvoiceSample {
     return { id, title, formats, categories, source: { ...src, ...totals(src.lines) } };
 }
 
-const ALL: EInvoiceFormat[] = ['facturx', 'xrechnung', 'xrechnung-cii', 'peppol'];
+const ALL: En16931Format[] = ['facturx', 'xrechnung', 'xrechnung-cii', 'peppol'];
 
 
 export const EINVOICE_SAMPLES: EInvoiceSample[] = [
@@ -258,6 +285,40 @@ export const EINVOICE_SAMPLES: EInvoiceSample[] = [
         lines: [sampleLine('Création graphique', 1, 850, 0)],
         iban: 'FR7630006000011234567890189',
     }),
+    sample('igic', 'Canarias: IGIC 7 % y 3 % (categoría L)', ALL, ['L', 'L'], {
+        ...ISSUED, invoiceNumber: 'AD-2026-000311', documentType: 'commercial_invoice', countryCode: 'ES',
+        issuedAt: '2026-10-08T10:00:00Z', timeZone: 'Atlantic/Canary', dueDate: '2026-11-07', paymentTermsCode: 'net30',
+        buyerReference: 'HT-COMPRAS-2026', purchaseOrder: 'PED-4471',
+        issuer: CANARIAS_SELLER, recipient: CANARIAS_BUYER,
+        lines: [
+            sampleLine('Mantenimiento de la red wifi', 12, 85, 0.07, { unitKey: 'HUR' }),
+            sampleLine('Guía impresa de uso', 40, 4.5, 0.03),
+        ],
+        iban: 'ES9121000418450200051332', bic: 'CAIXESBBXXX',
+    }),
+    sample('igic-zero', 'Canarias: IGIC 7 % con un concepto al 0 % (sin CII)', ['xrechnung', 'peppol'], ['L', 'L'], {
+        ...ISSUED, invoiceNumber: 'AD-2026-000312', documentType: 'commercial_invoice', countryCode: 'ES',
+        issuedAt: '2026-10-08T10:00:00Z', timeZone: 'Atlantic/Canary', dueDate: '2026-11-07', paymentTermsCode: 'net30',
+        buyerReference: 'HT-COMPRAS-2026',
+        issuer: CANARIAS_SELLER, recipient: CANARIAS_BUYER,
+        lines: [
+            sampleLine('Licencia anual del software de reservas', 1, 1200, 0.07),
+            sampleLine('Pan y bollería', 30, 1.2, 0),
+        ],
+        iban: 'ES9121000418450200051332', bic: 'CAIXESBBXXX',
+    }),
+    sample('ipsi', 'Ceuta: IPSI 4 %, 10 % y 0 % (categoría M)', ALL, ['M', 'M', 'M'], {
+        ...ISSUED, invoiceNumber: 'ES-2026-000052', documentType: 'commercial_invoice', countryCode: 'ES',
+        issuedAt: '2026-10-08T10:00:00Z', timeZone: 'Europe/Madrid', dueDate: '2026-11-07', paymentTermsCode: 'net30',
+        buyerReference: 'DC-PROV-0193', purchaseOrder: 'OC-2026-77',
+        issuer: CEUTA_SELLER, recipient: MADRID_BUYER,
+        lines: [
+            sampleLine('Asesoría logística', 6, 70, 0.04, { unitKey: 'HUR' }),
+            sampleLine('Transporte marítimo de mercancía', 1, 320, 0.1),
+            sampleLine('Material formativo', 10, 12.5, 0),
+        ],
+        iban: 'ES9121000418450200051332',
+    }),
 ];
 
 /** La entrada del PDF de siempre para una muestra, como la arma `invoicePdfInput`. */
@@ -276,3 +337,131 @@ export function samplePdfInput(src: EInvoiceSource): InvoicePdfInput {
         brandColor: '#0a192f',
     };
 }
+
+// ── Facturae (España) ───────────────────────────────────────────────────────
+//
+// Muestras de emisores españoles con lo que EN 16931 no admite: retenciones de
+// IRPF (TaxesWithheld) y también IGIC, IPSI, exenciones con causa, operaciones
+// intracomunitarias, exportación y la nota de crédito por diferencias. Los
+// importes y las retenciones salen del MOTOR real, como en `buildLines`.
+
+/** Documento completo por el motor: líneas, retenciones y totales. */
+export function engineDocument(
+    items: { description: string; quantity: number; unitPrice: number; taxRate: number; unitKey?: string; exemptionReason?: string }[],
+    opts: { descuento?: DescuentoInput | null; retenciones?: { nombre: string; tasa: number; tipo?: string; base?: 'subtotal' | 'impuesto' | 'gravado' }[] } = {},
+): Pick<FacturaeSource, 'lines' | 'subtotal' | 'taxTotal' | 'total' | 'retenciones' | 'retencionTotal'> {
+    const totals = calculateDocumentTotals(
+        items.map((i) => ({ descripcion: i.description, cantidad: i.quantity, precio_unitario: i.unitPrice, tax_rate: i.taxRate })),
+        { roundLines: 2, descuento: opts.descuento ?? null, retenciones: opts.retenciones ?? [] },
+    );
+    const lines: FiscalLineItem[] = totals.lineas.map((l, i) => ({
+        description: items[i].description,
+        quantity: l.cantidad,
+        unitPrice: Math.round((l.cantidad ? l.base / l.cantidad : l.base) * 1e6) / 1e6,
+        taxRate: l.tax_rate,
+        subtotal: round2(l.base),
+        taxAmount: round2(l.impuesto),
+        total: round2(l.total),
+        ...(l.descuento > 0 ? { discount: round2(l.descuento) } : {}),
+        ...(items[i].unitKey ? { unitKey: items[i].unitKey } : {}),
+        ...(items[i].exemptionReason ? { exemptionReason: items[i].exemptionReason } : {}),
+    }));
+    return {
+        lines,
+        subtotal: round2(totals.subtotal),
+        taxTotal: round2(totals.impuestos),
+        total: round2(totals.total),
+        retenciones: totals.retenciones.map((r) => ({ nombre: r.nombre, tipo: r.tipo, tasa: r.tasa, base: round2(r.base), baseTipo: r.baseTipo, monto: round2(r.monto) })),
+        retencionTotal: round2(totals.retencionTotal),
+    };
+}
+
+const MADRID_SELLER: FiscalParty = {
+    legalName: 'Lucía Pérez Gómez', taxId: '12345678Z', email: 'hola@luciaperez.es', phone: '+34 600 123 456',
+    address: { line1: 'Calle de Atocha 27, 3.º B', city: 'Madrid', postalCode: '28012', region: '28', countryCode: 'ES' },
+};
+const MADRID_COMPANY: FiscalParty = { ...MADRID_BUYER, contactName: 'Marta Ruiz', phone: '+34 910 000 111' };
+const IRPF_15 = { nombre: 'Retención IRPF 15%', tasa: 0.15, tipo: 'ret_isr', base: 'subtotal' as const };
+
+export interface FacturaeSample { id: string; title: string; source: FacturaeSource }
+
+const ES_BASE = { ...ISSUED, documentType: 'commercial_invoice', countryCode: 'ES', timeZone: 'Europe/Madrid', paymentTermsCode: 'net30' };
+
+export const FACTURAE_SAMPLES: FacturaeSample[] = [
+    {
+        id: 'fe-irpf', title: 'Profesional con retención de IRPF del 15 % (IVA 21 %)',
+        source: {
+            ...ES_BASE, invoiceNumber: 'LP-2026-0017', issuedAt: '2026-10-08T10:00:00Z', dueDate: '2026-11-07',
+            purchaseOrder: 'PED-2026-118', issuer: MADRID_SELLER, recipient: MADRID_BUYER,
+            ...engineDocument([
+                { description: 'Diseño de identidad visual', quantity: 1, unitPrice: 1800, taxRate: 0.21 },
+                { description: 'Rondas de revisión', quantity: 4, unitPrice: 60, taxRate: 0.21, unitKey: 'HUR' },
+            ], { retenciones: [IRPF_15] }),
+            iban: 'ES9121000418450200051332', bic: 'CAIXESBB',
+        },
+    },
+    {
+        id: 'fe-mixto', title: 'IVA 21 % y 10 %, una línea exenta (art. 20) y descuento del 10 %',
+        source: {
+            ...ES_BASE, invoiceNumber: 'DC-2026-0412', issuedAt: '2026-10-08T10:00:00Z', dueDate: '2026-11-07',
+            buyerReference: 'EXP-77/2026', issuer: MADRID_COMPANY, recipient: { ...MADRID_SELLER },
+            notes: 'Gracias por su confianza.',
+            ...engineDocument([
+                { description: 'Material de oficina', quantity: 12, unitPrice: 14.95, taxRate: 0.21, unitKey: 'C62' },
+                { description: 'Comidas de empresa', quantity: 8, unitPrice: 22.5, taxRate: 0.1 },
+                { description: 'Curso de primeros auxilios', quantity: 1, unitPrice: 350, taxRate: 0, exemptionReason: 'E1' },
+            ], { descuento: { tipo: 'porcentaje', valor: 10 } }),
+            iban: 'ES9121000418450200051332',
+        },
+    },
+    {
+        id: 'fe-igic-irpf', title: 'Canarias: IGIC 7 % y 0 % con retención de IRPF',
+        source: {
+            ...ES_BASE, invoiceNumber: 'NS-2026-0031', timeZone: 'Atlantic/Canary', issuedAt: '2026-10-08T10:00:00Z', dueDate: '2026-11-07',
+            issuer: { ...CANARIAS_SELLER, legalName: 'Nayra Santana Déniz', taxId: '12345678Z' }, recipient: CANARIAS_BUYER,
+            ...engineDocument([
+                { description: 'Fotografía del catálogo de habitaciones', quantity: 1, unitPrice: 950, taxRate: 0.07 },
+                { description: 'Copias impresas', quantity: 20, unitPrice: 3, taxRate: 0 },
+            ], { retenciones: [IRPF_15] }),
+            iban: 'ES9121000418450200051332',
+        },
+    },
+    {
+        id: 'fe-ipsi', title: 'Ceuta: IPSI 4 % y 0 %',
+        source: {
+            ...ES_BASE, invoiceNumber: 'ES-2026-000053', issuedAt: '2026-10-08T10:00:00Z', dueDate: '2026-11-07',
+            issuer: CEUTA_SELLER, recipient: MADRID_BUYER,
+            ...engineDocument([
+                { description: 'Asesoría logística', quantity: 6, unitPrice: 70, taxRate: 0.04, unitKey: 'HUR' },
+                { description: 'Material formativo', quantity: 10, unitPrice: 12.5, taxRate: 0 },
+            ]),
+        },
+    },
+    {
+        id: 'fe-intra-ue', title: 'Servicio a una empresa de otro Estado miembro (no sujeta, inversión del sujeto pasivo)',
+        source: {
+            ...ES_BASE, invoiceNumber: 'DC-2026-0413', issuedAt: '2026-10-08T10:00:00Z', dueDate: '2026-11-07',
+            purchaseOrder: 'PO-9921', issuer: MADRID_COMPANY, recipient: FR_BUYER,
+            ...engineDocument([{ description: 'Consultoría de distribución', quantity: 10, unitPrice: 95, taxRate: 0, unitKey: 'HUR' }]),
+            iban: 'ES9121000418450200051332', bic: 'CAIXESBBXXX',
+        },
+    },
+    {
+        id: 'fe-export', title: 'Exportación fuera de la UE (art. 21)',
+        source: {
+            ...ES_BASE, invoiceNumber: 'DC-2026-0414', issuedAt: '2026-10-08T10:00:00Z', dueDate: '2026-11-07',
+            issuer: MADRID_COMPANY, recipient: US_BUYER,
+            ...engineDocument([{ description: 'Aceite de oliva virgen extra (caja de 6)', quantity: 40, unitPrice: 54, taxRate: 0, exemptionReason: 'E2', unitKey: 'BX' }]),
+        },
+    },
+    {
+        id: 'fe-rectificativa', title: 'Nota de crédito por diferencias de una factura con IRPF',
+        source: {
+            ...ES_BASE, invoiceNumber: 'LP-2026-0018', documentType: 'commercial_credit_note', issuedAt: '2026-10-09T09:00:00Z',
+            creditNoteOf: { number: 'LP-2026-0017', issuedAt: '2026-10-08T10:00:00Z' },
+            notes: 'Se anulan dos rondas de revisión no realizadas.',
+            issuer: MADRID_SELLER, recipient: MADRID_BUYER,
+            ...engineDocument([{ description: 'Rondas de revisión', quantity: 2, unitPrice: 60, taxRate: 0.21, unitKey: 'HUR' }], { retenciones: [IRPF_15] }),
+        },
+    },
+];

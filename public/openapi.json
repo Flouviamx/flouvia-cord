@@ -3559,7 +3559,7 @@
                   },
                   "buyer_reference": {
                     "type": "string",
-                    "description": "Referencia del comprador para su cuenta por pagar (en Alemania, el Leitweg-ID de la administración pública). La lleva la factura electrónica europea (BT-10) y la exige XRechnung. Sin ella, la del cliente."
+                    "description": "Referencia del comprador para su cuenta por pagar (en Alemania, el Leitweg-ID de la administración pública). La lleva la factura electrónica europea (BT-10) y la exige XRechnung. Sin ella, la del cliente. Si la dirección electrónica del cliente es un Leitweg-ID (esquema 0204), se comprueban sus dígitos de control (ISO/IEC 7064 MOD 97-10) y una que no pase responde 400."
                   },
                   "purchase_order": {
                     "type": "string",

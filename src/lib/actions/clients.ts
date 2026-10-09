@@ -3,7 +3,8 @@ import { requireResourceCapacity, resourceLimitError } from '../org-entitlements
 import { isCountryCode } from '../countries';
 import { validateTaxId } from '../tax-id';
 import { normalizeTerm } from '../payment-terms';
-import { normalizeEInvoiceAddress } from '../fiscal/einvoice/codes';
+import { checkLeitwegId, einvoiceAddressLeitwegProblem, leitwegProblem, normalizeEInvoiceAddress, splitEInvoiceAddress } from '../fiscal/einvoice/codes';
+import { currentLocale } from '../context';
 import { after } from '../after';
 import { dispatchEvent } from '../webhooks';
 import { clientEventData, clientPrevData } from '../event-payloads';
@@ -64,10 +65,33 @@ export function cleanClientInput(input: Record<string, any>) {
     };
 }
 
-const EINVOICE_ADDRESS_INVALIDA = done(400, {
-    error: 'La dirección electrónica va como "esquema:identificador" con un esquema de la lista EAS, por ejemplo 0204:991-12345-67 o 0088:4000001000005.',
-    code: 'invalid_request',
-});
+/**
+ * Factura electrónica: la dirección va como "esquema EAS:identificador" y, con
+ * el esquema 0204 (administración pública alemana), es un Leitweg-ID cuyo
+ * dígito de control se comprueba (Formatspezifikation Leitweg-ID v2.0.2, cap.
+ * 2.4). Con esa dirección, la referencia del comprador (BT-10) también es su
+ * Leitweg-ID. `storedAddress` es la guardada, para una edición que solo manda
+ * la referencia.
+ */
+function einvoiceInputError(c: ClientInput, storedAddress?: string | null): ActionOutcome | null {
+    const lang = currentLocale() === 'en' ? 'en' : 'es';
+    if (c.einvoice_address_invalida) {
+        return done(400, {
+            error: lang === 'en'
+                ? 'The electronic address goes as "scheme:identifier" with a scheme from the EAS list, for example 0204:04011000-1234512345-06 or 0088:4000001000005.'
+                : 'La dirección electrónica va como "esquema:identificador" con un esquema de la lista EAS, por ejemplo 0204:04011000-1234512345-06 o 0088:4000001000005.',
+            code: 'invalid_request',
+        });
+    }
+    const address = c.einvoice_address === undefined ? storedAddress : c.einvoice_address;
+    const leitweg = c.einvoice_address === undefined ? null : einvoiceAddressLeitwegProblem(address);
+    if (leitweg) return done(400, { error: leitwegProblem(leitweg.reason, lang), code: 'invalid_request', field: 'einvoice_address' });
+    if (c.buyer_reference && splitEInvoiceAddress(address)?.scheme === '0204') {
+        const ref = checkLeitwegId(c.buyer_reference);
+        if (!ref.ok) return done(400, { error: leitwegProblem(ref.reason, lang), code: 'invalid_request', field: 'buyer_reference' });
+    }
+    return null;
+}
 
 const EMPRESA_OBLIGATORIA = done(400, { error: 'El nombre de la empresa es obligatorio', code: 'invalid_request' });
 const NO_ENCONTRADO = done(404, { error: 'Cliente no encontrado', code: 'not_found' });
@@ -113,7 +137,8 @@ async function checkClientTaxId(ctx: ActionContext, c: ClientInput, before?: Tax
 export async function createClient(ctx: ActionContext, input: Record<string, any>): Promise<ActionOutcome> {
     const c = cleanClientInput(input);
     if (!c.empresa) return EMPRESA_OBLIGATORIA;
-    if (c.einvoice_address_invalida) return EINVOICE_ADDRESS_INVALIDA;
+    const einvoiceDenied = einvoiceInputError(c);
+    if (einvoiceDenied) return einvoiceDenied;
     const taxDenied = await checkClientTaxId(ctx, c);
     if (taxDenied) return taxDenied;
     const capacityDenied = await requireResourceCapacity(ctx.orgId, 'clients');
@@ -148,12 +173,16 @@ export async function createClient(ctx: ActionContext, input: Record<string, any
 export async function updateClient(ctx: ActionContext, id: string, input: Record<string, any>): Promise<ActionOutcome> {
     const c = cleanClientInput(input);
     if (!c.empresa) return EMPRESA_OBLIGATORIA;
-    if (c.einvoice_address_invalida) return EINVOICE_ADDRESS_INVALIDA;
     if (!isUuid(id)) return NO_ENCONTRADO;
+    const needsBefore = !!c.rfc || (!!c.buyer_reference && c.einvoice_address === undefined);
+    const [[before]] = needsBefore
+        ? await withOrgTx(ctx.orgId, sql`select rfc, country_code, einvoice_address from clientes where id = ${id} and org_id = ${ctx.orgId}`)
+        : [[null]];
+    if (needsBefore && !before) return NO_ENCONTRADO;
+    const einvoiceDenied = einvoiceInputError(c, before?.einvoice_address as string | null | undefined);
+    if (einvoiceDenied) return einvoiceDenied;
     if (c.rfc) {
-        const [[before]] = await withOrgTx(ctx.orgId, sql`select rfc, country_code from clientes where id = ${id} and org_id = ${ctx.orgId}`);
-        if (!before) return NO_ENCONTRADO;
-        const taxDenied = await checkClientTaxId(ctx, c, before);
+        const taxDenied = await checkClientTaxId(ctx, c, before ?? undefined);
         if (taxDenied) return taxDenied;
     }
     return writeClientUpdate(ctx, id, c);

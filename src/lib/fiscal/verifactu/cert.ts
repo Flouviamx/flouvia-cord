@@ -236,3 +236,21 @@ export function credencialesTls(p12: Buffer, password: string): TlsCredenciales 
     }
     return pem;
 }
+
+/**
+ * Llave y certificado para la firma XAdES de una Facturae (`einvoice/xades.ts`):
+ * el mismo certificado cualificado que autentica el envío a Verifactu, la llave
+ * en PEM (solo en memoria) y el certificado del titular en DER. Solo RSA, que
+ * es lo que emiten la FNMT y las demás CA cualificadas para persona física,
+ * representante y sello.
+ */
+export function credencialesFirma(p12: Buffer, password: string): { privateKeyPem: string; certDer: Buffer } {
+    const { cert, key } = extraer(p12, password);
+    if (!(key as forge.pki.rsa.PrivateKey).n) {
+        throw new InvalidCertificateError('Este certificado no usa una llave RSA y no se puede usar para firmar facturas.');
+    }
+    return {
+        privateKeyPem: forge.pki.privateKeyToPem(key),
+        certDer: Buffer.from(forge.asn1.toDer(forge.pki.certificateToAsn1(cert)).getBytes(), 'binary'),
+    };
+}

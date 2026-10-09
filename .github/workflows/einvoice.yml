@@ -1,8 +1,9 @@
 name: E-invoice validators
 
-# Factur-X, XRechnung y Peppol contra los validadores OFICIALES: XSD, CEN
-# EN 16931, KoSIT con la configuración XRechnung, Peppol BIS, el schematron de
-# Factur-X y veraPDF (vía Mustang). Necesita Java y xmllint y descarga unos
+# Factur-X, XRechnung, Peppol y Facturae contra los validadores OFICIALES: XSD,
+# CEN EN 16931, KoSIT con la configuración XRechnung, Peppol BIS, el schematron
+# de Factur-X, veraPDF (vía Mustang) y la firma XAdES de Facturae verificada
+# con la librería XMLDSig del JDK. Necesita Java y xmllint y descarga unos
 # 85 MB de artefactos fijados por SHA-256, así que no va en test:payments: corre
 # solo cuando cambia algo que entra en la factura electrónica, y los artefactos
 # se guardan en caché por la huella de scripts/einvoice-check.mjs (donde viven
@@ -25,6 +26,7 @@ on:
       - "test/helpers/einvoice-samples.ts"
       - "scripts/einvoice-check.mjs"
       - "scripts/lib/ts-resolve.mjs"
+      - "scripts/lib/XmlDsigVerify.java"
       - ".github/workflows/einvoice.yml"
   push:
     branches: [main]
@@ -40,6 +42,7 @@ on:
       - "test/helpers/einvoice-samples.ts"
       - "scripts/einvoice-check.mjs"
       - "scripts/lib/ts-resolve.mjs"
+      - "scripts/lib/XmlDsigVerify.java"
       - ".github/workflows/einvoice.yml"
   workflow_dispatch:
 

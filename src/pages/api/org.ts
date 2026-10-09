@@ -31,7 +31,7 @@ import { isValidTimeZone } from '../../lib/timezones';
 import { validateLateInterestRate } from '../../lib/late-interest-policy';
 import { normalizeTerm } from '../../lib/payment-terms';
 import { serieCompartida, serieCompartidaMensaje } from '../../lib/fiscal/serie';
-import { EINVOICE_EMAIL_MODES, normalizeBic, normalizeEInvoiceAddress } from '../../lib/fiscal/einvoice/codes';
+import { EINVOICE_EMAIL_MODES, einvoiceAddressLeitwegProblem, leitwegProblem, normalizeBic, normalizeEInvoiceAddress } from '../../lib/fiscal/einvoice/codes';
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
 
@@ -258,6 +258,11 @@ export const PATCH: APIRoute = async ({ request }) => {
                 field: 'fiscal_einvoice_address',
             }, 400);
         }
+        // Esquema 0204: es un Leitweg-ID y su dígito de control se comprueba.
+        const leitweg = einvoiceAddressLeitwegProblem(address);
+        if (leitweg) {
+            return json({ error: leitwegProblem(leitweg.reason, currentLocale() === 'en' ? 'en' : 'es'), field: 'fiscal_einvoice_address' }, 400);
+        }
         if (address) currentFiscalMetadata.einvoice_address = address;
         else delete currentFiscalMetadata.einvoice_address;
     }
@@ -265,6 +270,13 @@ export const PATCH: APIRoute = async ({ request }) => {
         const mode = String(body.fiscal_einvoice_email ?? '');
         if ((EINVOICE_EMAIL_MODES as readonly string[]).includes(mode)) currentFiscalMetadata.einvoice_email = mode;
         else delete currentFiscalMetadata.einvoice_email;
+    }
+    // España: firmar la Facturae (XAdES-EPES) con el certificado electrónico que
+    // el negocio subió para Verifactu. Opt-in explícito: es una firma en su
+    // nombre. Lo lee `facturaeSigner()` en cada descarga y en el correo.
+    if (body.fiscal_facturae_firma !== undefined) {
+        if (body.fiscal_facturae_firma === true || body.fiscal_facturae_firma === 'true') currentFiscalMetadata.facturae_firma = true;
+        else delete currentFiscalMetadata.facturae_firma;
     }
 
     const vigDias = body.vigencia_default_dias !== undefined ? clamp(Math.round(Number(body.vigencia_default_dias) || 0), 1, 365) : actual.vigencia_default_dias;
@@ -365,6 +377,11 @@ export const PATCH: APIRoute = async ({ request }) => {
     // La franquicia es un régimen de Francia y Alemania: al salir de esos
     // países (o en cualquier otro) no puede seguir imprimiendo su mención.
     if (countryCode !== 'FR' && countryCode !== 'DE') delete currentFiscalMetadata.vat_regime;
+    // Facturae es el formato español: fuera de España ni se adjunta ni se firma.
+    if (countryCode !== 'ES') {
+        delete currentFiscalMetadata.facturae_firma;
+        if (currentFiscalMetadata.einvoice_email === 'facturae') delete currentFiscalMetadata.einvoice_email;
+    }
 
     // Una serie por emisor: si otra organización con el mismo identificador
     // fiscal ya numera con esta serie, se dice al guardar y no al emitir.

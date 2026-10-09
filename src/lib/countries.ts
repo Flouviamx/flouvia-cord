@@ -426,6 +426,20 @@ export function spainTaxTerritory(region?: string | null): 'iva' | 'igic' | 'ips
     return 'iva';
 }
 
+/**
+ * Nombre del impuesto indirecto de un emisor: el del país, salvo en Canarias
+ * (IGIC) y Ceuta y Melilla (IPSI), que están fuera del territorio del IVA. Una
+ * factura canaria que dijera "IVA 7 %" declararía un impuesto que ahí no existe.
+ */
+export function taxLabelFor(code: string, region?: string | null): string {
+    if (String(code || '').toUpperCase() === 'ES') {
+        const territory = spainTaxTerritory(region);
+        if (territory === 'igic') return 'IGIC';
+        if (territory === 'ipsi') return 'IPSI';
+    }
+    return getCountryProfile(code).taxLabel;
+}
+
 function spainRegionPresets(region?: string | null): TaxPreset[] | null {
     const territory = spainTaxTerritory(region);
     if (territory === 'igic') {

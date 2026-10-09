@@ -580,6 +580,21 @@ const EINV_FIX: Record<string, { href: string; es: string; en: string }> = {
                                         ))}
                                     </div>
                                 )}
+                                {/* Facturae: firmada solo si el negocio lo activó con su certificado.
+                                    Sin firma le sirve al cliente, pero FACe no la acepta. */}
+                                {EINV.facturaeSigned === true && (
+                                    <p class="fd-einv-note">{L === 'en'
+                                        ? 'The Facturae is downloaded signed (XAdES) with your electronic certificate.'
+                                        : 'La Facturae se descarga firmada (XAdES) con tu certificado electrónico.'}</p>
+                                )}
+                                {EINV.facturaeSigned === false && (
+                                    <p class="fd-einv-note">
+                                        {L === 'en'
+                                            ? 'The Facturae is downloaded unsigned. It works for your client; to submit it to FACe it must be signed, and it also needs the DIR3 codes of the public body, which Cord does not collect yet.'
+                                            : 'La Facturae se descarga sin firmar. A tu cliente le sirve así; para presentarla en FACe hay que firmarla, y además lleva los códigos DIR3 del organismo, que Cord todavía no captura.'}
+                                        {' '}<a href="/app/ajustes/fiscal">{L === 'en' ? 'Sign it with your certificate' : 'Firmarla con tu certificado'}</a>
+                                    </p>
+                                )}
                                 {EINV.missing.length > 0 && (
                                     <div class="fd-einv-missing">
                                         <p class="fd-einv-lead">{EINV.available.length
@@ -598,9 +613,13 @@ const EINV_FIX: Record<string, { href: string; es: string; en: string }> = {
                                             : 'Una factura emitida conserva los datos con que se emitió: lo que corrijas en Ajustes o en el cliente aplica a las siguientes.'}</p>
                                     </div>
                                 )}
-                                <p class="fd-einv-note">{L === 'en'
-                                    ? 'Cord generates these files and can attach them to the invoice email. It does not send them over the Peppol network.'
-                                    : 'Cord genera estos archivos y puede adjuntarlos al correo de la factura. No los envía por la red Peppol.'}</p>
+                                <p class="fd-einv-note">{EINV.facturaeSigned === null
+                                    ? (L === 'en'
+                                        ? 'Cord generates these files and can attach them to the invoice email. It does not send them over the Peppol network.'
+                                        : 'Cord genera estos archivos y puede adjuntarlos al correo de la factura. No los envía por la red Peppol.')
+                                    : (L === 'en'
+                                        ? 'Cord generates these files and can attach them to the invoice email. It does not send them over the Peppol network or to FACe.'
+                                        : 'Cord genera estos archivos y puede adjuntarlos al correo de la factura. No los envía por la red Peppol ni a FACe.')}</p>
                             </section>
                         )}
 
@@ -1182,8 +1201,10 @@ const EINV_FIX: Record<string, { href: string; es: string; en: string }> = {
     .fd-einv-missing li { display: flex; flex-direction: column; gap: 0.15rem; color: var(--color-text-muted); font-size: 0.76rem; line-height: 1.45; }
     .fd-einv-missing li a { color: var(--color-blue-deep); font-weight: 600; text-decoration: none; min-height: 24px; }
     .fd-einv-missing li a:hover { text-decoration: underline; }
-    :global(html[data-theme="dark"]) .fd-einv-missing li a, :global(html[data-theme="dark"]) .fd-einv-link:hover { color: #7fb0ff; }
+    :global(html[data-theme="dark"]) .fd-einv-missing li a, :global(html[data-theme="dark"]) .fd-einv-note a, :global(html[data-theme="dark"]) .fd-einv-link:hover { color: #7fb0ff; }
     .fd-einv-note { margin: 0; color: var(--color-text-muted); font-size: 0.72rem; line-height: 1.45; }
+    .fd-einv-note a { color: var(--color-blue-deep); font-weight: 600; text-decoration: none; }
+    .fd-einv-note a:hover { text-decoration: underline; }
     .fd-more summary {
         display: flex; align-items: center; justify-content: space-between; min-height: 40px;
         padding: 0 0.85rem; border: 1px solid var(--color-border); border-radius: 10px;

@@ -64,6 +64,8 @@ import { exemptionReasonFor } from './exemption';
 import { descuentoDesdeJson, descuentoParaMotor, type DescuentoDef, type DescuentoSolicitud } from '../descuentos';
 import { DescuentoError, liberarCupon, redimirCupon, resolverDescuento } from '../cupones';
 import { railDeDocumento } from './latam/rieles';
+import { checkLeitwegId, leitwegProblem, splitEInvoiceAddress } from './einvoice/codes';
+import { currentLocale } from '../context';
 
 export interface DraftLineInput {
   descripcion: string;
@@ -166,6 +168,19 @@ function cfdiOverrides(country: string, input: CreateDraftInput):
   if (uso && !isUsoCfdi(uso)) return { ok: false, error: 'El uso del CFDI no está en el catálogo del SAT.' };
   if (forma && !isFormaPago(forma)) return { ok: false, error: 'La forma de pago no está en el catálogo del SAT.' };
   return { ok: true, uso, forma };
+}
+
+/**
+ * Con un cliente de la administración pública alemana (dirección electrónica
+ * 0204), la referencia del comprador es su Leitweg-ID y se comprueba su dígito
+ * de control (Formatspezifikation Leitweg-ID v2.0.2, cap. 2.4). Solo la que
+ * llega en ESTA petición: una heredada del cliente que ya no pase no bloquea el
+ * borrador; la marca la ficha del cliente y la factura electrónica falla cerrado.
+ */
+function buyerReferenceError(value: string | null | undefined, clientAddress: unknown): string | null {
+  if (!value || splitEInvoiceAddress(clientAddress)?.scheme !== '0204') return null;
+  const check = checkLeitwegId(value);
+  return check.ok ? null : leitwegProblem(check.reason, currentLocale() === 'en' ? 'en' : 'es');
 }
 
 /** Máximo de conceptos por factura. Mismo tope que una cotización. */
@@ -482,6 +497,8 @@ export async function createInvoiceDraft(orgId: string, input: CreateDraftInput)
   if (satError) return { ok: false, error: satError };
   const overrides = cfdiOverrides(country, input);
   if (!overrides.ok) return { ok: false, error: overrides.error };
+  const leitweg = buyerReferenceError(input.buyerReference, head.cliente_einvoice_address);
+  if (leitweg) return { ok: false, error: leitweg };
   let docType: string;
   try { docType = await documentTypeForOrg(orgId, country, input.documentMode); }
   catch (error) { return { ok: false, error: error instanceof Error ? error.message : 'No se pudo verificar el tipo de documento.' }; }
@@ -637,6 +654,8 @@ export async function updateInvoiceDraft(
   if (satError) return { ok: false, error: satError };
   const overrides = cfdiOverrides(country, input);
   if (!overrides.ok) return { ok: false, error: overrides.error };
+  const leitweg = buyerReferenceError(input.buyerReference, head.cliente_einvoice_address);
+  if (leitweg) return { ok: false, error: leitweg };
   let docType = String(doc.document_type);
   if (input.documentMode !== undefined) {
     try { docType = await documentTypeForOrg(orgId, country, input.documentMode); }

@@ -25,11 +25,26 @@ import { nifIvaUE } from '../verifactu/validacion';
 import { docLangFor, termText, type DocLang } from '../invoice-pdf';
 import { EU_EXEMPTION_INFO, EXEMPTION_INFO, isEuExemptionCode, isExemptionReason, type ZeroVatCategory } from '../exemption';
 import { ibanValido } from '../../payout-fields';
-import { EAS_SCHEMES, splitEInvoiceAddress } from './codes';
+import { EAS_SCHEMES, checkLeitwegId, leitwegProblem, splitEInvoiceAddress } from './codes';
 
-export type VatCategory = 'S' | ZeroVatCategory;
-export type EInvoiceFormat = 'facturx' | 'xrechnung' | 'xrechnung-cii' | 'peppol';
-export const EINVOICE_FORMATS: readonly EInvoiceFormat[] = ['facturx', 'xrechnung', 'xrechnung-cii', 'peppol'];
+/**
+ * UNTDID 5305 en EN 16931: S, las categorías de tipo cero/exención y, para
+ * España fuera del territorio del IVA, L (IGIC, Canarias) y M (IPSI, Ceuta y
+ * Melilla). L y M se agrupan por tasa como S (BR-AF-08, BR-AG-08) y no llevan
+ * causa de exención (BR-AF-10, BR-AG-10).
+ */
+export type VatCategory = 'S' | 'L' | 'M' | ZeroVatCategory;
+/** Categorías con tasa propia: un grupo del desglose por tasa. */
+export const RATED_CATEGORIES: ReadonlySet<VatCategory> = new Set(['S', 'L', 'M']);
+/**
+ * Formatos de factura electrónica que Cord genera: los cuatro de EN 16931 que
+ * arma este modelo y Facturae 3.2.2 (`facturae.ts`), solo para emisores
+ * españoles, que además declara retenciones.
+ */
+export type EInvoiceFormat = 'facturx' | 'xrechnung' | 'xrechnung-cii' | 'peppol' | 'facturae';
+export type En16931Format = Exclude<EInvoiceFormat, 'facturae'>;
+export const EN16931_FORMATS: readonly En16931Format[] = ['facturx', 'xrechnung', 'xrechnung-cii', 'peppol'];
+export const EINVOICE_FORMATS: readonly EInvoiceFormat[] = [...EN16931_FORMATS, 'facturae'];
 
 export function isEInvoiceFormat(value: unknown): value is EInvoiceFormat {
     return typeof value === 'string' && (EINVOICE_FORMATS as readonly string[]).includes(value);
@@ -293,6 +308,15 @@ export function partyIds(party: FiscalParty, role: 'seller' | 'buyer', smallBusi
             return out;
         case 'ES':
             if (kind === 'nif' || kind === 'nie' || kind === 'cif') {
+                // Canarias, Ceuta y Melilla están fuera del territorio del IVA
+                // de la UE (Directiva 2006/112/CE, art. 6): su NIF no es un
+                // NIF-IVA (BT-31/BT-48). Va como registro fiscal del vendedor
+                // (BT-32) o identificación legal del comprador (BT-47).
+                if (spainTaxTerritory(party.address?.region) !== 'iva') {
+                    if (role === 'seller') out.taxRegistrationId = normalized;
+                    out.legalId ??= { id: normalized };
+                    return out;
+                }
                 out.vatId = `ES${normalized}`;
                 out.legalId ??= { id: normalized };
             } else if (role === 'buyer') out.legalId ??= { id: normalized };
@@ -365,8 +389,14 @@ interface LineVat { category: VatCategory; code?: string; text?: string }
  *       declara eligiendo VATEX-EU-O en el perfil exento;
  *     · nacional → E con el texto genérico de exención.
  */
-export function lineVat(line: FiscalLineItem, ctx: { issuerCountry: string; buyerCountry: string; sellerVat?: string; buyerVat?: string; smallBusiness: boolean; lang: DocLang }): LineVat {
+export function lineVat(line: FiscalLineItem, ctx: { issuerCountry: string; buyerCountry: string; sellerVat?: string; buyerVat?: string; smallBusiness: boolean; lang: DocLang; territory?: 'iva' | 'igic' | 'ipsi' }): LineVat {
     const rate = Number(line.taxRate) || 0;
+    // Canarias (IGIC) y Ceuta y Melilla (IPSI): todo concepto lleva la
+    // categoría de su impuesto, con su tasa, también al 0 % (BR-AF-05/BR-AG-05:
+    // "0 o mayor que cero"). Una causa de exención no tiene cabida (BR-AF-10,
+    // BR-AG-10): la decide `assessEInvoice`, que entonces falla cerrado.
+    if (ctx.territory === 'igic') return { category: 'L' };
+    if (ctx.territory === 'ipsi') return { category: 'M' };
     if (rate > 0) return { category: 'S' };
     const reason = clean(line.exemptionReason).toUpperCase();
     if (ctx.issuerCountry === 'ES' && isExemptionReason(reason)) {
@@ -434,13 +464,13 @@ export function assessEInvoice(src: EInvoiceSource): EInvoiceAssessment {
     if (!isEuCountry(issuerCountry)) {
         problems.push(p('issuer_not_eu', 'La factura electrónica europea es para emisores establecidos en la UE.', 'European e-invoices are for issuers established in the EU.', 'fiscal'));
     }
-    if (issuerCountry === 'ES' && spainTaxTerritory(src.issuer?.address?.region) !== 'iva') {
-        problems.push(p('igic_ipsi', 'Las facturas con IGIC o IPSI todavía no tienen versión electrónica europea en Cord.', 'Invoices with IGIC or IPSI do not have a European e-invoice version in Cord yet.'));
-    }
+    // Canarias (IGIC) o Ceuta y Melilla (IPSI): mismo criterio que el catálogo
+    // de impuestos al sembrar las tasas (`spainTaxTerritory`).
+    const territory = issuerCountry === 'ES' ? spainTaxTerritory(src.issuer?.address?.region) : 'iva';
     // Las retenciones (IRPF) no existen en EN 16931: un "importe a pagar" menor
     // que el total rompería BR-CO-16 o declararía un pago que no es.
     if (Number(src.retencionTotal) > 0) {
-        problems.push(p('withholding', 'Esta factura tiene retenciones y la factura electrónica europea no las admite. Emite sin retención para generarla.', 'This invoice has withholdings, which European e-invoices do not support. Issue it without withholding to generate one.'));
+        problems.push(p('withholding', 'Esta factura tiene retenciones y Factur-X, XRechnung y Peppol no las admiten: EN 16931 no tiene dónde declararlas, y restarlas como descuento o anticipo falsearía la base o el importe a pagar. En España, la Facturae sí las declara.', 'This invoice has withholdings and Factur-X, XRechnung and Peppol do not support them: EN 16931 has no place to declare them, and subtracting them as a discount or prepayment would misstate the base or the amount due. In Spain, Facturae does declare them.'));
     }
     const currency = normalizeCurrency(src.currency, '');
     if (!currency) problems.push(p('currency', 'La divisa del documento no es válida.', 'The document currency is not valid.'));
@@ -488,11 +518,29 @@ export function assessEInvoice(src: EInvoiceSource): EInvoiceAssessment {
     }
     if (!buyer.name) problems.push(p('buyer_name', 'Falta el nombre del cliente.', 'The client name is missing.', 'cliente'));
     if (!buyer.address.country) problems.push(p('buyer_country', 'Falta el país del cliente.', "The client's country is missing.", 'cliente'));
+    // Leitweg-ID (administración pública alemana, esquema EAS 0204): un dígito
+    // de control que no cuadra es una factura que no llega a su destino. No se
+    // corrige solo: se dice y se pide corregir (Formatspezifikation v2.0.2, 2.4).
+    const leitweg = (address: { scheme: string; id: string } | undefined) => {
+        if (address?.scheme !== '0204') return null;
+        const c = checkLeitwegId(address.id);
+        return c.ok ? null : c.reason;
+    };
+    const sellerLeitweg = leitweg(seller.electronicAddress);
+    if (sellerLeitweg) problems.push(p('seller_leitweg', `Tu dirección electrónica 0204 no es un Leitweg-ID válido. ${leitwegProblem(sellerLeitweg, 'es')}`, `Your 0204 electronic address is not a valid Leitweg-ID. ${leitwegProblem(sellerLeitweg, 'en')}`, 'fiscal'));
+    const buyerLeitweg = leitweg(buyer.electronicAddress);
+    if (buyerLeitweg) problems.push(p('buyer_leitweg', `La dirección electrónica 0204 del cliente no es un Leitweg-ID válido. ${leitwegProblem(buyerLeitweg, 'es')}`, `The client's 0204 electronic address is not a valid Leitweg-ID. ${leitwegProblem(buyerLeitweg, 'en')}`, 'cliente'));
+    // Con un cliente 0204, la referencia del comprador (BT-10) es su Leitweg-ID.
+    const refCheck = buyer.electronicAddress?.scheme === '0204' && clean(src.buyerReference) ? checkLeitwegId(src.buyerReference) : null;
+    if (refCheck && !refCheck.ok) {
+        problems.push(p('buyer_reference_leitweg', `La referencia del comprador no es un Leitweg-ID válido. ${leitwegProblem(refCheck.reason, 'es')}`, `The buyer reference is not a valid Leitweg-ID. ${leitwegProblem(refCheck.reason, 'en')}`, 'cliente'));
+    }
 
     // ── Líneas ──
-    const ctx = { issuerCountry, buyerCountry, sellerVat: sellerIds.vatId, buyerVat: buyerIds.vatId, smallBusiness, lang };
+    const ctx = { issuerCountry, buyerCountry, sellerVat: sellerIds.vatId, buyerVat: buyerIds.vatId, smallBusiness, lang, territory };
     const enLines: EnLine[] = [];
     let linesCuadran = true;
+    let territoryExemption = false;
     lines.forEach((line, index) => {
         const quantity = Number(line.quantity);
         const taxable = Number(line.subtotal);
@@ -504,7 +552,8 @@ export function assessEInvoice(src: EInvoiceSource): EInvoiceAssessment {
             return;
         }
         const vat = lineVat(line, ctx);
-        if (vat.category !== 'S' && cents(tax) !== 0) linesCuadran = false;
+        if (territory !== 'iva' && clean(line.exemptionReason)) territoryExemption = true;
+        if (!RATED_CATEGORIES.has(vat.category) && cents(tax) !== 0) linesCuadran = false;
         const netAmount = round2(taxable + discount);
         enLines.push({
             id: String(index + 1),
@@ -514,7 +563,7 @@ export function assessEInvoice(src: EInvoiceSource): EInvoiceAssessment {
             netAmount,
             netPrice: unitPrice(netAmount, quantity),
             category: vat.category,
-            rate: vat.category === 'S' ? Math.round(rate * 1e8) / 1e6 : 0,
+            rate: RATED_CATEGORIES.has(vat.category) ? Math.round(rate * 1e8) / 1e6 : 0,
             discount: round2(discount),
             taxable: round2(taxable),
             tax: round2(tax),
@@ -522,6 +571,11 @@ export function assessEInvoice(src: EInvoiceSource): EInvoiceAssessment {
             ...(vat.text ? { exemptionText: vat.text } : {}),
         });
     });
+    if (territoryExemption) {
+        problems.push(territory === 'igic'
+            ? p('igic_exemption', 'Un concepto lleva una causa de exención. En la factura electrónica europea el IGIC solo se declara con su tipo (también el 0 %), sin causa (BR-AF-10). Quita la causa del perfil exento o emite ese concepto en otra factura.', 'A line carries an exemption reason. In European e-invoices IGIC is declared only with its rate (0% included), without a reason (BR-AF-10). Remove the reason from the exempt profile or invoice that line separately.', 'impuestos')
+            : p('ipsi_exemption', 'Un concepto lleva una causa de exención. En la factura electrónica europea el IPSI solo se declara con su tipo (también el 0 %), sin causa (BR-AG-10). Quita la causa del perfil exento o emite ese concepto en otra factura.', 'A line carries an exemption reason. In European e-invoices IPSI is declared only with its rate (0% included), without a reason (BR-AG-10). Remove the reason from the exempt profile or invoice that line separately.', 'impuestos'));
+    }
     if (!linesCuadran) {
         problems.push(p('lines_inconsistent', 'Los importes de los conceptos no cuadran entre sí; esta factura no puede representarse como factura electrónica.', 'The line amounts do not reconcile; this invoice cannot be represented as an e-invoice.'));
     }
@@ -543,8 +597,9 @@ export function assessEInvoice(src: EInvoiceSource): EInvoiceAssessment {
     // grupo exactamente, que es lo que piden BR-S-08 y BR-*-08.
     const groups = new Map<string, { category: VatCategory; rate: number; taxable: number; tax: number; discount: number; codes: Set<string>; texts: string[] }>();
     for (const l of enLines) {
-        const key = l.category === 'S' ? `S:${l.rate}` : l.category;
-        const g = groups.get(key) ?? { category: l.category, rate: l.category === 'S' ? l.rate : 0, taxable: 0, tax: 0, discount: 0, codes: new Set<string>(), texts: [] };
+        const rated = RATED_CATEGORIES.has(l.category);
+        const key = rated ? `${l.category}:${l.rate}` : l.category;
+        const g = groups.get(key) ?? { category: l.category, rate: rated ? l.rate : 0, taxable: 0, tax: 0, discount: 0, codes: new Set<string>(), texts: [] };
         g.taxable += cents(l.taxable);
         g.tax += cents(l.tax);
         g.discount += cents(l.discount);
@@ -567,7 +622,7 @@ export function assessEInvoice(src: EInvoiceSource): EInvoiceAssessment {
     // (lo que dice el PDF). EN 16931 lo admite mientras difiera menos de una
     // unidad de base × tasa (BR-CO-17 y BR-S-09, schematron CEN v1.3.16); más
     // allá no hay forma honesta de escribirlo.
-    if (ordered.some((g) => g.category === 'S' && Math.abs(g.tax - Math.round(g.taxable * g.rate / 100)) >= 100)) {
+    if (ordered.some((g) => RATED_CATEGORIES.has(g.category) && Math.abs(g.tax - Math.round(g.taxable * g.rate / 100)) >= 100)) {
         problems.push(p('vat_rounding', 'El IVA de esta factura, redondeado concepto por concepto, se aleja más de una unidad del calculado sobre la base de cada tasa; la factura electrónica europea no lo admite.', 'The VAT on this invoice, rounded line by line, differs by more than one unit from the VAT computed on each rate base; European e-invoices do not allow it.'));
     }
     const allowances: EnAllowance[] = ordered.filter((g) => g.discount > 0).map((g) => ({
@@ -588,7 +643,8 @@ export function assessEInvoice(src: EInvoiceSource): EInvoiceAssessment {
             problems.push(p('o_legal_id', 'Para una operación no sujeta al IVA, la factura identifica al emisor por su número de registro mercantil. Agrégalo en Ajustes › Perfil fiscal.', 'For a supply not subject to VAT, the invoice identifies the issuer by its company registration number. Add it in Settings › Tax profile.', 'fiscal'));
         }
     }
-    const needsSellerVatOrTax = ['S', 'Z', 'E', 'AE'].some((c) => categories.has(c as VatCategory));
+    // BR-S-02, BR-Z-02, BR-E-02, BR-AE-02, BR-AF-02 y BR-AG-02.
+    const needsSellerVatOrTax = ['S', 'Z', 'E', 'AE', 'L', 'M'].some((c) => categories.has(c as VatCategory));
     if (needsSellerVatOrTax && !seller.vatId && !seller.taxRegistrationId) {
         problems.push(p('seller_vat', 'Falta el número de IVA del emisor. Agrégalo en Ajustes › Perfil fiscal.', 'The issuer VAT number is missing. Add it in Settings › Tax profile.', 'fiscal'));
     }
@@ -713,7 +769,7 @@ export function unitPrice(netAmount: number, quantity: number): number {
 }
 
 /** Lo que además pide cada formato. Vacío = se puede generar. */
-export function formatProblems(format: EInvoiceFormat, assessment: EInvoiceAssessment): EInvoiceProblem[] {
+export function formatProblems(format: En16931Format, assessment: EInvoiceAssessment): EInvoiceProblem[] {
     const out = [...assessment.problems];
     const inv = assessment.invoice;
     if (!inv) return out;
@@ -735,6 +791,16 @@ export function formatProblems(format: EInvoiceFormat, assessment: EInvoiceAsses
         // BR-DE-1: instrucciones de pago. Cord las da con la transferencia.
         if (inv.typeCode === '380' && !inv.paymentMeans) {
             out.push(p('iban', 'XRechnung pide cómo pagar: agrega tu IBAN en Ajustes › Cobros.', 'XRechnung requires payment instructions: add your IBAN in Settings › Payments.', 'cobros'));
+        }
+    }
+    if (format === 'facturx' || format === 'xrechnung-cii') {
+        // IGIC al 0 %: EN 16931 lo admite (BR-AF-05: "0 o mayor que cero") y la
+        // sintaxis UBL del schematron CEN 1.3.16 lo valida (`Percent >= 0`),
+        // pero su sintaxis CII —y el schematron de Factur-X 1.09— exige
+        // `RateApplicablePercent > 0` en la línea y en el descuento (BR-AF-05,
+        // -06, -07). Un CII así lo rechaza el validador oficial: no se genera.
+        if (inv.lines.some((l) => l.category === 'L' && l.rate === 0)) {
+            out.push(p('igic_zero_cii', 'El IGIC al 0 % no se puede declarar en la sintaxis CII (Factur-X y XRechnung CII): su validador oficial exige un tipo mayor que cero (BR-AF-05). Descarga XRechnung (UBL) o Peppol.', 'IGIC at 0% cannot be declared in the CII syntax (Factur-X and XRechnung CII): its official validator requires a rate above zero (BR-AF-05). Download XRechnung (UBL) or Peppol instead.'));
         }
     }
     if (format === 'peppol') {

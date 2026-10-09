@@ -284,7 +284,7 @@ export const FIELD_DOCS: Record<string, string> = {
     document_mode: 'commercial o fiscal. Sin él, fiscal si el plan lo incluye y el país lo tiene habilitado; fiscal sin eso responde 400.',
     done: 'true si la tarea está terminada.',
     due_date: 'Fecha de vencimiento, YYYY-MM-DD.',
-    buyer_reference: 'Referencia del comprador para su cuenta por pagar (en Alemania, el Leitweg-ID de la administración pública). La lleva la factura electrónica europea (BT-10) y la exige XRechnung. Sin ella, la del cliente.',
+    buyer_reference: 'Referencia del comprador para su cuenta por pagar (en Alemania, el Leitweg-ID de la administración pública). La lleva la factura electrónica europea (BT-10) y la exige XRechnung. Sin ella, la del cliente. Si la dirección electrónica del cliente es un Leitweg-ID (esquema 0204), se comprueban sus dígitos de control (ISO/IEC 7064 MOD 97-10) y una que no pase responde 400.',
     purchase_order: 'Número de la orden de compra del cliente (BT-13 de la factura electrónica europea).',
     service_date: 'Fecha de prestación del servicio o de entrega (Leistungsdatum), YYYY-MM-DD. Sin ella, la factura indica que coincide con la fecha de emisión.',
     service_date_end: 'Fin del periodo de prestación, YYYY-MM-DD. Requiere service_date y no puede ser anterior.',
