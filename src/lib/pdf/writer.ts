@@ -98,7 +98,11 @@ const W_BOLD = [
     611, 611, 389, 556, 333, 611, 556, 778, 556, 556, 500, 389, 280, 389, 584,
 ];
 
-// Ancho de los códigos WinAnsi altos que NO son una letra acentuada.
+// Ancho de los códigos WinAnsi altos que NO son una letra acentuada, por peso.
+// Helvetica-Bold tiene sus propios anchos (las comillas bajas y dobles son más
+// anchas, el ¦ y el µ también): escalar los de la regular dejaba el € y las
+// comillas angulares de la negrita 17 unidades más anchos, y un importe
+// alineado a la derecha se corría.
 const HIGH_WIDTH_REGULAR: Record<number, number> = {
     0x80: 556, 0x82: 222, 0x83: 556, 0x84: 333, 0x85: 1000, 0x86: 556, 0x87: 556,
     0x88: 333, 0x89: 1000, 0x8b: 333, 0x8c: 1000, 0x91: 222, 0x92: 222, 0x93: 333,
@@ -109,28 +113,48 @@ const HIGH_WIDTH_REGULAR: Record<number, number> = {
     0xb4: 333, 0xb5: 556, 0xb6: 537, 0xb7: 278, 0xb8: 333, 0xb9: 333, 0xba: 365,
     0xbb: 556, 0xbc: 834, 0xbd: 834, 0xbe: 834, 0xbf: 611, 0xd7: 584, 0xf7: 584,
 };
+const HIGH_WIDTH_BOLD: Record<number, number> = {
+    0x80: 556, 0x82: 278, 0x83: 556, 0x84: 500, 0x85: 1000, 0x86: 556, 0x87: 556,
+    0x88: 333, 0x89: 1000, 0x8b: 333, 0x8c: 1000, 0x91: 278, 0x92: 278, 0x93: 500,
+    0x94: 500, 0x95: 350, 0x96: 556, 0x97: 1000, 0x98: 333, 0x99: 1000, 0x9b: 333,
+    0x9c: 944, 0xa0: 278, 0xa1: 333, 0xa2: 556, 0xa3: 556, 0xa4: 556, 0xa5: 556,
+    0xa6: 280, 0xa7: 556, 0xa8: 333, 0xa9: 737, 0xaa: 370, 0xab: 556, 0xac: 584,
+    0xad: 333, 0xae: 737, 0xaf: 333, 0xb0: 400, 0xb1: 584, 0xb2: 333, 0xb3: 333,
+    0xb4: 333, 0xb5: 611, 0xb6: 556, 0xb7: 278, 0xb8: 333, 0xb9: 333, 0xba: 365,
+    0xbb: 556, 0xbc: 834, 0xbd: 834, 0xbe: 834, 0xbf: 611, 0xd7: 584, 0xf7: 584,
+};
+
+// Letras de WinAnsi que NO comparten el ancho de su letra base: la ß no es una
+// B, la Æ y la æ son ligaduras, y en la regular la i acentuada es más ancha que
+// la i (278 contra 222) y la ø más que la o.
+const LETTER_WIDTH_REGULAR: Record<number, number> = {
+    0xc6: 1000, 0xdf: 611, 0xe6: 889, 0xec: 278, 0xed: 278, 0xee: 278, 0xef: 278, 0xf8: 611,
+};
+const LETTER_WIDTH_BOLD: Record<number, number> = { 0xc6: 1000, 0xdf: 611, 0xe6: 889 };
 
 // Códigos WinAnsi de letras acentuadas → letra ASCII cuyo ancho comparten.
 const ACCENT_BASE: Record<number, string> = {
-    0xc0: 'A', 0xc1: 'A', 0xc2: 'A', 0xc3: 'A', 0xc4: 'A', 0xc5: 'A', 0xc6: 'A',
+    0xc0: 'A', 0xc1: 'A', 0xc2: 'A', 0xc3: 'A', 0xc4: 'A', 0xc5: 'A',
     0xc7: 'C', 0xc8: 'E', 0xc9: 'E', 0xca: 'E', 0xcb: 'E', 0xcc: 'I', 0xcd: 'I',
     0xce: 'I', 0xcf: 'I', 0xd0: 'D', 0xd1: 'N', 0xd2: 'O', 0xd3: 'O', 0xd4: 'O',
     0xd5: 'O', 0xd6: 'O', 0xd8: 'O', 0xd9: 'U', 0xda: 'U', 0xdb: 'U', 0xdc: 'U',
-    0xdd: 'Y', 0xde: 'P', 0xdf: 'B', 0xe0: 'a', 0xe1: 'a', 0xe2: 'a', 0xe3: 'a',
-    0xe4: 'a', 0xe5: 'a', 0xe6: 'a', 0xe7: 'c', 0xe8: 'e', 0xe9: 'e', 0xea: 'e',
+    0xdd: 'Y', 0xde: 'P', 0xe0: 'a', 0xe1: 'a', 0xe2: 'a', 0xe3: 'a',
+    0xe4: 'a', 0xe5: 'a', 0xe7: 'c', 0xe8: 'e', 0xe9: 'e', 0xea: 'e',
     0xeb: 'e', 0xec: 'i', 0xed: 'i', 0xee: 'i', 0xef: 'i', 0xf0: 'o', 0xf1: 'n',
     0xf2: 'o', 0xf3: 'o', 0xf4: 'o', 0xf5: 'o', 0xf6: 'o', 0xf8: 'o', 0xf9: 'u',
     0xfa: 'u', 0xfb: 'u', 0xfc: 'u', 0xfd: 'y', 0xfe: 'p', 0xff: 'y',
-    0x8a: 'S', 0x8e: 'Z', 0x9a: 's', 0x9e: 'z', 0x9f: 'Y', 0x8f: 'A',
+    0x8a: 'S', 0x8e: 'Z', 0x9a: 's', 0x9e: 'z', 0x9f: 'Y',
 };
 
 function glyphWidth(byte: number, bold: boolean): number {
     const table = bold ? W_BOLD : W_REGULAR;
     if (byte >= 32 && byte <= 126) return table[byte - 32];
+    const letter = (bold ? LETTER_WIDTH_BOLD : LETTER_WIDTH_REGULAR)[byte];
+    if (letter !== undefined) return letter;
     const base = ACCENT_BASE[byte];
     if (base) return table[base.charCodeAt(0) - 32];
-    const high = HIGH_WIDTH_REGULAR[byte];
-    if (high !== undefined) return bold ? Math.round(high * 1.03) : high;
+    const high = (bold ? HIGH_WIDTH_BOLD : HIGH_WIDTH_REGULAR)[byte];
+    if (high !== undefined) return high;
     return table[0];
 }
 

@@ -37,6 +37,7 @@ archived.hubspot.config.yml
 !.github/workflows/elements.yml
 !.github/workflows/cord-crons.yml
 !.github/workflows/publish-packages.yml
+!.github/workflows/einvoice.yml
 .env*
 
 # clasp: el id del script de cada complemento, como el .env de las demás apps
