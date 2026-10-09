@@ -7,7 +7,10 @@
 //   - estructura del DTE: DTE_v10.xsd y EnvioDTE_v10.xsd (actualización del
 //     06/02/2026, schema_dte.zip de www.sii.cl/factura_electronica/factura_mercado);
 //   - nombres impresos de cada documento: "Manual de muestras impresas" v4.0;
-//   - vigencia de los folios: Resolución Exenta SII N° 58 de 2017.
+//   - vigencia de los folios: Resolución Exenta SII N° 58 de 2017;
+//   - libros de compras y ventas: "Formato de información electrónica de
+//     compras y ventas" v3.0 (formato_iecv.pdf) y LibroCV_v10.xsd
+//     (schema_iecv.zip de www.sii.cl/factura_electronica/factura_mercado).
 //
 // Puro: lo cargan los scripts de contrato con Node plano.
 
@@ -59,6 +62,43 @@ export const RUT_SII = '60803000-K';
  * (instructivo técnico, Anexo 3, A 3.1).
  */
 export const SCHEMA_LOCATION_ENVIO = `${NS_SII_DTE} EnvioDTE_v10.xsd`;
+
+/** Información electrónica de compras y ventas (schema_iecv de www.sii.cl, LibroCV_v10.xsd). */
+export const SCHEMA_LOCATION_LIBRO = `${NS_SII_DTE} LibroCV_v10.xsd`;
+
+/**
+ * Carátula de los libros del set de pruebas (instrucciones del set, III y
+ * IV): libro ESPECIAL, envío TOTAL y folio de notificación 1 en el de ventas
+ * y 2 en el de compras.
+ */
+export const FOLIO_NOTIFICACION_SET: Readonly<Record<'VENTA' | 'COMPRA', number>> = { VENTA: 1, COMPRA: 2 };
+
+/**
+ * Códigos de documento del libro de compras (formato IECV v3.0, 4.2) que el
+ * set de libro de compras puede traer, por su nombre en el set. El libro de
+ * compras registra documentos en papel (30, 32, 45, 55, 60) además de los
+ * electrónicos.
+ */
+export const DOCUMENTOS_COMPRA: Readonly<Record<string, number>> = {
+    'FACTURA': 30,
+    'FACTURA EXENTA': 32,
+    'FACTURA NO AFECTA O EXENTA': 32,
+    'FACTURA ELECTRONICA': 33,
+    'FACTURA EXENTA ELECTRONICA': 34,
+    'FACTURA NO AFECTA O EXENTA ELECTRONICA': 34,
+    'FACTURA DE COMPRA': 45,
+    'FACTURA DE COMPRA ELECTRONICA': 46,
+    'NOTA DE DEBITO': 55,
+    'NOTA DE DEBITO ELECTRONICA': 56,
+    'NOTA DE CREDITO': 60,
+    'NOTA DE CREDITO ELECTRONICA': 61,
+};
+
+/** Documentos en papel: el libro exige su razón social (formato IECV, detalle de compras, campo 12). */
+export const DOCUMENTOS_NO_ELECTRONICOS: readonly number[] = [30, 32, 45, 55, 60];
+
+/** Código 15, "IVA retenido total" (formato IECV, 7): factura de compra emitida (45, 46). */
+export const COD_IVA_RETENIDO_TOTAL = 15;
 
 export type TipoDte = 33 | 34 | 56 | 61;
 

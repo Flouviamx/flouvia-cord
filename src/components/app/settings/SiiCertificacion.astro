@@ -5,8 +5,11 @@
 //   set de pruebas que el SII asignó al negocio, elección de los clientes
 //   receptores (RUT distintos por factura), envío firmado de todos los casos
 //   en un envío, veredicto del SII y muestras impresas de cada caso (con su
-//   copia cedible). Lo que el set trae y Cord no arma (libros, guías,
-//   exportación, factura de compra) se dice al cargarlo.
+//   copia cedible). Después, los libros de ventas y de compras que pide el
+//   mismo archivo: el de ventas informa el set aceptado; el de compras, los
+//   documentos del set de compras con el proveedor que el negocio agrega. Lo
+//   que el set trae y Cord no arma (guías y su libro, exportación, factura de
+//   compra) se dice al cargarlo.
 // - Intercambio (ambos ambientes): la casilla de intercambio del negocio si
 //   hay correo entrante, la subida manual de un envío recibido y, por cada DTE,
 //   la aceptación o el rechazo con su motivo, el recibo de mercaderías y el
@@ -29,7 +32,7 @@ const cert = entorno === 'homologacion';
                 ? 'To become an electronic issuer, the SII asks for five steps in its certification environment. Cord does the first one for you and prepares what the others need:'
                 : 'Para quedar autorizado como emisor electrónico, el SII pide cinco pasos en su ambiente de certificación. Cord hace el primero por ti y deja listo lo que necesitan los demás:'}</p>
             <ol class="sii-cert-pasos">
-                <li>{en ? 'Test set: load the file the SII assigned you; Cord builds every case, signs them and sends them in one submission.' : 'Set de pruebas: carga el archivo que te asignó el SII; Cord arma cada caso, lo firma y los envía en un solo envío.'}</li>
+                <li>{en ? 'Test set: load the file the SII assigned you; Cord builds every case, signs them and sends them in one submission. Once the SII accepts it, Cord also sends the sales and purchase ledgers your set asks for.' : 'Set de pruebas: carga el archivo que te asignó el SII; Cord arma cada caso, lo firma y los envía en un solo envío. Cuando el SII lo acepte, Cord envía también los libros de ventas y de compras que pide tu set.'}</li>
                 <li>{en ? 'Simulation: issue representative documents from Invoices while this account is in certification.' : 'Simulación: emite documentos representativos desde Facturas mientras esta cuenta esté en certificación.'}</li>
                 <li>{en ? 'Exchange: the SII sends you documents; answer them below.' : 'Intercambio: el SII te envía documentos; respóndelos más abajo.'}</li>
                 <li>{en ? 'Printed samples: download the PDF of each case (and its assignable copy) and upload them on the SII site.' : 'Muestras impresas: descarga el PDF de cada caso (y su copia cedible) y súbelos en el sitio del SII.'}</li>
@@ -49,6 +52,7 @@ const cert = entorno === 'homologacion';
             </div>
             <p class="sii-hint" data-sii-set-nosop hidden></p>
             <div class="sii-cert-lista" data-sii-sets></div>
+            <div class="sii-cert-lista" data-sii-libros></div>
         </Fragment>
     )}
 
@@ -100,9 +104,10 @@ const cert = entorno === 'homologacion';
     [data-sii] .sii-cert-links a { font-size: 0.76rem; font-weight: 600; color: var(--color-blue-deep); text-decoration: none; min-height: 28px; display: inline-flex; align-items: center; }
     [data-sii] .sii-cert-links a:hover { text-decoration: underline; }
     [data-sii] .sii-cert-decision { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5rem; }
+    [data-sii] .sii-cert-prov { display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: 0.5rem; }
     [data-sii] .sii-cert-subir { display: grid; grid-template-columns: minmax(0, 260px) minmax(0, 1fr); gap: 1rem; align-items: end; }
     @media (max-width: 880px) {
-        [data-sii] .sii-cert-caso, [data-sii] .sii-cert-decision, [data-sii] .sii-cert-subir { grid-template-columns: 1fr; }
+        [data-sii] .sii-cert-caso, [data-sii] .sii-cert-decision, [data-sii] .sii-cert-subir, [data-sii] .sii-cert-prov { grid-template-columns: 1fr; }
         [data-sii] .sii-cert-links a { min-height: 44px; }
     }
 </style>
@@ -163,7 +168,8 @@ const cert = entorno === 'homologacion';
             rechazado: ['Rechazado por el SII', 'Rejected by the SII', 'is-err'],
         };
         const NO_SOPORTADO: Record<string, [string, string]> = {
-            libro: ['libro de compras o ventas', 'purchase or sales ledger'],
+            libro: ['libro que Cord no arma', 'ledger Cord does not build'],
+            libro_guias: ['libro de guías de despacho', 'dispatch guide ledger'],
             guia: ['guía de despacho', 'dispatch guide'],
             exportacion: ['documentos de exportación', 'export documents'],
             compra: ['factura de compra', 'purchase invoice'],
@@ -262,7 +268,157 @@ const cert = entorno === 'homologacion';
             }));
         }
         let sets: Json[] = [];
-        const reemplazar = (s: Json) => { sets = [s, ...sets.filter((x) => x.numero_atencion !== s.numero_atencion)]; pintarSets(sets); };
+        // Un set recién aceptado habilita los libros: la pantalla vuelve a pedir su estado.
+        const reemplazar = (s: Json) => {
+            sets = [s, ...sets.filter((x) => x.numero_atencion !== s.numero_atencion)];
+            pintarSets(sets);
+            if (s.estado === 'aceptado') cargarCert();
+        };
+
+        // ── Libros de ventas y de compras del set ───────────────────────────
+        const ESTADO_LIBRO: Record<string, [string, string, string]> = {
+            cargado: ['Listo para enviar', 'Ready to send', ''],
+            enviando: ['Enviando', 'Sending', ''],
+            enviado: ['Enviado, esperando al SII', 'Sent, waiting for the SII', ''],
+            incierto: ['Sin confirmación del SII', 'Not confirmed by the SII', 'is-err'],
+            procesado: ['Procesado por el SII', 'Processed by the SII', 'is-ok'],
+            respondido: ['Respuesta del SII', 'SII answer', ''],
+            rechazado: ['Rechazado por el SII', 'Rejected by the SII', 'is-err'],
+        };
+        const TRATAMIENTO: Record<string, [string, string]> = {
+            credito: ['IVA con derecho a crédito', 'VAT with credit right'],
+            uso_comun: ['IVA de uso común', 'Common-use VAT'],
+            no_recuperable: ['IVA no recuperable', 'Non-recoverable VAT'],
+            retencion_total: ['IVA retenido total', 'Fully withheld VAT'],
+        };
+        let libros: Json[] = [];
+        let fuente: Json | null = null;
+
+        function pintarLibros() {
+            const cont = q<HTMLElement>('[data-sii-libros]');
+            if (!cont) return;
+            cont.replaceChildren(...libros.map((l) => {
+                const [es, eng, clase] = ESTADO_LIBRO[l.estado] ?? [l.estado, l.estado, ''];
+                const ventas = l.operacion === 'VENTA';
+                const item = h('div', { class: 'sii-cert-item' },
+                    h('div', { class: 'sii-cert-cab' },
+                        h('strong', {}, `${ventas ? (en ? 'Sales ledger' : 'Libro de ventas') : (en ? 'Purchase ledger' : 'Libro de compras')} · ${en ? 'attention no.' : 'N° de atención'} ${l.numero_atencion}`),
+                        h('span', { class: `sii-cert-estado ${clase}` }, en ? eng : es),
+                        l.track_id ? h('small', {}, `${en ? 'Submission' : 'Envío'} ${l.track_id}`) : null,
+                        l.periodo ? h('small', {}, `${en ? 'Period' : 'Período'} ${l.periodo}`) : null),
+                    l.error ? h('span', { class: 'sii-cert-err' }, l.error) : null);
+                if (l.estado === 'cargado') {
+                    item.append(h('span', { class: 'sii-cert-nota' }, fuente
+                        ? (ventas
+                            ? (en ? `It reports the ${fuente.documentos} documents of the accepted set ${fuente.numero_atencion} (submission ${fuente.track_id}), period ${fuente.periodo}.`
+                                : `Informa los ${fuente.documentos} documentos del set ${fuente.numero_atencion} aceptado (envío ${fuente.track_id}), período ${fuente.periodo}.`)
+                            : (en ? `Same period as the sales ledger (${fuente.periodo}). Add the supplier of each document with a valid RUT, as your set asks.`
+                                : `Mismo período que el libro de ventas (${fuente.periodo}). Agrega el proveedor de cada documento con un RUT válido, como pide tu set.`))
+                        : (en ? 'It is sent once the SII accepts the basic set: the ledgers report its documents and its period.'
+                            : 'Se envía cuando el SII acepte el set básico: los libros informan sus documentos y su período.')));
+                }
+                // Compras: los documentos del set, con su proveedor.
+                const proveedores: { n: number; folio: number; modifica: number | null; rut: HTMLInputElement; razon: HTMLInputElement }[] = [];
+                if (!ventas && (l.filas as Json[]).length) {
+                    const lista = h('ul', { class: 'sii-cert-casos' });
+                    for (const f of l.filas as Json[]) {
+                        const montos = [
+                            f.afecto ? `${en ? 'Taxable' : 'Afecto'} ${pesos(f.afecto)}` : '',
+                            f.exento ? `${en ? 'Exempt' : 'Exento'} ${pesos(f.exento)}` : '',
+                        ].filter(Boolean).join(' · ');
+                        const titulo = h('span', {}, `${f.tipo_documento} ${f.folio} · ${montos}`,
+                            h('small', {}, `${f.observacion} · ${TRATAMIENTO[f.tratamiento]?.[en ? 1 : 0] ?? f.tratamiento}`));
+                        let derecha: Node;
+                        if (l.estado === 'cargado') {
+                            const rut = h('input', { class: 's-input', maxlength: '12', autocomplete: 'off', placeholder: en ? 'Supplier RUT' : 'RUT del proveedor', 'aria-label': `${en ? 'Supplier RUT of' : 'RUT del proveedor de'} ${f.tipo_documento} ${f.folio}` });
+                            const razon = h('input', { class: 's-input', maxlength: '50', autocomplete: 'off', placeholder: en ? 'Supplier name' : 'Razón social del proveedor', 'aria-label': `${en ? 'Supplier name of' : 'Razón social del proveedor de'} ${f.tipo_documento} ${f.folio}` });
+                            rut.value = f.rut || '';
+                            razon.value = f.razon_social || '';
+                            proveedores.push({ n: f.n, folio: f.folio, modifica: f.modifica, rut, razon });
+                            derecha = h('div', { class: 'sii-cert-prov' }, rut, razon);
+                        } else {
+                            derecha = h('small', {}, f.rut ? `${f.rut}${f.razon_social ? ` · ${f.razon_social}` : ''}` : '');
+                        }
+                        lista.append(h('li', { class: 'sii-cert-caso' }, titulo, derecha));
+                    }
+                    // La nota que modifica una factura del set es del mismo proveedor: se completa sola.
+                    for (const p of proveedores) {
+                        for (const campo of ['rut', 'razon'] as const) {
+                            p[campo].addEventListener('input', () => {
+                                p[campo].dataset.auto = '';
+                                for (const otra of proveedores) {
+                                    if (otra.modifica !== p.folio) continue;
+                                    if (otra[campo].value && otra[campo].dataset.auto !== '1') continue;
+                                    otra[campo].value = p[campo].value;
+                                    otra[campo].dataset.auto = '1';
+                                }
+                            });
+                        }
+                    }
+                    item.append(lista);
+                    if (l.factor) item.append(h('span', { class: 'sii-cert-nota' }, en
+                        ? `Common-use VAT with the proportionality factor your set gives (${l.factor}).`
+                        : `IVA de uso común con el factor de proporcionalidad que da tu set (${String(l.factor).replace('.', ',')}).`));
+                }
+                if (l.resumen?.length) {
+                    item.append(h('span', { class: 'sii-cert-nota' }, (l.resumen as Json[]).map((t) =>
+                        `${en ? 'Type' : 'Tipo'} ${t.tipo}: ${t.documentos} ${en ? (t.documentos === 1 ? 'document' : 'documents') : (t.documentos === 1 ? 'documento' : 'documentos')}, ${pesos(t.total)}`).join(' · ')));
+                }
+                if (l.estado === 'procesado' || l.estado === 'respondido') {
+                    const r = l.respuesta || {};
+                    item.append(h('span', { class: 'sii-cert-nota' }, l.estado === 'procesado'
+                        ? (en ? 'The SII processed the submission. Check the ledger result on the SII site (Electronic ledgers status) and, if it has no objections, report the progress of your application.'
+                            : 'El SII procesó el envío. Revisa el resultado del libro en el sitio del SII (Consulta Estado Libros Electrónicos) y, si quedó sin reparos, declara el avance de tu postulación.')
+                        : (en ? `The SII answered "${r.glosa || r.estado}" (status ${r.estado}). Confirm the ledger result on the SII site (Electronic ledgers status).`
+                            : `El SII respondió «${r.glosa || r.estado}» (estado ${r.estado}). Confirma el resultado del libro en el sitio del SII (Consulta Estado Libros Electrónicos).`)));
+                }
+                const acciones = h('div', { class: 'sii-actions' });
+                const msg = h('span', { class: 'sii-msg' });
+                const boton = (texto: string, solido: boolean, fn: () => Promise<void>, deshabilitado = false) => {
+                    const b = h('button', { type: 'button', class: solido ? 'sii-btn-solid' : 'sii-btn-ghost' }, texto);
+                    b.disabled = deshabilitado;
+                    b.addEventListener('click', async () => {
+                        b.disabled = true;
+                        msg.textContent = '';
+                        try { await fn(); } catch (err: any) { msg.textContent = err?.message || ''; msg.className = 'sii-msg err'; } finally { b.disabled = false; }
+                    });
+                    acciones.append(b);
+                };
+                const reemplazarLibro = (x: Json) => {
+                    libros = libros.map((y) => (y.operacion === x.operacion && y.numero_atencion === x.numero_atencion ? x : y));
+                    pintarLibros();
+                };
+                if (l.estado === 'cargado') {
+                    boton(en ? 'Sign and send to the SII' : 'Firmar y enviar al SII', true, async () => {
+                        const body: Json = { accion: 'enviar_libro', libro_id: l.id };
+                        if (!ventas) {
+                            body.proveedores = Object.fromEntries(proveedores.map((p) => [String(p.n), { rut: p.rut.value.trim(), razon_social: p.razon.value.trim() }]));
+                        }
+                        const d = await postJson('/api/fiscal/sii-certificacion', body);
+                        reemplazarLibro(d.libro);
+                    }, !fuente);
+                }
+                if (l.estado === 'enviado' || l.estado === 'enviando') {
+                    boton(en ? 'Check the SII status' : 'Consultar estado en el SII', true, async () => {
+                        const d = await postJson('/api/fiscal/sii-certificacion', { accion: 'consultar_libro', libro_id: l.id });
+                        reemplazarLibro(d.libro);
+                    });
+                }
+                if (['enviado', 'incierto', 'procesado', 'respondido', 'rechazado'].includes(l.estado)) {
+                    boton(en ? 'New attempt' : 'Nuevo intento', false, async () => {
+                        const d = await postJson('/api/fiscal/sii-certificacion', { accion: 'reintentar_libro', libro_id: l.id });
+                        reemplazarLibro(d.libro);
+                    });
+                }
+                if (l.xml) {
+                    acciones.append(h('span', { class: 'sii-cert-links' },
+                        h('a', { href: `/api/fiscal/sii-certificacion?libro=${encodeURIComponent(l.id)}` }, en ? 'Signed ledger (XML)' : 'Libro firmado (XML)')));
+                }
+                acciones.append(msg);
+                item.append(acciones);
+                return item;
+            }));
+        }
 
         async function cargarCert() {
             if (!cert) return;
@@ -270,7 +426,10 @@ const cert = entorno === 'homologacion';
                 const d = await llamar('/api/fiscal/sii-certificacion');
                 clientes = d.clientes || [];
                 sets = d.sets || [];
+                libros = d.libros || [];
+                fuente = d.fuente_libros || null;
                 pintarSets(sets);
+                pintarLibros();
             } catch { /* la sección de arriba ya dice si el SII no está disponible */ }
         }
 
@@ -291,6 +450,11 @@ const cert = entorno === 'homologacion';
             try {
                 const d = await postJson('/api/fiscal/sii-certificacion', { accion: 'cargar', texto });
                 for (const s of d.sets || []) reemplazar(s);
+                for (const l of (d.libros || []) as Json[]) {
+                    libros = [l, ...libros.filter((x) => !(x.operacion === l.operacion && x.numero_atencion === l.numero_atencion))];
+                }
+                libros.sort((a, b) => (a.operacion === b.operacion ? 0 : a.operacion === 'VENTA' ? -1 : 1));
+                pintarLibros();
                 const nos = q<HTMLElement>('[data-sii-set-nosop]');
                 if (nos) {
                     const lista = (d.no_soportados || []) as Json[];
@@ -300,7 +464,8 @@ const cert = entorno === 'homologacion';
                             + lista.map((n) => `${n.nombre}${n.numero_atencion ? ` (${n.numero_atencion})` : ''}: ${NO_SOPORTADO[n.motivo]?.[en ? 1 : 0] ?? n.motivo}`).join('; ') + '.'
                         : '';
                 }
-                flash('[data-sii-msg-set]', (d.sets || []).length ? (en ? 'Test set loaded.' : 'Set cargado.') : (en ? 'The file has no set Cord can build.' : 'El archivo no trae un set que Cord pueda armar.'), !!(d.sets || []).length);
+                const algo = (d.sets || []).length + (d.libros || []).length;
+                flash('[data-sii-msg-set]', algo ? (en ? 'Test set loaded.' : 'Set cargado.') : (en ? 'The file has no set Cord can build.' : 'El archivo no trae un set que Cord pueda armar.'), !!algo);
             } catch (err: any) {
                 flash('[data-sii-msg-set]', err?.message || '', false);
             } finally { b.disabled = false; }

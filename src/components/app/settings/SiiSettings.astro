@@ -11,6 +11,8 @@
 //
 // El certificado y los CAF viajan una sola vez (multipart a /api/fiscal/sii y
 // /api/fiscal/sii-folios) y nunca vuelven: la pantalla solo ve resúmenes.
+// Subirlos o quitarlos exige una sesión reciente: el 428 abre la confirmación
+// de identidad (cordStepUp) y el mismo pedido se reintenta.
 import type { EstadoSii } from '../../../lib/fiscal/latam/sii/estado';
 import SiiCertificacion from './SiiCertificacion.astro';
 
@@ -308,6 +310,20 @@ const RES = A.resoluciones?.[estado.entorno];
             if (ok && !sticky) setTimeout(() => { el.textContent = ''; el.className = 'sii-msg'; }, 5000);
         };
 
+        /**
+         * Subir o quitar el certificado y los folios exige una sesión reciente
+         * (requireFreshAuth responde 428): se confirma la identidad con
+         * cordStepUp y se reintenta el MISMO pedido, como en el resto de Ajustes.
+         */
+        const conStepUp = async (enviar: () => Promise<Response>): Promise<Response> => {
+            let res = await enviar();
+            if (res.status === 428 && typeof (window as any).cordStepUp === 'function') {
+                if (!await (window as any).cordStepUp()) throw new Error(en ? 'You need to confirm your identity to continue.' : 'Necesitas confirmar tu identidad para continuar.');
+                res = await enviar();
+            }
+            return res;
+        };
+
         const pintarFolios = (v: any) => {
             const folios = q<HTMLElement>('[data-sii-folios]');
             if (folios) {
@@ -418,7 +434,7 @@ const RES = A.resoluciones?.[estado.entorno];
             fd.append('caf', f);
             cafBtn.disabled = true;
             try {
-                const res = await fetch('/api/fiscal/sii-folios', { method: 'POST', body: fd });
+                const res = await conStepUp(() => fetch('/api/fiscal/sii-folios', { method: 'POST', body: fd }));
                 const d = await res.json().catch(() => ({}));
                 if (!res.ok) throw new Error(d.error || '');
                 pintar(d);
@@ -441,7 +457,7 @@ const RES = A.resoluciones?.[estado.entorno];
             if (!ok) return;
             btn.disabled = true;
             try {
-                const res = await fetch(`/api/fiscal/sii-folios?id=${encodeURIComponent(btn.getAttribute('data-sii-caf-remove') || '')}`, { method: 'DELETE' });
+                const res = await conStepUp(() => fetch(`/api/fiscal/sii-folios?id=${encodeURIComponent(btn.getAttribute('data-sii-caf-remove') || '')}`, { method: 'DELETE' }));
                 const d = await res.json().catch(() => ({}));
                 if (!res.ok) throw new Error(d.error || '');
                 pintar(d);
@@ -463,7 +479,7 @@ const RES = A.resoluciones?.[estado.entorno];
             const orig = uploadBtn.textContent;
             uploadBtn.textContent = en ? 'Uploading…' : 'Subiendo…';
             try {
-                const res = await fetch('/api/fiscal/sii', { method: 'POST', body: fd });
+                const res = await conStepUp(() => fetch('/api/fiscal/sii', { method: 'POST', body: fd }));
                 const d = await res.json().catch(() => ({}));
                 if (d.requiere_rut) q<HTMLElement>('[data-sii-rut-field]')?.removeAttribute('hidden');
                 if (!res.ok) throw new Error(d.error || '');
@@ -489,7 +505,7 @@ const RES = A.resoluciones?.[estado.entorno];
             if (!ok) return;
             removeBtn.disabled = true;
             try {
-                const res = await fetch('/api/fiscal/sii', { method: 'DELETE' });
+                const res = await conStepUp(() => fetch('/api/fiscal/sii', { method: 'DELETE' }));
                 const d = await res.json().catch(() => ({}));
                 if (!res.ok) throw new Error(res.status === 409 && typeof d.error === 'string' ? d.error : '');
                 pintar(d);

@@ -1,7 +1,9 @@
 // Set de pruebas de la certificación ante el SII, de punta a punta: cargar el
 // archivo que el SII le asignó al negocio, armar cada caso (set-pruebas.ts)
 // con folios de certificación, firmarlos en UN envío en el orden del set,
-// subirlo, consultar su veredicto y entregar las muestras impresas.
+// subirlo, consultar su veredicto y entregar las muestras impresas. Los
+// libros de ventas y compras que el mismo archivo pide viven en
+// libros-set.ts y usan el set aceptado de aquí (setFuenteDeLibros).
 //
 // No es una emisión normal: los documentos del set no son documentos_fiscales,
 // no entran a la cartera ni a la numeración interna de Cord y solo existen en
@@ -27,7 +29,7 @@ import { emitirDocumento } from './emision';
 import { armarEnvio } from './envio';
 import { faseEnvio, mensajeEnvioRechazado, mensajeUpload, STATUS_REINTENTABLES } from './errores';
 import { representacionSii } from './representacion';
-import { armarDocumentosDelSet, parsearSetDePruebas, type CasoSet, type SetNoSoportado } from './set-pruebas';
+import { armarDocumentosDelSet, parsearSetDePruebas, type CasoSet, type LibroDelSet, type SetNoSoportado } from './set-pruebas';
 import { bytesLatin1, rutConPuntos, rutValido } from './texto';
 import { SiiTransporteError, subirEnvio } from './ws';
 import { parsearFragmento } from './xml';
@@ -87,13 +89,14 @@ export function exigirCertificacion(ctx: Pick<ContextoSii, 'entorno'>): void {
 
 /**
  * Carga el archivo del set: una fila por cada set que Cord arma (básico,
- * factura exenta). Lo que el archivo trae y Cord no arma se devuelve para
+ * factura exenta). Los libros que el archivo pide vuelven leídos para que
+ * libros-set.ts los guarde; lo que trae y Cord no arma se devuelve para
  * decirlo en pantalla.
  */
-export async function cargarSet(orgId: string, texto: string, creadoPor: string | null): Promise<{ sets: SetGuardado[]; noSoportados: SetNoSoportado[] }> {
+export async function cargarSet(orgId: string, texto: string, creadoPor: string | null): Promise<{ sets: SetGuardado[]; libros: LibroDelSet[]; noSoportados: SetNoSoportado[] }> {
     const archivo = parsearSetDePruebas(texto);
     if (!archivo.sets.length) {
-        return { sets: [], noSoportados: archivo.noSoportados };
+        return { sets: [], libros: archivo.libros, noSoportados: archivo.noSoportados };
     }
     const sets: SetGuardado[] = [];
     for (const s of archivo.sets) {
@@ -103,7 +106,7 @@ export async function cargarSet(orgId: string, texto: string, creadoPor: string 
             returning *`);
         sets.push(fila(rows[0]));
     }
-    return { sets, noSoportados: archivo.noSoportados };
+    return { sets, libros: archivo.libros, noSoportados: archivo.noSoportados };
 }
 
 /** El último intento de cada set (el que la pantalla muestra), más reciente primero. */
@@ -114,6 +117,25 @@ export async function listarSets(orgId: string): Promise<SetGuardado[]> {
          where org_id = ${orgId}
          order by numero_atencion, created_at desc`);
     return rows.map(fila).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
+/**
+ * El set cuyos documentos informa el libro de ventas y cuyo período usan los
+ * dos libros: el último intento ACEPTADO del set básico; sin set básico, el
+ * de factura exenta ("si obtuvo ambos set, utilice los documentos del set
+ * básico", texto del set de libro de ventas). Los documentos del libro son
+ * los "reportados para revisión" (instrucciones del set, III): los de un set
+ * aceptado, no los de un intento con reparos.
+ */
+export async function setFuenteDeLibros(orgId: string): Promise<SetGuardado | null> {
+    const [rows] = await withOrgTx(orgId, sql`
+        select * from fiscal_sii_sets
+         where org_id = ${orgId}
+         order by created_at desc`);
+    const sets = rows.map(fila);
+    const basicos = sets.filter((s) => /^SET BASICO\b/.test(s.nombre));
+    const candidatos = basicos.length ? basicos : sets.filter((s) => /\bEXENTA\b/.test(s.nombre));
+    return candidatos.find((s) => s.estado === 'aceptado' && s.documentos?.length) ?? null;
 }
 
 export async function setPorId(orgId: string, id: string): Promise<SetGuardado | null> {
@@ -212,7 +234,7 @@ export async function enviarSet(ctx: ContextoSii, setId: string, porCaso: Record
                set documentos = ${JSON.stringify(guardados)}::jsonb, envio_xml = ${envio}, enviado_at = now(), updated_at = now()
              where id = ${setId} and org_id = ${ctx.orgId}`);
 
-        const subida = await subir(ctx, envio, `EnvioDTE_${ctx.rutEmisor.replace('-', '')}_SET${set.numeroAtencion}.xml`);
+        const subida = await subirAlSii(ctx, envio, `EnvioDTE_${ctx.rutEmisor.replace('-', '')}_SET${set.numeroAtencion}.xml`, 'set de pruebas');
         if (subida.tipo === 'recibido') {
             await withOrgTx(ctx.orgId, sql`
                 update fiscal_sii_sets set estado = 'enviado', track_id = ${subida.trackId}, updated_at = now()
@@ -238,7 +260,12 @@ export async function enviarSet(ctx: ContextoSii, setId: string, porCaso: Record
     return (await setPorId(ctx.orgId, setId))!;
 }
 
-async function subir(ctx: ContextoSii, envio: string, nombre: string): Promise<{ tipo: 'recibido'; trackId: string } | { tipo: 'rechazado'; status: number } | { tipo: 'incierto' }> {
+/**
+ * Sube un archivo de la certificación (el envío del set o un libro: el SII los
+ * recibe por el mismo upload, "Envío DTE (documentos y libros)" del menú de
+ * certificación de maullin.sii.cl).
+ */
+export async function subirAlSii(ctx: ContextoSii, envio: string, nombre: string, que: string): Promise<{ tipo: 'recibido'; trackId: string } | { tipo: 'rechazado'; status: number } | { tipo: 'incierto' }> {
     const archivo = bytesLatin1(envio);
     try {
         let token = await autenticar(ctx);
@@ -253,11 +280,11 @@ async function subir(ctx: ContextoSii, envio: string, nombre: string): Promise<{
         }
         if (r.status === 0 && r.trackId) return { tipo: 'recibido', trackId: r.trackId };
         if (r.status === 0) return { tipo: 'incierto' };
-        log.error('sii: el SII rechazó el envío del set de pruebas', { route: 'fiscal/sii-certificacion', orgId: ctx.orgId, status: r.status, detalle: r.detalle });
+        log.error(`sii: el SII rechazó el envío (${que})`, { route: 'fiscal/sii-certificacion', orgId: ctx.orgId, status: r.status, detalle: r.detalle });
         return { tipo: 'rechazado', status: r.status };
     } catch (error) {
         if (error instanceof SiiTransporteError) {
-            log.error('sii: el envío del set de pruebas no tuvo respuesta legible', { route: 'fiscal/sii-certificacion', orgId: ctx.orgId, err: error });
+            log.error(`sii: el envío (${que}) no tuvo respuesta legible`, { route: 'fiscal/sii-certificacion', orgId: ctx.orgId, err: error });
             return { tipo: 'incierto' };
         }
         throw error;

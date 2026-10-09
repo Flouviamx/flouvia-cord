@@ -1926,7 +1926,7 @@ rechazo, validación diferida, respuesta perdida, STATUS 3 y 5, cron, nota de
 crédito, folios (concurrencia, agotamiento, trigger), XML para el cliente y
 RLS; `test/sii-comprobante.test.ts` las piezas puras.
 
-### Nota de débito, set de pruebas e intercambio (Chile) — oct 2026
+### Nota de débito, set de pruebas con sus libros e intercambio (Chile) — oct 2026
 
 Lo que faltaba para que un negocio complete la certificación ante el SII con
 Cord. Fuentes primarias (www.sii.cl), vendorizadas o citadas en
@@ -1985,15 +1985,60 @@ son `documentos_fiscales`: no entran a la cartera ni a la numeración de Cord.
 Solo existe en el ambiente de certificación (el despliegue con
 `SII_ENTORNO=homologacion`): el entorno es del despliegue, no de la cuenta.
 
+**Libros de ventas y de compras del set** (oct 2026; `latam/sii/iecv.ts`,
+`libros-set.ts`, tabla `fiscal_sii_libros` con RLS forzada,
+`/api/fiscal/sii-certificacion`, Ajustes › Datos fiscales). El set básico pide
+dos libros más (instrucciones del set, III y IV) y Cord los arma con el mismo
+archivo del set:
+
+- *Fuentes.* "Formato de información electrónica de compras y ventas" v3.0
+  (marzo de 2016, `formato_iecv.pdf`) y `LibroCV_v10.xsd`
+  (`schema_iecv.zip`), de www.sii.cl/factura_electronica/factura_mercado,
+  vendorizados en `scripts/fixtures/sii/`.
+- *Solo en la certificación.* Desde el período de agosto de 2017 el Registro de
+  Compras y Ventas reemplaza al libro: la Resolución Exenta SII N° 61 de 2017
+  exime a los facturadores electrónicos de llevar el Libro de Compras y Ventas
+  (resolutivo 9) y deroga el envío de los registros electrónicos de la
+  Res. 45/2003 (resolutivos 12 y 13). Cord no ofrece libros fuera del set.
+- *Carátula del set.* Libro ESPECIAL, envío TOTAL, folio de notificación 1
+  (ventas) y 2 (compras), el período tributario de los documentos del set y la
+  resolución de certificación. Un envío TOTAL lleva resumen del período y
+  detalle, sin resumen de segmento (formato, 1.3 y 1.5).
+- *Libro de ventas.* "Sólo la información de los documentos que son parte de
+  sus SET de prueba y que han sido reportados para revisión" (III): los
+  documentos del último intento ACEPTADO del set básico (sin set básico, del
+  de factura exenta, como dice el texto del set). Una línea por documento con
+  su tasa y su IVA (obligatorios), y la nota de crédito que anula un documento
+  completo con su tipo y folio (2.4, campos 16 y 17).
+- *Libro de compras.* "Sólo la información de los documentos que se le han
+  entregado en el SET de prueba de Libro de Compras" (IV): el archivo del set
+  trae, por documento, tipo y folio, una observación y los montos exento y
+  afecto; el negocio agrega el proveedor de cada uno con RUT válido (IV.3) y,
+  en los documentos en papel, su razón social (3.4, campo 12). La observación
+  decide cómo se registra el IVA (3.4, campos 15 a 23): con derecho a crédito;
+  de uso común (fuera del IVA recuperable, con el factor de proporcionalidad
+  de las observaciones generales y el crédito = factor × total, 3.3, campos 18
+  y 19); no recuperable con su código (entrega gratuita del proveedor → 4); o
+  retenido total en la factura de compra (código 15 a la tasa del IVA, y el
+  monto total sin lo retenido, 3.4, campo 25). Una observación que Cord no
+  sabe registrar se rechaza al cargar. **No incluye los DTE recibidos por
+  intercambio**: el instructivo los excluye, y fuera de la certificación el
+  libro ya no existe.
+- *Envío y estado.* Firmado como el EnvioDTE y subido por el mismo upload (el
+  menú de certificación de maullin lo llama "Envío DTE (documentos y
+  libros)"). `QueryEstUp` documenta los estados del ENVÍO (RSC, RFR, RCT
+  rechazan; SOK, CRT, FOK, PDR siguen en proceso; EPR procesado), no el
+  resultado del libro: un estado que su manual no documenta se guarda y se
+  muestra tal cual, y la pantalla remite a "Consulta Estado Libros
+  Electrónicos" del sitio del SII. Un libro enviado no se reenvía: el
+  reintento es una fila nueva que conserva los proveedores, y el archivo
+  firmado no cambia (trigger). El XML firmado se descarga desde Ajustes.
+
 **Lo que el set exige y Cord NO arma** (se dice al cargar el archivo, con su
-número de atención): los **libros de ventas y de compras** (Información
-Electrónica de Compras y Ventas, IECV: Tipo de Libro ESPECIAL, envío TOTAL,
-Folio Notificación 1 y 2 — instrucciones, III y IV), la **guía de despacho
-(52)** y su **libro de guías**, los **documentos de exportación** (110/111/112)
-y la **factura de compra (46)**, según lo que el negocio postuló. Sin los libros
-el SII no da por terminado el set: para un negocio que solo factura, el libro de
-ventas y el de compras son obligatorios. Pendiente de decidir si Cord los
-construye.
+número de atención): la **guía de despacho (52)** y su **libro de guías**, los
+**documentos de exportación** (110/111/112) y la **factura de compra (46)**
+como documento emitido, según lo que el negocio postuló. (La factura de compra
+sí aparece como una línea del libro de compras del set, que solo la registra.)
 
 **Intercambio** (`latam/sii/respuesta-intercambio.ts`, `recepcion.ts`,
 `reclamo.ts`; tablas `fiscal_sii_buzones`, `fiscal_sii_recepciones`,
@@ -2062,16 +2107,24 @@ aviso de documento de prueba); la de la simulación es el PDF de la factura.
 nota de débito sobre factura y sobre nota de crédito, set completo en un envío
 con folios de certificación y veredicto por tipo, reintento con folios nuevos,
 recepción con sus rechazos, respuestas firmadas, registro ACD/ERM/RFT, plazo de
-8 días, casilla y webhook autenticado, RLS) y `npm run security:sii` (sección 7:
-el set leído del archivo del SII, el envío del set y la nota de débito contra
+8 días, casilla y webhook autenticado, RLS; y los dos libros: carga desde el
+archivo real del SII, ningún libro sin el set aceptado, carátula, detalle y
+resumen, IVA de uso común, no recuperable y retenido, firma, estados de
+`QueryEstUp` y trigger) y `npm run security:sii` (sección 7: el set leído del
+archivo del SII, el envío del set y la nota de débito contra
 `EnvioDTE_v10.xsd`, las tres respuestas contra sus XSD oficiales, controles
 negativos, firmas verificadas con la JDK, y el registro de reclamos contra sus
-WSDL).
+WSDL; sección 8: los libros con la aritmética del formato IECV contra
+`LibroCV_v10.xsd` con xmllint y con la JDK —`scripts/sii-esquema.java`; xmllint
+no representa una faceta decimal de 34 dígitos de `LceSiiTypes_v10.xsd`, de un
+tipo que el libro no usa, y valida con una copia temporal que recorta solo esa
+faceta—, controles negativos y firmas en la JDK).
 
 ### Activación del SII paso a paso
 
-1. `npm run db:migrate` (o el despliegue, que aplica `db/deploy/2026-10-09-sii.sql` y
-   `db/deploy/2026-10-09-sii2-certificacion.sql`). Para la casilla de intercambio:
+1. `npm run db:migrate` (o el despliegue, que aplica `db/deploy/2026-10-09-sii.sql`,
+   `db/deploy/2026-10-09-sii2-certificacion.sql` y
+   `db/deploy/2026-10-09-sii3-libros.sql`). Para la casilla de intercambio:
    `SII_INTERCAMBIO_DOMINIO` y `INBOUND_EMAIL_SECRET`, con el correo entrante del
    dominio dirigido a `/api/webhooks/sii-intercambio`.
 2. **Certificado y postulación.** El representante del negocio obtiene un
@@ -2089,13 +2142,13 @@ WSDL).
    certificación, los sube con su certificado y sus datos, y recorre las etapas
    del SII — set de pruebas, simulación, intercambio de información y muestras
    impresas (el PDF con timbre y la copia cedible) — y firma la declaración de
-   cumplimiento. El set (facturas, notas de crédito y de débito), el
-   intercambio y las muestras se hacen desde Ajustes › Datos fiscales (sección
-   anterior). **Pendiente para completarla:** los libros de compras y ventas
-   (IECV) que pide el set, y la guía de despacho y su libro si el negocio los
-   postuló. Tampoco está verificado si Flouvia puede registrarse ante el SII
-   como proveedor de software certificado para simplificar este trámite a sus
-   clientes.
+   cumplimiento. El set (facturas, notas de crédito y de débito), sus libros
+   de ventas y de compras, el intercambio y las muestras se hacen desde
+   Ajustes › Datos fiscales (sección anterior). **Pendiente:** la guía de
+   despacho y su libro, la exportación y la factura de compra emitida, si el
+   negocio los postuló. Tampoco está verificado si Flouvia puede registrarse
+   ante el SII como proveedor de software certificado para simplificar este
+   trámite a sus clientes.
 5. **Producción.** Con la resolución del SII, cada negocio sube su certificado
    y sus folios de producción (palena) y carga el número y la fecha de la
    resolución; después `SII_ENTORNO=produccion` y `SII_ENABLED=true` en

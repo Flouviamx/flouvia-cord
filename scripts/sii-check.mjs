@@ -39,10 +39,19 @@
 //      RespuestaEnvioDTE_v10.xsd y EnvioRecibos_v10.xsd de www.sii.cl, con
 //      controles negativos y verificación de firmas en la JDK; el registro de
 //      reclamos contra sus WSDL de ws2 (certificación) y ws1 (producción).
+//   8. Libros del set (ronda 4): el set de libro de compras leído del archivo
+//      del SII (observación → IVA recuperable, de uso común, no recuperable o
+//      retenido) y los dos libros armados con la aritmética del formato IECV
+//      v3.0, validados contra LibroCV_v10.xsd (schema_iecv.zip de www.sii.cl)
+//      con xmllint y con la JDK, con controles negativos, y sus firmas
+//      verificadas en la JDK. xmllint no representa una faceta decimal de 34
+//      dígitos de LceSiiTypes_v10.xsd (tipo de los libros contables, que el
+//      libro de compras y ventas no usa): se valida con una copia temporal
+//      que recorta SOLO esa faceta; la JDK valida contra el esquema intacto.
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { generateKeyPairSync } from 'node:crypto';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -59,6 +68,7 @@ import { codificarPdf417, evaluar, medidasTimbre } from '../src/lib/fiscal/latam
 import { rutDelCertificado } from '../src/lib/fiscal/latam/sii/certificado.ts';
 import { DECLARACION_RECIBO, NS_SII_DTE, NS_WS_RECLAMO, NS_WS_SII, NS_XSI, RUT_SII, siiEndpoints, siiReclamoEndpoint } from '../src/lib/fiscal/latam/sii/constantes.ts';
 import { armarDocumentosDelSet, codRefDeCaso, parsearSetDePruebas } from '../src/lib/fiscal/latam/sii/set-pruebas.ts';
+import { armarLibro, detalleCompra, detalleVenta, resumenPeriodo } from '../src/lib/fiscal/latam/sii/iecv.ts';
 import { envioRecibos, leerEnvioRecibido, respuestaRecepcion, respuestaResultado, verificarFirmaRecibida } from '../src/lib/fiscal/latam/sii/respuesta-intercambio.ts';
 import { mensajeReclamo, parsearRespuestaReclamo, sobreReclamo } from '../src/lib/fiscal/latam/sii/reclamo.ts';
 import { representacionSii } from '../src/lib/fiscal/latam/sii/representacion.ts';
@@ -442,7 +452,7 @@ assert.match(d33.envioXml, /Servicio de &quot;consultor\xeda&quot; &amp; soporte
     const texto = leer('set-pruebas-basico.txt', 'latin1');
     const archivoSet = parsearSetDePruebas(texto);
     assert.deepEqual(archivoSet.sets.map((s) => [s.nombre, s.numeroAtencion, s.casos.map((c) => c.tipo).join(',')]), [['SET BASICO', '4352553', '33,33,33,33,61,61,61,56']]);
-    assert.deepEqual(archivoSet.noSoportados.map((n) => n.motivo), ['libro', 'libro', 'guia', 'exportacion', 'compra'], 'libros, guía, exportación y factura de compra se dicen, no se arman');
+    assert.deepEqual(archivoSet.noSoportados.map((n) => n.motivo), ['guia', 'libro_guias', 'exportacion', 'compra'], 'guía y su libro, exportación y factura de compra se dicen, no se arman');
     assert.throws(() => parsearSetDePruebas(texto.replace('Cajón', 'Caj\uFFFDn')), RailDatosError, 'una tilde perdida no se adivina');
     assert.throws(() => parsearSetDePruebas(texto.replace('DESCUENTO GLOBAL ITEMES AFECTOS\t\t     22%', 'RECARGO GLOBAL\t\t 5%')), /no sabe armar/, 'una línea desconocida no se ignora');
     const set = archivoSet.sets[0];
@@ -571,4 +581,123 @@ assert.match(d33.envioXml, /Servicio de &quot;consultor\xeda&quot; &amp; soporte
     }
 }
 
-process.stdout.write('security:sii (ejemplo oficial F60T33, esquemas DTE/EnvioDTE 2026, firmas XMLDSig y timbre, PDF417, WSDL de maullin y palena, reglas y respuestas reales del SII, nota de débito, set de pruebas, respuestas de intercambio y registro de reclamos) OK\n');
+// ── 8. Libros de ventas y de compras del set (IECV) ──────────────────────────
+{
+    const texto = leer('set-pruebas-basico.txt', 'latin1');
+    const archivo = parsearSetDePruebas(texto);
+    assert.deepEqual(archivo.libros.map((l) => [l.operacion, l.numeroAtencion, l.filas.length, l.factorProporcionalidad]),
+        [['VENTA', '4352554', 0, null], ['COMPRA', '4352555', 7, 0.6]], 'el archivo pide los dos libros (instrucciones del set, III y IV)');
+    const compras = archivo.libros[1];
+    // Observación del set → cómo se registra el IVA (formato IECV v3.0, 3.4, campos 15 a 23).
+    assert.deepEqual(compras.filas.map((f) => [f.tpoDoc, f.folio, f.tratamiento.tipo, f.tratamiento.codigo ?? null]), [
+        [30, 234, 'credito', null], [33, 32, 'credito', null], [30, 781, 'uso_comun', null], [60, 451, 'credito', null],
+        [33, 67, 'no_recuperable', 4], [46, 9, 'retencion_total', null], [60, 211, 'credito', null],
+    ], 'factura en papel 30, nota de crédito en papel 60, factura de compra 46 (formato IECV, 4.2)');
+    assert.throws(() => parsearSetDePruebas(texto.replace('ENTREGA GRATUITA DEL PROVEEDOR', 'COMPRA CON IVA DIFERIDO')), /no sabe registrar/, 'una observación desconocida no se adivina');
+    assert.throws(() => parsearSetDePruebas(texto.replace('DEL IVA ES DE 0.60', 'DEL IVA ES DE')), /factor de proporcionalidad/, 'IVA de uso común sin factor');
+    assert.throws(() => parsearSetDePruebas(texto.replace('FACTURA DE COMPRA ELECTRONICA\t\t  9', 'FACTURA ELECTRONICA\t\t\t  9')), /no sabe registrar/, 'el código 15 es de la factura de compra');
+    assert.throws(() => parsearSetDePruebas(texto.replace('NOTA DE CREDITO\t\t\t\t451', 'BOLETA\t\t\t\t451')), /no sabe registrar/, 'un documento que el libro de compras no admite');
+
+    // Libro de ventas: los documentos del set, uno por línea, y el resumen por tipo.
+    const set = archivo.sets[0];
+    const ruts = ['77777777-7', '11222333-9', '12345678-5', '22333444-K'];
+    const receptores = Object.fromEntries(set.casos.filter((c) => c.tipo === 33).map((c, i) => [c.numero, { ...receptor, rut: ruts[i], razonSocial: `Cliente ${i + 1} Ltda.` }]));
+    const folios = Object.fromEntries(set.casos.map((c, i) => [c.numero, 10 + i]));
+    const docs = armarDocumentosDelSet({ casos: set.casos, emisor, receptores, fecha: '2026-10-09', folios });
+    const dv = docs.map((d) => detalleVenta({ tipo: d.borrador.tipo, folio: d.folio, borrador: d.borrador }));
+    const rv = resumenPeriodo(dv);
+    assert.ok(dv.every((d) => d.mntExe + d.mntNeto + d.mntIva === d.mntTotal && d.tasaImp === 19), 'ventas: total = exento + neto + IVA, con la tasa (obligatoria)');
+    assert.deepEqual(rv.map((t) => [t.tpoDoc, t.totDoc, t.totMntTotal]), [[33, 4, 14273786], [56, 1, 0], [61, 3, 5580671]], 'resumen del período por tipo de documento');
+    assert.deepEqual(dv.filter((d) => d.tpoDocRef).map((d) => [d.tpoDoc, d.tpoDocRef, d.folioDocRef]), [[61, 33, 12]], 'solo la nota de crédito que anula un documento completo lo referencia (2.4, campos 16 y 17)');
+
+    // Libro de compras: la aritmética del formato.
+    const proveedores = ['78885550-8', '96543210-8', '12345678-5', '78885550-8', '11222333-9', '22333444-K', '96543210-8']
+        .map((rut, i) => ({ rut, razonSocial: `Proveedor ${i + 1} Ltda.` }));
+    const dc = compras.filas.map((f, i) => detalleCompra(f, proveedores[i], '2026-10-09', compras.factorProporcionalidad));
+    for (const d of dc) {
+        const retenido = (d.otrosImp ?? []).filter((o) => o.codigo === 15).reduce((x, o) => x + o.monto, 0);
+        const noRec = (d.ivaNoRec ?? []).reduce((x, n) => x + n.monto, 0);
+        assert.equal(d.mntIva + (d.ivaUsoComun ?? 0) + noRec, Math.round(d.mntNeto * 0.19), `tasa × neto = recuperable + uso común + no recuperable (3.4, campo 15): ${d.tpoDoc} ${d.nroDoc}`);
+        assert.equal(d.mntTotal, d.mntNeto + d.mntExe + d.mntIva + (d.ivaUsoComun ?? 0) + noRec - retenido, `monto total (3.4, campo 25): ${d.tpoDoc} ${d.nroDoc}`);
+    }
+    const rc = resumenPeriodo(dc, compras.factorProporcionalidad);
+    assert.deepEqual(rc.map((t) => [t.tpoDoc, t.totDoc, t.totMntExe, t.totMntNeto, t.totMntIva, t.totMntTotal]), [
+        [30, 2, 0, 51083, 4047, 60789], [33, 2, 8844, 16553, 1240, 28542], [46, 1, 0, 9575, 1819, 9575], [60, 2, 0, 7184, 1365, 8549],
+    ]);
+    assert.deepEqual([rc[0].totOpIvaUsoComun, rc[0].totIvaUsoComun, rc[0].fctProp, rc[0].totCredIvaUsoComun], [1, 5659, 0.6, 3395], 'crédito del IVA de uso común = factor × total (3.3, campos 18 y 19)');
+    assert.deepEqual(rc[1].totIvaNoRec, [{ codigo: 4, operaciones: 1, monto: 1905 }], 'entrega gratuita: IVA no recuperable código 4');
+    assert.deepEqual(rc[2].totOtrosImp, [{ codigo: 15, monto: 1819 }], 'retención total: código 15');
+    assert.throws(() => detalleCompra(compras.filas[1], { rut: '78885550-9' }, '2026-10-09', 0.6), /RUT válido/, 'proveedor con RUT válido (instrucciones del set, IV.3)');
+    assert.throws(() => detalleCompra(compras.filas[0], { rut: '78885550-8' }, '2026-10-09', 0.6), /razón social/, 'razón social obligatoria en los documentos en papel (3.4, campo 12)');
+    assert.doesNotThrow(() => detalleCompra(compras.filas[1], { rut: '96543210-8' }, '2026-10-09', 0.6), 'opcional en los electrónicos');
+
+    const car = { rutEmisor: RUT_EMISOR, rutEnvia: RUT_FIRMANTE, periodo: '2026-10', resolucion: caratula.resolucion };
+    const libroVentas = armarLibro({ ...car, operacion: 'VENTA' }, dv, rv, ahora, clave);
+    const libroCompras = armarLibro({ ...car, operacion: 'COMPRA' }, dc, rc, ahora, clave);
+    assert.equal(libroVentas.split('\n')[0], DECLARACION_XML);
+    assert.match(libroVentas.split('\n')[1], /^<LibroCompraVenta xmlns="http:\/\/www\.sii\.cl\/SiiDte" xmlns:xsi="[^"]+" xsi:schemaLocation="http:\/\/www\.sii\.cl\/SiiDte LibroCV_v10\.xsd" version="1\.0">$/);
+    assert.match(libroVentas, /<TipoOperacion>VENTA<\/TipoOperacion>\n<TipoLibro>ESPECIAL<\/TipoLibro>\n<TipoEnvio>TOTAL<\/TipoEnvio>\n<FolioNotificacion>1<\/FolioNotificacion>/, 'carátula del libro de ventas del set (III.1)');
+    assert.match(libroCompras, /<TipoOperacion>COMPRA<\/TipoOperacion>\n<TipoLibro>ESPECIAL<\/TipoLibro>\n<TipoEnvio>TOTAL<\/TipoEnvio>\n<FolioNotificacion>2<\/FolioNotificacion>/, 'carátula del libro de compras del set (IV.1)');
+    assert.ok(!/ResumenSegmento/.test(libroVentas + libroCompras), 'un envío TOTAL no lleva resumen de segmento (1.5 b)');
+    assert.throws(() => armarLibro({ ...car, periodo: '2026-13', operacion: 'VENTA' }, dv, rv, ahora, clave), /período/);
+    for (const xml of [libroVentas, libroCompras]) {
+        const raiz = parsearFragmento(xml.replace(/^<\?xml[^>]*\?>\n/, ''));
+        const firma = (raiz.c ?? []).find((h) => h.n === 'Signature');
+        assert.ok(verificarFirmaRecibida(buscar(raiz, 'EnvioLibro'), [raiz], firma, [raiz]).ok, 'firma del <EnvioLibro> en el contexto del libro');
+    }
+
+    let xmllint = true;
+    try { execFileSync('xmllint', ['--version'], { stdio: 'ignore' }); } catch { xmllint = false; }
+    let java = true;
+    try { execFileSync('java', ['-version'], { stdio: 'ignore' }); } catch { java = false; }
+    const dir = mkdtempSync(join(tmpdir(), 'sii-libros-'));
+    try {
+        const escribir = (nombre, t) => { const f = join(dir, nombre); writeFileSync(f, Buffer.from(t, 'latin1')); return f; };
+        const negativos = [
+            [libroVentas.replace('<TipoOperacion>VENTA</TipoOperacion>', '<TipoOperacion>VENTAS</TipoOperacion>'), 'TipoOperacion COMPRA o VENTA'],
+            [libroVentas.replace('<TipoEnvio>TOTAL</TipoEnvio>', '<TipoEnvio>TOT</TipoEnvio>'), 'TipoEnvio PARCIAL, FINAL, TOTAL o AJUSTE'],
+            [libroVentas.replace('<TotMntTotal>14273786</TotMntTotal>\n', ''), 'TotMntTotal obligatorio'],
+            [libroCompras.replace('<CodIVANoRec>4</CodIVANoRec>', '<CodIVANoRec>5</CodIVANoRec>'), 'CodIVANoRec 1, 2, 3, 4 o 9'],
+            [libroCompras.replace('<FctProp>0.6</FctProp>', '<FctProp>100</FctProp>'), 'FctProp hasta 99.999'],
+            [libroCompras.replace(/<MntNeto>29785<\/MntNeto>\n<MntIVA>0<\/MntIVA>/, '<MntIVA>0</MntIVA>\n<MntNeto>29785</MntNeto>'), 'orden del detalle'],
+        ];
+        if (xmllint) {
+            // Copia temporal del esquema: SOLO la faceta de 34 dígitos que libxml2 no representa (ver cabecera).
+            const xsd = join(dir, 'xsd');
+            mkdirSync(xsd);
+            for (const f of ['LibroCV_v10.xsd', 'LceCoCertif_v10.xsd', 'LceCal_v10.xsd', 'xmldsignature_v10.xsd']) writeFileSync(join(xsd, f), readFileSync(join(FIX, f)));
+            const tipos = leer('LceSiiTypes_v10.xsd', 'latin1');
+            assert.ok(tipos.includes('<xs:maxInclusive value="999999999999999999999999999999.9999"/>'), 'la faceta que se recorta para libxml2 es la del esquema oficial');
+            writeFileSync(join(xsd, 'LceSiiTypes_v10.xsd'), Buffer.from(tipos.replace('<xs:maxInclusive value="999999999999999999999999999999.9999"/>', '<xs:maxInclusive value="99999999999999999999.9999"/>'), 'latin1'));
+            const valida = (f) => execFileSync('xmllint', ['--noout', '--nonet', '--schema', join(xsd, 'LibroCV_v10.xsd'), f], { stdio: 'pipe' });
+            for (const [nombre, t] of [['libro-ventas.xml', libroVentas], ['libro-compras.xml', libroCompras]]) {
+                try { valida(escribir(nombre, t)); } catch (e) { throw new Error(`${nombre} no valida contra LibroCV_v10.xsd:\n${e.stderr?.toString() ?? e}`); }
+            }
+            negativos.forEach(([t, msg], i) => {
+                assert.notEqual(t, libroVentas, msg);
+                assert.notEqual(t, libroCompras, msg);
+                assert.throws(() => valida(escribir(`neg-libro-${i}.xml`, t)), msg);
+            });
+        } else if (process.env.SII_XSD_REQUIRED === '1') {
+            throw new Error('xmllint no está disponible y SII_XSD_REQUIRED=1');
+        }
+        if (java) {
+            const ESQUEMA = fileURLToPath(new URL('./sii-esquema.java', import.meta.url));
+            const FIRMAS = fileURLToPath(new URL('./sii-firmas.java', import.meta.url));
+            const buenos = [escribir('jdk-ventas.xml', libroVentas), escribir('jdk-compras.xml', libroCompras)];
+            const esquema = execFileSync('java', [ESQUEMA, join(FIX, 'LibroCV_v10.xsd'), ...buenos], { stdio: 'pipe' }).toString();
+            assert.equal((esquema.match(/valida=true/g) ?? []).length, 2, `los dos libros validan en la JDK contra el esquema oficial intacto:\n${esquema}`);
+            for (const [i, [t, msg]] of negativos.entries()) {
+                assert.throws(() => execFileSync('java', [ESQUEMA, join(FIX, 'LibroCV_v10.xsd'), escribir(`jdk-neg-${i}.xml`, t)], { stdio: 'pipe' }), `JDK: ${msg}`);
+            }
+            const firmas = execFileSync('java', [FIRMAS, '--sobre', ...buenos], { stdio: 'pipe' }).toString();
+            assert.equal((firmas.match(/valida=true/g) ?? []).length, 2, `firmas de los libros verificadas por la JDK:\n${firmas}`);
+        } else if (process.env.SII_JDK_REQUIRED === '1') {
+            throw new Error('java no está disponible y SII_JDK_REQUIRED=1');
+        }
+    } finally {
+        rmSync(dir, { recursive: true, force: true });
+    }
+}
+
+process.stdout.write('security:sii (ejemplo oficial F60T33, esquemas DTE/EnvioDTE 2026, firmas XMLDSig y timbre, PDF417, WSDL de maullin y palena, reglas y respuestas reales del SII, nota de débito, set de pruebas, respuestas de intercambio, registro de reclamos y libros de compras y ventas contra LibroCV_v10.xsd) OK\n');

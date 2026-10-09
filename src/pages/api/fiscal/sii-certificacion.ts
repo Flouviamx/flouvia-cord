@@ -1,16 +1,21 @@
 // /api/fiscal/sii-certificacion — Set de pruebas de la certificación ante el SII (Chile).
 //   GET                                          → sets cargados y los clientes que pueden ser receptores
 //   GET    ?muestra=<set>&caso=<n>[&cedible=1]   → muestra impresa (PDF) de un caso del set
+//   GET    ?libro=<id>                           → el libro firmado (XML) tal como se subió
 //   POST   JSON { accion: 'cargar', texto }      → carga el archivo del set tal como lo entregó el SII
 //          JSON { accion: 'enviar', set_id, receptores: { [caso]: clienteId } }
 //                                               → arma, firma y sube el set en un solo envío
 //          JSON { accion: 'consultar', set_id } → veredicto del SII sobre el envío
 //          JSON { accion: 'reintentar', set_id } → intento nuevo del mismo set (folios nuevos)
+//          JSON { accion: 'enviar_libro', libro_id, proveedores?: { [n]: { rut, razon_social } } }
+//                                               → arma, firma y sube el libro de ventas o de compras
+//          JSON { accion: 'consultar_libro', libro_id } / { accion: 'reintentar_libro', libro_id }
 //
-// Solo en el ambiente de certificación (latam/sii/certificacion.ts): el set no
-// crea documentos_fiscales ni toca la numeración de producción. Lo que el
-// archivo trae y Cord no arma (libros, guías, exportación, factura de compra)
-// se devuelve en `no_soportados` para decirlo en pantalla.
+// Solo en el ambiente de certificación (latam/sii/certificacion.ts y
+// libros-set.ts): el set no crea documentos_fiscales ni toca la numeración de
+// producción. Lo que el archivo trae y Cord no arma (guías y su libro,
+// exportación, factura de compra) se devuelve en `no_soportados` para decirlo
+// en pantalla.
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
@@ -24,8 +29,11 @@ import { railConfig } from '../../../lib/fiscal/latam/config';
 import { esErrorSeguro } from '../../../lib/fiscal/latam/errores';
 import { contextoSii } from '../../../lib/fiscal/latam/sii/autorizacion';
 import {
-    cargarSet, consultarSet, enviarSet, listarSets, muestraDeCaso, nuevoIntento, setPorId, type SetGuardado,
+    consultarSet, enviarSet, listarSets, muestraDeCaso, nuevoIntento, setFuenteDeLibros, setPorId, type SetGuardado,
 } from '../../../lib/fiscal/latam/sii/certificacion';
+import {
+    cargarArchivoSet, consultarLibro, enviarLibro, libroPorId, listarLibros, nuevoIntentoLibro, proveedoresDe, xmlDelLibro, type LibroGuardado,
+} from '../../../lib/fiscal/latam/sii/libros-set';
 import { TIPOS_DTE } from '../../../lib/fiscal/latam/sii/constantes';
 import { rutValido } from '../../../lib/fiscal/latam/sii/texto';
 import { motivoSinSii } from '../../../lib/fiscal/latam/sii/vista';
@@ -65,6 +73,46 @@ function vistaSet(s: SetGuardado) {
     };
 }
 
+/** Lo que la pantalla ve de un libro: sus documentos y totales, nunca el XML firmado. */
+function vistaLibro(l: LibroGuardado) {
+    return {
+        id: l.id,
+        operacion: l.operacion,
+        numero_atencion: l.numeroAtencion,
+        nombre: l.nombre,
+        estado: l.estado,
+        track_id: l.trackId,
+        error: l.errorMensaje,
+        periodo: l.periodo,
+        creado_at: l.createdAt,
+        enviado_at: l.enviadoAt,
+        xml: l.tieneXml,
+        respuesta: l.respuesta ? { estado: l.respuesta.estado ?? null, glosa: l.respuesta.glosa ?? null } : null,
+        factor: l.factorProporcionalidad,
+        filas: l.filas.map((f, i) => ({
+            n: i,
+            tipo_documento: f.tipoDocumento,
+            tpo_doc: f.tpoDoc,
+            folio: f.folio,
+            observacion: f.observacion,
+            exento: f.exento,
+            afecto: f.afecto,
+            tratamiento: f.tratamiento.tipo,
+            modifica: f.modifica,
+            rut: l.proveedores[String(i)]?.rut ?? '',
+            razon_social: l.proveedores[String(i)]?.razonSocial ?? '',
+        })),
+        documentos: l.detalles?.length ?? null,
+        resumen: l.resumen?.map((t) => ({ tipo: t.tpoDoc, documentos: t.totDoc, total: t.totMntTotal })) ?? null,
+    };
+}
+
+/** El set aceptado que alimenta los libros (o null si todavía no hay uno). */
+function vistaFuente(s: SetGuardado | null) {
+    if (!s?.documentos?.length) return null;
+    return { set_id: s.id, numero_atencion: s.numeroAtencion, track_id: s.trackId, documentos: s.documentos.length, periodo: s.documentos[0].fecha.slice(0, 7) };
+}
+
 /** El set solo vive en certificación: en producción la pantalla ni lo ofrece. */
 function sinCertificacion(): Response | null {
     return railConfig('sii').entorno === 'homologacion'
@@ -77,6 +125,16 @@ export const GET: APIRoute = async ({ url }) => {
     const orgId = await getActiveOrgId();
     const sinSii = await motivoSinSii(orgId); if (sinSii) return json({ error: sinSii }, 409);
     const noCert = sinCertificacion(); if (noCert) return noCert;
+
+    const libroId = url.searchParams.get('libro');
+    if (libroId) {
+        if (!UUID_RE.test(libroId)) return json({ error: 'Libro no encontrado' }, 404);
+        const archivo = await xmlDelLibro(orgId, libroId);
+        if (!archivo) return json({ error: 'Este libro todavía no tiene archivo firmado.' }, 404);
+        return new Response(new Uint8Array(Buffer.from(archivo.xml, 'latin1')), {
+            headers: { 'Content-Type': 'application/xml; charset=ISO-8859-1', 'Content-Disposition': `attachment; filename="${archivo.nombre}"`, 'Cache-Control': 'no-store' },
+        });
+    }
 
     const muestra = url.searchParams.get('muestra');
     if (muestra) {
@@ -107,8 +165,10 @@ export const GET: APIRoute = async ({ url }) => {
         }
     }
 
-    const [sets, [clientes]] = await Promise.all([
+    const [sets, libros, fuente, [clientes]] = await Promise.all([
         listarSets(orgId),
+        listarLibros(orgId),
+        setFuenteDeLibros(orgId),
         withOrgTx(orgId, sql`
             select id, coalesce(nullif(empresa, ''), contacto) as nombre, rfc, giro, comuna, direccion_line1
               from clientes
@@ -118,6 +178,8 @@ export const GET: APIRoute = async ({ url }) => {
     ]);
     return json({
         sets: sets.map(vistaSet),
+        libros: libros.map(vistaLibro),
+        fuente_libros: vistaFuente(fuente),
         clientes: clientes
             .map((c) => ({ id: String(c.id), nombre: String(c.nombre ?? ''), rut: rutValido(c.rfc), completo: !!(c.giro && c.comuna && c.direccion_line1) }))
             .filter((c) => c.rut),
@@ -156,13 +218,44 @@ export const POST: APIRoute = async ({ request }) => {
             const texto = String(body.texto ?? '');
             if (!texto.trim()) return json({ error: 'Pega el texto del set de pruebas.' }, 400);
             if (texto.length > 200_000) return json({ error: 'El texto es demasiado largo para ser un set de pruebas.' }, 400);
-            const r = await cargarSet(orgId, texto, currentUserId());
+            const r = await cargarArchivoSet(orgId, texto, currentUserId());
+            const cargados = [
+                ...r.sets.map((s) => `${s.nombre} (${s.numeroAtencion}, ${s.casos.length} casos)`),
+                ...r.libros.map((l) => `${l.nombre} (${l.numeroAtencion}${l.filas.length ? `, ${l.filas.length} documentos` : ''})`),
+            ];
             await logAudit(orgId, {
                 accion: 'sii_set.cargado', entidad: 'org', entidad_id: orgId,
-                detalle: `Set de pruebas del SII cargado: ${r.sets.map((s) => `${s.nombre} (${s.numeroAtencion}, ${s.casos.length} casos)`).join('; ') || 'ninguno que Cord arme'}`,
+                detalle: `Set de pruebas del SII cargado: ${cargados.join('; ') || 'ninguno que Cord arme'}`,
                 ip: reqIp(request),
             });
-            return json({ ok: true, sets: r.sets.map(vistaSet), no_soportados: r.noSoportados.map((n) => ({ nombre: n.nombre, numero_atencion: n.numeroAtencion, motivo: n.motivo })) });
+            return json({
+                ok: true, sets: r.sets.map(vistaSet), libros: r.libros.map(vistaLibro),
+                no_soportados: r.noSoportados.map((n) => ({ nombre: n.nombre, numero_atencion: n.numeroAtencion, motivo: n.motivo })),
+            });
+        }
+        if (accion === 'enviar_libro' || accion === 'consultar_libro' || accion === 'reintentar_libro') {
+            const libroId = String(body.libro_id ?? '');
+            if (!UUID_RE.test(libroId)) return json({ error: 'Libro no encontrado' }, 404);
+            if (accion === 'reintentar_libro') {
+                const l = await nuevoIntentoLibro(orgId, libroId, currentUserId());
+                return json({ ok: true, libro: vistaLibro(l) });
+            }
+            // Firmar el libro y consultar al SII usan el certificado del negocio.
+            const staleAuth = await requireFreshAuth(); if (staleAuth) return staleAuth;
+            const ctx = await contextoSii(orgId, railConfig('sii').entorno, await rutNegocio(orgId));
+            if (accion === 'consultar_libro') {
+                const l = await consultarLibro(ctx, libroId);
+                return json({ ok: true, libro: vistaLibro(l) });
+            }
+            const actual = await libroPorId(orgId, libroId);
+            if (!actual) return json({ error: 'Libro no encontrado' }, 404);
+            const l = await enviarLibro(ctx, libroId, proveedoresDe(actual, body.proveedores));
+            await logAudit(orgId, {
+                accion: 'sii_libro.enviado', entidad: 'org', entidad_id: orgId,
+                detalle: `Libro de ${l.operacion === 'VENTA' ? 'ventas' : 'compras'} del set ${l.numeroAtencion} enviado al SII (certificación): ${l.detalles?.length ?? 0} documentos, período ${l.periodo}${l.trackId ? `, envío ${l.trackId}` : ''}`,
+                ip: reqIp(request),
+            });
+            return json({ ok: true, libro: vistaLibro(l) });
         }
         const setId = String(body.set_id ?? '');
         if (!UUID_RE.test(setId)) return json({ error: 'Set no encontrado' }, 404);

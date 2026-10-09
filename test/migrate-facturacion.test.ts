@@ -150,6 +150,13 @@ describe('migración de despliegue de facturación', () => {
             const nfeColumnas = (await db.query<{ c: string }>(`select table_name || '.' || column_name as c from information_schema.columns
                 where column_name = 'nfe' and table_name in ('productos', 'clientes') order by 1`)).rows.map((r) => r.c);
             expect(nfeColumnas).toEqual(['clientes.nfe', 'productos.nfe']);
+            // Chile, certificación ante el SII (db/deploy/2026-10-09-sii*.sql): todas las
+            // tablas del riel con RLS forzada, incluidos los libros del set, y el libro
+            // firmado inmutable.
+            const rlsSii = (await db.query<{ relname: string }>(`select relname from pg_class
+                where relname like 'fiscal_sii_%' and relkind = 'r' and relrowsecurity and relforcerowsecurity order by relname`)).rows.map((r) => r.relname);
+            expect(rlsSii).toEqual(['fiscal_sii_buzones', 'fiscal_sii_cafs', 'fiscal_sii_dte_recibidos', 'fiscal_sii_libros', 'fiscal_sii_recepciones', 'fiscal_sii_respuestas', 'fiscal_sii_sets']);
+            expect((await db.query(`select 1 from pg_trigger where tgname = 'trg_fiscal_sii_libro_guardas'`)).rows).toHaveLength(1);
             // Francia, emisión por plataforma autorizada (db/deploy/2026-10-09-fr-pa.sql):
             // las menciones que congela el documento, la cola con RLS forzada, su
             // trigger de inmutabilidad y los resolutores del webhook.

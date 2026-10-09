@@ -8,6 +8,9 @@
 //   - set de pruebas: carga del archivo del SII, un envío con todos los casos
 //     en orden y la línea SET/CASO, folios de certificación, veredicto por
 //     tipo y muestras impresas;
+//   - libros de ventas y de compras del set (IECV): del set aceptado y de los
+//     documentos del set de compras con su proveedor, firmados, subidos por el
+//     mismo upload y con el estado tal como lo dice el SII;
 //   - intercambio: recepción y validación (firma, RUT receptor, repetidos),
 //     RespuestaDTE de recepción y de resultado, EnvioRecibos, el registro en
 //     el SII, la casilla del correo entrante y el aislamiento por organización.
@@ -69,6 +72,7 @@ const { parsearCaf } = await import('../src/lib/fiscal/latam/sii/caf');
 const { guardarCaf } = await import('../src/lib/fiscal/latam/sii/cafs');
 const { contextoSii } = await import('../src/lib/fiscal/latam/sii/autorizacion');
 const { cargarSet, consultarSet, enviarSet, muestraDeCaso, nuevoIntento, listarSets, exigirCertificacion } = await import('../src/lib/fiscal/latam/sii/certificacion');
+const { cargarArchivoSet, consultarLibro, enviarLibro, libroPorId, listarLibros, nuevoIntentoLibro, xmlDelLibro } = await import('../src/lib/fiscal/latam/sii/libros-set');
 const { casillaIntercambio, decidirDocumentos, listarRecepciones, orgDeCasilla, recibirEnvio, xmlRespuesta } = await import('../src/lib/fiscal/latam/sii/recepcion');
 const { verificarFirmaRecibida } = await import('../src/lib/fiscal/latam/sii/respuesta-intercambio');
 const { emitirDocumento } = await import('../src/lib/fiscal/latam/sii/emision');
@@ -88,6 +92,8 @@ const sii = {
     reclamos: [] as { accion: string; folio: string; tipo: string; rut: string; cookie: string }[],
     codReclamo: 0,
     veredicto: 'ok' as 'ok' | 'reparo' | 'rechazo',
+    /** ESTADO y GLOSA de QueryEstUp para un libro. */
+    estadoLibro: ['EPR', 'Envio Procesado'] as [string, string],
 };
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 function respuesta(op: string, interno: string): Response {
@@ -101,7 +107,9 @@ const param = (body: string, k: string) => new RegExp(`<${k} xsi:type="xsd:strin
 function upload(init: RequestInit): Response {
     const token = /TOKEN=([^;\s]+)/.exec(String((init.headers as Record<string, string>).Cookie ?? ''))?.[1];
     const cuerpo = Buffer.from(init.body as Uint8Array).toString('latin1');
-    const archivo = cuerpo.slice(cuerpo.indexOf('<?xml'), cuerpo.lastIndexOf('</EnvioDTE>') + '</EnvioDTE>'.length);
+    // El mismo upload recibe el envío de documentos y los libros.
+    const cierre = cuerpo.includes('</LibroCompraVenta>') ? '</LibroCompraVenta>' : '</EnvioDTE>';
+    const archivo = cuerpo.slice(cuerpo.indexOf('<?xml'), cuerpo.lastIndexOf(cierre) + cierre.length);
     sii.uploads.push(archivo);
     const status = token === sii.tokenValido ? 0 : 5;
     const tipos = new Map<string, number>();
@@ -116,6 +124,9 @@ function estadoEnvio(body: string): Response {
     if (param(body, 'Token') !== sii.tokenValido) return respuesta('getEstUp', '<SII:RESP_HDR><ESTADO>001</ESTADO><GLOSA>TOKEN NO EXISTE</GLOSA></SII:RESP_HDR>');
     const e = sii.envios.get(param(body, 'TrackId'));
     if (!e) return respuesta('getEstUp', '<SII:RESP_HDR><ESTADO>-11</ESTADO></SII:RESP_HDR>');
+    if (e.archivo.includes('<LibroCompraVenta')) {
+        return respuesta('getEstUp', `<SII:RESP_HDR><TRACKID>${param(body, 'TrackId')}</TRACKID><ESTADO>${sii.estadoLibro[0]}</ESTADO><GLOSA>${sii.estadoLibro[1]}</GLOSA></SII:RESP_HDR>`);
+    }
     // Un bloque por tipo de documento dentro del cuerpo (manual de QueryEstUp).
     const bloques = [...e.tipos.entries()].map(([tipo, n], i) => {
         const rep = sii.veredicto === 'reparo' && i === 0 ? 1 : 0;
@@ -223,6 +234,7 @@ beforeAll(async () => {
     await m.db.exec(seccion('-- ── Rieles fiscales de LatAm', '-- END rieles-latam'));
     await m.db.exec(seccion('-- ── Chile: factura electrónica con el SII', '-- END sii'));
     await m.db.exec(seccion('-- ── Chile: nota de débito, set de pruebas e intercambio', '-- END sii-certificacion'));
+    await m.db.exec(seccion('-- ── Chile: libros de compras y ventas del set de pruebas', '-- END sii-libros'));
     for (const [id, empresa, rut] of CLIENTES) {
         await m.db.query(`insert into clientes (id, org_id, empresa, rfc, giro, comuna, direccion_line1, ciudad) values ($1, $2, $3, $4, 'Comercio al por mayor', 'Santiago', 'Teatinos 120', 'Santiago')`,
             [id, ORG, empresa, rut]);
@@ -250,6 +262,7 @@ beforeEach(() => {
     sii.reclamos = [];
     sii.codReclamo = 0;
     sii.veredicto = 'ok';
+    sii.estadoLibro = ['EPR', 'Envio Procesado'];
     m.correos = [];
 });
 
@@ -376,7 +389,8 @@ describe('set de pruebas', () => {
     it('carga el set básico y dice qué trae el archivo que Cord no arma', async () => {
         const r = await cargarSet(ORG, SET, null);
         expect(r.sets.map((s) => [s.numeroAtencion, s.casos.length, s.estado])).toEqual([['4352553', 8, 'cargado']]);
-        expect(r.noSoportados.map((n) => [n.numeroAtencion, n.motivo])).toEqual([['4352554', 'libro'], ['4352556', 'guia']]);
+        expect(r.libros.map((l) => [l.operacion, l.numeroAtencion])).toEqual([['VENTA', '4352554']]);
+        expect(r.noSoportados.map((n) => [n.numeroAtencion, n.motivo])).toEqual([['4352556', 'guia']]);
         await expect(cargarSet(ORG, SET.replace('Cajón', 'Caj�n'), null)).rejects.toThrow(/ilegibles/);
     });
 
@@ -460,6 +474,136 @@ describe('set de pruebas', () => {
 
     it('solo en certificación', () => {
         expect(() => exigirCertificacion({ entorno: 'produccion' })).toThrow(/producción/);
+    });
+});
+
+// ── Libros de ventas y de compras del set ────────────────────────────────────
+describe('libros de ventas y de compras del set (IECV)', () => {
+    // El archivo del SII completo (ISO-8859-1, CRLF): set básico, libros, guías, exportación y factura de compra.
+    const ARCHIVO = readFileSync(new URL('../scripts/fixtures/sii/set-pruebas-basico.txt', import.meta.url), 'latin1');
+    const PERIODO = HOY.slice(0, 7);
+    const proveedores = {
+        0: { rut: '78885550-8', razonSocial: 'Distribuidora del Sur Ltda.' },
+        1: { rut: '96543210-8', razonSocial: 'Proveedor del Sur SpA' },
+        2: { rut: '12345678-5', razonSocial: 'Servicios Maipo S.A.' },
+        3: { rut: '78885550-8', razonSocial: 'Distribuidora del Sur Ltda.' },
+        4: { rut: '11222333-9', razonSocial: null },
+        5: { rut: '22333444-K', razonSocial: null },
+        6: { rut: '96543210-8', razonSocial: 'Proveedor del Sur SpA' },
+    };
+
+    it('el archivo del SII trae los dos libros: el de compras con sus documentos, su IVA y el factor', async () => {
+        const r = await cargarArchivoSet(ORG, ARCHIVO, null);
+        expect(r.sets.map((s) => s.numeroAtencion)).toEqual(['4352553']);
+        expect(r.libros.map((l) => [l.operacion, l.numeroAtencion, l.folioNotificacion, l.estado])).toEqual([['VENTA', '4352554', 1, 'cargado'], ['COMPRA', '4352555', 2, 'cargado']]);
+        const compras = r.libros[1];
+        expect(compras.filas.map((f) => [f.tpoDoc, f.folio, f.exento, f.afecto, f.tratamiento])).toEqual([
+            [30, 234, 0, 21298, { tipo: 'credito' }],
+            [33, 32, 8844, 6527, { tipo: 'credito' }],
+            [30, 781, 0, 29785, { tipo: 'uso_comun' }],
+            [60, 451, 0, 2719, { tipo: 'credito' }],
+            [33, 67, 0, 10026, { tipo: 'no_recuperable', codigo: 4 }],
+            [46, 9, 0, 9575, { tipo: 'retencion_total' }],
+            [60, 211, 0, 4465, { tipo: 'credito' }],
+        ]);
+        expect(compras.filas.map((f) => f.modifica)).toEqual([null, null, null, 234, null, null, 32]);
+        expect(compras.factorProporcionalidad).toBe(0.6);
+        expect(r.noSoportados.map((n) => [n.numeroAtencion, n.motivo])).toEqual([['4352556', 'guia'], ['4352557', 'libro_guias'], ['4352558', 'exportacion'], ['4352560', 'compra']]);
+        // Una observación que Cord no sabe registrar se rechaza al cargar.
+        await expect(cargarArchivoSet(ORG, ARCHIVO.replace('ENTREGA GRATUITA DEL PROVEEDOR', 'COMPRA CON RETENCION PARCIAL DEL IVA'), null)).rejects.toThrow(/no sabe registrar/);
+    });
+
+    it('sin el set básico aceptado no se envía ningún libro', async () => {
+        const ventas = (await listarLibros(ORG)).find((l) => l.operacion === 'VENTA')!;
+        const { rows } = await m.db.query(`update fiscal_sii_sets set estado = 'reparos' where org_id = $1 and estado = 'aceptado' returning id`, [ORG]);
+        try {
+            await expect(enviarLibro(await ctx(), ventas.id, {})).rejects.toThrow(/aceptado el set básico/);
+        } finally {
+            for (const r of rows) await m.db.query(`update fiscal_sii_sets set estado = 'aceptado' where id = $1`, [r.id]);
+        }
+        expect(sii.uploads).toHaveLength(0);
+        expect((await libroPorId(ORG, ventas.id))!.estado).toBe('cargado');
+    });
+
+    it('libro de ventas: los documentos del set aceptado, firmado y subido; el estado, como lo dice el SII', async () => {
+        const [s] = (await cargarSet(ORG, SET, null)).sets;
+        await enviarSet(await ctx(), s.id, receptores, emisorBase);
+        const aceptado = await consultarSet(await ctx(), s.id);
+        expect(aceptado.estado).toBe('aceptado');
+        sii.uploads = [];
+        const ventas = (await listarLibros(ORG)).find((l) => l.operacion === 'VENTA')!;
+        const enviado = await enviarLibro(await ctx(), ventas.id, {});
+        expect([enviado.estado, enviado.setId, enviado.periodo, enviado.trackId]).toEqual(['enviado', s.id, PERIODO, String(sii.track)]);
+        expect(sii.uploads).toHaveLength(1);
+        const xml = sii.uploads[0];
+        expect(xml.split('\n')[0]).toBe('<?xml version="1.0" encoding="ISO-8859-1"?>');
+        expect(xml.split('\n')[1]).toMatch(/^<LibroCompraVenta xmlns="http:\/\/www\.sii\.cl\/SiiDte" xmlns:xsi="[^"]+" xsi:schemaLocation="http:\/\/www\.sii\.cl\/SiiDte LibroCV_v10\.xsd" version="1\.0">$/);
+        // Carátula del set (instrucciones, III.1): ESPECIAL, TOTAL, folio de notificación 1.
+        expect(xml).toContain(`<RutEmisorLibro>${RUT}</RutEmisorLibro>\n<RutEnvia>${RUT_FIRMANTE}</RutEnvia>\n<PeriodoTributario>${PERIODO}</PeriodoTributario>\n<FchResol>2026-10-01</FchResol>\n<NroResol>0</NroResol>`);
+        expect(xml).toContain('<TipoOperacion>VENTA</TipoOperacion>\n<TipoLibro>ESPECIAL</TipoLibro>\n<TipoEnvio>TOTAL</TipoEnvio>\n<FolioNotificacion>1</FolioNotificacion>');
+        // Un detalle por documento del set, en orden; el resumen, por tipo de documento.
+        const detalle = [...xml.matchAll(/<Detalle>\n<TpoDoc>(\d+)<\/TpoDoc>\n<NroDoc>(\d+)<\/NroDoc>/g)].map((x) => `${x[1]}:${x[2]}`);
+        expect(detalle).toEqual(aceptado.documentos!.map((d) => `${d.tipo}:${d.folio}`));
+        expect([...xml.matchAll(/<TotalesPeriodo>\n<TpoDoc>(\d+)<\/TpoDoc>\n<TotDoc>(\d+)<\/TotDoc>/g)].map((x) => `${x[1]}:${x[2]}`)).toEqual(['33:4', '56:1', '61:3']);
+        expect(xml).toContain('<TotMntTotal>14273786</TotMntTotal>');
+        // La nota de crédito que anula la factura del caso 3 dice qué anula (formato IECV, 2.4, campos 16 y 17).
+        const anulada = aceptado.documentos!.find((d) => d.caso === '4352553-3')!;
+        expect(xml).toContain(`<TpoDocRef>33</TpoDocRef>\n<FolioDocRef>${anulada.folio}</FolioDocRef>`);
+        // Firma del <EnvioLibro> en el contexto del documento, con el certificado del negocio.
+        const raiz = parsearFragmento(xml.replace(/^<\?xml[^>]*\?>\n/, ''));
+        const firma = (raiz.c ?? []).find((h: any) => h.n === 'Signature') as any;
+        expect(verificarFirmaRecibida(buscar(raiz, 'EnvioLibro')!, [raiz], firma, [raiz]).ok).toBe(true);
+        expect((await xmlDelLibro(ORG, ventas.id))!.xml.trimEnd()).toBe(xml);
+        await expect(enviarLibro(await ctx(), ventas.id, {})).rejects.toThrow(/ya se envió/);
+        // Un libro firmado no cambia (trigger).
+        await expect(m.db.query(`update fiscal_sii_libros set detalles = '[]'::jsonb where id = $1`, [ventas.id])).rejects.toThrow(/no se modifica/);
+
+        // QueryEstUp: lo que su manual documenta se interpreta; lo demás se guarda tal cual.
+        sii.estadoLibro = ['EPR', 'Envio Procesado'];
+        expect((await consultarLibro(await ctx(), ventas.id)).estado).toBe('procesado');
+        sii.estadoLibro = ['XYZ', 'Glosa que el manual no documenta'];
+        const otro = await consultarLibro(await ctx(), ventas.id);
+        expect([otro.estado, otro.respuesta]).toEqual(['respondido', { estado: 'XYZ', glosa: 'Glosa que el manual no documenta' }]);
+        sii.estadoLibro = ['-11', ''];
+        const sinRespuesta = await consultarLibro(await ctx(), ventas.id);
+        expect([sinRespuesta.estado, sinRespuesta.errorMensaje]).toEqual(['enviado', 'El SII no pudo responder la consulta (estado -11). Reintenta en unos minutos.']);
+        sii.estadoLibro = ['RCT', 'Rechazado por Error en Caratula'];
+        const rechazado = await consultarLibro(await ctx(), ventas.id);
+        expect(rechazado.estado).toBe('rechazado');
+        expect(rechazado.errorMensaje).toMatch(/carátula/);
+        const nuevo = await nuevoIntentoLibro(ORG, ventas.id, null);
+        expect([nuevo.estado, nuevo.trackId, nuevo.tieneXml]).toEqual(['cargado', null, false]);
+    });
+
+    it('libro de compras: los documentos del set con su proveedor, IVA de uso común, no recuperable y retenido', async () => {
+        const compras = (await listarLibros(ORG)).find((l) => l.operacion === 'COMPRA')!;
+        // Instrucciones del set, IV.3: el emisor de cada documento, con RUT válido.
+        await expect(enviarLibro(await ctx(), compras.id, { ...proveedores, 2: { rut: '12345678-9', razonSocial: 'X' } })).rejects.toThrow(/RUT válido/);
+        // Formato IECV, 3.4, campo 12: razón social obligatoria en los documentos en papel.
+        await expect(enviarLibro(await ctx(), compras.id, { ...proveedores, 0: { rut: '78885550-8', razonSocial: null } })).rejects.toThrow(/razón social/);
+        expect(sii.uploads).toHaveLength(0);
+        expect((await libroPorId(ORG, compras.id))!.estado).toBe('cargado');
+
+        const enviado = await enviarLibro(await ctx(), compras.id, proveedores);
+        expect([enviado.estado, enviado.periodo]).toEqual(['enviado', PERIODO]);
+        const xml = sii.uploads[0];
+        expect(xml).toContain('<TipoOperacion>COMPRA</TipoOperacion>\n<TipoLibro>ESPECIAL</TipoLibro>\n<TipoEnvio>TOTAL</TipoEnvio>\n<FolioNotificacion>2</FolioNotificacion>');
+        expect(xml).toContain(`<PeriodoTributario>${PERIODO}</PeriodoTributario>`);
+        expect([...xml.matchAll(/<Detalle>\n<TpoDoc>(\d+)<\/TpoDoc>\n<NroDoc>(\d+)<\/NroDoc>/g)].map((x) => `${x[1]}:${x[2]}`))
+            .toEqual(['30:234', '33:32', '30:781', '60:451', '33:67', '46:9', '60:211']);
+        expect(xml).toContain('<RUTDoc>78885550-8</RUTDoc>\n<RznSoc>Distribuidora del Sur Ltda.</RznSoc>\n<MntNeto>21298</MntNeto>\n<MntIVA>4047</MntIVA>\n<MntTotal>25345</MntTotal>');
+        // IVA de uso común: fuera del IVA recuperable, con el factor y el crédito del período.
+        expect(xml).toContain('<MntNeto>29785</MntNeto>\n<MntIVA>0</MntIVA>\n<IVAUsoComun>5659</IVAUsoComun>\n<MntTotal>35444</MntTotal>');
+        expect(xml).toContain('<TotOpIVAUsoComun>1</TotOpIVAUsoComun>\n<TotIVAUsoComun>5659</TotIVAUsoComun>\n<FctProp>0.6</FctProp>\n<TotCredIVAUsoComun>3395</TotCredIVAUsoComun>');
+        // Entrega gratuita: IVA no recuperable, código 4.
+        expect(xml).toContain('<MntNeto>10026</MntNeto>\n<MntIVA>0</MntIVA>\n<IVANoRec>\n<CodIVANoRec>4</CodIVANoRec>\n<MntIVANoRec>1905</MntIVANoRec>\n</IVANoRec>\n<MntTotal>11931</MntTotal>');
+        // Retención total del IVA: código 15 a la tasa del impuesto, y el total sin lo retenido.
+        expect(xml).toContain('<MntNeto>9575</MntNeto>\n<MntIVA>1819</MntIVA>\n<OtrosImp>\n<CodImp>15</CodImp>\n<TasaImp>19</TasaImp>\n<MntImp>1819</MntImp>\n</OtrosImp>\n<MntTotal>9575</MntTotal>');
+        expect(enviado.resumen!.map((t) => [t.tpoDoc, t.totDoc, t.totMntTotal])).toEqual([[30, 2, 60789], [33, 2, 28542], [46, 1, 9575], [60, 2, 8549]]);
+        // El intento nuevo conserva los proveedores que el negocio escribió.
+        const otro = await nuevoIntentoLibro(ORG, compras.id, null);
+        expect([otro.estado, otro.proveedores['5']?.rut]).toEqual(['cargado', '22333444-K']);
+        expect((await listarLibros(ORG)).find((l) => l.operacion === 'COMPRA')!.id).toBe(otro.id);
     });
 });
 
@@ -633,12 +777,12 @@ describe('casilla de intercambio y aislamiento', () => {
             await t.query("select set_config('app.org_id', $1, true)", [org]);
             return Number((await t.query(`select count(*)::int as n from ${tabla}`)).rows[0].n);
         });
-        for (const tabla of ['fiscal_sii_recepciones', 'fiscal_sii_dte_recibidos', 'fiscal_sii_respuestas', 'fiscal_sii_sets']) {
+        for (const tabla of ['fiscal_sii_recepciones', 'fiscal_sii_dte_recibidos', 'fiscal_sii_respuestas', 'fiscal_sii_sets', 'fiscal_sii_libros']) {
             expect(await ver(ORG, tabla), tabla).toBeGreaterThan(0);
             expect(await ver(ORG2, tabla), tabla).toBe(0);
         }
         const forzadas = (await m.db.query(`select relname from pg_class where relname like 'fiscal_sii_%' and relrowsecurity and relforcerowsecurity order by 1`)).rows.map((r: any) => r.relname);
-        expect(forzadas).toEqual(['fiscal_sii_buzones', 'fiscal_sii_cafs', 'fiscal_sii_dte_recibidos', 'fiscal_sii_recepciones', 'fiscal_sii_respuestas', 'fiscal_sii_sets']);
+        expect(forzadas).toEqual(['fiscal_sii_buzones', 'fiscal_sii_cafs', 'fiscal_sii_dte_recibidos', 'fiscal_sii_libros', 'fiscal_sii_recepciones', 'fiscal_sii_respuestas', 'fiscal_sii_sets']);
     });
 });
 
