@@ -14,12 +14,16 @@ const dist = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'dist
 // ofrecidos con su dígito verificador (validateTaxId), no solo RFC/NIF/EIN.
 // Entra en todo bundle que monta el Fiscal Element (~1.6 KB gzip); headless
 // además exporta los motivos en español e inglés (~0.9 KB más).
+// Oct 2026: el motor aplica el descuento de documento (porcentaje o monto,
+// repartido por línea en unidades mínimas por mayor residuo) y el Quote
+// Builder manda el código de cupón: ~0.45 KB gzip en todo entrypoint que trae
+// el motor (index, headless y los que montan el builder).
 const BUDGET_KB = {
-    'index.mjs': 15.5,
-    'headless.mjs': 14.25,
-    'react.mjs': 26.5,
-    'vue.mjs': 15,
-    'framer.mjs': 23,
+    'index.mjs': 16,
+    'headless.mjs': 14.75,
+    'react.mjs': 27,
+    'vue.mjs': 15.5,
+    'framer.mjs': 23.5,
     'webflow.mjs': 7,
     'webflow.js': 7,
     'embed.js': 7,

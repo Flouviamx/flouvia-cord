@@ -203,66 +203,42 @@ const roundTo = (n: number, decimals: number): number => {
  * su propio importe. Los empates se resuelven por orden de línea, así que el
  * mismo documento da siempre el mismo reparto.
  */
-function repartirDescuento(brutos: number[], descuento: DescuentoInput | null | undefined, decimals: number | undefined): number[] {
-    const ceros = brutos.map(() => 0);
-    if (!descuento) return ceros;
-    const tipo = descuento.tipo;
-    const valor = Number(descuento.valor);
-    if (tipo !== 'porcentaje' && tipo !== 'monto') {
-        throw new RangeError(`descuento.tipo debe ser 'porcentaje' o 'monto' (recibido: ${String(tipo)}).`);
-    }
+function repartirDescuento(brutos: number[], d: DescuentoInput | null | undefined, decimals: number | undefined): number[] {
+    const valor = Number(d?.valor);
     // Mismo criterio que las tasas: un descuento negativo, NaN o de más del
     // 100 % es un error de programación, no algo que se ajusta en silencio.
-    if (!Number.isFinite(valor) || valor < 0 || (tipo === 'porcentaje' && valor > 100)) {
-        throw new RangeError(`descuento.valor fuera de rango para '${tipo}' (recibido: ${String(descuento.valor)}).`);
+    if (d && ((d.tipo !== 'porcentaje' && d.tipo !== 'monto') || !(valor >= 0 && valor <= (d.tipo === 'monto' ? Infinity : 100)))) {
+        throw new RangeError(`descuento fuera de rango: ${d.tipo} ${d.valor}`);
     }
     const bruto = brutos.reduce((s, b) => s + b, 0);
-    if (!(valor > 0) || !(bruto > 0)) return ceros;
+    if (!d || !(valor > 0) || !(bruto > 0)) return brutos.map(() => 0);
+    const deseado = d.tipo === 'porcentaje' ? bruto * valor / 100 : valor;
 
     if (decimals === undefined) {
-        const total = tipo === 'porcentaje' ? bruto * valor / 100 : Math.min(valor, bruto);
-        if (total >= bruto) return brutos.slice();
-        return brutos.map((b) => total * b / bruto);
+        const total = Math.min(deseado, bruto);
+        return brutos.map((b) => (total >= bruto ? b : total * b / bruto));
     }
 
     const f = 10 ** decimals;
-    const unidades = brutos.map((b) => Math.round(b * f));
-    const totalUnidades = unidades.reduce((s, u) => s + u, 0);
-    const deseado = tipo === 'porcentaje' ? roundTo(bruto * valor / 100, decimals) : roundTo(valor, decimals);
-    const descuentoUnidades = Math.min(Math.round(deseado * f), totalUnidades);
-    if (descuentoUnidades <= 0 || totalUnidades <= 0) return ceros;
-
-    // Cociente y residuo enteros de (descuento × importe) / total. En el rango
-    // real de importes el producto cabe exacto en un double; si no, se cae a
-    // aritmética de punto flotante (el residuo solo decide desempates).
-    const partes = unidades.map((u) => {
-        const prod = descuentoUnidades * u;
-        if (Number.isSafeInteger(prod)) {
-            let q = Math.floor(prod / totalUnidades);
-            let resto = prod - q * totalUnidades;
-            if (resto < 0) { q -= 1; resto += totalUnidades; }
-            if (resto >= totalUnidades) { q += 1; resto -= totalUnidades; }
-            return { q: Math.min(q, u), resto };
-        }
-        const exacto = descuentoUnidades * (u / totalUnidades);
-        const q = Math.min(Math.floor(exacto), u);
-        return { q, resto: (exacto - q) * totalUnidades };
+    const u = brutos.map((b) => Math.round(b * f));
+    const tu = u.reduce((s, x) => s + x, 0);
+    const D = Math.min(Math.round(roundTo(deseado, decimals) * f), tu);
+    // Cociente entero de (descuento × importe) / total. La división en punto
+    // flotante puede redondear hacia arriba un cociente que no es exacto: se
+    // corrige, y el ajuste final por residuo cubre lo que quede.
+    const q = u.map((x) => {
+        const k = Math.floor(D * x / tu);
+        return k * tu > D * x ? k - 1 : k;
     });
-    let faltan = descuentoUnidades - partes.reduce((s, p) => s + p.q, 0);
-    const orden = partes
-        .map((p, i) => ({ i, resto: p.resto }))
-        .sort((a, b) => (b.resto - a.resto) || (a.i - b.i));
-    // Una vuelta basta en la práctica; el `while` cubre el caso degenerado en
-    // que una línea ya llena no pudo recibir su unidad y otra debe tomarla.
-    while (faltan > 0) {
-        let asignadas = 0;
-        for (const { i } of orden) {
-            if (faltan === 0) break;
-            if (partes[i].q < unidades[i]) { partes[i].q += 1; faltan -= 1; asignadas += 1; }
-        }
-        if (asignadas === 0) break;
+    let resto = D - q.reduce((s, x) => s + x, 0);
+    // Mayor residuo primero; empate por orden de línea. Si falta, se suma una
+    // unidad a quien tiene cupo; si sobra (importes enormes), se quita al revés.
+    const orden = u.map((_, i) => i).sort((a, b) => (D * u[b] - q[b] * tu) - (D * u[a] - q[a] * tu) || a - b);
+    for (const i of resto < 0 ? orden.reverse() : orden) {
+        if (resto > 0 && q[i] < u[i]) { q[i]++; resto--; }
+        else if (resto < 0 && q[i] > 0) { q[i]--; resto++; }
     }
-    return partes.map((p) => p.q / f);
+    return q.map((x) => x / f);
 }
 
 /**

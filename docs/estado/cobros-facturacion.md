@@ -109,6 +109,54 @@ no hace falta una app por país.
   Vercel antes del build (columnas de `db/catalogo-fiscal.sql` + función y vista extraídas
   de `db/schema.sql`). Si falla, el despliegue se detiene.
 
+## Descuentos de documento y cupones — oct 2026
+
+- **Qué es:** una rebaja sobre la venta completa (`porcentaje` de 0 a 100 o
+  `monto` en la divisa del documento), ANTES de impuestos. La aplica el motor
+  (`calculateDocumentTotals`, opción `descuento`) y la reparte entre las líneas
+  en proporción a su importe bruto; con `roundLines` el reparto es en unidades
+  mínimas por mayor residuo (la suma por línea es exactamente el descuento y
+  ninguna línea queda negativa). Un monto se topa en el bruto. Con precios que
+  incluyen impuesto, el monto rebaja lo que paga el cliente y la base se
+  desagrega después. Las retenciones se calculan sobre las bases descontadas.
+- **Contrato de datos:** el navegador y la API mandan la DEFINICIÓN
+  (`descuento: {tipo, valor}`) o un código (`cupon`), nunca un importe; el cupón
+  manda sobre el manual (`src/lib/descuentos.ts`, `leerDescuentoBody`). Sin
+  ninguna de las dos llaves, una edición conserva el descuento guardado.
+  Cotización: `cotizaciones.descuento` = importe antes de impuestos (la hoja lo
+  exporta y su `subtotal` es el bruto) y `descuento_def` = definición. Factura:
+  `documentos_fiscales.descuento_total` y `descuento` (definición, con
+  `cupon_id`); cada concepto del snapshot lleva `discount` y su `subtotal` sigue
+  siendo la base NETA (`unitPrice` también es neto). `cotizacion_items.descuento_pct`
+  no se usa: Shopify y la contabilidad lo aplican por línea.
+- **Cupones** (`cupones`, Ajustes › Descuentos › Cupones, permiso `ajustes`):
+  código `[A-Z0-9_-]{3,32}` único por organización, vigencia en la zona horaria
+  del negocio, divisa obligatoria para un monto, tope global y por cliente.
+  Código, tipo, valor y divisa no se editan; un cupón usado no se borra, se
+  desactiva. El editor valida con `POST /api/cupones/validar` (permiso `cotizar`).
+- **Ciclo de vida** (`src/lib/cupones.ts`): vigencia y `activo` se revisan al
+  APLICAR; un cupón ya aplicado a un documento se conserva al editarlo. El uso se
+  registra cuando el documento se vuelve vinculante, con `cord_cupon_redimir`
+  (bloquea la fila del cupón): la factura al emitirse —ANTES de reservar folio—
+  y la cotización al aprobarse, en la misma transacción que la aprobación. Si los
+  usos se agotaron, no se emite ni se aprueba (el vendedor lo ve en el historial).
+  La factura de una cotización reusa su redención. Anular la factura, borrar el
+  borrador o rechazar la cotización la libera (`cord_cupon_liberar`). Un
+  descuento manual cuenta para el tope de aprobación; un cupón no.
+- **Rieles:** CFDI con `items[].discount` y ValorUnitario bruto (Facturapi:
+  "monto total de descuento aplicado a este concepto"; Anexo 20: Importe −
+  Descuento = base, y la base de un traslado debe ser mayor que cero, por eso un
+  concepto que el descuento deja en cero se rechaza antes del PAC). Verifactu
+  declara la base neta. La nota de crédito prorratea el `discount`. El PDF
+  muestra el importe bruto por concepto y "Descuento (CÓDIGO)" en los totales.
+- **Copias:** duplicar o repetir una factura copia el precio BRUTO y el
+  descuento aparte; una recurrencia lleva solo un descuento manual
+  (`documento_recurrencias.descuento`). Aprobación parcial y factura de una
+  cotización vuelven a aplicar la definición sobre lo aprobado.
+- **Despliegue:** `db/deploy/2026-10-08-descuentos.sql`. Lo verifican
+  `test/engine-descuento.test.ts`, `test/cupones-db.test.ts` y
+  `test/descuento-fiscal.test.ts`.
+
 ## Facturación internacional — ago 2026
 
 - México: CFDI 4.0 mediante `MexicoSatProvider` y Facturapi como PAC intercambiable.
