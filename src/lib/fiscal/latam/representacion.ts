@@ -33,6 +33,12 @@ export interface RepresentacionImpresa {
     qrUrl?: string;
     /** Texto que acompaña al QR. */
     qrLeyenda?: string;
+    /**
+     * La norma exige el QR en TODAS las páginas (Colombia: Anexo Técnico de la
+     * DIAN, numeral 11.7, mínimo 2 cm). El PDF lo repite en el pie de cada
+     * página siguiente a la primera.
+     */
+    qrCadaPagina?: boolean;
     /** Leyendas obligatorias del comprobante, cada una completa. */
     leyendas: string[];
     /** Pie legal: reemplaza al aviso de "documento comercial" de Cord. */
@@ -69,6 +75,7 @@ export function representacionDe(providerData: unknown): RepresentacionImpresa |
         filas,
         ...(texto(r.qrUrl) ? { qrUrl: texto(r.qrUrl) } : {}),
         ...(texto(r.qrLeyenda) ? { qrLeyenda: texto(r.qrLeyenda) } : {}),
+        ...(r.qrCadaPagina === true && texto(r.qrUrl) ? { qrCadaPagina: true } : {}),
         leyendas: Array.isArray(r.leyendas) ? (r.leyendas as unknown[]).filter((l): l is string => typeof l === 'string' && !!l) : [],
         pie,
         ...(r.prueba === true ? { prueba: true } : {}),

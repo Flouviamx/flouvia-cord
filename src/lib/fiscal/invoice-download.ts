@@ -118,6 +118,15 @@ export async function downloadInvoiceDocument(orgId: string, id: string, format:
     });
   }
 
+  // Colombia: el XML de un documento validado por la DIAN es su contenedor
+  // (AttachedDocument) con el documento firmado y la respuesta de la DIAN.
+  if (format === 'xml' && String(doc.document_type || '').startsWith('dian_')) {
+    const { contenedorDeDocumento } = await import('./latam/dian/contenedor');
+    const contenedor = await contenedorDeDocumento(orgId, String(doc.id)).catch(() => null);
+    if (!contenedor) return new Response('XML no disponible para este documento', { status: 404 });
+    return new Response(contenedor.xml, { status: 200, headers: downloadHeaders('application/xml', contenedor.nombre) });
+  }
+
   if (format !== 'pdf') return new Response('Esta factura no genera XML', { status: 404 });
   return invoicePdf(orgId, doc, Boolean(doc.provider_data?.simulado));
 }

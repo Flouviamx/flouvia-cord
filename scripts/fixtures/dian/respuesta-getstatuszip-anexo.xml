@@ -1,0 +1,32 @@
+<!-- Transcrito del Anexo Técnico de Factura Electrónica de Venta v1.9 (Resolución DIAN 000165 de 2023), numeral 7.12.3 "Protocolo de respuesta" de GetStatusZip. Solo se corrigieron los artefactos de extracción del PDF; XmlBase64Bytes conserva el prefijo que el Anexo trae truncado. -->
+<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope" xmlns:a="http://www.w3.org/2005/08/addressing" xmlns:u="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">
+  <s:Header>
+     <a:Action s:mustUnderstand="1">http://wcf.dian.colombia/IWcfDianCustomerServices/GetStatusZipResponse</a:Action>
+     <o:Security s:mustUnderstand="1" xmlns:o="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
+        <u:Timestamp u:Id="_0">
+          <u:Created>2020-02-03T22:53:10.291Z</u:Created>
+          <u:Expires>2020-02-03T22:58:10.291Z</u:Expires>
+        </u:Timestamp>
+     </o:Security>
+  </s:Header>
+  <s:Body>
+     <GetStatusZipResponse xmlns="http://wcf.dian.colombia">
+        <GetStatusZipResult xmlns:b="http://schemas.datacontract.org/2004/07/DianResponse" xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+          <b:DianResponse>
+             <b:ErrorMessage xmlns:c="http://schemas.microsoft.com/2003/10/Serialization/Arrays">
+                <c:string>Regla: FAJ40, Notificación: El contenido de este elemento no corresponde a un contenido valido</c:string>
+                <c:string>Regla: FAJ41, Notificación: El contenido de este elemento no corresponde al nombre y código valido.</c:string>
+             </b:ErrorMessage>
+             <b:IsValid>true</b:IsValid>
+             <b:StatusCode>00</b:StatusCode>
+             <b:StatusDescription>Procesado Correctamente.</b:StatusDescription>
+             <b:StatusMessage>La Factura electrónica SETP-990058987, ha sido autorizada.</b:StatusMessage>
+             <b:XmlBase64Bytes>PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiIHN0YW5kYWxvbmU9Im5vIj8+</b:XmlBase64Bytes>
+             <b:XmlBytes i:nil="true"/>
+             <b:XmlDocumentKey>794d0cf7692a33e6b103801a8db189a95a89d37f9f1f58ae73c9fb50b05aa4783ce6a5b9e45bffe3c7ab6f23a13b1e4c</b:XmlDocumentKey>
+             <b:XmlFileName>invoice-1-firmado-SHA256</b:XmlFileName>
+          </b:DianResponse>
+        </GetStatusZipResult>
+     </GetStatusZipResponse>
+  </s:Body>
+</s:Envelope>

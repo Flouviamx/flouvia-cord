@@ -9,6 +9,7 @@ import { dispatchEvent } from '../webhooks';
 import { clientEventData, clientPrevData } from '../event-payloads';
 import { type ActionContext, type ActionOutcome, auditAction, done, fromResponse, isUuid } from './outcome';
 import { CONDICIONES_IVA_RECEPTOR } from '../fiscal/latam/arca/constantes';
+import { fichaClienteDian } from '../fiscal/latam/dian/comprobante';
 
 const NIVELES = ['estandar', 'plata', 'oro', 'distribuidor'];
 const CONDICIONES_IVA_IDS = new Set(CONDICIONES_IVA_RECEPTOR.map((c) => c.id));
@@ -51,6 +52,9 @@ export function cleanClientInput(input: Record<string, any>) {
         condicion_iva: input.condicion_iva === undefined
             ? undefined
             : CONDICIONES_IVA_IDS.has(Number(input.condicion_iva)) ? Number(input.condicion_iva) : null,
+        // Ficha DIAN (Colombia): tipo de documento, tipo de persona, tributo y
+        // responsabilidades del adquiriente. Mismo contrato: `undefined` = no tocarla.
+        dian: input.dian === undefined ? undefined : fichaClienteDian(input.dian),
     };
 }
 
@@ -115,13 +119,13 @@ export async function createClient(ctx: ActionContext, input: Record<string, any
                 org_id, empresa, contacto, email, telefono, rfc, terminos_default, limite_credito,
                 nivel, descuento_pct, regimen_fiscal, uso_cfdi, cp_fiscal,
                 country_code, direccion_line1, direccion_line2, ciudad, region, condicion_iva,
-                einvoice_address, buyer_reference
+                einvoice_address, buyer_reference, dian
             )
             values (
                 ${ctx.orgId}, ${c.empresa}, ${c.contacto}, ${c.email}, ${c.telefono}, ${c.rfc}, ${c.terminos}, ${c.limite},
                 ${c.nivel}, ${c.descuento}, ${c.regimen_fiscal}, ${c.uso_cfdi}, ${c.cp_fiscal},
                 ${c.country_code}, ${c.direccion_line1}, ${c.direccion_line2}, ${c.ciudad}, ${c.region}, ${c.condicion_iva ?? null},
-                ${c.einvoice_address ?? null}, ${c.buyer_reference ?? null}
+                ${c.einvoice_address ?? null}, ${c.buyer_reference ?? null}, ${c.dian ? JSON.stringify(c.dian) : null}::jsonb
             )
             returning *`);
     } catch (error) {
@@ -164,7 +168,8 @@ async function writeClientUpdate(ctx: ActionContext, id: string, c: ClientInput)
             direccion_line2 = ${c.direccion_line2}, ciudad = ${c.ciudad}, region = ${c.region},
             condicion_iva = case when ${c.condicion_iva === undefined} then condicion_iva else ${c.condicion_iva ?? null}::smallint end,
             einvoice_address = case when ${c.einvoice_address === undefined}::boolean then einvoice_address else ${c.einvoice_address ?? null}::text end,
-            buyer_reference = case when ${c.buyer_reference === undefined}::boolean then buyer_reference else ${c.buyer_reference ?? null}::text end
+            buyer_reference = case when ${c.buyer_reference === undefined}::boolean then buyer_reference else ${c.buyer_reference ?? null}::text end,
+            dian = case when ${c.dian === undefined}::boolean then dian else ${c.dian ? JSON.stringify(c.dian) : null}::jsonb end
         where id = ${id} and org_id = ${ctx.orgId}
         returning *`);
     if (!rows.length) return NO_ENCONTRADO;
@@ -195,6 +200,7 @@ function clientRowToInput(c: Record<string, any>): Record<string, unknown> {
         regimen_fiscal: c.regimen_fiscal, uso_cfdi: c.uso_cfdi, cp_fiscal: c.cp_fiscal, country_code: c.country_code,
         direccion_line1: c.direccion_line1, direccion_line2: c.direccion_line2, ciudad: c.ciudad, region: c.region,
         condicion_iva: c.condicion_iva,
+        dian: c.dian ?? null,
     };
 }
 

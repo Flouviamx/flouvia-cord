@@ -16,7 +16,7 @@
 // los scripts de contrato y la UI.
 
 /** Identificador estable del riel. Es parte de la clave de las tablas `fiscal_rail_*`. */
-export type RailId = 'arca';
+export type RailId = 'arca' | 'dian';
 
 /**
  * Entorno de la autoridad. `homologacion` es el ambiente de pruebas de la
@@ -72,6 +72,17 @@ export const RIELES: Readonly<Record<RailId, RailDefinicion>> = {
         documentos: { factura: 'arca_invoice', notaCredito: 'arca_credit_note' },
         envPrefijo: 'ARCA',
         anulable: false,
+        numeracionPropia: true,
+    },
+    dian: {
+        id: 'dian',
+        pais: 'CO',
+        autoridad: 'DIAN',
+        documentos: { factura: 'dian_invoice', notaCredito: 'dian_credit_note' },
+        envPrefijo: 'DIAN',
+        // Una factura validada se ajusta con una nota crédito (Anexo Técnico 1.9).
+        anulable: false,
+        // Prefijo y consecutivo de la resolución de numeración de la DIAN.
         numeracionPropia: true,
     },
 };

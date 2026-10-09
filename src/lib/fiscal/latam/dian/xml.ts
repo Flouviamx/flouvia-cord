@@ -18,7 +18,7 @@
 //
 // Puro, sin dependencias.
 
-export type Hijo = Nodo | string | number | null | undefined | false | Hijo[];
+export type Hijo = Nodo | Texto | string | number | null | undefined | false | Hijo[];
 
 export interface Nodo {
     /** Nombre calificado (prefijo:local o local). */
@@ -28,7 +28,7 @@ export interface Nodo {
     c: (Nodo | Texto)[];
 }
 
-interface Texto {
+export interface Texto {
     t: string;
     /** Se escribe como sección CDATA en el documento (en la forma canónica, como texto escapado). */
     cdata?: boolean;

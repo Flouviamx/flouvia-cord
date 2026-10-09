@@ -1,0 +1,562 @@
+---
+// Ajustes › Datos fiscales › Factura electrónica con la DIAN (Colombia).
+//
+// Lo que el negocio aporta para facturar con software propio ante la DIAN:
+// sus datos del RUT (tipo de persona, responsabilidades, tributo, municipio),
+// el software que registró en el portal de la DIAN (identificador y PIN), la
+// resolución de numeración con su clave técnica, el certificado de firma con
+// su cadena y, en habilitación, el set de pruebas. Estado honesto: mientras
+// falte cualquiera, o mientras Cord no tenga la DIAN activa, las facturas
+// siguen como documento comercial y aquí se dice exactamente eso (regla 15).
+// Sin la DIAN activa en el despliegue no se ofrece ningún control.
+//
+// El certificado, la llave, el PIN y la clave técnica viajan una sola vez y
+// nunca vuelven: la pantalla solo sabe si están.
+import type { EstadoDian } from '../../../lib/fiscal/latam/dian/estado';
+import { RESPONSABILIDADES, TRIBUTOS_PARTE } from '../../../lib/fiscal/latam/dian/constantes';
+import { DEPARTAMENTOS, MUNICIPIOS } from '../../../lib/fiscal/latam/dian/municipios';
+
+interface Props { estado: EstadoDian; locale: 'es' | 'en'; }
+const { estado, locale } = Astro.props;
+const en = locale === 'en';
+
+const FALTANTE: Record<string, [string, string]> = {
+    nit: ['el NIT de tu negocio con su dígito de verificación (arriba, en Identidad de facturación)', 'your business NIT with its check digit (above, under Invoice identity)'],
+    razon_social: ['la razón social (arriba)', 'the legal name (above)'],
+    direccion: ['el domicilio fiscal (arriba)', 'the tax address (above)'],
+    tipo_persona: ['el tipo de persona', 'the type of taxpayer'],
+    responsabilidades: ['tus responsabilidades fiscales', 'your tax responsibilities'],
+    tributo: ['tu responsabilidad frente al IVA', 'your VAT responsibility'],
+    municipio: ['el municipio', 'the municipality'],
+    software: ['el identificador del software', 'the software ID'],
+    resolucion: ['la resolución de numeración', 'the numbering resolution'],
+    prefijo_notas: ['el prefijo de las notas', 'the notes prefix'],
+    certificado: ['el certificado de firma', 'the signing certificate'],
+    certificado_vencido: ['un certificado vigente (el actual venció)', 'a valid certificate (the current one expired)'],
+    certificado_nit: ['un certificado a nombre de tu NIT', 'a certificate issued to your NIT'],
+    pin: ['el PIN del software', 'the software PIN'],
+    clave_tecnica: ['la clave técnica de la resolución', 'the resolution technical key'],
+};
+const faltantes = estado.faltantes.map((f) => FALTANTE[f]?.[en ? 1 : 0] ?? f);
+const prueba = estado.entorno === 'homologacion';
+const cred = estado.credencial;
+const caduca = cred?.caduca?.slice(0, 10) ?? '';
+const A = estado.ajustes;
+const R = A.numeracion?.[estado.entorno];
+const titulo = !estado.habilitado
+    ? (en ? 'Coming soon' : 'Próximamente')
+    : estado.listo
+        ? (prueba ? (en ? 'Connected to the DIAN enablement environment' : 'Conectado al ambiente de habilitación de la DIAN') : (en ? 'Electronic invoicing with the DIAN active' : 'Factura electrónica con la DIAN activa'))
+        : (en ? 'Not connected yet' : 'Aún sin conectar');
+const sub = estado.listo
+    ? (prueba
+        ? (en ? 'Documents are validated in the enablement (test) environment and have no tax validity.' : 'Los documentos se validan en el ambiente de habilitación (pruebas) y no tienen validez fiscal.')
+        : (en ? `Certificate valid until ${caduca} · NIT ${estado.nit}-${estado.dv}` : `Certificado vigente hasta ${caduca} · NIT ${estado.nit}-${estado.dv}`))
+    : (en ? `Missing: ${faltantes.join(', ')}.` : `Falta: ${faltantes.join(', ')}.`);
+const N = estado.numeracion;
+const avisoNumeracion = N && N.proximoAlFin
+    ? (N.agotada
+        ? (en ? 'The numbering range is used up: request a new resolution from the DIAN and enter it here.' : 'Se agotó el rango de numeración: solicita una nueva resolución a la DIAN y regístrala aquí.')
+        : N.vencida
+            ? (en ? 'The numbering resolution expired: request a new one from the DIAN and enter it here.' : 'La resolución de numeración venció: solicita una nueva a la DIAN y regístrala aquí.')
+            : (en ? `Numbering is running out: ${N.quedan} numbers and ${N.dias} days of validity left.` : `La numeración se está acabando: quedan ${N.quedan} números y ${N.dias} días de vigencia.`))
+    : null;
+const porDepto = Object.entries(DEPARTAMENTOS).map(([cod, nombre]) => ({
+    cod, nombre, municipios: Object.entries(MUNICIPIOS).filter(([m]) => m.startsWith(cod)),
+}));
+---
+
+<div class="dian" data-dian data-entorno={estado.entorno}>
+    <p class="dian-intro">{en
+        ? 'In Colombia every invoice must be validated by the DIAN before it is delivered. Cord signs each invoice and credit note with your certificate, sends it to the DIAN as your own software, and prints the CUFE and the QR code on the PDF. Register Cord as your own software in the DIAN portal, complete the test set and enter the data below. Until then, invoices are issued as commercial documents without tax validity.'
+        : 'En Colombia cada factura debe validarla la DIAN antes de entregarse. Cord firma cada factura y nota crédito con tu certificado, la envía a la DIAN como tu software propio e imprime el CUFE y el código QR en el PDF. Registra Cord como software propio en el portal de la DIAN, supera el set de pruebas y completa los datos de abajo. Mientras tanto, las facturas se emiten como documento comercial sin validez fiscal.'}</p>
+
+    <div class="dian-state" data-on={estado.listo ? '1' : '0'} data-dian-state>
+        <span class="dian-dot" aria-hidden="true"></span>
+        <span class="dian-state-info">
+            <span class="dian-state-title" data-dian-title>{titulo}</span>
+            <span class="dian-state-sub" data-dian-sub>{estado.habilitado
+                ? sub
+                : (en ? 'Electronic invoicing with the DIAN is not available in Cord yet. Your invoices are still issued as commercial documents; we will let you know when you can connect it.' : 'La factura electrónica con la DIAN todavía no está disponible en Cord. Tus facturas se siguen emitiendo como documento comercial; te avisaremos cuando puedas conectarla.')}</span>
+            {estado.habilitado && avisoNumeracion && <span class="dian-state-err">{avisoNumeracion}</span>}
+            {estado.habilitado && cred?.verificacionError && <span class="dian-state-err" data-dian-verif>{cred.verificacionError}</span>}
+        </span>
+        {estado.habilitado && (
+            <button type="button" class="dian-btn-ghost" data-dian-remove style={cred ? '' : 'display:none'}>{en ? 'Disconnect' : 'Desconectar'}</button>
+        )}
+    </div>
+
+    {estado.habilitado && (
+        <Fragment>
+            <span class="dian-sec">{en ? 'Your business in the RUT' : 'Tu negocio en el RUT'}</span>
+            <div class="dian-grid">
+                <div class="s-field">
+                    <label for="dianPersona">{en ? 'Type of taxpayer' : 'Tipo de persona'}</label>
+                    <select class="s-input" id="dianPersona">
+                        <option value="" selected={!A.tipoPersona}>{en ? 'Choose…' : 'Elige…'}</option>
+                        <option value="1" selected={A.tipoPersona === '1'}>{en ? 'Legal entity' : 'Persona jurídica'}</option>
+                        <option value="2" selected={A.tipoPersona === '2'}>{en ? 'Individual' : 'Persona natural'}</option>
+                    </select>
+                </div>
+                <div class="s-field">
+                    <label for="dianTributo">{en ? 'VAT responsibility' : 'Responsabilidad frente al IVA'}</label>
+                    <select class="s-input" id="dianTributo">
+                        <option value="" selected={!A.tributo}>{en ? 'Choose…' : 'Elige…'}</option>
+                        {TRIBUTOS_PARTE.map((t) => <option value={t.id} selected={A.tributo === t.id}>{en ? t.etiquetaEn : t.etiqueta}</option>)}
+                    </select>
+                </div>
+                <div class="s-field">
+                    <label for="dianMunicipio">{en ? 'Municipality of your tax address' : 'Municipio del domicilio fiscal'}</label>
+                    <select class="s-input" id="dianMunicipio">
+                        <option value="" selected={!A.municipio}>{en ? 'Choose…' : 'Elige…'}</option>
+                        {porDepto.map((d) => (
+                            <optgroup label={d.nombre}>
+                                {d.municipios.map(([cod, nombre]) => <option value={cod} selected={A.municipio === cod}>{nombre} ({cod})</option>)}
+                            </optgroup>
+                        ))}
+                    </select>
+                </div>
+                <div class="s-field">
+                    <label for="dianComercial">{en ? 'Trade name (optional)' : 'Nombre comercial (opcional)'}</label>
+                    <input class="s-input" id="dianComercial" value={A.nombreComercial ?? ''} maxlength="450" />
+                </div>
+                <div class="s-field">
+                    <label for="dianMatricula">{en ? 'Commercial registration (optional)' : 'Matrícula mercantil (opcional)'}</label>
+                    <input class="s-input" id="dianMatricula" value={A.matriculaMercantil ?? ''} maxlength="40" autocomplete="off" />
+                </div>
+                <div class="s-field">
+                    <label for="dianCorreo">{en ? 'Reception email registered with the DIAN (optional)' : 'Correo de recepción registrado en la DIAN (opcional)'}</label>
+                    <input class="s-input" id="dianCorreo" type="email" value={A.correo ?? ''} maxlength="200" autocomplete="off" />
+                </div>
+            </div>
+            <fieldset class="dian-checks">
+                <legend>{en ? 'Tax responsibilities (box 53 of the RUT)' : 'Responsabilidades fiscales (casilla 53 del RUT)'}</legend>
+                {RESPONSABILIDADES.filter((r) => r.id !== 'R-99-PN').map((r) => (
+                    <label><input type="checkbox" name="dianResp" value={r.id} checked={(A.responsabilidades ?? []).includes(r.id)} /> {r.id} · {en ? r.nombreEn : r.nombre}</label>
+                ))}
+                <label><input type="checkbox" name="dianResp" value="R-99-PN" checked={(A.responsabilidades ?? []).includes('R-99-PN')} /> R-99-PN · {en ? 'Not applicable (none of the above)' : 'No aplica (ninguna de las anteriores)'}</label>
+            </fieldset>
+
+            <span class="dian-sec">{en ? 'Software and numbering' : 'Software y numeración'}</span>
+            <div class="dian-grid">
+                <div class="s-field">
+                    <label for="dianSoftware">{en ? 'Software ID (from the DIAN portal)' : 'Identificador del software (del portal de la DIAN)'}</label>
+                    <input class="s-input" id="dianSoftware" value={A.softwareId ?? ''} maxlength="36" autocomplete="off" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
+                </div>
+                <div class="s-field">
+                    <label for="dianPin">{en ? 'Software PIN (5 digits)' : 'PIN del software (5 dígitos)'}</label>
+                    <input class="s-input" id="dianPin" type="password" inputmode="numeric" maxlength="5" autocomplete="off" placeholder={estado.secretos.pin ? (en ? 'Saved' : 'Guardado') : ''} />
+                </div>
+                <div class="s-field">
+                    <label for="dianResNum">{prueba ? (en ? 'Test range: resolution number' : 'Rango de pruebas: número de resolución') : (en ? 'Numbering resolution number' : 'Número de la resolución de numeración')}</label>
+                    <input class="s-input" id="dianResNum" inputmode="numeric" value={R?.numero ?? ''} maxlength="20" autocomplete="off" />
+                </div>
+                <div class="s-field">
+                    <label for="dianResPrefijo">{en ? 'Prefix' : 'Prefijo'}</label>
+                    <input class="s-input" id="dianResPrefijo" value={R?.prefijo ?? ''} maxlength="4" autocomplete="off" />
+                </div>
+                <div class="s-field">
+                    <label for="dianResDesde">{en ? 'From number' : 'Desde el número'}</label>
+                    <input class="s-input" id="dianResDesde" type="number" min="0" step="1" value={R?.desde ?? ''} />
+                </div>
+                <div class="s-field">
+                    <label for="dianResHasta">{en ? 'To number' : 'Hasta el número'}</label>
+                    <input class="s-input" id="dianResHasta" type="number" min="0" step="1" value={R?.hasta ?? ''} />
+                </div>
+                <div class="s-field">
+                    <label for="dianResIni">{en ? 'Valid from' : 'Vigente desde'}</label>
+                    <input class="s-input" id="dianResIni" type="date" value={R?.vigenteDesde ?? ''} />
+                </div>
+                <div class="s-field">
+                    <label for="dianResFin">{en ? 'Valid until' : 'Vigente hasta'}</label>
+                    <input class="s-input" id="dianResFin" type="date" value={R?.vigenteHasta ?? ''} />
+                </div>
+                <div class="s-field">
+                    <label for="dianClave">{en ? 'Technical key of the range' : 'Clave técnica del rango'}</label>
+                    <input class="s-input" id="dianClave" type="password" maxlength="128" autocomplete="off" placeholder={estado.secretos.claveTecnica ? (en ? 'Saved' : 'Guardada') : ''} />
+                </div>
+                <div class="s-field">
+                    <label for="dianPrefNotas">{en ? 'Credit note prefix' : 'Prefijo de las notas crédito'}</label>
+                    <input class="s-input" id="dianPrefNotas" value={A.prefijoNotas ?? ''} maxlength="4" autocomplete="off" placeholder="NC" />
+                </div>
+                <div class="s-field">
+                    <label for="dianSinIva">{en ? 'Your 0% sales are' : 'Tus ventas al 0 % son'}</label>
+                    <select class="s-input" id="dianSinIva">
+                        <option value="" selected={!A.tratamientoSinIva}>{en ? 'I do not sell at 0%' : 'No vendo al 0 %'}</option>
+                        <option value="exento" selected={A.tratamientoSinIva === 'exento'}>{en ? 'VAT exempt' : 'Exentas de IVA'}</option>
+                        <option value="excluido" selected={A.tratamientoSinIva === 'excluido'}>{en ? 'Excluded from VAT' : 'Excluidas de IVA'}</option>
+                    </select>
+                </div>
+            </div>
+            <p class="dian-hint">{prueba
+                ? (en ? 'In the enablement environment, the numbering is the test range shown in the test set details of the DIAN portal, with its technical key. The PIN and the technical key are stored encrypted and are never shown again.' : 'En habilitación, la numeración es el rango de pruebas que muestra el detalle del set de pruebas en el portal de la DIAN, con su clave técnica. El PIN y la clave técnica se guardan cifrados y no vuelven a mostrarse.')
+                : (en ? 'Associate the resolution with your software in the DIAN portal. "Get from the DIAN" checks the ranges the DIAN reports for your NIT and stores the technical key of the configured range.' : 'Asocia la resolución a tu software en el portal de la DIAN. "Traer de la DIAN" consulta los rangos que la DIAN informa para tu NIT y guarda la clave técnica del rango configurado.')}</p>
+            <div class="dian-actions">
+                <button type="button" class="dian-btn-solid" data-dian-save>{en ? 'Save DIAN settings' : 'Guardar ajustes de la DIAN'}</button>
+                {!prueba && <button type="button" class="dian-btn-ghost" data-dian-rangos>{en ? 'Get from the DIAN' : 'Traer de la DIAN'}</button>}
+                <span class="dian-msg" data-dian-msg-ajustes></span>
+            </div>
+
+            {prueba && (
+                <div class="dian-block">
+                    <span class="dian-sec">{en ? 'Test set (enablement)' : 'Set de pruebas (habilitación)'}</span>
+                    <div class="dian-grid">
+                        <div class="s-field">
+                            <label for="dianTestSet">TestSetId</label>
+                            <input class="s-input" id="dianTestSet" value={A.testSetId ?? ''} maxlength="36" autocomplete="off" />
+                        </div>
+                        <div class="dian-qty">
+                            <div class="s-field"><label for="dianSetF">{en ? 'Invoices' : 'Facturas'}</label><input class="s-input" id="dianSetF" type="number" min="1" max="30" value="8" /></div>
+                            <div class="s-field"><label for="dianSetNc">{en ? 'Credit notes' : 'Notas crédito'}</label><input class="s-input" id="dianSetNc" type="number" min="0" max="10" value="1" /></div>
+                            <div class="s-field"><label for="dianSetNd">{en ? 'Debit notes' : 'Notas débito'}</label><input class="s-input" id="dianSetNd" type="number" min="0" max="10" value="1" /></div>
+                        </div>
+                    </div>
+                    <p class="dian-hint">{en ? 'Use the quantities shown in your test set details. Cord signs the documents with your data and a final consumer as customer; they have no tax validity. When the DIAN accepts them, sync to production from the DIAN portal.' : 'Usa las cantidades que indica el detalle de tu set de pruebas. Cord firma los documentos con tus datos y un consumidor final como cliente; no tienen validez fiscal. Cuando la DIAN los acepte, sincroniza a producción desde su portal.'}</p>
+                    <div class="dian-actions">
+                        <button type="button" class="dian-btn-solid" data-dian-set>{en ? 'Send test set' : 'Enviar set de pruebas'}</button>
+                        <button type="button" class="dian-btn-ghost" data-dian-set-estado>{en ? 'Check result' : 'Ver resultado'}</button>
+                        <span class="dian-msg" data-dian-msg-set></span>
+                    </div>
+                    <ul class="dian-set-list" data-dian-set-list></ul>
+                </div>
+            )}
+
+            <div class="dian-block">
+                <span class="dian-sec">{en ? 'Signing certificate' : 'Certificado de firma'}</span>
+                <p class="dian-hint dian-hint-top">{en ? 'The digital signature certificate for electronic invoicing issued to your NIT by a certification authority accredited by ONAC, with its full certification chain.' : 'El certificado de firma digital para factura electrónica a nombre de tu NIT, emitido por una entidad certificadora avalada por la ONAC, con su cadena de certificación completa.'}</p>
+                <div class="dian-mode" role="radiogroup" aria-label={en ? 'Certificate format' : 'Formato del certificado'}>
+                    <label><input type="radio" name="dianModo" value="p12" checked /> {en ? '.p12 / .pfx file' : 'Archivo .p12 / .pfx'}</label>
+                    <label><input type="radio" name="dianModo" value="pem" /> {en ? 'Certificate + private key' : 'Certificado + llave privada'}</label>
+                </div>
+                <div class="dian-files" data-dian-p12>
+                    <label class="dian-drop">
+                        <input type="file" id="dianP12" accept=".p12,.pfx" />
+                        <span class="dian-drop-ico">.p12</span>
+                        <span class="dian-drop-t">{en ? 'Certificate with key' : 'Certificado con llave'}</span>
+                        <span class="dian-drop-s" data-dian-name="dianP12">{en ? 'Choose your .p12/.pfx file' : 'Elige tu archivo .p12/.pfx'}</span>
+                    </label>
+                    <label class="dian-drop">
+                        <input type="file" id="dianCadenaP12" accept=".pem,.crt,.cer,.p7b" />
+                        <span class="dian-drop-ico">.pem</span>
+                        <span class="dian-drop-t">{en ? 'Chain (if not in the file)' : 'Cadena (si no viene en el archivo)'}</span>
+                        <span class="dian-drop-s" data-dian-name="dianCadenaP12">{en ? 'Intermediate and root' : 'Intermedia y raíz'}</span>
+                    </label>
+                </div>
+                <div class="dian-files is-three" data-dian-pem hidden>
+                    <label class="dian-drop">
+                        <input type="file" id="dianCrt" accept=".crt,.pem,.cer" />
+                        <span class="dian-drop-ico">.crt</span>
+                        <span class="dian-drop-t">{en ? 'Certificate' : 'Certificado'}</span>
+                        <span class="dian-drop-s" data-dian-name="dianCrt">{en ? 'Issued to your NIT' : 'A nombre de tu NIT'}</span>
+                    </label>
+                    <label class="dian-drop">
+                        <input type="file" id="dianKey" accept=".key,.pem" />
+                        <span class="dian-drop-ico">.key</span>
+                        <span class="dian-drop-t">{en ? 'Private key' : 'Llave privada'}</span>
+                        <span class="dian-drop-s" data-dian-name="dianKey">{en ? 'Its private key' : 'Su llave privada'}</span>
+                    </label>
+                    <label class="dian-drop">
+                        <input type="file" id="dianCadena" accept=".pem,.crt,.cer" />
+                        <span class="dian-drop-ico">.pem</span>
+                        <span class="dian-drop-t">{en ? 'Chain' : 'Cadena'}</span>
+                        <span class="dian-drop-s" data-dian-name="dianCadena">{en ? 'Intermediate and root' : 'Intermedia y raíz'}</span>
+                    </label>
+                </div>
+                <div class="s-field dian-pass">
+                    <label for="dianPass">{en ? 'Password (if it has one)' : 'Contraseña (si tiene)'}</label>
+                    <input class="s-input" id="dianPass" type="password" autocomplete="off" />
+                </div>
+                <div class="dian-actions">
+                    <button type="button" class="dian-btn-solid" data-dian-upload>{en ? 'Upload certificate' : 'Subir certificado'}</button>
+                    <span class="dian-msg" data-dian-msg-cert></span>
+                </div>
+            </div>
+        </Fragment>
+    )}
+</div>
+
+<style>
+    .dian-intro { font-size: 0.82rem; color: var(--color-text-muted); line-height: 1.55; margin: 0 0 1.1rem; }
+    .dian-state { display: flex; align-items: center; gap: 11px; border: 1px solid var(--color-border); border-radius: 10px; padding: 12px 14px; margin-bottom: 1.2rem; }
+    .dian-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--color-text-muted); flex-shrink: 0; }
+    .dian-state[data-on="1"] .dian-dot { background: var(--color-ok); box-shadow: 0 0 0 3px rgba(16,185,129,0.18); }
+    .dian-state-info { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+    .dian-state-title { font-size: 0.86rem; font-weight: 600; color: var(--color-text); }
+    .dian-state-sub { font-size: 0.76rem; color: var(--color-text-muted); line-height: 1.45; }
+    .dian-state-err { font-size: 0.76rem; color: var(--color-err, #c0392b); line-height: 1.45; }
+    .dian-sec { display: block; font-size: 0.84rem; font-weight: 600; color: var(--color-text); margin: 1.2rem 0 0.7rem; }
+    .dian-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.9rem 1rem; }
+    .dian-qty { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.6rem; }
+    .dian-checks { border: none; margin: 1rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.8rem; color: var(--color-text); }
+    .dian-checks legend { font-size: 0.78rem; font-weight: 600; color: var(--color-text); margin-bottom: 0.4rem; }
+    .dian-checks label { display: inline-flex; align-items: center; gap: 7px; min-height: 30px; cursor: pointer; }
+    .dian-hint { font-size: 0.76rem; color: var(--color-text-muted); line-height: 1.5; margin: 0.8rem 0 0; }
+    .dian-hint-top { margin: 0 0 0.8rem; }
+    .dian-block { border-top: 1px solid var(--color-border); margin-top: 1.4rem; padding-top: 0.2rem; }
+    .dian-set-list { list-style: none; margin: 0.8rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.78rem; color: var(--color-text); }
+    .dian-set-list li[data-ok="1"] { color: var(--color-ok); }
+    .dian-set-list li[data-ok="0"] { color: var(--color-err, #c0392b); }
+    .dian-mode { display: flex; flex-wrap: wrap; gap: 0.5rem 1.2rem; font-size: 0.8rem; color: var(--color-text); margin-bottom: 0.9rem; }
+    .dian-mode label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; min-height: 32px; }
+    .dian-files { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .dian-files.is-three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .dian-files[hidden] { display: none; }
+    .dian-drop { display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; border: 1.5px dashed var(--color-border); border-radius: 12px; padding: 1.2rem 1rem; cursor: pointer; background: var(--color-bg-soft); transition: border-color 0.2s, background 0.2s; }
+    .dian-drop:hover { border-color: var(--color-blue-deep); }
+    .dian-drop.has-file { border-style: solid; border-color: var(--color-ok); background: rgba(16,185,129,0.06); }
+    .dian-drop input { display: none; }
+    .dian-drop:focus-within { outline: 2px solid var(--color-blue-deep); outline-offset: 2px; }
+    .dian-drop-ico { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.04em; color: var(--color-blue-deep); }
+    .dian-drop-t { font-size: 0.82rem; font-weight: 600; color: var(--color-text); }
+    .dian-drop-s { font-size: 0.72rem; color: var(--color-text-muted); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .dian-pass { max-width: 50%; margin-top: 1rem; }
+    .dian-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 0.7rem; margin-top: 1.1rem; }
+    .dian-btn-solid { font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; color: #fff; background: var(--color-blue-deep); border: none; border-radius: 999px; padding: 9px 18px; cursor: pointer; transition: transform 0.2s var(--ease-spring), opacity 0.2s; }
+    .dian-btn-solid:hover { transform: scale(1.02); }
+    .dian-btn-solid:active { transform: scale(0.98); }
+    .dian-btn-solid:disabled, .dian-btn-ghost:disabled { opacity: 0.6; cursor: progress; transform: none; }
+    .dian-btn-ghost { font-family: var(--font-sans); font-size: 0.78rem; font-weight: 600; color: var(--color-text); background: transparent; border: 1px solid var(--color-border); border-radius: 999px; padding: 7px 14px; cursor: pointer; }
+    .dian-msg { font-size: 0.78rem; line-height: 1.45; }
+    .dian-msg.ok { color: var(--color-ok); }
+    .dian-msg.err { color: var(--color-err, #c0392b); }
+    @media (max-width: 880px) {
+        .dian-grid, .dian-files, .dian-files.is-three { grid-template-columns: 1fr; }
+        .dian-pass { max-width: none; }
+        .dian-btn-solid, .dian-btn-ghost { min-height: 44px; }
+    }
+</style>
+
+<script>
+    // Etiquetas de lo que falta: el servidor manda códigos, la pantalla los dice.
+    const FALTANTE: Record<string, [string, string]> = {
+        nit: ['el NIT de tu negocio con su dígito de verificación (arriba, en Identidad de facturación)', 'your business NIT with its check digit (above, under Invoice identity)'],
+        razon_social: ['la razón social (arriba)', 'the legal name (above)'],
+        direccion: ['el domicilio fiscal (arriba)', 'the tax address (above)'],
+        tipo_persona: ['el tipo de persona', 'the type of taxpayer'],
+        responsabilidades: ['tus responsabilidades fiscales', 'your tax responsibilities'],
+        tributo: ['tu responsabilidad frente al IVA', 'your VAT responsibility'],
+        municipio: ['el municipio', 'the municipality'],
+        software: ['el identificador del software', 'the software ID'],
+        resolucion: ['la resolución de numeración', 'the numbering resolution'],
+        prefijo_notas: ['el prefijo de las notas', 'the notes prefix'],
+        certificado: ['el certificado de firma', 'the signing certificate'],
+        certificado_vencido: ['un certificado vigente (el actual venció)', 'a valid certificate (the current one expired)'],
+        certificado_nit: ['un certificado a nombre de tu NIT', 'a certificate issued to your NIT'],
+        pin: ['el PIN del software', 'the software PIN'],
+        clave_tecnica: ['la clave técnica de la resolución', 'the resolution technical key'],
+    };
+
+    function initDian() {
+        const root = document.querySelector<HTMLElement>('[data-dian]');
+        if (!root) return;
+        const en = document.documentElement.lang === 'en';
+        const i = en ? 1 : 0;
+        const q = <T extends Element>(s: string) => root.querySelector<T>(s);
+        const val = (id: string) => (document.getElementById(id) as HTMLInputElement | HTMLSelectElement | null)?.value?.trim() ?? '';
+        const state = q<HTMLElement>('[data-dian-state]');
+        const title = q<HTMLElement>('[data-dian-title]');
+        const sub = q<HTMLElement>('[data-dian-sub]');
+        const removeBtn = q<HTMLButtonElement>('[data-dian-remove]');
+        const saveBtn = q<HTMLButtonElement>('[data-dian-save]');
+        const uploadBtn = q<HTMLButtonElement>('[data-dian-upload]');
+        if (!state || !saveBtn || !uploadBtn) return;
+
+        const flash = (sel: string, text: string, ok: boolean) => {
+            const el = q<HTMLElement>(sel);
+            if (!el) return;
+            el.textContent = text;
+            el.className = 'dian-msg ' + (ok ? 'ok' : 'err');
+            if (ok) setTimeout(() => { el.textContent = ''; el.className = 'dian-msg'; }, 5000);
+        };
+
+        const pintar = (v: any) => {
+            const prueba = v.entorno === 'homologacion';
+            state.setAttribute('data-on', v.listo ? '1' : '0');
+            if (title) title.textContent = v.listo
+                ? (prueba ? (en ? 'Connected to the DIAN enablement environment' : 'Conectado al ambiente de habilitación de la DIAN') : (en ? 'Electronic invoicing with the DIAN active' : 'Factura electrónica con la DIAN activa'))
+                : (en ? 'Not connected yet' : 'Aún sin conectar');
+            if (sub) sub.textContent = v.listo
+                ? (prueba
+                    ? (en ? 'Documents are validated in the enablement (test) environment and have no tax validity.' : 'Los documentos se validan en el ambiente de habilitación (pruebas) y no tienen validez fiscal.')
+                    : (en ? `Certificate valid until ${v.credencial?.caduca} · NIT ${v.nit}` : `Certificado vigente hasta ${v.credencial?.caduca} · NIT ${v.nit}`))
+                : (en ? 'Missing: ' : 'Falta: ') + (v.faltantes || []).map((f: string) => FALTANTE[f]?.[i] ?? f).join(', ') + '.';
+            q<HTMLElement>('[data-dian-verif]')?.remove();
+            if (v.credencial?.verificacion_error) {
+                const e = document.createElement('span');
+                e.className = 'dian-state-err';
+                e.setAttribute('data-dian-verif', '');
+                e.textContent = v.credencial.verificacion_error;
+                sub?.after(e);
+            }
+            if (removeBtn) removeBtn.style.display = v.credencial ? '' : 'none';
+            const pin = document.getElementById('dianPin') as HTMLInputElement | null;
+            const clave = document.getElementById('dianClave') as HTMLInputElement | null;
+            if (pin) { pin.value = ''; pin.placeholder = v.secretos?.pin ? (en ? 'Saved' : 'Guardado') : ''; }
+            if (clave) { clave.value = ''; clave.placeholder = v.secretos?.claveTecnica ? (en ? 'Saved' : 'Guardada') : ''; }
+        };
+
+        const llamar = async (method: string, body: unknown) => {
+            const res = await fetch('/api/fiscal/dian', { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+            const d = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(d.error || '');
+            return d;
+        };
+
+        const p12 = q<HTMLElement>('[data-dian-p12]');
+        const pem = q<HTMLElement>('[data-dian-pem]');
+        root.querySelectorAll<HTMLInputElement>('input[name="dianModo"]').forEach((r) => r.addEventListener('change', () => {
+            const esPem = r.value === 'pem' && r.checked;
+            if (p12) p12.hidden = esPem;
+            if (pem) pem.hidden = !esPem;
+        }));
+        root.querySelectorAll<HTMLInputElement>('input[type="file"]').forEach((input) => input.addEventListener('change', () => {
+            const f = input.files?.[0];
+            const name = q<HTMLElement>(`[data-dian-name="${input.id}"]`);
+            if (name && f) name.textContent = f.name;
+            input.closest('.dian-drop')?.classList.toggle('has-file', !!f);
+        }));
+
+        saveBtn.addEventListener('click', async () => {
+            const resolucion = [val('dianResNum'), val('dianResDesde'), val('dianResHasta'), val('dianResIni'), val('dianResFin')].every((x) => x === '')
+                ? undefined
+                : { numero: val('dianResNum'), prefijo: val('dianResPrefijo'), desde: Number(val('dianResDesde')), hasta: Number(val('dianResHasta')), vigente_desde: val('dianResIni'), vigente_hasta: val('dianResFin') };
+            const body: Record<string, unknown> = {
+                tipo_persona: val('dianPersona') || undefined,
+                tributo: val('dianTributo') || undefined,
+                municipio: val('dianMunicipio') || undefined,
+                nombre_comercial: val('dianComercial'),
+                matricula_mercantil: val('dianMatricula'),
+                correo: val('dianCorreo'),
+                software_id: val('dianSoftware'),
+                prefijo_notas: val('dianPrefNotas'),
+                tratamiento_sin_iva: val('dianSinIva'),
+                resolucion,
+            };
+            const resp = [...root.querySelectorAll<HTMLInputElement>('input[name="dianResp"]:checked')].map((c) => c.value);
+            if (resp.length) body.responsabilidades = resp;
+            if (document.getElementById('dianTestSet')) body.test_set_id = val('dianTestSet');
+            if (val('dianPin')) body.pin = val('dianPin');
+            if (val('dianClave')) body.clave_tecnica = val('dianClave');
+            saveBtn.disabled = true;
+            try {
+                pintar(await llamar('PATCH', body));
+                flash('[data-dian-msg-ajustes]', en ? 'DIAN settings saved.' : 'Ajustes de la DIAN guardados.', true);
+            } catch (err: any) {
+                flash('[data-dian-msg-ajustes]', err?.message || (en ? 'Could not save the DIAN settings' : 'No se pudieron guardar los ajustes de la DIAN'), false);
+            } finally { saveBtn.disabled = false; }
+        });
+
+        const rangosBtn = q<HTMLButtonElement>('[data-dian-rangos]');
+        rangosBtn?.addEventListener('click', async () => {
+            rangosBtn.disabled = true;
+            try {
+                const d = await llamar('POST', { accion: 'rangos' });
+                const lista = (d.rangos || []).map((r: any) => `${r.prefijo || '—'} ${r.desde}–${r.hasta} (${r.resolucion}, ${r.vigente_hasta})`).join(' · ');
+                flash('[data-dian-msg-ajustes]', (d.clave_tecnica_guardada
+                    ? (en ? 'Technical key saved. Ranges: ' : 'Clave técnica guardada. Rangos: ')
+                    : (en ? 'None matches the configured resolution. Ranges: ' : 'Ninguno coincide con la resolución configurada. Rangos: ')) + (lista || '—'), !!d.clave_tecnica_guardada);
+            } catch (err: any) {
+                flash('[data-dian-msg-ajustes]', err?.message || (en ? 'Could not reach the DIAN' : 'No se pudo consultar a la DIAN'), false);
+            } finally { rangosBtn.disabled = false; }
+        });
+
+        const lista = q<HTMLUListElement>('[data-dian-set-list]');
+        const NOMBRE: Record<string, [string, string]> = { factura: ['Factura', 'Invoice'], nota_credito: ['Nota crédito', 'Credit note'], nota_debito: ['Nota débito', 'Debit note'] };
+        const setBtn = q<HTMLButtonElement>('[data-dian-set]');
+        setBtn?.addEventListener('click', async () => {
+            setBtn.disabled = true;
+            const orig = setBtn.textContent;
+            setBtn.textContent = en ? 'Sending…' : 'Enviando…';
+            try {
+                const d = await llamar('POST', { accion: 'set_pruebas', facturas: Number(val('dianSetF')), notas_credito: Number(val('dianSetNc')), notas_debito: Number(val('dianSetNd')) });
+                const recibidos = (d.envios || []).filter((e: any) => e.recibido).length;
+                flash('[data-dian-msg-set]', en ? `${recibidos} of ${(d.envios || []).length} documents received by the DIAN. Check the result in a few minutes.` : `La DIAN recibió ${recibidos} de ${(d.envios || []).length} documentos. Revisa el resultado en unos minutos.`, recibidos > 0);
+            } catch (err: any) {
+                flash('[data-dian-msg-set]', err?.message || (en ? 'Could not send the test set' : 'No se pudo enviar el set de pruebas'), false);
+            } finally { setBtn.disabled = false; setBtn.textContent = orig; }
+        });
+        const estadoBtn = q<HTMLButtonElement>('[data-dian-set-estado]');
+        estadoBtn?.addEventListener('click', async () => {
+            estadoBtn.disabled = true;
+            try {
+                const d = await llamar('POST', { accion: 'estado_set' });
+                if (lista) {
+                    lista.replaceChildren(...(d.documentos || []).map((doc: any) => {
+                        const li = document.createElement('li');
+                        li.setAttribute('data-ok', doc.aceptado === true ? '1' : doc.aceptado === false ? '0' : '');
+                        const estado = doc.aceptado === true ? (en ? 'accepted' : 'aceptado') : doc.aceptado === false ? (doc.mensaje || (en ? 'rejected' : 'rechazado')) : (en ? 'in validation' : 'en validación');
+                        li.textContent = `${NOMBRE[doc.clase]?.[i] ?? doc.clase} ${doc.id}: ${estado}`;
+                        return li;
+                    }));
+                }
+            } catch (err: any) {
+                flash('[data-dian-msg-set]', err?.message || (en ? 'Could not check the test set' : 'No se pudo consultar el set de pruebas'), false);
+            } finally { estadoBtn.disabled = false; }
+        });
+
+        uploadBtn.addEventListener('click', async () => {
+            const modoPem = !!root.querySelector<HTMLInputElement>('input[name="dianModo"][value="pem"]:checked');
+            const pass = (document.getElementById('dianPass') as HTMLInputElement | null)?.value ?? '';
+            const archivo = (id: string) => (document.getElementById(id) as HTMLInputElement | null)?.files?.[0];
+            const fd = new FormData();
+            if (!modoPem) {
+                const f = archivo('dianP12');
+                if (!f) { flash('[data-dian-msg-cert]', en ? 'Choose your .p12/.pfx file first.' : 'Elige primero tu archivo .p12/.pfx.', false); return; }
+                fd.append('p12', f);
+                fd.append('password', pass);
+                const cadena = archivo('dianCadenaP12');
+                if (cadena) fd.append('cadena', cadena);
+            } else {
+                const crt = archivo('dianCrt');
+                const key = archivo('dianKey');
+                if (!crt || !key) { flash('[data-dian-msg-cert]', en ? 'Choose the certificate and its private key.' : 'Elige el certificado y su llave privada.', false); return; }
+                fd.append('crt', crt);
+                fd.append('key', key);
+                if (pass) fd.append('key_password', pass);
+                const cadena = archivo('dianCadena');
+                if (cadena) fd.append('cadena', cadena);
+            }
+            if (val('dianPin')) fd.append('pin', val('dianPin'));
+            if (val('dianClave')) fd.append('clave_tecnica', val('dianClave'));
+            uploadBtn.disabled = true;
+            const orig = uploadBtn.textContent;
+            uploadBtn.textContent = en ? 'Uploading…' : 'Subiendo…';
+            try {
+                const res = await fetch('/api/fiscal/dian', { method: 'POST', body: fd });
+                const d = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(d.error || '');
+                const passIn = document.getElementById('dianPass') as HTMLInputElement | null;
+                if (passIn) passIn.value = '';
+                pintar(d);
+                flash('[data-dian-msg-cert]', en ? 'Certificate uploaded.' : 'Certificado cargado.', true);
+                (window as any).cordToast?.(en ? 'Signing certificate uploaded' : 'Certificado de firma cargado', 'ok');
+            } catch (err: any) {
+                flash('[data-dian-msg-cert]', err?.message || (en ? 'Could not upload the certificate' : 'No se pudo subir el certificado'), false);
+            } finally { uploadBtn.disabled = false; uploadBtn.textContent = orig; }
+        });
+
+        removeBtn?.addEventListener('click', async () => {
+            const ok = await (window as any).cordConfirm?.({
+                title: en ? 'Disconnect the DIAN' : 'Desconectar la DIAN',
+                body: en
+                    ? 'New invoices will be issued as commercial documents, without DIAN validation, until you upload a certificate again. Disconnect?'
+                    : 'Las facturas nuevas se emitirán como documento comercial, sin validación de la DIAN, hasta que subas un certificado de nuevo. ¿Desconectar?',
+                danger: true,
+                confirmText: en ? 'Disconnect' : 'Desconectar',
+            });
+            if (!ok) return;
+            removeBtn.disabled = true;
+            try {
+                const res = await fetch('/api/fiscal/dian', { method: 'DELETE' });
+                const d = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(res.status === 409 && typeof d.error === 'string' ? d.error : '');
+                pintar(d);
+                flash('[data-dian-msg-cert]', en ? 'Signing certificate disconnected.' : 'Certificado de firma desconectado.', true);
+            } catch (err: any) {
+                flash('[data-dian-msg-cert]', err?.message || (en ? 'Could not disconnect the certificate' : 'No se pudo desconectar el certificado'), false);
+            } finally { removeBtn.disabled = false; }
+        });
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initDian);
+    else initDian();
+</script>

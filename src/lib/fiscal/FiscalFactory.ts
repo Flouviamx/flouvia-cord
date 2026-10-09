@@ -2,6 +2,7 @@ import type { FiscalProvider } from './index';
 import { MexicoSatProvider } from './providers/MexicoSatProvider';
 import { SpainVerifactuProvider } from './providers/SpainVerifactuProvider';
 import { ArgentinaArcaProvider } from './providers/ArgentinaArcaProvider';
+import { ColombiaDianProvider } from './providers/ColombiaDianProvider';
 import { CommercialInvoiceProvider } from './providers/CommercialInvoiceProvider';
 
 export class FiscalFactory {
@@ -16,6 +17,7 @@ export class FiscalFactory {
     // Rieles de LatAm con integración directa (src/lib/fiscal/latam/). Mismo
     // contrato que Verifactu: sin la cuenta lista degradan a "commercial_only".
     new ArgentinaArcaProvider(),
+    new ColombiaDianProvider(),
     new CommercialInvoiceProvider(),
     // Un adapter regulatorio nuevo se registra antes del provider comercial.
     // El documento canónico y el folio permanecen iguales.

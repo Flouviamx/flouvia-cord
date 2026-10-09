@@ -63,8 +63,15 @@ export class DianFaultError extends Error {
         this.razon = razon.slice(0, 2000);
     }
 
-    /** Falla del remitente en la seguridad del mensaje: WCF lo rechaza antes de despacharlo. */
+    /**
+     * El servicio rechazó el mensaje antes de procesarlo: falla de seguridad
+     * del remitente (WCF) o el `s:Client` sin motivo con que el ambiente de
+     * habilitación responde a un certificado que no emitió una entidad
+     * avalada (fixture respuesta-fault-certificado-no-confiable.xml,
+     * capturado el 2026-10-09).
+     */
     get noProcesado(): boolean {
+        if (/Client$/i.test(this.codigo)) return true;
         return /Sender$/i.test(this.codigo) && /(InvalidSecurity|FailedAuthentication|MessageExpired|InvalidSecurityToken|SecurityTokenUnavailable|ActionNotSupported|DestinationUnreachable)/i.test(this.subcodigo);
     }
 }

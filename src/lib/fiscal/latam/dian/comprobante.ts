@@ -167,6 +167,22 @@ const RESPONSABILIDADES_VALIDAS = new Set(RESPONSABILIDADES.map((r) => r.id));
 const TRIBUTOS_VALIDOS = new Map(TRIBUTOS_PARTE.map((t) => [t.id, t.nombre]));
 
 /**
+ * La ficha DIAN del cliente tal como se guarda (`clientes.dian`): solo códigos
+ * de las tablas oficiales; lo demás se descarta. Null si no queda nada.
+ */
+export function fichaClienteDian(v: unknown): FichaClienteDian | null {
+    if (!v || typeof v !== 'object' || Array.isArray(v)) return null;
+    const f = v as Record<string, unknown>;
+    const out: FichaClienteDian = {};
+    if (DOCUMENTOS_VALIDOS.has(String(f.tipoDocumento ?? ''))) out.tipoDocumento = String(f.tipoDocumento);
+    if (f.tipoPersona === TIPO_PERSONA.juridica || f.tipoPersona === TIPO_PERSONA.natural) out.tipoPersona = f.tipoPersona;
+    if (TRIBUTOS_VALIDOS.has(String(f.tributo ?? ''))) out.tributo = String(f.tributo);
+    const resp = Array.isArray(f.responsabilidades) ? [...new Set(f.responsabilidades.map(String).filter((r) => RESPONSABILIDADES_VALIDAS.has(r)))] : [];
+    if (resp.length) out.responsabilidades = resp;
+    return Object.keys(out).length ? out : null;
+}
+
+/**
  * El adquiriente a partir del cliente de Cord. Solo se infiere lo que la ley
  * hace inequívoco:
  *   - sin identificación (cliente nacional) → consumidor final [AT FAK02–FAK41];

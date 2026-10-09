@@ -833,15 +833,23 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
     : tx('disclaimerCommercial');
 
   const pages = doc.pageCount;
+  // QR en cada página cuando la norma lo exige (latam/representacion.ts,
+  // `qrCadaPagina`): en las páginas siguientes a la primera va a la derecha
+  // del pie, a 2 cm (el mínimo), entre el último renglón y el borde.
+  const qrPie = pages > 1 && input.autoridad?.qrCadaPagina && input.autoridad.qrUrl ? input.autoridad.qrUrl : null;
+  const qrPieSize = mmAPuntos(20);
   for (let page = 0; page < pages; page++) {
     doc.selectPage(page);
-    doc.line(MARGIN, FOOT_TOP, MARGIN + contentW, FOOT_TOP, { color: HAIRLINE, width: 0.5 });
-    wrapText(disclaimer, contentW - 60, 7.2).forEach((line, index) => {
+    const conQr = !!qrPie && page > 0;
+    const reserva = conQr ? qrPieSize + 12 : 0;
+    doc.line(MARGIN, FOOT_TOP, MARGIN + contentW - reserva, FOOT_TOP, { color: HAIRLINE, width: 0.5 });
+    wrapText(disclaimer, contentW - 60 - reserva, 7.2).forEach((line, index) => {
       doc.text(line, MARGIN, FOOT_TOP + 14 + index * 9, { size: 7.2, color: MUTED });
     });
     doc.text(`${page + 1} / ${pages}`, MARGIN, FOOT_TOP + 14, {
-      size: 7.2, color: MUTED, align: 'right', width: contentW,
+      size: 7.2, color: MUTED, align: 'right', width: contentW - reserva,
     });
+    if (conQr) drawQr(doc, qrPie!, MARGIN + contentW - qrPieSize, FOOT_TOP - 8, qrPieSize);
   }
 
   return input.assemble ? input.assemble(doc) : doc.build();
