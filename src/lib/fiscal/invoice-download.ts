@@ -119,6 +119,14 @@ export async function downloadInvoiceDocument(orgId: string, id: string, format:
     });
   }
 
+  // Perú: el ejemplar electrónico es el XML firmado que SUNAT aceptó.
+  if (format === 'xml' && (doc.document_type === 'sunat_invoice' || doc.document_type === 'sunat_credit_note')) {
+    const { xmlAceptadoSunat } = await import('./latam/sunat/descarga');
+    const aceptado = await xmlAceptadoSunat(orgId, id);
+    if (!aceptado) return new Response('XML no disponible', { status: 404 });
+    return new Response(aceptado.xml, { status: 200, headers: downloadHeaders('application/xml', `${safeFilename(aceptado.archivo)}.xml`) });
+  }
+
   // Chile: el XML legal es el DTE firmado, en un sobre de intercambio
   // dirigido al cliente; la copia cedible es el mismo PDF con el acuse de
   // recibo (Ley 19.983).

@@ -1,0 +1,702 @@
+  . ANEXO I
+  Anexo N.º 1: Factura Electrónica
+  REPRESENTACI
+  CONDICIÓ
+  REQUISIT  ÓN IMPRESA -
+  N DE
+N.º  CAMPO  O MÍNIMO  INFORMACIÓN  VALIDACIÓN  DESCRIPCIÓN (4)
+  EMISIÓN
+  (3)  MÍNIMA DEL
+  (1) (2)
+  RESUMEN
+FECHA DE EMISIÓN Y MECANISMO DE SEGURIDAD
+  Dato alfanumérico de 10 posiciones con
+ 1  Fecha de emisión  X  X  X  En la representación impresa se podrá consignar "fecha de emisión".
+  formato yyyy-mm-dd.
+  En caso de emplear los servicios de un PSE (Proveedor de Servicios Electrónicos),
+  Que sea válida, se encuentre vigente y la firma digital puede ser de este siempre que se encuentre inscrito en el registro
+ 2  Firma digital  X  X
+  corresponda al emisor electrónico.  de PSE y el emisor electrónico haya autorizado su uso a través de SUNAT
+  Operaciones en Línea.
+DATOS DEL EMISOR ELECTRÓNICO Y DEL DOCUMENTO ELECTRÓNICO
+  Apellidos  y
+  nombres,
+ 3  X  X  X  Campo lleno.
+  denominación  o
+  razón social
+ 4  Nombre comercial  X  X  Campo lleno.  Deberá consignar su nombre comercial si lo tuviera.
+ 5  Domicilio Fiscal
+  En la representación impresa deberá figurar la denominación "RUC" seguida del
+ 6  Número de RUC  X  X  X  El número de RUC debe ser válido.
+  número.
+  Tipo  de  El tipo de documento debe ser el código En la representación impresa debe sustituirse el código de tipo de documento por
+ 7  X  X  X
+  documento  '01' del catálogo N.° 01 del Anexo N.º 8. la denominación "Factura electrónica".
+  La serie debe ser alfanumérica de
+  Numeración,  cuatro (4) caracteres, siendo el primer
+  conformada  por  caracter de la izquierda la letra F Dicho número será independiente del número correlativo del comprobante de pago
+ 8  X  X  X
+  serie y número  (ejemplo: F001). El número correlativo emitido en formato impreso y/o importado por imprenta autorizada.
+  correlativo  podrá tener hasta ocho (8) caracteres y
+  se iniciará en uno (1).
+  Tipo de moneda
+  en la cual se emite  Según el catálogo N.º 02 del Anexo N.º En la representación impresa se deberá consignar el signo de la moneda o su
+ 9  X  X  X
+  la  factura  8.  descripción.
+  electrónica
+  Según el catálogo N.º 51 del Anexo N.º
+ 10  Tipo de operación  X  X
+  8.
+DATOS DEL ADQUIRENTE O USUARIO
+  El Tipo de documento será '6' - RUC,
+  según el catálogo N.º 06 del Anexo N.º
+  8,  salvo  en  las  operaciones
+  mencionadas en el inciso a) del numeral
+  17.2 del artículo 17 de la Resolución de
+  Superintendencia N.º 097-2012/SUNAT
+  y  modificatorias  (SEE  -  Del
+  Contribuyente) o en el inciso a) del
+  Tipo y número de  párrafo 19.2 del artículo 19 de la
+  documento del  Resolución de Superintendencia N.º En la representación impresa debe sustituirse el código de tipo de documento por
+ 11  X  X  X
+  adquirente o  117-2017/SUNAT y modificatorias la denominación de este y colocar a continuación el número.
+  usuario  (SEE - OSE), en cuyo caso se colocará
+  un  guion  (-).
+  Solo si el campo Tipo de operación
+  tiene el código ´0112' - "Venta Interna -
+  Sustenta Gastos Deducibles Persona
+  Natural" del catálogo N.º 51 del Anexo
+  N.º 8, se deberá colocar el tipo de
+  documento '6' o '1' (RUC o DNI).
+  Apellidos  y
+  nombres,
+  denominación  o
+ 12  X  X  X  Campo lleno.
+  razón social del
+  adquirente  o
+  usuario
+  Dirección  del
+ 13  adquirente  o  Campo lleno.
+  usuario
+DETALLE POR CADA ÍTEM (SERVICIO PRESTADO, BIEN VENDIDO O CEDIDO EN USO) (5)
+  Unidad de medida  Según el catálogo N.º 03 del Anexo N.º
+ 14  X  X  X
+  por ítem  8.
+  Cantidad  de
+ 15  X  X  X  Campo lleno.
+  unidades por ítem
+  Las características comprenden, entre otras, la marca del bien así como el número
+  Descripción
+  de serie y/o número de motor si se trata de un bien identificable, salvo que no fuera
+  detallada  del
+  posible su consignación al momento de la emisión de la factura electrónica.
+  servicio prestado,
+  Tratándose de la venta de medicamentos e insumos materia del beneficio a que
+16  bien vendido o  X  X  X  Campo lleno.
+  se refiere el inciso p) del artículo 2 de la Ley del IGV e ISC, se consignará(n) la(s)
+  cedido en uso,
+  denominación(es) y la(s) partida(s) arancelaria(s) correspondiente(s) en cuyo caso
+  indicando  las
+  la factura electrónica no podrá incluir bienes que no sean materia de dicho
+  características
+  beneficio.
+  Código  de  Solo si utiliza un código propio para identificar los productos, este podrá ser
+17
+  producto  consignado en este campo.
+  Será utilizado para el tipo de operación '0112' – "Venta Interna - Sustenta Gastos
+  Deducibles Persona Natural" del catálogo N.º 51 del Anexo N.º 8:
+  Arrendamiento  de  residencias  =  80131501.
+  Financiamiento  de  vivienda  =  84121901.
+  Campo obligatorio para todo tipo de operaciones a partir de:
+  i) El 1.7.2019 para el emisor electrónico que tenga la calidad de principal
+  contribuyente nacional al 31.12.2018 y siempre que sus ingresos anuales sean
+  mayores o iguales a S/ 250 000 000,00 (doscientos cincuenta millones con 00/100
+  soles), según su declaración jurada anual del impuesto a la renta del ejercicio
+  2017.
+  ii) El 1.1.2020 para el emisor electrónico que tenga la calidad de principal
+  contribuyente nacional al 31.12.2018 y siempre que sus ingresos anuales sean
+  menores a S/ 250 000 000,00 (doscientos cincuenta millones con 00/100 soles),
+  según su declaración jurada anual del impuesto a la renta del ejercicio 2017.
+  Código  de  Según el catálogo N.º 25 del Anexo N.º
+18  iii) El 1.7.2020 para el emisor electrónico que tenga la calidad de principal
+  producto SUNAT  8.
+  contribuyente de la Intendencia Lima, de las intendencias regionales y oficinas
+  zonales  al  31.12.2018.
+  iv) El 1.1.2021 para todo sujeto que a dicha fecha tenga la calidad de emisor
+  electrónico y no hubiera sido comprendido en los acápites anteriores.
+  v) La fecha en la que un sujeto tenga la calidad de emisor electrónico, cuando ello
+  ocurra  a  partir  del  1.1.2021.
+  A efecto de lo indicado en el párrafo anterior, se considera como ingresos anuales
+  a la suma de los montos consignados en las casillas 463, 473, 475 y 432 de la
+  declaración jurada anual del impuesto a la renta del ejercicio 2017. De existir
+  declaraciones rectificatorias se consideran las que hayan surtido efecto hasta el
+  30.4.2019.
+  Se debe considerar el tercer nivel jerárquico del código Internacional UNSPSC.
+  Podrá utilizarse el código GTIN en lugar del Código de producto SUNAT.
+  Código  de
+19  Es el código de producto GTIN (Global Trade Item Number).
+  producto GTIN
+  Valor unitario por
+ 20  X  X  Campo lleno.
+  ítem
+  Valor referencial
+  unitario por ítem  Solo en el caso que en la factura existan operaciones gratuitas. Corresponde al
+ 21  en  operaciones  X  valor de la venta, al importe de la cesión en uso o al servicio prestado que hubiera
+  Según el catálogo N.º 16 del Anexo N.º
+  gratuitas  (no  correspondido a la operación.
+  8.
+  onerosas)
+  Precio de venta
+ 22  X  X  X  Incluye IGV o IVAP, según corresponda.
+  unitario por ítem
+  Afectación al IGV
+ 23  X  X  No aplica en operaciones gravadas con IVAP.
+  por ítem  Según el catálogo N.º 07 del Anexo N.º
+  Afectación al IVAP  8.
+ 24  X  X  Solo aplica para operaciones gravadas con el IVAP.
+  por ítem
+  Sistema de ISC  Según el catálogo N.º 08 del Anexo N.º
+ 25  X  Solo de corresponder.
+  por ítem  8.
+  Afectación  al  Según el catálogo N.° 05 del Anexo N.°
+25-A  X  Solo de corresponder.
+  ICBPER por ítem  8.
+  Afectación otros  Según el catálogo N.º 05 del Anexo N.º
+ 26  Solo de corresponder.
+  tributos por ítem  8.
+  Cargo/descuento  Según el catálogo N.º 53 del Anexo N.º
+ 27  X  Solo de corresponder.
+  por ítem  8.
+  Corresponde al campo Valor unitario por ítem por el campo Cantidad de unidades
+  Valor de venta por
+ 28  X  X  Campo lleno.  por ítem, incluyendo el (los) campo(s) Cargo/descuento por ítem que afecte(n) la
+  ítem
+  base imponible del ítem.
+  Monto total de
+ 29  X  X  Sumatoria de los tributos que afecta al ítem según corresponda.
+  tributos del ítem
+  Declaración
+ 30  Aduanera  de  Solo de corresponder.
+  Mercancías (DAM)
+  Partida
+ 31  Solo de corresponder.
+  arancelaria
+  Según el catálogo N.º 55 del Anexo N.º
+  Solo de corresponder. Este campo podrá ser utilizado por las empresas
+  Datos  de  8.
+ 32  concesionarias de vehículos para identificar los datos del vehículo tales como la
+  vehículos
+  categoría, marca, modelo, color, entre otros.
+RESUMEN DEL IMPORTE TOTAL DE LA FACTURA ELECTRÓNICA
+  Sumatoria del Valor de venta por ítem de las operaciones gravadas con el IGV.
+  Total valor  de  Monto incluye los cargos y/o descuentos por ítem, si los hubiere. En la
+  Deberá existir información por lo
+  venta  -  representación impresa se podrá consignar la denominación "Op. gravada". En
+ 33  X  X  X  menos en uno de los campos 33, 34,
+  operaciones  caso de operaciones sujetas al IVAP, consignar el valor de la primera venta
+  35, 36 o 37.
+  gravadas  realizada en territorio nacional, determinado según la normativa respectiva, más el
+  IVAP.
+  Total valor  de
+  Solo de corresponder. Sumatoria del Valor de venta por ítem de las operaciones
+  venta  -
+34  X  X  X  inafectas del IGV. Monto incluye los cargos y/o descuentos por ítem, si los hubiere.
+  operaciones
+  En la representación impresa se podrá consignar la denominación "Op. inafectas".
+  inafectas
+  Total valor  de  Solo de corresponder. Sumatoria del Valor de venta por ítem de las operaciones
+  venta  -  exoneradas del IGV. Monto incluye los cargos y/o descuentos por ítem, si los
+35  X  X  X
+  operaciones  hubiere. En la representación impresa se podrá consignar la denominación "Op.
+  exoneradas  exonerada".
+  Total valor  de
+  Sumatoria del Valor de venta por ítem de las operaciones de exportación. Monto
+  venta  -
+36  X  X  X  incluye los cargos y/o descuentos por ítem, si los hubiere. En la representación
+  operaciones  de
+  impresa se podrá consignar la denominación "Op. exportación".
+  exportación
+  Total valor  de
+  Sumatoria del Valor referencial unitario por ítem en operaciones gratuitas (no
+  venta  -
+37  X  X  onerosas).
+  operaciones
+  En la representación impresa se podrá consignar "Op. gratuita".
+  gratuitas
+  Sumatoria  de
+  tributos  de
+38  X  Solo en el caso que en la factura existan operaciones gratuitas.
+  operaciones
+  gratuitas
+  Sumatoria  de  Solo de corresponder. En la representación impresa se podrá consignar "IGV" o
+39  X  X  X
+  IGV/IVAP  "IVAP" según corresponda.
+40  Sumatoria de ISC  X  X  X  Solo de corresponder. En la representación impresa se podrá consignar "ISC".
+  Sumatoria  del
+40-A  X  X  Solo de corresponder. En la representación impresa se podrá consignar “ICBPER”.
+  ICBPER
+  Solo de corresponder. Monto total de tributo distinto al IGV, ISC o IVAP,
+  Sumatoria  de
+41  X  X  comprendido en la factura electrónica. En la representación impresa se podrán
+  otros tributos
+  consignar "Otros tributos".
+  Monto total  de  Corresponde al monto total de los campos Sumatoria de IGV/IVAP + Sumatoria de
+ 42  X  X
+  tributos  ISC + Sumatoria de otros tributos + Sumatoria del ICBPER.
+  Sumatoria  otros
+  Solo de corresponder. Total de cargos de la factura que no forman parte del valor
+  cargos (que no
+ 43  X  X  de venta (base imponible). En la representación impresa se podrá consignar
+  afectan la base
+  "Otros cargos".
+  imponible del IGV)
+  Sumatoria  otros
+  Solo de corresponder. Total de descuentos que no forman parte del valor de venta
+  descuentos (que
+ 44  X  X  (base imponible). En la representación impresa se podrá consignar "Otros
+  no afectan la base
+  descuentos".
+  imponible del IGV)
+  Cargos  y/o
+  Según el catálogo N.º 53 del Anexo N.º
+ 45  descuentos  X  X  Solo de corresponder.
+  8.
+  globales
+  Total  valor  de  Sumatoria de los campos Total valor de venta de las operaciones gravadas,
+ 46  X  X
+  venta  inafectas, exoneradas, de exportación y gratuitas.
+  Sumatoria del campo Total valor de venta más los campos Sumatoria de IGV/IVAP,
+  Sub total de la
+ 47  X  X  Sumatoria de ISC, Sumatoria de otros tributos, Sumatoria de impuestos de
+  factura
+  operaciones gratuitas y Sumatoria del ICBPER.
+  Importe total de la  Importe total de la factura electrónica. Corresponde al campo Sub total de la factura
+  venta, cesión en  incluyendo la Sumatoria otros cargos (que no afectan la base imponible del IGV)
+ 48  X  X  X
+  uso o del servicio  y el campo Sumatoria otros descuentos (que no afectan la base imponible del IGV).
+  prestado  En la representación impresa se podrá consignar "IMPORTE TOTAL".
+  Monto  de
+  Solo de corresponder. Se podrá consignar la diferencia entre el importe total y el
+ 49  redondeo  del  X
+  importe redondeado.
+  importe total
+DATOS ADICIONALES GENERALES
+  Al contado: Si el importe total de la venta, cesión en uso o del servicio se paga en
+  la fecha de emisión de la factura electrónica. Al crédito: Si el importe total de la
+49-A  Forma de pago  X  X  Dato de 7 caracteres.
+  venta, cesión en uso o servicio se paga total o parcialmente en fecha posterior a
+  la de su emisión.
+  Tratándose  de  la  transferencia  de  bienes  muebles:
+  i. Cuando el pago y la entrega o puesta a disposición de los bienes ocurre en un
+  mismo establecimiento anexo, el código a consignar será el de ese
+  De informar un código distinto a 0000,
+  establecimiento.
+  se verificará que corresponda al código
+  Código asignado  En este caso, de utilizarse como medio de pago tarjetas de crédito y/o débito se
+  del establecimiento anexo registrado
+  por la SUNAT  considera como lugar donde se ubica el establecimiento anexo y se realiza el pago
+  en SUNAT, declarado de acuerdo con
+  para el  aquel en el que se ubican los terminales de punto de venta a que se refiere la
+50  X  X  la Resolución de Superintendencia N.º
+  establecimiento  Resolución SBS N.º 6523-2013 y como código de establecimiento anexo aquel
+  210-2004-SUNAT  y  normas
+  anexo declarado  asignado  por  la  SUNAT.
+  modificatorias. Dicho código puede ser
+  en el RUC  ii. Cuando el hecho que genera la emisión del comprobante de pago sea la entrega
+  revisado en la opción consulta de RUC
+  o puesta a disposición de los bienes en un establecimiento anexo declarado en el
+  de SUNAT Virtual.
+  RUC de acuerdo con la Resolución de Superintendencia N.º 210-2004-SUNAT, el
+  código  a  consignar  será  el  de  este  último.
+  En los demás casos, consignar el código 0000.
+  Código de país del
+  uso, explotación o  Según el catálogo N.º 04 del anexo N.º Solo de corresponder. Es obligatorio cuando el código que se consigne en el
+51
+  aprovechamiento  8.  campo Tipo de operación es '0201' o '0208'.
+  del servicio
+  Tipo y número de
+  documento  de
+  identidad de otros
+  participantes
+  asociados a la
+  transacción
+  Solo de corresponder. En caso se requiera identificar a un sujeto adicional como
+52
+  Apellidos  y  adquirente o usuario.
+  nombres,
+  denominación  o  Según el catálogo N.º 06 del Anexo N.º
+  razón social de  8.
+  otros participantes
+  asociados a la
+  transacción
+  Tipo y número de
+  documento  de
+  identidad  del  Solo de corresponder. En caso se requiera identificar al sujeto que realiza la
+53
+  sujeto que realiza  transacción por cuenta del adquirente o usuario.
+  la operación por
+  cuenta  del
+  adquirente  o
+  usuario
+  Número de la
+54  orden de compra o  En caso se cuente con este dato.
+  servicio
+  FISE (Ley N.º
+  29852) Fondo de  Según el catálogo N.º 53 del Anexo N.º
+56  Solo de corresponder.
+  Inclusión  Social  8.
+  Energético
+  Restitución
+  Simplificada  de  Solo de corresponder. En caso de procedimiento de Restitución Simplificada de
+57
+  Derechos  Derechos Arancelarios.
+  Arancelarios
+58  Incoterm  Solo de corresponder, en caso de factura de exportación.
+  Tipo y numeración
+  Solo de corresponder. En la representación impresa debe sustituir el código por la
+  de la guía de
+  Según el catálogo N.º 01 del Anexo N.º denominación "Guía de remisión - Remitente" o "Guía de remisión - Transportista",
+59  remisión  X  X
+  8 considerar el código '09' o '31'.  según sea el caso. Tratándose de la venta de bienes realizada por emisor
+  relacionada con la
+  electrónico itinerante, se debe consignar este dato de manera obligatoria.
+  operación
+  Solo de corresponder. En este caso, en la representación impresa deberá
+  sustituirse el código de Tipo de documento por la denominación de este y colocar
+  Tipo y número de  a  continuación  el  número.
+  otro documento o
+  Según el catálogo N.º 12 del Anexo N.º
+60  código  X  X  En caso el código sea '05' - "Código SCOP", se consignará el código de
+  8.
+  relacionado con la  autorización emitido por el Sistema de Control de Órdenes de Pedido (SCOP) o,
+  operación  en el caso de los comercializadores de combustibles de aviación regulados por
+  OSINERGMIN, se podrá consignar el número de la orden de entrega (ticket) de
+  despacho de combustible en lugar del referido código.
+  Según el catálogo N.º 52 del Anexo N.º Solo de corresponder. El código '1002' es aplicable cuando todas las operaciones
+61  Leyenda  X  X
+  8.  comprendidas en la factura electrónica son gratuitas.
+  Leyenda:
+62  "Representación  X  Solo en la representación impresa.
+  impresa de la
+  factura
+  electrónica"
+  Se  utilizará  en  los  siguientes  casos:
+  1) En la cesión en uso de vehículos, si al momento de la emisión del comprobante
+  de  pago  se  conoce  ese  dato;
+  Número de placa  2) En la venta al público de combustible para vehículos automotores, cuando se
+ 63  del  vehículo  X  X  Campo lleno.  despache el combustible directamente al tanque de dicho vehículo y,
+  automotor  3) En la prestación de servicios de mantenimiento, seguros, reparación y similares
+  para  vehículos  automotores.
+  Se incluirá como parte del detalle por cada ítem.
+  Dirección del lugar
+  Corresponde a la dirección de la venta de bienes cuando la venta sea realizada
+  en el que se
+ 64  X  X  Campo lleno.  por un emisor electrónico itinerante y siempre que no obre este dato como punto
+  entrega el bien, en
+  de llegada en la guía de remisión - remitente del emisor electrónico.
+  la venta itinerante
+  Es obligatorio cuando la forma de pago de la factura electrónica sea al crédito.
+  Es el saldo pendiente de pago del campo importe total de la venta, cesión en uso
+  o del servicio descontando las retenciones del IGV, detracciones que deba efectuar
+  Monto  neto
+64-A  X  el adquirente o usuario y otras deducciones a las que pueda estar sujeto el
+  pendiente de pago
+  comprobante  de  pago.
+  No es aplicable la nota (4).
+  Monto(s)  y
+  El dato de la fecha de pago es
+  fecha(s)  de  Es obligatorio cuando la forma de pago de la factura electrónica sea al crédito.
+  alfanumérico
+64-B  vencimiento  del  X
+  de 10 posiciones con formato yyyy-mm-
+  pago único o de  No es aplicable la nota (4).
+  dd.
+  las cuotas
+DATOS ADICIONALES – ANTICIPOS
+  Importe  del  Solo de corresponder. Es el monto de anticipo consignado en una factura o boleta
+ 84
+  anticipo  de venta electrónica emitida con anterioridad.
+  Solo de corresponder. Es la sumatoria de los montos consignados en la factura
+ 85  Total de anticipos
+  según el campo 'Importe del anticipo'.
+DATOS ADICIONALES - TRANSPORTE TERRESTRE DE PASAJEROS
+  Datos a ser utilizados en caso se utilice la factura electrónica en la prestación de servicios de transporte
+a) Datos de identificación del pasajero
+  terrestre de pasajeros. Según el catálogo N.° 55 del Anexo N.° 8.
+  Apellidos  y
+ 86  Campo lleno.
+  nombres
+  Tipo y número de
+  Según el catálogo N.° 06 del Anexo N.°
+ 87  documento  de
+  8.
+  identidad
+b) Del servicio de transporte
+  Ciudad o lugar de
+ 88
+  origen
+  Ciudad o lugar de
+ 89
+  destino
+  Día  y  hora
+  Formato fecha yyyy-mm-dd. / formato
+ 90  programada  de
+  hora: hh:mm:ss.
+  inicio del viaje
+  Número  de
+ 91
+  asiento
+DATOS ADICIONALES - FACTURA ELECTRÓNICA EMITIDA POR EMPRESAS DEL SISTEMA FINANCIERO Y COOPERATIVAS DE AHORRO Y CRÉDITO NO AUTORIZADAS A CAPTAR
+RECURSOS DEL PÚBLICO
+  Fecha  del
+  Dato alfanumérico de 10 posiciones con
+ 92  otorgamiento del  X  X
+  formato yyyy-mm-dd.
+  crédito
+  Número  de
+  Dato alfanumérico de hasta 50
+ 93  contrato  y/o X  X
+  posiciones.
+  préstamo
+  Numérico:
+  0 Sin información.
+  1 Si es construcción / adquisición.
+ 94  Tipo de préstamo
+  2 Si es para refacción, remodelación,
+  ampliación, mejoramiento o subdivisión
+  de vivienda propia.
+  Se valida que tenga 50 caracteres como
+ 95  Partida registral  máximo.
+  Si no hay información se consigna “-“.
+  Dirección  Se valida que tenga 100 caracteres
+ 96  completa  del  como  máximo.
+  predio  Si no hay información se consigna “-“.
+  Dato  numérico:
+  0  =  Sin  indicador.
+  1 = Calificado para crédito Mi Vivienda
+  /  Techo  Propio.
+  Indicador  de  2 = Libre disposición de la AFP
+ 97
+  primera vivienda  3 = Calificado como primera vivienda de
+  acuerdo a la información proporcionada
+  por  el  cliente  (*).
+  (*) Para créditos otorgados a partir del
+  01.01.2013.
+  Monto del crédito  Dato alfanumérico  de  hasta  18
+97-A  X  X
+  otorgado (capital)  posiciones.
+DATOS ADICIONALES - MIGRACION DE DOCUMENTOS AUTORIZADOS A FACTURA ELECTRÓNICA
+a) Carta de porte aéreo
+  Según el catálogo N.° 55 del Anexo N.°
+ 98  Lugar de origen  X  X
+  8.
+  Es obligatorio cuando se consigne en el campo Tipo de operación el código '0301'
+  Según el catálogo N.° 55 del Anexo N.° del catálogo N.° 51 del Anexo N.° 8.
+ 99  Lugar de destino  X  X
+  8.
+b) BVME para transporte ferroviario de pasajeros
+  Es obligatorio cuando se consigne en el campo Tipo de operación el código '0302'
+  del catálogo N.° 51 del anexo N.° 8 y un Agente de Ventas hubiera intervenido en
+  Número de RUC
+  Según el catálogo N.° 06 del Anexo N.° la  operación.
+100  del agente de  X  X
+  8.  En caso el Agente de Ventas sea un sujeto no domiciliado y no se encuentre
+  ventas
+  obligado a inscribirse en el RUC, se deberá indicar en lugar del RUC, el código del
+  Agente de Ventas.
+Datos de identificación del pasajero
+  Apellidos  y
+101  X  X
+  nombres
+  Es obligatorio cuando se consigne en el campo Tipo de operación el código
+  Tipo y número de
+  Según el catálogo N.° 06 del Anexo N.° '0302' del catálogo N.° 51 del anexo N.° 8.
+102  documento  de  X  X
+  8.
+  identidad
+Del servicio de transporte
+  Ciudad o lugar de
+103  X  X
+  origen
+  Ciudad o lugar de
+104  X  X
+  destino
+  Según el catálogo N.° 55 del Anexo N.° Es obligatorio cuando se consigne en el campo Tipo de operación el código
+  Día  y  hora
+  8.  '0302' del catálogo N.° 51 del anexo N.° 8.
+105  programada  de  X  X
+  inicio del viaje
+  Número  de
+106  X  X
+  asiento
+  Es obligatorio cuando se consigne en el campo Tipo de operación el código '0302'
+  Según el catálogo N.° 59 del Anexo N.°
+107  Forma de pago  X  X  del catálogo N.° 51 del anexo N.° 8. Se consignará el medio de pago siempre que
+  8.
+  se hubiera efectuado el pago hasta la fecha en la que se emita el comprobante.
+  El número de
+  Es obligatorio cuando se consigne en el campo Tipo de operación el código '0302'
+  autorización de la
+  del catálogo N.° 51 del anexo N.° 8. Si como forma de pago se ingresó tarjeta de
+  transacción y el
+108  X  X  Campo lleno.  crédito o débito, ingresar el número de autorización, en caso contrario consignar
+  sistema de tarjeta
+  cero "0". Para el caso del sistema de tarjeta se podrá utilizar la abreviatura que
+  de crédito y/o
+  corresponda a los usos y costumbres comerciales.
+  débito utilizado
+DATOS ADICIONALES - RETENCIONES DEL IGV
+108-  Porcentaje de la
+ A  retención
+  Es la suma total que queda obligado a pagar el adquiriente, el usuario del servicio
+108-  Importe de  la
+  o quien encarga la construcción, incluidos los tributos que graven la operación,
+ B  operación
+  inclusive el IGV.
+108-  Importe de  la
+ C  retención
+DATOS ADICIONALES – PERCEPCIONES
+  Código  del
+  Según el catálogo N.° 53 del Anexo N.° Es obligatorio cuando el comprobante de pago se utilice como comprobante de
+109  régimen  de
+  8.  percepción, en cuyo caso el campo Tipo de operación deberá ser igual al código
+  percepción
+  '2001' del catálogo N.° 51 del anexo N.° 8. Los montos deben ser en moneda
+  Porcentaje de la
+110  nacional.
+  percepción
+111  Precio de Venta
+  Monto  de  la
+112
+  percepción
+  Monto  total
+113  incluida  la
+  percepción
+DATOS ADICIONALES - DETRACCIONES
+a) Detracciones - Datos Generales
+  Código del bien o
+  Según el catálogo N.° 54 del Anexo N.°
+114  servicio sujeto a
+  8.
+  detracción
+  Número de cuenta
+115  en el Banco de la  Es obligatorio cuando el campo Tipo de operación tiene el código '1001' del
+  Nación  catálogo N.° 51 del Anexo N.° 8.
+  Monto  del
+  depósito  y
+116
+  porcentaje de la
+  detracción
+b) Detracciones - Recursos Hidrobiológicos
+  Matrícula de la
+117  embarcación
+  pesquera
+  Nombre de la
+118  embarcación
+  pesquera  Según el catálogo N.° 55 del Anexo N.° Es obligatorio cuando el campo Tipo de operación tiene el código '1002' del
+  Descripción  del  8.  catálogo N.° 51 del Anexo N.° 8.
+119  tipo y cantidad de
+  la especie vendida
+120  Lugar de descarga
+  Fecha  de
+121
+  descarga
+c) Detracciones - Servicio de transporte de carga
+  Punto de origen
+  - Código de ubigeo
+  Según el catálogo N.° 13 del Anexo N.° Es obligatorio cuando el campo Tipo de operación tiene el código '1004' del
+122  -  Dirección
+  8.  catálogo N.° 51 del Anexo N.° 8.
+  detallada  del
+  origen
+  Punto de destino
+  - Código de ubigeo
+123  -  Dirección
+  detallada  del
+  destino
+124  Detalle del viaje
+  Valor referencial
+125  del servicio de
+  transporte
+  Valor referencial
+  sobre la carga
+  efectiva y valor
+126
+  referencial sobre
+  la  carga  útil
+  nominal
+DATOS ADICIONALES - EXPORTACIÓN DE SERVICIOS DE HOSPEDAJE
+  Número  de
+  documento  del
+127
+  sujeto  no
+  domiciliado
+  Código de tipo de
+  documento  de
+128  identidad  del
+  sujeto  no
+  domiciliado
+  Código país de
+129  emisión  del
+  pasaporte
+  Apellidos  y
+  nombres  del
+130  Según el catálogo N.° 55 del Anexo N.° Es obligatorio cuando el campo Tipo de operación tiene el código '0202' del
+  sujeto  no
+  8.  catálogo N.° 51 del Anexo N.° 8 .
+  domiciliado
+  Código del país de
+  residencia  del
+131
+  sujeto  no
+  domiciliado
+  Fecha de ingreso
+132
+  al país
+  Fecha de ingreso
+133
+  al establecimiento
+  Fecha de salida
+134  del
+  establecimiento
+  Fecha  de
+135
+  consumo
+  Número de días
+136
+  de permanencia
+DATOS ADICIONALES - VENTAS AL SECTOR PÚBLICO
+  Número  de
+137
+  Expediente
+  Código de unidad
+138
+  ejecutora
+  Solo de corresponder. Podrá utilizarse cuando se realice ventas a entidades del
+  Número  de
+139  sector público.
+  contrato
+  Número  de
+140  proceso  de
+  selección
+DATOS ADICIONALES - FACTURA ELECTRÓNICA EMITIDA POR EMPRESAS DEL SISTEMA DE SEGUROS
+  Dato alfanumérico de hasta 20
+141  Número de póliza  X  X
+  posiciones.
+  Fecha de inicio de
+  Dato alfanumérico de 10 posiciones con
+142  vigencia de  X  X
+  formato yyyy-mm-dd.
+  cobertura
+  Fecha de término
+  Dato alfanumérico de 10 posiciones con
+143  de vigencia de  X  X
+  formato yyyy-mm-dd.
+  cobertura
+  Tipos de seguro:
+  1 = Seguros de Vida
+144  Tipo de seguro  X  X
+  2 = Seguros para afiliados a AFP
+  3 = Otros (de aplicar)
+  Suma asegurada /
+  Dato alfanumérico de hasta 18

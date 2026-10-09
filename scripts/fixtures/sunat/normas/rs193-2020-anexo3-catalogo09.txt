@@ -1,0 +1,22 @@
+  ANEXO III
+  Anexo N.° 8: Catálogo de códigos
+(…)
+No.  09
+Catálogo  Códigos de tipo de nota de crédito electrónica
+  Código  Descripción
+  01  Anulación de la operación
+  02  Anulación por error en el RUC
+  03  Corrección por error en la descripción.
+  04  Descuento global
+  05  Descuento por ítem
+  06  Devolución total
+  07  Devolución por ítem
+  08  Bonificación
+  09  Disminución en el valor
+  10  Otros conceptos
+  11  Ajustes de operaciones de exportación
+  12  Ajustes afectos al IVAP
+  Corrección del monto neto pendiente de pago y/o la(s) fechas(s) de vencimiento del pago
+  13
+  único o de las cuotas y/o los montos correspondientes a cada cuota, de ser el caso.
+(…)

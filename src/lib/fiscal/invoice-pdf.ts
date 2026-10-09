@@ -148,8 +148,8 @@ function tint(rgb: RGB, amount: number): RGB {
  * archivo). Zona de silencio de 2 módulos — sin ella algunos lectores de móvil
  * fallan al enfocar el código pegado al resto del contenido.
  */
-function drawQr(doc: PdfDocument, url: string, x: number, top: number, size: number): void {
-  const qr = QRCode.create(url, { errorCorrectionLevel: 'M' });
+function drawQr(doc: PdfDocument, url: string, x: number, top: number, size: number, level: 'L' | 'M' | 'Q' | 'H' = 'M'): void {
+  const qr = QRCode.create(url, { errorCorrectionLevel: level });
   const modules = qr.modules;
   // `size` es el CÓDIGO (lo que la norma mide: 30–40 mm). La zona de silencio
   // va por fuera, como espacio en blanco alrededor, no restada del código.
@@ -483,7 +483,9 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
   // el recuadro con la letra y los datos que la autoridad exige impresos.
   if (input.autoridad) {
     const a = input.autoridad;
-    const qrSize = a.qrUrl ? mmAPuntos(30) : 0;
+    // Con `qrPosicion: 'inferior'` (SUNAT) el QR va al final del documento.
+    const qrArriba = !!a.qrUrl && a.qrPosicion !== 'inferior';
+    const qrSize = qrArriba ? mmAPuntos(30) : 0;
     const textX = MARGIN + (qrSize ? qrSize + 18 : 0);
     const textW = contentW - (textX - MARGIN);
     let ay = y;
@@ -502,15 +504,15 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
       doc.text(truncateText(`${f.k}: ${f.v}`, colW2, 8, 'regular'), fx, ay + row * 11.5, { size: 8, color: INK });
     });
     ay += half * 11.5 + 4;
-    if (a.qrUrl) {
-      drawQr(doc, a.qrUrl, MARGIN, y, qrSize);
+    if (a.qrUrl && qrArriba) {
+      drawQr(doc, a.qrUrl, MARGIN, y, qrSize, a.qrNivel);
       if (a.qrLeyenda) {
         for (const [i, line] of wrapText(a.qrLeyenda, qrSize + 10, 6.8).entries()) {
           doc.text(line, MARGIN, y + qrSize + 9 + i * 8, { size: 6.8, color: MUTED, align: 'center', width: qrSize });
         }
       }
     }
-    y = Math.max(ay, y + qrSize + (a.qrLeyenda ? 20 : 6)) + 14;
+    y = Math.max(ay, y + qrSize + (qrArriba && a.qrLeyenda ? 20 : 6)) + 14;
   }
 
   // ── Emisor y cliente, en dos columnas ──────────────────────────────────────
@@ -840,6 +842,24 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
     }
   }
   y = Math.max(ty, by);
+
+  // ── QR de la autoridad en la parte inferior (SUNAT: RS 113-2018, anexo 6,
+  // §6.4.4 a) ─ con su leyenda a la derecha (el valor resumen). Si no cabe en
+  // la página, sigue en otra: el QR nunca se corta.
+  const autoridadQr = input.autoridad;
+  if (autoridadQr?.qrUrl && autoridadQr.qrPosicion === 'inferior') {
+    const a = { ...autoridadQr, qrUrl: autoridadQr.qrUrl };
+    const qrSize = mmAPuntos(30);
+    if (y + 16 + qrSize > BOTTOM_LIMIT) { doc.addPage(); y = MARGIN + 8; } else y += 16;
+    drawQr(doc, a.qrUrl, MARGIN, y, qrSize, a.qrNivel);
+    if (a.qrLeyenda) {
+      const legendX = MARGIN + qrSize + 14;
+      wrapText(a.qrLeyenda, contentW - qrSize - 14, 7.5).forEach((line, i) => {
+        doc.text(line, legendX, y + 10 + i * 9.5, { size: 7.5, color: MUTED });
+      });
+    }
+    y += qrSize;
+  }
 
   // ── Timbre 2D del riel y copia cedible, al pie del documento ───────────────
   // Lo calcula el riel (latam/representacion.ts): aquí solo se dibujan los
