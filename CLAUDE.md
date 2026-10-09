@@ -10,13 +10,20 @@ manual, changelog ni depósito de decisiones. La documentación canónica vive e
 
 ## Antes de trabajar
 
-1. Lee el contexto base importado al final: proyecto y estándares de ingeniería.
-2. Abre solo los documentos del dominio que vas a tocar usando la tabla inferior.
-3. Consulta el historial temático únicamente cuando necesites el porqué de una
+1. Sincroniza (regla 37): el hook de sesión (`.claude/settings.json`) corre
+   `npm run doctor` y deja su resultado en el contexto; si no aparece, córrelo a
+   mano. Con commits por traer, `git pull --rebase` antes de editar (si hay cambios
+   locales sin commit, pregunta primero); si marca algo del entorno, corrígelo antes.
+2. Lee el contexto base importado al final: proyecto y estándares de ingeniería.
+3. Abre solo los documentos del dominio que vas a tocar usando la tabla inferior.
+4. Consulta el historial temático únicamente cuando necesites el porqué de una
    decisión, migración o regresión.
-4. Verifica en código, `db/schema.sql`, `package.json` y `.env.example` cualquier
+5. Verifica en código, `db/schema.sql`, `package.json` y `.env.example` cualquier
    dato operativo sensible a drift.
-5. Preserva cambios locales ajenos a la tarea; el worktree puede estar sucio.
+6. Preserva cambios locales ajenos a la tarea; el worktree puede estar sucio.
+
+Al cerrar una tarea, el trabajo queda en commits y se avisa si hay commits sin
+subir: lo que no llega a GitHub no existe para las otras computadoras.
 
 ## Mapa de lectura
 

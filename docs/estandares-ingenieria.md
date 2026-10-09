@@ -960,3 +960,42 @@ Caso que originó la regla (sep 2026): `app.ts` acumulaba **466** claves sin
 consumidor —el perfil de cuenta anterior, las pantallas CFO/analítica/flujo
 retiradas, los modales viejos de cliente y producto, el menú "Crear"— y `ui.ts`
 **36**. Cada rediseño había dejado su texto anterior vivo en ambos idiomas.
+
+### 37. Ninguna computadora es la fuente: el código vive en GitHub y el entorno en Vercel
+
+Cord se trabaja desde varias computadoras (la Mac y una PC Windows) y a veces
+desde varias sesiones a la vez. Una copia local es un reflejo desechable: se puede
+borrar y reconstruir en minutos sin perder nada.
+
+- **El código viaja solo por git.** Al empezar, `git pull --rebase`; al terminar,
+  commit y `git push`. Una copia nueva sale de `git clone`, nunca de un ZIP, una
+  USB o una carpeta compartida.
+- **El `.env` no se escribe a mano ni se copia entre computadoras.** Se regenera
+  con `npm run env:pull`, que baja el entorno **Development** de Vercel a `.env`.
+  Nunca se baja de Production o Preview: sus variables son *sensitive*, llegan
+  vacías y dejan `VERCEL_ENV=production` en local. No se usa `.env.local`; si
+  `vercel link` crea uno, solo puede tener `VERCEL_OIDC_TOKEN`.
+- **Una variable nueva entra por Vercel:** `.env.example` → `vercel env add` en
+  cada entorno que la necesite (Development incluido) → `npm run env:pull` en cada
+  computadora. Los interruptores con efectos reales (`VERIFACTU_AEAT_ENABLED`,
+  `CORD_CUSTOM_DOMAINS_ENABLED`, `BUILD_AUCTION_LIVE`) van en `false` en
+  Development, y `CORD_DOMAINS_VERCEL_TOKEN` nunca entra ahí.
+- **Development apunta a producción:** misma base de Neon, `ENCRYPTION_KEY` real,
+  Stripe y Resend live (Facturapi en modo prueba). `npm run dev` y cualquier script
+  con `--env-file` tocan datos y dinero reales.
+- **Lo demás que no viaja por git se reconstruye:** dependencias con `npm ci`
+  cuando un pull trae cambios en `package-lock.json`, y Node según `.nvmrc`. El
+  `.gitattributes` fija LF en todo el repositorio, también en Windows.
+- **`npm run doctor` es el candado** (`scripts/doctor.mjs`): revisa sincronía con
+  GitHub, Node, dependencias y `.env` sin imprimir valores, y el hook
+  `SessionStart` de `.claude/settings.json` lo corre en cada sesión de Claude Code.
+- **Computadora nueva:** `git clone https://github.com/Flouviamx/flouvia-cord.git`
+  → `npm ci` → `vercel login` → `vercel link --yes --project flouvia-cord --scope
+  flouvia` → `npm run env:pull` → `npm run doctor`.
+
+Caso que originó la regla (oct 2026): al sumar una segunda computadora, la copia
+se bajó como ZIP y quedó atrasada respecto a `main`; Development solo tenía 4 de
+las variables de Production, y el `.env.local` de la Mac traía `VERCEL_ENV=production`
+de un pull anterior que además había dejado 44 de 55 valores vacíos
+(`docs/historial/auth-clerk.md`). Desde entonces Development replica Production y
+cada computadora se arma solo con los comandos de arriba.

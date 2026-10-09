@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node scripts/doctor.mjs --hook",
+            "timeout": 30,
+            "statusMessage": "Revisando sincronía con GitHub y el entorno local"
+          }
+        ]
+      }
+    ]
+  }
+}

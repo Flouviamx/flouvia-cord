@@ -1,0 +1,3 @@
+# El repositorio se trabaja desde macOS y Windows: todo archivo de texto vive con
+# fin de línea LF en git y en cada copia de trabajo. Git detecta solo los binarios.
+* text=auto eol=lf

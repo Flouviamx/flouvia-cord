@@ -25,6 +25,9 @@ archived.hubspot.config.yml
 # macOS-specific files
 .DS_Store
 
+# ajustes personales de Claude Code (los compartidos viven en .claude/settings.json)
+.claude/settings.local.json
+
 # jetbrains setting folder
 .idea/
 

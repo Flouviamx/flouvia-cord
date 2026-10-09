@@ -12,11 +12,18 @@ Producción: **[cordhq.app](https://cordhq.app)**
 ## Desarrollo
 
 ```bash
+git clone https://github.com/Flouviamx/flouvia-cord.git
 nvm use            # Node 24.15.0 (.nvmrc); el proyecto exige >=22.12.0
-npm install
-cp .env.example .env   # .env.example documenta cada variable y su obligatoriedad
+npm ci
+vercel link --yes --project flouvia-cord --scope flouvia   # una vez por computadora
+npm run env:pull   # .env desde Vercel (Development); no se llena a mano
+npm run doctor     # sincronía con GitHub, Node, dependencias y .env
 npm run dev        # localhost:4321
 ```
+
+El repositorio se trabaja desde varias computadoras: `git pull --rebase` al
+empezar y `git push` al terminar. El protocolo completo es la regla 37 de
+[`docs/estandares-ingenieria.md`](docs/estandares-ingenieria.md).
 
 Otros comandos:
 
