@@ -81,11 +81,23 @@ function revisarGit() {
   }
 }
 
+// "22.12.0" → [22, 12, 0]; compara versiones semver sin dependencias.
+const partes = (version) => version.replace(/^v/, '').split('.').map(Number);
+const menorQue = (a, b) => {
+  const [x, y] = [partes(a), partes(b)];
+  for (let i = 0; i < 3; i++) if ((x[i] ?? 0) !== (y[i] ?? 0)) return (x[i] ?? 0) < (y[i] ?? 0);
+  return false;
+};
+
 function revisarNodeYDependencias() {
+  // engines.node es el contrato (bloquea); .nvmrc es la versión de producción (informa).
+  const actual = process.versions.node;
+  const minimo = /(\d+\.\d+\.\d+)/.exec(JSON.parse(readFileSync('package.json', 'utf8')).engines?.node ?? '')?.[1];
   const nvmrc = existsSync('.nvmrc') ? readFileSync('.nvmrc', 'utf8').trim().replace(/^v/, '') : '';
-  const mayor = (version) => version.split('.')[0];
-  if (nvmrc && mayor(nvmrc) !== mayor(process.versions.node)) {
-    avisos.push(`Node ${process.versions.node} activo y .nvmrc fija ${nvmrc}: cambia de versión (\`fnm use\` o \`nvm use\`).`);
+  if (minimo && menorQue(actual, minimo)) {
+    avisos.push(`Node ${actual} no cumple engines (>=${minimo}): instala ${nvmrc || minimo} con fnm o nvm.`);
+  } else if (nvmrc && partes(nvmrc)[0] !== partes(actual)[0]) {
+    estado.push(`Node ${actual} activo; .nvmrc fija ${nvmrc}. Una terminal con fnm o nvm lo cambia sola al entrar a la carpeta.`);
   }
   if (!existsSync('node_modules/.package-lock.json')) {
     avisos.push('Faltan las dependencias: `npm ci`.');

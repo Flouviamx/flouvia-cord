@@ -977,7 +977,8 @@ borrar y reconstruir en minutos sin perder nada.
   `vercel link` crea uno, solo puede tener `VERCEL_OIDC_TOKEN`.
 - **Una variable nueva entra por Vercel:** `.env.example` → `vercel env add` en
   cada entorno que la necesite (Development incluido) → `npm run env:pull` en cada
-  computadora. Los interruptores con efectos reales (`VERIFACTU_AEAT_ENABLED`,
+  computadora. El sentido es siempre Vercel → local: ningún script sube un `.env`
+  a Vercel (un `rm` + `add` además borra la marca *sensitive*). Los interruptores con efectos reales (`VERIFACTU_AEAT_ENABLED`,
   `CORD_CUSTOM_DOMAINS_ENABLED`, `BUILD_AUCTION_LIVE`) van en `false` en
   Development, y `CORD_DOMAINS_VERCEL_TOKEN` nunca entra ahí.
 - **Development apunta a producción:** misma base de Neon, `ENCRYPTION_KEY` real,
