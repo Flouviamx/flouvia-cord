@@ -109,7 +109,13 @@ for (const t of ['us_tax_calculos', 'us_tax_registros']) {
     }
 }
 ok(/if exists \(select 1 from pg_roles where rolname = 'cord_app'\)/.test(seccion), 'Los grants a cord_app van condicionados a que el rol exista.');
-ok(schema.trimEnd().endsWith('-- END us-tax'), 'La sección del sales tax por dirección va al FINAL de db/schema.sql.');
+// La sección existe una sola vez y cierra con su marcador. No se exige que sea
+// la ÚLTIMA del schema: cada dominio agrega la suya al final, y obligar a que
+// esta quede siempre detrás rompía a la siguiente rama que sumara una sección.
+const inicioUsTax = schema.indexOf('-- ── Sales tax de EE. UU. calculado por la dirección del cliente');
+const finUsTax = schema.indexOf('-- END us-tax');
+ok(inicioUsTax >= 0 && finUsTax > inicioUsTax, 'db/schema.sql: falta la sección del sales tax por dirección, cerrada con `-- END us-tax`.');
+ok(schema.indexOf('-- END us-tax', finUsTax + 1) === -1, 'db/schema.sql: el marcador `-- END us-tax` aparece más de una vez.');
 
 // Cron registrado (cada hora en GitHub, diario de respaldo en Vercel).
 ok(read('.github/workflows/cord-crons.yml').includes('*:*:api/cron/us-tax'), 'El cron us-tax debe correr cada hora desde cord-crons.yml.');
