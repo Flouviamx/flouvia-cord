@@ -1,0 +1,65 @@
+---
+// Estado de la factura ante SUNAT (Perú), en el panel lateral de
+// /app/facturas/[id]: aceptada con su constancia de recepción, observaciones,
+// o por qué no se aceptó. Lee el último intento del riel
+// (fiscal_rail_comprobantes); si la factura nunca pasó por SUNAT (documento
+// comercial) no dibuja nada. Solo muestra mensajes de Cord, nunca el texto
+// crudo de SUNAT (regla 14).
+import { ultimoIntento } from '../../../lib/fiscal/latam/comprobantes';
+
+interface Props { orgId: string; documentoId: string; locale: 'es' | 'en'; }
+const { orgId, documentoId, locale } = Astro.props;
+const en = locale === 'en';
+const intento = orgId ? await ultimoIntento(orgId, documentoId, 'sunat').catch(() => null) : null;
+
+const TITULO: Record<string, [string, string]> = {
+    autorizado: ['Aceptada por SUNAT', 'Accepted by SUNAT'],
+    pendiente: ['Esperando la confirmación de SUNAT', 'Waiting for SUNAT to confirm'],
+    incierto: ['Esperando la confirmación de SUNAT', 'Waiting for SUNAT to confirm'],
+    rechazado: ['SUNAT no aceptó la factura', 'SUNAT did not accept the invoice'],
+    descartado: ['SUNAT no registró este envío', 'SUNAT did not register this submission'],
+};
+const titulo = intento ? (TITULO[intento.estado]?.[en ? 1 : 0] ?? intento.estado) : '';
+const resumen = (intento?.solicitud as { envio?: { resumen?: string } } | undefined)?.envio?.resumen ?? null;
+const constancia = intento?.autorizacion && intento.autorizacion !== resumen ? intento.autorizacion : null;
+const observaciones = (intento?.observaciones ?? []).map((o) => o.mensaje).filter(Boolean) as string[];
+const prueba = intento?.entorno === 'homologacion';
+---
+
+{intento && (
+    <section class="fd-meta-section sunat-fe">
+        <div class="sunat-fe-head"><h2>SUNAT</h2></div>
+        <div class={`sunat-fe-state is-${intento.estado}`}>
+            <span class="sunat-fe-dot" aria-hidden="true"></span>
+            <span class="sunat-fe-copy">
+                <strong>{titulo}</strong>
+                {intento.estado === 'autorizado' && constancia && (
+                    <small>{en ? 'Receipt' : 'Constancia'} {constancia}</small>
+                )}
+                {intento.estado === 'autorizado' && resumen && (
+                    <small>{en ? 'Hash' : 'Valor resumen'} {resumen}</small>
+                )}
+                {intento.estado !== 'autorizado' && intento.errorMensaje && <small>{intento.errorMensaje}</small>}
+                {prueba && <small>{en ? 'SUNAT test service (beta): no tax validity.' : 'Servicio de pruebas (beta) de SUNAT: sin validez fiscal.'}</small>}
+            </span>
+        </div>
+        {observaciones.length > 0 && (
+            <ul class="sunat-fe-obs">
+                {observaciones.map((o) => <li>{o}</li>)}
+            </ul>
+        )}
+    </section>
+)}
+
+<style>
+    .sunat-fe-head h2 { font-size: 0.82rem; font-weight: 600; margin: 0 0 0.6rem; color: var(--color-text); }
+    .sunat-fe-state { display: flex; gap: 0.6rem; align-items: flex-start; }
+    .sunat-fe-dot { width: 7px; height: 7px; margin-top: 0.35rem; border-radius: 50%; background: var(--color-text-muted); flex-shrink: 0; }
+    .sunat-fe-state.is-autorizado .sunat-fe-dot { background: var(--color-ok); }
+    .sunat-fe-state.is-pendiente .sunat-fe-dot, .sunat-fe-state.is-incierto .sunat-fe-dot { background: #d97706; }
+    .sunat-fe-state.is-rechazado .sunat-fe-dot { background: var(--color-err, #dc2626); }
+    .sunat-fe-copy { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .sunat-fe-copy strong { font-size: 0.82rem; color: var(--color-text); }
+    .sunat-fe-copy small { font-size: 0.75rem; color: var(--color-text-muted); line-height: 1.45; overflow-wrap: anywhere; }
+    .sunat-fe-obs { margin: 0.6rem 0 0; padding-left: 1.1rem; font-size: 0.75rem; color: var(--color-text-muted); line-height: 1.45; }
+</style>

@@ -10,6 +10,8 @@ import { declaracionResponsableONull, DECLARACION_RUTA } from '../../../lib/fisc
 import { incidenciasVerifactu } from '../../../lib/fiscal/verifactu/incidencias';
 import ArcaSettings from '../../../components/app/settings/ArcaSettings.astro';
 import { estadoArca } from '../../../lib/fiscal/latam/arca/estado';
+import SunatSettings from '../../../components/app/settings/SunatSettings.astro';
+import { estadoSunat } from '../../../lib/fiscal/latam/sunat/estado';
 import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
 const ORG = await getOrg();
@@ -20,6 +22,8 @@ const isCa = ORG.countryCode === 'CA';
 const isEs = ORG.countryCode === 'ES';
 // Argentina: factura electrónica autorizada por ARCA (rieles fiscales de LatAm).
 const ARCA = ORG.countryCode === 'AR' ? await estadoArca(ORG.id).catch(() => null) : null;
+// Perú: factura electrónica enviada a SUNAT (SEE - Del contribuyente).
+const SUNAT = ORG.countryCode === 'PE' ? await estadoSunat(ORG.id).catch(() => null) : null;
 const verifactuOn = ORG.verifactuModo === 'verifactu';
 // Certificado cargado no es lo mismo que registrar: con el envío a la AEAT
 // apagado no se encadena nada, y la pantalla no puede decir "activo".
@@ -66,7 +70,7 @@ const EINV_AUTO_LABEL = EINV_AUTO === 'facturx'
         : (L === 'en'
             ? `Configure the identity shown on invoices issued in ${PROFILE.name}.`
             : `Configura la identidad que aparecerá en tus facturas emitidas en ${PROFILE.name}.`)} save>
-    {!isMx && !ARCA?.listo && (
+    {!isMx && !ARCA?.listo && !SUNAT?.listo && (
         <div class="fiscal-capability">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('alert-circle')}></svg>
             <div>
@@ -388,6 +392,13 @@ const EINV_AUTO_LABEL = EINV_AUTO === 'facturx'
         <SettingsSection icon="shield" class="s-block">
             <Fragment slot="heading">{L === 'en' ? 'Electronic invoicing with ARCA' : 'Factura electrónica con ARCA'}</Fragment>
             <ArcaSettings estado={ARCA} locale={L === 'en' ? 'en' : 'es'} />
+        </SettingsSection>
+    )}
+
+    {SUNAT && (
+        <SettingsSection icon="shield" class="s-block">
+            <Fragment slot="heading">{L === 'en' ? 'Electronic invoicing with SUNAT' : 'Factura electrónica con SUNAT'}</Fragment>
+            <SunatSettings estado={SUNAT} locale={L === 'en' ? 'en' : 'es'} />
         </SettingsSection>
     )}
 </SettingsShell>
