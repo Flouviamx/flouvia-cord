@@ -9,6 +9,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const m = vi.hoisted(() => ({
   stripe: vi.fn(), expire: vi.fn(), rows: [] as any[], after: [] as Promise<unknown>[],
   createExternal: vi.fn(), retrieve: vi.fn(), notify: vi.fn(),
+  horas: vi.fn(), programar: vi.fn(), completar: vi.fn(), cancelar: vi.fn(), sincronizar: vi.fn(), orden: [] as string[],
 }));
 vi.mock('../src/lib/db', () => ({
   sql: (s: TemplateStringsArray, ...values: unknown[]) => ({ text: s.join('?'), values }),
@@ -28,6 +29,11 @@ vi.mock('../src/lib/connect-audit', () => ({ auditConnect: vi.fn() }));
 vi.mock('../src/lib/crypto-secret', () => ({ encryptRequiredSecret: (v: string) => `enc:${v}` }));
 vi.mock('../src/lib/context', () => ({ currentLocale: () => 'es', currentUserId: () => 'user-1' }));
 vi.mock('../src/lib/auth-email', () => ({ notifyMoneyDestinationChange: m.notify }));
+vi.mock('../src/lib/money-hold', () => ({
+  horasDeEspera: m.horas, programarCambio: m.programar, completarCambio: m.completar, cancelarCambio: m.cancelar,
+  registrarFalla: vi.fn(), urlRevertir: (t: string) => `https://cordhq.app/dinero/revertir/${t}`,
+}));
+vi.mock('../src/lib/deposit-control', () => ({ sincronizarControl: m.sincronizar }));
 
 import { invalidateLiveCharges } from '../src/lib/fiscal/quote-ledger';
 import { cuentaDeDepositoVigente } from '../src/lib/payout-fields';
@@ -93,20 +99,78 @@ describe('cambiar la cuenta bancaria', () => {
   beforeEach(() => {
     m.rows = [{ stripe_account_id: 'acct_1', stripe_business_type: 'company', banco_clabe_last4: '9999', country_code: 'MX', moneda: 'MXN' }];
     m.retrieve.mockResolvedValue({ requirements: {} });
+    m.horas.mockResolvedValue(0);
+    m.orden.length = 0;
+    m.programar.mockImplementation(async () => { m.orden.push('programar'); return { id: 'cambio-1', efectivoDesde: new Date('2026-10-12T15:00:00Z'), revertirToken: 'tok', reemplazados: [] }; });
+    m.completar.mockResolvedValue([]);
+    m.cancelar.mockResolvedValue(undefined);
+    m.sincronizar.mockImplementation(async () => { m.orden.push('control'); return 'controlada'; });
+    m.createExternal.mockImplementation(async (_a: string, f: any) => { m.orden.push('crear'); return { id: 'ba_new', last4: '7771', default_for_currency: f.default_for_currency === 'true' }; });
   });
 
-  it('la cuenta nueva queda como PREDETERMINADA para su divisa', async () => {
-    m.createExternal.mockResolvedValue({ id: 'ba_new', last4: '7771', default_for_currency: true });
+  const conCuentaAnterior = () => m.retrieve.mockResolvedValue({
+    requirements: {},
+    external_accounts: { data: [{ id: 'ba_vieja', object: 'bank_account', currency: 'mxn', last4: '1111', default_for_currency: true }] },
+  });
+
+  it('con una cuenta anterior, la nueva espera SIN ser predeterminada: los depósitos siguen en la anterior', async () => {
+    conCuentaAnterior();
+    m.horas.mockResolvedValue(72);
+    const res = await post();
+    expect(res.status).toBe(200);
+    expect(m.createExternal).toHaveBeenCalledWith('acct_1', expect.objectContaining({ default_for_currency: 'false' }));
+    expect(m.horas).toHaveBeenCalledWith('org-1', expect.objectContaining({ tipo: 'banco', primerDestino: false }));
+    // El registro va ANTES de crear la cuenta, y sin reemplazar todavía lo que esperaba.
+    expect(m.orden).toEqual(['programar', 'crear']);
+    expect(m.programar).toHaveBeenCalledWith('org-1', expect.objectContaining({
+      reemplazar: false, antes: expect.objectContaining({ external_account_id: 'ba_vieja' }),
+      despues: expect.objectContaining({ clabe_enc: 'enc:002010077777777771', clabe_last4: '7771' }),
+    }));
+    expect(m.completar).toHaveBeenCalledWith('org-1', 'cambio-1', { external_account_id: 'ba_new' });
+    expect(m.sincronizar).not.toHaveBeenCalled();
+    expect((await res.json()).espera).toEqual({ horas: 72, efectivo_desde: '2026-10-12T15:00:00.000Z' });
+    await Promise.all(m.after);
+    expect(m.notify).toHaveBeenCalledWith('org-1', 'banco', expect.objectContaining({
+      efectivoDesde: new Date('2026-10-12T15:00:00Z'), revertirUrl: 'https://cordhq.app/dinero/revertir/tok',
+    }));
+  });
+
+  it('la PRIMERA cuenta de un negocio que ya cobró: Cord toma los depósitos ANTES de crearla', async () => {
+    m.horas.mockResolvedValue(72);
+    expect((await post()).status).toBe(200);
+    expect(m.orden).toEqual(['programar', 'control', 'crear']);
+    expect(m.createExternal).toHaveBeenCalledWith('acct_1', expect.objectContaining({ default_for_currency: 'true' }));
+  });
+
+  it('si el proveedor rechaza la cuenta, el cambio se cancela y Cord suelta los depósitos', async () => {
+    m.horas.mockResolvedValue(72);
+    m.createExternal.mockRejectedValue(new Error('cuenta inválida'));
+    expect((await post()).status).toBe(400);
+    expect(m.cancelar).toHaveBeenCalledWith('org-1', 'cambio-1');
+    expect(m.orden).toEqual(['programar', 'control', 'control']);
+    expect(m.notify).not.toHaveBeenCalled();
+  });
+
+  it('una cuenta que reemplaza a otra todavía en espera la borra del proveedor', async () => {
+    conCuentaAnterior();
+    m.horas.mockResolvedValue(72);
+    m.completar.mockResolvedValue([{ external_account_id: 'ba_intermedia' }]);
+    await post();
+    expect(m.stripe).toHaveBeenCalledWith('/v1/accounts/acct_1/external_accounts/ba_intermedia', undefined, 'DELETE');
+  });
+
+  it('sin espera (el alta), la cuenta nueva queda como PREDETERMINADA para su divisa', async () => {
     const res = await post();
     expect(res.status).toBe(200);
     expect(m.createExternal).toHaveBeenCalledWith('acct_1', expect.objectContaining({ default_for_currency: 'true' }));
   });
 
-  it('si el proveedor no la dejó como predeterminada, no se reporta como cambiada', async () => {
+  it('si el proveedor no la dejó como predeterminada, se borra y no se reporta como cambiada', async () => {
     m.createExternal.mockResolvedValue({ id: 'ba_new', last4: '7771', default_for_currency: false });
     const res = await post();
     expect(res.status).toBe(400);
     expect(m.notify).not.toHaveBeenCalled();
+    expect(m.stripe).toHaveBeenCalledWith('/v1/accounts/acct_1/external_accounts/ba_new', undefined, 'DELETE');
   });
 });
 

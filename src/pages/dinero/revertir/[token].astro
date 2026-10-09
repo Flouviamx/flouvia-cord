@@ -1,0 +1,164 @@
+---
+// /dinero/revertir/[token] — el "No fui yo" del correo que reciben los dueños
+// cuando cambia a dónde llega el dinero (regla 38, src/lib/money-hold.ts).
+//
+// Esta página NO cambia nada al abrirse: los escáneres de enlaces de los correos
+// corporativos abren cada link, y un "No fui yo" disparado por uno de ellos
+// congelaría los depósitos de un negocio que no pidió nada. Revertir es un botón
+// que hace POST a /api/dinero/revertir.
+//
+// El token es una credencial portadora en la URL: sin analítica (PostHog guarda
+// `$current_url` completo) y, desde el middleware, sin Referer ni caché.
+export const prerender = false;
+
+import Layout from '../../../layouts/Layout.astro';
+import { sql, withOrgTx } from '../../../lib/db';
+import { cambioPorToken } from '../../../lib/money-hold';
+import { getCountryProfile } from '../../../lib/countries';
+
+const { token } = Astro.params;
+const cambio = token ? await cambioPorToken(token) : null;
+
+let org: { nombre?: string; idioma?: string; zona_horaria?: string; country_code?: string } = {};
+if (cambio) {
+    const [[o]] = await withOrgTx(cambio.orgId, sql`select nombre, idioma, zona_horaria, country_code from orgs where id = ${cambio.orgId}`);
+    org = o ?? {};
+}
+const L = org.idioma === 'en' ? 'en' : 'es';
+const say = (es: string, en: string) => (L === 'en' ? en : es);
+
+const fecha = (iso: string) => {
+    const perfil = getCountryProfile(String(org.country_code || 'MX'));
+    try {
+        return new Intl.DateTimeFormat(L === 'en' ? 'en-US' : perfil.locale, {
+            dateStyle: 'long', timeStyle: 'short', timeZone: org.zona_horaria || perfil.timeZone,
+        }).format(new Date(iso));
+    } catch {
+        return new Date(iso).toISOString().replace('T', ' ').slice(0, 16) + ' UTC';
+    }
+};
+
+const queCambio = !cambio ? '' : cambio.tipo === 'mercadopago'
+    ? say(`la cuenta de Mercado Pago que cobra (ahora ${cambio.despues.nickname || cambio.despues.mp_user_id || ''})`,
+          `the Mercado Pago account that collects (now ${cambio.despues.nickname || cambio.despues.mp_user_id || ''})`)
+    : cambio.tipo === 'clabe'
+        ? say(`la CLABE que reciben tus clientes (ahora termina en ${cambio.despues.clabe_last4 || ''})`,
+              `the CLABE your clients transfer to (now ending in ${cambio.despues.clabe_last4 || ''})`)
+        : say(`la cuenta bancaria que recibe tus depósitos (ahora termina en ${cambio.despues.last4 || cambio.despues.clabe_last4 || ''})`,
+              `the bank account that receives your payouts (now ending in ${cambio.despues.last4 || cambio.despues.clabe_last4 || ''})`);
+const enEspera = cambio?.estado === 'en_espera';
+---
+
+<Layout title={say('Revertir un cambio — Cord', 'Revert a change — Cord')} noindex={true} analyticsDisabled={true}>
+    <main class="rv-page">
+        <section class="rv-card" id="rvCard" data-token={cambio ? token : ''} data-lang={L}>
+            {cambio ? (
+                <>
+                    <h1>{say('¿No reconoces este cambio?', "Don't recognize this change?")}</h1>
+                    <p class="rv-lead">
+                        {say('En', 'At')} <b>{org.nombre || 'Cord'}</b> {say('se cambió', 'someone changed')} {queCambio}
+                        {say(' el ', ' on ')}{fecha(cambio.creadoAt)}.
+                    </p>
+                    <p class="rv-estado">
+                        {enEspera
+                            ? say(`Todavía no entra en vigor: lo hace el ${fecha(cambio.efectivoDesde)}.`, `It hasn't taken effect yet: it does on ${fecha(cambio.efectivoDesde)}.`)
+                            : say('Este cambio ya está en vigor.', 'This change is already in effect.')}
+                    </p>
+                    <ul class="rv-pasos">
+                        <li>{say('Revertimos el cambio.', 'We revert the change.')}</li>
+                        <li>{say('Congelamos los depósitos hasta que nuestro equipo hable contigo.', 'We freeze payouts until our team talks to you.')}</li>
+                        <li>{say('Cerramos las sesiones de todo tu equipo.', 'We sign out your whole team.')}</li>
+                    </ul>
+                    <button type="button" class="rv-btn" id="rvBtn">{say('Revertir y congelar depósitos', 'Revert and freeze payouts')}</button>
+                    <p class="rv-nota">{say('Si tú hiciste el cambio, cierra esta página: no tienes que hacer nada.', 'If you made the change, close this page: you don’t need to do anything.')}</p>
+                    <p class="rv-error" id="rvError" role="alert" hidden></p>
+                </>
+            ) : (
+                <>
+                    <h1>{say('Este enlace ya no sirve', 'This link no longer works')}</h1>
+                    <p class="rv-lead">{say(
+                        'Ya se usó, venció o el cambio ya no se puede revertir desde aquí. Si no reconoces un cambio en tu cuenta, escríbenos a contacto@cordhq.app.',
+                        "It was already used, it expired, or the change can no longer be reverted from here. If you don't recognize a change on your account, write to contacto@cordhq.app.",
+                    )}</p>
+                </>
+            )}
+        </section>
+        <section class="rv-card" id="rvListo" hidden>
+            <h1>{say('Listo: revertimos el cambio', 'Done: we reverted the change')}</h1>
+            <p class="rv-lead">{say(
+                'Los depósitos quedaron congelados y cerramos las sesiones de tu equipo. Cambia tu contraseña ahora; nuestro equipo te llamará al teléfono registrado antes de descongelar.',
+                'Payouts are frozen and your team was signed out. Change your password now; our team will call the phone on file before unfreezing.',
+            )}</p>
+            <a class="rv-btn rv-btn--sec" href="/reset-password">{say('Cambiar mi contraseña', 'Change my password')}</a>
+        </section>
+    </main>
+</Layout>
+
+<style is:global>
+    body:has(.rv-page) #navbar,
+    body:has(.rv-page) footer { display: none !important; }
+</style>
+
+<style>
+    .rv-page {
+        min-height: 100vh; min-height: 100dvh;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        padding: 2rem 16px; background: #f5f5f7;
+    }
+    .rv-card {
+        width: 100%; max-width: 460px; background: #fff; border-radius: 32px;
+        padding: 2.5rem 2rem;
+        box-shadow: 0 2px 4px rgba(10,25,47,0.04), 0 28px 56px -14px rgba(10,25,47,0.14);
+        display: flex; flex-direction: column; gap: 1rem;
+    }
+    .rv-card[hidden] { display: none; }
+    h1 { margin: 0; font-size: 1.6rem; line-height: 1.1; letter-spacing: -0.04em; color: #050505; text-wrap: balance; }
+    .rv-lead { margin: 0; font-size: 0.98rem; line-height: 1.55; color: #1d1d1f; }
+    .rv-estado { margin: 0; font-size: 0.88rem; color: #6e6e73; }
+    .rv-pasos { margin: 0.25rem 0; padding-left: 1.1rem; display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.9rem; color: #1d1d1f; }
+    .rv-btn {
+        margin-top: 0.5rem; display: inline-flex; align-items: center; justify-content: center;
+        min-height: 48px; padding: 0 1.5rem; border: 0; border-radius: 999px;
+        background: #0a192f; color: #fff; font: inherit; font-weight: 600; font-size: 0.95rem;
+        cursor: pointer; text-decoration: none; transition: transform 0.15s ease, opacity 0.15s ease;
+    }
+    .rv-btn:hover { transform: scale(1.01); }
+    .rv-btn:active { transform: scale(0.98); }
+    .rv-btn:disabled { opacity: 0.6; cursor: progress; transform: none; }
+    .rv-btn:focus-visible { outline: 2px solid #0a192f; outline-offset: 3px; }
+    .rv-btn--sec { background: #f5f5f7; color: #0a192f; }
+    .rv-nota { margin: 0; font-size: 0.8rem; color: #6e6e73; }
+    .rv-error { margin: 0; font-size: 0.85rem; color: #b42318; }
+</style>
+
+<script>
+    const card = document.getElementById('rvCard') as HTMLElement | null;
+    const btn = document.getElementById('rvBtn') as HTMLButtonElement | null;
+    const error = document.getElementById('rvError') as HTMLElement | null;
+    const listo = document.getElementById('rvListo') as HTMLElement | null;
+    const en = card?.dataset.lang === 'en';
+    btn?.addEventListener('click', async () => {
+        if (!card?.dataset.token || btn.disabled) return;
+        btn.disabled = true;
+        if (error) error.hidden = true;
+        try {
+            const res = await fetch('/api/dinero/revertir', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token: card.dataset.token }),
+            });
+            if (res.ok) {
+                card.hidden = true;
+                if (listo) listo.hidden = false;
+                return;
+            }
+            const message = res.status === 404
+                ? (en ? 'This link was already used or expired.' : 'Este enlace ya se usó o venció.')
+                : (en ? 'We could not revert it. Try again in a minute or write to contacto@cordhq.app.' : 'No pudimos revertirlo. Intenta de nuevo en un minuto o escríbenos a contacto@cordhq.app.');
+            throw new Error(message);
+        } catch (e) {
+            if (error) { error.textContent = (e as Error).message; error.hidden = false; }
+            btn.disabled = false;
+        }
+    });
+</script>

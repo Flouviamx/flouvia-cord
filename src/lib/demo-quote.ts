@@ -257,6 +257,7 @@ export function getDemoQuote(now: Date = new Date()) {
         bancoNombre: '',
         bancoClabe: '',
         bancoBeneficiario: '',
+        bancoActualizadoAt: null,
         moneda: CURRENCY,
     };
 

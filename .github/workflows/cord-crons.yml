@@ -3,11 +3,13 @@ name: Cord crons
 # Los crons de Cord, disparados desde GitHub y no desde Vercel.
 #
 # Por qué: el plan Hobby de Vercel solo admite crons DIARIOS y un puñado de
-# ellos. Cord tiene 16, y desde que los workflows programados y las esperas
+# ellos. Cord tiene 19, y desde que los workflows programados y las esperas
 # condicionadas existen, uno necesita correr CADA HORA — un horario que el
 # negocio eligió ("cada lunes a las 9") no se puede honrar con un barrido al
-# día. Un `0 * * * *` en vercel.json hace que el deployment entero sea
-# rechazado, que es exactamente lo que pasó el 20 de septiembre de 2026.
+# día. Tampoco la espera de 72 horas de un cambio de cuenta bancaria: entra en
+# vigor a la hora, no al día siguiente. Un `0 * * * *` en vercel.json hace que el
+# deployment entero sea rechazado, que es exactamente lo que pasó el 20 de
+# septiembre de 2026.
 #
 # Este workflow corre cada hora y decide qué endpoints tocan, con la MISMA
 # tabla de horarios que tenía vercel.json. Los de vercel.json se quedan como
@@ -61,6 +63,9 @@ jobs:
           #   <hora|*>:<día del mes|*>:<ruta>
           TABLA="
           *:*:api/cron/workflows
+          *:*:api/cron/destino-dinero
+          6:*:api/cron/depositos
+          5:*:api/cron/mercadopago-conciliar
           10:*:api/health
           13:*:api/cron/recurrencias
           15:*:api/cron/recordatorios

@@ -4,6 +4,8 @@ import type { APIRoute } from 'astro';
 import { sql, withOpsTx } from '../../../../lib/db';
 import { trustedIp } from '../../../../lib/ip';
 import { OPS_ALLOWED_EMAILS, opsAuditQuery } from '../../../../lib/ops-auth';
+import { reqContext } from '../../../../lib/context';
+import { descongelarDepositos, entrarEnVigor } from '../../../../lib/destino-dinero';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
@@ -74,6 +76,34 @@ export const PATCH: APIRoute = async ({ params, request, locals }) => {
             opsAuditQuery({ ...auditBase, action: 'ops.organization_sessions_revoked', metadata: { organization: target.nombre } }),
         );
         return json({ success: true, affected: sessions.length });
+    }
+
+    // ── A dónde llega el dinero (regla 38) ─────────────────────────────────
+    // Liberar una espera o descongelar depósitos es saltarse la defensa contra
+    // una sesión robada. Solo después de LLAMAR al dueño a un teléfono que ya
+    // estaba registrado antes del cambio, y la nota de esa llamada queda en la
+    // auditoría: sin nota, no hay acción.
+    if (body?.action === 'release_money_hold' || body?.action === 'unfreeze_payouts') {
+        const nota = String(body?.reason ?? '').trim().slice(0, 500);
+        if (nota.length < 20) {
+            return json({ error: 'Escribe la nota de la llamada al dueño (a qué teléfono registrado y qué confirmó).' }, 400);
+        }
+        if (body?.confirmation !== target.nombre) {
+            return json({ error: 'La confirmación no coincide con la organización' }, 400);
+        }
+        if (body.action === 'release_money_hold') {
+            const cambioId = String(body?.targetId ?? '');
+            if (!UUID.test(cambioId)) return json({ error: 'Cambio inválido' }, 400);
+            const r = await reqContext.run({ userId: null, orgId: targetId, actor: 'system' }, () =>
+                entrarEnVigor(targetId, cambioId, { porOps: { operador: operator.email, nota } }));
+            if (r === 'no_aplica') return json({ error: 'Ese cambio ya no está en espera' }, 409);
+            await withOpsTx(opsAuditQuery({ ...auditBase, action: 'ops.money_hold_released', metadata: { organization: target.nombre, cambio: cambioId, nota } }));
+            return json({ success: true });
+        }
+        const hecho = await reqContext.run({ userId: null, orgId: targetId, actor: 'system' }, () => descongelarDepositos(targetId));
+        if (!hecho) return json({ error: 'Los depósitos no estaban congelados' }, 409);
+        await withOpsTx(opsAuditQuery({ ...auditBase, action: 'ops.payouts_unfrozen', metadata: { organization: target.nombre, nota } }));
+        return json({ success: true });
     }
 
     if (body?.action === 'delete_organization') {

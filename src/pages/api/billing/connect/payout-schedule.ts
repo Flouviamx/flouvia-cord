@@ -7,6 +7,15 @@ export const prerender = false;
 // Es una decisión de tesorería real: cobrar diario cuesta más comisiones fijas
 // de transferencia; cobrar mensual junta el dinero pero lo deja lejos. Quien la
 // toma es el dueño del negocio, no soporte.
+//
+// Mientras Cord tiene el control de los depósitos (periodo de prueba,
+// congelamiento o primera cuenta en espera; src/lib/deposit-control.ts) la
+// frecuencia en Stripe es manual y la decide el cron: la preferencia se GUARDA
+// y se aplica cuando Cord suelta el control. Escribirla en Stripe en ese momento
+// reabría los depósitos automáticos por la puerta de Ajustes.
+//
+// "Manual" no se ofrece: Cord no tiene una pantalla para pedir un depósito, así
+// que el dinero quedaba atorado en el saldo sin forma de sacarlo.
 
 import type { APIRoute } from 'astro';
 import { z } from 'zod';
@@ -17,6 +26,13 @@ import { translateStripeError } from '../../../../lib/stripe-catalogs';
 import { auditConnect } from '../../../../lib/connect-audit';
 import { limitConnectMutation, limitConnectRead } from '../../../../lib/connect-security';
 import { requireFreshAuth } from '../../../../lib/step-up';
+import type { FrecuenciaPreferida } from '../../../../lib/deposit-control';
+
+const preferidaDe = (v: unknown): FrecuenciaPreferida | null => {
+    if (!v) return null;
+    if (typeof v === 'string') { try { return JSON.parse(v); } catch { return null; } }
+    return v as FrecuenciaPreferida;
+};
 
 const json = (data: unknown, status = 200) =>
     new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
@@ -25,7 +41,7 @@ const json = (data: unknown, status = 200) =>
 // facturas (regla 25): un "31" se salta febrero en silencio, y un depósito que
 // no se emite es dinero que no llega.
 const Esquema = z.object({
-    interval: z.enum(['daily', 'weekly', 'monthly', 'manual']),
+    interval: z.enum(['daily', 'weekly', 'monthly']),
     delay_days: z.union([z.literal('minimum'), z.number().int().min(2).max(30)]).optional(),
     weekly_anchor: z.enum(['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']).optional(),
     monthly_anchor: z.number().int().min(1).max(28).optional(),
@@ -38,15 +54,20 @@ export const GET: APIRoute = async ({ request }) => {
     const limited = await limitConnectRead(request, 'payout-schedule', orgId);
     if (limited) return limited;
 
-    const [rows] = await withOrgTx(orgId, sql`select stripe_account_id from orgs where id = ${orgId}`);
+    const [rows] = await withOrgTx(orgId, sql`
+        select stripe_account_id, depositos_controlados, deposito_preferido from orgs where id = ${orgId}`);
     const accountId = rows[0]?.stripe_account_id as string | undefined;
     if (!accountId) return json({ ok: true, schedule: null });
 
     try {
         const account = await retrieveAccount(accountId);
-        const schedule = account?.settings?.payouts?.schedule ?? {};
+        // Bajo control, Stripe dice "manual": lo que el negocio eligió es la
+        // preferencia guardada, y eso es lo que se le muestra.
+        const preferida = rows[0]?.depositos_controlados ? preferidaDe(rows[0]?.deposito_preferido) : null;
+        const schedule = preferida ?? account?.settings?.payouts?.schedule ?? {};
         return json({
             ok: true,
+            controlado: !!rows[0]?.depositos_controlados,
             schedule: {
                 interval: schedule.interval ?? null,
                 delay_days: schedule.delay_days ?? null,
@@ -78,9 +99,24 @@ export const PATCH: APIRoute = async ({ request }) => {
     if (!parsed.success) return json({ error: 'Configuración de depósito no válida.' }, 400);
     const cfg = parsed.data;
 
-    const [rows] = await withOrgTx(orgId, sql`select stripe_account_id from orgs where id = ${orgId}`);
+    const [rows] = await withOrgTx(orgId, sql`
+        select stripe_account_id, depositos_controlados from orgs where id = ${orgId}`);
     const accountId = rows[0]?.stripe_account_id as string | undefined;
     if (!accountId) return json({ error: 'Cuenta no creada' }, 400);
+
+    const preferida: FrecuenciaPreferida = {
+        interval: cfg.interval,
+        ...(cfg.delay_days !== undefined ? { delay_days: cfg.delay_days } : {}),
+        ...(cfg.interval === 'weekly' && cfg.weekly_anchor ? { weekly_anchor: cfg.weekly_anchor } : {}),
+        ...(cfg.interval === 'monthly' && cfg.monthly_anchor ? { monthly_anchor: cfg.monthly_anchor } : {}),
+    };
+    if (rows[0]?.depositos_controlados) {
+        await withOrgTx(orgId, sql`update orgs set deposito_preferido = ${JSON.stringify(preferida)}::jsonb where id = ${orgId}`);
+        await auditConnect(orgId, request, 'frecuencia_deposito_actualizada', {
+            entityId: accountId, detail: `${cfg.interval} (se aplica al terminar el control de depósitos)`,
+        });
+        return json({ ok: true, schedule: preferida, controlado: true });
+    }
 
     // Los anclajes sólo existen en su intervalo: mandar `weekly_anchor` con
     // `interval: monthly` es un 400 del proveedor con un texto que no le habla
@@ -88,7 +124,7 @@ export const PATCH: APIRoute = async ({ request }) => {
     const fields: Record<string, string> = {
         'settings[payouts][schedule][interval]': cfg.interval,
     };
-    if (cfg.interval !== 'manual' && cfg.delay_days !== undefined) {
+    if (cfg.delay_days !== undefined) {
         fields['settings[payouts][schedule][delay_days]'] = String(cfg.delay_days);
     }
     if (cfg.interval === 'weekly' && cfg.weekly_anchor) {
@@ -105,6 +141,7 @@ export const PATCH: APIRoute = async ({ request }) => {
         // fuente sigue siendo el proveedor: se guarda lo que ÉL devolvió.
         await withOrgTx(orgId, sql`
             update orgs set
+                deposito_preferido    = ${JSON.stringify(preferida)}::jsonb,
                 payout_interval       = ${schedule.interval ?? null},
                 payout_delay_days     = ${schedule.delay_days ?? null},
                 payout_weekly_anchor  = ${schedule.weekly_anchor ?? null},

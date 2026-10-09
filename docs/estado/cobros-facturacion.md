@@ -111,6 +111,45 @@ marcado pagado por el webhook). La app de México (MLM) conecta vendedores de ot
 país: se confirmó el mismo día con un vendedor de prueba de Colombia (MCO), así que
 no hace falta una app por país.
 
+## A dónde llega el dinero y cuándo sale — oct 2026
+
+Regla 38. Dos piezas:
+
+**La espera de un destino nuevo** (`src/lib/money-hold.ts`, tabla
+`destino_dinero_cambios`, cron horario `/api/cron/destino-dinero`). Cuenta de
+depósito, cuenta de Mercado Pago y CLABE de transferencia: 72 horas, 7 días si la
+seguridad cambió en los 3 días anteriores, nada para el primer destino de una
+cuenta que todavía no cobra. La proyección en `orgs` (`deposito_espera_hasta`,
+`mp_espera_hasta`, `clabe_espera_hasta`) se deriva de los cambios en espera y la
+leen los rieles: `mpAccessToken('cobrar')` y las superficies públicas no ofrecen
+Mercado Pago en espera; el link público sigue mostrando la CLABE anterior. Lo que
+habla con el proveedor vive en `src/lib/destino-dinero.ts` (`entrarEnVigor`,
+`revertirCambio`, `descongelarDepositos`). Ops lo ve y lo libera en la ficha de la
+organización.
+
+**El control de depósitos** (`src/lib/deposit-control.ts`, cron diario
+`/api/cron/depositos`). Con cuentas Custom la plataforma responde por el saldo
+negativo de cada negocio, y en México y Brasil Stripe no puede cobrárselo al
+banco. Cord pone la cuenta en depósitos manuales y crea él los depósitos mientras:
+
+- está en **periodo de prueba** (60 días desde la primera vez que puede cobrar):
+  depósitos con 7 días de margen y 10% de lo cobrado con tarjeta en reserva 90
+  días; SPEI y OXXO no se reservan. Sale cuando cumple TODO: 60 días, 10 cobros de
+  3 pagadores distintos, sin disputas abiertas ni perdidas, tasa de disputas bajo
+  0.75%, sin requisitos pendientes, 2 depósitos exitosos a la cuenta actual y sin
+  cambio de destino en 14 días. Vuelve a prueba con saldo negativo, un depósito
+  fallido, tasa de disputas alta o reembolsos de más del 10% (con muestra mínima);
+- está **congelada** por un "No fui yo";
+- espera su **primera cuenta bancaria** habiendo cobrado ya.
+
+La reserva NO usa el API de reservas de Stripe (vista previa, exige Radar): se
+construye con depósitos manuales. El depósito del día lleva llave de idempotencia
+por cuenta, divisa y día. La frecuencia que el negocio elige se guarda en
+`deposito_preferido` y se aplica al soltar el control; Ajustes no la escribe en
+Stripe mientras Cord controla, y "manual" ya no se ofrece. Fuera de México y Brasil
+se activa `debit_negative_balances`. **Brasil queda fuera del control**: Stripe solo
+permite ahí depósitos diarios automáticos.
+
 ## Un solo saldo por venta: cotización y factura — oct 2026
 
 Regla 37. Contrato en `src/lib/fiscal/quote-ledger.ts`; pruebas contra PostgreSQL

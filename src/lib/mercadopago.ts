@@ -185,10 +185,16 @@ export class MpTransientError extends Error {}
  */
 export async function mpAccessToken(orgId: string, proposito: 'cobrar' | 'leer' = 'cobrar'): Promise<string | null> {
     const [[org]] = await withOrgTx(orgId, sql`
-        select mp_access_token_enc, mp_refresh_token_enc, mp_token_expira, mp_charges_enabled
+        select mp_access_token_enc, mp_refresh_token_enc, mp_token_expira, mp_charges_enabled,
+               coalesce(mp_espera_hasta > now(), false) as mp_en_espera
           from orgs where id = ${orgId}`);
     if (!org) return null;
     if (proposito === 'cobrar' && !org.mp_charges_enabled) return null;
+    // Una cuenta de Mercado Pago recién conectada o cambiada no cobra hasta que
+    // termina su espera (src/lib/money-hold.ts): el dinero de Mercado Pago no
+    // pasa por Cord, así que la única forma de no mandarlo a una cuenta que un
+    // dueño todavía puede desconocer es no abrir cobros en ella.
+    if (proposito === 'cobrar' && org.mp_en_espera) return null;
     const token = decryptSecret(org.mp_access_token_enc as string);
     const refresh = decryptSecret(org.mp_refresh_token_enc as string);
     if (!token) {

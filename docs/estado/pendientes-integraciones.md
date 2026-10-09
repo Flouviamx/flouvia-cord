@@ -396,6 +396,16 @@ pagada" o anular una factura vence su preferencia.
   ficha de OXXO de Mercado Pago del mismo cobro sigue viva (y viceversa). El pago
   tardío llega como duplicado con aviso, pero el efectivo es difícil de devolver.
 
+**Falta, destino del dinero (regla 38):**
+- [ ] Las cuentas que YA cobraban antes del despliegue no entran al periodo de
+  prueba (solo entra la que se activa por primera vez). Decidir si se meten a mano
+  las activadas en los últimos 60 días.
+- [ ] Procedimiento de Ops para liberar una espera: la llamada va a un teléfono
+  registrado ANTES del cambio. Cord no guarda todavía un teléfono verificado del
+  dueño; hoy Ops usa el de la cuenta y la nota queda en la auditoría.
+- [ ] Brasil no tiene control de depósitos (Stripe solo permite diarios
+  automáticos): la reserva ahí no existe.
+
 **Falta, operativo (después del despliegue de la auditoría):**
 - [ ] `npm run db:migrate` ANTES de desplegar: `pay.astro` lee
   `cotizacion_cobros.pago_en_proceso_at` y responde 500 sin la columna.

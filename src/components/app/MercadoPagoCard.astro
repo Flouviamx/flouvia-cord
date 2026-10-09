@@ -39,7 +39,7 @@ const cuentaTexto = cuenta && (cuenta.nickname || cuenta.siteId)
         <p class="mp-cuenta">{t(L, 'set.cobros.mp.cuenta')} <b>{cuentaTexto}</b></p>
     )}
     {mpFlash && ['conectada', 'cancelada', 'estado', 'error', 'pais'].includes(mpFlash) && (
-        <p class="mp-flash" data-bad={mpFlash !== 'conectada' ? '1' : undefined}>{t(L, `set.cobros.mp.flash_${mpFlash}` as any)}</p>
+        <p class="mp-flash" data-bad={mpFlash !== 'conectada' && mpFlash !== 'espera' ? '1' : undefined}>{t(L, `set.cobros.mp.flash_${mpFlash}` as any)}</p>
     )}
     <div class="mp-actions">
         <button type="button" class="mp-btn" data-mp-connect>{mpConectado ? t(L, 'set.cobros.mp.reconectar') : t(L, 'set.cobros.mp.conectar')}</button>

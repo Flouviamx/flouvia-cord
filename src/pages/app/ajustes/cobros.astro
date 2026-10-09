@@ -4,6 +4,9 @@ import SettingsShell from '../../../components/app/SettingsShell.astro';
 import ConnectCustomOnboarding from '../../../components/app/ConnectCustomOnboarding';
 import MercadoPagoCard from '../../../components/app/MercadoPagoCard.astro';
 import { getOrg } from '../../../lib/queries';
+import { getActiveOrgId } from '../../../lib/db';
+import { cambiosEnEspera } from '../../../lib/money-hold';
+import { fmtDateLong, fmtTime } from '../../../lib/fmt-server';
 import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
 import { describeFee, describeSubscriptionFee, FEE_TERMS_VERSION } from '../../../lib/fees';
@@ -33,6 +36,22 @@ const mercadoPago = supportsMercadoPago(PAIS);
 const mpConectado = Boolean(ORG.mpChargesEnabled);
 const mpCuenta = { nickname: String(ORG.mpNickname || ''), siteId: String(ORG.mpSiteId || '') };
 const mpFlash = Astro.url.searchParams.get('mp');
+
+// ── A dónde llega el dinero: lo que espera, lo congelado y el periodo de prueba ─
+// Un cambio de cuenta, CLABE o Mercado Pago espera 72 horas (regla 38). Si la
+// pantalla no lo dice, el negocio ve "su" CLABE de siempre después de cambiarla
+// y la vuelve a capturar, reiniciando la espera.
+const ESPERAS = await cambiosEnEspera(await getActiveOrgId()).catch(() => []);
+const cuandoEntra = (iso: string) => `${fmtDateLong(iso)}, ${fmtTime(iso)}`;
+const ddLinea = (p: (typeof ESPERAS)[number]) => {
+    const fecha = cuandoEntra(p.efectivoDesde);
+    if (p.tipo === 'mercadopago') {
+        return t(L, 'set.cobros.dd.mercadopago').replace('{cuenta}', String(p.despues.nickname || p.despues.mp_user_id || '')).replace('{fecha}', fecha);
+    }
+    const last4 = String(p.despues.last4 || p.despues.clabe_last4 || '');
+    if (p.tipo === 'clabe') return t(L, 'set.cobros.dd.clabe').replace('{last4}', last4).replace('{fecha}', fecha);
+    return t(L, p.primeraCuenta ? 'set.cobros.dd.banco_primera' : 'set.cobros.dd.banco').replace('{last4}', last4).replace('{fecha}', fecha);
+};
 // Tres casos, y el orden es la prioridad:
 //   - solo Cord Payments: nada cambia;
 //   - los dos (MX, BR): Cord Payments primero y Mercado Pago al final, como alternativa;
@@ -97,6 +116,31 @@ import { iconInner } from '../../../lib/icons';
 
 <SettingsShell title="Cobros — Ajustes" tab="cobros" perm="cobros_config"
     intro={t(L, 'set.cobros.intro')} save>
+
+    {(ESPERAS.length > 0 || ORG.depositosCongelados || ORG.pagosControl === 'prueba') && (
+        <section class="dd-panel settings-surface" aria-labelledby="ddTitulo">
+            <h2 id="ddTitulo" class="dd-titulo">{t(L, 'set.cobros.dd.titulo')}</h2>
+            {ORG.depositosCongelados && (
+                <div class="dd-fila" data-tono="alto">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('lock')}></svg>
+                    <p>{t(L, 'set.cobros.dd.congelado')}</p>
+                </div>
+            )}
+            {ESPERAS.map((p) => (
+                <div class="dd-fila">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('clock')}></svg>
+                    <p>{ddLinea(p)}</p>
+                </div>
+            ))}
+            {ESPERAS.length > 0 && <p class="dd-nota">{t(L, 'set.cobros.dd.por_que')}</p>}
+            {ORG.pagosControl === 'prueba' && (
+                <div class="dd-fila">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('shield')}></svg>
+                    <p>{t(L, 'set.cobros.dd.prueba')}</p>
+                </div>
+            )}
+        </section>
+    )}
 
     {soloMercadoPago && <MercadoPagoCard lang={L} conectado={mpConectado} flash={mpFlash} alterno={false} cuenta={mpCuenta} />}
 
@@ -284,7 +328,6 @@ import { iconInner } from '../../../lib/icons';
                         <option value="daily">{L === 'en' ? 'Daily' : 'Diaria'}</option>
                         <option value="weekly">{L === 'en' ? 'Weekly' : 'Semanal'}</option>
                         <option value="monthly">{L === 'en' ? 'Monthly' : 'Mensual'}</option>
-                        <option value="manual">{L === 'en' ? 'Manual' : 'Manual'}</option>
                     </select>
                 </div>
                 <div class="s-field" id="poAnchorWeekWrap" hidden>
@@ -339,6 +382,15 @@ import { iconInner } from '../../../lib/icons';
 </SettingsShell>
 
 <style>
+    /* ── A dónde llega el dinero ── */
+    .dd-panel { display: flex; flex-direction: column; gap: 12px; }
+    .dd-titulo { font-size: 0.95rem; font-weight: 600; letter-spacing: -0.01em; color: var(--color-text); margin: 0; }
+    .dd-fila { display: flex; gap: 12px; align-items: flex-start; color: var(--color-text-muted); }
+    .dd-fila svg { flex-shrink: 0; width: 20px; height: 20px; margin-top: 1px; color: var(--color-warn); }
+    .dd-fila[data-tono="alto"] svg { color: var(--color-danger); }
+    .dd-fila p { margin: 0; font-size: 0.86rem; line-height: 1.55; color: var(--color-text); max-width: 68ch; }
+    .dd-nota { margin: 0; font-size: 0.78rem; line-height: 1.5; color: var(--color-text-muted); max-width: 72ch; }
+
     /* ── Estado (conectado) ── */
     .cobros-status {
         display: flex; align-items: center; gap: 14px;
@@ -703,6 +755,11 @@ import { iconInner } from '../../../lib/icons';
 
 <script>
     import { setSaveState } from '../../../lib/settings-save-feedback';
+    // Una CLABE nueva no se muestra hasta que entra en vigor: tras guardarla se
+    // recarga para enseñar la espera, no el campo con un valor que aún no rige.
+    document.addEventListener('cord:settings-saved', (e) => {
+        if ((e as CustomEvent).detail?.banco_clabe !== undefined) setTimeout(() => location.reload(), 600);
+    });
     // Frecuencia de depósito. El estado inicial se pide al endpoint en vez de
     // renderizarse desde `orgs`: el espejo local puede ir un paso atrás si el
     // proveedor cambió el calendario por su cuenta (verificación pendiente,
@@ -733,7 +790,12 @@ import { iconInner } from '../../../lib/icons';
                 if (d.schedule.weekly_anchor) week.value = d.schedule.weekly_anchor;
                 if (d.schedule.monthly_anchor) month.value = String(d.schedule.monthly_anchor);
                 sync();
-                if (d.payoutsEnabled === false) {
+                if (d.controlado) {
+                    msg.classList.add('show');
+                    msg.querySelector('.s-saved-text')!.textContent = en
+                        ? 'Cord schedules your payouts for now. Your choice applies when that ends.'
+                        : 'Por ahora Cord programa tus depósitos. Lo que elijas se aplica cuando termine.';
+                } else if (d.payoutsEnabled === false) {
                     msg.classList.add('show');
                     msg.querySelector('.s-saved-text')!.textContent = en
                         ? 'Payouts are paused until verification completes.'
@@ -764,7 +826,9 @@ import { iconInner } from '../../../lib/icons';
                 const data = await res.json();
                 if (!res.ok || !data?.ok) throw new Error(data?.error || (en ? 'Could not save.' : 'No se pudo guardar.'));
                 setSaveState(btn, 'saved');
-                (window as any).cordToast?.(en ? 'Payout frequency updated' : 'Frecuencia de depósito actualizada', 'ok');
+                (window as any).cordToast?.(data.controlado
+                    ? (en ? 'Saved. It applies when Cord stops scheduling your payouts.' : 'Guardado. Se aplica cuando Cord deje de programar tus depósitos.')
+                    : (en ? 'Payout frequency updated' : 'Frecuencia de depósito actualizada'), 'ok');
             } catch (e: any) {
                 setSaveState(btn, 'error', e?.message || (en ? 'Could not save.' : 'No se pudo guardar.'));
             }

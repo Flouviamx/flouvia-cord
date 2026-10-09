@@ -40,7 +40,7 @@ export const POST: APIRoute = async ({ request }) => {
         const passwordHash = await hashPassword(password);
         await sql`
             update users
-            set password_hash = ${passwordHash}, password_changed_at = now(), updated_at = now()
+            set password_hash = ${passwordHash}, password_changed_at = now(), seguridad_cambiada_at = now(), updated_at = now()
             where id = ${userId}
         `;
 

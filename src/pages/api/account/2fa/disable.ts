@@ -36,7 +36,7 @@ export const POST: APIRoute = async ({ request }) => {
     await sql`
         update users
         set totp_enabled = false, totp_secret = null, totp_secret_enc = null,
-            totp_backup_codes = null, totp_confirmed_at = null
+            totp_backup_codes = null, totp_confirmed_at = null, seguridad_cambiada_at = now()
         where id = ${userId}`;
 
     return new Response(JSON.stringify({ ok: true }), { status: 200 });

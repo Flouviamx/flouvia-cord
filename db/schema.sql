@@ -5997,3 +5997,140 @@ do $$ begin
   end if;
 end $$;
 -- END cli-logins
+
+-- BEGIN destino-dinero
+-- A dónde llega el dinero y CUÁNDO sale (decisiones de oct 2026, regla 38).
+--
+-- Un cambio de destino (cuenta de depósito, cuenta de Mercado Pago, CLABE que
+-- ve el cliente) espera 72 horas antes de entrar en vigor; los dueños reciben un
+-- enlace "No fui yo" que lo revierte y congela los depósitos. Ver
+-- src/lib/money-hold.ts.
+--
+-- Cord toma los depósitos de una cuenta (manuales en Stripe, los crea un cron)
+-- mientras está en periodo de prueba, en espera o congelada. Ver
+-- src/lib/deposit-control.ts.
+create table if not exists destino_dinero_cambios (
+  id                   uuid primary key default gen_random_uuid(),
+  org_id               uuid not null references orgs(id) on delete cascade,
+  tipo                 text not null check (tipo in ('banco', 'mercadopago', 'clabe')),
+  estado               text not null default 'en_espera'
+                       check (estado in ('en_espera', 'vigente', 'liberado', 'revertido', 'reemplazado', 'cancelado')),
+  efectivo_desde       timestamptz not null,
+  -- Nunca un número de cuenta completo en claro: últimos 4, ids del proveedor o
+  -- el valor cifrado con el que se promueve la CLABE.
+  antes                jsonb not null default '{}'::jsonb,
+  despues              jsonb not null default '{}'::jsonb,
+  creado_por           uuid references users(id) on delete set null,
+  creado_at            timestamptz not null default now(),
+  -- sha256 del enlace "No fui yo"; null cuando ya se usó.
+  revertir_token_hash  text unique,
+  revertido_at         timestamptz,
+  liberado_por         text,
+  liberado_nota        text,
+  liberado_at          timestamptz,
+  -- Cuándo el proveedor quedó igual que el registro (la cuenta bancaria nueva
+  -- pasó a predeterminada en Stripe). Null en un cambio vigente = el cron
+  -- reintenta: el registro dice vigente y el proveedor todavía no.
+  aplicado_at          timestamptz
+);
+alter table destino_dinero_cambios add column if not exists aplicado_at timestamptz;
+create index if not exists idx_destino_dinero_cambios_org on destino_dinero_cambios(org_id, tipo, estado);
+create index if not exists idx_destino_dinero_cambios_vencen on destino_dinero_cambios(efectivo_desde) where estado = 'en_espera';
+create index if not exists idx_destino_dinero_cambios_sin_aplicar on destino_dinero_cambios(creado_at)
+  where estado in ('vigente', 'liberado') and aplicado_at is null;
+alter table destino_dinero_cambios enable row level security;
+drop policy if exists "rls_destino_dinero_cambios" on destino_dinero_cambios;
+create policy "rls_destino_dinero_cambios" on destino_dinero_cambios
+  using (org_id = nullif(current_setting('app.org_id', true), '')::uuid)
+  with check (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
+-- Ops ve los cambios (para liberar una espera después de llamar al dueño); la
+-- liberación misma corre en el carril de la organización.
+drop policy if exists "ops_destino_dinero_cambios" on destino_dinero_cambios;
+create policy "ops_destino_dinero_cambios" on destino_dinero_cambios
+  using (current_setting('app.scope', true) = 'ops');
+alter table destino_dinero_cambios force row level security;
+
+-- Proyecciones que leen los rieles y el control de depósitos.
+alter table orgs add column if not exists deposito_espera_hasta timestamptz;
+alter table orgs add column if not exists mp_espera_hasta timestamptz;
+alter table orgs add column if not exists clabe_espera_hasta timestamptz;
+alter table orgs add column if not exists depositos_congelados_at timestamptz;
+-- Desde cuándo el link público muestra "datos bancarios actualizados".
+alter table orgs add column if not exists banco_clabe_actualizada_at timestamptz;
+-- Periodo de prueba de una cuenta de cobros nueva (o que volvió a riesgo).
+alter table orgs add column if not exists pagos_control text not null default 'normal';
+do $$ begin
+  alter table orgs add constraint orgs_pagos_control_chk check (pagos_control in ('normal', 'prueba'));
+exception when duplicate_object then null; end $$;
+alter table orgs add column if not exists pagos_prueba_desde timestamptz;
+alter table orgs add column if not exists pagos_prueba_motivo text;
+-- La frecuencia que eligió el negocio; Cord la aplica cuando suelta el control.
+alter table orgs add column if not exists deposito_preferido jsonb;
+-- Último estado aplicado en Stripe, para no repetir llamadas.
+alter table orgs add column if not exists depositos_controlados boolean not null default false;
+alter table orgs add column if not exists debito_negativo_configurado boolean not null default false;
+-- Cuándo revisó el cron por última vez esta cuenta: la que lleva más tiempo va primero.
+alter table orgs add column if not exists depositos_revisados_at timestamptz;
+
+-- Un cambio de contraseña, segundo factor o passkey: un cambio de destino del
+-- dinero en los 3 días siguientes espera 7 días en vez de 3.
+alter table users add column if not exists seguridad_cambiada_at timestamptz;
+
+-- El cron recorre los cambios vencidos de todas las organizaciones; el trabajo
+-- de cada una vuelve a withOrgTx (regla 30).
+-- Dos casos: la espera terminó, o el registro ya dice vigente y el proveedor
+-- todavía no lo refleja (un reintento).
+create or replace function cord_destino_cambios_vencidos(p_limit int default 200)
+returns table (org_id uuid, id uuid, tipo text)
+language sql stable security definer
+set search_path = public, pg_temp
+as $$
+  select c.org_id, c.id, c.tipo from destino_dinero_cambios c
+   where (c.estado = 'en_espera' and c.efectivo_desde <= now())
+      or (c.estado in ('vigente', 'liberado') and c.aplicado_at is null
+          and c.creado_at > now() - interval '30 days')
+   order by c.efectivo_desde
+   limit least(greatest(coalesce(p_limit, 200), 1), 1000)
+$$;
+revoke all on function cord_destino_cambios_vencidos(int) from public;
+
+-- El enlace "No fui yo" llega por correo y se abre sin sesión: el token resuelve
+-- el cambio; el trabajo vuelve a withOrgTx con su org_id.
+drop function if exists cord_destino_cambio_por_token(text, int);
+create or replace function cord_destino_cambio_por_token(p_hash text, p_dias int default 30)
+returns table (org_id uuid, id uuid, tipo text, estado text, antes jsonb, despues jsonb, creado_por uuid,
+               creado_at timestamptz, efectivo_desde timestamptz)
+language sql stable security definer
+set search_path = public, pg_temp
+as $$
+  select c.org_id, c.id, c.tipo, c.estado, c.antes, c.despues, c.creado_por, c.creado_at, c.efectivo_desde
+    from destino_dinero_cambios c
+   where c.revertir_token_hash = p_hash
+     and c.estado in ('en_espera', 'vigente', 'liberado')
+     and c.creado_at > now() - make_interval(days => least(greatest(coalesce(p_dias, 30), 1), 60))
+   limit 1
+$$;
+revoke all on function cord_destino_cambio_por_token(text, int) from public;
+
+-- El cron diario de depósitos recorre las cuentas de cobro activas.
+create or replace function cord_cuentas_de_cobro_activas(p_limit int default 1000)
+returns table (org_id uuid, stripe_account_id text, country_code text)
+language sql stable security definer
+set search_path = public, pg_temp
+as $$
+  select o.id, o.stripe_account_id, upper(coalesce(o.country_code, 'MX'))
+    from orgs o
+   where o.stripe_account_id is not null and o.stripe_charges_enabled = true and o.sandbox_of is null
+   order by o.depositos_revisados_at asc nulls first, o.id
+   limit least(greatest(coalesce(p_limit, 1000), 1), 5000)
+$$;
+revoke all on function cord_cuentas_de_cobro_activas(int) from public;
+
+do $$ begin
+  if exists (select 1 from pg_roles where rolname = 'cord_app') then
+    grant execute on function cord_destino_cambios_vencidos(int) to cord_app;
+    grant execute on function cord_destino_cambio_por_token(text, int) to cord_app;
+    grant execute on function cord_cuentas_de_cobro_activas(int) to cord_app;
+  end if;
+end $$;
+-- END destino-dinero

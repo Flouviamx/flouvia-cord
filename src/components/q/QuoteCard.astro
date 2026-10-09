@@ -10,6 +10,7 @@ import { getCountryProfile } from '../../lib/countries';
 import { canCollectOnline } from '../../lib/payment-rail';
 import { splitAnticipo } from '../../lib/cobros';
 import { currentLocale } from '../../lib/context';
+import { fmtDateLong } from '../../lib/fmt-server';
 import { t, getQuoteCardRuntimeI18n } from '../../i18n/app';
 import { publicPath } from '../../i18n/utils';
 
@@ -485,6 +486,9 @@ import { iconInner } from '../../lib/icons';
                             {ORG.aceptaTransferencia && (
                                 <div class="ql-pay-transfer">
                                     <div class="ql-transfer-title">{t(L, 'q.datos_transferencia')}</div>
+                                    {ORG.bancoActualizadoAt && (
+                                        <p class="ql-transfer-aviso" role="note">{t(L, 'q.banco_actualizado').replace('{fecha}', fmtDateLong(ORG.bancoActualizadoAt))}</p>
+                                    )}
                                     <div class="ql-transfer-details">
                                         <div class="ql-transfer-row"><span>{t(L, 'q.banco')}</span><strong>{ORG.bancoNombre || 'N/A'}</strong></div>
                                         <div class="ql-transfer-row"><span>{t(L, 'q.clabe')}</span><strong>{ORG.bancoClabe || 'N/A'}</strong></div>
@@ -2256,6 +2260,7 @@ import { iconInner } from '../../lib/icons';
 .ql-pay-transfer { display: flex; flex-direction: column; gap: 1rem; padding: 1.2rem; background: #fff; border: 1px solid rgba(10,25,47,0.08); border-radius: 16px; }
 .ql-transfer-title { font-size: 0.75rem; font-weight: 700; color: #111; letter-spacing: -0.2px; text-align: left; }
 .ql-transfer-details { display: flex; flex-direction: column; gap: 0; border: 1px solid rgba(10,25,47,0.06); border-radius: 10px; overflow: hidden; text-align: left; }
+.ql-transfer-aviso { margin: 0 0 10px; padding: 10px 14px; border-radius: 12px; background: rgba(245,158,11,0.08); color: #7a4a05; font-size: 0.76rem; line-height: 1.5; }
 .ql-transfer-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: #fafafa; border-bottom: 1px solid rgba(10,25,47,0.04); font-size: 0.78rem; gap: 1rem; }
 .ql-transfer-row:last-of-type { border-bottom: none; }
 .ql-transfer-row span { color: #6b7280; font-weight: 500; }

@@ -39,7 +39,7 @@ export const POST: APIRoute = async ({ params, request }) => {
                coalesce(c.terminos, cl.terminos_default) as terminos,
                coalesce(c.approved_at, c.created_at) as base_date,
                cl.email as cliente_email,
-               o.sandbox_of, o.mp_charges_enabled, o.moneda, o.nombre as org_nombre,
+               o.sandbox_of, (o.mp_charges_enabled and (o.mp_espera_hasta is null or o.mp_espera_hasta <= now())) as mp_charges_enabled, o.moneda, o.nombre as org_nombre,
                upper(coalesce(o.country_code, 'MX')) as pais
           from cotizaciones c
           left join clientes cl on cl.id = c.cliente_id and cl.org_id = c.org_id

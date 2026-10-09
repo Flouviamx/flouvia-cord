@@ -19,6 +19,8 @@ export const OPS_AUDIT_LABELS: Record<string, string> = {
   'ops.organization_api_keys_revoked': 'Llaves API revocadas',
   'ops.organization_webhooks_disabled': 'Webhooks desactivados',
   'ops.organization_sessions_revoked': 'Sesiones de organización revocadas',
+  'ops.money_hold_released': 'Espera de cambio de destino liberada',
+  'ops.payouts_unfrozen': 'Depósitos descongelados',
   'ops.organization_deleted': 'Organización eliminada',
   'ops.database_table_viewed': 'Tabla consultada',
   'ops.privileged_session_revoked': 'Sesión Ops revocada',

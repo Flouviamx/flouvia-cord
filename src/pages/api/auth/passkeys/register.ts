@@ -64,6 +64,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
           ${credential.transports || body.response?.transports || []}
         )
       `;
+      // Una credencial nueva: el siguiente cambio de destino del dinero espera 7 días.
+      await sql`update users set seguridad_cambiada_at = now() where id = ${session.userId}`;
 
       return new Response(JSON.stringify({ success: true }), { status: 200 });
     }

@@ -9,7 +9,10 @@
 //     divisa puede cobrar) — una cuenta de otro país dejaría cada cobro
 //     fallando del otro lado (regla 28);
 //   - deja a la vista QUÉ cuenta quedó conectada, audita el antes y el después,
-//     y avisa a los dueños por correo si la cuenta es nueva o distinta.
+//     y avisa a los dueños por correo si la cuenta es nueva o distinta;
+//   - una cuenta nueva o distinta no cobra durante 72 horas si el negocio ya
+//     mueve dinero (src/lib/money-hold.ts, regla 38): el dinero de Mercado Pago
+//     no pasa por Cord, así que la espera es no abrir cobros en ella.
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
@@ -21,6 +24,9 @@ import { exchangeMpCode, fetchMpCuenta, MP_SITE_COUNTRY, saveMpAccount } from '.
 import { siteOrigin } from '../../../../lib/email';
 import { notifyMoneyDestinationChange } from '../../../../lib/auth-email';
 import { after } from '../../../../lib/after';
+import {
+    cancelarCambio, horasDeEspera, programarCambio, registrarFalla, urlRevertir, type CambioProgramado,
+} from '../../../../lib/money-hold';
 
 const VUELTA = '/app/ajustes/cobros';
 
@@ -57,10 +63,35 @@ export const GET: APIRoute = async ({ request, url, redirect }) => {
         return redirect(`${VUELTA}?mp=pais`);
     }
 
-    await saveMpAccount(orgId, tokens, cuenta);
     const nueva = String(tokens.user_id);
     const detalle = `Cuenta ${nueva}${cuenta.nickname ? ` (${cuenta.nickname})` : ''}, ${cuenta.siteId}`;
     const cambio = !antes?.mp_user_id ? 'mp_conectado' : String(antes.mp_user_id) !== nueva ? 'mp_cambiado' : null;
+
+    // La espera se registra ANTES de guardar las credenciales: no hay un
+    // instante en que la cuenta nueva esté conectada y sin espera.
+    let programado: CambioProgramado | null = null;
+    let horas = 0;
+    if (cambio) {
+        try {
+            horas = await horasDeEspera(orgId, { tipo: 'mercadopago', primerDestino: !antes?.mp_user_id, actorUserId: userId });
+            programado = await programarCambio(orgId, {
+                tipo: 'mercadopago', horas, actorUserId: userId,
+                antes: { mp_user_id: antes?.mp_user_id ?? null, nickname: antes?.mp_nickname ?? null },
+                despues: { mp_user_id: nueva, nickname: cuenta.nickname ?? null, site_id: cuenta.siteId ?? null },
+            });
+        } catch (err) {
+            registrarFalla(orgId, err, 'mercadopago');
+            return redirect(`${VUELTA}?mp=error`);
+        }
+    }
+    // Reconectar la MISMA cuenta no es un cambio: si seguía en espera, sigue igual.
+    try {
+        await saveMpAccount(orgId, tokens, cuenta);
+    } catch (err) {
+        registrarFalla(orgId, err, 'mercadopago_guardar');
+        if (programado) await cancelarCambio(orgId, programado.id).catch(() => {});
+        return redirect(`${VUELTA}?mp=error`);
+    }
     await logAudit(orgId, {
         accion: cambio === 'mp_cambiado' ? 'cord_pagos.mercadopago_cambiado' : 'cord_pagos.mercadopago_conectado',
         entidad: 'org', entidad_id: orgId,
@@ -69,6 +100,12 @@ export const GET: APIRoute = async ({ request, url, redirect }) => {
             : detalle,
         ip: reqIp(request),
     });
-    if (cambio) after(notifyMoneyDestinationChange(orgId, cambio, { detalle, actorUserId: userId, ip: reqIp(request) }));
-    return redirect(`${VUELTA}?mp=conectada`);
+    if (cambio) {
+        after(notifyMoneyDestinationChange(orgId, cambio, {
+            detalle, actorUserId: userId, ip: reqIp(request),
+            efectivoDesde: horas > 0 && programado ? programado.efectivoDesde : null,
+            revertirUrl: programado ? urlRevertir(programado.revertirToken) : null,
+        }));
+    }
+    return redirect(`${VUELTA}?mp=${horas > 0 ? 'espera' : 'conectada'}`);
 };

@@ -37,7 +37,7 @@ export const POST: APIRoute = async ({ request }) => {
     const hashed = backupCodes.map(hashBackupCode);
     await sql`
         update users
-        set totp_enabled = true, totp_confirmed_at = now(), totp_backup_codes = ${hashed}
+        set totp_enabled = true, totp_confirmed_at = now(), totp_backup_codes = ${hashed}, seguridad_cambiada_at = now()
         where id = ${userId}`;
 
     return new Response(JSON.stringify({ ok: true, backupCodes }), { status: 200, headers: { 'Content-Type': 'application/json' } });

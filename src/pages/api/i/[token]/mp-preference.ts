@@ -35,7 +35,7 @@ export const POST: APIRoute = async ({ params, request }) => {
         select d.id, d.org_id, d.invoice_number, d.lifecycle, d.currency, d.total, d.amount_remaining,
                d.credit_note_of, d.document_type, d.provider_data, d.public_token,
                c.email as cliente_email,
-               o.sandbox_of, o.mp_charges_enabled, o.moneda, o.nombre as org_nombre,
+               o.sandbox_of, (o.mp_charges_enabled and (o.mp_espera_hasta is null or o.mp_espera_hasta <= now())) as mp_charges_enabled, o.moneda, o.nombre as org_nombre,
                upper(coalesce(o.country_code, 'MX')) as pais
           from documentos_fiscales d
           join orgs o on o.id = d.org_id

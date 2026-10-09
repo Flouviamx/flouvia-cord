@@ -52,7 +52,7 @@ const OPS_PUBLIC_API_EXACT = [
 ];
 // OAuth legal intent is unauthenticated by definition (the account does not
 // exist yet), but it remains a same-origin POST subject to the CSRF check.
-const PUBLIC_API_EXACT = ["/api/mcp", "/api/cli/login", "/api/cli/login/claim", "/api/health", "/api/docs-search.json", "/api/geo", "/api/legal/oauth-intent", "/api/resend/marketing-webhook", "/api/integraciones/hubspot/webhook", "/api/integraciones/hubspot/tarjeta", "/api/integraciones/slack/eventos", "/api/integraciones/slack/comando", "/api/integraciones/slack/interaccion", "/api/integraciones/shopify/webhook", "/api/integraciones/shopify/instalar", "/api/build/payment-intent", "/api/oauth/token", "/api/oauth/revoke", "/api/oauth/entrega", ...OPS_PUBLIC_API_EXACT];
+const PUBLIC_API_EXACT = ["/api/mcp", "/api/cli/login", "/api/cli/login/claim", "/api/health", "/api/docs-search.json", "/api/geo", "/api/legal/oauth-intent", "/api/resend/marketing-webhook", "/api/integraciones/hubspot/webhook", "/api/integraciones/hubspot/tarjeta", "/api/integraciones/slack/eventos", "/api/integraciones/slack/comando", "/api/integraciones/slack/interaccion", "/api/integraciones/shopify/webhook", "/api/integraciones/shopify/instalar", "/api/build/payment-intent", "/api/oauth/token", "/api/oauth/revoke", "/api/oauth/entrega", "/api/dinero/revertir", ...OPS_PUBLIC_API_EXACT];
 
 // Exención CSRF independiente de "API pública". Solo entra aquí una mutación
 // que se autentica con una credencial que el navegador no adjunta por sí solo
@@ -800,10 +800,13 @@ const securityHeaders = async (context: any, next: any) => {
     // contraseña.
     const isCapturaIdentidad = path === "/verificar-identidad" || path.startsWith("/verificar-identidad/");
     const isPublicInvoice = path.startsWith('/i/') || path.startsWith('/api/i/');
+    // El "No fui yo" de un cambio de destino del dinero (regla 38): el token del
+    // path revierte el cambio y congela los depósitos.
+    const isRevertirDinero = path.startsWith('/dinero/revertir/') || path === '/api/dinero/revertir';
 
     secureRes.headers.set(
         "Referrer-Policy",
-        path.startsWith("/reset-password") || isCapturaIdentidad || isPublicInvoice || isEmbed ? "no-referrer" : "strict-origin-when-cross-origin",
+        path.startsWith("/reset-password") || isCapturaIdentidad || isPublicInvoice || isRevertirDinero || isEmbed ? "no-referrer" : "strict-origin-when-cross-origin",
     );
     // `camera=()` es una allowlist VACÍA: deshabilita getUserMedia incluso para el
     // documento de nivel superior, no sólo para iframes. Se aplicaba a TODA ruta
@@ -818,7 +821,7 @@ const securityHeaders = async (context: any, next: any) => {
         "Permissions-Policy",
         `camera=${isCapturaIdentidad ? "(self)" : "()"}, microphone=(), geolocation=(), payment=(self)`,
     );
-    if (isCapturaIdentidad || isPublicInvoice) {
+    if (isCapturaIdentidad || isPublicInvoice || isRevertirDinero) {
         // Una página que lleva una credencial portadora en la URL no se cachea ni
         // se indexa. El `noindex` del layout es un meta tag; esto es el header,
         // que también cubre respuestas no-HTML y crawlers que no ejecutan JS.

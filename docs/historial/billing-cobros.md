@@ -7,6 +7,18 @@
 
 ---
 
+**A dónde llega el dinero y cuándo sale (9 oct 2026)** — decisiones del dueño tras
+investigar cómo lo hacen Stripe, Shopify, Amazon, Upwork y Etsy:
+- Un destino nuevo (cuenta bancaria, Mercado Pago, CLABE) espera 72 horas, 7 días
+  si la seguridad cambió hace poco, con enlace "No fui yo" que revierte, congela y
+  cierra sesiones. La cuenta bancaria nueva se agrega sin ser predeterminada para
+  que el negocio no se quede tres días sin depósitos por un cambio legítimo.
+- Periodo de prueba de 60 días para cuentas nuevas, con 7 días de margen y 10% de
+  reserva de tarjeta, construido con depósitos manuales.
+- Se marcó `users.seguridad_cambiada_at` en cada cambio de credencial.
+- De paso: `mercadopago-conciliar` estaba en `vercel.json` y no en la tabla del
+  workflow de crons de GitHub, que es el que corre en el plan actual.
+
 **Auditoría de pagos: los altos de dinero directo (9 oct 2026)** — segundo lote de la
 auditoría, cada arreglo con pruebas que fallan contra el código anterior:
 - **A1, liquidación de Stripe a medias.** El webhook de Stripe liquidaba en tres

@@ -32,5 +32,7 @@ export const DELETE: APIRoute = async ({ params }) => {
     }
 
     await sql`delete from oauth_accounts where user_id = ${userId} and provider = ${provider}`;
+    // Un cambio de credenciales: el siguiente cambio de destino del dinero espera 7 días.
+    await sql`update users set seguridad_cambiada_at = now() where id = ${userId}`;
     return new Response(JSON.stringify({ ok: true }), { status: 200 });
 };

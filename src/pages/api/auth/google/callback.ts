@@ -145,10 +145,16 @@ export const GET: APIRoute = async ({ request, url, cookies, redirect }) => {
       }
 
       // Vincular cuenta OAuth
+      // Vincular un proveedor a una cuenta que YA existía es un acceso nuevo: el
+      // siguiente cambio de destino del dinero espera 7 días (src/lib/money-hold.ts).
       await sql`
-        insert into oauth_accounts (user_id, provider, provider_user_id, email)
-        values (${userId}, 'google', ${providerUserId}, ${email})
-        on conflict (provider, provider_user_id) do nothing
+        with nuevo as (
+          insert into oauth_accounts (user_id, provider, provider_user_id, email)
+          values (${userId}, 'google', ${providerUserId}, ${email})
+          on conflict (provider, provider_user_id) do nothing
+          returning user_id)
+        update users set seguridad_cambiada_at = now()
+         where id in (select user_id from nuevo) and ${!isNewUser}
       `;
       // Un correo verificado por Google certifica el correo del usuario en Cord también.
       await sql`update users set email_verified_at = coalesce(email_verified_at, now()) where id = ${userId}`;

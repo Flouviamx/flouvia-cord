@@ -47,6 +47,14 @@
       "schedule": "45 5 * * *"
     },
     {
+      "path": "/api/cron/depositos",
+      "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/destino-dinero",
+      "schedule": "20 6 * * *"
+    },
+    {
       "path": "/api/cron/comisiones-mensuales",
       "schedule": "0 8 2 * *"
     },

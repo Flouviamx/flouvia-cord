@@ -172,6 +172,13 @@ existe pero es ajeno ya es filtrar entre negocios.
                    `cobros_config`. El island recibe un DTO ANGOSTO, no el objeto
                    completo de getOrg(): Astro serializa las props al HTML y ahí
                    viajaba la cuenta de depósito descifrada.
+/dinero/revertir/[token]
+                 → "No fui yo" del correo de un cambio de destino del dinero
+                   (regla 38). PÚBLICA, noindex y sin analítica; no-referrer y
+                   no-store desde el middleware. El GET solo muestra: los escáneres
+                   de enlaces de los correos corporativos abren cada link. Revertir
+                   es el POST a /api/dinero/revertir (PUBLIC_API_EXACT, límite
+                   estricto por IP, 404 igual para "no existe", "usado" y "vencido").
 /verificar-identidad/[token]
                  → captura móvil de documentos, PÚBLICA y noindex. El token es la
                    credencial (identity_capture_sessions) y la persona se deriva de la

@@ -1051,6 +1051,33 @@ Cada uno de esos caminos exige las mismas cuatro cosas:
 Una cuenta de un proveedor que no puede cobrar en la divisa del país del negocio no
 se acepta: su sitio se verifica al conectarla (regla 28).
 
+**Y un destino nuevo no recibe dinero de inmediato** (oct 2026,
+`src/lib/money-hold.ts`). Permiso y reautenticación no bastan contra una sesión
+robada que también tiene la contraseña: la cuenta de depósito, la cuenta de
+Mercado Pago y la CLABE nuevas esperan **72 horas** (7 días si la contraseña, el
+segundo factor, una passkey o una cuenta vinculada de un dueño o de quien hace el
+cambio cambió en los 3 días anteriores, `users.seguridad_cambiada_at`). Así lo
+hacen Amazon, Upwork, Shopify y Etsy. Durante la espera:
+
+- la cuenta bancaria nueva existe en Stripe pero **no es la predeterminada**: los
+  depósitos siguen llegando a la anterior, ya probada, y la nueva pasa a
+  predeterminada al entrar en vigor. Si es la PRIMERA cuenta de un negocio que ya
+  cobró (Stripe hace predeterminada a la primera de cada divisa), la espera son
+  depósitos manuales, y el cambio se registra ANTES de crearla en el proveedor;
+- la CLABE que ve el cliente sigue siendo la anterior;
+- Mercado Pago no abre cobros (el dinero no pasa por Cord: no hay otra forma de
+  retenerlo).
+
+El correo a los dueños lleva la fecha de entrada en vigor y un enlace **"No fui
+yo"** (`/dinero/revertir/[token]`, 30 días, un solo uso, su sha256 en la base): el
+GET solo muestra; el POST revierte en el proveedor, congela los depósitos y cierra
+las sesiones del equipo. Primero el registro (que decide UNA vez) y después el
+proveedor; si el proveedor falla, el cron reintenta (`aplicado_at`). Sin espera
+solo va el primer destino de una cuenta que todavía no mueve dinero (el alta). La
+espera solo la libera Ops, con la nota de la llamada al dueño a un teléfono
+registrado ANTES del cambio; descongelar, igual. Durante 30 días el link público
+avisa al cliente que los datos bancarios cambiaron.
+
 ### 39. Un webhook de dinero distingue "no es mío" de "no pude saberlo"
 
 Responder 200 a un proveedor es decirle "ya no me lo mandes". Solo se responde 200

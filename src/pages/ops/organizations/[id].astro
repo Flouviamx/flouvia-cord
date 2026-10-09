@@ -43,8 +43,16 @@ const r = await withOpsTx(
   opsCollectedByCurrency(90, id),
   opsOrgCommerce(id),
   opsOrgClosedByCurrency(id),
+  // A dónde llega el dinero: cambios recientes (nunca el valor cifrado) y el
+  // estado del control de depósitos.
+  sql`select id, tipo, estado, efectivo_desde, creado_at, despues - 'clabe_enc' as despues, liberado_por, liberado_nota
+        from destino_dinero_cambios where org_id=${id} order by creado_at desc limit 10`,
+  sql`select depositos_congelados_at, pagos_control, pagos_prueba_desde, pagos_prueba_motivo from orgs where id=${id}`,
 );
-const [orgRows, members, quotes, clients, products, keys, webhooks, sso, audit, feed, invoices, workflows, integrations, collected, commerceRows, closed] = r as any[];
+const [orgRows, members, quotes, clients, products, keys, webhooks, sso, audit, feed, invoices, workflows, integrations, collected, commerceRows, closed, destinoCambios, controlRows] = r as any[];
+const control: any = controlRows[0] || {};
+const TIPO_DESTINO: Record<string, string> = { banco: 'Cuenta bancaria', clabe: 'CLABE de transferencia', mercadopago: 'Mercado Pago' };
+const ultimos4 = (d: any) => d?.last4 || d?.clabe_last4 || d?.nickname || d?.mp_user_id || '';
 if (!orgRows.length) return Astro.redirect('/ops/organizations');
 const org: any = orgRows[0];
 const commerce: any = commerceRows[0] || {};
@@ -106,6 +114,18 @@ const fullName = (m: any) => [m.first_name, m.last_name].filter(Boolean).join(' 
         <div class="ops-card ops-list">
           {members.map((m: any) => <a class="ops-list-row two" href={m.id ? `/ops/users/${m.id}` : undefined}><div class="ops-identity"><span class="ops-avatar">{fullName(m).charAt(0).toUpperCase()}</span><div><strong>{fullName(m)}</strong><span class="ops-sub">{m.rol} · {m.estado} · visto {opsAgo(m.last_seen, 'nunca').toLowerCase()}</span></div></div><time>{opsNumber(m.actions_30d)} acciones</time></a>)}
           {members.length === 0 && <div class="ops-empty">Sin miembros.</div>}
+        </div>
+      </section>
+      <section class="ops-section">
+        <header class="ops-section-header"><div><h2>A dónde llega el dinero</h2><p>Liberar o descongelar solo después de llamar al dueño a un teléfono registrado ANTES del cambio.</p></div></header>
+        <div class="ops-card ops-list">
+          <div class="ops-list-row two"><div><strong>Depósitos</strong><span class="ops-sub">{control.depositos_congelados_at ? `Congelados desde ${opsDate(control.depositos_congelados_at)}` : control.pagos_control === 'prueba' ? `Periodo de prueba desde ${opsDate(control.pagos_prueba_desde)}${control.pagos_prueba_motivo ? ` · ${control.pagos_prueba_motivo}` : ''}` : 'Normales'}</span></div>
+            {control.depositos_congelados_at && <button class="ops-button danger-soft sm" data-ops-action="unfreeze_payouts" data-endpoint={endpoint} data-confirm={org.nombre} data-reason="true" data-danger="true" data-title="Descongelar depósitos" data-description="Escribe en el motivo a qué teléfono registrado llamaste y qué confirmó el dueño.">Descongelar</button>}
+          </div>
+          {destinoCambios.map((c: any) => <div class="ops-list-row two"><div><strong>{TIPO_DESTINO[c.tipo] || c.tipo} · {ultimos4(c.despues)}</strong><span class="ops-sub">{c.estado} · creado {opsDate(c.creado_at)} · en vigor {opsDate(c.efectivo_desde)}{c.liberado_por ? ` · liberó ${c.liberado_por}` : ''}</span></div>
+            {c.estado === 'en_espera' && <button class="ops-button secondary sm" data-ops-action="release_money_hold" data-target-id={c.id} data-endpoint={endpoint} data-confirm={org.nombre} data-reason="true" data-title="Liberar la espera" data-description="El cambio entra en vigor ahora. Escribe en el motivo a qué teléfono registrado llamaste y qué confirmó el dueño.">Liberar</button>}
+          </div>)}
+          {destinoCambios.length === 0 && <div class="ops-empty">Sin cambios de destino.</div>}
         </div>
       </section>
       <section class="ops-section">

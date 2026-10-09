@@ -21,7 +21,7 @@ const [rows] = await withOrgTx(identity.orgId, sql`
            coalesce(c.terminos, cl.terminos_default) as terminos,
            o.nombre, o.color_marca, o.logo_url,
            o.stripe_account_id, o.stripe_charges_enabled, o.acepta_tarjeta, o.cobro_spei_auto, o.sandbox_of,
-           o.mp_charges_enabled, upper(coalesce(o.country_code, 'MX')) as pais,
+           (o.mp_charges_enabled and (o.mp_espera_hasta is null or o.mp_espera_hasta <= now())) as mp_charges_enabled, upper(coalesce(o.country_code, 'MX')) as pais,
            o.checkout_v2
     from cotizaciones c
     left join clientes cl on cl.id = c.cliente_id

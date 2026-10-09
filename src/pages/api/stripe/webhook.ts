@@ -33,6 +33,8 @@ import { invalidateMoneyCaches } from '../../../lib/queries';
 import { fromMinorUnits, normalizeCurrency, toMinorUnits } from '../../../lib/currency';
 import { log } from '../../../lib/log';
 import { cordRefundIdDe } from '../../../lib/refund-reconcile';
+import { controlaDepositos, tomarControl } from '../../../lib/deposit-control';
+import { notifyPayoutControl } from '../../../lib/auth-email';
 
 const WH_SECRET = import.meta.env.STRIPE_WEBHOOK_SECRET || process.env.STRIPE_WEBHOOK_SECRET;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -1490,7 +1492,8 @@ async function updateAccountStatus(account: any) {
     // que la org puede cobrar de verdad), no cada re-confirmación del webhook.
     const [before, updated] = await withOrgTx(orgId,
         sql`select id, created_at, stripe_charges_enabled, stripe_payouts_enabled, stripe_disabled_reason, stripe_requirements,
-                   (sandbox_of is not null) as is_sandbox, is_demo
+                   (sandbox_of is not null) as is_sandbox, is_demo, pagos_prueba_desde,
+                   upper(coalesce(country_code, 'MX')) as pais
             from orgs where id = ${orgId} limit 1`,
         sql`update orgs set
             stripe_charges_enabled = ${chargesEnabled},
@@ -1506,6 +1509,22 @@ async function updateAccountStatus(account: any) {
         const antes = { puede_cobrar: !!prev.stripe_charges_enabled, puede_depositar: !!prev.stripe_payouts_enabled, motivo_bloqueo: prev.stripe_disabled_reason ?? null, pendientes: requisitosPendientes(prev.stripe_requirements) };
         const ahora = { puede_cobrar: chargesEnabled, puede_depositar: payoutsEnabled, motivo_bloqueo: disabledReason, pendientes: requisitosPendientes(requirements) };
         if (JSON.stringify(antes) !== JSON.stringify(ahora)) await dispatchEvent(orgId, 'account.updated', { object: 'account', ...ahora });
+    }
+
+    // Periodo de prueba de una cuenta nueva (src/lib/deposit-control.ts): la
+    // PRIMERA vez que puede cobrar, nunca al reactivarse. Primero Stripe y
+    // después el registro: si el registro falla, el reintento del webhook vuelve
+    // a tomar el control (idempotente) y lo registra; al revés, un registro sin
+    // control dejaría salir depósitos automáticos hasta el cron del día.
+    if (before.length && chargesEnabled && !before[0].stripe_charges_enabled
+        && !before[0].is_sandbox && !before[0].pagos_prueba_desde && controlaDepositos(String(before[0].pais))) {
+        await tomarControl(account.id);
+        const [entro] = await withOrgTx(orgId, sql`
+            update orgs set pagos_control = 'prueba', pagos_prueba_desde = now(),
+                   pagos_prueba_motivo = 'cuenta_nueva', depositos_controlados = true
+             where id = ${orgId} and pagos_prueba_desde is null
+            returning id`);
+        if (entro.length) after(notifyPayoutControl(orgId, 'prueba_inicio'));
     }
 
     if (before.length && chargesEnabled && !before[0].stripe_charges_enabled) {

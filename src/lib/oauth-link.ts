@@ -84,10 +84,15 @@ export async function completeOAuthLink(
         return existing.user_id === userId ? 'already_yours' : 'already_linked';
     }
 
+    // Un acceso nuevo a la cuenta: el siguiente cambio de destino del dinero
+    // espera 7 días (src/lib/money-hold.ts).
     await sql`
-        insert into oauth_accounts (user_id, provider, provider_user_id, email)
-        values (${userId}, ${provider}, ${providerUserId}, ${email})
-        on conflict (provider, provider_user_id) do nothing
+        with nuevo as (
+            insert into oauth_accounts (user_id, provider, provider_user_id, email)
+            values (${userId}, ${provider}, ${providerUserId}, ${email})
+            on conflict (provider, provider_user_id) do nothing
+            returning user_id)
+        update users set seguridad_cambiada_at = now() where id in (select user_id from nuevo)
     `;
     // Deliberadamente NO se toca users.email_verified_at: el correo del
     // proveedor puede ser distinto al de la cuenta de Cord, y verificar un

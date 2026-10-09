@@ -42,6 +42,9 @@ con el `org_id` que la función devolvió.
 | Correo entrante | `cord_resolve_inbound_email` | El proveedor no sabe de qué organización es el mensaje. |
 | Webhook de Mercado Pago | `cord_resolve_mp_orgs` | El aviso solo trae la organización de la `notification_url` y la cuenta del vendedor (oct 2026, regla 39). |
 | Conciliación diaria de Mercado Pago | `cord_mp_referencias_abiertas` | Cron cross-org; `cotizacion_cobros` no tiene política de sistema. |
+| Cambios de destino del dinero que vencen | `cord_destino_cambios_vencidos` | Cron horario cross-org; el trabajo de cada organización vuelve a `withOrgTx`. |
+| Enlace "No fui yo" del correo | `cord_destino_cambio_por_token` | Se abre sin sesión; el token resuelve el cambio y la organización. |
+| Control diario de depósitos | `cord_cuentas_de_cobro_activas` | Cron cross-org; `orgs` sí tiene política de sistema, pero el barrido solo necesita tres columnas. |
 | Reparación cotización ↔ factura | `cord_facturas_cotizacion_por_conciliar` | Ruta manual cross-org (regla 37). |
 | Alta de organización | *(ninguna)* | No hizo falta: la organización nace a nombre de quien llama, y `withUserTx` ya lo cubre. |
 

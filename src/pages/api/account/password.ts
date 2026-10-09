@@ -42,7 +42,9 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     }
 
     const newHash = await hashPassword(newPassword);
-    await sql`update users set password_hash = ${newHash}, password_changed_at = now(), updated_at = now() where id = ${userId}`;
+    // `seguridad_cambiada_at`: un cambio de a dónde llega el dinero en los 3
+    // días siguientes espera 7 días en vez de 3 (src/lib/money-hold.ts).
+    await sql`update users set password_hash = ${newHash}, password_changed_at = now(), seguridad_cambiada_at = now(), updated_at = now() where id = ${userId}`;
 
     const currentToken = cookies.get(SESSION_COOKIE)?.value;
     const currentSessionId = currentToken ? sha256Hex(currentToken) : undefined;

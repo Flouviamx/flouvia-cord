@@ -27,6 +27,9 @@ import { getCountryProfile, isCountryCode, isSupportedCountry } from '../../lib/
 import { listOfferedCurrencies } from '../../lib/currency';
 import { isValidTimeZone } from '../../lib/timezones';
 import { validateLateInterestRate } from '../../lib/late-interest-policy';
+import {
+    cancelarEspera, horasDeEspera, programarCambio, registrarFalla, urlRevertir, type CambioProgramado,
+} from '../../lib/money-hold';
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
 const TEMPLATES = new Set(['clasico', 'minimal', 'detallado']);
@@ -385,6 +388,24 @@ export const PATCH: APIRoute = async ({ request }) => {
     const bancoClabeLast4 = body.banco_clabe !== undefined ? bancoClabe?.slice(-4) || null : actual.banco_clabe_last4;
     const bancoBen = body.banco_beneficiario !== undefined ? str(body.banco_beneficiario, 150) : actual.banco_beneficiario;
 
+    // La CLABE que el link público le da al cliente es a dónde llega su dinero:
+    // una nueva espera 72 horas (src/lib/money-hold.ts, regla 38) y mientras
+    // tanto se sigue mostrando la anterior, con su beneficiario. Quitarla es
+    // inmediato: no manda dinero a ningún lado.
+    const clabeCambia = body.banco_clabe !== undefined && (bancoClabe || null) !== (previousClabe || null);
+    const esperaClabe = clabeCambia && bancoClabe
+        ? await horasDeEspera(orgId, { tipo: 'clabe', primerDestino: !previousClabe, actorUserId: currentUserId() })
+        : 0;
+    let clabeAnteriorEnc: string | null = (actual.banco_clabe_enc as string) || null;
+    if (esperaClabe > 0 && !clabeAnteriorEnc && previousClabe) {
+        // Una CLABE heredada en claro: se cifra para poder restaurarla.
+        try { clabeAnteriorEnc = encryptRequiredSecret(previousClabe); }
+        catch { return json({ error: 'El servicio de cifrado no está disponible.' }, 503); }
+    }
+    const clabeEncGuardada = esperaClabe > 0 ? clabeAnteriorEnc : bancoClabeEnc;
+    const clabeLast4Guardada = esperaClabe > 0 ? actual.banco_clabe_last4 : bancoClabeLast4;
+    const beneficiarioGuardado = esperaClabe > 0 ? actual.banco_beneficiario : bancoBen;
+
     const revision = createSettingsRevision(actual, {
         color_marca:color,color_secundario:colorSec,brand_profile:brandProfile,
         pdf_template:pdfTemplate,pdf_mensaje:pdfMensaje,pdf_condiciones:pdfCond,pdf_mostrar_lista:pdfLista,
@@ -418,8 +439,8 @@ export const PATCH: APIRoute = async ({ request }) => {
             portal_banner = ${portalBanner}, portal_mostrar_chat = ${portalChat}, portal_powered = ${portalPowered},
             email_from_name = ${emailFromName}, email_reply_to = ${emailReplyTo}, email_intro = ${emailIntro}, email_firma = ${emailFirma},
             acepta_tarjeta = ${aceptaTarjeta}, acepta_transferencia = ${aceptaTransf}, cobro_spei_auto = ${cobroSpeiAuto},
-            banco_nombre = ${bancoNombre}, banco_clabe = null, banco_clabe_enc = ${bancoClabeEnc},
-            banco_clabe_last4 = ${bancoClabeLast4}, banco_beneficiario = ${bancoBen}
+            banco_nombre = ${bancoNombre}, banco_clabe = null, banco_clabe_enc = ${clabeEncGuardada},
+            banco_clabe_last4 = ${clabeLast4Guardada}, banco_beneficiario = ${beneficiarioGuardado}
         where id = ${orgId} and xmin::text = ${actual._revision}
         returning id)
         insert into audit_log (org_id,actor,accion,entidad,entidad_id,detalle,ip)
@@ -432,12 +453,37 @@ export const PATCH: APIRoute = async ({ request }) => {
     await logAudit(orgId, { accion: 'org.actualizada', entidad: 'org', entidad_id: orgId, detalle: `Campos: ${submittedFields.join(', ') || 'ninguno'}`, ip: reqIp(request) });
     // La CLABE de transferencia es la que el link público le da al cliente para
     // pagar: cambiarla es cambiar a dónde llega el dinero, y los dueños se
-    // enteran por el correo de SU cuenta.
-    if (body.banco_clabe !== undefined && (bancoClabe || null) !== (previousClabe || null)) {
-        after(notifyMoneyDestinationChange(orgId, 'banco', {
-            detalle: `CLABE para transferencias ${bancoClabeLast4 ? `termina en ${bancoClabeLast4}` : 'eliminada'}${actual.banco_clabe_last4 ? ` (antes ${String(actual.banco_clabe_last4)})` : ''}`,
-            actorUserId: currentUserId(), ip: reqIp(request),
-        }));
+    // enteran por el correo de SU cuenta, con la fecha en que entra en vigor y
+    // el enlace "No fui yo".
+    let clabeEspera: { last4: string | null; efectivo_desde: string } | null = null;
+    if (body.banco_clabe !== undefined) {
+        let cambio: CambioProgramado | null = null;
+        try {
+            if (clabeCambia && bancoClabe) {
+                cambio = await programarCambio(orgId, {
+                    tipo: 'clabe', horas: esperaClabe, actorUserId: currentUserId(),
+                    antes: { clabe_enc: clabeAnteriorEnc, clabe_last4: actual.banco_clabe_last4 ?? null, beneficiario: actual.banco_beneficiario ?? null },
+                    despues: { clabe_enc: bancoClabeEnc, clabe_last4: bancoClabeLast4, beneficiario: bancoBen },
+                });
+                if (esperaClabe > 0) clabeEspera = { last4: bancoClabeLast4, efectivo_desde: cambio.efectivoDesde.toISOString() };
+            } else {
+                // Quitó la CLABE o volvió a capturar la de siempre: lo que seguía
+                // en espera ya no entra en vigor.
+                await cancelarEspera(orgId, 'clabe');
+            }
+        } catch (err) {
+            registrarFalla(orgId, err, 'clabe');
+            // Con espera, la CLABE nueva NO se guardó: hay que decirlo.
+            if (esperaClabe > 0) return json({ error: currentLocale() === 'en' ? 'The new CLABE could not be scheduled. Try again.' : 'No se pudo programar la CLABE nueva. Intenta de nuevo.' }, 503);
+        }
+        if (clabeCambia) {
+            after(notifyMoneyDestinationChange(orgId, 'clabe', {
+                detalle: `${bancoClabeLast4 ? `termina en ${bancoClabeLast4}` : 'eliminada'}${actual.banco_clabe_last4 ? ` (antes ${String(actual.banco_clabe_last4)})` : ''}`,
+                actorUserId: currentUserId(), ip: reqIp(request),
+                efectivoDesde: esperaClabe > 0 && cambio ? cambio.efectivoDesde : null,
+                revertirUrl: cambio ? urlRevertir(cambio.revertirToken) : null,
+            }));
+        }
     }
 
     // Al ACTIVAR "Exigir SSO": las sesiones de contraseña de los no-owner
@@ -460,7 +506,7 @@ export const PATCH: APIRoute = async ({ request }) => {
     // 30-60 s: el usuario cree que no se guardó y vuelve a guardar.
     invalidateMoneyCaches(orgId);
 
-    return json({ ok: true });
+    return json({ ok: true, ...(clabeEspera ? { clabe_espera: clabeEspera } : {}) });
 };
 
 const deleteSchema = z.object({

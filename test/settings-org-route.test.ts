@@ -1,7 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createSettingsRevision } from '../src/lib/settings-history';
 type Query={text:string;values:unknown[]};
-const m=vi.hoisted(()=>({perm:vi.fn(),entitlement:vi.fn(),tx:vi.fn(),audit:vi.fn(),invalidate:vi.fn(),fresh:vi.fn()}));
+const m=vi.hoisted(()=>({perm:vi.fn(),entitlement:vi.fn(),tx:vi.fn(),audit:vi.fn(),invalidate:vi.fn(),fresh:vi.fn(),
+ horas:vi.fn(),programar:vi.fn(),cancelarEspera:vi.fn(),notify:vi.fn()}));
+vi.mock('../src/lib/money-hold',()=>({horasDeEspera:m.horas,programarCambio:m.programar,cancelarEspera:m.cancelarEspera,
+ registrarFalla:vi.fn(),urlRevertir:(t:string)=>'https://cordhq.app/dinero/revertir/'+t}));
+vi.mock('../src/lib/auth-email',()=>({notifyMoneyDestinationChange:m.notify}));
+vi.mock('../src/lib/after',()=>({after:(p:Promise<unknown>)=>{void p;}}));
 vi.mock('../src/lib/db',()=>({sql:(s:TemplateStringsArray,...values:unknown[])=>({text:s.join('?'),values}),withOrgTx:m.tx,getActiveOrgId:async()=> 'org-a',logAudit:m.audit,reqIp:()=> '127.0.0.1'}));
 vi.mock('../src/lib/queries',()=>({requirePerm:m.perm,invalidateMoneyCaches:m.invalidate}));
 vi.mock('../src/lib/org-entitlements',()=>({requireEntitlement:m.entitlement}));
@@ -26,6 +31,38 @@ beforeEach(()=>{
   return qs.map(q=>q.text.includes('select detalle from audit_log')?[{detalle:JSON.stringify(revision)}]:q.text.includes('with updated as')?[{id:'audit-id'}]:[{...current}]);
  });
 });
+describe('la CLABE de transferencia espera 72 horas (regla 38)',()=>{
+ const conClabe={...current,banco_clabe:'002010077777777771',banco_clabe_enc:null,banco_clabe_last4:'7771',banco_beneficiario:'Negocio SA'};
+ beforeEach(()=>{
+  m.tx.mockImplementation(async(_org:string,...qs:Query[])=>{queries.push(...qs);return qs.map(q=>q.text.includes('with updated as')?[{id:'audit-id'}]:[{...conClabe}]);});
+  m.programar.mockResolvedValue({id:'c-1',efectivoDesde:new Date('2026-10-12T15:00:00Z'),revertirToken:'tok',reemplazados:[]});
+  m.cancelarEspera.mockResolvedValue(undefined);
+ });
+ it('una CLABE nueva NO se muestra todavía: se guarda la anterior y la nueva queda en espera',async()=>{
+  m.horas.mockResolvedValue(72);
+  const res=await request({banco_clabe:'012180001234567897',banco_beneficiario:'Otro SA'});
+  expect(res.status).toBe(200);
+  expect((await res.json()).clabe_espera).toEqual({last4:'7897',efectivo_desde:'2026-10-12T15:00:00.000Z'});
+  const write=queries.find(q=>q.text.includes('with updated as'))!;
+  // La CLABE heredada en claro se cifra para poder restaurarla; la que se muestra sigue siendo la anterior.
+  expect(write.values).toContain('encrypted:002010077777777771');expect(write.values).toContain('7771');expect(write.values).toContain('Negocio SA');
+  expect(write.values).not.toContain('encrypted:012180001234567897');
+  expect(m.programar).toHaveBeenCalledWith('org-a',expect.objectContaining({tipo:'clabe',horas:72,
+   despues:{clabe_enc:'encrypted:012180001234567897',clabe_last4:'7897',beneficiario:'Otro SA'}}));
+  expect(m.notify).toHaveBeenCalledWith('org-a','clabe',expect.objectContaining({revertirUrl:'https://cordhq.app/dinero/revertir/tok'}));
+ });
+ it('quitar la CLABE es inmediato y cancela lo que seguía en espera',async()=>{
+  m.horas.mockResolvedValue(72);
+  expect((await request({banco_clabe:''})).status).toBe(200);
+  expect(m.horas).not.toHaveBeenCalled();expect(m.programar).not.toHaveBeenCalled();
+  expect(m.cancelarEspera).toHaveBeenCalledWith('org-a','clabe');
+ });
+ it('si la espera no se pudo programar, se dice: la CLABE nueva no quedó guardada',async()=>{
+  m.horas.mockResolvedValue(72);m.programar.mockRejectedValue(new Error('base caída'));
+  expect((await request({banco_clabe:'012180001234567897'})).status).toBe(503);
+ });
+});
+
 describe('settings saves and history restoration',()=>{
  it('requires settings permission before accessing a revision',async()=>{
   m.perm.mockResolvedValue(new Response('{}',{status:403}));

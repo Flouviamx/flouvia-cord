@@ -135,6 +135,10 @@ export async function getOrg() {
         whatsappIdioma: (o.whatsapp_plantilla_idioma as string) ?? '',
         whatsappConectado: !!(o.whatsapp_phone_id && o.whatsapp_token_enc && o.whatsapp_plantilla),
         mpChargesEnabled: (o.mp_charges_enabled as boolean) ?? false,
+        // A dónde llega el dinero (regla 38): congelamiento tras un "No fui yo"
+        // y periodo de prueba de la cuenta de cobros.
+        depositosCongelados: !!o.depositos_congelados_at,
+        pagosControl: (o.pagos_control as string) === 'prueba' ? 'prueba' : 'normal',
         mpNickname: (o.mp_nickname as string) ?? '',
         mpSiteId: (o.mp_site_id as string) ?? '',
         aiCobranzaActiva: (o.ai_cobranza_activa as boolean) ?? false,
@@ -1710,7 +1714,7 @@ export async function getFacturaByToken(token: string) {
                    o.stripe_charges_enabled as org_stripe_charges_enabled,
                    o.acepta_tarjeta as org_acepta_tarjeta,
                    o.acepta_transferencia as org_acepta_transferencia,
-                   o.mp_charges_enabled as org_mp_charges_enabled,
+                   (o.mp_charges_enabled and (o.mp_espera_hasta is null or o.mp_espera_hasta <= now())) as org_mp_charges_enabled,
                    o.embed_domains as org_embed_domains
               from documentos_fiscales d
               join orgs o on o.id = d.org_id
@@ -1913,12 +1917,14 @@ export async function getCotizacionByToken(token: string) {
                o.is_demo as org_es_demo,
                o.stripe_account_id as org_stripe_account_id,
                o.stripe_charges_enabled as org_stripe_charges_enabled,
-               o.mp_charges_enabled as org_mp_charges_enabled,
+               (o.mp_charges_enabled and (o.mp_espera_hasta is null or o.mp_espera_hasta <= now())) as org_mp_charges_enabled,
                o.acepta_tarjeta as org_acepta_tarjeta,
                o.acepta_transferencia as org_acepta_transferencia,
                o.cobro_spei_auto as org_cobro_spei_auto,
                o.banco_nombre as org_banco_nombre,
                o.banco_clabe as org_banco_clabe, o.banco_clabe_enc as org_banco_clabe_enc,
+               case when o.banco_clabe_actualizada_at > now() - interval '30 days'
+                    then o.banco_clabe_actualizada_at end as org_banco_actualizado_at,
                o.banco_beneficiario as org_banco_beneficiario
             from cotizaciones c
             left join clientes cl on cl.id = c.cliente_id
@@ -2098,6 +2104,10 @@ export async function getCotizacionByToken(token: string) {
             bancoNombre: (rows[0].org_banco_nombre as string) || '',
             bancoClabe: decryptSecret(rows[0].org_banco_clabe_enc as string) || (rows[0].org_banco_clabe as string) || '',
             bancoBeneficiario: (rows[0].org_banco_beneficiario as string) || '',
+            // Los datos de transferencia cambiaron en los últimos 30 días: el link
+            // lo dice junto a ellos. Es la defensa del cliente contra el fraude de
+            // "cambiamos de cuenta" (regla 38).
+            bancoActualizadoAt: rows[0].org_banco_actualizado_at ? new Date(rows[0].org_banco_actualizado_at as string).toISOString() : null,
             // Divisa de ESTA cotización — la que el cliente ve y en la que se
             // le cobra. Viaja en el DTO para que los scripts del link público
             // formateen igual que el render de servidor.

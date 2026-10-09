@@ -17,6 +17,7 @@ vi.mock('../src/lib/email', () => ({ sendEmail: vi.fn(), siteOrigin: () => 'http
 vi.mock('../src/lib/fiscal/payments', () => ({ applyPayment: vi.fn() }));
 vi.mock('../src/lib/fiscal/reconciliation', () => ({ recordInvoiceRefund: vi.fn() }));
 vi.mock('../src/lib/log', () => ({ log: { error: vi.fn(), warn: vi.fn() } }));
+vi.mock('../src/lib/auth-email', () => ({ notifyPayoutControl: vi.fn(async () => {}) }));
 
 const QUOTE = '3f1c9a52-7b8e-4d21-9c0a-5e6f7a8b9c0d';
 
@@ -120,6 +121,28 @@ describe('cuenta de cobros', () => {
         mocks.state.before = { ...base, stripe_charges_enabled: false, stripe_payouts_enabled: false, stripe_disabled_reason: 'requirements.past_due', stripe_requirements: { currently_due: ['individual.id_number'] } };
         await deliver('account.updated', { id: 'acct_seller', charges_enabled: true, payouts_enabled: true, details_submitted: true, requirements: { currently_due: [] } });
         expect(emitted()).toEqual([['account.updated', { object: 'account', puede_cobrar: true, puede_depositar: true, motivo_bloqueo: null, pendientes: 0 }]]);
+    });
+
+    it('la PRIMERA vez que puede cobrar entra al periodo de prueba: Stripe primero, después el registro', async () => {
+        mocks.state.before = { ...base, pais: 'MX', pagos_prueba_desde: null, stripe_charges_enabled: false, stripe_payouts_enabled: false, stripe_disabled_reason: null, stripe_requirements: null };
+        const orden: string[] = [];
+        mocks.stripe.mockImplementation(async (path: string, fields: Record<string, string>) => { orden.push(`stripe:${path}:${fields?.['settings[payouts][schedule][interval]']}`); return {}; });
+        const sql = mocks.sql.getMockImplementation()!;
+        mocks.sql.mockImplementation(async (strings: TemplateStringsArray, ...v: unknown[]) => {
+            const text = strings.join('?');
+            if (text.includes("pagos_control = 'prueba'")) { orden.push('registro'); return [{ id: 'org-seller' }]; }
+            return sql(strings, ...v);
+        });
+        await deliver('account.updated', { id: 'acct_seller', charges_enabled: true, payouts_enabled: true, details_submitted: true, requirements: { currently_due: [] } });
+        expect(orden).toEqual(['stripe:/v1/accounts/acct_seller:manual', 'registro']);
+    });
+
+    it('al reactivarse, o en Brasil, no entra al periodo de prueba', async () => {
+        mocks.state.before = { ...base, pais: 'MX', pagos_prueba_desde: '2026-08-01', stripe_charges_enabled: false, stripe_payouts_enabled: true, stripe_disabled_reason: null, stripe_requirements: null };
+        await deliver('account.updated', { id: 'acct_seller', charges_enabled: true, payouts_enabled: true, details_submitted: true, requirements: { currently_due: [] } });
+        mocks.state.before = { ...base, pais: 'BR', pagos_prueba_desde: null, stripe_charges_enabled: false, stripe_payouts_enabled: true, stripe_disabled_reason: null, stripe_requirements: null };
+        await deliver('account.updated', { id: 'acct_seller', charges_enabled: true, payouts_enabled: true, details_submitted: true, requirements: { currently_due: [] } });
+        expect(mocks.stripe).not.toHaveBeenCalled();
     });
 
     it('no emite si nada cambió', async () => {

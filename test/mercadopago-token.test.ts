@@ -42,6 +42,13 @@ beforeEach(() => {
 });
 
 describe('token de Mercado Pago', () => {
+    it('una cuenta en espera (recién conectada o cambiada) no abre cobros, pero sus pagos se siguen leyendo', async () => {
+        m.row.mp_token_expira = new Date(Date.now() + 86_400_000).toISOString();
+        m.row.mp_en_espera = true;
+        expect(await mpAccessToken(org, 'cobrar')).toBeNull();
+        expect(await mpAccessToken(org, 'leer')).toBe('tok_viejo');
+    });
+
     it('un token vigente se usa tal cual, sin llamar al proveedor', async () => {
         m.row.mp_token_expira = new Date(Date.now() + 86_400_000).toISOString();
         expect(await mpAccessToken(org)).toBe('tok_viejo');

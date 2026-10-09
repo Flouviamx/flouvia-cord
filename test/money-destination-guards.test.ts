@@ -9,6 +9,11 @@ const m = vi.hoisted(() => ({
     rows: [] as any[], actor: { rol: 'owner', permisos: {}, esOwner: true } as any, user: 'user-actor' as string | null,
     fresh: vi.fn(), notify: vi.fn(), perm: vi.fn(), audit: vi.fn(), sqlCalls: [] as Array<{ text: string; values: unknown[] }>,
     createSession: vi.fn(), handoffRow: null as any, exchange: vi.fn(), cuenta: vi.fn(), save: vi.fn(), consume: vi.fn(),
+    horas: vi.fn(), programar: vi.fn(), cancelar: vi.fn(), orden: [] as string[],
+}));
+vi.mock('../src/lib/money-hold', () => ({
+    horasDeEspera: m.horas, programarCambio: m.programar, cancelarCambio: m.cancelar, registrarFalla: vi.fn(),
+    urlRevertir: (t: string) => `https://cordhq.app/dinero/revertir/${t}`,
 }));
 vi.mock('../src/lib/db', () => ({
     sql: (s: TemplateStringsArray, ...values: unknown[]) => {
@@ -66,6 +71,11 @@ beforeEach(() => {
     m.actor = { rol: 'owner', permisos: {}, esOwner: true };
     m.perm.mockResolvedValue(null);
     m.fresh.mockResolvedValue(null);
+    m.orden = [];
+    m.horas.mockResolvedValue(0);
+    m.programar.mockImplementation(async () => { m.orden.push('programar'); return { id: 'c-1', efectivoDesde: new Date('2026-10-12T15:00:00Z'), revertirToken: 'tok', reemplazados: [] }; });
+    m.save.mockImplementation(async () => { m.orden.push('guardar'); });
+    m.cancelar.mockResolvedValue(undefined);
 });
 
 describe('quién puede repartir permisos', () => {
@@ -149,6 +159,46 @@ describe('Mercado Pago: conectar es decidir a dónde llega el dinero', () => {
         expect(m.save).toHaveBeenCalled();
         expect(m.audit).toHaveBeenCalledWith('org-1', expect.objectContaining({ accion: 'cord_pagos.mercadopago_cambiado', detalle: expect.stringContaining('antes cuenta 777') }));
         expect(m.notify).toHaveBeenCalledWith('org-1', 'mp_cambiado', expect.objectContaining({ detalle: expect.stringContaining('999') }));
+    });
+
+    const vuelta = async () => {
+        const { GET } = await import('../src/pages/api/billing/mercadopago/callback');
+        m.consume.mockResolvedValue(true);
+        m.exchange.mockResolvedValue({ access_token: 'a', refresh_token: 'r', user_id: 999, expires_in: 100 });
+        m.cuenta.mockResolvedValue({ nickname: 'NUEVA', siteId: 'MLM' });
+        const url = new URL('https://cordhq.app/api/billing/mercadopago/callback?code=c&state=s');
+        return (GET as any)({ request: new Request(url), url, redirect: (to: string) => new Response(null, { status: 302, headers: { Location: to } }) }) as Promise<Response>;
+    };
+
+    it('una cuenta nueva de un negocio que ya cobra espera 72 horas: la espera se registra ANTES de guardar las credenciales', async () => {
+        m.rows = [{ mp_user_id: '777', mp_nickname: 'TIENDA', pais: 'MX' }];
+        m.horas.mockResolvedValue(72);
+        const res = await vuelta();
+        expect(res.headers.get('Location')).toContain('mp=espera');
+        expect(m.orden).toEqual(['programar', 'guardar']);
+        expect(m.programar).toHaveBeenCalledWith('org-1', expect.objectContaining({
+            tipo: 'mercadopago', horas: 72, antes: expect.objectContaining({ mp_user_id: '777' }), despues: expect.objectContaining({ mp_user_id: '999' }),
+        }));
+        expect(m.notify).toHaveBeenCalledWith('org-1', 'mp_cambiado', expect.objectContaining({
+            efectivoDesde: new Date('2026-10-12T15:00:00Z'), revertirUrl: 'https://cordhq.app/dinero/revertir/tok',
+        }));
+    });
+
+    it('reconectar la MISMA cuenta no es un cambio: no espera ni avisa', async () => {
+        m.rows = [{ mp_user_id: '999', mp_nickname: 'NUEVA', pais: 'MX' }];
+        const res = await vuelta();
+        expect(res.headers.get('Location')).toContain('mp=conectada');
+        expect(m.programar).not.toHaveBeenCalled();
+        expect(m.notify).not.toHaveBeenCalled();
+    });
+
+    it('si no se pudo registrar la espera, NO se guardan las credenciales', async () => {
+        m.rows = [{ mp_user_id: '777', mp_nickname: 'TIENDA', pais: 'MX' }];
+        m.horas.mockResolvedValue(72);
+        m.programar.mockRejectedValue(new Error('base caída'));
+        const res = await vuelta();
+        expect(res.headers.get('Location')).toContain('mp=error');
+        expect(m.save).not.toHaveBeenCalled();
     });
 });
 

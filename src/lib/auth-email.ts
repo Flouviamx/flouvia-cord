@@ -117,17 +117,23 @@ export async function sendTeamInviteEmail(to: string, orgName: string, token: st
 
 export type CambioDestinoDinero =
     | 'mp_conectado' | 'mp_cambiado' | 'mp_desconectado'
-    | 'banco' | 'cobros_desconectados' | 'cuenta_creada' | 'permiso' | 'sso';
+    | 'banco' | 'clabe' | 'cobros_desconectados' | 'cuenta_creada' | 'permiso' | 'sso'
+    | 'banco_vigente' | 'mp_vigente' | 'clabe_vigente' | 'revertido';
 
 const CAMBIO_DESTINO_KEY = {
     mp_conectado: 'authEmail.dinero.mp_conectado',
     mp_cambiado: 'authEmail.dinero.mp_cambiado',
     mp_desconectado: 'authEmail.dinero.mp_desconectado',
     banco: 'authEmail.dinero.banco',
+    clabe: 'authEmail.dinero.clabe',
     cobros_desconectados: 'authEmail.dinero.cobros_desconectados',
     cuenta_creada: 'authEmail.dinero.cuenta_creada',
     permiso: 'authEmail.dinero.permiso',
     sso: 'authEmail.dinero.sso',
+    banco_vigente: 'authEmail.dinero.banco_vigente',
+    mp_vigente: 'authEmail.dinero.mp_vigente',
+    clabe_vigente: 'authEmail.dinero.clabe_vigente',
+    revertido: 'authEmail.dinero.revertido',
 } as const;
 
 /**
@@ -143,7 +149,13 @@ const CAMBIO_DESTINO_KEY = {
 export async function notifyMoneyDestinationChange(
     orgId: string,
     cambio: CambioDestinoDinero,
-    opts: { detalle?: string | null; actorUserId?: string | null; ip?: string | null } = {},
+    opts: {
+        detalle?: string | null; actorUserId?: string | null; ip?: string | null;
+        /** Cuándo entra en vigor. Mientras tanto no sale ningún depósito a ese destino. */
+        efectivoDesde?: Date | null;
+        /** Enlace "No fui yo": revierte el cambio y congela los depósitos. */
+        revertirUrl?: string | null;
+    } = {},
 ): Promise<void> {
     try {
         const [[org], owners, [actor]] = await withOrgTx(orgId,
@@ -163,14 +175,19 @@ export async function notifyMoneyDestinationChange(
             `${t(L, CAMBIO_DESTINO_KEY[cambio])} <b>${nombre}</b>.`,
             opts.detalle ? `${t(L, 'authEmail.dinero.detalle')} ${escapeHtml(opts.detalle)}` : '',
             actor?.email ? `${t(L, 'authEmail.dinero.quien')} ${escapeHtml(String(actor.email))}${opts.ip ? ` (IP ${escapeHtml(opts.ip)})` : ''}` : '',
+            opts.efectivoDesde
+                ? `${t(L, 'authEmail.dinero.efectivo')} <b>${opts.efectivoDesde.toISOString().replace('T', ' ').slice(0, 16)} UTC</b>. ${t(L, 'authEmail.dinero.mientras')}`
+                : '',
             new Date().toISOString().replace('T', ' ').slice(0, 16) + ' UTC',
         ].filter(Boolean);
+        // Con enlace de reversa, el botón principal ES "No fui yo": es la acción
+        // que no puede esperar. Sin él, se lleva a Ajustes.
         const html = shell({
             titulo: t(L, 'authEmail.dinero.titulo'),
             cuerpo: lineas.join('<br>'),
-            ctaLabel: t(L, 'authEmail.dinero.boton'),
-            ctaHref: `${siteOrigin()}/app/ajustes/cobros`,
-            footer: t(L, 'authEmail.dinero.no_fui_yo'),
+            ctaLabel: opts.revertirUrl ? t(L, 'authEmail.dinero.boton_revertir') : t(L, 'authEmail.dinero.boton'),
+            ctaHref: opts.revertirUrl || `${siteOrigin()}/app/ajustes/cobros`,
+            footer: opts.revertirUrl ? t(L, 'authEmail.dinero.revertir_footer') : t(L, 'authEmail.dinero.no_fui_yo'),
         });
         for (const o of owners) {
             await sendEmail({
@@ -179,4 +196,40 @@ export async function notifyMoneyDestinationChange(
             });
         }
     } catch { /* el aviso nunca tumba la operación que ya se autorizó */ }
+}
+
+export type AvisoDepositos = 'prueba_inicio' | 'prueba_fin' | 'prueba_reingreso' | 'congelado';
+
+/**
+ * Avisa a los dueños cuando Cord toma o suelta el control de sus depósitos:
+ * el periodo de prueba de una cuenta nueva (o de vuelta a él) y el
+ * congelamiento por un "No fui yo". Mismo destinatario que el aviso de destino:
+ * el correo de la cuenta de cada dueño.
+ */
+export async function notifyPayoutControl(orgId: string, aviso: AvisoDepositos): Promise<void> {
+    try {
+        const [[org], owners] = await withOrgTx(orgId,
+            sql`select nombre, idioma from orgs where id = ${orgId}`,
+            sql`select distinct lower(u.email) as email
+                  from org_members m join users u on u.id = m.user_id
+                 where m.org_id = ${orgId} and m.rol = 'owner' and m.estado = 'activo'
+                   and u.email is not null and u.suspended_at is null
+                union
+                select lower(u.email) from orgs o join users u on u.id = o.owner_id
+                 where o.id = ${orgId} and u.email is not null and u.suspended_at is null`);
+        if (!org || !owners.length) return;
+        const L = org.idioma === 'en' ? 'en' : 'es';
+        const html = shell({
+            titulo: t(L, `authEmail.depositos.${aviso}_titulo` as any),
+            cuerpo: `${escapeHtml(String(org.nombre || 'Cord'))}<br>${t(L, `authEmail.depositos.${aviso}` as any)}`,
+            ctaLabel: t(L, 'authEmail.dinero.boton'),
+            ctaHref: `${siteOrigin()}/app/ajustes/cobros`,
+        });
+        for (const o of owners) {
+            await sendEmail({
+                to: String(o.email), subject: t(L, `authEmail.depositos.${aviso}_titulo` as any), fromName: FROM_NAME,
+                html, orgId, operation: 'payout_control_notice',
+            });
+        }
+    } catch { /* el aviso nunca tumba el control de depósitos */ }
 }
