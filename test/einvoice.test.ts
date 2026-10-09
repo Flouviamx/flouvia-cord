@@ -274,16 +274,20 @@ describe('Factur-X (PDF/A-3b) y el PDF de siempre', () => {
 
     it('Liberation reproduce las métricas con que el PDF calcula el layout', { timeout: 20_000 }, async () => {
         const fonts = await loadArchivalFonts();
-        // Diferencias conocidas de las tablas AFM de writer.ts (no de
-        // Liberation, que es métricamente compatible con Helvetica y Times):
-        // corregirlas cambiaría el PDF de siempre, así que se documentan aquí.
-        const KNOWN: Record<string, string> = { 'sans.regular': 'ßí', 'sans.bold': '€«»ß', 'serif.regular': '', 'serif.bold': '' };
-        const sample = Array.from({ length: 95 }, (_, i) => String.fromCharCode(32 + i)).join('') + 'áéíóúñüöäèàçÁÉÍÓÚÑÜÖÄß«»€';
+        // Liberation es métricamente compatible con Helvetica y Times en todo
+        // WinAnsi salvo cinco símbolos (¯ ± µ · ÷), donde copia los anchos de
+        // Arial y Times New Roman. Ahí el PDF de siempre se dibuja con la fuente
+        // estándar del visor, así que mandan las métricas AFM de Adobe.
+        const AFM_DIFIERE = '¯±µ·÷';
+        const winAnsi = Array.from({ length: 224 }, (_, i) => winAnsiCodePoint(i + 32))
+            .filter((cp): cp is number => cp != null && cp !== 0x7f)
+            .map((cp) => String.fromCodePoint(cp));
+        expect(winAnsi.length).toBeGreaterThan(200);
         for (const family of ['sans', 'serif'] as const) {
             for (const weight of ['regular', 'bold'] as const) {
                 const font = fonts[family][weight];
-                for (const ch of sample) {
-                    if (KNOWN[`${family}.${weight}`].includes(ch)) continue;
+                for (const ch of winAnsi) {
+                    if (AFM_DIFIERE.includes(ch)) continue;
                     const cp = ch.codePointAt(0)!;
                     const lib = (font.advance(font.glyphFor(cp)) * 1000) / font.unitsPerEm;
                     expect(Math.abs(measureText(ch, 1000, weight as FontKey, family) - lib), `${family} ${weight} ${ch}`).toBeLessThanOrEqual(1);
