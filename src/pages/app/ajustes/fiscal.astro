@@ -10,6 +10,8 @@ import { declaracionResponsableONull, DECLARACION_RUTA } from '../../../lib/fisc
 import { incidenciasVerifactu } from '../../../lib/fiscal/verifactu/incidencias';
 import ArcaSettings from '../../../components/app/settings/ArcaSettings.astro';
 import { estadoArca } from '../../../lib/fiscal/latam/arca/estado';
+import SiiSettings from '../../../components/app/settings/SiiSettings.astro';
+import { estadoSii } from '../../../lib/fiscal/latam/sii/estado';
 import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
 const ORG = await getOrg();
@@ -20,6 +22,8 @@ const isCa = ORG.countryCode === 'CA';
 const isEs = ORG.countryCode === 'ES';
 // Argentina: factura electrónica autorizada por ARCA (rieles fiscales de LatAm).
 const ARCA = ORG.countryCode === 'AR' ? await estadoArca(ORG.id).catch(() => null) : null;
+// Chile: DTE emitido directamente ante el SII.
+const SII = ORG.countryCode === 'CL' ? await estadoSii(ORG.id).catch(() => null) : null;
 const verifactuOn = ORG.verifactuModo === 'verifactu';
 // Certificado cargado no es lo mismo que registrar: con el envío a la AEAT
 // apagado no se encadena nada, y la pantalla no puede decir "activo".
@@ -388,6 +392,13 @@ const EINV_AUTO_LABEL = EINV_AUTO === 'facturx'
         <SettingsSection icon="shield" class="s-block">
             <Fragment slot="heading">{L === 'en' ? 'Electronic invoicing with ARCA' : 'Factura electrónica con ARCA'}</Fragment>
             <ArcaSettings estado={ARCA} locale={L === 'en' ? 'en' : 'es'} />
+        </SettingsSection>
+    )}
+
+    {SII && (
+        <SettingsSection icon="shield" class="s-block">
+            <Fragment slot="heading">{L === 'en' ? 'Electronic invoicing with the SII' : 'Factura electrónica con el SII'}</Fragment>
+            <SiiSettings estado={SII} locale={L === 'en' ? 'en' : 'es'} />
         </SettingsSection>
     )}
 </SettingsShell>

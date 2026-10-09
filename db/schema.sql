@@ -7078,6 +7078,8 @@ language plpgsql
 as $$
 begin
   if TG_OP = 'INSERT' then
+    -- Dos cargas simultáneas del mismo tipo se ordenan: la segunda ve la primera.
+    perform pg_advisory_xact_lock(hashtext('fiscal_sii_cafs:' || new.org_id::text || ':' || new.entorno || ':' || new.tipo_dte::text));
     if exists (
       select 1 from fiscal_sii_cafs c
        where c.org_id = new.org_id and c.entorno = new.entorno and c.tipo_dte = new.tipo_dte

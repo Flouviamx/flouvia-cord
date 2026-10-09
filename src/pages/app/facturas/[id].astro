@@ -20,6 +20,7 @@ import { currencyDecimals } from '../../../lib/currency';
 import { fmtTaxPct, splitTaxBucket } from '../../../lib/tax-components';
 import { estadoVerifactuFactura } from '../../../lib/fiscal/verifactu/incidencias';
 import ArcaEstadoFactura from '../../../components/app/facturas/ArcaEstadoFactura.astro';
+import SiiEstadoFactura from '../../../components/app/facturas/SiiEstadoFactura.astro';
 import { EXEMPTION_INFO, EXEMPTION_REASONS } from '../../../lib/fiscal/exemption';
 import { currentLocale } from '../../../lib/context';
 import { getInvoiceTimeline } from '../../../lib/fiscal/timeline';
@@ -665,6 +666,10 @@ const EINV_FIX: Record<string, { href: string; es: string; en: string }> = {
 
                         {String(f.pais || '').toUpperCase() === 'AR' && (
                             <ArcaEstadoFactura orgId={f.orgId ?? ''} documentoId={f.id} locale={L === 'en' ? 'en' : 'es'} />
+                        )}
+
+                        {String(f.pais || '').toUpperCase() === 'CL' && (
+                            <SiiEstadoFactura orgId={f.orgId ?? ''} documentoId={f.id} locale={L === 'en' ? 'en' : 'es'} />
                         )}
 
                     </aside>

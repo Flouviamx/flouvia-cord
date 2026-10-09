@@ -287,7 +287,7 @@ import { iconInner } from '../../lib/icons';
                 <p class="iv-payerr" id="ivPayErr" role="alert" hidden></p>
                 {f.estado !== 'void' && <div class="iv-dl">
                     <a href={`/api/i/${token}/documents/pdf`}>{t(L, 'fact.p_pdf')}</a>
-                    {f.pais === 'MX' && f.fiscalId && (
+                    {(f.pais === 'MX' || (f.pais === 'CL' && String(f.tipo || '').startsWith('sii_'))) && f.fiscalId && (
                         <a href={`/api/i/${token}/documents/xml`}>{t(L, 'fact.p_xml')}</a>
                     )}
                     {einv?.available.map((fmt) => (

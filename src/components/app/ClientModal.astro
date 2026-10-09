@@ -50,6 +50,9 @@ const orgIsEu = EU_COUNTRIES.has(ORG_COUNTRY);
 // factura (RG 5616/2024); sin ella, un cliente con CUIT no se puede facturar.
 // Solo con el riel encendido: sin él nada la lee (regla 15).
 const orgIsAr = ORG_COUNTRY === 'AR' && railConfig('arca').habilitado;
+// Chile: el DTE exige giro y comuna del receptor en cada factura. Solo con el
+// riel del SII encendido: sin él nada los lee (regla 15).
+const orgIsCl = ORG_COUNTRY === 'CL' && railConfig('sii').habilitado;
 
 // El cliente puede ser de CUALQUIER país, no solo de los que Cord ofrece al
 // darse de alta (regla 28: esto valida un dato ya guardado, no un catálogo
@@ -293,6 +296,25 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
                 </section>
             )}
 
+            {orgIsCl && (
+                <section class="cm-sec" id="cmFiscalCl" aria-labelledby="cmSecFiscalCl">
+                    <header class="cm-sec-h"><span class="cm-sec-i"><Icon name="document" size={15} /></span><h3 id="cmSecFiscalCl">{L === 'en' ? 'Tax details (SII)' : 'Datos tributarios (SII)'}</h3></header>
+                    <div class="m-row">
+                        <div class="m-field">
+                            <label for="cmGiro">{L === 'en' ? "Customer's line of business (giro)" : 'Giro del cliente'}</label>
+                            <input class="m-input" id="cmGiro" maxlength="40" autocomplete="off" />
+                        </div>
+                        <div class="m-field">
+                            <label for="cmComuna">{L === 'en' ? 'Comuna' : 'Comuna'}</label>
+                            <input class="m-input" id="cmComuna" maxlength="20" autocomplete="off" />
+                        </div>
+                    </div>
+                    <span class="m-hint">{L === 'en'
+                        ? 'The SII requires the RUT, legal name, line of business, address and comuna of the customer on every invoice.'
+                        : 'El SII exige en cada factura el RUT, la razón social, el giro, la dirección y la comuna del cliente.'}</span>
+                </section>
+            )}
+
             {orgIsMx && (
                 <section class="cm-sec" id="cmFiscal" aria-labelledby="cmSecFiscal">
                     <header class="cm-sec-h"><span class="cm-sec-i"><Icon name="document" size={15} /></span><h3 id="cmSecFiscal">{t(L, 'cmod.fiscal_summary')}</h3></header>
@@ -454,6 +476,7 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
         const cpLabel = document.getElementById('cmCpLabel')!;
         const fiscal = document.getElementById('cmFiscal');
         const fiscalAr = document.getElementById('cmFiscalAr');
+        const fiscalCl = document.getElementById('cmFiscalCl');
         const cfdiExt = document.getElementById('cmCfdiExt');
         const input = (id: string) => document.getElementById(id) as HTMLInputElement;
         const select = (id: string) => document.getElementById(id) as HTMLSelectElement | null;
@@ -561,6 +584,7 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
             if (!ccTouched) setCc(c);
             if (fiscal) fiscal.hidden = c !== 'MX';
             if (fiscalAr) fiscalAr.hidden = c !== 'AR';
+            if (fiscalCl) fiscalCl.hidden = c !== 'CL';
             if (cfdiExt) {
                 cfdiExt.hidden = c === 'MX';
                 const pais = select('cmCountry')?.selectedOptions[0]?.textContent?.trim() || c;
@@ -620,6 +644,7 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
             if (select('cmRegimen')) select('cmRegimen')!.value = data?.regimen ?? '';
             if (select('cmUso')) select('cmUso')!.value = data?.uso ?? '';
             if (select('cmCondIva')) select('cmCondIva')!.value = data?.condicionIva ?? '';
+            if (fiscalCl) { input('cmGiro').value = data?.giro ?? ''; input('cmComuna').value = data?.comuna ?? ''; }
             input('cmCp').value = data?.cp ?? '';
             input('cmDireccion1').value = data?.direccion1 ?? '';
             input('cmDireccion2').value = data?.direccion2 ?? '';
@@ -697,6 +722,9 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
                 uso_cfdi: fiscal && !fiscal.hidden ? select('cmUso')!.value : '',
                 // Sin el bloque (otro país u organización) se conserva lo guardado.
                 condicion_iva: fiscalAr && !fiscalAr.hidden ? select('cmCondIva')!.value : (editId ? (currentCondIva ?? '') : ''),
+                // Chile: sin el bloque visible no se mandan (undefined) y se conserva lo guardado.
+                giro: fiscalCl && !fiscalCl.hidden ? input('cmGiro').value : undefined,
+                comuna: fiscalCl && !fiscalCl.hidden ? input('cmComuna').value : undefined,
                 cp_fiscal: input('cmCp').value,
                 country_code: country(),
                 direccion_line1: input('cmDireccion1').value,

@@ -126,11 +126,14 @@ export async function contextoSii(orgId: string, entorno: EntornoRail, rutNegoci
     };
 }
 
-const claveAcceso = (ctx: ContextoSii): ClaveAcceso => ({ orgId: ctx.orgId, rail: 'sii', entorno: ctx.entorno, servicio: SERVICIO_TOKEN });
+/** Lo mínimo para autenticarse: la cuenta, el entorno y el certificado (sin los datos del DTE). */
+export type AccesoSii = Pick<ContextoSii, 'orgId' | 'entorno' | 'credencial'>;
+
+const claveAcceso = (ctx: AccesoSii): ClaveAcceso => ({ orgId: ctx.orgId, rail: 'sii', entorno: ctx.entorno, servicio: SERVICIO_TOKEN });
 const MSG_SII_CAIDO = 'El SII no está respondiendo en este momento. Reintenta en unos minutos.';
 
 /** Token del SII (semilla → semilla firmada → token), cacheado y renovado por una sola instancia. */
-export async function autenticar(ctx: ContextoSii, opts: { forzar?: boolean } = {}): Promise<string> {
+export async function autenticar(ctx: AccesoSii, opts: { forzar?: boolean } = {}): Promise<string> {
     const ticket = await obtenerTicket(claveAcceso(ctx), async () => {
         try {
             const semilla = await parsearRespuesta(await llamarSii(ctx.entorno, 'getSeed', sobreSemilla()), 'getSeed');
@@ -480,7 +483,7 @@ export async function emitirAnteSii(ctx: ContextoSii, documentoId: string, borra
     // Recibido: el veredicto suele llegar en segundos. Se espera un poco; si
     // no llega, el cron (y cada reintento) lo vuelve a consultar.
     const limite = Date.now() + esperaVeredictoMs;
-    for (let espera = 1_500; Date.now() + espera <= limite; espera = Math.min(espera * 2, 5_000)) {
+    for (let espera = Math.min(1_500, esperaVeredictoMs); espera > 0; espera = Math.min(espera * 2, 5_000, limite - Date.now())) {
         await dormir(espera);
         try {
             const v = await veredictoEnvio(ctx, (await intentoPorId(ctx.orgId, intento.id)) ?? intento, s.trackId);

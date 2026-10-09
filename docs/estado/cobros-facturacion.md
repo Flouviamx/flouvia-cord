@@ -695,6 +695,147 @@ que el CMS es legible (el WSAA llegó a evaluar el certificado), que los pedidos
 de Cord se deserializan en WSFEv1 (respuesta 600 por token y no `soap:Client`)
 y el TLS de los cuatro endpoints.
 
+### SII (Chile)
+
+Documento Tributario Electrónico enviado DIRECTO al SII, sin proveedor
+intermediario: Cord toma el folio, timbra, firma, sube y consulta el
+veredicto. Proveedor: `providers/ChileSiiProvider.ts`; riel: `latam/sii/`.
+Cobertura:
+
+- **Tipos**: factura electrónica (33), factura no afecta o exenta (34, cuando
+  todos los conceptos son exentos) y nota de crédito (61). La boleta (39/41), la
+  factura de exportación (110–112), la nota de débito (56), la guía de despacho
+  (52) y la boleta de honorarios no se emiten: se dice en Ajustes y, si el
+  documento lo requiere (cliente sin RUT, cliente extranjero sin RUT,
+  retención), se rechaza ANTES de tomar folio.
+- **Folios (CAF)**: el negocio descarga del SII el archivo de folios por tipo y
+  lo sube en Ajustes › Datos fiscales (`/api/fiscal/sii-folios`). Se valida que
+  sea del RUT del negocio, de un tipo que Cord emite y que la llave privada
+  (RSASK) sea la pareja de la pública (RSAPK); se guarda entero y cifrado en
+  `fiscal_sii_cafs` y nunca vuelve al navegador. `folio_siguiente` avanza con un
+  UPDATE atómico dentro del lease de la secuencia (`serie` = RUT emisor, `tipo`
+  = tipo de DTE) y **un folio usado no vuelve nunca**: un rechazo o un descarte
+  libera el documento, no el folio. El trigger de la tabla impide solapar
+  rangos, retroceder el folio, cambiar la identidad de un CAF o borrar uno con
+  folios usados. Vigencia de seis meses desde la autorización para 33 y 61
+  (Res. Ex. SII 58/2017; la 61 por prudencia), aviso cuando quedan
+  max(20, 10 %) o menos. La firma del SII sobre el CAF (`FRMA`) no se verifica:
+  el SII no publica sus llaves por `IDK`.
+- **Timbre electrónico**: `DD` aplanado en ISO-8859-1 y firmado SHA1withRSA con
+  la llave del CAF (`ted.ts`); PDF417 propio (`pdf417.ts`: compactación de
+  bytes, corrección de errores nivel 5, X ≥ 6,7 mils, fila 3X, entre 2 × 5 y
+  4 × 9 cm), impreso a 2 cm o más del borde izquierdo con "Timbre Electrónico
+  SII" y "Res. N de AAAA - Verifique documento: www.sii.cl".
+- **Firma**: XMLDSig RSA-SHA1, C14N inclusivo 20010315. El DTE se firma SUELTO,
+  sin declaración de espacio de nombres, y se inserta tal cual en el sobre; el
+  `SetDTE` se firma en el contexto del `EnvioDTE` (xmlns + xmlns:xsi). Es la
+  convención del SII: el DigestValue del ejemplo oficial F60T33 solo se
+  reproduce así (un verificador estándar que canonicaliza el DTE dentro del
+  sobre no lo valida, tampoco el del ejemplo oficial). Archivo en ISO-8859-1
+  con el schemaLocation en la segunda línea y saltos de línea tras cada
+  etiqueta.
+- **Autenticación**: semilla (`CrSeed`) firmada → token (`GetTokenFromSeed`),
+  cacheado 60 min en `fiscal_rail_accesos` (el manual no fija su vigencia) y
+  renovado ante los estados 001–003 de las consultas o el STATUS 5 del upload.
+  El certificado es de una PERSONA (el usuario autorizado ante el SII): su RUT
+  sale del `subjectAltName` (OID 1.3.6.1.4.1.8321.1) o se pide escrito, y va
+  como `RutEnvia`.
+- **Envío y veredicto**: `DTEUpload` devuelve un número de envío (trackid) y el
+  SII valida después. `QueryEstUp` "EPR" con aceptados o reparos → emitido
+  (`autorizacion` = trackid; los reparos quedan como observación); "EPR" con
+  rechazados o RSC/RFR/RCT → rechazado, con mensaje propio. Cord espera el
+  veredicto en línea hasta 12 s; si no llega, responde `delivery_uncertain` con
+  el trackid y lo terminan el cron `fiscal-latam` o el siguiente reintento, que
+  CONSULTAN. Sin respuesta legible del upload el intento queda `incierto` y se
+  resuelve con `QueryEstDte` por los datos del documento (DOK y similares →
+  emitido, `autorizacion` = `SII-<estado>`; FAN/FNA → descartado; sin registro
+  pasadas 2 h → descartado). Solo se reenvía el MISMO archivo cuando el SII dijo
+  que no lo recibió (STATUS 2, 3, 9, o 5 con token nuevo). Con trackid y sin
+  registro del DTE a las 24 h → rechazado.
+- **Montos**: pesos chilenos enteros (otra divisa sería exportación). IVA del
+  documento = round(neto × 19 %); Cord lo calcula por concepto y, si la suma
+  difiere, el documento NO se envía y el mensaje dice cuánto (el SII obligaría a
+  corregirlo con nota de crédito). Descuento de documento como `DescuentoMonto`
+  por línea con `MontoItem` neto; precio y cantidad solo se informan si
+  round(cantidad × precio) = monto + descuento. Retenciones: rechazadas (la de
+  honorarios es de la boleta de honorarios).
+- **Receptor**: RUT, razón social, giro, dirección y comuna, obligatorios en 33
+  y 34. `clientes.giro` y `clientes.comuna` son nuevos y el modal de cliente
+  los pide solo a clientes chilenos de una cuenta con el riel encendido.
+- **Emisor**: RUT y razón social de Identidad de facturación; en los ajustes
+  del riel: giro, actividades económicas (1 a 4), dirección (si difiere),
+  comuna, ciudad, sucursal y su código del SII, unidad del SII que imprime el
+  recuadro, y número y fecha de la resolución por entorno (0 en certificación).
+- **Nota de crédito**: `TpoDocRef`/`FolioRef`/`FchRef` de la factura aceptada,
+  `CodRef` 1 si anula el total y 3 si corrige montos, con el receptor de la
+  factura. Un DTE aceptado no se anula (`anulable: false`).
+- **Impresión** (`provider_data.latam.representacion`, campos `recuadro`,
+  `timbre` y `cedible`): recuadro rojo arriba a la derecha (RUT, tipo, N° de
+  folio) con "S.I.I. - <unidad>" debajo, filas de fecha, giros, comuna, forma de
+  pago, vencimiento, período, referencia y totalizadores, el timbre, y la copia
+  cedible de 33 y 34 (`/api/fiscal/documents/<id>/cedible`) con el acuse de
+  recibo de la Ley 19.983 y "CEDIBLE".
+- **XML al cliente**: la descarga `xml` (app y link público) entrega el DTE tal
+  como lo aceptó el SII dentro de un `EnvioDTE` dirigido al RUT del cliente,
+  firmado con el certificado vigente; sin certificado, el DTE firmado suelto.
+- **Certificación** (`SII_ENTORNO=homologacion`, maullin): número `C-FE-…`,
+  `simulado: true`, `livemode: false` y leyenda "sin validez tributaria".
+
+**Decisiones abiertas:** el IVA por concepto frente al del documento (hoy se
+rechaza la diferencia en vez de ajustar; la salida limpia es que el motor
+calcule el IVA chileno por documento); `fiscalId` = `<RUT>/T<tipo>/F<folio>`;
+los plazos de 2 h y 24 h; la vigencia de 60 min del token.
+
+**Verificación:** `npm run security:sii` (en `test:payments`) reproduce el
+timbre y los DigestValue del ejemplo oficial F60T33, valida los sobres 33, 34,
+61 y el de intercambio contra `EnvioDTE_v10.xsd`/`DTE_v10.xsd` (actualización
+06/02/2026, con controles negativos), verifica cada firma con la verificación
+propia y con la JDK (`scripts/sii-firmas.java`, si hay `java`), comprueba los
+síndromes y las medidas del PDF417, coteja endpoints y parámetros con los WSDL
+de maullin y palena y lee respuestas reales del SII (`scripts/fixtures/sii/`).
+`test/sii-db.test.ts` (PGlite + SII simulado) cubre aceptación, reparos,
+rechazo, validación diferida, respuesta perdida, STATUS 3 y 5, cron, nota de
+crédito, folios (concurrencia, agotamiento, trigger), XML para el cliente y
+RLS; `test/sii-comprobante.test.ts` las piezas puras.
+
+### Activación del SII paso a paso
+
+1. `npm run db:migrate` (o el despliegue, que aplica `db/deploy/2026-10-09-sii.sql`).
+2. **Certificado y postulación.** El representante del negocio obtiene un
+   certificado digital de una entidad acreditada y lo registra en el SII; luego
+   postula como emisor electrónico con sistema de mercado en el sitio del SII
+   (ambiente de certificación). La fecha que asigna el SII es la `FchResol` de
+   certificación; el número es 0.
+3. **Prueba técnica.** `npm run sii:prueba` comprueba red y TLS hasta maullin;
+   `SII_PRUEBA_PASSWORD='…' npm run sii:prueba -- --p12 cert.pfx` prueba la
+   autenticación (10 = certificado no registrado en el SII, 11 = firma
+   rechazada) y `--emitir --caf caf33.xml --folio N …` sube una factura de
+   prueba y consulta su estado. Fijado a certificación; nunca toca la base.
+4. **Certificación ante el SII** con `SII_ENABLED=true` y
+   `SII_ENTORNO=homologacion` en un Preview: el negocio pide folios de
+   certificación, los sube con su certificado y sus datos, y recorre las etapas
+   del SII — set de pruebas, simulación, intercambio de información y muestras
+   impresas (el PDF con timbre y la copia cedible) — y firma la declaración de
+   cumplimiento. **Pendiente para completarla:** el set de pruebas exige una
+   referencia "SET / CASO n" en cada documento y casos de tipos que Cord no
+   emite (nota de débito 56 y, según el set, guías y libros), y la etapa de
+   intercambio exige RECIBIR DTE y responder acuses (`RespuestaDTE`,
+   `EnvioRecibos`), que Cord no hace. Tampoco está verificado si Flouvia puede
+   registrarse ante el SII como proveedor de software certificado para
+   simplificar este trámite a sus clientes.
+5. **Producción.** Con la resolución del SII, cada negocio sube su certificado
+   y sus folios de producción (palena) y carga el número y la fecha de la
+   resolución; después `SII_ENTORNO=produccion` y `SII_ENABLED=true` en
+   Production. Certificados y folios se guardan por entorno.
+
+**Lo que no se pudo verificar sin un certificado registrado en el SII y un
+CAF real:** la obtención de un token, el upload con trackid, la aceptación de
+un DTE, los estados vivos de `QueryEstUp`/`QueryEstDte` más allá del token y
+la firma `FRMA` de un CAF real. Sí se verificó contra el SII real: la semilla
+de maullin, que GetTokenFromSeed evalúa la firma de Cord (10 con firma válida de
+un certificado no registrado frente a 11 con la firma alterada), las respuestas
+sin token de las dos consultas, el upload sin autenticar (STATUS 5) y el TLS.
+
 ## Documento de factura — ago 2026
 
 Fuera de México, el PDF que genera Cord **es** la factura que ve el comprador, así

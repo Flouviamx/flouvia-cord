@@ -124,6 +124,9 @@ function respuestaFallida(request: FiscalDocumentRequest, error: string, inciert
 }
 
 export class ChileSiiProvider implements FiscalProvider {
+    /** Cuánto se espera en línea el veredicto del SII tras el upload (las pruebas lo acortan). */
+    constructor(private readonly opciones: { esperaVeredictoMs?: number } = {}) {}
+
     supports(countryCode: string): boolean {
         return countryCode.toUpperCase() === RIELES.sii.pais;
     }
@@ -166,7 +169,7 @@ export class ChileSiiProvider implements FiscalProvider {
             }
 
             const borrador = await this.borrador(request, ctx);
-            const resultado = await emitirAnteSii(ctx, request.documentId, borrador);
+            const resultado = await emitirAnteSii(ctx, request.documentId, borrador, new Date(), this.opciones.esperaVeredictoMs);
             if (resultado.tipo === 'autorizado') return respuestaAutorizada(request, resultado.intento);
             if (resultado.tipo === 'en_validacion') {
                 return respuestaFallida(request, resultado.mensaje, true, { latam: { rail: 'sii', track_id: resultado.trackId } });
