@@ -36,6 +36,7 @@ export async function loadInvoiceDocumentRow(orgId: string, id: string, publicTo
            d.service_date::text as service_date, d.service_date_end::text as service_date_end,
            d.public_token as invoice_token, d.due_date as invoice_due,
            d.buyer_reference, d.purchase_order, d.payee_account, d.due_date::text as invoice_due_text,
+           d.delivery_address, d.credit_note_of,
            orig.invoice_number as credit_note_of_number, orig.issued_at as credit_note_of_issued_at,
            o.fiscal_metadata as org_fiscal_metadata,
            o.facturapi_live_key, o.facturapi_live_key_enc,
@@ -237,6 +238,7 @@ export async function invoicePdfInput(orgId: string, doc: any, simulated: boolea
     serviceDate: (doc.service_date as string) || null,
     serviceDateEnd: (doc.service_date_end as string) || null,
     creditNoteOfNumber: (doc.credit_note_of_number as string) || null,
+    deliveryAddress: doc.delivery_address && typeof doc.delivery_address === 'object' ? doc.delivery_address : null,
     verifactu: doc.provider_data?.verifactu || null,
     autoridad: representacionDe(doc.provider_data),
     // El "cómo pagar" es la página de LA FACTURA: ahí está el saldo real de

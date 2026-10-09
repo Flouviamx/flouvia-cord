@@ -35,7 +35,7 @@ import { iconInner } from '../../../lib/icons';
                 data-descripcion={p.descripcion} data-precio={String(p.precio)} data-costo={String(p.costo)}
                 data-activo={p.activo ? '1' : ''} data-volumen={JSON.stringify(p.preciosVolumen)}
                 data-tax={p.taxRate === null ? '' : String(p.taxRate)}
-                data-clave-sat={p.claveSat ?? ''} data-clave-unidad-sat={p.claveUnidadSat ?? ''} data-nfe={p.nfe}
+                data-clave-sat={p.claveSat ?? ''} data-clave-unidad-sat={p.claveUnidadSat ?? ''} data-naturaleza={p.naturaleza ?? ''} data-nfe={p.nfe}
             >{t(L, 'pdet.editar')}</button>
         )}
         <a class="dp-btn-primary" href="/app/cotizaciones/nueva">{t(L, 'pdet.cotizar')}</a>

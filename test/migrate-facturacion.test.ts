@@ -150,6 +150,24 @@ describe('migración de despliegue de facturación', () => {
             const nfeColumnas = (await db.query<{ c: string }>(`select table_name || '.' || column_name as c from information_schema.columns
                 where column_name = 'nfe' and table_name in ('productos', 'clientes') order by 1`)).rows.map((r) => r.c);
             expect(nfeColumnas).toEqual(['clientes.nfe', 'productos.nfe']);
+            // Francia, emisión por plataforma autorizada (db/deploy/2026-10-09-fr-pa.sql):
+            // las menciones que congela el documento, la cola con RLS forzada, su
+            // trigger de inmutabilidad y los resolutores del webhook.
+            const frPa = (await db.query<{ c: string }>(`select table_name || '.' || column_name as c from information_schema.columns
+                where (table_name, column_name) in (('documentos_fiscales', 'delivery_address'), ('productos', 'naturaleza')) order by 1`)).rows.map((r) => r.c);
+            expect(frPa).toEqual(['documentos_fiscales.delivery_address', 'productos.naturaleza']);
+            const rlsPa = (await db.query<{ relname: string }>(`select relname from pg_class
+                where relname in ('pa_altas', 'pa_envios', 'pa_estados', 'pa_cola')
+                  and relrowsecurity and relforcerowsecurity order by relname`)).rows.map((r) => r.relname);
+            expect(rlsPa).toEqual(['pa_altas', 'pa_cola', 'pa_envios', 'pa_estados']);
+            expect((await db.query(`select 1 from pg_trigger where tgname = 'trg_pa_envio_inmutable'`)).rows).toHaveLength(1);
+            const resolutores = (await db.query<{ proname: string; prosecdef: boolean }>(`select proname, prosecdef from pg_proc
+                where proname in ('cord_pa_org_de_alta', 'cord_pa_envio_de_proveedor', 'cord_pa_factura_por_numero') order by proname`)).rows;
+            expect(resolutores).toEqual([
+                { proname: 'cord_pa_envio_de_proveedor', prosecdef: true },
+                { proname: 'cord_pa_factura_por_numero', prosecdef: true },
+                { proname: 'cord_pa_org_de_alta', prosecdef: true },
+            ]);
 
             // Canadá: la QST suelta pasa a la combinada, y la tasa plana la sigue.
             expect((await db.query<{ nombre: string; tasa: string }>(`select nombre, tasa::text from impuestos where org_id = '${ORG_CA}'`)).rows)

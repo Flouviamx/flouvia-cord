@@ -69,6 +69,7 @@ const UNITS = PRODUCT_UNITS[L];
     data-i18n-sat-elegida={t(L, 'pmod.clave_sat_elegida')}
     data-i18n-creando={t(L, 'pmod.creando')} data-i18n-guardando={t(L, 'pmod.guardando')}
     data-show-delete={showDelete ? '1' : ''}
+    data-naturaleza-fr={PAIS === 'FR' ? '1' : ''}
 >
     <script type="application/json" id="pmUnits" is:inline set:html={jsonForScript(UNITS)} />
     <form method="dialog" class="m-form" id="prodForm" novalidate>
@@ -91,6 +92,7 @@ const UNITS = PRODUCT_UNITS[L];
                     <button type="button" class="chip" data-v="servicio"><Icon name="clock" size={14} />{t(L, 'pmod.tipo_servicio')}</button>
                     <button type="button" class="chip" data-v="suscripcion"><Icon name="refresh" size={14} />{t(L, 'pmod.tipo_suscripcion')}</button>
                 </div>
+                {PAIS === 'FR' && <span class="m-hint">{t(L, 'pmod.naturaleza_fr')}</span>}
                 <div class="m-field">
                     <label for="pmNombre">{t(L, 'pmod.nombre')}</label>
                     <input class="m-input" id="pmNombre" required maxlength="200" placeholder={t(L, 'pmod.nombre_ph')} />
@@ -625,7 +627,11 @@ const UNITS = PRODUCT_UNITS[L];
             setActivo(data ? Boolean(data.activo) : true);
             try { volTiers = JSON.parse(data?.volumen || '[]'); } catch { volTiers = []; }
             if (!Array.isArray(volTiers)) volTiers = [];
-            setKind(kindOf(data?.unidad ?? ''), !editId);
+            // Francia: la naturaleza guardada manda sobre la que sugiere la unidad.
+            const porUnidad = kindOf(data?.unidad ?? '');
+            setKind(data?.naturaleza === 'goods' ? 'bien'
+                : data?.naturaleza === 'services' && porUnidad === 'bien' ? 'servicio'
+                : porUnidad, !editId);
             updateMargin();
             syncUnidadHint();
             dlg.showModal();
@@ -698,6 +704,10 @@ const UNITS = PRODUCT_UNITS[L];
                     clave_sat: satKeyValue() || null,
                     clave_unidad_sat: claveUnidad?.value.trim().toUpperCase() || null,
                 } : {}),
+                // Francia: el tipo elegido es la naturaleza fiscal del concepto
+                // (categoría de la operación de la factura). Una suscripción o
+                // licencia es una prestación de servicios.
+                ...(I.naturalezaFr ? { naturaleza: kind === 'bien' ? 'goods' : 'services' } : {}),
                 precios_volumen: volTiers
                     .map((t2) => ({ min: Math.floor(Number(t2.min) || 0), precio: Math.max(0, Number(t2.precio) || 0) }))
                     .filter((t2) => t2.min > 0 && t2.precio > 0)

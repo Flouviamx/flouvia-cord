@@ -22,6 +22,9 @@ import SiiSettings from '../../../components/app/settings/SiiSettings.astro';
 import { estadoSii } from '../../../lib/fiscal/latam/sii/estado';
 import SpfeSettings from '../../../components/app/settings/SpfeSettings.astro';
 import { estadoSpfeOrg } from '../../../lib/fiscal/spfe/estado';
+import FrPaSettings from '../../../components/app/settings/FrPaSettings.astro';
+import { estadoPaOrg } from '../../../lib/fiscal/transmision/estado';
+import { ETIQUETA_REGIMEN, REGIMENES_TVA_ELEGIBLES } from '../../../lib/fiscal/transmision/periodos';
 import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
 const ORG = await getOrg();
@@ -50,6 +53,9 @@ const DECLARACION_DISPONIBLE = isEs && declaracionResponsableONull() !== null;
 const INCIDENCIAS_VF = isEs ? await incidenciasVerifactu(ORG.id).catch(() => []) : [];
 // España: factura electrónica entre empresarios por la solución pública de la AEAT.
 const SPFE = isEs ? await estadoSpfeOrg(ORG.id).catch(() => null) : null;
+// Francia: las menciones de la reforma y la emisión por plataforma autorizada.
+const isFr = ORG.countryCode === 'FR';
+const FR_PA = isFr ? await estadoPaOrg(ORG.id).catch(() => null) : null;
 const VF_INC_ESTADO: Record<string, string> = L === 'en'
     ? { rechazado: 'Rejected by the AEAT', bloqueado: 'Could not be sent', aceptado_con_errores: 'Registered with errors' }
     : { rechazado: 'Rechazada por la AEAT', bloqueado: 'No se pudo enviar', aceptado_con_errores: 'Registrada con errores' };
@@ -190,8 +196,8 @@ const EINV_AUTO_LABEL = EINV_AUTO === 'facturx'
             <Fragment slot="heading">{L === 'en' ? 'European e-invoicing' : 'Factura electrónica europea'}</Fragment>
             <div class="s-body">
                 <p class="csd-intro">{L === 'en'
-                    ? 'Each invoice can be downloaded as Factur-X (PDF with the XML inside), XRechnung or Peppol BIS (EN 16931), so your client can process it automatically. Cord generates and attaches them; it does not send them over the Peppol network or through an e-invoicing platform.'
-                    : 'Cada factura se puede descargar como Factur-X (PDF con el XML dentro), XRechnung o Peppol BIS (EN 16931) para que tu cliente la procese automáticamente. Cord las genera y las adjunta; no las envía por la red Peppol ni por una plataforma de facturación electrónica.'}</p>
+                    ? `Each invoice can be downloaded as Factur-X (PDF with the XML inside), XRechnung or Peppol BIS (EN 16931), so your client can process it automatically. Cord generates and attaches them; it does not send them over the Peppol network.${isFr ? ' In France it transmits them through the approved platform once your registration below is complete.' : ' It does not send them through an e-invoicing platform either.'}`
+                    : `Cada factura se puede descargar como Factur-X (PDF con el XML dentro), XRechnung o Peppol BIS (EN 16931) para que tu cliente la procese automáticamente. Cord las genera y las adjunta; no las envía por la red Peppol.${isFr ? ' En Francia las transmite por la plataforma autorizada cuando tu alta de abajo está completa.' : ' Tampoco las envía por una plataforma de facturación electrónica.'}`}</p>
                 {isEs && (
                     <p class="csd-intro">{L === 'en'
                         ? 'In Spain, each invoice can also be downloaded as Facturae 3.2.2, the Spanish format, which also declares the personal income tax withholding (IRPF). Factur-X, XRechnung and Peppol have no place for withholdings, so an invoice with IRPF is only available as Facturae.'
@@ -428,6 +434,52 @@ const EINV_AUTO_LABEL = EINV_AUTO === 'facturx'
                     ))}
                 </div>
             )}
+        </SettingsSection>
+    )}
+
+    {isFr && (
+        <SettingsSection icon="document" class="s-block">
+            <Fragment slot="heading">{L === 'en' ? 'E-invoicing in France' : 'Factura electrónica en Francia'}</Fragment>
+            <div class="s-body">
+                <div class="s-row">
+                    <div class="s-field">
+                        <label for="fFrRegime">{L === 'en' ? 'VAT regime' : 'Régimen de TVA'}</label>
+                        {FM.vat_regime === 'small_business' ? (
+                            <input class="s-input" id="fFrRegime" value={ETIQUETA_REGIMEN.franchise[L === 'en' ? 'en' : 'es']} disabled />
+                        ) : (
+                            <select class="s-input" id="fFrRegime" data-field="fiscal_fr_regime_tva">
+                                <option value="" selected={!FM.fr_regime_tva}>{L === 'en' ? 'Choose your regime' : 'Elige tu régimen'}</option>
+                                {REGIMENES_TVA_ELEGIBLES.map((r) => <option value={r} selected={FM.fr_regime_tva === r}>{ETIQUETA_REGIMEN[r][L === 'en' ? 'en' : 'es']}</option>)}
+                            </select>
+                        )}
+                        <span class="s-hint">{L === 'en'
+                            ? 'It sets how often your consumer and international sales are reported: by ten-day periods in the monthly standard regime, every month in the quarterly and simplified ones, every two months under the franchise.'
+                            : 'Decide cada cuánto se declaran tus ventas a particulares y con el extranjero: por décadas en el régimen real mensual, cada mes en el trimestral y el simplificado, cada dos meses en la franquicia.'}</span>
+                    </div>
+                    <div class="s-field">
+                        <label for="fFrNature">{L === 'en' ? 'Lines without a catalog product' : 'Conceptos sin producto del catálogo'}</label>
+                        <select class="s-input" id="fFrNature" data-field="fiscal_fr_nature_defaut">
+                            <option value="" selected={!FM.fr_nature_defaut}>{L === 'en' ? 'Not set' : 'Sin definir'}</option>
+                            <option value="goods" selected={FM.fr_nature_defaut === 'goods'}>{L === 'en' ? 'Goods' : 'Bienes'}</option>
+                            <option value="services" selected={FM.fr_nature_defaut === 'services'}>{L === 'en' ? 'Services' : 'Servicios'}</option>
+                        </select>
+                        <span class="s-hint">{L === 'en'
+                            ? 'French invoices state whether you sell goods, services or both. Products say it through their type; this applies to lines typed by hand. Without it, those invoices cannot be transmitted.'
+                            : 'La factura francesa dice si vendes bienes, servicios o ambos. Los productos lo dicen por su tipo; esto vale para los conceptos escritos a mano. Sin definirlo, esas facturas no se pueden transmitir.'}</span>
+                    </div>
+                </div>
+                <div class="s-field">
+                    <label class="s-toggle" style="margin-bottom:0.3rem">
+                        <input type="checkbox" id="fFrDebits" data-field="fiscal_fr_tva_debits" checked={FM.fr_tva_debits === 'true'} />
+                        <span class="s-toggle-track"><span class="s-toggle-thumb"></span></span>
+                        <span class="s-toggle-text">{L === 'en' ? 'I opted to pay VAT on debits' : 'Opté por pagar la TVA sobre los débitos'}</span>
+                    </label>
+                    <span class="s-hint">{L === 'en'
+                        ? 'With the option, VAT on your services is due when you invoice: the invoice says so and Cord does not report its payments. Without it, Cord reports each payment of a service.'
+                        : 'Con la opción, la TVA de tus servicios es exigible al facturar: la factura lo dice y Cord no comunica sus cobros. Sin ella, Cord comunica cada cobro de un servicio.'}</span>
+                </div>
+                {FR_PA && <FrPaSettings estado={FR_PA} locale={L} />}
+            </div>
         </SettingsSection>
     )}
 

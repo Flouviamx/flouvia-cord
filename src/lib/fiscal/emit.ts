@@ -379,7 +379,7 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string, do
     // `line_items_snapshot` del documento.
     sql`select ci.descripcion, ci.cantidad, ci.precio_unitario, ci.precio_negociado, ci.aprobado, ci.tax_rate, ci.exemption_reason, ci.tax_breakdown, ci.producto_id,
                ci.clave_sat as linea_clave_sat, ci.clave_unidad_sat as linea_clave_unidad_sat,
-               p.clave_sat, p.clave_unidad_sat, p.unidad as producto_unidad
+               p.clave_sat, p.clave_unidad_sat, p.unidad as producto_unidad, p.naturaleza as producto_naturaleza
         from cotizacion_items ci
         join cotizaciones c on c.id = ci.cotizacion_id
         left join productos p on p.id = ci.producto_id and p.org_id = c.org_id
@@ -462,6 +462,14 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string, do
     const causa = exemptionReasonFor(country, approvedItems[i]?.exemption_reason, rate);
     return causa ? { exemptionReason: causa } : {};
   };
+  // Francia: bien o servicio (categoría de la operación, BT-23; fr-ctc.ts),
+  // del producto o, sin él, lo que el negocio declaró en Ajustes.
+  const natureDefecto = metadata(head.fiscal_metadata).fr_nature_defaut;
+  const natureDe = (i: number): { nature?: 'goods' | 'services' } => {
+    if (country !== 'FR') return {};
+    const n = approvedItems[i]?.producto_naturaleza ?? natureDefecto;
+    return n === 'goods' || n === 'services' ? { nature: n } : {};
+  };
   const lines: FiscalLineItem[] = totals.lineas.map((l, i) => ({
     description: String(l.descripcion || 'Concepto').slice(0, 500),
     quantity: l.cantidad,
@@ -486,6 +494,7 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string, do
       unidad: approvedItems[i]?.producto_unidad,
     }, approvedItems[i]?.linea_clave_unidad_sat)),
     ...causaDe(i, l.tax_rate),
+    ...natureDe(i),
     // EE. UU.: el desglose por jurisdicción que se congeló al cotizar viaja
     // con su concepto; la tasa efectiva ya es `tax_rate`.
     ...(approvedItems[i]?.tax_breakdown ? { taxBreakdown: approvedItems[i].tax_breakdown } : {}),

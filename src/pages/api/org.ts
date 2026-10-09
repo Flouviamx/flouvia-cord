@@ -32,6 +32,7 @@ import { validateLateInterestRate } from '../../lib/late-interest-policy';
 import { normalizeTerm } from '../../lib/payment-terms';
 import { serieCompartida, serieCompartidaMensaje } from '../../lib/fiscal/serie';
 import { EINVOICE_EMAIL_MODES, einvoiceAddressLeitwegProblem, leitwegProblem, normalizeBic, normalizeEInvoiceAddress } from '../../lib/fiscal/einvoice/codes';
+import { REGIMENES_TVA_ELEGIBLES } from '../../lib/fiscal/transmision/periodos';
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
 
@@ -278,6 +279,25 @@ export const PATCH: APIRoute = async ({ request }) => {
         if (body.fiscal_facturae_firma === true || body.fiscal_facturae_firma === 'true') currentFiscalMetadata.facturae_firma = true;
         else delete currentFiscalMetadata.facturae_firma;
     }
+    // Francia (reforma de la facturación electrónica): régimen de TVA (decide
+    // la periodicidad del e-reporting), opción por los débitos (mención BT-8 y
+    // qué cobros se reportan) y si los conceptos sin producto son bienes o
+    // servicios (categoría de la operación). Texto, como el resto del bloque:
+    // partiesFrom() solo lee cadenas. La franquicia sigue en `vat_regime`.
+    if (body.fiscal_fr_regime_tva !== undefined) {
+        const v = String(body.fiscal_fr_regime_tva ?? '');
+        if ((REGIMENES_TVA_ELEGIBLES as readonly string[]).includes(v)) currentFiscalMetadata.fr_regime_tva = v;
+        else delete currentFiscalMetadata.fr_regime_tva;
+    }
+    if (body.fiscal_fr_tva_debits !== undefined) {
+        if (body.fiscal_fr_tva_debits === true || body.fiscal_fr_tva_debits === 'true') currentFiscalMetadata.fr_tva_debits = 'true';
+        else delete currentFiscalMetadata.fr_tva_debits;
+    }
+    if (body.fiscal_fr_nature_defaut !== undefined) {
+        const v = String(body.fiscal_fr_nature_defaut ?? '');
+        if (v === 'goods' || v === 'services') currentFiscalMetadata.fr_nature_defaut = v;
+        else delete currentFiscalMetadata.fr_nature_defaut;
+    }
 
     const vigDias = body.vigencia_default_dias !== undefined ? clamp(Math.round(Number(body.vigencia_default_dias) || 0), 1, 365) : actual.vigencia_default_dias;
     const termDef = body.terminos_default !== undefined ? normalizeTerm(body.terminos_default) : actual.terminos_default;
@@ -377,6 +397,12 @@ export const PATCH: APIRoute = async ({ request }) => {
     // La franquicia es un régimen de Francia y Alemania: al salir de esos
     // países (o en cualquier otro) no puede seguir imprimiendo su mención.
     if (countryCode !== 'FR' && countryCode !== 'DE') delete currentFiscalMetadata.vat_regime;
+    // Las menciones de la reforma francesa no existen fuera de Francia.
+    if (countryCode !== 'FR') {
+        delete currentFiscalMetadata.fr_regime_tva;
+        delete currentFiscalMetadata.fr_tva_debits;
+        delete currentFiscalMetadata.fr_nature_defaut;
+    }
     // Facturae es el formato español: fuera de España ni se adjunta ni se firma.
     if (countryCode !== 'ES') {
         delete currentFiscalMetadata.facturae_firma;

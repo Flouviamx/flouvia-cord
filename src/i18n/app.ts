@@ -2785,6 +2785,7 @@ export const appStrings = {
         "pmod.tipo_bien": "Producto",
         "pmod.tipo_servicio": "Servicio",
         "pmod.tipo_suscripcion": "Suscripción o licencia",
+        "pmod.naturaleza_fr": "En Francia, el tipo decide la categoría de la operación de tus facturas: un producto es una entrega de bienes; un servicio, una suscripción o una licencia, una prestación de servicios.",
         "pmod.impuesto": "Impuesto",
         "pmod.impuesto_default": "Predeterminado de tu negocio ({tasa})",
         "pmod.impuesto_hint": "Se aplica al agregarlo a una cotización o factura; puedes cambiarlo en cada línea.",
@@ -3482,6 +3483,7 @@ export const appStrings = {
         "fact.ev.credit_note": "Nota de crédito",
         "fact.ev.uncollectible": "Marcada incobrable",
         "fact.ev.verifactu": "Verifactu",
+        "fact.ev.plataforma": "Plataforma de facturación electrónica",
         // Facturas recurrentes
         "rec.titulo": "Facturas recurrentes",
         "rec.plan_titulo": "Factura una vez y deja que se repita sola",
@@ -6910,6 +6912,7 @@ export const appStrings = {
         "pmod.tipo_bien": "Product",
         "pmod.tipo_servicio": "Service",
         "pmod.tipo_suscripcion": "Subscription or license",
+        "pmod.naturaleza_fr": "In France, the type sets the transaction category on your invoices: a product is a supply of goods; a service, subscription or license is a supply of services.",
         "pmod.impuesto": "Tax",
         "pmod.impuesto_default": "Your business default ({tasa})",
         "pmod.impuesto_hint": "Applied when you add it to a quote or invoice; you can change it on each line.",
@@ -7607,6 +7610,7 @@ export const appStrings = {
         "fact.ev.credit_note": "Credit note",
         "fact.ev.uncollectible": "Marked uncollectible",
         "fact.ev.verifactu": "Verifactu",
+        "fact.ev.plataforma": "E-invoicing platform",
         // Facturas recurrentes
         "rec.titulo": "Recurring invoices",
         "rec.plan_titulo": "Invoice once and let it repeat itself",

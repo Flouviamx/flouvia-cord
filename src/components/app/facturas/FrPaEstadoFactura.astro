@@ -1,0 +1,128 @@
+---
+// Francia: la factura ante la plataforma autorizada, en el panel lateral de
+// /app/facturas/[id]. Cómo la trata la reforma (transmitida entre empresas o
+// declarada en el e-reporting), en qué va su envío y cada estado que notificó
+// la plataforma, con su motivo. Un 210 (rechazada por el cliente) o un 213
+// (rechazada por una plataforma) se dice con lo que toca hacer —anularla con
+// una nota de crédito, que no se transmite, y volver a facturar— y nadie lo
+// corrige solo. Mientras el riel esté apagado: "Próximamente" y si la factura
+// ya tiene lo que exige la reforma o qué le falta.
+import { estadoPaFactura } from '../../../lib/fiscal/transmision/estado';
+import type { AppLocale } from '../../../i18n/app';
+
+interface Props { orgId: string; documentoId: string; locale: AppLocale; }
+const { orgId, documentoId, locale: L } = Astro.props;
+const en = L === 'en';
+const e = orgId ? await estadoPaFactura(orgId, documentoId).catch(() => null) : null;
+
+const TRATAMIENTO = {
+    B2B: { es: 'Factura entre empresas establecidas en Francia: se transmite por la plataforma.', en: 'Invoice between businesses established in France: transmitted through the platform.' },
+    B2BINT: { es: 'Operación con una empresa establecida fuera de Francia: se declara (e-reporting).', en: 'Transaction with a business established outside France: reported (e-reporting).' },
+    B2C: { es: 'Venta a un particular: se declara en el resumen del día (e-reporting).', en: 'Sale to a consumer: reported in the daily summary (e-reporting).' },
+} as const;
+const ENVIO: Record<string, { es: string; en: string }> = {
+    pendiente: { es: 'En cola para enviarse', en: 'Queued to be sent' },
+    incierto: { es: 'Enviada, sin confirmación todavía', en: 'Sent, not confirmed yet' },
+    aceptado: { es: 'Recibida por la plataforma', en: 'Received by the platform' },
+    rechazado: { es: 'No se pudo transmitir', en: 'Could not be transmitted' },
+    descartado: { es: 'No llegó; se volverá a enviar', en: 'Did not arrive; it will be sent again' },
+};
+const fecha = (iso: string | null) => (iso ? new Intl.DateTimeFormat(en ? 'en-GB' : 'es-ES', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(iso)) : '');
+const ultimo = e?.estados[0] ?? null;
+const envioTitulo = e?.envio
+    ? (e.envio.tipo === 'factura' ? ENVIO[e.envio.estado] : {
+        pendiente: { es: 'Por declarar', en: 'To be reported' },
+        incierto: { es: 'Declarada, sin confirmación todavía', en: 'Reported, not confirmed yet' },
+        aceptado: { es: e.envio.confirmado ? 'Integrada en la declaración del periodo' : 'Declarada a la plataforma', en: e.envio.confirmado ? 'Included in the period declaration' : 'Reported to the platform' },
+        rechazado: { es: 'No se pudo declarar', en: 'Could not be reported' },
+        descartado: { es: 'No llegó; se volverá a declarar', en: 'Did not arrive; it will be reported again' },
+    }[e.envio.estado as 'pendiente'])
+    : null;
+---
+
+{e && (
+    <section class="fd-meta-section frpa-fe">
+        <div class="frpa-fe-head"><h2>{en ? 'E-invoicing platform' : 'Plataforma de facturación electrónica'}</h2></div>
+        <p class="frpa-fe-trat">{TRATAMIENTO[e.tratamiento][en ? 'en' : 'es']}</p>
+
+        {!e.activo ? (
+            <div class="frpa-fe-state is-proximamente">
+                <span class="frpa-fe-dot" aria-hidden="true"></span>
+                <span class="frpa-fe-copy">
+                    <strong>{en ? 'Coming soon' : 'Próximamente'}</strong>
+                    {e.faltantes.length === 0
+                        ? <small class="frpa-fe-ok">{en ? 'It already has everything the reform requires.' : 'Ya tiene todo lo que exige la reforma.'}</small>
+                        : <small>{en ? 'Missing to be transmitted:' : 'Le falta para transmitirse:'}</small>}
+                </span>
+            </div>
+        ) : e.envio ? (
+            <div class={`frpa-fe-state is-${ultimo?.rechazo ? 'rechazado' : e.envio.estado}`}>
+                <span class="frpa-fe-dot" aria-hidden="true"></span>
+                <span class="frpa-fe-copy">
+                    <strong>{ultimo ? (en ? ultimo.en : ultimo.es) : envioTitulo?.[en ? 'en' : 'es']}</strong>
+                    {ultimo?.fecha && <small>{fecha(ultimo.fecha)}</small>}
+                    {ultimo?.motivo && <small>{en ? 'Reason' : 'Motivo'}: {ultimo.motivo}</small>}
+                    {!ultimo && e.envio.mensaje && <small>{e.envio.mensaje}</small>}
+                    {ultimo?.rechazo && (
+                        <small class="frpa-fe-guia">{en
+                            ? 'A rejected invoice is not corrected: cancel it with a credit note (it is not transmitted, it is an accounting cancellation) and issue a new one with the right data.'
+                            : 'Una factura rechazada no se corrige: anúlala con una nota de crédito (no se transmite, es una anulación contable) y emite otra con los datos correctos.'}</small>
+                    )}
+                    {e.entorno === 'preproduccion' && <small>{en ? 'Platform test environment.' : 'Entorno de pruebas de la plataforma.'}</small>}
+                </span>
+            </div>
+        ) : (
+            <div class="frpa-fe-state is-pendiente">
+                <span class="frpa-fe-dot" aria-hidden="true"></span>
+                <span class="frpa-fe-copy">
+                    <strong>{e.sinAlta
+                        ? (en ? 'Not transmitted by Cord' : 'Cord no la transmite')
+                        : e.faltantes.length ? (en ? 'Cannot be transmitted yet' : 'Todavía no se puede transmitir') : (en ? 'Waiting for the next send' : 'Esperando el próximo envío')}</strong>
+                    {e.sinAlta && <small>{en
+                        ? 'It was issued before your registration with the platform was complete (Settings › Tax details).'
+                        : 'Se emitió antes de completar tu alta en la plataforma (Ajustes › Datos fiscales).'}</small>}
+                </span>
+            </div>
+        )}
+
+        {e.faltantes.length > 0 && !e.envio && (
+            <ul class="frpa-fe-obs">
+                {e.faltantes.map((p) => <li>{en ? p.en : p.es}</li>)}
+            </ul>
+        )}
+
+        {e.estados.length > 1 && (
+            <ol class="frpa-fe-hist">
+                {e.estados.slice(1, 8).map((s) => (
+                    <li><span>{en ? s.en : s.es}</span><time>{fecha(s.fecha)}</time></li>
+                ))}
+            </ol>
+        )}
+
+        {e.cobros.length > 0 && (
+            <p class="frpa-fe-cobros">{en ? 'Payments reported' : 'Cobros comunicados'}: {e.cobros.filter((c) => c.estado === 'aceptado').length}/{e.cobros.length}
+                {e.cobros.some((c) => c.estado === 'rechazado') && <span class="frpa-fe-err"> · {en ? 'one was not accepted' : 'uno no se admitió'}</span>}</p>
+        )}
+    </section>
+)}
+
+<style>
+    .frpa-fe-head h2 { font-size: 0.82rem; font-weight: 600; margin: 0 0 0.4rem; color: var(--color-text); }
+    .frpa-fe-trat { font-size: 0.75rem; color: var(--color-text-muted); line-height: 1.45; margin: 0 0 0.6rem; }
+    .frpa-fe-state { display: flex; gap: 0.6rem; align-items: flex-start; }
+    .frpa-fe-dot { width: 7px; height: 7px; margin-top: 0.35rem; border-radius: 50%; background: var(--color-text-muted); flex-shrink: 0; }
+    .frpa-fe-state.is-aceptado .frpa-fe-dot { background: var(--color-ok); }
+    .frpa-fe-state.is-pendiente .frpa-fe-dot, .frpa-fe-state.is-incierto .frpa-fe-dot, .frpa-fe-state.is-descartado .frpa-fe-dot, .frpa-fe-state.is-proximamente .frpa-fe-dot { background: #d97706; }
+    .frpa-fe-state.is-rechazado .frpa-fe-dot { background: var(--color-danger, #dc2626); }
+    .frpa-fe-copy { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .frpa-fe-copy strong { font-size: 0.82rem; color: var(--color-text); }
+    .frpa-fe-copy small { font-size: 0.75rem; color: var(--color-text-muted); line-height: 1.45; overflow-wrap: anywhere; }
+    .frpa-fe-copy .frpa-fe-ok { color: var(--color-ok); }
+    .frpa-fe-copy .frpa-fe-guia { color: var(--color-text); }
+    .frpa-fe-obs { margin: 0.6rem 0 0; padding-left: 1.1rem; font-size: 0.75rem; color: var(--color-text-muted); line-height: 1.45; }
+    .frpa-fe-hist { list-style: none; margin: 0.6rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.25rem; }
+    .frpa-fe-hist li { display: flex; justify-content: space-between; gap: 0.6rem; font-size: 0.74rem; color: var(--color-text-muted); }
+    .frpa-fe-hist time { flex-shrink: 0; }
+    .frpa-fe-cobros { font-size: 0.75rem; color: var(--color-text-muted); margin: 0.6rem 0 0; }
+    .frpa-fe-err { color: var(--color-danger, #dc2626); }
+</style>

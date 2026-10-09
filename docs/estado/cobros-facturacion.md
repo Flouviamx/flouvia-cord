@@ -313,10 +313,12 @@ Catálogos puros en `src/lib/fiscal/cfdi-catalogos.ts`.
   `model.ts` arma el modelo semántico y dice qué falta, `cii.ts`/`ubl.ts`
   serializan, `facturx.ts` + `src/lib/pdf/pdfa.ts` hacen el PDF/A, `server.ts`
   lo lee de la base.
-- **Sin transmisión.** Cord genera, deja descargar y adjunta al correo. No envía
-  por la red Peppol ni por una plataforma de facturación electrónica francesa
-  (PA/PDP): decisión de producto. Ajustes y el detalle de la factura lo dicen;
-  ninguna pantalla ofrece un envío que no existe (regla 15).
+- **Sin transmisión, salvo Francia.** Cord genera, deja descargar y adjunta al
+  correo. No envía por la red Peppol: decisión de producto. En Francia sí
+  transmite por una plataforma autorizada cuando el negocio completa su alta
+  (sección "Francia: emisión por plataforma autorizada"; apagado hasta que
+  Flouvia lo active). Ajustes y el detalle de la factura lo dicen; ninguna
+  pantalla ofrece un envío que no existe (regla 15).
 - **Fuente única: el snapshot.** El modelo se arma SOLO con lo congelado al
   emitir (`issuer_snapshot`, `recipient_snapshot`, `line_items_snapshot`,
   totales, `buyer_reference`, `purchase_order`, `payee_account`). Los importes
@@ -376,7 +378,8 @@ Catálogos puros en `src/lib/fiscal/cfdi-catalogos.ts`.
   `orgs.fiscal_metadata` `contact_name`, `contact_phone`, `einvoice_address`
   ("esquema EAS:id", validado contra la lista de BR-CL-25), `legal_registration_id`,
   `bic`, `einvoice_email` (`off`, `facturx`, `xrechnung` o, solo en España,
-  `facturae`) y `facturae_firma` (solo España). El cliente: `clientes.einvoice_address` y
+  `facturae`) y `facturae_firma` (solo España); en Francia `fr_regime_tva`,
+  `fr_tva_debits` y `fr_nature_defaut` (sección de Francia). El cliente: `clientes.einvoice_address` y
   `buyer_reference` (la que toman sus facturas por defecto). La factura:
   `documentos_fiscales.buyer_reference`/`purchase_order` (editor, POST
   /api/facturas, update_draft, /api/v1/facturas) y `payee_account` (IBAN
@@ -409,7 +412,7 @@ Catálogos puros en `src/lib/fiscal/cfdi-catalogos.ts`.
   Times New Roman.
 - **Verificación:** `test/einvoice.test.ts` (rápido) y
   `npm run security:einvoice` (`scripts/einvoice-check.mjs`, en CI con
-  `.github/workflows/einvoice.yml`): catorce muestras EN 16931
+  `.github/workflows/einvoice.yml`): dieciocho muestras EN 16931
   (`test/helpers/einvoice-samples.ts`, con IGIC 7 % + 3 %, IGIC con un 0 % e
   IPSI 4/10/0 %) en cada formato que admiten contra XSD UBL 2.1/CII
   D16B/Factur-X, schematron CEN 1.3.16, KoSIT 1.6.3 + XRechnung 3.0.2
@@ -421,7 +424,10 @@ Catálogos puros en `src/lib/fiscal/cfdi-catalogos.ts`.
   validador debe rechazar, entre ellos un IGIC con causa de exención (CEN y
   Peppol), un IGIC al 0 % en CII (CEN y KoSIT), un TaxTypeCode fuera de la
   lista (XSD), un importe y una hora de firma alterados después de firmar
-  (XMLDSig) y un elemento XAdES inventado (XSD). Artefactos con URL y SHA-256 fijos en `.cache/einvoice/` o
+  (XMLDSig) y un elemento XAdES inventado (XSD). Las cuatro muestras de la
+  reforma francesa (`fr-ctc-*`) pasan además por el schematron BR-FR del
+  flujo 2 de FNFE-MPE v1.4.0.04 con su XSD y su Factur-X 1.09.2, con cuatro
+  controles negativos propios (diecisiete en total). Artefactos con URL y SHA-256 fijos en `.cache/einvoice/` o
   `EINVOICE_TOOLS_DIR`; sin Java/xmllint/red se omite con aviso salvo con
   `EINVOICE_VALIDATION_REQUIRED=1`. Avisos aceptados, no errores:
   PEPPOL-EN16931-R008 del schematron Factur-X (`ApplicableHeaderTradeDelivery`
@@ -429,7 +435,8 @@ Catálogos puros en `src/lib/fiscal/cfdi-catalogos.ts`.
   (recomienda fecha de prestación cuando el emisor no es alemán y no la
   capturó) y el aviso aritmético de Mustang en la muestra de redondeo (recalcula
   el IVA por tasa en vez de sumar el redondeado por línea; dentro de BR-CO-17).
-- **Pendiente:** transmisión (Peppol Access Point, PA francesa, FACe), los
+- **Pendiente:** transmisión por Peppol Access Point y FACe (la plataforma
+  autorizada francesa tiene su sección: construida y apagada), los
   códigos DIR3 de la Facturae para la administración pública española
   (`AdministrativeCentres`), Order-X y el perfil EXTENDED. El envío por la
   solución pública de la AEAT tiene su sección: construido y apagado hasta que
@@ -791,6 +798,260 @@ Lo que falta está enumerado en `PENDIENTES_AEAT` (`normativa.ts`):
    `db/deploy/2026-10-09-spfe.sql`), después `SPFE_ENTORNO=produccion` y
    `SPFE_ENABLED=true` en Production, y redesplegar, antes del 6-10-2027 para
    los clientes de más de 8 M€.
+
+## Francia: emisión por plataforma autorizada — oct 2026
+
+Cord **emite** por una plataforma autorizada (PA) las facturas entre empresas
+establecidas en Francia, **declara** (e-reporting) las ventas a particulares y
+con empresas extranjeras, y **comunica los cobros** cuando la TVA es exigible
+al cobro. Construido y **apagado** (`IOPOLE_ENABLED`): la pantalla dice
+"Próximamente" hasta que Flouvia complete los pasos de abajo. La plataforma es
+**Iopole**; el proveedor es intercambiable (`src/lib/fiscal/transmision/`).
+
+### Norma y calendario
+
+- CGI art. 289 bis (factura electrónica entre empresas) y 290 A (datos de
+  transacción y de pago). Fuente técnica: DGFiP, *Spécifications externes*
+  v3.2 (30/04/2026): Dossier général, Annexe 1 (formato del flujo 1),
+  Annexe 2 (ciclo de vida), Annexe 6 (e-reporting) y Annexe 7 v1.9 (reglas
+  de gestión). Reglas de la factura: norma AFNOR XP Z12-012 v1.4,
+  implementada por el schematron BR-FR del flujo 2 de FNFE-MPE v1.4.0.04
+  (04/09/2026). FAQ "Tout savoir sur la facturation électronique" (ago 2026).
+- Desde el **1/9/2026** toda empresa establecida en Francia debe poder
+  **recibir** facturas electrónicas; grandes empresas y ETI además emiten y
+  declaran. PYME y microempresas emiten y declaran desde el **1/9/2027**.
+  Adelantarse es válido.
+
+### Qué hace Cord y qué no
+
+- **Solo emisión.** El alta en la plataforma se pide con
+  `registrationStrategy: 'NONE'` (no registra ninguna dirección de recepción
+  en el annuaire) y `operatorRelation.direction: 'OUTBOUND'`. Recibir exige
+  mostrar las facturas recibidas y Cord no las muestra; registrar una
+  dirección además la movería desde la plataforma de recepción que el negocio
+  ya tenga. Ajustes lo dice: el negocio necesita su plataforma de recepción.
+- **B2B** (emisor y cliente franceses, cliente con SIREN): el Factur-X
+  EN 16931 de la factura se transmite (flujo 2). Sus cobros, si la TVA es
+  exigible al cobro, como estado **212 "Encaissée"** (flujo 6).
+- **B2BINT** (cliente establecido fuera de Francia con identificador fiscal):
+  bloque **10.1** del e-reporting, uno por factura; sus cobros en el **10.2**.
+- **B2C** (particular, francés o no): agregado **10.3** por día cerrado,
+  divisa y categoría (TLB1 bienes, TPS1 servicios, TNT1 fuera del ámbito de la
+  TVA francesa); lo cobrado del día en el **10.4**.
+- **Cobros:** solo servicios, sin la opción por los débitos, ni
+  autoliquidación ni fuera de ámbito (nota 119 del Dossier général). Un pago se
+  reparte por tasa en proporción al importe con impuesto de cada grupo de
+  servicios (G7.45); en una factura mixta solo viaja la parte de servicios.
+  Una **devolución** va como 212 en negativo con motivo (P1.17 del Annexe 2);
+  en el e-reporting de pagos la API no admite negativos
+  (`collectedAmount: ^\d+(\.\d{1,2})?$`): la devolución queda bloqueada con su
+  motivo para regularizarla en la consola de la plataforma. El 10.2 y el 10.4
+  van en euros: con la `fx_rate` congelada del documento o bloqueados.
+
+### Menciones de la factura (todas las facturas francesas, con o sin plataforma)
+
+`src/lib/fiscal/einvoice/fr-ctc.ts` + `model.ts`, sacadas del snapshot:
+
+- **Categoría de la operación** (BT-23, B1/S1/M1, BR-FR-08) de la naturaleza
+  de cada línea: `productos.naturaleza` (`goods`/`services`, el tipo del
+  producto en su modal; suscripción o licencia = servicio) o, sin producto,
+  `fiscal_metadata.fr_nature_defaut`. Se congela en `line_items_snapshot`
+  (`nature`). Sin ella, la factura se escribe como antes de la reforma y no se
+  puede transmitir (`fr_operation_category`).
+- **Opción por los débitos** (`fiscal_metadata.fr_tva_debits`, congelada como
+  `issuer_snapshot.vatOnDebits`): BT-8 con código 5 en CII y 3 en UBL, solo
+  con servicios (G1.43); el PDF imprime "Option pour le paiement de la taxe
+  d'après les débits".
+- **SIREN del cliente**: un SIRET va como identificador (BT-46, 0009) y su
+  SIREN como registro legal (BT-47, 0002); la dirección electrónica del
+  cliente es la de su SIREN en el annuaire (0225, BR-FR-12/21) si la capturada
+  no lo es. La del emisor, la suya 0225.
+- **Dirección de entrega** si difiere de la del cliente y no es solo de
+  servicios (G6.16): `documentos_fiscales.delivery_address`, en el editor de
+  facturas (solo Francia).
+- Además: nota BAR "B2B" (BR-FR-20, fuera de la nota única de Peppol), precio
+  bruto (BT-148) y neto a seis decimales. `frCtcProblems()` dice lo que impide
+  transmitir: SIREN del emisor, número de factura (35 caracteres de
+  `A-Za-z0-9+-_/`), tasa francesa, cuatro decimales en la cantidad, TVA en
+  euros, nota de crédito que cita la factura y su fecha.
+
+### Régimen de TVA y plazos del e-reporting
+
+`fiscal_metadata.fr_regime_tva` (`reel_mensuel`, `reel_trimestriel`,
+`simplifie`; la franquicia sale de `vat_regime`). Viaja en el alta
+(`vatRegime`) y fija los plazos (`periodos.ts`, Tableau 13 del Dossier
+général, columna "date limite de transmission … à la plateforme agréée"):
+
+| Régimen | Transacciones | Pagos |
+|---|---|---|
+| Réel normal mensuel | décadas: 1-10 → día 20; 11-20 → último día del mes; 21-fin → día 10 siguiente | mes → día 10 siguiente |
+| Réel normal trimestriel | mes → día 10 siguiente | mes → día 10 siguiente |
+| Simplifié | mes → último día del mes siguiente | ídem |
+| Franchise | bimestre civil → último día del mes siguiente | ídem |
+
+Cord manda cada día en cuanto cierra (la plataforma agrupa en el expediente
+del periodo); `pa_envios.periodo`/`fecha_limite` dicen el plazo y Ajustes
+cuenta lo vencido.
+
+### Proveedor de transmisión e Iopole
+
+- **Puerto** (`proveedor.ts`): alta, consulta del alta y de la entidad, envío
+  de la factura, búsqueda y su historial, cobro, y los cuatro bloques de
+  e-reporting, en vocabulario de Cord. La cola, el alta y los eventos solo
+  hablan con él; otra plataforma es otro adaptador (`activo.ts`).
+- **Iopole** (`transmision/iopole/`): OAuth 2.0 `client_credentials` del
+  realm `iopole` (token de una hora). Hosts: preproducción
+  `api.ppd.iopole.fr` / `auth.preprod.iopole.fr`; producción `api.iopole.com`
+  / `auth.iopole.com`. Rutas y cuerpos en `cuerpos.ts`, contra la OpenAPI del
+  operador fijada en `scripts/fixtures/iopole/` (preproducción, 09/10/2026;
+  la de producción solo difiere en la URL del token).
+- **Errores:** red, 5xx o respuesta ilegible → incierto (se consulta); 401,
+  403, 429 → nada se procesó, vuelve a la cola y la organización se pausa
+  15 min; otro 4xx → rechazado, final y a la vista. El mensaje del proveedor
+  queda en el log y en `respuesta`; la pantalla dice qué pasó (regla 14). El
+  nombre de la plataforma solo aparece en el botón donde el negocio firma su
+  mandato.
+- **Webhook** `/api/fiscal/iopole/webhook` (público, exento de CSRF, GET de
+  sonda): HMAC-SHA256 de `X-Timestamp\nMÉTODO\nruta?consulta\nsha256(cuerpo)`
+  con `IOPOLE_WEBHOOK_SECRET`, `X-Checksum` opcional, ventana de diez
+  minutos. Tres URL (`?tipo=status|onboarding|events`) registradas con
+  `npm run iopole:webhook`: estados de lo EMITIDO (`filterStreamDirection:
+  'OUTBOUND'`), etapas del alta y los eventos `OUTBOUND_INVOICE_NOT_DELIVERED`,
+  `OUTBOUND_STATUS_INVALID/NOT_ALLOWED` y `EREPORTING_*`. La organización se
+  resuelve con `cord_pa_org_de_alta`, `cord_pa_envio_de_proveedor` y
+  `cord_pa_factura_por_numero` (`security definer`); responde JSON vacío y 500
+  ante un fallo para que Iopole reintente. Los avisos son "al menos una vez":
+  `pa_estados` es único por id de estado y una etapa vieja no retrocede el alta.
+
+### Alta del negocio
+
+Ajustes › Datos fiscales › Factura electrónica en Francia → "Darme de alta en
+la plataforma" (`/api/fiscal/plataforma`: permiso de Ajustes, sesión reciente,
+plan con facturación fiscal). Toma SIREN, régimen, correo y dirección del
+perfil y, opcional, el representante legal; devuelve el enlace donde el
+negocio verifica su identidad y firma el mandato. `pa_altas` guarda una viva
+por organización y entorno con su etapa. La creación no es idempotente en la
+API (cada POST crea otra): la fila se escribe antes, una respuesta perdida se
+resuelve consultando el alta en curso por SIREN y, sin rastro en dos horas,
+queda descartada; nunca se repite sola. El aviso `COMPLETED` la completa; la
+cola consulta cada hora como respaldo y guarda el id de la entidad.
+
+### La cola (`cola.ts`, `/api/cron/fiscal-plataforma`)
+
+Horaria en `cord-crons.yml`, diaria de respaldo en `vercel.json`. Por
+organización de Francia con alta completada, con lease en `pa_cola`:
+
+1. **Descubre** sin red lo emitido desde `completada_at`. Cada envío se
+   escribe antes de salir en `pa_envios` con su `clave` (un intento vivo por
+   clave: `factura:<doc>`, `cobro:p:<pago>`, `tx:<día>:<divisa>:<n>`…) y su
+   contenido inmutable (el PDF del Factur-X en `archivo` con su SHA-256, o el
+   cuerpo neutro en `datos`). Lo que no se puede transmitir se escribe como
+   **rechazado sin salir**, con su motivo: se ve una vez y no se reevalúa.
+2. **Envía**, marcando `enviado_at` antes.
+3. **Resuelve por consulta**: una factura incierta se busca por emisor y
+   número (`/v1.1/invoice/search`); un cobro, en el historial de la factura
+   (un 212 posterior al envío). Encontrado → aceptado; sin rastro en 24 h →
+   descartado y la siguiente pasada escribe uno nuevo (la plataforma además
+   rechaza una factura duplicada). El primer estado que llega por webhook
+   también resuelve una factura incierta. El e-reporting no tiene consulta por
+   envío: un incierto queda a la vista y no se repite.
+
+Estados de `pa_envios` (trigger `cord_pa_envio_inmutable`): pendiente →
+aceptado | rechazado | incierto | descartado; incierto → aceptado |
+descartado; aceptado → rechazado (rechazo asíncrono del e-reporting).
+
+### Estados de la factura y rechazos
+
+`pa_estados` guarda cada estado (200 a 213 y 501) con su motivo, y deja un
+renglón `plataforma` en la historia de la factura ("Estado 213 · Rechazada por
+una plataforma: motivo", traducido al pintar). Un **210** (rechazada por el
+cliente) o **213** (rechazada por una plataforma) se muestra con lo que toca:
+el Dossier général pide una **anulación contable sin flujo** — Cord no
+transmite la nota de crédito de una factura rechazada — y una factura nueva
+con los datos correctos. Nada se corrige solo.
+
+### Pantallas
+
+- **Ajustes › Datos fiscales** (Francia): régimen, opción por los débitos y
+  naturaleza por defecto (se guardan con el resto del perfil y alimentan las
+  menciones aunque el riel esté apagado); `FrPaSettings.astro` con el alta, el
+  enlace del mandato, el aviso de recepción, la cola (en cola, sin
+  confirmación, vencidos, pausa) y lo que necesita atención.
+- **Detalle de la factura** (`FrPaEstadoFactura.astro`): cómo la trata la
+  reforma, su envío, cada estado con fecha y motivo, los cobros comunicados y,
+  antes de enviarse, si tiene lo que exige la reforma o qué le falta.
+
+### Verificación
+
+- `npm run security:einvoice`: las cuatro muestras francesas
+  (`fr-ctc-*`) contra el XSD Factur-X 1.09.2, el schematron BR-FR del flujo 2
+  (todas sus reglas fatales) y el Factur-X 1.09.2 del paquete FNFE v1.4.0.04,
+  con cuatro controles negativos (sin cadre, sin PMT, tasa inexistente,
+  dirección del cliente fuera del annuaire). Siguen pasando KoSIT, CEN, Peppol
+  y veraPDF.
+- `npm run security:fr-pa` (`scripts/fr-pa-check.mjs`, en `test:payments`,
+  sin red): SHA-256 de la OpenAPI fijada, URL del token, cada ruta usada en la
+  especificación, cada cuerpo armado desde las muestras contra el esquema de su
+  operación, cada campo leído en el esquema de su respuesta, los códigos
+  interpretados en sus listas, firma del webhook y superficie (CSRF, ruta
+  pública, cron). Controles negativos que el validador debe rechazar.
+- `test/fr-pa-db.test.ts`: PGlite con el esquema real y una Iopole simulada a
+  nivel HTTP que solo atiende las rutas de la OpenAPI fijada y valida cuerpos
+  y respuestas. `test/fr-pa.test.ts`: periodos, estados, reparto, agregados,
+  firma. `test/einvoice.test.ts`: las menciones.
+- **Verificado contra la especificación publicada:** autenticación y hosts,
+  rutas, esquemas de petición y respuesta, etapas del alta, códigos de estado,
+  eventos, firma HMAC, formato de los avisos documentados.
+- **No verificable sin credenciales:** el token real, un alta y su KYC, un
+  envío y sus estados reales, la sintaxis de búsqueda con `seller.siren` y
+  `createdDate` (campos de los ejemplos oficiales), la forma exacta de los
+  eventos `OUTBOUND_*` (no publicada), la cabecera de idempotencia del
+  webhook (no publicada; Cord deduplica por id), y si producción admite
+  `registrationStrategy: 'NONE'` en el contrato de Flouvia.
+
+### Activación paso a paso
+
+**Flouvia (una vez):**
+
+1. Crear la cuenta de operador de pruebas en **Iopole Labs**
+   (https://labs.iopole.io, "create your own sandbox environment") y obtener
+   `clientId`/`clientSecret` de preproducción. Confirmar con Iopole que el
+   operador tiene el módulo de alta (onboarding) y que admite altas solo de
+   emisión (`registrationStrategy: 'NONE'`).
+2. En un Preview: `IOPOLE_ENABLED=true`, `IOPOLE_ENTORNO=preproduccion`,
+   `IOPOLE_CLIENT_ID`, `IOPOLE_CLIENT_SECRET`, `IOPOLE_WEBHOOK_SECRET`
+   (`openssl rand -hex 32`) y `SITE`. Registrar el webhook con
+   `npm run iopole:webhook -- --dry-run` y luego sin `--dry-run`.
+3. Probar de punta a punta con una organización francesa de prueba: alta y
+   mandato, una factura B2B (estados 200/202…), una venta a particular (el
+   día siguiente, 10.3), un cobro de servicios (212 o 10.4) y una factura a
+   una empresa de otro país (10.1).
+4. **Contrato de producción** con Iopole (operador, tarifas, mandato). Con las
+   credenciales de producción: las mismas variables con
+   `IOPOLE_ENTORNO=produccion` en Production, `npm run iopole:webhook` contra
+   producción y redesplegar. La migración (`db/deploy/2026-10-09-fr-pa.sql`)
+   la aplica el despliegue.
+
+**Cada negocio:**
+
+1. Datos fiscales: SIREN (o su TVA, que lo contiene), dirección, correo,
+   **régimen de TVA**, la **opción por los débitos** si la tiene y la
+   naturaleza por defecto de los conceptos sin producto; en el catálogo, el
+   tipo de cada producto (bien o servicio).
+2. "Darme de alta en la plataforma" y, en la página de Iopole, verificar su
+   identidad y firmar el mandato.
+3. Mantener su **plataforma de recepción**: Cord no recibe facturas.
+
+### Pendiente
+
+- La API de Iopole no tiene modificación ni borrado de e-reporting ("under
+  construction"): un dato declarado no se corrige desde Cord.
+- Anulación de una factura ya transmitida: Cord no la anula ante la
+  plataforma; la corrección es una nota de crédito transmitida.
+- Facturas con IRPF, autofacturación, multivendedor, anticipos (B2/S2/M2…) y
+  el margen (TMA1): no se emiten por la plataforma.
+- `/api/v1` todavía no recibe `delivery_address`.
+- Recepción de facturas de proveedores: fuera de alcance a propósito.
 
 ## Facturación internacional — ago 2026
 

@@ -1,7 +1,7 @@
 ---
 title: "Factura electrónica: Factur-X, XRechnung, Peppol y Facturae"
 seoTitle: "Factura electrónica: Factur-X, XRechnung, Peppol y Facturae"
-description: "Descarga cada factura como Factur-X, XRechnung o Peppol BIS (EN 16931), o como Facturae en España, adjúntala al correo y prepárate para la factura electrónica entre empresas de la AEAT."
+description: "Descarga cada factura como Factur-X, XRechnung o Peppol BIS (EN 16931), o como Facturae en España, adjúntala al correo, emítela por plataforma autorizada en Francia y prepárate para la factura electrónica entre empresas de la AEAT."
 lastUpdated: "2026-10-09"
 reviewedBy: "Producto y operaciones de Cord"
 appliesToMarkets: [ES, DE, FR]
@@ -37,9 +37,10 @@ Esta función es nueva y puede no estar habilitada todavía en tu cuenta. Si no 
 
 <Callout type="warning">
 Cord **genera** estos archivos, te deja descargarlos y puede adjuntarlos al correo de la
-factura. **No los envía** por la red Peppol, ni por una plataforma de facturación
-electrónica francesa, ni a FACe. Si tu cliente te pide recibirlos por Peppol, descárgalos
-y súbelos a tu proveedor de acceso.
+factura. **No los envía** por la red Peppol ni a FACe. Si tu cliente te pide recibirlos
+por Peppol, descárgalos y súbelos a tu proveedor de acceso. En Francia, Cord sí los
+transmite por una plataforma autorizada: ver [Factura electrónica en
+Francia](#factura-electrónica-en-francia).
 </Callout>
 
 ## Prepara tus datos una vez
@@ -201,6 +202,60 @@ No viajarán por la solución pública:
   Forales, todavía sin publicar;
 - las notas de crédito de una factura simplificada.
 
+## Factura electrónica en Francia
+
+Desde el **1 de septiembre de 2026** toda empresa establecida en Francia debe poder
+**recibir** facturas electrónicas por una plataforma autorizada (PA), y las grandes
+empresas y las ETI además **emitirlas** y **declarar** sus otras operaciones
+(e-reporting). Las PYME y las microempresas emiten y declaran desde el **1 de septiembre
+de 2027**.
+
+Cord emite y declara por ti, desde las facturas que ya emites:
+
+- una factura a otra empresa establecida en Francia (con SIREN) viaja como **Factur-X**
+  por la plataforma, y Cord muestra en la factura cada estado que notifica: depositada,
+  recibida por la plataforma de tu cliente, aprobada, rechazada…;
+- una venta a un **particular** se declara en el resumen del día, y una factura a una
+  **empresa de otro país**, una por una;
+- si tu TVA es exigible al cobro (servicios sin la opción por los débitos), Cord
+  comunica **cada cobro** que registras.
+
+<Callout type="info">
+**Próximamente.** La emisión por plataforma autorizada todavía no está activa en Cord.
+Tus facturas ya llevan las menciones que exige la reforma, y **Ajustes › Perfil fiscal**
+y el detalle de cada factura dicen si ya tiene todo o qué le falta.
+</Callout>
+
+Las facturas francesas llevan desde ya las cuatro menciones nuevas: el **SIREN del
+cliente**, la **categoría de la operación** (bienes, servicios o ambos), la **opción por
+pagar la TVA sobre los débitos** si la tomaste, y la **dirección de entrega** si no es la
+del cliente.
+
+<Steps>
+
+1. En **Ajustes › Perfil fiscal**, completa tu **SIREN** (o tu número de TVA, que lo
+   contiene) y, en **Factura electrónica en Francia**, tu **régimen de TVA**, si optaste
+   por los **débitos** y si los conceptos escritos a mano son **bienes o servicios**.
+2. En el catálogo, elige el **tipo** de cada producto: un producto es una entrega de
+   bienes; un servicio, una suscripción o una licencia, una prestación de servicios.
+3. Si entregas en otro lugar que la dirección del cliente, captura la **dirección de
+   entrega** en el editor de la factura.
+4. Cuando la función esté activa, pulsa **Darme de alta en la plataforma** y, en su
+   página, verifica tu identidad y firma el mandato. Cord solo transmite lo que emitas
+   después de completar el alta.
+
+</Steps>
+
+<Callout type="warning">
+Cord **solo emite**. Para recibir las facturas de tus proveedores necesitas tu propia
+plataforma de recepción, obligatoria desde el 1 de septiembre de 2026; darte de alta en
+Cord no la cambia.
+</Callout>
+
+Si tu cliente o una plataforma **rechaza** una factura, la factura lo dice con el motivo.
+No se corrige: anúlala con una **nota de crédito** (es una anulación contable y no se
+transmite) y emite una factura nueva con los datos correctos.
+
 ## Leitweg-ID
 
 El Leitweg-ID identifica a un organismo de la administración pública alemana y lleva al
@@ -240,6 +295,9 @@ versión electrónica para:
   de la orden de compra o del organismo, y corrígelo en el cliente.
 - **"Facturae exige el NIF del cliente":** captúralo en el cliente; la Facturae no se
   genera sin él.
+- **"Falta decir si cada concepto es un bien o un servicio"** (Francia): elige el tipo
+  del producto o, para los conceptos escritos a mano, la opción de **Ajustes › Perfil
+  fiscal**. Una factura ya emitida conserva sus conceptos: aplica a las siguientes.
 
 ## Relacionado
 

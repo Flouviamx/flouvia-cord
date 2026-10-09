@@ -9,6 +9,17 @@
 // SAT, que también es puro, para no duplicar sus descripciones.
 
 import { MOTIVOS_CANCELACION } from './cfdi-catalogos';
+import { ESTADOS_DGFIP } from './transmision/estados';
+
+// Francia: lo que deja en la historia la plataforma autorizada (transmision/).
+const PLATAFORMA_EN: Record<string, string> = {
+    'Enviada a la plataforma de facturación electrónica': 'Sent to the e-invoicing platform',
+    'Cobro comunicado a la plataforma': 'Payment reported to the platform',
+    'La plataforma no admitió el envío': 'The platform did not accept the submission',
+    'La plataforma no admitió el cobro comunicado': 'The platform did not accept the reported payment',
+    'La plataforma no pudo entregar la factura': 'The platform could not deliver the invoice',
+    'Anulada tras un litigio': 'Cancelled after a dispute',
+};
 
 export type TimelineLocale = 'es' | 'en';
 
@@ -46,6 +57,18 @@ export function invoiceEventDetail(tipo: string, detalle: string, locale: Timeli
     }
 
     if (locale === 'es') return d;
+
+    if (tipo === 'plataforma') {
+        if (PLATAFORMA_EN[d]) return PLATAFORMA_EN[d];
+        // "Estado 213 · Rechazada por una plataforma: motivo" — el motivo lo
+        // escribió la plataforma y se deja tal cual.
+        if ((m = d.match(/^Estado (\d{3}) · ([^:]+)(?:: (.+))?$/))) {
+            const e = ESTADOS_DGFIP[m[1]];
+            return `Status ${m[1]} · ${e ? e.en : m[2]}${m[3] ? `: ${m[3]}` : ''}`;
+        }
+        if ((m = d.match(/^Anulada tras un litigio(?:: (.+))?$/))) return `Cancelled after a dispute${m[1] ? `: ${m[1]}` : ''}`;
+        if ((m = d.match(/^Estado (.+)$/))) return `Status ${m[1]}`;
+    }
 
     if ((m = d.match(/^Factura (.+) emitida$/))) return `Invoice ${m[1]} issued`;
     if (d === 'Emitida por recurrencia') return 'Issued by recurrence';
