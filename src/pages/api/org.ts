@@ -31,6 +31,7 @@ import { isValidTimeZone } from '../../lib/timezones';
 import { validateLateInterestRate } from '../../lib/late-interest-policy';
 import { normalizeTerm } from '../../lib/payment-terms';
 import { serieCompartida, serieCompartidaMensaje } from '../../lib/fiscal/serie';
+import { EINVOICE_EMAIL_MODES, normalizeBic, normalizeEInvoiceAddress } from '../../lib/fiscal/einvoice/codes';
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
 
@@ -229,6 +230,41 @@ export const PATCH: APIRoute = async ({ request }) => {
     if (body.fiscal_small_business !== undefined) {
         if (body.fiscal_small_business === true) currentFiscalMetadata.vat_regime = 'small_business';
         else delete currentFiscalMetadata.vat_regime;
+    }
+    // Factura electrónica europea (Factur-X, XRechnung, Peppol): contacto del
+    // emisor (XRechnung lo exige: BR-DE-2/5/6/7), registro mercantil, BIC, la
+    // dirección electrónica (esquema EAS) y qué formato acompaña al correo. Las
+    // congela cada factura en su snapshot; el correo lee `einvoice_email`.
+    fiscalField('fiscal_contact_name', 'contact_name', 100);
+    fiscalField('fiscal_contact_phone', 'contact_phone', 40);
+    fiscalField('fiscal_legal_registration_id', 'legal_registration_id', 64);
+    if (body.fiscal_bic !== undefined) {
+        const raw = String(body.fiscal_bic ?? '').trim();
+        const bic = normalizeBic(raw);
+        if (raw && !bic) {
+            return json({ error: currentLocale() === 'en' ? 'The BIC has 8 or 11 characters (for example COBADEFFXXX).' : 'El BIC tiene 8 u 11 caracteres (por ejemplo COBADEFFXXX).', field: 'fiscal_bic' }, 400);
+        }
+        if (bic) currentFiscalMetadata.bic = bic;
+        else delete currentFiscalMetadata.bic;
+    }
+    if (body.fiscal_einvoice_address !== undefined) {
+        const raw = String(body.fiscal_einvoice_address ?? '').trim();
+        const address = normalizeEInvoiceAddress(raw);
+        if (raw && !address) {
+            return json({
+                error: currentLocale() === 'en'
+                    ? 'The electronic address goes as "scheme:identifier" with a scheme from the EAS list, for example 0088:4000001000005.'
+                    : 'La dirección electrónica va como "esquema:identificador" con un esquema de la lista EAS, por ejemplo 0088:4000001000005.',
+                field: 'fiscal_einvoice_address',
+            }, 400);
+        }
+        if (address) currentFiscalMetadata.einvoice_address = address;
+        else delete currentFiscalMetadata.einvoice_address;
+    }
+    if (body.fiscal_einvoice_email !== undefined) {
+        const mode = String(body.fiscal_einvoice_email ?? '');
+        if ((EINVOICE_EMAIL_MODES as readonly string[]).includes(mode)) currentFiscalMetadata.einvoice_email = mode;
+        else delete currentFiscalMetadata.einvoice_email;
     }
 
     const vigDias = body.vigencia_default_dias !== undefined ? clamp(Math.round(Number(body.vigencia_default_dias) || 0), 1, 365) : actual.vigencia_default_dias;

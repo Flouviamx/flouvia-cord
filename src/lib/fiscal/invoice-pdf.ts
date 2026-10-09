@@ -16,7 +16,7 @@ import { mmAPuntos, VERIFACTU_QR_PRESENTACION } from './verifactu/qr';
 import { countryName, getCountryProfile, isEuCountry } from '../countries';
 import { currencyDecimals, normalizeCurrency } from '../currency';
 import { fmtTaxPct, splitTaxBucket } from '../tax-components';
-import { EXEMPTION_INFO, isExemptionReason } from './exemption';
+import { EU_EXEMPTION_INFO, EXEMPTION_INFO, isEuExemptionCode, isExemptionReason } from './exemption';
 import {
   PdfDocument, measureText as measure, prepareImage, truncateText as truncate, wrapText as wrap,
   type Align, type FontKey, type RGB,
@@ -715,7 +715,13 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
     ? [...new Set(input.lines.map((l) => l.exemptionReason).filter(isExemptionReason))]
       .filter((c) => !(isIntraCommunity && (c === 'E5' || c === 'N2' || c === 'S2')))
       .map((c) => EXEMPTION_INFO[c].mencion)
-    : [];
+    // Resto de la UE: la causa VATEX de una exención (categoría E) cita su
+    // precepto (Directiva 2006/112/CE, art. 226.11), el mismo texto que viaja
+    // como BT-120 en la factura electrónica. La franquicia ya la imprime su
+    // propio aviso cuando el emisor está en el régimen.
+    : [...new Set(input.lines.map((l) => l.exemptionReason).filter(isEuExemptionCode))]
+      .filter((c) => EU_EXEMPTION_INFO[c].category === 'E' && !(smallBusiness && c === 'VATEX-FR-FRANCHISE'))
+      .map((c) => EU_EXEMPTION_INFO[c].text);
 
   // ── Cómo pagar y notas, a la izquierda de los totales ──────────────────────
   const blocks = [

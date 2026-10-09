@@ -11,7 +11,7 @@ export const prerender = false;
 import { withApiAuth } from '../../../lib/apikey';
 import { getActiveOrgId, logAudit, reqIp } from '../../../lib/db';
 import { getFacturas } from '../../../lib/queries';
-import { createInvoiceDraft, parseInvoiceItems, parseServiceDates, MAX_INVOICE_ITEMS } from '../../../lib/fiscal/invoices';
+import { createInvoiceDraft, parseInvoiceItems, parseInvoiceReferences, parseServiceDates, MAX_INVOICE_ITEMS } from '../../../lib/fiscal/invoices';
 import { ok, fail, invoiceListItem, readJsonBody } from '../../../lib/apiv1';
 import { requireEntitlement } from '../../../lib/org-entitlements';
 import { invoicingFeatureFor } from '../../../lib/fiscal/gate';
@@ -70,6 +70,7 @@ export const POST = withApiAuth('write', async ({ request }, auth) => {
         notes: String(body.notas ?? '').trim().slice(0, 1000) || null,
         bufferPct: Number(body.fx_buffer_pct) || 0,
         ivaIncluido: body.iva_incluido === true,
+        ...parseInvoiceReferences(body),
     });
     if (!result.ok) {
         // Regla 22: sin tasa demostrable no se factura. 503, no 400 — el

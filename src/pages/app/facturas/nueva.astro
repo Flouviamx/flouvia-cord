@@ -434,6 +434,18 @@ import { iconInner } from '../../../lib/icons';
                     </div>
 
                     <div class="sum-field">
+                        <label class="sum-lbl" for="buyerReference">{L === 'en' ? 'Buyer reference (optional)' : 'Referencia del comprador (opcional)'}</label>
+                        <input id="buyerReference" class="ed-input" maxlength="200" autocomplete="off"
+                            value={draft?.referenciaComprador ?? ''}
+                            placeholder={L === 'en' ? 'Leitweg-ID or client reference' : 'Leitweg-ID o referencia del cliente'} />
+                        <label class="sum-lbl" for="purchaseOrder">{L === 'en' ? 'Purchase order (optional)' : 'Orden de compra (opcional)'}</label>
+                        <input id="purchaseOrder" class="ed-input" maxlength="200" autocomplete="off" value={draft?.ordenCompra ?? ''} />
+                        <p class="sum-hint">{L === 'en'
+                            ? 'Printed on the invoice and carried by its e-invoice. XRechnung requires the buyer reference; if empty, the client’s default is used.'
+                            : 'Se imprimen en la factura y viajan en su factura electrónica. XRechnung exige la referencia del comprador; vacía, se usa la del cliente.'}</p>
+                    </div>
+
+                    <div class="sum-field">
                         <label for="fxBaseTrigger">{L === 'en' ? 'Invoice currency' : 'Divisa de la factura'}</label>
                         <FlagSelect
                             client:load
@@ -1048,6 +1060,10 @@ import { iconInner } from '../../../lib/icons';
             service_date: ($('serviceDate') as HTMLInputElement).value || undefined,
             service_date_end: ($('serviceDateEnd') as HTMLInputElement).value || undefined,
             notas: ($('notas') as HTMLTextAreaElement).value.trim() || undefined,
+            // Al crear, vacías no se mandan y el servidor toma la referencia del
+            // cliente; al editar un borrador, vacías la borran.
+            buyer_reference: ($('buyerReference') as HTMLInputElement).value.trim() || (activeDraftId ? '' : undefined),
+            purchase_order: ($('purchaseOrder') as HTMLInputElement).value.trim() || (activeDraftId ? '' : undefined),
             iva_incluido: ivaIncluidoEl.checked,
             fx_buffer_pct: currency === BOOT.orgCurrency ? 0 : Number(($('fxBuffer') as HTMLInputElement).value) || 0,
             items: lines.map((l) => ({

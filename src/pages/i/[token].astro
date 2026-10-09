@@ -23,6 +23,8 @@ import { currentLocale } from '../../lib/context';
 import { t } from '../../i18n/app';
 import { publicInvoiceGuidance, publicInvoiceContact, publicInvoicePayability } from '../../lib/fiscal/public-invoice-state';
 import { MP_MARK } from '../../lib/brand-marks';
+import { isEuCountry } from '../../lib/countries';
+import { einvoiceSummary, EINVOICE_LABELS } from '../../lib/fiscal/einvoice/server';
 
 const { token } = Astro.params;
 const f = await getFacturaByToken(token ?? '');
@@ -57,6 +59,11 @@ const ESTADO: Record<string, { label: string; tone: string }> = {
 const estado = f.esNotaCredito && f.estado !== 'void'
     ? { label: t(L, 'fact.p_emitida'), tone: 'ok' }
     : ESTADO[f.estado] ?? { label: t(L, 'fact.p_emitida'), tone: 'wait' };
+// Factura electrónica europea: solo los formatos que el documento ya admite.
+// Lo que falta lo corrige el negocio desde su panel, no quien recibe el link.
+const einv = f.estado !== 'void' && isEuCountry(f.pais || '')
+    ? await einvoiceSummary(f.orgId, f.id, token ?? '').catch(() => null)
+    : null;
 const titulo = f.tipo === 'proforma' ? 'Proforma' : f.esNotaCredito ? t(L, 'fact.p_nota_credito') : t(L, 'fact.p_factura');
 import { iconInner } from '../../lib/icons';
 ---
@@ -274,6 +281,9 @@ import { iconInner } from '../../lib/icons';
                     {f.pais === 'MX' && f.fiscalId && (
                         <a href={`/api/i/${token}/documents/xml`}>{t(L, 'fact.p_xml')}</a>
                     )}
+                    {einv?.available.map((fmt) => (
+                        <a href={`/api/i/${token}/documents/${fmt}`}>{EINVOICE_LABELS[fmt]}</a>
+                    ))}
                 </div>}
                 {f.fiscalId && <p class="iv-uuid">{t(L, 'fact.p_folio_fiscal')} {f.fiscalId}</p>}
                 {f.org.powered && <p class="iv-powered">{f.org.nombre} · {t(L, 'fact.p_enviado_con')}</p>}

@@ -10,7 +10,7 @@
 // correo. La UI no ofrece un envío que no existe (regla 15).
 
 import { decryptSecret } from '../../crypto-secret';
-import { invoicePdfInput } from '../invoice-download';
+import { invoicePdfInput, loadInvoiceDocumentRow } from '../invoice-download';
 import { loadArchivalFonts } from '../../pdf/pdfa';
 import { isTermCode } from '../../payment-terms';
 import {
@@ -104,4 +104,41 @@ export async function renderEInvoice(orgId: string, doc: any, format: EInvoiceFo
         case 'peppol':
             return { ok: true, file: { filename: `${name}-peppol.xml`, contentType: 'application/xml', content: Buffer.from(serializeUbl(invoice, 'peppol'), 'utf8') } };
     }
+}
+
+/** Nombres de los formatos: nombres propios, iguales en todo idioma. */
+export const EINVOICE_LABELS: Record<EInvoiceFormat, string> = {
+    facturx: 'Factur-X (PDF)',
+    xrechnung: 'XRechnung (UBL)',
+    'xrechnung-cii': 'XRechnung (CII)',
+    peppol: 'Peppol BIS 3.0 (UBL)',
+};
+
+// Problemas que significan "este documento no tiene versión electrónica
+// europea" (no es de la UE, es una proforma, no está emitido…): la sección no
+// se dibuja en vez de listar algo que el negocio no puede ni debe corregir.
+const NO_APLICA = new Set(['issuer_not_eu', 'proforma', 'document_type', 'not_issued', 'void', 'test_document']);
+
+export interface EInvoiceSummary {
+    available: EInvoiceFormat[];
+    /** Lo que falta para los formatos que no se pueden generar, sin repetir. */
+    missing: EInvoiceProblem[];
+}
+
+/**
+ * Qué formatos ofrece la factura y qué falta para el resto, o `null` si el
+ * documento no tiene versión electrónica europea. Lo leen el detalle de la
+ * factura y su página pública (con el token, que acota la lectura).
+ */
+export async function einvoiceSummary(orgId: string, documentId: string, publicToken?: string): Promise<EInvoiceSummary | null> {
+    const doc = await loadInvoiceDocumentRow(orgId, documentId, publicToken);
+    if (!doc || doc.status !== 'issued') return null;
+    const { assessment, formats } = einvoiceStatus(doc);
+    if (assessment.problems.some((p) => NO_APLICA.has(p.code))) return null;
+    const available = EINVOICE_FORMATS.filter((f) => formats[f].length === 0);
+    const missing: EInvoiceProblem[] = [];
+    for (const f of EINVOICE_FORMATS) {
+        for (const p of formats[f]) if (!missing.some((m) => m.code === p.code)) missing.push(p);
+    }
+    return { available, missing };
 }

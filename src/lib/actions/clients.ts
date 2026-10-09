@@ -3,6 +3,7 @@ import { requireResourceCapacity, resourceLimitError } from '../org-entitlements
 import { isCountryCode } from '../countries';
 import { validateTaxId } from '../tax-id';
 import { normalizeTerm } from '../payment-terms';
+import { normalizeEInvoiceAddress } from '../fiscal/einvoice/codes';
 import { after } from '../after';
 import { dispatchEvent } from '../webhooks';
 import { clientEventData, clientPrevData } from '../event-payloads';
@@ -31,8 +32,23 @@ export function cleanClientInput(input: Record<string, any>) {
         direccion_line2: String(input.direccion_line2 ?? '').trim().slice(0, 200) || null,
         ciudad: String(input.ciudad ?? '').trim().slice(0, 100) || null,
         region: String(input.region ?? '').trim().slice(0, 100) || null,
+        // Factura electrónica europea: dirección electrónica del cliente (BT-49,
+        // "esquema EAS:identificador") y su referencia de comprador por defecto
+        // (BT-10, el Leitweg-ID de una administración alemana). `undefined` =
+        // el llamador no los mandó y se conservan.
+        einvoice_address: input.einvoice_address === undefined ? undefined
+            : (normalizeEInvoiceAddress(input.einvoice_address) ?? null),
+        einvoice_address_invalida: String(input.einvoice_address ?? '').trim() !== ''
+            && normalizeEInvoiceAddress(input.einvoice_address) === null,
+        buyer_reference: input.buyer_reference === undefined ? undefined
+            : (String(input.buyer_reference ?? '').replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, 200) || null),
     };
 }
+
+const EINVOICE_ADDRESS_INVALIDA = done(400, {
+    error: 'La dirección electrónica va como "esquema:identificador" con un esquema de la lista EAS, por ejemplo 0204:991-12345-67 o 0088:4000001000005.',
+    code: 'invalid_request',
+});
 
 const EMPRESA_OBLIGATORIA = done(400, { error: 'El nombre de la empresa es obligatorio', code: 'invalid_request' });
 const NO_ENCONTRADO = done(404, { error: 'Cliente no encontrado', code: 'not_found' });
@@ -78,6 +94,7 @@ async function checkClientTaxId(ctx: ActionContext, c: ClientInput, before?: Tax
 export async function createClient(ctx: ActionContext, input: Record<string, any>): Promise<ActionOutcome> {
     const c = cleanClientInput(input);
     if (!c.empresa) return EMPRESA_OBLIGATORIA;
+    if (c.einvoice_address_invalida) return EINVOICE_ADDRESS_INVALIDA;
     const taxDenied = await checkClientTaxId(ctx, c);
     if (taxDenied) return taxDenied;
     const capacityDenied = await requireResourceCapacity(ctx.orgId, 'clients');
@@ -88,12 +105,14 @@ export async function createClient(ctx: ActionContext, input: Record<string, any
             insert into clientes (
                 org_id, empresa, contacto, email, telefono, rfc, terminos_default, limite_credito,
                 nivel, descuento_pct, regimen_fiscal, uso_cfdi, cp_fiscal,
-                country_code, direccion_line1, direccion_line2, ciudad, region
+                country_code, direccion_line1, direccion_line2, ciudad, region,
+                einvoice_address, buyer_reference
             )
             values (
                 ${ctx.orgId}, ${c.empresa}, ${c.contacto}, ${c.email}, ${c.telefono}, ${c.rfc}, ${c.terminos}, ${c.limite},
                 ${c.nivel}, ${c.descuento}, ${c.regimen_fiscal}, ${c.uso_cfdi}, ${c.cp_fiscal},
-                ${c.country_code}, ${c.direccion_line1}, ${c.direccion_line2}, ${c.ciudad}, ${c.region}
+                ${c.country_code}, ${c.direccion_line1}, ${c.direccion_line2}, ${c.ciudad}, ${c.region},
+                ${c.einvoice_address ?? null}, ${c.buyer_reference ?? null}
             )
             returning *`);
     } catch (error) {
@@ -109,6 +128,7 @@ export async function createClient(ctx: ActionContext, input: Record<string, any
 export async function updateClient(ctx: ActionContext, id: string, input: Record<string, any>): Promise<ActionOutcome> {
     const c = cleanClientInput(input);
     if (!c.empresa) return EMPRESA_OBLIGATORIA;
+    if (c.einvoice_address_invalida) return EINVOICE_ADDRESS_INVALIDA;
     if (!isUuid(id)) return NO_ENCONTRADO;
     if (c.rfc) {
         const [[before]] = await withOrgTx(ctx.orgId, sql`select rfc, country_code from clientes where id = ${id} and org_id = ${ctx.orgId}`);
@@ -132,7 +152,9 @@ async function writeClientUpdate(ctx: ActionContext, id: string, c: ClientInput)
             nivel = ${c.nivel}, descuento_pct = ${c.descuento},
             regimen_fiscal = ${c.regimen_fiscal}, uso_cfdi = ${c.uso_cfdi}, cp_fiscal = ${c.cp_fiscal},
             country_code = ${c.country_code}, direccion_line1 = ${c.direccion_line1},
-            direccion_line2 = ${c.direccion_line2}, ciudad = ${c.ciudad}, region = ${c.region}
+            direccion_line2 = ${c.direccion_line2}, ciudad = ${c.ciudad}, region = ${c.region},
+            einvoice_address = case when ${c.einvoice_address === undefined}::boolean then einvoice_address else ${c.einvoice_address ?? null}::text end,
+            buyer_reference = case when ${c.buyer_reference === undefined}::boolean then buyer_reference else ${c.buyer_reference ?? null}::text end
         where id = ${id} and org_id = ${ctx.orgId}
         returning *`);
     if (!rows.length) return NO_ENCONTRADO;

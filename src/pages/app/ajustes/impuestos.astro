@@ -14,7 +14,7 @@ import { getImpuestos, getOrg } from '../../../lib/queries';
 import { getCountryProfile, hasTaxPreset, taxKindLabel, taxPresetsFor, usStateTaxPresets, type TaxKind } from '../../../lib/countries';
 import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
-import { EXEMPTION_INFO, EXEMPTION_REASONS } from '../../../lib/fiscal/exemption';
+import { exemptionChoicesFor } from '../../../lib/fiscal/exemption';
 const ORG = await getOrg();
 const L = currentLocale();
 const tf = (key: string, vars: Record<string, string> = {}) => {
@@ -49,10 +49,15 @@ const PRESETS = isUs && usState
 const PRESET_DEFAULT = PRESETS.find((p) => p.esDefault);
 const NOMBRE_PLACEHOLDER = PRESET_DEFAULT ? `${PRESET_DEFAULT.nombre}…` : `${PROFILE.taxLabel}…`;
 const TASA_DEFAULT = PRESET_DEFAULT ? String(PRESET_DEFAULT.tasa) : '';
-// España: la causa de exención que Verifactu declara y la factura cita. Vacía,
-// el registro la deriva (no sujeta para un cliente extranjero, exenta dentro).
+// España: la causa de exención que Verifactu declara y la factura cita. Resto
+// de la UE: la clasificación de la factura electrónica europea (VATEX o tipo
+// cero). Vacía, se deriva del cliente (no sujeta / inversión del sujeto pasivo
+// para uno extranjero, exenta dentro). Fuera de la UE no hay lista.
 const isEs = PAIS === 'ES';
-const CAUSAS = EXEMPTION_REASONS.map((code) => ({ code, label: `${code} · ${L === 'en' ? EXEMPTION_INFO[code].en : EXEMPTION_INFO[code].es}` }));
+const CAUSAS = exemptionChoicesFor(PAIS, L === 'en' ? 'en' : 'es');
+const CAUSA_LABEL = isEs
+    ? (L === 'en' ? 'Exemption reason (Verifactu)' : 'Causa de exención (Verifactu)')
+    : (L === 'en' ? 'E-invoice classification' : 'Clasificación en la factura electrónica');
 const CAUSA_AUTO = L === 'en' ? 'Automatic (from the client)' : 'Automática (según el cliente)';
 ---
 
@@ -100,7 +105,7 @@ const CAUSA_AUTO = L === 'en' ? 'Automatic (from the client)' : 'Automática (se
                         <span class="imp-body">
                             <span class="imp-name">{i.nombre}</span>
                             <span class="imp-tasa editorial">{i.tasa}%</span>
-                            {isEs && i.kind === 'exento' && (
+                            {CAUSAS.length > 0 && i.kind === 'exento' && (
                                 <select class="imp-causa" data-causa={i.id} aria-label={L === 'en' ? `Exemption reason for ${i.nombre}` : `Causa de exención de ${i.nombre}`}>
                                     <option value="" selected={!i.exemptionReason}>{CAUSA_AUTO}</option>
                                     {CAUSAS.map((c) => <option value={c.code} selected={i.exemptionReason === c.code}>{c.label}</option>)}
@@ -182,9 +187,9 @@ const CAUSA_AUTO = L === 'en' ? 'Automatic (from the client)' : 'Automática (se
                 </select>
             </div>
         </div>
-        {isEs && (
+        {CAUSAS.length > 0 && (
             <div class="s-field" id="iCausaRow" style="margin-bottom:1rem" hidden>
-                <label for="iCausa">{L === 'en' ? 'Exemption reason (Verifactu)' : 'Causa de exención (Verifactu)'}</label>
+                <label for="iCausa">{CAUSA_LABEL}</label>
                 <select class="s-input" id="iCausa">
                     <option value="">{CAUSA_AUTO}</option>
                     {CAUSAS.map((c) => <option value={c.code}>{c.label}</option>)}

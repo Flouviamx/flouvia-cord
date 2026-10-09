@@ -724,7 +724,7 @@
                           "type": "number"
                         },
                         "exemption_reason": {
-                          "description": "Solo España y solo en un concepto con tax_rate 0: causa de exención o no sujeción que declara Verifactu y cita la factura. Sin ella se deriva del cliente.",
+                          "description": "Solo en un concepto con tax_rate 0. España: causa de exención o no sujeción que declara Verifactu y cita la factura (E1–E6, N1, N2, S2). Resto de la UE: clasificación de la factura electrónica europea (código VATEX o Z para tipo cero). Sin ella se deriva del cliente.",
                           "type": "string",
                           "enum": [
                             "E1",
@@ -735,7 +735,19 @@
                             "E6",
                             "N1",
                             "N2",
-                            "S2"
+                            "S2",
+                            "VATEX-EU-AE",
+                            "VATEX-EU-IC",
+                            "VATEX-EU-G",
+                            "VATEX-EU-O",
+                            "Z",
+                            "VATEX-EU-132",
+                            "VATEX-EU-135-1",
+                            "VATEX-EU-79-C",
+                            "VATEX-EU-148",
+                            "VATEX-EU-151",
+                            "VATEX-EU-309",
+                            "VATEX-FR-FRANCHISE"
                           ]
                         }
                       },
@@ -3329,7 +3341,7 @@
                           "type": "number"
                         },
                         "exemption_reason": {
-                          "description": "Solo España y solo en un concepto con tax_rate 0: causa de exención o no sujeción que declara Verifactu y cita la factura. Sin ella se deriva del cliente.",
+                          "description": "Solo en un concepto con tax_rate 0. España: causa de exención o no sujeción que declara Verifactu y cita la factura (E1–E6, N1, N2, S2). Resto de la UE: clasificación de la factura electrónica europea (código VATEX o Z para tipo cero). Sin ella se deriva del cliente.",
                           "type": "string",
                           "enum": [
                             "E1",
@@ -3340,7 +3352,19 @@
                             "E6",
                             "N1",
                             "N2",
-                            "S2"
+                            "S2",
+                            "VATEX-EU-AE",
+                            "VATEX-EU-IC",
+                            "VATEX-EU-G",
+                            "VATEX-EU-O",
+                            "Z",
+                            "VATEX-EU-132",
+                            "VATEX-EU-135-1",
+                            "VATEX-EU-79-C",
+                            "VATEX-EU-148",
+                            "VATEX-EU-151",
+                            "VATEX-EU-309",
+                            "VATEX-FR-FRANCHISE"
                           ]
                         }
                       },
@@ -3388,6 +3412,14 @@
                   "fx_buffer_pct": {
                     "type": "number",
                     "description": "Cobertura en puntos porcentuales sobre el tipo de cambio de referencia (2 = +2%); se acota a 25. Default 0."
+                  },
+                  "buyer_reference": {
+                    "type": "string",
+                    "description": "Referencia del comprador para su cuenta por pagar (en Alemania, el Leitweg-ID de la administración pública). La lleva la factura electrónica europea (BT-10) y la exige XRechnung. Sin ella, la del cliente."
+                  },
+                  "purchase_order": {
+                    "type": "string",
+                    "description": "Número de la orden de compra del cliente (BT-13 de la factura electrónica europea)."
                   }
                 },
                 "required": [

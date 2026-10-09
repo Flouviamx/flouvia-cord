@@ -147,6 +147,20 @@ const METODOS = [
     { v: 'otro', l: t(L, 'fact.d_m_otro') },
 ];
 import { iconInner } from '../../../lib/icons';
+import { isEuCountry } from '../../../lib/countries';
+import { einvoiceSummary, EINVOICE_LABELS } from '../../../lib/fiscal/einvoice/server';
+// Factura electrónica europea (EN 16931): qué formatos se pueden descargar y,
+// para los demás, qué falta. Solo emisores de la UE y documentos emitidos; un
+// fallo al calcularlo no tumba el detalle.
+const EINV = f && hasIssued && f.estado !== 'void' && isEuCountry(String(f.pais || ''))
+    ? await einvoiceSummary(f.orgId ?? '', f.id).catch(() => null)
+    : null;
+const EINV_FIX: Record<string, { href: string; es: string; en: string }> = {
+    fiscal: { href: '/app/ajustes/fiscal', es: 'Ajustes › Datos fiscales', en: 'Settings › Tax details' },
+    cobros: { href: '/app/ajustes/cobros', es: 'Ajustes › Cobros', en: 'Settings › Payments' },
+    impuestos: { href: '/app/ajustes/impuestos', es: 'Ajustes › Impuestos', en: 'Settings › Taxes' },
+    cliente: { href: f?.clienteId ? `/app/clientes/${f.clienteId}` : '/app/clientes', es: 'Ver cliente', en: 'View client' },
+};
 ---
 
 <AppLayout
@@ -401,6 +415,43 @@ import { iconInner } from '../../../lib/icons';
                                 </div>
                             </details>
                         </section>
+
+                        {EINV && (
+                            <section class="surface-card fd-einv" aria-labelledby="fdEinvTitle">
+                                <div class="fd-section-head"><h2 id="fdEinvTitle">{L === 'en' ? 'E-invoice' : 'Factura electrónica'}</h2></div>
+                                {EINV.available.length > 0 && (
+                                    <div class="fd-einv-links">
+                                        {EINV.available.map((fmt) => (
+                                            <a class="fd-einv-link" href={`/api/fiscal/documents/${f.id}/${fmt}`} target="_blank" rel="noopener">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('download')}></svg>
+                                                <span>{EINVOICE_LABELS[fmt]}</span>
+                                            </a>
+                                        ))}
+                                    </div>
+                                )}
+                                {EINV.missing.length > 0 && (
+                                    <div class="fd-einv-missing">
+                                        <p class="fd-einv-lead">{EINV.available.length
+                                            ? (L === 'en' ? 'To generate the other formats:' : 'Para generar los demás formatos:')
+                                            : (L === 'en' ? 'To generate it:' : 'Para generarla:')}</p>
+                                        <ul>
+                                            {EINV.missing.map((m) => (
+                                                <li>
+                                                    <span>{L === 'en' ? m.en : m.es}</span>
+                                                    {m.fix && EINV_FIX[m.fix] && <a href={EINV_FIX[m.fix].href}>{L === 'en' ? EINV_FIX[m.fix].en : EINV_FIX[m.fix].es}</a>}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                        <p class="fd-einv-note">{L === 'en'
+                                            ? 'An issued invoice keeps the data it was issued with: what you correct in Settings or on the client applies to the next invoices.'
+                                            : 'Una factura emitida conserva los datos con que se emitió: lo que corrijas en Ajustes o en el cliente aplica a las siguientes.'}</p>
+                                    </div>
+                                )}
+                                <p class="fd-einv-note">{L === 'en'
+                                    ? 'Cord generates these files and can attach them to the invoice email. It does not send them over the Peppol network.'
+                                    : 'Cord genera estos archivos y puede adjuntarlos al correo de la factura. No los envía por la red Peppol.'}</p>
+                            </section>
+                        )}
 
                         {f.cancelacionEstado && f.estado !== 'void' && (
                             <section class="surface-card" aria-live="polite" style="padding: 16px; margin-bottom: 16px;">
@@ -851,6 +902,24 @@ import { iconInner } from '../../../lib/icons';
     :global(html[data-theme="dark"]) .fd-util-wa:hover { color: #34d399; border-color: rgba(52, 211, 153, 0.28); }
 
     .fd-more { margin-top: 0; }
+    .fd-einv { display: flex; flex-direction: column; gap: 0.6rem; padding: 16px; margin-bottom: 16px; }
+    .fd-einv .fd-section-head { margin-bottom: 0; }
+    .fd-einv-links { display: flex; flex-direction: column; gap: 0.4rem; }
+    .fd-einv-link {
+        display: flex; align-items: center; gap: 0.55rem; min-height: 40px; padding: 0 0.8rem;
+        border: 1px solid var(--color-border); border-radius: 10px; background: var(--color-bg-soft);
+        color: var(--color-text); font-size: 0.8rem; font-weight: 600; text-decoration: none;
+        transition: border-color 0.2s, color 0.2s;
+    }
+    .fd-einv-link:hover { border-color: var(--color-blue-deep); color: var(--color-blue-deep); }
+    .fd-einv-link svg { width: 16px; height: 16px; flex-shrink: 0; }
+    .fd-einv-lead { margin: 0; color: var(--color-text); font-size: 0.78rem; font-weight: 600; }
+    .fd-einv-missing ul { display: flex; flex-direction: column; gap: 0.45rem; margin: 0.4rem 0 0; padding: 0; list-style: none; }
+    .fd-einv-missing li { display: flex; flex-direction: column; gap: 0.15rem; color: var(--color-text-muted); font-size: 0.76rem; line-height: 1.45; }
+    .fd-einv-missing li a { color: var(--color-blue-deep); font-weight: 600; text-decoration: none; min-height: 24px; }
+    .fd-einv-missing li a:hover { text-decoration: underline; }
+    :global(html[data-theme="dark"]) .fd-einv-missing li a, :global(html[data-theme="dark"]) .fd-einv-link:hover { color: #7fb0ff; }
+    .fd-einv-note { margin: 0; color: var(--color-text-muted); font-size: 0.72rem; line-height: 1.45; }
     .fd-more summary {
         display: flex; align-items: center; justify-content: space-between; min-height: 40px;
         padding: 0 0.85rem; border: 1px solid var(--color-border); border-radius: 10px;

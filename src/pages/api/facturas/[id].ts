@@ -10,7 +10,7 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { sql, getActiveOrgId, logAudit, reqIp, withOrgTx } from '../../../lib/db';
 import { requirePerm, invalidateMoneyCaches, getFacturaDetalle } from '../../../lib/queries';
-import { createInvoiceDraft, finalizeInvoice, voidInvoice, createCreditNote, updateInvoiceDraft, parseInvoiceItems, parseServiceDates, MAX_INVOICE_ITEMS } from '../../../lib/fiscal/invoices';
+import { createInvoiceDraft, finalizeInvoice, voidInvoice, createCreditNote, updateInvoiceDraft, parseInvoiceItems, parseInvoiceReferences, parseServiceDates, MAX_INVOICE_ITEMS } from '../../../lib/fiscal/invoices';
 import { applyPayment, manualPaymentMethod } from '../../../lib/fiscal/payments';
 import { requireEntitlement } from '../../../lib/org-entitlements';
 import { dispatchInvoiceEvent } from '../../../lib/webhooks';
@@ -136,6 +136,7 @@ async function updateDraft(orgId: string, id: string, body: any, request: Reques
         notes: String(body.notas ?? '').trim().slice(0, 1000) || null,
         bufferPct: Number(body.fx_buffer_pct) || 0,
         ivaIncluido: body.iva_incluido === true,
+        ...parseInvoiceReferences(body),
     });
     if (!result.ok) {
         // Igual que al crear: un fallo de FX o del catálogo de impuestos es 503 y

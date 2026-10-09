@@ -40,6 +40,20 @@ const FOLIO_EJEMPLO = `${FM.invoice_prefix || PROFILE.invoicePrefix}${isEs ? new
 // y por qué; sin el dato, Cord no tenía cómo imprimir esa mención.
 const SMALL_BUSINESS = ORG.countryCode === 'FR' || ORG.countryCode === 'DE';
 import { iconInner } from '../../../lib/icons';
+import { isEuCountry } from '../../../lib/countries';
+import { EAS_COMMON, einvoiceEmailMode } from '../../../lib/fiscal/einvoice/codes';
+// Factura electrónica europea (EN 16931): solo para emisores de la UE. La
+// dirección electrónica se guarda como "esquema:identificador".
+const IS_EU = isEuCountry(ORG.countryCode);
+const EAS_GUARDADA = String(FM.einvoice_address || '');
+const EAS_ESQUEMA = EAS_GUARDADA.includes(':') ? EAS_GUARDADA.slice(0, EAS_GUARDADA.indexOf(':')) : '';
+const EAS_ID = EAS_GUARDADA.includes(':') ? EAS_GUARDADA.slice(EAS_GUARDADA.indexOf(':') + 1) : '';
+const EINV_AUTO = einvoiceEmailMode(ORG.countryCode, null);
+const EINV_AUTO_LABEL = EINV_AUTO === 'facturx'
+    ? (L === 'en' ? 'Automatic: Factur-X PDF' : 'Automático: PDF Factur-X')
+    : EINV_AUTO === 'xrechnung'
+        ? (L === 'en' ? 'Automatic: PDF + XRechnung' : 'Automático: PDF + XRechnung')
+        : (L === 'en' ? 'Automatic: PDF only' : 'Automático: solo el PDF');
 ---
 
 <SettingsShell title="Datos fiscales — Ajustes" tab="fiscal" perm="ajustes"
@@ -139,6 +153,71 @@ import { iconInner } from '../../../lib/icons';
                     </div>
                 )}
                 <a class="fact-link" href="/app/facturas">{L === 'en' ? 'View issued invoices' : 'Ver facturas emitidas'}</a>
+            </div>
+        </SettingsSection>
+    )}
+
+    {IS_EU && (
+        <SettingsSection icon="document" class="s-block">
+            <Fragment slot="heading">{L === 'en' ? 'European e-invoicing' : 'Factura electrónica europea'}</Fragment>
+            <div class="s-body">
+                <p class="csd-intro">{L === 'en'
+                    ? 'Each invoice can be downloaded as Factur-X (PDF with the XML inside), XRechnung or Peppol BIS (EN 16931), so your client can process it automatically. Cord generates and attaches them; it does not send them over the Peppol network or through an e-invoicing platform.'
+                    : 'Cada factura se puede descargar como Factur-X (PDF con el XML dentro), XRechnung o Peppol BIS (EN 16931) para que tu cliente la procese automáticamente. Cord las genera y las adjunta; no las envía por la red Peppol ni por una plataforma de facturación electrónica.'}</p>
+                <div class="s-row">
+                    <div class="s-field">
+                        <label for="fContactName">{L === 'en' ? 'Billing contact' : 'Contacto de facturación'}</label>
+                        <input class="s-input" id="fContactName" data-field="fiscal_contact_name" value={FM.contact_name || ''} maxlength="100" autocomplete="name" />
+                    </div>
+                    <div class="s-field">
+                        <label for="fContactPhone">{L === 'en' ? 'Contact phone' : 'Teléfono de contacto'}</label>
+                        <input class="s-input" id="fContactPhone" data-field="fiscal_contact_phone" value={FM.contact_phone || ''} maxlength="40" autocomplete="tel" placeholder={ORG.telefono || ''} />
+                    </div>
+                </div>
+                <span class="s-hint">{L === 'en'
+                    ? 'XRechnung requires a contact with name, phone and email (your business email). Without a phone here, the one in General is used.'
+                    : 'XRechnung exige un contacto con nombre, teléfono y correo (el de tu negocio). Sin teléfono aquí, se usa el de General.'}</span>
+                <div class="s-row">
+                    <div class="s-field">
+                        <label for="fEasScheme">{L === 'en' ? 'Electronic address' : 'Dirección electrónica'}</label>
+                        <select class="s-input" id="fEasScheme">
+                            <option value="" selected={!EAS_ESQUEMA}>{L === 'en' ? 'None' : 'Sin dirección'}</option>
+                            {EAS_COMMON.map((x) => <option value={x.code} selected={EAS_ESQUEMA === x.code}>{`${x.code === 'EM' ? '' : x.code + ' · '}${L === 'en' ? x.en : x.es}`}</option>)}
+                            {EAS_ESQUEMA && !EAS_COMMON.some((x) => x.code === EAS_ESQUEMA) && <option value={EAS_ESQUEMA} selected>{EAS_ESQUEMA}</option>}
+                        </select>
+                    </div>
+                    <div class="s-field">
+                        <label for="fEasId">{L === 'en' ? 'Identifier' : 'Identificador'}</label>
+                        <input class="s-input" id="fEasId" value={EAS_ID} maxlength="120" autocomplete="off" />
+                        <input type="hidden" id="fEasAddress" data-field="fiscal_einvoice_address" value={EAS_GUARDADA} />
+                    </div>
+                </div>
+                <span class="s-hint">{L === 'en'
+                    ? 'Your Peppol participant identifier (for example a GLN or your VAT number with its scheme). Peppol requires it; XRechnung uses your email if there is none.'
+                    : 'Tu identificador de participante Peppol (por ejemplo un GLN o tu NIF-IVA con su esquema). Peppol lo exige; XRechnung usa tu correo si no hay otro.'}</span>
+                <div class="s-row">
+                    <div class="s-field">
+                        <label for="fLegalReg">{L === 'en' ? 'Company registration number' : 'Número de registro mercantil'}</label>
+                        <input class="s-input" id="fLegalReg" data-field="fiscal_legal_registration_id" value={FM.legal_registration_id || ''} maxlength="64" autocomplete="off" />
+                    </div>
+                    <div class="s-field">
+                        <label for="fBic">BIC / SWIFT</label>
+                        <input class="s-input" id="fBic" data-field="fiscal_bic" value={FM.bic || ''} maxlength="11" autocomplete="off" placeholder="COBADEFFXXX" />
+                        <span class="s-hint">{L === 'en' ? 'The IBAN is the one in Settings › Payments.' : 'El IBAN es el de Ajustes › Cobros.'}</span>
+                    </div>
+                </div>
+                <div class="s-field" style="max-width:50%">
+                    <label for="fEinvEmail">{L === 'en' ? 'Attach to invoice emails' : 'Adjuntar al correo de cada factura'}</label>
+                    <select class="s-input" id="fEinvEmail" data-field="fiscal_einvoice_email">
+                        <option value="" selected={!FM.einvoice_email}>{EINV_AUTO_LABEL}</option>
+                        <option value="off" selected={FM.einvoice_email === 'off'}>{L === 'en' ? 'PDF only' : 'Solo el PDF'}</option>
+                        <option value="facturx" selected={FM.einvoice_email === 'facturx'}>{L === 'en' ? 'Factur-X PDF (replaces the PDF)' : 'PDF Factur-X (en lugar del PDF)'}</option>
+                        <option value="xrechnung" selected={FM.einvoice_email === 'xrechnung'}>{L === 'en' ? 'PDF + XRechnung XML' : 'PDF + XML de XRechnung'}</option>
+                    </select>
+                    <span class="s-hint">{L === 'en'
+                        ? 'If an invoice is missing data for the format, the email goes with the regular PDF and the invoice tells you what is missing.'
+                        : 'Si a una factura le falta un dato del formato, el correo sale con el PDF de siempre y la factura te dice qué falta.'}</span>
+                </div>
             </div>
         </SettingsSection>
     )}
@@ -540,4 +619,19 @@ import { iconInner } from '../../../lib/icons';
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initVerifactu);
     else initVerifactu();
+
+    // ── Factura electrónica: esquema + identificador → "esquema:identificador" ──
+    // El guardado genérico lee el campo oculto; se actualiza en el propio
+    // elemento, antes de que el evento llegue al formulario que detecta cambios.
+    function initEas() {
+        const scheme = document.getElementById('fEasScheme') as HTMLSelectElement | null;
+        const id = document.getElementById('fEasId') as HTMLInputElement | null;
+        const hidden = document.getElementById('fEasAddress') as HTMLInputElement | null;
+        if (!scheme || !id || !hidden) return;
+        const sync = () => { hidden.value = scheme.value && id.value.trim() ? `${scheme.value}:${id.value.trim()}` : ''; };
+        scheme.addEventListener('change', sync);
+        id.addEventListener('input', sync);
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initEas);
+    else initEas();
 </script>

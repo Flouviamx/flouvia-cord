@@ -29,6 +29,7 @@ import { flagSrc } from '../../lib/flags';
 import Icon from '../Icon.astro';
 import { jsonForScript } from '../../lib/escape';
 import TermPicker from './TermPicker.astro';
+import { EAS_COMMON } from '../../lib/fiscal/einvoice/codes';
 
 interface Props {
     showDelete?: boolean;
@@ -40,6 +41,9 @@ const ORG = await getOrg();
 const ORG_COUNTRY = String(ORG.countryCode || 'MX').toUpperCase();
 const ORG_CURRENCY = String(ORG.moneda || getCountryProfile(ORG_COUNTRY, L).currency).toUpperCase();
 const orgIsMx = ORG_COUNTRY === 'MX';
+// Factura electrónica europea (Factur-X, XRechnung, Peppol): solo la emite un
+// negocio establecido en la UE, así que solo ahí se piden sus datos.
+const orgIsEu = EU_COUNTRIES.has(ORG_COUNTRY);
 
 // El cliente puede ser de CUALQUIER país, no solo de los que Cord ofrece al
 // darse de alta (regla 28: esto valida un dato ya guardado, no un catálogo
@@ -237,6 +241,35 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
                     <span class="m-hint">{t(L, 'cmod.descuento_hint')}</span>
                 </div>
             </section>
+
+            {orgIsEu && (
+                <section class="cm-sec" id="cmEinvoice" aria-labelledby="cmSecEinvoice">
+                    <header class="cm-sec-h"><span class="cm-sec-i"><Icon name="document" size={15} /></span><h3 id="cmSecEinvoice">{L === 'en' ? 'E-invoicing' : 'Factura electrónica'}</h3></header>
+                    <p class="m-hint">{L === 'en'
+                        ? 'Only if this client receives structured invoices (XRechnung, Peppol). Cord generates them; it does not send them over the Peppol network.'
+                        : 'Solo si este cliente recibe facturas estructuradas (XRechnung, Peppol). Cord las genera; no las envía por la red Peppol.'}</p>
+                    <div class="m-row">
+                        <div class="m-field">
+                            <label for="cmEasScheme">{L === 'en' ? 'Electronic address' : 'Dirección electrónica'} <span class="m-optlbl">{t(L, 'cmod.opcional')}</span></label>
+                            <select class="m-input" id="cmEasScheme">
+                                <option value="">{L === 'en' ? 'None' : 'Sin dirección'}</option>
+                                {EAS_COMMON.map((s) => <option value={s.code}>{`${s.code === 'EM' ? '' : s.code + ' · '}${L === 'en' ? s.en : s.es}`}</option>)}
+                            </select>
+                        </div>
+                        <div class="m-field">
+                            <label for="cmEasId">{L === 'en' ? 'Identifier' : 'Identificador'}</label>
+                            <input class="m-input" id="cmEasId" maxlength="120" autocomplete="off" />
+                        </div>
+                    </div>
+                    <div class="m-field">
+                        <label for="cmBuyerRef">{L === 'en' ? 'Buyer reference (Leitweg-ID)' : 'Referencia del comprador (Leitweg-ID)'} <span class="m-optlbl">{t(L, 'cmod.opcional')}</span></label>
+                        <input class="m-input" id="cmBuyerRef" maxlength="200" autocomplete="off" />
+                        <span class="m-hint">{L === 'en'
+                            ? 'German public bodies require it on every invoice. New invoices for this client start with it.'
+                            : 'La administración pública alemana la exige en cada factura. Las facturas nuevas de este cliente la llevan por defecto.'}</span>
+                    </div>
+                </section>
+            )}
 
             {orgIsMx && (
                 <section class="cm-sec" id="cmFiscal" aria-labelledby="cmSecFiscal">
@@ -564,6 +597,19 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
             input('cmDireccion1').value = data?.direccion1 ?? '';
             input('cmDireccion2').value = data?.direccion2 ?? '';
             input('cmCiudad').value = data?.ciudad ?? '';
+            if (select('cmEasScheme')) {
+                const eas = String(data?.einvoice ?? '');
+                const i = eas.indexOf(':');
+                const scheme = i > 0 ? eas.slice(0, i) : '';
+                select('cmEasScheme')!.value = scheme;
+                // Un esquema EAS válido que no está en la lista corta se conserva.
+                if (scheme && select('cmEasScheme')!.value !== scheme) {
+                    select('cmEasScheme')!.add(new Option(scheme, scheme));
+                    select('cmEasScheme')!.value = scheme;
+                }
+                input('cmEasId').value = i > 0 ? eas.slice(i + 1) : '';
+                input('cmBuyerRef').value = data?.buyerref ?? '';
+            }
             // Sin país guardado, el cliente hereda el del negocio: se muestra ese,
             // que es el que ya usan sus facturas.
             const c = String(data?.country || cfg.orgCountry).toUpperCase();
@@ -628,6 +674,13 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
                 direccion_line2: input('cmDireccion2').value,
                 ciudad: input('cmCiudad').value,
                 region: regionValue(),
+                // Solo cuando la sección existe (negocio en la UE): sin ella,
+                // `undefined` le dice al servidor que conserve lo guardado.
+                ...(select('cmEasScheme') ? {
+                    einvoice_address: select('cmEasScheme')!.value && input('cmEasId').value.trim()
+                        ? `${select('cmEasScheme')!.value}:${input('cmEasId').value.trim()}` : '',
+                    buyer_reference: input('cmBuyerRef').value,
+                } : {}),
             };
             try {
                 const res = await fetch('/api/clientes', {

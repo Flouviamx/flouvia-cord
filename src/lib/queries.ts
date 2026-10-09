@@ -1234,6 +1234,8 @@ function mapCliente(c: DbRow) {
         direccionLine2: (c.direccion_line2 as string) ?? '',
         ciudad: (c.ciudad as string) ?? '',
         region: (c.region as string) ?? '',
+        einvoiceAddress: (c.einvoice_address as string) ?? '',
+        buyerReference: (c.buyer_reference as string) ?? '',
         origen: (c.origen as string) || 'app',
         createdAt: c.created_at ? new Date(c.created_at as string).toISOString() : null,
         fiscalCompleto: !!((c.regimen_fiscal as string) && (c.cp_fiscal as string)),
@@ -1347,6 +1349,8 @@ export async function getCliente(id: string) {
         direccionLine2: (c.direccion_line2 as string) ?? '',
         ciudad: (c.ciudad as string) ?? '',
         region: (c.region as string) ?? '',
+        einvoiceAddress: (c.einvoice_address as string) ?? '',
+        buyerReference: (c.buyer_reference as string) ?? '',
         origen: (c.origen as string) || 'app',
         createdAt: c.created_at ? new Date(c.created_at as string).toISOString() : null,
         fiscalCompleto: !!((c.regimen_fiscal as string) && (c.cp_fiscal as string)),
@@ -1606,6 +1610,10 @@ function rowToFactura(r: any) {
         // Fecha (o periodo) de prestación; solo la trae el detalle (`d.*`).
         servicioISO: r.service_date ? venceDia(r.service_date) : null,
         servicioFinISO: r.service_date_end ? venceDia(r.service_date_end) : null,
+        // Referencia del comprador y orden de compra (factura electrónica: BT-10,
+        // BT-13); como la fecha de prestación, solo las trae el detalle (`d.*`).
+        referenciaComprador: (r.buyer_reference as string) || null,
+        ordenCompra: (r.purchase_order as string) || null,
         servicio: r.service_date
             ? (r.service_date_end
                 ? `${fmtCalendarDate(r.service_date as string)} – ${fmtCalendarDate(r.service_date_end as string)}`

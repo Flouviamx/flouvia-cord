@@ -6,6 +6,7 @@
 import { z } from 'zod';
 import { WEBHOOK_EVENT_OBJECTS } from '../../packages/elements/src/contract/webhook-events.ts';
 import { TERM_CODES } from './payment-terms.ts';
+import { EU_EXEMPTION_CODES, EXEMPTION_REASONS } from './fiscal/exemption.ts';
 
 const id = z.string().describe('Identificador (UUID).');
 const money = z.number().describe('Importe en la divisa indicada por `moneda`.');
@@ -118,8 +119,8 @@ const QuoteItemInput = z.object({
     descripcion: z.string(), cantidad: z.number(), precio_unitario: z.number(),
     precio_negociado: z.number().optional(), costo_unitario: z.number().optional(), producto_id: z.string().optional(),
     tax_rate: z.number().optional().describe('Fracción 0–1, validada contra el catálogo de impuestos.'),
-    exemption_reason: z.enum(['E1', 'E2', 'E3', 'E4', 'E5', 'E6', 'N1', 'N2', 'S2']).optional()
-        .describe('Solo España y solo en un concepto con tax_rate 0: causa de exención o no sujeción que declara Verifactu y cita la factura. Sin ella se deriva del cliente.'),
+    exemption_reason: z.enum([...EXEMPTION_REASONS, ...EU_EXEMPTION_CODES]).optional()
+        .describe('Solo en un concepto con tax_rate 0. España: causa de exención o no sujeción que declara Verifactu y cita la factura (E1–E6, N1, N2, S2). Resto de la UE: clasificación de la factura electrónica europea (código VATEX o Z para tipo cero). Sin ella se deriva del cliente.'),
 });
 
 export const CreateQuoteInput = z.object({
@@ -180,7 +181,7 @@ export const OPERATIONS: Operation[] = [
     { method: 'POST', path: '/productos', summary: 'Crear producto', tag: 'Productos', scope: 'write', body: z.looseObject({ nombre: z.string() }), response: Ack },
 
     { method: 'GET', path: '/facturas', summary: 'Listar facturas', tag: 'Facturas', scope: 'read', page: 'cursor', query: { ...cursorQ, estado: z.string(), cliente: z.string(), desde: z.string(), hasta: z.string(), q: z.string() }, response: Invoice },
-    { method: 'POST', path: '/facturas', summary: 'Crear factura en borrador', tag: 'Facturas', scope: 'write', body: z.object({ cliente_id: z.string(), items: z.array(QuoteItemInput).min(1).max(200), currency: z.string().optional(), due_date: z.string().optional(), service_date: z.string().optional(), service_date_end: z.string().optional(), notas: z.string().optional(), iva_incluido: z.boolean().optional(), document_mode: z.enum(['commercial', 'fiscal']).optional(), fx_buffer_pct: z.number().optional() }), response: Ack },
+    { method: 'POST', path: '/facturas', summary: 'Crear factura en borrador', tag: 'Facturas', scope: 'write', body: z.object({ cliente_id: z.string(), items: z.array(QuoteItemInput).min(1).max(200), currency: z.string().optional(), due_date: z.string().optional(), service_date: z.string().optional(), service_date_end: z.string().optional(), notas: z.string().optional(), iva_incluido: z.boolean().optional(), document_mode: z.enum(['commercial', 'fiscal']).optional(), fx_buffer_pct: z.number().optional(), buyer_reference: z.string().optional(), purchase_order: z.string().optional() }), response: Ack },
     { method: 'GET', path: '/facturas/{id}', summary: 'Detalle de factura', tag: 'Facturas', scope: 'read', response: InvoiceDetail },
     { method: 'POST', path: '/facturas/{id}', summary: 'Emitir, enviar, anular, registrar pago o nota de crédito', tag: 'Facturas', scope: 'write', body: action(['finalize', 'send', 'void', 'payment', 'credit_note'], { monto: z.number().optional(), moneda: z.string().optional(), metodo: z.string().optional(), referencia: z.string().optional(), motivo: z.string().optional() }), response: Ack },
 
@@ -256,6 +257,8 @@ export const FIELD_DOCS: Record<string, string> = {
     document_mode: 'commercial o fiscal. Sin él, fiscal si el plan lo incluye y el país lo tiene habilitado; fiscal sin eso responde 400.',
     done: 'true si la tarea está terminada.',
     due_date: 'Fecha de vencimiento, YYYY-MM-DD.',
+    buyer_reference: 'Referencia del comprador para su cuenta por pagar (en Alemania, el Leitweg-ID de la administración pública). La lleva la factura electrónica europea (BT-10) y la exige XRechnung. Sin ella, la del cliente.',
+    purchase_order: 'Número de la orden de compra del cliente (BT-13 de la factura electrónica europea).',
     service_date: 'Fecha de prestación del servicio o de entrega (Leistungsdatum), YYYY-MM-DD. Sin ella, la factura indica que coincide con la fecha de emisión.',
     service_date_end: 'Fin del periodo de prestación, YYYY-MM-DD. Requiere service_date y no puede ser anterior.',
     email: 'Correo electrónico.',
