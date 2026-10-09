@@ -1,0 +1,248 @@
+  RESOLUCIÓN DE SUPERINTENDENCIA
+  N.° 000193-2020/SUNAT
+  MODIFICAN LA NORMATIVA SOBRE EMISIÓN ELECTRÓNICA EN RELACIÓN
+  CON LA FACTURA ELECTRÓNICA, EL RECIBO POR HONORARIOS
+  ELECTRÓNICO Y LA NOTA DE CRÉDITO ELECTRÓNICA
+Lima, 05 de noviembre de 2020
+CONSIDERANDO:
+Que las Resoluciones de Superintendencia N.os 188-2010/SUNAT, 097-2012/SUNAT,
+182-2016/SUNAT y 117-2017/SUNAT aprobaron el Sistema de Emisión Electrónica en
+SUNAT Operaciones en Línea (SEE - SOL), el SEE desarrollado desde los sistemas del
+contribuyente (SEE - Del contribuyente), el SEE Facturador SUNAT (SEE - SFS) y el
+SEE Operador de Servicios Electrónicos (SEE - OSE), respectivamente;
+Que el SEE - SOL, que incluye el SEE aprobado por el artículo 2 de la Resolución de
+Superintendencia N.° 182-2008/SUNAT, permite la emisión del recibo por honorarios
+electrónico, de la factura electrónica y la nota de crédito electrónica vinculada a esos
+comprobantes de pago, entre otros. Por su parte, el SEE - Del contribuyente, el SEE -
+SFS y el SEE - OSE permiten la emisión de la factura electrónica y la nota de crédito
+electrónica vinculada a esta, además de otros documentos electrónicos;
+Que, con la finalidad de contar con elementos adicionales que coadyuven a las acciones
+de la Administración Tributaria en relación con el control del cumplimiento de las
+obligaciones tributarias y la cobranza de la deuda tributaria, resulta necesario incluir
+información adicional en el recibo por honorarios electrónico, la factura electrónica y la
+nota de crédito electrónica y modificar los supuestos que contemplan la emisión de esta
+última;
+Que, además, a efecto que el adquirente o usuario en las operaciones por las que se
+emite la factura electrónica pueda tener certeza en un menor plazo que lo que se emitió
+cumple con las condiciones de emisión para considerarlo un documento electrónico,
+resulta conveniente reducir el plazo de envío de la factura electrónica regulado en el
+SEE - Del contribuyente, el SEE - SFS y el SEE - OSE, para que la SUNAT o el OSE,
+según corresponda, verifiquen el cumplimiento de las referidas condiciones de emisión;
+En uso de las facultades conferidas por el Decreto Ley N.° 25632; el artículo 11 del
+Decreto Legislativo N.° 501, Ley General de la SUNAT; el artículo 5 de la Ley N.° 29816,
+Ley de Fortalecimiento de la SUNAT, y el inciso o) del artículo 8 del Reglamento de
+Organización y Funciones de la SUNAT, aprobado por la Resolución de
+Superintendencia N.° 122-2014/SUNAT;
+SE RESUELVE:
+Artículo 1. Modificaciones en la Resolución de Superintendencia N.° 182-
+2008/SUNAT
+1.1 Modifícase el numeral 9 del artículo 1 de la Resolución de Superintendencia N.°
+  182-2008/SUNAT, en los siguientes términos:
+“Artículo 1. DEFINICIONES
+Para efecto de la presente resolución se entenderá por:
+ 9.  Medio de pago  :  A aquel incluido en la relación publicada en la página web de
+  la SUNAT, cuya dirección es http://www.sunat.gob.pe, según
+  lo establece la Resolución de Superintendencia N.° 062-
+  2018/SUNAT.”
+1.2 Incorpórase los incisos g) y h) en el numeral 1 y modifícase el inciso e) del numeral
+2 del artículo 7 de la Resolución de Superintendencia N.° 182-2008/SUNAT, en los
+siguientes términos:
+“Artículo 7. Emisión del recibo por honorarios electrónico
+Para la emisión del recibo por honorarios electrónico el emisor electrónico deberá
+ingresar a SUNAT Operaciones en Línea con su código de usuario y clave SOL,
+seleccionar la opción que para tal efecto prevea el Sistema y seguir las indicaciones del
+mismo teniendo en cuenta lo siguiente:
+1. Deberá registrar la siguiente información, según corresponda:
+(…)
+g) Si el recibo por honorarios electrónico se emite para ser otorgado en el momento en
+que se perciba la retribución y por el monto de la misma, se debe indicar como forma de
+pago “contado”.
+h) Si el recibo por honorarios electrónico se emite para ser otorgado antes de que se
+perciba la retribución, se debe indicar como forma de pago “crédito”, el monto de los
+honorarios pendiente de pago y la(s) fecha(s) de vencimiento del pago único o de las
+cuotas y los montos correspondientes a cada cuota.
+Para efecto de lo indicado en el párrafo anterior, el monto de los honorarios pendiente
+de pago no incluye la retención del Impuesto a la Renta de cuarta categoría.
+(…)
+2. Adicionalmente a la información detallada en el numeral 1, al momento de la emisión
+del recibo por honorarios electrónico, el Sistema consignará automáticamente en éste
+el mecanismo de seguridad y la siguiente información:
+(…)
+e) Importe neto que se recibe por el servicio prestado, expresado numérica y
+literalmente.”
+1.3 Modifícase el primer párrafo del artículo 9 de la Resolución de Superintendencia N.°
+182-2008/SUNAT, en los siguientes términos:
+“Artículo 9. REVERSIÓN DEL RECIBO POR HONORARIOS ELECTRÓNICO
+El emisor electrónico puede revertir el recibo por honorarios electrónico emitido y/u
+otorgado cuando detecte que ha consignado erróneamente la información a que se
+refieren los incisos a) y c) del numeral 1 del artículo 7. Para que proceda la reversión no
+deberán existir pagos ni haberse emitido notas de crédito respecto del recibo por
+honorarios electrónico a revertir.
+(…)”
+1.4 Incorpórase el numeral 6 en el artículo 10 de la Resolución de Superintendencia N.°
+182-2008/SUNAT, en los siguientes términos:
+“Artículo 10. EMISIÓN  Y  OTORGAMIENTO  DE  LA  NOTA  DE  CRÉDITO
+ELECTRÓNICA
+La emisión y otorgamiento de la nota de crédito electrónica se regirá por las siguientes
+disposiciones:
+(…)
+6. Excepcionalmente, se puede emitir la nota de crédito electrónica para corregir un
+recibo por honorarios electrónico en cuanto a la información a que se refiere el inciso b)
+y el inciso h) del numeral 1 del artículo 7. En este último caso, solo la información referida
+al monto de los honorarios pendiente de pago, la(s) fecha(s) de vencimiento del pago
+único o de las cuotas y los montos correspondientes a cada cuota.
+En este caso, la nota de crédito electrónica debe ser emitida al mismo usuario hasta el
+décimo (10) día hábil del mes siguiente de emitido el recibo por honorarios electrónico
+objeto de corrección y se le aplican las disposiciones previstas en los numerales 2, 3 y
+5, salvo lo señalado en el acápite iii) del inciso a) del numeral 2.”
+Artículo 2. Modificaciones en la Resolución de Superintendencia N.° 188-
+2010/SUNAT
+2.1 Incorpórase el inciso s) en el numeral 1 del artículo 9 de la Resolución de
+Superintendencia N.° 188-2010/SUNAT, en los siguientes términos:
+“Artículo 9. EMISIÓN DE LA FACTURA ELECTRÓNICA
+Para la emisión de la factura electrónica, el emisor electrónico debe ingresar a SUNAT
+Operaciones en Línea, seleccionar la opción que para tal efecto prevea el Sistema y
+seguir las indicaciones de este, teniendo en cuenta lo siguiente:
+1. Debe ingresar la siguiente información o seguir el procedimiento que se indique,
+según corresponda:
+(…)
+s) Forma de pago de la factura electrónica:
+  i. Contado: Si el importe total de la venta, cesión en uso o servicio se paga en la
+  fecha de su emisión.
+  ii. Crédito: Si el importe total de la venta, cesión en uso o servicio se paga total o
+  parcialmente en fecha posterior a la de su emisión.
+  En este caso, adicionalmente, se debe ingresar el monto neto pendiente de pago
+  y la(s) fecha(s) de vencimiento del pago único o de las cuotas y los montos
+  correspondientes a cada cuota.
+  El monto neto pendiente de pago no incluye las retenciones del IGV, el monto del
+  depósito que deba efectuar el adquirente o usuario, según el Sistema de Pago de
+  Obligaciones Tributarias regulado por el texto único ordenado del Decreto
+  Legislativo N.° 940, aprobado por el Decreto Supremo N.° 155-2004-EF, y otras
+  deducciones a las que pueda estar sujeto el comprobante de pago.”
+2.2 Modifícase el numeral 1.7 del artículo 13 de la Resolución de Superintendencia N.°
+188-2010/SUNAT, en los siguientes términos:
+“Artículo 13. DE LAS NOTAS DE CRÉDITO Y LAS NOTAS DE DÉBITO
+ELECTRÓNICAS
+Las notas de crédito y de débito electrónicas se rigen por las siguientes disposiciones:
+1. Nota de crédito electrónica:
+(…)
+1.7 Excepcionalmente, puede emitirse una nota de crédito electrónica para:
+a) Anular el comprobante de pago electrónico emitido a un sujeto distinto del adquirente
+  o usuario.
+  Una vez emitida la nota de crédito electrónica, el comprobante de pago electrónico
+  se tiene por no emitido ni otorgado. El número correlativo que el Sistema le asignó al
+  comprobante de pago electrónico anulado no puede ser asignado a otro.
+  En los casos en que, con anterioridad a la emisión de la nota de crédito electrónica,
+  el emisor electrónico hubiera emitido un nuevo comprobante de pago electrónico al
+  verdadero adquirente o usuario, el número de este último se debe consignar en la
+  referida nota de crédito.
+b) Corregir el comprobante de pago electrónico que contenga una descripción que no
+  corresponde al bien vendido o cedido en uso o al tipo de servicio prestado.
+c) Corregir la información de la factura electrónica a que se refiere el segundo párrafo
+  del acápite ii. del inciso s) del numeral 1 del artículo 9.
+Tratándose de los incisos b) y c), la emisión de la nota de crédito electrónica no afecta
+la condición de emitido ni de otorgado del comprobante de pago electrónico corregido,
+el cual conserva el número correlativo que el Sistema le asignó.
+En todos los casos comprendidos en este numeral, la nota de crédito electrónica debe
+ser emitida hasta el décimo (10) día hábil del mes siguiente de emitido el comprobante
+de pago electrónico objeto de anulación o corrección, siéndole de aplicación las
+disposiciones previstas en los numerales 1.3, 1.4, 1.5 y 1.6, salvo lo señalado en el
+acápite iii. del inciso a) del numeral 1.3.”
+Artículo 3. Modificaciones en la Resolución de Superintendencia N.° 097-
+2012/SUNAT
+3.1 Modifícase los incisos a) y b) del numeral 12.1 del artículo 12 de la Resolución de
+Superintendencia N.° 097-2012/SUNAT, en los siguientes términos:
+“Artículo 12. ENVÍO A LA SUNAT DE LA FACTURA ELECTRÓNICA, EL DAE, LA
+BOLETA DE VENTA ELECTRÓNICA, EL RECIBO ELECTRÓNICO SP, LA NOTA
+ELECTRÓNICA VINCULADA A AQUELLOS Y LA LIQUIDACIÓN DE COMPRA
+ELECTRÓNICA
+12.1 El emisor electrónico debe remitir a la SUNAT un ejemplar de:
+a) El DAE, el recibo electrónico SP y la nota electrónica vinculada a aquellos en la fecha
+de emisión consignada en dichos documentos o incluso hasta en un plazo máximo de
+siete días calendario contado desde el día calendario siguiente a esa fecha.
+b) La factura, la nota electrónica vinculada a aquella y la liquidación de compra
+electrónica en la fecha de emisión consignada en dichos documentos o incluso hasta el
+día calendario siguiente a esa fecha.
+(…)”
+3.2 Modifícase el inciso c) del numeral 22.3 del artículo 22 de la Resolución de
+Superintendencia N.° 097-2012/SUNAT, en los siguientes términos:
+“Artículo 22. NOTA DE CRÉDITO ELECTRÓNICA
+La nota de crédito electrónica se regirá por las siguientes disposiciones:
+(…)
+22.3 Excepcionalmente, podrá emitirse una nota de crédito electrónica respecto de una
+factura electrónica o un DAE que cuente con la CDR respectiva o una boleta de venta
+electrónica, otorgada con anterioridad:
+(…)
+c) Para corregir los datos señalados en los ítems 64-A, 64-B, 88, 89, 90 y 91 del anexo
+N.° 1 y los ítems 65, 66, 67 y 68 del anexo N.° 2.”
+3.3 Modifícase los anexos N.os 1, 3, 8 y 9-A de la Resolución de Superintendencia N.°
+097-2012/SUNAT, según lo indicado en los anexos I, II, III y IV de la presente resolución.
+Artículo 4. Modificación en la Resolución de Superintendencia N.° 182-
+2016/SUNAT
+4.1 Modifícase el primer párrafo del inciso 12.2 del artículo 12 de la Resolución de
+Superintendencia N.° 182-2016/SUNAT, en los siguientes términos:
+“Artículo 12. Remisión a la SUNAT
+La remisión a la SUNAT del ejemplar del comprobante de pago o de la nota electrónica,
+según corresponda, debe realizarse teniendo en cuenta lo siguiente:
+(…)
+12.2 Factura electrónica y nota electrónica vinculada a aquella
+En la fecha de emisión consignada en la factura electrónica y/o en la nota electrónica
+vinculada a aquella o, incluso, hasta el día calendario siguiente a esa fecha, el emisor
+electrónico debe remitir a la SUNAT un ejemplar de dicha factura y/o nota. Vencido ese
+plazo lo no enviado no tendrá la calidad de factura electrónica ni de nota electrónica,
+aun cuando hubiera sido entregada al adquirente o usuario. La fecha de emisión
+consignada en el comprobante de pago electrónico puede ser anterior a la fecha en que
+este se debe emitir según el primer párrafo del artículo 5 del RCP, si el emisor
+electrónico desea anticipar la emisión de acuerdo con el segundo párrafo de ese
+artículo.”
+4.2 Modifícase los literales a) y c) del anexo I de la Resolución de Superintendencia N.°
+182-2016/SUNAT, según lo indicado en el anexo V de la presente resolución.
+Artículo 5. Modificaciones en la Resolución de Superintendencia N.° 117-
+2017/SUNAT
+5.1 Modifícase el párrafo 15.1 del artículo 15 de la Resolución de Superintendencia N.°
+117-2017/SUNAT, en los siguientes términos:
+“Artículo 15. Envío al OSE
+15.1 Factura electrónica, DAE y nota electrónica vinculada a aquellas y la GRE
+El emisor electrónico debe remitir al OSE un ejemplar de la factura electrónica, del DAE,
+de la nota electrónica vinculada a aquella(aquel) y de la GRE en los plazos que se
+indican a continuación:
+a)  Factura electrónica y nota electrónica vinculada a aquella: En la fecha de emisión
+  consignada en esos documentos o, incluso, hasta el día calendario siguiente a esa
+  fecha.
+b)  DAE, nota electrónica vinculada a aquel y GRE: En la fecha de emisión consignada
+  en esos documentos o, incluso, hasta un plazo máximo de siete días calendario
+  contado desde el día siguiente a esa fecha.
+Vencidos aquellos plazos, el OSE no puede realizar la comprobación material de las
+condiciones de emisión de esos documentos y, en consecuencia, lo que reciba no tendrá
+la calidad de factura electrónica, DAE, nota electrónica vinculada a aquella(aquel) ni
+GRE, aun cuando hubiera sido entregada al adquirente o usuario, transportista o
+destinatario, según corresponda.
+La fecha de emisión consignada en la factura electrónica y en el DAE puede ser anterior
+a aquella en que se debe emitir según el primer párrafo del artículo 5 del RCP, si el
+emisor electrónico desea anticipar la emisión de acuerdo con el segundo párrafo de ese
+artículo.”
+5.2 Modifícase el literal c) del inciso 26.4.2 del párrafo 26.4 del artículo 26 de la
+Resolución de Superintendencia N.° 117-2017/SUNAT, en los siguientes términos:
+“Artículo 26. Nota de crédito electrónica
+(…)
+26.4 Excepcionalmente, una nota de crédito electrónica se puede emitir respecto de los
+comprobantes de pago indicados en el párrafo 26.1, siempre que hayan sido otorgados
+con anterioridad:
+(…)
+26.4.2 Para corregir:
+(…)
+c) Los datos señalados en los ítems 64-A, 64-B, 88, 89, 90 y 91 del anexo N.° 1 y los
+ítems 65, 66, 67 y 68 del anexo N.° 2.
+(…)”
+  DISPOSICIÓN COMPLEMENTARIA FINAL
+ÚNICA. Vigencia
+La presente resolución entra en vigencia el 1 de abril de 2021.
+  DISPOSICIÓN COMPLEMENTARIA DEROGATORIA
+ÚNICA. Deroga ítem en anexo
+Derógase el ítem 55 del anexo N.° 1 de la Resolución de Superintendencia N.° 097-
+2012/SUNAT.
+Regístrese, comuníquese y publíquese.
+  LUIS ENRIQUE VERA CASTILLO
+  Superintendente Nacional
+SUPERINTENDENCIA NACIONAL DE ADUANAS
+  Y DE ADMINISTRACIÓN TRIBUTARIA

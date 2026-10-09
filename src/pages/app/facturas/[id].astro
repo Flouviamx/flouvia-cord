@@ -20,6 +20,8 @@ import { currencyDecimals } from '../../../lib/currency';
 import { fmtTaxPct, splitTaxBucket } from '../../../lib/tax-components';
 import { estadoVerifactuFactura } from '../../../lib/fiscal/verifactu/incidencias';
 import ArcaEstadoFactura from '../../../components/app/facturas/ArcaEstadoFactura.astro';
+import NfseEstadoFactura from '../../../components/app/facturas/NfseEstadoFactura.astro';
+import SunatEstadoFactura from '../../../components/app/facturas/SunatEstadoFactura.astro';
 import DianEstadoFactura from '../../../components/app/facturas/DianEstadoFactura.astro';
 import { EXEMPTION_INFO, EXEMPTION_REASONS } from '../../../lib/fiscal/exemption';
 import { currentLocale } from '../../../lib/context';
@@ -554,7 +556,7 @@ const EINV_FIX: Record<string, { href: string; es: string; en: string }> = {
                                     {f.estadoFiscal === 'issued' && !f.notaCreditoDe && !esGlobal && (
                                         <button type="button" class="fd-menu-btn" id="fdRepetir">{t(L, 'rec.repetir')}</button>
                                     )}
-                                    {f.pais === 'MX' && f.fiscalId && (
+                                    {(f.pais === 'MX' || f.pais === 'PE' || f.pais === 'CO') && f.fiscalId && (
                                         <a class="fd-menu-btn fd-menu-link" href={`/api/fiscal/documents/${f.id}/xml`} target="_blank" rel="noopener">{t(L, 'fact.d_xml')}</a>
                                     )}
                                     {((f.estado === 'open' && f.pagado === 0) || (esGlobal && f.estado === 'paid')) && !f.sustituidaPor && (
@@ -666,6 +668,12 @@ const EINV_FIX: Record<string, { href: string; es: string; en: string }> = {
 
                         {String(f.pais || '').toUpperCase() === 'AR' && (
                             <ArcaEstadoFactura orgId={f.orgId ?? ''} documentoId={f.id} locale={L === 'en' ? 'en' : 'es'} />
+                        )}
+                        {String(f.pais || '').toUpperCase() === 'BR' && (
+                            <NfseEstadoFactura orgId={f.orgId ?? ''} documentoId={f.id} locale={L === 'en' ? 'en' : 'es'} />
+                        )}
+                        {String(f.pais || '').toUpperCase() === 'PE' && (
+                            <SunatEstadoFactura orgId={f.orgId ?? ''} documentoId={f.id} locale={L === 'en' ? 'en' : 'es'} />
                         )}
 
                         {String(f.pais || '').toUpperCase() === 'CO' && (

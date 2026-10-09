@@ -118,6 +118,14 @@ export async function downloadInvoiceDocument(orgId: string, id: string, format:
     });
   }
 
+  // Perú: el ejemplar electrónico es el XML firmado que SUNAT aceptó.
+  if (format === 'xml' && (doc.document_type === 'sunat_invoice' || doc.document_type === 'sunat_credit_note')) {
+    const { xmlAceptadoSunat } = await import('./latam/sunat/descarga');
+    const aceptado = await xmlAceptadoSunat(orgId, id);
+    if (!aceptado) return new Response('XML no disponible', { status: 404 });
+    return new Response(aceptado.xml, { status: 200, headers: downloadHeaders('application/xml', `${safeFilename(aceptado.archivo)}.xml`) });
+  }
+
   // Colombia: el XML de un documento validado por la DIAN es su contenedor
   // (AttachedDocument) con el documento firmado y la respuesta de la DIAN.
   if (format === 'xml' && String(doc.document_type || '').startsWith('dian_')) {

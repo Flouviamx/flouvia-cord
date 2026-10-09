@@ -16,7 +16,7 @@
 // los scripts de contrato y la UI.
 
 /** Identificador estable del riel. Es parte de la clave de las tablas `fiscal_rail_*`. */
-export type RailId = 'arca' | 'dian';
+export type RailId = 'arca' | 'nfse' | 'sunat' | 'dian';
 
 /**
  * Entorno de la autoridad. `homologacion` es el ambiente de pruebas de la
@@ -72,6 +72,33 @@ export const RIELES: Readonly<Record<RailId, RailDefinicion>> = {
         documentos: { factura: 'arca_invoice', notaCredito: 'arca_credit_note' },
         envPrefijo: 'ARCA',
         anulable: false,
+        numeracionPropia: true,
+    },
+    // Brasil: NFS-e de Padrão Nacional (Sistema Nacional NFS-e, Sefin
+    // Nacional), solo servicios. La Sefin numera la NFS-e y una NFS-e
+    // generada se cancela con el evento e101101 (src/lib/fiscal/latam/nfse/).
+    nfse: {
+        id: 'nfse',
+        pais: 'BR',
+        autoridad: 'Sistema Nacional NFS-e',
+        documentos: { factura: 'nfse_invoice', notaCredito: 'nfse_credit_note' },
+        envPrefijo: 'NFSE',
+        anulable: true,
+        numeracionPropia: true,
+    },
+    sunat: {
+        id: 'sunat',
+        pais: 'PE',
+        autoridad: 'SUNAT',
+        documentos: { factura: 'sunat_invoice', notaCredito: 'sunat_credit_note' },
+        envPrefijo: 'SUNAT',
+        // La comunicación de baja solo procede con facturas que NO se
+        // entregaron al cliente (orientacion.sunat.gob.pe, "Operatividad"), y
+        // Cord entrega la factura al emitirla (link y correo): se compensa
+        // con una nota de crédito (tipo 01, anulación de la operación).
+        anulable: false,
+        // El emisor numera (serie F### + correlativo) y SUNAT valida: el
+        // número legal reemplaza al folio interno de Cord.
         numeracionPropia: true,
     },
     dian: {

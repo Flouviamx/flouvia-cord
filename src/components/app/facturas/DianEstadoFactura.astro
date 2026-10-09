@@ -1,8 +1,8 @@
 ---
 // Estado del documento ante la DIAN (Colombia), en el panel lateral de
 // /app/facturas/[id]: CUFE (o CUDE de una nota), notificaciones con que la
-// DIAN lo validó, o por qué no lo validó, y la descarga del contenedor XML
-// que se le entrega al cliente. Lee el último intento del riel
+// DIAN lo validó, o por qué no lo validó (el contenedor XML se descarga desde
+// el menú del documento). Lee el último intento del riel
 // (fiscal_rail_comprobantes); si el documento nunca pasó por la DIAN
 // (documento comercial) no dibuja nada.
 import { ultimoIntento } from '../../../lib/fiscal/latam/comprobantes';
@@ -39,9 +39,6 @@ const prueba = intento?.entorno === 'homologacion';
                 {prueba && <small>{en ? 'DIAN enablement environment: no tax validity.' : 'Ambiente de habilitación de la DIAN: sin validez fiscal.'}</small>}
             </span>
         </div>
-        {intento.estado === 'autorizado' && (
-            <a class="dian-fe-xml" href={`/api/fiscal/documents/${documentoId}/xml`} download>{en ? 'Download XML container' : 'Descargar contenedor XML'}</a>
-        )}
         {observaciones.length > 0 && (
             <ul class="dian-fe-obs">
                 {observaciones.map((o) => <li>{o}</li>)}
@@ -60,6 +57,5 @@ const prueba = intento?.entorno === 'homologacion';
     .dian-fe-copy { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
     .dian-fe-copy strong { font-size: 0.82rem; color: var(--color-text); }
     .dian-fe-copy small { font-size: 0.75rem; color: var(--color-text-muted); line-height: 1.45; overflow-wrap: anywhere; }
-    .dian-fe-xml { display: inline-block; margin-top: 0.6rem; font-size: 0.78rem; font-weight: 600; color: var(--color-blue-deep); min-height: 32px; line-height: 32px; }
     .dian-fe-obs { margin: 0.6rem 0 0; padding-left: 1.1rem; font-size: 0.75rem; color: var(--color-text-muted); line-height: 1.45; }
 </style>

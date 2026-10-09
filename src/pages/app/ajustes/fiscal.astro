@@ -10,6 +10,10 @@ import { declaracionResponsableONull, DECLARACION_RUTA } from '../../../lib/fisc
 import { incidenciasVerifactu } from '../../../lib/fiscal/verifactu/incidencias';
 import ArcaSettings from '../../../components/app/settings/ArcaSettings.astro';
 import { estadoArca } from '../../../lib/fiscal/latam/arca/estado';
+import NfseSettings from '../../../components/app/settings/NfseSettings.astro';
+import { estadoNfse } from '../../../lib/fiscal/latam/nfse/estado';
+import SunatSettings from '../../../components/app/settings/SunatSettings.astro';
+import { estadoSunat } from '../../../lib/fiscal/latam/sunat/estado';
 import DianSettings from '../../../components/app/settings/DianSettings.astro';
 import { estadoDian } from '../../../lib/fiscal/latam/dian/estado';
 import { currentLocale } from '../../../lib/context';
@@ -22,6 +26,10 @@ const isCa = ORG.countryCode === 'CA';
 const isEs = ORG.countryCode === 'ES';
 // Argentina: factura electrónica autorizada por ARCA (rieles fiscales de LatAm).
 const ARCA = ORG.countryCode === 'AR' ? await estadoArca(ORG.id).catch(() => null) : null;
+// Brasil: NFS-e de Padrão Nacional (rieles fiscales de LatAm).
+const NFSE = ORG.countryCode === 'BR' ? await estadoNfse(ORG.id).catch(() => null) : null;
+// Perú: factura electrónica enviada a SUNAT (SEE - Del contribuyente).
+const SUNAT = ORG.countryCode === 'PE' ? await estadoSunat(ORG.id).catch(() => null) : null;
 // Colombia: factura electrónica validada por la DIAN (rieles fiscales de LatAm).
 const DIAN = ORG.countryCode === 'CO' ? await estadoDian(ORG.id).catch(() => null) : null;
 const verifactuOn = ORG.verifactuModo === 'verifactu';
@@ -70,7 +78,7 @@ const EINV_AUTO_LABEL = EINV_AUTO === 'facturx'
         : (L === 'en'
             ? `Configure the identity shown on invoices issued in ${PROFILE.name}.`
             : `Configura la identidad que aparecerá en tus facturas emitidas en ${PROFILE.name}.`)} save>
-    {!isMx && !ARCA?.listo && !DIAN?.listo && (
+    {!isMx && !ARCA?.listo && !NFSE?.listo && !SUNAT?.listo && !DIAN?.listo && (
         <div class="fiscal-capability">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('alert-circle')}></svg>
             <div>
@@ -392,6 +400,20 @@ const EINV_AUTO_LABEL = EINV_AUTO === 'facturx'
         <SettingsSection icon="shield" class="s-block">
             <Fragment slot="heading">{L === 'en' ? 'Electronic invoicing with ARCA' : 'Factura electrónica con ARCA'}</Fragment>
             <ArcaSettings estado={ARCA} locale={L === 'en' ? 'en' : 'es'} />
+        </SettingsSection>
+    )}
+
+    {NFSE && (
+        <SettingsSection icon="shield" class="s-block">
+            <Fragment slot="heading">NFS-e</Fragment>
+            <NfseSettings estado={NFSE} locale={L === 'en' ? 'en' : 'es'} />
+        </SettingsSection>
+    )}
+
+    {SUNAT && (
+        <SettingsSection icon="shield" class="s-block">
+            <Fragment slot="heading">{L === 'en' ? 'Electronic invoicing with SUNAT' : 'Factura electrónica con SUNAT'}</Fragment>
+            <SunatSettings estado={SUNAT} locale={L === 'en' ? 'en' : 'es'} />
         </SettingsSection>
     )}
 

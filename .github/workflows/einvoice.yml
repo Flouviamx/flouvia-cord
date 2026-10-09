@@ -1,0 +1,87 @@
+name: E-invoice validators
+
+# Factur-X, XRechnung y Peppol contra los validadores OFICIALES: XSD, CEN
+# EN 16931, KoSIT con la configuración XRechnung, Peppol BIS, el schematron de
+# Factur-X y veraPDF (vía Mustang). Necesita Java y xmllint y descarga unos
+# 85 MB de artefactos fijados por SHA-256, así que no va en test:payments: corre
+# solo cuando cambia algo que entra en la factura electrónica, y los artefactos
+# se guardan en caché por la huella de scripts/einvoice-check.mjs (donde viven
+# sus URLs y sus SHA-256).
+#
+# EINVOICE_VALIDATION_REQUIRED=1: aquí no se omite nada. Sin Java, sin xmllint
+# o sin red el check FALLA en vez de avisar y salir en verde.
+
+on:
+  pull_request:
+    paths:
+      - "src/lib/fiscal/**"
+      - "src/lib/pdf/**"
+      - "src/lib/countries.ts"
+      - "src/lib/currency.ts"
+      - "src/lib/payment-terms.ts"
+      - "src/lib/payout-fields.ts"
+      - "packages/elements/src/engine.ts"
+      - "packages/elements/src/fiscal/**"
+      - "test/helpers/einvoice-samples.ts"
+      - "scripts/einvoice-check.mjs"
+      - "scripts/lib/ts-resolve.mjs"
+      - ".github/workflows/einvoice.yml"
+  push:
+    branches: [main]
+    paths:
+      - "src/lib/fiscal/**"
+      - "src/lib/pdf/**"
+      - "src/lib/countries.ts"
+      - "src/lib/currency.ts"
+      - "src/lib/payment-terms.ts"
+      - "src/lib/payout-fields.ts"
+      - "packages/elements/src/engine.ts"
+      - "packages/elements/src/fiscal/**"
+      - "test/helpers/einvoice-samples.ts"
+      - "scripts/einvoice-check.mjs"
+      - "scripts/lib/ts-resolve.mjs"
+      - ".github/workflows/einvoice.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: einvoice-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Official EN 16931 validators
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            packages/elements/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - name: Install xmllint
+        run: command -v xmllint || (sudo apt-get update && sudo apt-get install -y --no-install-recommends libxml2-utils)
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Install Elements dependencies
+        run: npm ci --prefix packages/elements
+      - name: Cache pinned validator artifacts
+        uses: actions/cache@v4
+        with:
+          path: .cache/einvoice
+          key: einvoice-validators-${{ hashFiles('scripts/einvoice-check.mjs') }}
+      - name: Validate every sample against the official validators
+        env:
+          EINVOICE_VALIDATION_REQUIRED: "1"
+        run: npm run security:einvoice
