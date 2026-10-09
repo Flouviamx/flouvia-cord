@@ -26,6 +26,10 @@ const CSRF_EXEMPT_WRITE_EXACT = new Set([
     '/api/cli/login/',
     '/api/cli/login/claim',
     '/api/cli/login/claim/',
+    // Correo entrante de intercambio de DTE (Chile): Bearer + firma HMAC de
+    // INBOUND_EMAIL_SECRET (lib/inbound-auth.ts), sin cookies.
+    '/api/webhooks/sii-intercambio',
+    '/api/webhooks/sii-intercambio/',
 ]);
 
 /**

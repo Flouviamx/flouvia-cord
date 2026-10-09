@@ -5,48 +5,18 @@ import { getCobranzaConfig, renderCollectionEmail } from '../../../lib/agents/co
 import { sendEmail } from '../../../lib/email';
 import { publicDocumentUrl } from '../../../lib/public-links';
 import { log } from '../../../lib/log';
-import { createHmac, timingSafeEqual } from 'node:crypto';
+import { bearerValido, firmaValida } from '../../../lib/inbound-auth';
 
 export const prerender = false;
 
-const INBOUND_SECRET = import.meta.env.INBOUND_EMAIL_SECRET || process.env.INBOUND_EMAIL_SECRET;
-
-// Ventana anti-replay: un webhook capturado no puede reproducirse indefinidamente.
-const FIRMA_TOLERANCIA_SEG = 300;
-
-/**
- * Verifica la firma del proveedor sobre el CUERPO CRUDO, en tiempo constante.
- *
- * Antes esto era `token !== INBOUND_SECRET` con `!==`: un bearer estático,
- * comparado carácter a carácter (filtra el secreto por tiempo de respuesta) y
- * sin nada que atara la petición a su contenido — quien tuviera el token podía
- * inyectar cualquier cuerpo, y reproducir uno capturado para siempre.
- *
- * La firma cubre `timestamp.cuerpo`, así que cambiar un byte del payload la
- * invalida y el timestamp acota la reproducción. Se acepta el bearer a secas
- * SOLO si el proveedor no manda firma, para no romper una configuración
- * existente el día que se encienda; en cuanto llega `x-cord-signature`, mandar.
- */
-function firmaValida(raw: string, timestamp: string | null, firma: string | null): boolean {
-    if (!INBOUND_SECRET) return false;
-    if (!firma) return true;                       // proveedor sin firma → decide el bearer
-    if (!timestamp) return false;
-
-    const edad = Math.abs(Date.now() / 1000 - Number(timestamp));
-    if (!Number.isFinite(edad) || edad > FIRMA_TOLERANCIA_SEG) return false;
-
-    const esperado = createHmac('sha256', INBOUND_SECRET).update(`${timestamp}.${raw}`).digest();
-    const recibido = Buffer.from(firma.replace(/^sha256=/, ''), 'hex');
-    return recibido.length === esperado.length && timingSafeEqual(recibido, esperado);
-}
-
-/** Compara dos secretos sin filtrar su longitud ni su contenido por tiempo. */
-function bearerValido(token: string | undefined): boolean {
-    if (!INBOUND_SECRET || !token) return false;
-    const a = Buffer.from(token);
-    const b = Buffer.from(INBOUND_SECRET);
-    return a.length === b.length && timingSafeEqual(a, b);
-}
+// La autenticación (bearer en tiempo constante + firma HMAC sobre el cuerpo
+// crudo con ventana anti-replay) vive en src/lib/inbound-auth.ts: la comparte
+// el intercambio de DTE de Chile (/api/webhooks/sii-intercambio).
+//
+// Antes esto era `token !== INBOUND_SECRET` con `!==`: un bearer estático,
+// comparado carácter a carácter (filtra el secreto por tiempo de respuesta) y
+// sin nada que atara la petición a su contenido — quien tuviera el token podía
+// inyectar cualquier cuerpo, y reproducir uno capturado para siempre.
 
 // ════════════════════════════════════════════════════════════════════════════
 // Respuestas del cliente por correo → conversación bidireccional del agente.

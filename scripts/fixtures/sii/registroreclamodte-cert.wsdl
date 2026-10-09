@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:soap11="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/" xmlns:wsp="http://www.w3.org/ns/ws-policy" xmlns:wsp200409="http://schemas.xmlsoap.org/ws/2004/09/policy" xmlns:wsp200607="http://www.w3.org/2006/07/ws-policy" xmlns:ns0="http://ws.registroreclamodte.diii.sdi.sii.cl" targetNamespace="http://ws.registroreclamodte.diii.sdi.sii.cl">
+<wsdl:types xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+<xsd:schema>
+<xsd:import schemaLocation="registroreclamodteservice.xsd2.xsd" namespace="http://ws.registroreclamodte.diii.sdi.sii.cl"/></xsd:schema></wsdl:types>
+<wsdl:message name="consultarDocDteCedible">
+<wsdl:part name="rutEmisor" type="xsns:string" xmlns:xsns="http://www.w3.org/2001/XMLSchema"/>
+<wsdl:part name="dvEmisor" type="xsns:string" xmlns:xsns="http://www.w3.org/2001/XMLSchema"/>
+<wsdl:part name="tipoDoc" type="xsns:string" xmlns:xsns="http://www.w3.org/2001/XMLSchema"/>
+<wsdl:part name="folio" type="xsns:string" xmlns:xsns="http://www.w3.org/2001/XMLSchema"/></wsdl:message>
+<wsdl:message name="consultarDocDteCedibleResponse">
+<wsdl:part name="return" type="xsns:respuestaTo" xmlns:xsns="http://ws.registroreclamodte.diii.sdi.sii.cl"/></wsdl:message>
+<wsdl:message name="consultarFechaRecepcionSii">
+<wsdl:part name="rutEmisor" type="xsns:string" xmlns:xsns="http://www.w3.org/2001/XMLSchema"/>
+<wsdl:part name="dvEmisor" type="xsns:string" xmlns:xsns="http://www.w3.org/2001/XMLSchema"/>
+<wsdl:part name="tipoDoc" type="xsns:string" xmlns:xsns="http://www.w3.org/2001/XMLSchema"/>
+<wsdl:part name="folio" type="xsns:string" xmlns:xsns="http://www.w3.org/2001/XMLSchema"/></wsdl:message>
+<wsdl:message name="consultarFechaRecepcionSiiResponse">
+<wsdl:part name="return" type="xsns:string" xmlns:xsns="http://www.w3.org/2001/XMLSchema"/></wsdl:message>
+<wsdl:message name="Exception">
+<wsdl:part name="fault" element="xsns:Exception" xmlns:xsns="http://ws.registroreclamodte.diii.sdi.sii.cl"/></wsdl:message>
+<wsdl:message name="getVersion"/>
+<wsdl:message name="getVersionResponse">
+<wsdl:part name="return" type="xsns:string" xmlns:xsns="http://www.w3.org/2001/XMLSchema"/></wsdl:message>
+<wsdl:message name="ingresarAceptacionReclamoDoc">
+<wsdl:part name="rutEmisor" type="xsns:string" xmlns:xsns="http://www.w3.org/2001/XMLSchema"/>
+<wsdl:part name="dvEmisor" type="xsns:string" xmlns:xsns="http://www.w3.org/2001/XMLSchema"/>
+<wsdl:part name="tipoDoc" type="xsns:string" xmlns:xsns="http://www.w3.org/2001/XMLSchema"/>
+<wsdl:part name="folio" type="xsns:string" xmlns:xsns="http://www.w3.org/2001/XMLSchema"/>
+<wsdl:part name="accionDoc" type="xsns:string" xmlns:xsns="http://www.w3.org/2001/XMLSchema"/></wsdl:message>
+<wsdl:message name="ingresarAceptacionReclamoDocResponse">
+<wsdl:part name="return" type="xsns:respuestaTo" xmlns:xsns="http://ws.registroreclamodte.diii.sdi.sii.cl"/></wsdl:message>
+<wsdl:message name="listarEventosHistDoc">
+<wsdl:part name="rutEmisor" type="xsns:string" xmlns:xsns="http://www.w3.org/2001/XMLSchema"/>
+<wsdl:part name="dvEmisor" type="xsns:string" xmlns:xsns="http://www.w3.org/2001/XMLSchema"/>
+<wsdl:part name="tipoDoc" type="xsns:string" xmlns:xsns="http://www.w3.org/2001/XMLSchema"/>
+<wsdl:part name="folio" type="xsns:string" xmlns:xsns="http://www.w3.org/2001/XMLSchema"/></wsdl:message>
+<wsdl:message name="listarEventosHistDocResponse">
+<wsdl:part name="return" type="xsns:respuestaTo" xmlns:xsns="http://ws.registroreclamodte.diii.sdi.sii.cl"/></wsdl:message>
+<wsdl:portType name="RegistroReclamoDteService">
+<wsdl:operation name="consultarDocDteCedible" parameterOrder="rutEmisor dvEmisor tipoDoc folio">
+<wsdl:input name="consultarDocDteCedibleRequest" message="ns0:consultarDocDteCedible"/>
+<wsdl:output name="consultarDocDteCedibleResponse" message="ns0:consultarDocDteCedibleResponse"/></wsdl:operation>
+<wsdl:operation name="consultarFechaRecepcionSii" parameterOrder="rutEmisor dvEmisor tipoDoc folio">
+<wsdl:input name="consultarFechaRecepcionSiiRequest" message="ns0:consultarFechaRecepcionSii"/>
+<wsdl:output name="consultarFechaRecepcionSiiResponse" message="ns0:consultarFechaRecepcionSiiResponse"/></wsdl:operation>
+<wsdl:operation name="getVersion">
+<wsdl:input name="getVersionRequest" message="ns0:getVersion"/>
+<wsdl:output name="getVersionResponse" message="ns0:getVersionResponse"/></wsdl:operation>
+<wsdl:operation name="ingresarAceptacionReclamoDoc" parameterOrder="rutEmisor dvEmisor tipoDoc folio accionDoc">
+<wsdl:input name="ingresarAceptacionReclamoDocRequest" message="ns0:ingresarAceptacionReclamoDoc"/>
+<wsdl:output name="ingresarAceptacionReclamoDocResponse" message="ns0:ingresarAceptacionReclamoDocResponse"/>
+<wsdl:fault name="Exception" message="ns0:Exception"/></wsdl:operation>
+<wsdl:operation name="listarEventosHistDoc" parameterOrder="rutEmisor dvEmisor tipoDoc folio">
+<wsdl:input name="listarEventosHistDocRequest" message="ns0:listarEventosHistDoc"/>
+<wsdl:output name="listarEventosHistDocResponse" message="ns0:listarEventosHistDocResponse"/></wsdl:operation></wsdl:portType>
+<wsdl:binding name="RegistroReclamoDteServicePortBinding" type="ns0:RegistroReclamoDteService">
+<soap11:binding transport="http://schemas.xmlsoap.org/soap/http" style="rpc"/>
+<wsdl:operation name="consultarDocDteCedible">
+<soap11:operation soapAction="" style="rpc"/>
+<wsdl:input name="consultarDocDteCedibleRequest">
+<soap11:body use="literal" namespace="http://ws.registroreclamodte.diii.sdi.sii.cl"/></wsdl:input>
+<wsdl:output name="consultarDocDteCedibleResponse">
+<soap11:body use="literal" namespace="http://ws.registroreclamodte.diii.sdi.sii.cl"/></wsdl:output></wsdl:operation>
+<wsdl:operation name="consultarFechaRecepcionSii">
+<soap11:operation soapAction="" style="rpc"/>
+<wsdl:input name="consultarFechaRecepcionSiiRequest">
+<soap11:body use="literal" namespace="http://ws.registroreclamodte.diii.sdi.sii.cl"/></wsdl:input>
+<wsdl:output name="consultarFechaRecepcionSiiResponse">
+<soap11:body use="literal" namespace="http://ws.registroreclamodte.diii.sdi.sii.cl"/></wsdl:output></wsdl:operation>
+<wsdl:operation name="getVersion">
+<soap11:operation soapAction="" style="rpc"/>
+<wsdl:input name="getVersionRequest">
+<soap11:body use="literal" namespace="http://ws.registroreclamodte.diii.sdi.sii.cl"/></wsdl:input>
+<wsdl:output name="getVersionResponse">
+<soap11:body use="literal" namespace="http://ws.registroreclamodte.diii.sdi.sii.cl"/></wsdl:output></wsdl:operation>
+<wsdl:operation name="ingresarAceptacionReclamoDoc">
+<soap11:operation soapAction="" style="rpc"/>
+<wsdl:input name="ingresarAceptacionReclamoDocRequest">
+<soap11:body use="literal" namespace="http://ws.registroreclamodte.diii.sdi.sii.cl"/></wsdl:input>
+<wsdl:output name="ingresarAceptacionReclamoDocResponse">
+<soap11:body use="literal" namespace="http://ws.registroreclamodte.diii.sdi.sii.cl"/></wsdl:output>
+<wsdl:fault name="Exception">
+<soap11:fault name="Exception" use="literal"/></wsdl:fault></wsdl:operation>
+<wsdl:operation name="listarEventosHistDoc">
+<soap11:operation soapAction="" style="rpc"/>
+<wsdl:input name="listarEventosHistDocRequest">
+<soap11:body use="literal" namespace="http://ws.registroreclamodte.diii.sdi.sii.cl"/></wsdl:input>
+<wsdl:output name="listarEventosHistDocResponse">
+<soap11:body use="literal" namespace="http://ws.registroreclamodte.diii.sdi.sii.cl"/></wsdl:output></wsdl:operation></wsdl:binding>
+<wsdl:service name="RegistroReclamoDteServiceEndpointService">
+<wsdl:port name="RegistroReclamoDteServicePort" binding="ns0:RegistroReclamoDteServicePortBinding">
+<soap11:address location="https://ws2.sii.cl/WSREGISTRORECLAMODTECERT/registroreclamodteservice"/></wsdl:port></wsdl:service></wsdl:definitions>

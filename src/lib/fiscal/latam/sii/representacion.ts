@@ -5,25 +5,29 @@
 //   - recuadro arriba a la derecha con el RUT del emisor (con puntos), el
 //     nombre del documento en mayúsculas y el N° de folio; debajo, la
 //     dirección regional o unidad del SII (1.1.4);
+//   - arriba a la izquierda, bajo la razón social destacada: el giro sin
+//     abreviar, la casa matriz y la sucursal, en ese orden (1.1.7);
 //   - fecha de emisión, receptor (razón social, RUT, giro, dirección),
 //     referencias (tipo en palabras, folio, fecha, motivo) (1.1.7);
-//   - "Monto Exento" cuando hay ítems exentos y la tasa en el totalizador de
-//     IVA (1.4);
+//   - descuentos de línea en monto, en su línea (1.4, "Descuentos");
+//   - en la zona de totales: "Monto Neto", "Monto Exento" (si hay ítems
+//     exentos) e "IVA (19%)" con su tasa; la factura exenta solo informa el
+//     exento y el total (1.4, "Montos Exentos" y "Tasa de Impuesto");
 //   - timbre PDF417 al pie, a no menos de 2 cm del borde izquierdo, con
 //     "Timbre Electrónico SII", "Res. XX de AAAA" y "Verifique documento:
 //     www.sii.cl" debajo (1.5);
 //   - copia cedible (33 y 34): recuadro de acuse de recibo con nombre, RUT,
 //     fecha, recinto y firma, el texto de la Res. Ex. SII N° 51 de 2005 y la
-//     leyenda "CEDIBLE" abajo a la derecha (1.4). Las notas no llevan copia
-//     cedible.
+//     leyenda "CEDIBLE" abajo a la derecha (1.4). Las notas de crédito y de
+//     débito no llevan copia cedible ni acuse.
 //
 // Se arma UNA vez, al quedar aceptado, y se guarda en provider_data
 // (latam/representacion.ts). Puro: lo prueba scripts/sii-check.mjs.
 
 // Extensión .ts explícita: este módulo también se carga desde Node plano.
 import type { FilaRepresentacion, RepresentacionImpresa } from '../representacion.ts';
-import { TASA_IVA_PCT, TIPOS_DTE, type TipoDte } from './constantes.ts';
-import type { BorradorSii } from './dte.ts';
+import { TASA_IVA_PCT, TIPOS_DTE, TPO_DOC_REF_SET, type TipoDte } from './constantes.ts';
+import { referenciasDe, type BorradorSii } from './dte.ts';
 import { codificarPdf417, medidasTimbre } from './pdf417.ts';
 import { bytesLatin1, fechaDma, rutConPuntos } from './texto.ts';
 
@@ -45,9 +49,17 @@ export interface DatosRepresentacionSii {
     certificacion: boolean;
     /** Número de envío (trackid) con que el SII lo aceptó, si se conoce. */
     trackId?: string | null;
+    /**
+     * Muestra impresa para el SII (etapa "Documentos impresos" de la
+     * certificación): el documento se dibuja como uno real, sin el aviso de
+     * documento de prueba — el SII revisa la representación que tendrán los
+     * documentos de verdad. La resolución "0" ya dice que es de certificación.
+     */
+    muestra?: boolean;
 }
 
 const pesos = (n: number) => `$ ${new Intl.NumberFormat('es-CL', { maximumFractionDigits: 0 }).format(n)}`;
+const pct = (n: number) => new Intl.NumberFormat('es-CL', { maximumFractionDigits: 2 }).format(n);
 
 /** Codifica una fila de módulos ('0'/'1') en hexadecimal para guardarla compacta. */
 export function filaAHex(fila: string): string {
@@ -57,47 +69,80 @@ export function filaAHex(fila: string): string {
     return out;
 }
 
+/** Filas de referencia: tipo en palabras, folio, fecha y motivo (manual, 1.1.7 y 1.4). */
+export function filasReferencias(b: Pick<BorradorSii, 'referencias' | 'referencia'>): FilaRepresentacion[] {
+    const filas: FilaRepresentacion[] = [];
+    for (const r of referenciasDe(b)) {
+        if (r.tipo === TPO_DOC_REF_SET) {
+            filas.push({ k: 'Set de pruebas', v: r.razon });
+            continue;
+        }
+        const nombre = TIPOS_DTE[r.tipo as TipoDte]?.nombre ?? `DOCUMENTO TIPO ${r.tipo}`;
+        filas.push({ k: 'Referencia', v: `${nombre} N° ${r.folio} del ${fechaDma(r.fecha)}` });
+        if (r.razon) filas.push({ k: 'Motivo', v: r.razon });
+    }
+    return filas;
+}
+
+/** Totalizadores del SII en la zona de totales (manual, 1.4). */
+export function totalesSii(b: BorradorSii): FilaRepresentacion[] {
+    const filas: FilaRepresentacion[] = [];
+    if (b.descuentoGlobal && b.descuentoGlobal.monto > 0) {
+        filas.push({ k: `Descuento global ${pct(b.descuentoGlobal.pct)}% (ítems afectos)`, v: `-${pesos(b.descuentoGlobal.monto)}` });
+    }
+    const conIva = b.tipo !== 34 && (b.neto > 0 || b.iva > 0);
+    if (conIva) filas.push({ k: 'Monto neto', v: pesos(b.neto) });
+    if (b.exento > 0 || b.tipo === 34) filas.push({ k: 'Monto exento', v: pesos(b.exento) });
+    if (conIva) filas.push({ k: `IVA (${TASA_IVA_PCT}%)`, v: pesos(b.iva) });
+    return filas;
+}
+
 export function representacionSii(d: DatosRepresentacionSii): RepresentacionImpresa {
     const b = d.borrador;
     const tipo = TIPOS_DTE[b.tipo as TipoDte];
-    // El PDF de Cord ya imprime emisor, cliente (razón social, RUT, dirección),
-    // conceptos y totales; aquí va lo que la norma exige y ese PDF no trae.
-    const filas: FilaRepresentacion[] = [
-        { k: 'Fecha de emisión', v: fechaDma(b.fechaEmision) },
-        { k: 'Giro del emisor', v: b.emisor.giro },
-    ];
-    if (b.emisor.sucursal) filas.push({ k: 'Sucursal', v: b.emisor.sucursal });
-    if (b.receptor.giro) filas.push({ k: 'Giro del cliente', v: b.receptor.giro });
-    if (b.receptor.comuna) filas.push({ k: 'Comuna del cliente', v: b.receptor.comuna });
+    // El PDF de Cord ya imprime las razones sociales, el RUT del cliente, los
+    // conceptos y el total; aquí va lo que la norma exige y ese PDF no trae.
+    const filas: FilaRepresentacion[] = [{ k: 'Fecha de emisión', v: fechaDma(b.fechaEmision) }];
     if (b.formaPago) filas.push({ k: 'Forma de pago', v: b.formaPago === 1 ? 'Contado' : 'Crédito' });
     if (b.vencimiento) filas.push({ k: 'Vencimiento', v: fechaDma(b.vencimiento) });
     if (b.periodo) filas.push({ k: 'Período', v: `${fechaDma(b.periodo.desde)} al ${fechaDma(b.periodo.hasta)}` });
-    if (b.referencia) {
-        const ref = TIPOS_DTE[b.referencia.tipo];
-        filas.push({ k: 'Referencia', v: `${ref.nombre} N° ${b.referencia.folio} del ${fechaDma(b.referencia.fecha)}` });
-        filas.push({ k: 'Motivo', v: b.referencia.razon });
-    }
-    // Totalizadores del SII: el subtotal de Cord suma neto y exento juntos.
-    if (b.tipo !== 34 && (b.neto > 0 || b.iva > 0)) filas.push({ k: 'Monto neto', v: pesos(b.neto) });
-    if (b.exento > 0) filas.push({ k: 'Monto exento', v: pesos(b.exento) });
-    if (b.tipo !== 34 && (b.neto > 0 || b.iva > 0)) filas.push({ k: `IVA ${TASA_IVA_PCT}%`, v: pesos(b.iva) });
+    filas.push(...filasReferencias(b));
+
+    const em = b.emisor;
+    const emisor = [
+        `Giro: ${em.giro}`,
+        `Casa matriz: ${[em.direccion, em.comuna, em.ciudad].filter(Boolean).join(', ')}`,
+        ...(em.sucursal ? [`Sucursal: ${em.sucursal}`] : []),
+    ];
+    const re = b.receptor;
+    const receptor = [
+        ...(re.giro ? [`Giro: ${re.giro}`] : []),
+        ...(re.direccion ? [`Dirección: ${re.direccion}`] : []),
+        ...(re.comuna ? [`Comuna: ${re.comuna}${re.ciudad ? ` · Ciudad: ${re.ciudad}` : ''}`] : []),
+    ];
 
     const bytes = bytesLatin1(d.timbre);
     const medidas = medidasTimbre(bytes);
     const simbolo = codificarPdf417(bytes, medidas.columnas);
     const anioRes = d.resolucion.fecha.slice(0, 4);
+    const prueba = d.certificacion && !d.muestra;
 
     const leyendas: string[] = [];
-    if (d.certificacion) leyendas.push('Documento emitido en el ambiente de certificación (pruebas) del SII: no tiene validez tributaria.');
+    if (prueba) leyendas.push('Documento emitido en el ambiente de certificación (pruebas) del SII: no tiene validez tributaria.');
 
     return {
         rail: 'sii',
         titulo: tipo.nombre,
         recuadro: {
-            lineas: [`R.U.T.: ${rutConPuntos(b.emisor.rut)}`, tipo.nombre, `N° ${d.folio}`],
+            lineas: [`R.U.T.: ${rutConPuntos(em.rut)}`, tipo.nombre, `N° ${d.folio}`],
             pie: `S.I.I. - ${d.unidadSii.toUpperCase()}`,
         },
         filas,
+        emisor,
+        ...(receptor.length ? { receptor } : {}),
+        totales: totalesSii(b),
+        totalEtiqueta: 'Monto total',
+        descuentoPorLinea: true,
         timbre: {
             filas: simbolo.filas.map(filaAHex),
             modulos: simbolo.filas[0].length,
@@ -109,9 +154,9 @@ export function representacionSii(d: DatosRepresentacionSii): RepresentacionImpr
             cedible: { leyenda: LEYENDA_CEDIBLE, acuseTitulo: 'Acuse de recibo', acuseCampos: CAMPOS_ACUSE, acuseTexto: TEXTO_ACUSE },
         } : {}),
         leyendas,
-        pie: d.certificacion
+        pie: prueba
             ? `Documento de prueba emitido en certificación del SII (${tipo.nombre} N° ${d.folio}). Sin validez tributaria.`
-            : `Documento tributario electrónico aceptado por el SII. ${tipo.nombre} N° ${d.folio}. Verifique documento: www.sii.cl`,
-        ...(d.certificacion ? { prueba: true } : {}),
+            : `Documento tributario electrónico${d.muestra ? '' : ' aceptado por el SII'}. ${tipo.nombre} N° ${d.folio}. ${LEYENDA_VERIFIQUE}`,
+        ...(prueba ? { prueba: true } : {}),
     };
 }

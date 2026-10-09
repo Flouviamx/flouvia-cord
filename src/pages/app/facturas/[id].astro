@@ -46,7 +46,8 @@ const f = hasPerm ? await getFacturaDetalle(Astro.params.id ?? '') : null;
 if (hasPerm && !f) return Astro.redirect('/app/facturas');
 // Un borrador se edita, no se contempla: su sitio es el editor.
 // La factura global no tiene editor: su borrador se reintenta o se descarta aquí.
-if (f && f.estado === 'draft' && !f.invoiceNumber && !f.notaCreditoDe && !f.esGlobal) {
+// Las notas (de crédito y, en Chile, de débito) tampoco: se arman desde el documento que modifican.
+if (f && f.estado === 'draft' && !f.invoiceNumber && !f.notaCreditoDe && !f.notaDebitoDe && !f.esGlobal) {
     return Astro.redirect(`/app/facturas/nueva?draft=${f.id}`);
 }
 
@@ -342,6 +343,7 @@ const EINV_FIX: Record<string, { href: string; es: string; en: string }> = {
                                         <h2>{f.cliente ?? (L === 'en' ? 'No client' : 'Sin cliente')}</h2>
                                         {f.vencida && <span class="fd-badge fd-badge-danger">+{f.diasVencida}d</span>}
                                         {f.notaCreditoDe && <span class="fd-badge">{t(L, 'fact.d_nota_credito')}</span>}
+                                        {f.notaDebitoDe && <span class="fd-badge">{L === 'en' ? 'Debit note' : 'Nota de débito'}</span>}
                                         {esGlobal && <span class="fd-badge">{t(L, 'fglob.badge')}</span>}
                                         {f.simulado && <span class="fd-badge fd-badge-test">{L === 'en' ? 'Test document' : 'Documento de prueba'}</span>}
                                         {!f.simulado && f.testMode && <span class="fd-badge fd-badge-test">{t(L, 'fact.badge_prueba')}</span>}
@@ -475,9 +477,9 @@ const EINV_FIX: Record<string, { href: string; es: string; en: string }> = {
                     <aside class="fd-side">
                         <section class="fd-actions">
                             <div class="fd-section-head"><h2>{L === 'en' ? 'Actions' : 'Acciones'}</h2></div>
-                            {f.estado === 'draft' && (f.estadoFiscal === 'error' || f.notaCreditoDe) && (
+                            {f.estado === 'draft' && (f.estadoFiscal === 'error' || f.notaCreditoDe || f.notaDebitoDe) && (
                                 <button type="button" class="fd-btn fd-btn-primary" data-act="finalize">
-                                    {f.estadoFiscal === 'error' ? (L === 'en' ? 'Retry issuing' : 'Reintentar emisión') : (L === 'en' ? 'Issue credit note' : 'Emitir nota de crédito')}
+                                    {f.estadoFiscal === 'error' ? (L === 'en' ? 'Retry issuing' : 'Reintentar emisión') : f.notaDebitoDe ? (L === 'en' ? 'Issue debit note' : 'Emitir nota de débito') : (L === 'en' ? 'Issue credit note' : 'Emitir nota de crédito')}
                                 </button>
                             )}
                             {esGlobal && f.estado === 'draft' && (

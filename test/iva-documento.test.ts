@@ -164,7 +164,7 @@ describe('DTE: el IVA del documento', () => {
             totales: { subtotal: nota!.subtotal, taxes: nota!.taxes, total: nota!.subtotal + nota!.taxes, currency: 'CLP' },
             notaCreditoDe: { tipo: 33, folio: 7, fechaEmision: '2026-10-09', total: doc.total, receptor: { ...receptor } },
         });
-        expect(b).toMatchObject({ tipo: 61, iva: nota!.taxes, referencia: { codigo: 3 } });
+        expect(b).toMatchObject({ tipo: 61, iva: nota!.taxes, referencias: [{ codigo: 3 }] });
     });
 });
 

@@ -32,7 +32,7 @@ import { RailDatosError, RailNoDisponibleError, RailTransitorioError, MSG_INCIER
 import type { EntornoRail } from '../rieles';
 import { sql, withOrgTx } from '../../../db';
 import { consumirFolio } from './cafs';
-import { SERVICIO_TOKEN, TIPOS_DTE, VIGENCIA_TOKEN_MS } from './constantes';
+import { SERVICIO_TOKEN, TIPOS_DTE, VIGENCIA_TOKEN_MS, type TipoDte } from './constantes';
 import { numeroDocumento, type BorradorSii } from './dte';
 import { emitirDocumento } from './emision';
 import { semillaFirmada } from './envio';
@@ -201,7 +201,7 @@ export async function estadoDte(ctx: ContextoSii, s: SolicitudSii): Promise<Resp
 
 /** Lo que se le envía al SII por UN documento. Se persiste tal cual en `solicitud`. */
 export interface SolicitudSii {
-    tipo: 33 | 34 | 61;
+    tipo: TipoDte;
     folio: number;
     fechaEmision: string;
     rutEmisor: string;

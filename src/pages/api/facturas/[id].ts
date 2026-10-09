@@ -1,5 +1,8 @@
 // /api/facturas/[id] — ciclo de vida de una factura.
-//   PATCH { action: 'finalize' | 'finalize_and_send' | 'send' | 'duplicate' | 'payment' | 'void' | 'credit_note' | 'uncollectible' | 'retry_complements' | 'substitute' }
+//   PATCH { action: 'finalize' | 'finalize_and_send' | 'send' | 'duplicate' | 'payment' | 'void' | 'credit_note' | 'debit_note' | 'uncollectible' | 'retry_complements' | 'substitute' }
+//   Chile: `debit_note` crea el borrador de una nota de débito (DTE 56) sobre
+//   un documento aceptado por el SII — `items` [{ descripcion, monto, exento }]
+//   sobre una factura; sin ítems sobre una nota de crédito, que anula completa.
 //   México: `void` lleva `motivo` = clave del SAT (02, 03, 04; el 01 lo pide la
 //   sustitución) y `substitute` crea el borrador que sustituye a un CFDI emitido.
 //   DELETE                                     → { ok }  (solo borradores)
@@ -12,7 +15,7 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { sql, getActiveOrgId, logAudit, reqIp, withOrgTx } from '../../../lib/db';
 import { requirePerm, invalidateMoneyCaches, getFacturaDetalle } from '../../../lib/queries';
-import { createInvoiceDraft, finalizeInvoice, voidInvoice, createCreditNote, updateInvoiceDraft, parseInvoiceItems, parseInvoiceReferences, parseServiceDates, parseCfdiOverrides, MAX_INVOICE_ITEMS } from '../../../lib/fiscal/invoices';
+import { createInvoiceDraft, finalizeInvoice, voidInvoice, createCreditNote, createDebitNote, updateInvoiceDraft, parseInvoiceItems, parseInvoiceReferences, parseServiceDates, parseCfdiOverrides, MAX_INVOICE_ITEMS } from '../../../lib/fiscal/invoices';
 import { createSubstitutionDraft } from '../../../lib/fiscal/sustitucion';
 import { isMotivoCancelacion } from '../../../lib/fiscal/cfdi-catalogos';
 import { isFiscalDocument } from '../../../lib/fiscal/document-kind';
@@ -89,6 +92,7 @@ export const PATCH: APIRoute = async ({ params, request }) => {
         case 'cancellation_status': return voidIt(orgId, id, body, request, doc);
         case 'substitute': return substitute(orgId, id, request);
         case 'credit_note': return creditNote(orgId, id, body, request);
+        case 'debit_note': return debitNote(orgId, id, body, request);
         case 'uncollectible': return uncollectible(orgId, id, doc, request);
         case 'retry_complements': {
             // México: vuelve a pedir los complementos de pago que no salieron.
@@ -417,6 +421,30 @@ async function creditNote(orgId: string, id: string, body: any, request: Request
     await logAudit(orgId, {
         accion: 'factura.nota_credito', entidad: 'factura', entidad_id: result.documentId as string,
         detalle: `Nota de crédito de ${id}`, ip: reqIp(request),
+    });
+    invalidateMoneyCaches(orgId);
+    // Nace como borrador: se emite con `finalize`, igual que cualquier otra.
+    return json({ id: result.documentId, token: result.publicToken });
+}
+
+async function debitNote(orgId: string, id: string, body: any, request: Request) {
+    const subscriptionDenied = await requireEntitlement(orgId, await invoicingFeatureFor(orgId));
+    if (subscriptionDenied) return subscriptionDenied;
+    const items = Array.isArray(body.items) ? body.items.slice(0, 20).map((it: any) => ({
+        descripcion: String(it?.descripcion ?? '').trim().slice(0, 500),
+        cantidad: it?.cantidad === undefined || it?.cantidad === '' ? undefined : Number(it.cantidad),
+        precioUnitario: Number(it?.monto ?? it?.precioUnitario),
+        taxRate: it?.exento === true ? 0 : Number.isFinite(Number(it?.taxRate)) ? Number(it.taxRate) : 0.19,
+    })) : undefined;
+    const result = await createDebitNote(orgId, id, {
+        items,
+        motivo: String(body.motivo ?? '').trim().slice(0, 90) || undefined,
+        createdBy: currentUserId(),
+    });
+    if (!result.ok) return json({ error: result.error }, 400);
+    await logAudit(orgId, {
+        accion: 'factura.nota_debito', entidad: 'factura', entidad_id: result.documentId as string,
+        detalle: `Nota de débito de ${id}`, ip: reqIp(request),
     });
     invalidateMoneyCaches(orgId);
     // Nace como borrador: se emite con `finalize`, igual que cualquier otra.

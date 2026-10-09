@@ -1511,8 +1511,8 @@ veredicto. Proveedor: `providers/ChileSiiProvider.ts`; riel: `latam/sii/`.
 Cobertura:
 
 - **Tipos**: factura electrónica (33), factura no afecta o exenta (34, cuando
-  todos los conceptos son exentos) y nota de crédito (61). La boleta (39/41), la
-  factura de exportación (110–112), la nota de débito (56), la guía de despacho
+  todos los conceptos son exentos), nota de débito (56) y nota de crédito (61).
+  La boleta (39/41), la factura de exportación (110–112), la guía de despacho
   (52) y la boleta de honorarios no se emiten: se dice en Ajustes y, si el
   documento lo requiere (cliente sin RUT, cliente extranjero sin RUT,
   retención), se rechaza ANTES de tomar folio.
@@ -1525,8 +1525,8 @@ Cobertura:
   = tipo de DTE) y **un folio usado no vuelve nunca**: un rechazo o un descarte
   libera el documento, no el folio. El trigger de la tabla impide solapar
   rangos, retroceder el folio, cambiar la identidad de un CAF o borrar uno con
-  folios usados. Vigencia de seis meses desde la autorización para 33 y 61
-  (Res. Ex. SII 58/2017; la 61 por prudencia), aviso cuando quedan
+  folios usados. Vigencia de seis meses desde la autorización para 33, 56 y 61
+  (Res. Ex. SII 58/2017: dan crédito fiscal), aviso cuando quedan
   max(20, 10 %) o menos. La firma del SII sobre el CAF (`FRMA`) no se verifica:
   el SII no publica sus llaves por `IDK`.
 - **Timbre electrónico**: `DD` aplanado en ISO-8859-1 y firmado SHA1withRSA con
@@ -1665,9 +1665,154 @@ rechazo, validación diferida, respuesta perdida, STATUS 3 y 5, cron, nota de
 crédito, folios (concurrencia, agotamiento, trigger), XML para el cliente y
 RLS; `test/sii-comprobante.test.ts` las piezas puras.
 
+### Nota de débito, set de pruebas e intercambio (Chile) — oct 2026
+
+Lo que faltaba para que un negocio complete la certificación ante el SII con
+Cord. Fuentes primarias (www.sii.cl), vendorizadas o citadas en
+`scripts/sii-check.mjs`: Formato DTE v2.2 (área de referencias), "Instrucciones
+para la construcción de DTE con los datos del set de pruebas", "Manual de
+certificación" (2009), "Formato Mensaje de Respuesta a DTE" v1.0 con
+`RespuestaEnvioDTE_v10.xsd`, "Formato Recibo Electrónico… Ley 19.983" v1.0 con
+`EnvioRecibos_v10.xsd`/`Recibos_v10.xsd`, instructivo técnico (Anexo 4), "Web
+Service de Consulta y Registro de Aceptación/Reclamo a DTE recibido" v1.2 con
+sus WSDL de `ws2` (certificación) y `ws1` (producción), y el "Manual de muestras
+impresas" v4.0.
+
+**Nota de débito (DTE 56): decisión.** Cord no tenía nota de débito en el ciclo
+de la factura. El menor cambio que la deja usable fuera de la certificación es
+un `document_type` propio del riel, como la nota de crédito: `RIELES.sii.
+documentos.notaDebito = 'sii_debit_note'` (opcional en `RailDefinicion`; ningún
+otro riel la declara y nada de su ciclo cambia) y la columna
+`documentos_fiscales.nota_debito_de` (el documento que modifica).
+`createDebitNote()` (`fiscal/invoices.ts`) crea el borrador desde el documento
+emitido: sobre una **factura** (o una nota de débito) lleva los conceptos que se
+indiquen —cargo adicional, intereses, diferencia de precio— y el DTE sale con
+**CodRef 3** ("corrige montos", caso d del formato); sobre una **nota de
+crédito** copia sus conceptos y la anula completa con **CodRef 1** (caso c), una
+sola vez. CodRef 2 ("corrige texto") es solo de la nota de crédito (caso b) y lo
+usa el set de pruebas. La nota de débito es una cuenta por cobrar propia (no
+reserva saldo del original), no lleva `FmaPago` ni copia cedible, su serie
+interna es `ND-` y su número legal `ND-<folio>` (`C-ND-` en certificación); sus
+folios vienen de un CAF 56, que vence a los seis meses como el de factura
+(Res. Ex. 58/2017: da crédito fiscal). Se ofrece en el panel del SII de un
+documento aceptado (`SiiEstadoFactura.astro`, acción `debit_note` de
+`/api/facturas/[id]`) y se emite como cualquier borrador; el editor de facturas
+no la toca. Fuera de Chile `createDebitNote` responde "Este documento no admite
+nota de débito".
+
+**Set de pruebas** (`latam/sii/set-pruebas.ts`, `certificacion.ts`, tabla
+`fiscal_sii_sets`, `/api/fiscal/sii-certificacion`, Ajustes › Datos fiscales):
+el negocio pega o abre el archivo que le asignó el SII (ISO-8859-1, tabuladores;
+un carácter ilegible —una tilde perdida al copiar— se rechaza: la glosa va
+EXACTA). Cord lee cada set, arma los casos y elige por defecto clientes con RUT
+distintos para las facturas (I.4.b); el negocio puede cambiarlos. Al enviar:
+valida el set completo ANTES de tomar folios, toma un folio de certificación por
+caso con la misma secuencia que la emisión (nunca se repite), firma todos los
+casos en UN envío en el orden del set con la carátula al SII (60803000-K) y la
+resolución 0, y lo sube. Cada DTE lleva en la línea 1 de referencias
+`TpoDocRef` "SET" y `RazonRef` "CASO n" (I.6) —`FolioRef`/`FchRef` son los del
+propio documento: el instructivo no los fija y el esquema los exige—; las notas
+referencian su documento desde la línea 2 con el CodRef que dice la razón del
+caso (ANULA → 1, CORRIGE sin ítems → 2, el resto 3). Descuentos por línea en %
+y monto (`DescuentoPct` + `DescuentoMonto`), descuento global sobre afectos
+(`DscRcgGlobal`), NC por devolución al precio de la factura original (I.4.e),
+notas de monto cero (corrección de giro y su anulación). El veredicto se
+consulta por tipo (`QueryEstUp`, un bloque por tipo de documento): aceptado,
+con reparos o rechazado; con reparos o rechazos el set no está aprobado y el
+reintento es una fila nueva con folios nuevos (II). Los documentos del set NO
+son `documentos_fiscales`: no entran a la cartera ni a la numeración de Cord.
+Solo existe en el ambiente de certificación (el despliegue con
+`SII_ENTORNO=homologacion`): el entorno es del despliegue, no de la cuenta.
+
+**Lo que el set exige y Cord NO arma** (se dice al cargar el archivo, con su
+número de atención): los **libros de ventas y de compras** (Información
+Electrónica de Compras y Ventas, IECV: Tipo de Libro ESPECIAL, envío TOTAL,
+Folio Notificación 1 y 2 — instrucciones, III y IV), la **guía de despacho
+(52)** y su **libro de guías**, los **documentos de exportación** (110/111/112)
+y la **factura de compra (46)**, según lo que el negocio postuló. Sin los libros
+el SII no da por terminado el set: para un negocio que solo factura, el libro de
+ventas y el de compras son obligatorios. Pendiente de decidir si Cord los
+construye.
+
+**Intercambio** (`latam/sii/respuesta-intercambio.ts`, `recepcion.ts`,
+`reclamo.ts`; tablas `fiscal_sii_buzones`, `fiscal_sii_recepciones`,
+`fiscal_sii_dte_recibidos`, `fiscal_sii_respuestas`, todas con RLS forzada):
+
+- *Entrada.* Reutiliza el correo entrante que Cord ya tenía
+  (`INBOUND_EMAIL_SECRET`, `/api/webhooks/inbound-email`): la autenticación
+  (bearer en tiempo constante + HMAC del cuerpo con ventana) pasó a
+  `src/lib/inbound-auth.ts` y la comparten las dos rutas. La nueva
+  `/api/webhooks/sii-intercambio` (pública y exenta de CSRF; falla cerrado sin
+  el secreto o sin `SII_INTERCAMBIO_DOMINIO`) recibe el correo de la casilla
+  `dte-<token>@<dominio>` de cada negocio; la casilla se resuelve con
+  `cord_sii_buzon_org()` (security definer) y el trabajo vuelve a `withOrgTx`.
+  Sin el dominio no hay casilla y Ajustes ofrece subir el XML a mano
+  (`/api/fiscal/sii-intercambio`), por el mismo camino.
+- *Validación* (nunca lanza: todo es un estado del formato). Ilegible o con DTD
+  → 91; sin la estructura de un EnvioDTE → 1; firma del `SetDTE` → 2; RUT
+  receptor de la carátula ≠ el del negocio → 3. Por DTE: firma → 1, RUT emisor ≠
+  carátula → 2, RUT receptor → 3, mismo emisor/tipo/folio ya recibido → 4. La
+  firma se verifica con el certificado de la propia firma (RSA-SHA1, C14N
+  inclusivo), en el contexto del sobre o suelto (convención del SII). No hay un
+  validador XSD en el servidor: se verifica la estructura que el receptor lee;
+  la validación completa contra los XSD corre en `security:sii` sobre lo que
+  arma Cord. El archivo se guarda tal cual; el mismo archivo dos veces no se
+  procesa ni se responde dos veces.
+- *Respuestas*, firmadas con el certificado del negocio y enviadas por correo
+  al emisor, un único adjunto por correo (Anexo 4, 4.3): `RespuestaDTE` con
+  `<RecepcionEnvio>` al recibir (acuse del envío y de cada DTE); al decidir,
+  `RespuestaDTE` con `<ResultadoDTE>` (las dos secciones son excluyentes: dos
+  archivos) — ACEPTADO OK, ACEPTADO CON DISCREPANCIAS o RECHAZADO con su motivo
+  obligatorio (Ley 19.983) — y `EnvioRecibos` por lo recibido conforme con su
+  recinto (33 y 34; la `Declaracion` es el texto fijo del esquema; cada
+  `Recibo` firmado suelto como el DTE y el `SetRecibos` en el sobre). En
+  certificación las respuestas van a `SII_dte_intercambio@sii.cl` (manual de
+  certificación, paso 3); en producción a quien mandó el envío (o al
+  `CorreoEmisor` del DTE, o al correo que se indique). Una decisión no se
+  cambia (trigger en `fiscal_sii_dte_recibidos`).
+- *Registro en el SII* (Ley 20.956): la misma decisión se registra con
+  `ingresarAceptacionReclamoDoc` — ACD al aceptar (más ERM si hubo recibo),
+  RCD/RFP/RFT al reclamar — para 33, 34 y 43, dentro de los 8 días corridos.
+  Token de `CrSeed`/`GetTokenFromSeed` en la cookie `TOKEN`; 0 y 7 (ya
+  registrado) cuentan como registrado; el resto se dice al usuario sin la
+  glosa cruda y se puede reintentar. No verificado contra el SII real: que el
+  token de maullin sirva en ws2 (el manual dice "autenticado con certificado
+  digital de acuerdo a autenticacion.pdf").
+
+**Muestras impresas** (Manual de muestras impresas v4.0), revisadas contra el
+PDF con timbre y la copia cedible. Ya cumplía: recuadro rojo de 7,2 × ≥1,5 cm
+con RUT, nombre y N°, unidad del SII debajo, timbre PDF417 de 2–4 × 5–9 cm a
+2 cm del borde con sus leyendas, acuse de recibo con nombre, RUT, fecha, recinto
+y firma y el texto de la Res. 51/2005, "CEDIBLE" abajo a la derecha, notas sin
+copia cedible. Corregido: (1) el recuadro empezaba a 4,2 mm del borde (mínimo
+5 mm, 1.1.2) y con un perfil de marca "contraste" la cabecera se pintaba hasta
+el borde y la unidad del SII salía en blanco — con recuadro, la cabecera es
+blanca y la tinta negra; (2) el giro y la casa matriz del emisor, y el giro, la
+dirección y la comuna del receptor, van ahora en su bloque, como los declaró el
+DTE (1.1.7), en lugar de en la franja superior; (3) "Monto Neto", "Monto
+Exento" e "IVA (19%)" van en la zona de totales (1.4), y la factura exenta solo
+informa el exento; (4) el descuento de cada línea se imprime en su línea, en
+monto (1.4, "Descuentos"), y el descuento global con su porcentaje; (5) varias
+referencias, incluida la del set. La muestra de cada caso del set se descarga
+desde Ajustes (un PDF de una página por documento, con su copia cedible, sin el
+aviso de documento de prueba); la de la simulación es el PDF de la factura.
+
+**Verificación:** `test/sii-certificacion-db.test.ts` (PGlite + SII simulado:
+nota de débito sobre factura y sobre nota de crédito, set completo en un envío
+con folios de certificación y veredicto por tipo, reintento con folios nuevos,
+recepción con sus rechazos, respuestas firmadas, registro ACD/ERM/RFT, plazo de
+8 días, casilla y webhook autenticado, RLS) y `npm run security:sii` (sección 7:
+el set leído del archivo del SII, el envío del set y la nota de débito contra
+`EnvioDTE_v10.xsd`, las tres respuestas contra sus XSD oficiales, controles
+negativos, firmas verificadas con la JDK, y el registro de reclamos contra sus
+WSDL).
+
 ### Activación del SII paso a paso
 
-1. `npm run db:migrate` (o el despliegue, que aplica `db/deploy/2026-10-09-sii.sql`).
+1. `npm run db:migrate` (o el despliegue, que aplica `db/deploy/2026-10-09-sii.sql` y
+   `db/deploy/2026-10-09-sii2-certificacion.sql`). Para la casilla de intercambio:
+   `SII_INTERCAMBIO_DOMINIO` y `INBOUND_EMAIL_SECRET`, con el correo entrante del
+   dominio dirigido a `/api/webhooks/sii-intercambio`.
 2. **Certificado y postulación.** El representante del negocio obtiene un
    certificado digital de una entidad acreditada y lo registra en el SII; luego
    postula como emisor electrónico con sistema de mercado en el sitio del SII
@@ -1683,13 +1828,13 @@ RLS; `test/sii-comprobante.test.ts` las piezas puras.
    certificación, los sube con su certificado y sus datos, y recorre las etapas
    del SII — set de pruebas, simulación, intercambio de información y muestras
    impresas (el PDF con timbre y la copia cedible) — y firma la declaración de
-   cumplimiento. **Pendiente para completarla:** el set de pruebas exige una
-   referencia "SET / CASO n" en cada documento y casos de tipos que Cord no
-   emite (nota de débito 56 y, según el set, guías y libros), y la etapa de
-   intercambio exige RECIBIR DTE y responder acuses (`RespuestaDTE`,
-   `EnvioRecibos`), que Cord no hace. Tampoco está verificado si Flouvia puede
-   registrarse ante el SII como proveedor de software certificado para
-   simplificar este trámite a sus clientes.
+   cumplimiento. El set (facturas, notas de crédito y de débito), el
+   intercambio y las muestras se hacen desde Ajustes › Datos fiscales (sección
+   anterior). **Pendiente para completarla:** los libros de compras y ventas
+   (IECV) que pide el set, y la guía de despacho y su libro si el negocio los
+   postuló. Tampoco está verificado si Flouvia puede registrarse ante el SII
+   como proveedor de software certificado para simplificar este trámite a sus
+   clientes.
 5. **Producción.** Con la resolución del SII, cada negocio sube su certificado
    y sus folios de producción (palena) y carga el número y la fecha de la
    resolución; después `SII_ENTORNO=produccion` y `SII_ENABLED=true` en

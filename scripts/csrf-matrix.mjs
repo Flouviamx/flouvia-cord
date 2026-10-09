@@ -12,6 +12,7 @@ const exempt = [
     ['/api/resend/marketing-webhook', 'POST'],
     ['/api/integraciones/hubspot/webhook', 'POST'],
     ['/api/integraciones/shopify/webhook', 'POST'],
+    ['/api/webhooks/sii-intercambio', 'POST'],
     [`/api/auth/saml/${uuid}/acs`, 'POST'],
 ];
 for (const [path, method] of exempt) {
@@ -27,6 +28,8 @@ const guarded = [
     ['/api/blog/subscribe', 'POST'],
     ['/api/ops/operators', 'POST'],
     ['/api/integraciones/hubspot', 'POST'],
+    // El intercambio subido a mano en Ajustes es de sesión: exige Origin.
+    ['/api/fiscal/sii-intercambio', 'POST'],
 ];
 for (const [path, method] of guarded) {
     assert.equal(isCsrfExemptWrite(path, method), false, `${method} ${path} debe exigir Origin`);

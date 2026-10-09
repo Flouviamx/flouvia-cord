@@ -47,8 +47,13 @@ export interface RailDefinicion {
     pais: string;
     /** Nombre de la autoridad tal como lo conoce el dueño del negocio (regla 14: nunca el del web service). */
     autoridad: string;
-    /** `documentos_fiscales.document_type` de los documentos de este riel. */
-    documentos: { factura: string; notaCredito: string };
+    /**
+     * `documentos_fiscales.document_type` de los documentos de este riel. La
+     * nota de débito es opcional y propia del riel que la emite: hoy solo el
+     * SII (DTE 56, `documentos_fiscales.nota_debito_de`). Los demás rieles no
+     * la declaran y nada de su ciclo cambia.
+     */
+    documentos: { factura: string; notaCredito: string; notaDebito?: string };
     /** Prefijo de las variables de entorno del riel: `<PREFIJO>_ENABLED`, `<PREFIJO>_ENTORNO`. */
     envPrefijo: string;
     /**
@@ -105,7 +110,7 @@ export const RIELES: Readonly<Record<RailId, RailDefinicion>> = {
         id: 'sii',
         pais: 'CL',
         autoridad: 'SII',
-        documentos: { factura: 'sii_invoice', notaCredito: 'sii_credit_note' },
+        documentos: { factura: 'sii_invoice', notaCredito: 'sii_credit_note', notaDebito: 'sii_debit_note' },
         envPrefijo: 'SII',
         // Un DTE aceptado no se anula ante el SII: se corrige o se anula con
         // una nota de crédito que lo referencia (formato DTE, CodRef 1 y 3).
@@ -159,14 +164,21 @@ export function rielesDePais(country: unknown): RailDefinicion[] {
 /** Riel al que pertenece un `document_type` persistido. */
 export function railDeDocumento(documentType: unknown): RailDefinicion | null {
     const type = String(documentType ?? '');
-    return LISTA.find((r) => r.documentos.factura === type || r.documentos.notaCredito === type) ?? null;
+    return LISTA.find((r) => r.documentos.factura === type || r.documentos.notaCredito === type || r.documentos.notaDebito === type) ?? null;
 }
 
 /** Todos los `document_type` que pertenecen a un riel regulatorio de LatAm. */
-export const DOCUMENTOS_DE_RIELES: readonly string[] = LISTA.flatMap((r) => [r.documentos.factura, r.documentos.notaCredito]);
+export const DOCUMENTOS_DE_RIELES: readonly string[] = LISTA.flatMap((r) => [
+    r.documentos.factura, r.documentos.notaCredito, ...(r.documentos.notaDebito ? [r.documentos.notaDebito] : []),
+]);
 
 export function esNotaCreditoDeRail(documentType: unknown): boolean {
     return LISTA.some((r) => r.documentos.notaCredito === String(documentType ?? ''));
+}
+
+export function esNotaDebitoDeRail(documentType: unknown): boolean {
+    const type = String(documentType ?? '');
+    return !!type && LISTA.some((r) => r.documentos.notaDebito === type);
 }
 
 export function esRailId(value: unknown): value is RailId {

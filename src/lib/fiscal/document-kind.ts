@@ -2,7 +2,7 @@ import { getEffectivePlan } from '../org-entitlements';
 import { sql, withOrgTx } from '../db';
 import { planIncludes, type PlanId } from '../entitlements';
 import { verifactuEnvioConfig } from './verifactu/sif';
-import { DOCUMENTOS_DE_RIELES, esNotaCreditoDeRail, railDePais, rielesDePais } from './latam/rieles';
+import { DOCUMENTOS_DE_RIELES, esNotaCreditoDeRail, esNotaDebitoDeRail, railDePais, rielesDePais } from './latam/rieles';
 import { railListo } from './latam/estado';
 
 export type InvoiceMode = 'commercial' | 'fiscal';
@@ -67,5 +67,7 @@ export function documentPrefix(type: string, fiscalPrefix: string, defaultPrefix
   // serie por defecto del país se conserva "NCC", que es la que ya existe.
   if (type === 'commercial_credit_note') return defaultPrefix && fiscalPrefix !== defaultPrefix ? `NCC-${fiscalPrefix}` : 'NCC';
   if (type === 'cfdi_egreso' || type === 'verifactu_credit_note' || esNotaCreditoDeRail(type)) return `NC-${fiscalPrefix}`;
+  // Nota de débito de un riel (Chile, DTE 56): su propia serie, como la nota de crédito.
+  if (esNotaDebitoDeRail(type)) return `ND-${fiscalPrefix}`;
   return fiscalPrefix;
 }

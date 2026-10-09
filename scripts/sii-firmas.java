@@ -1,10 +1,13 @@
 // Verificador independiente de firmas XMLDSig para scripts/sii-check.mjs:
 // valida cada <Signature> de los archivos dados con javax.xml.crypto de la
-// JDK (no con el codigo de Cord). Marca como ID el atributo ID de <Documento>
-// y <SetDTE>, como hace el SII. Sale con 3 si alguna firma no verifica.
+// JDK (no con el codigo de Cord). Marca como ID el atributo ID de <Documento>,
+// <SetDTE>, <Resultado> (RespuestaDTE), <SetRecibos> y <DocumentoRecibo>
+// (EnvioRecibos), como hace el SII. Sale con 3 si alguna firma no verifica.
 // Uso: java scripts/sii-firmas.java [--sobre] archivo.xml [...]
 //
-// Con --sobre solo verifica la firma del <SetDTE> (hija de <EnvioDTE>): el DTE
+// Con --sobre solo verifica la firma hija del elemento raiz (la del <SetDTE>
+// en <EnvioDTE>, la del <Resultado> en <RespuestaDTE>, la del <SetRecibos>
+// en <EnvioRecibos>): el DTE y el recibo
 // se firma suelto, sin espacios de nombres (convencion del SII, ver
 // src/lib/fiscal/latam/sii/envio.ts), y un verificador estandar lo
 // canonicalizaria dentro del sobre heredando xmlns y xmlns:xsi; el ejemplo
@@ -43,14 +46,14 @@ public class VerificaFirmas {
         for (String path : args) {
             if (path.equals("--sobre")) continue;
             Document doc = f.newDocumentBuilder().parse(new File(path));
-            for (String tag : new String[]{"Documento", "SetDTE"}) {
+            for (String tag : new String[]{"Documento", "SetDTE", "Resultado", "SetRecibos", "DocumentoRecibo"}) {
                 NodeList l = doc.getElementsByTagNameNS("*", tag);
                 for (int i = 0; i < l.getLength(); i++) ((Element) l.item(i)).setIdAttribute("ID", true);
             }
             NodeList firmas = doc.getElementsByTagNameNS(XMLSignature.XMLNS, "Signature");
             XMLSignatureFactory fac = XMLSignatureFactory.getInstance("DOM");
             for (int i = 0; i < firmas.getLength(); i++) {
-                if (soloSobre && !"EnvioDTE".equals(firmas.item(i).getParentNode().getLocalName())) continue;
+                if (soloSobre && firmas.item(i).getParentNode() != doc.getDocumentElement()) continue;
                 DOMValidateContext ctx = new DOMValidateContext(new Selector(), firmas.item(i));
                 ctx.setProperty("org.jcp.xml.dsig.secureValidation", Boolean.FALSE);
                 XMLSignature sig = fac.unmarshalXMLSignature(ctx);

@@ -388,9 +388,14 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
 
   // ── Cabecera de marca ──────────────────────────────────────────────────────
   const HEADER_H = 104;
-  const contrast = appearance.header === 'contrast';
+  // Con el recuadro de una autoridad (Chile) la cabecera es blanca y la tinta
+  // negra: nada se imprime hasta el borde de la hoja ("borde sin letras" de
+  // 0,5 cm) y el recuadro solo admite negro o rojo (manual de muestras
+  // impresas del SII, 1.1.2 y 1.1.4).
+  const sinFondo = !!input.autoridad?.recuadro;
+  const contrast = appearance.header === 'contrast' && !sinFondo;
   const headerInk = contrast ? onBrand : INK;
-  doc.rect(0, 0, PAGE_W, HEADER_H, { fill: contrast ? brand : appearance.header === 'soft' ? tint(secondary,.9) : WHITE });
+  doc.rect(0, 0, PAGE_W, HEADER_H, { fill: contrast ? brand : appearance.header === 'soft' && !sinFondo ? tint(secondary,.9) : WHITE });
   if (appearance.header === 'classic') doc.line(MARGIN,HEADER_H,MARGIN+contentW,HEADER_H,{color:brand,width:2});
 
   if (logo) {
@@ -420,11 +425,13 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
     const lineas = recuadro.lineas.flatMap((l) => wrapText(l, boxW - 14, 10, 'bold'));
     const boxH = Math.max(mmAPuntos(15), lineas.length * 13 + 14);
     const boxX = PAGE_W - MARGIN - boxW;
-    doc.rect(boxX, 12, boxW, boxH, { fill: WHITE, stroke: RECUADRO, lineWidth: mmAPuntos(0.7) });
-    lineas.forEach((l, i) => doc.text(l, boxX, 12 + (boxH - lineas.length * 13) / 2 + 10 + i * 13, {
+    // A 6,35 mm del borde superior: el manual pide al menos 0,5 cm sin impresión.
+    const boxY = mmAPuntos(6.35);
+    doc.rect(boxX, boxY, boxW, boxH, { fill: WHITE, stroke: RECUADRO, lineWidth: mmAPuntos(0.7) });
+    lineas.forEach((l, i) => doc.text(l, boxX, boxY + (boxH - lineas.length * 13) / 2 + 10 + i * 13, {
       size: 10, font: 'bold', color: RECUADRO, align: 'center', width: boxW,
     }));
-    if (recuadro.pie) doc.text(recuadro.pie, boxX, 12 + boxH + 12, { size: 9, font: 'bold', color: headerInk, align: 'center', width: boxW });
+    if (recuadro.pie) doc.text(recuadro.pie, boxX, boxY + boxH + 12, { size: 9, font: 'bold', color: headerInk, align: 'center', width: boxW });
   } else {
     doc.text(tituloDoc, headRight, 42, {
       size: 9, font: 'bold', color: headerInk, align: 'right', width: 220, tracking: 2.4,
@@ -528,7 +535,10 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
   doc.text(tx('billTo'), colRight, y, { size: 7, font: 'bold', color: MUTED, tracking: 1.2 });
   y += 16;
 
-  const party = (p: FiscalParty, x: number, top: number): number => {
+  // Las líneas de la autoridad (Chile: giro, casa matriz, sucursal; giro,
+  // dirección y comuna del cliente) reemplazan la dirección de la ficha: el
+  // documento impreso dice lo mismo que el DTE.
+  const party = (p: FiscalParty, x: number, top: number, propias?: string[]): number => {
     let cursor = top;
     for (const line of wrapText(p.legalName || '—', colW, 11, 'bold').slice(0, 2)) {
       doc.text(line, x, cursor, { size: 11, font: 'bold', color: INK });
@@ -543,8 +553,9 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
       p.taxId ? `${partyTaxIdLabel}: ${p.taxId}` : '',
       // Número de QST (Quebec): sin él, el cliente no recupera la QST.
       ...(p.extraTaxIds ?? []).map((x) => `${lang === 'fr' ? 'TVQ' : 'QST'}: ${x.value}`),
+      ...(propias?.length ? propias : []),
       p.contactName || '',
-      ...addressLines(p, lang),
+      ...(propias?.length ? [] : addressLines(p, lang)),
       p.email || '',
     ].filter(Boolean);
     for (const row of rows) {
@@ -555,7 +566,7 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
     }
     return cursor;
   };
-  y = Math.max(party(input.issuer, MARGIN, y), party(input.recipient, colRight, y)) + 14;
+  y = Math.max(party(input.issuer, MARGIN, y, input.autoridad?.emisor), party(input.recipient, colRight, y, input.autoridad?.receptor)) + 14;
 
   // ── Franja de datos clave ──────────────────────────────────────────────────
   const facts: { k: string; v: string }[] = [];
@@ -595,16 +606,29 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
   }
 
   // ── Tabla de conceptos ─────────────────────────────────────────────────────
+  // Descuento de documento: cada concepto trae su parte (`discount`) y su
+  // `subtotal` ya es la base neta. Con descuento, la tabla muestra el importe
+  // BRUTO de cada concepto (cantidad × precio cuadra a la vista) y el renglón de
+  // descuento aparece en los totales; los impuestos siguen sobre la base neta.
+  // Si la norma lo exige (Chile), el descuento va en su línea, en monto, y el
+  // importe de la línea es el neto.
+  const discountOf = (line: FiscalLineItem) => Math.max(Number(line.discount) || 0, 0);
+  const discountTotal = Math.round(input.lines.reduce((sum, line) => sum + discountOf(line), 0) * 1e6) / 1e6;
+  const hasDiscount = discountTotal > 0;
+  const lineDiscount = hasDiscount && !!input.autoridad?.descuentoPorLinea;
+  const DISC_W = lineDiscount ? 64 : 0;
   const COLS: { title: string; width: number; align: Align }[] = [
-    { title: tx('description'), width: contentW - 262, align: 'left' },
+    { title: tx('description'), width: contentW - 262 - DISC_W, align: 'left' },
     { title: tx('qty'), width: 44, align: 'right' },
     { title: tx('unitPrice'), width: 78, align: 'right' },
     // El nombre real del impuesto del país ('IVA', 'VAT', 'Sales tax'…), no un
     // "Tax" genérico — una factura española decía "Impuesto 21%" en la tabla
     // y "IVA" en el editor de origen; ahora dicen lo mismo.
     { title: truncateText(taxName, 58, 6.8, 'bold'), width: 58, align: 'right' },
+    ...(lineDiscount ? [{ title: tx('discount'), width: DISC_W, align: 'right' as Align }] : []),
     { title: tx('amount'), width: 82, align: 'right' },
   ];
+  const AMOUNT_COL = COLS.length - 1;
   const colX = (index: number) => MARGIN + COLS.slice(0, index).reduce((sum, c) => sum + c.width, 0);
   const PAD = appearance.density === 'compact' ? 5 : 8;
   const LINE_H = 12;
@@ -627,14 +651,6 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
   // Desglose por tasa: varios países exigen ver la base imponible de cada tipo,
   // no un único renglón de "impuestos".
   const taxBuckets = new Map<number, { base: number; amount: number }>();
-
-  // Descuento de documento: cada concepto trae su parte (`discount`) y su
-  // `subtotal` ya es la base neta. Con descuento, la tabla muestra el importe
-  // BRUTO de cada concepto (cantidad × precio cuadra a la vista) y el renglón de
-  // descuento aparece en los totales; los impuestos siguen sobre la base neta.
-  const discountOf = (line: FiscalLineItem) => Math.max(Number(line.discount) || 0, 0);
-  const discountTotal = Math.round(input.lines.reduce((sum, line) => sum + discountOf(line), 0) * 1e6) / 1e6;
-  const hasDiscount = discountTotal > 0;
 
   input.lines.forEach((line, index) => {
     const descLines = wrapText(String(line.description || '—'), COLS[0].width - 20, 9);
@@ -661,7 +677,8 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
     // EE. UU.: la tasa legal combinada de las jurisdicciones (9.5 %), no la
     // efectiva del cálculo con que el motor reproduce el centavo.
     cell(3, line.taxBreakdown ? taxLabel(lineTaxPct(line.taxRate, line.taxBreakdown) / 100) : taxLabel(Number(line.taxRate) || 0));
-    cell(4, money(hasDiscount ? gross : line.subtotal), 'bold');
+    if (lineDiscount) cell(4, discountOf(line) > 0 ? money(discountOf(line)) : '—');
+    cell(AMOUNT_COL, money(hasDiscount && !lineDiscount ? gross : line.subtotal), 'bold');
 
     const rate = Number(line.taxRate) || 0;
     const bucket = taxBuckets.get(rate) ?? { base: 0, amount: 0 };
@@ -713,7 +730,11 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
   // convertido no basta: es la cuota la que se declara.
   const issuerCountry = String(input.issuer.address?.countryCode || input.countryCode).toUpperCase();
   const taxInLedger = hasFx && isEuCountry(issuerCountry) && Number(input.taxTotal) > 0;
-  const totalsH = 16 + (hasDiscount ? 16 : 0) + (taxDisplay.length || 1) * 16 + (retenciones.length ? 16 : 0) + retenciones.length * 16 + 42 + (hasFx ? 26 : 0) + (taxInLedger ? 11 : 0);
+  const totalesAutoridad = input.autoridad?.totales?.length ? input.autoridad.totales : null;
+  const totalsH = (totalesAutoridad
+    ? totalesAutoridad.length * 16
+    : 16 + (hasDiscount ? 16 : 0) + (taxDisplay.length || 1) * 16)
+    + (retenciones.length ? 16 : 0) + retenciones.length * 16 + 42 + (hasFx ? 26 : 0) + (taxInLedger ? 11 : 0);
 
   if (y + totalsH > BOTTOM_LIMIT) { doc.addPage(); y = MARGIN + 8; }
   const totalsTop = y + 16;
@@ -727,6 +748,11 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
     ty += 16;
   };
 
+  // Los totalizadores que exige la autoridad (Chile: Monto Neto, Monto
+  // Exento, IVA con su tasa) reemplazan a los genéricos, en su orden.
+  if (totalesAutoridad) {
+    for (const row of totalesAutoridad) totalRow(row.k, row.v);
+  } else {
   // Con descuento, el subtotal es la suma BRUTA y el descuento se resta a la
   // vista antes de los impuestos (cuyas bases ya son netas).
   totalRow(tx('subtotal'), `${money(Number(input.subtotal) + discountTotal)} ${currency}`);
@@ -740,6 +766,7 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
     }
   } else if (Number(input.taxTotal) > 0) {
     totalRow(taxName, `${money(input.taxTotal)} ${currency}`, true);
+  }
   }
   // Una retención se RESTA: va junto a los impuestos pero con el signo a la
   // vista, porque apunta en dirección contraria (regla 20 de estándares
@@ -757,7 +784,7 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
   // El total va en el color de la marca: es el número que todos buscan primero.
   const TOTAL_H = 36;
   doc.rect(totalsX, ty - 6, totalsW, TOTAL_H, { fill: brand, radius: corner });
-  doc.text(retenciones.length ? tx('totalDue') : tx('total'), totalsX + 13, ty + 16, { size: 8, font: 'bold', color: onBrand, tracking: 1.3 });
+  doc.text(input.autoridad?.totalEtiqueta?.toUpperCase() ?? (retenciones.length ? tx('totalDue') : tx('total')), totalsX + 13, ty + 16, { size: 8, font: 'bold', color: onBrand, tracking: 1.3 });
   doc.text(`${money(input.total)} ${currency}`, totalsX, ty + 16, {
     size: 13, font: 'bold', color: onBrand, align: 'right', width: totalsW - 13,
   });
