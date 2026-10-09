@@ -177,6 +177,9 @@ export function sefazSimulada(opts = {}) {
             for (let k = ini; k <= fin; k++) {
                 if (est.porNumero.has(`${cnpj}|${serie}|${k}`)) return ret('241', 'Rejeição: Um número da faixa já foi utilizado');
             }
+            const ja = est.inutilizadas.filter((u) => u.cnpj === cnpj && u.serie === serie && u.ini <= fin && u.fin >= ini);
+            if (ja.some((u) => u.ini === ini && u.fin === fin)) return ret('563', 'Rejeição: Já existe pedido de Inutilização com a mesma faixa de inutilização');
+            if (ja.length) return ret('256', 'Rejeição: Uma NF-e da faixa já está inutilizada na Base de dados da SEFAZ');
             est.inutilizadas.push({ cnpj, serie, ini, fin });
             return ret('102', 'Inutilização de número homologado', proximoProt());
         },

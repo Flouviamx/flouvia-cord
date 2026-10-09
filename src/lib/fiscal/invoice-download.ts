@@ -148,6 +148,18 @@ export async function downloadInvoiceDocument(orgId: string, id: string, format:
       headers: downloadHeaders('application/xml; charset=ISO-8859-1', `${safeFilename(doc.invoice_number || 'dte')}.xml`),
     });
   }
+  // Brasil, NF-e: el XML legal es el nfeProc —la NF-e firmada más el protocolo
+  // de autorización de la SEFAZ—, el que el destinatario debe archivar.
+  if (format === 'xml' && railDeDocumento(doc.document_type)?.id === 'nfe') {
+    const { intentoAutorizado } = await import('./latam/comprobantes');
+    const intento = await intentoAutorizado(orgId, String(doc.id), 'nfe');
+    const proc = (intento?.respuesta as { nfeProc?: unknown } | null)?.nfeProc;
+    if (!intento || typeof proc !== 'string' || !proc) return new Response('XML no disponible para este documento', { status: 404 });
+    return new Response(proc, {
+      status: 200,
+      headers: downloadHeaders('application/xml; charset=UTF-8', `${safeFilename(intento.autorizacion || doc.invoice_number || 'nfe')}-procNFe.xml`),
+    });
+  }
   if (format === 'cedible') {
     if (!representacionDe(doc.provider_data)?.cedible) return new Response('Este documento no tiene copia cedible', { status: 404 });
     return invoicePdf(orgId, doc, Boolean(doc.provider_data?.simulado), true);

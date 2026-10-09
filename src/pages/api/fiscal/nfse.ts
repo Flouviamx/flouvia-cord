@@ -25,7 +25,7 @@ import { currentUserId } from '../../../lib/context';
 import { log } from '../../../lib/log';
 import { railConfig } from '../../../lib/fiscal/latam/config';
 import { parsearCertificado } from '../../../lib/fiscal/latam/certificado';
-import { eliminarCredencial, guardarAjustes, guardarCredencial, leerAjustes } from '../../../lib/fiscal/latam/credenciales';
+import { eliminarCredencial, guardarAjustes, guardarCredencial, leerAjustes, resumenCredencial } from '../../../lib/fiscal/latam/credenciales';
 import { esErrorSeguro } from '../../../lib/fiscal/latam/errores';
 import { aplicarCambio, faltantesAjustes, type AjustesNfse } from '../../../lib/fiscal/latam/nfse/ajustes';
 import { probarCredencial } from '../../../lib/fiscal/latam/nfse/autorizacao';
@@ -185,6 +185,18 @@ export const DELETE: APIRoute = async ({ request }) => {
          where org_id = ${orgId} and rail = 'nfse' and entorno = ${config.entorno} and estado in ('pendiente', 'incierto')`);
     if (Number(p?.n || 0) > 0) {
         return json({ error: 'Hay NFS-e esperando la confirmación del Sistema Nacional. Podrás desconectar el certificado cuando se confirmen (normalmente en minutos).' }, 409);
+    }
+    // La NF-e firma con este mismo certificado cuando no tiene uno propio: sus
+    // notas y eventos sin respuesta también se resuelven consultando con él.
+    if (!(await resumenCredencial(orgId, 'nfe', config.entorno))) {
+        const [[nfe]] = await withOrgTx(orgId, sql`
+            select (select count(*) from fiscal_rail_comprobantes
+                     where org_id = ${orgId} and rail = 'nfe' and entorno = ${config.entorno} and estado in ('pendiente', 'incierto'))
+                 + (select count(*) from nfe_eventos
+                     where org_id = ${orgId} and entorno = ${config.entorno} and estado in ('pendiente', 'incierto')) as n`);
+        if (Number(nfe?.n || 0) > 0) {
+            return json({ error: 'Hay NF-e firmadas con este certificado esperando la confirmación de la SEFAZ. Podrás desconectarlo cuando se confirmen (normalmente en minutos).' }, 409);
+        }
     }
     await eliminarCredencial(orgId, 'nfse', config.entorno);
     await logAudit(orgId, { accion: 'nfse_cert.eliminado', entidad: 'org', entidad_id: orgId, detalle: `Certificado ICP-Brasil (${config.entorno}) desconectado`, ip: reqIp(request) });

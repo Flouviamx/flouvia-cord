@@ -25,7 +25,7 @@ import { dataHoraBrasilia, documentoFederal } from '../nfse/dps';
 import { autorizadorDaChave, claveSecuencia, contextoNfe, TIPO_SEQUENCIA } from './autorizacao';
 import { chaveValida } from './chave';
 import { AUTORIZADOR_UF, CANCELAMENTO_PRAZO_HORAS, EVENTO_CANCELAMENTO, EVENTO_CCE, INUTILIZACAO_MAX, codigoUf, ufDeCodigo, type Autorizador } from './constantes';
-import { EVENTO_DUPLICADO, EVENTO_REGISTRADO, INUTILIZACAO_HOMOLOGADA, mensajeEvento } from './erros';
+import { EVENTO_DUPLICADO, EVENTO_REGISTRADO, INUTILIZACAO_HOMOLOGADA, INUTILIZACAO_JA_REGISTRADA, mensajeEvento } from './erros';
 import { credencialNfe } from './estado';
 import {
     consSitNFe, envEvento, eventoAssinado, idLote, inutilizacaoAssinada, lerRetConsSit, lerRetEnvEvento, lerRetInut,
@@ -248,21 +248,46 @@ export async function inutilizarFaixa(orgId: string, entorno: EntornoRail, cnpj:
            and (estado in ('pendiente', 'incierto', 'autorizado') or coalesce(respuesta, '{}'::jsonb) ?| array['denegada', 'conflicto'])
          limit 1`);
     if (usados[0]) return { estado: 'rechazada', mensaje: `El número ${usados[0].numero} del rango ya tiene una NF-e. Inutiliza solo números que nunca se usaron.` };
-    const [solapa] = await withOrgTx(orgId, sql`
-        select id from nfe_inutilizacoes
-         where org_id = ${orgId} and entorno = ${entorno} and serie = ${serie} and estado in ('homologada', 'pendiente', 'incierta')
-           and n_ini <= ${fim} and n_fin >= ${inicio}
+    // Un pedido del MISMO rango que se quedó sin respuesta se reenvía tal cual
+    // (el mismo XML firmado): el servicio no tiene consulta, y la SEFAZ responde
+    // 563/256 si el primero sí llegó.
+    const [previas] = await withOrgTx(orgId, sql`
+        select id, xml_pedido from nfe_inutilizacoes
+         where org_id = ${orgId} and entorno = ${entorno} and serie = ${serie} and n_ini = ${inicio} and n_fin = ${fim}
+           and estado in ('pendiente', 'incierta') and xml_pedido is not null
+         order by created_at desc
          limit 1`);
-    if (solapa[0]) return { estado: 'rechazada', mensaje: 'Parte de ese rango ya está inutilizada o en proceso.' };
+    const previa = previas[0] as { id: string; xml_pedido: string } | undefined;
+    if (!previa) {
+        const [solapa] = await withOrgTx(orgId, sql`
+            select id from nfe_inutilizacoes
+             where org_id = ${orgId} and entorno = ${entorno} and serie = ${serie} and estado in ('homologada', 'pendiente', 'incierta')
+               and n_ini <= ${fim} and n_fin >= ${inicio}
+             limit 1`);
+        if (solapa[0]) return { estado: 'rechazada', mensaje: 'Parte de ese rango ya está inutilizada o en proceso.' };
+    }
 
     return conSecuencia(orgId, claveSecuencia(entorno, serie), async () => {
-        const ano = dataHoraBrasilia(new Date()).slice(2, 4);
-        const pedido = pedidoInutilizacao({ entorno, cUF: codigoUf(ctx.uf), ano, cnpj: ctx.documento.numero, serie, nNFIni: inicio, nNFFin: fim, xJust: justificativa });
-        const xml = inutilizacaoAssinada(pedido, ctx.credencial.certPem, ctx.credencial.keyPem);
-        const [[fila]] = await withOrgTx(orgId, sql`
-            insert into nfe_inutilizacoes (org_id, entorno, serie, n_ini, n_fin, justificativa, estado, pedido, xml_pedido, creado_por)
-            values (${orgId}, ${entorno}, ${serie}, ${inicio}, ${fim}, ${pedido.xJust}, 'pendiente', ${JSON.stringify(pedido)}::jsonb, ${xml}, ${p.creadoPor ?? null})
-            returning id`);
+        let filaId: string;
+        let xml: string;
+        if (previa) {
+            // Releída bajo el lease de la serie: otra petición pudo resolverla mientras tanto.
+            const [[actual]] = await withOrgTx(orgId, sql`
+                select estado, n_prot, error_mensaje from nfe_inutilizacoes where id = ${previa.id} and org_id = ${orgId}`);
+            if (actual?.estado === 'homologada') return { estado: 'homologada', ...(actual.n_prot ? { nProt: String(actual.n_prot) } : {}) } as const;
+            if (actual?.estado === 'rechazada') return { estado: 'rechazada', mensaje: String(actual.error_mensaje || 'La SEFAZ rechazó la inutilização.') } as const;
+            filaId = String(previa.id);
+            xml = String(previa.xml_pedido);
+        } else {
+            const ano = dataHoraBrasilia(new Date()).slice(2, 4);
+            const pedido = pedidoInutilizacao({ entorno, cUF: codigoUf(ctx.uf), ano, cnpj: ctx.documento.numero, serie, nNFIni: inicio, nNFFin: fim, xJust: justificativa });
+            xml = inutilizacaoAssinada(pedido, ctx.credencial.certPem, ctx.credencial.keyPem);
+            const [[fila]] = await withOrgTx(orgId, sql`
+                insert into nfe_inutilizacoes (org_id, entorno, serie, n_ini, n_fin, justificativa, estado, pedido, xml_pedido, creado_por)
+                values (${orgId}, ${entorno}, ${serie}, ${inicio}, ${fim}, ${pedido.xJust}, 'pendiente', ${JSON.stringify(pedido)}::jsonb, ${xml}, ${p.creadoPor ?? null})
+                returning id`);
+            filaId = String(fila.id);
+        }
         try {
             const r = await chamarSefaz(entorno, AUTORIZADOR_UF[ctx.uf], 'NfeInutilizacao', xml, ctx.credencial, { timeoutMs: 30_000 });
             const ret = lerRetInut(r.resultado);
@@ -272,19 +297,28 @@ export async function inutilizarFaixa(orgId: string, entorno: EntornoRail, cnpj:
                     update nfe_inutilizacoes set estado = 'homologada', n_prot = ${ret.nProt || null}, homologada_at = now(),
                            respuesta = ${JSON.stringify({ cStat: ret.cStat, nProt: ret.nProt, dhRecbto: ret.dhRecbto })}::jsonb,
                            proc_xml = ${procInut(xml, ret.xml)}
-                     where id = ${fila.id} and org_id = ${orgId}`);
+                     where id = ${filaId} and org_id = ${orgId}`);
                 return { estado: 'homologada', nProt: ret.nProt } as const;
+            }
+            if (previa && INUTILIZACAO_JA_REGISTRADA.has(ret.cStat)) {
+                // El primer envío sí llegó: el rango ya está inutilizado (sin
+                // protocolo en Cord, que no lo recibió).
+                await withOrgTx(orgId, sql`
+                    update nfe_inutilizacoes set estado = 'homologada', homologada_at = now(),
+                           respuesta = ${JSON.stringify({ cStat: ret.cStat, recuperado: true })}::jsonb
+                     where id = ${filaId} and org_id = ${orgId}`);
+                return { estado: 'homologada' } as const;
             }
             const mensaje = mensajeEvento(ret.cStat);
             await withOrgTx(orgId, sql`
                 update nfe_inutilizacoes set estado = 'rechazada', error_codigo = ${ret.cStat}, error_mensaje = ${mensaje},
                        respuesta = ${JSON.stringify({ cStat: ret.cStat })}::jsonb
-                 where id = ${fila.id} and org_id = ${orgId}`);
+                 where id = ${filaId} and org_id = ${orgId}`);
             return { estado: 'rechazada', mensaje } as const;
         } catch (error) {
             if (!(error instanceof NfeTransporteError)) throw error;
-            await withOrgTx(orgId, sql`update nfe_inutilizacoes set estado = 'incierta' where id = ${fila.id} and org_id = ${orgId}`);
-            return { estado: 'incierta', mensaje: 'La SEFAZ no respondió. Revisa el estado en unos minutos antes de volver a pedirla.' } as const;
+            await withOrgTx(orgId, sql`update nfe_inutilizacoes set estado = 'incierta' where id = ${filaId} and org_id = ${orgId}`);
+            return { estado: 'incierta', mensaje: 'La SEFAZ no respondió. Vuelve a pedir el MISMO rango en unos minutos: Cord reenvía el mismo pedido y no se duplica.' } as const;
         }
     }, { esperaMaxMs: 12_000 });
 }

@@ -12,6 +12,8 @@ import ArcaSettings from '../../../components/app/settings/ArcaSettings.astro';
 import { estadoArca } from '../../../lib/fiscal/latam/arca/estado';
 import NfseSettings from '../../../components/app/settings/NfseSettings.astro';
 import { estadoNfse } from '../../../lib/fiscal/latam/nfse/estado';
+import NfeSettings from '../../../components/app/settings/NfeSettings.astro';
+import { estadoNfe } from '../../../lib/fiscal/latam/nfe/estado';
 import SunatSettings from '../../../components/app/settings/SunatSettings.astro';
 import { estadoSunat } from '../../../lib/fiscal/latam/sunat/estado';
 import DianSettings from '../../../components/app/settings/DianSettings.astro';
@@ -32,6 +34,8 @@ const isEs = ORG.countryCode === 'ES';
 const ARCA = ORG.countryCode === 'AR' ? await estadoArca(ORG.id).catch(() => null) : null;
 // Brasil: NFS-e de Padrão Nacional (rieles fiscales de LatAm).
 const NFSE = ORG.countryCode === 'BR' ? await estadoNfse(ORG.id).catch(() => null) : null;
+// Brasil: NF-e modelo 55 (venta de mercancías), autorizada por la SEFAZ del estado.
+const NFE = ORG.countryCode === 'BR' ? await estadoNfe(ORG.id).catch(() => null) : null;
 // Colombia: factura electrónica validada por la DIAN (rieles fiscales de LatAm).
 const DIAN = ORG.countryCode === 'CO' ? await estadoDian(ORG.id).catch(() => null) : null;
 // Perú: factura electrónica enviada a SUNAT (SEE - Del contribuyente).
@@ -445,6 +449,13 @@ const EINV_AUTO_LABEL = EINV_AUTO === 'facturx'
         <SettingsSection icon="shield" class="s-block">
             <Fragment slot="heading">NFS-e</Fragment>
             <NfseSettings estado={NFSE} locale={L === 'en' ? 'en' : 'es'} />
+        </SettingsSection>
+    )}
+
+    {NFE && (
+        <SettingsSection icon="shield" class="s-block">
+            <Fragment slot="heading">NF-e</Fragment>
+            <NfeSettings estado={NFE} locale={L === 'en' ? 'en' : 'es'} />
         </SettingsSection>
     )}
 

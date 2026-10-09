@@ -11,6 +11,7 @@ import { clientEventData, clientPrevData } from '../event-payloads';
 import { type ActionContext, type ActionOutcome, auditAction, done, fromResponse, isUuid } from './outcome';
 import { CONDICIONES_IVA_RECEPTOR } from '../fiscal/latam/arca/constantes';
 import { fichaClienteDian } from '../fiscal/latam/dian/comprobante';
+import { clienteNfeDe } from '../fiscal/latam/nfe/produto';
 
 const NIVELES = ['estandar', 'plata', 'oro', 'distribuidor'];
 const CONDICIONES_IVA_IDS = new Set(CONDICIONES_IVA_RECEPTOR.map((c) => c.id));
@@ -19,6 +20,9 @@ const textoCorto = (v: unknown, max: number) => String(v ?? '').replace(/[\u0000
 
 export function cleanClientInput(input: Record<string, any>) {
     const countryRaw = String(input.country_code ?? '').trim().toUpperCase();
+    // Brasil (NF-e): número, barrio, municipio IBGE e indicador de IE del
+    // destinatario. Mismo contrato que la ficha DIAN: `undefined` = no tocarla.
+    const nfe = input.nfe === undefined ? undefined : clienteNfeDe(input.nfe);
     return {
         empresa: String(input.empresa ?? '').trim(),
         contacto: String(input.contacto ?? '').trim() || null,
@@ -62,7 +66,14 @@ export function cleanClientInput(input: Record<string, any>) {
         // (GiroRecep ≤ 40, CmnaRecep ≤ 20). Mismo contrato: undefined = no tocar.
         giro: input.giro === undefined ? undefined : (textoCorto(input.giro, 40) || null),
         comuna: input.comuna === undefined ? undefined : (textoCorto(input.comuna, 20) || null),
+        nfe: nfe === undefined ? undefined : (nfe.ok ? nfe.valor : null),
+        nfe_error: nfe && !nfe.ok ? nfe.error : null,
     };
+}
+
+/** Datos de NF-e del cliente con forma inválida: se dice qué falta en vez de guardarlos a medias. */
+function nfeInputError(c: ClientInput): ActionOutcome | null {
+    return c.nfe_error ? done(400, { error: c.nfe_error, code: 'invalid_request', field: 'nfe' }) : null;
 }
 
 /**
@@ -139,6 +150,8 @@ export async function createClient(ctx: ActionContext, input: Record<string, any
     if (!c.empresa) return EMPRESA_OBLIGATORIA;
     const einvoiceDenied = einvoiceInputError(c);
     if (einvoiceDenied) return einvoiceDenied;
+    const nfeDenied = nfeInputError(c);
+    if (nfeDenied) return nfeDenied;
     const taxDenied = await checkClientTaxId(ctx, c);
     if (taxDenied) return taxDenied;
     const capacityDenied = await requireResourceCapacity(ctx.orgId, 'clients');
@@ -150,14 +163,15 @@ export async function createClient(ctx: ActionContext, input: Record<string, any
                 org_id, empresa, contacto, email, telefono, rfc, terminos_default, limite_credito,
                 nivel, descuento_pct, regimen_fiscal, uso_cfdi, cp_fiscal,
                 country_code, direccion_line1, direccion_line2, ciudad, region, condicion_iva,
-                einvoice_address, buyer_reference, giro, comuna, dian
+                einvoice_address, buyer_reference, giro, comuna, dian, nfe
             )
             values (
                 ${ctx.orgId}, ${c.empresa}, ${c.contacto}, ${c.email}, ${c.telefono}, ${c.rfc}, ${c.terminos}, ${c.limite},
                 ${c.nivel}, ${c.descuento}, ${c.regimen_fiscal}, ${c.uso_cfdi}, ${c.cp_fiscal},
                 ${c.country_code}, ${c.direccion_line1}, ${c.direccion_line2}, ${c.ciudad}, ${c.region}, ${c.condicion_iva ?? null},
                 ${c.einvoice_address ?? null}, ${c.buyer_reference ?? null}, ${c.giro ?? null}, ${c.comuna ?? null},
-                ${c.dian ? JSON.stringify(c.dian) : null}::jsonb
+                ${c.dian ? JSON.stringify(c.dian) : null}::jsonb,
+                ${c.nfe ? JSON.stringify(c.nfe) : null}::jsonb
             )
             returning *`);
     } catch (error) {
@@ -181,6 +195,8 @@ export async function updateClient(ctx: ActionContext, id: string, input: Record
     if (needsBefore && !before) return NO_ENCONTRADO;
     const einvoiceDenied = einvoiceInputError(c, before?.einvoice_address as string | null | undefined);
     if (einvoiceDenied) return einvoiceDenied;
+    const nfeDenied = nfeInputError(c);
+    if (nfeDenied) return nfeDenied;
     if (c.rfc) {
         const taxDenied = await checkClientTaxId(ctx, c, before ?? undefined);
         if (taxDenied) return taxDenied;
@@ -207,7 +223,8 @@ async function writeClientUpdate(ctx: ActionContext, id: string, c: ClientInput)
             buyer_reference = case when ${c.buyer_reference === undefined}::boolean then buyer_reference else ${c.buyer_reference ?? null}::text end,
             giro = case when ${c.giro === undefined}::boolean then giro else ${c.giro ?? null}::text end,
             comuna = case when ${c.comuna === undefined}::boolean then comuna else ${c.comuna ?? null}::text end,
-            dian = case when ${c.dian === undefined}::boolean then dian else ${c.dian ? JSON.stringify(c.dian) : null}::jsonb end
+            dian = case when ${c.dian === undefined}::boolean then dian else ${c.dian ? JSON.stringify(c.dian) : null}::jsonb end,
+            nfe = case when ${c.nfe === undefined}::boolean then nfe else ${c.nfe ? JSON.stringify(c.nfe) : null}::jsonb end
         where id = ${id} and org_id = ${ctx.orgId}
         returning *`);
     if (!rows.length) return NO_ENCONTRADO;
@@ -239,6 +256,7 @@ function clientRowToInput(c: Record<string, any>): Record<string, unknown> {
         direccion_line1: c.direccion_line1, direccion_line2: c.direccion_line2, ciudad: c.ciudad, region: c.region,
         condicion_iva: c.condicion_iva, giro: c.giro, comuna: c.comuna,
         dian: c.dian ?? null,
+        nfe: c.nfe ?? null,
     };
 }
 

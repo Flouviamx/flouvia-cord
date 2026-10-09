@@ -31,6 +31,13 @@ export const NAO_CONSTA = '217';
 export const EVENTO_REGISTRADO = new Set(['135', '136', '155']);
 export const EVENTO_DUPLICADO = '573';
 export const INUTILIZACAO_HOMOLOGADA = '102';
+/**
+ * Respuestas al REENVÍO de una inutilização sin respuesta que confirman que la
+ * primera sí llegó: 256 (un número de la faixa ya está inutilizado) y 563 (ya
+ * existe pedido con la misma faixa) [MOC Anexo I 4.4]. El servicio no tiene
+ * consulta propia: reenviar el mismo pedido firmado es la forma de saberlo.
+ */
+export const INUTILIZACAO_JA_REGISTRADA = new Set(['256', '563']);
 /** Certificado de transmisión o de firma rechazado. */
 export const CERTIFICADO = new Set(['213', '280', '281', '282', '283', '284', '285', '286', '290', '291', '292', '293', '294', '295', '296', '297', '298']);
 
@@ -42,6 +49,10 @@ const RESP_TEC = 'La SEFAZ exige datos del desarrollador del sistema emisor que 
 
 const MENSAJES: Record<string, string> = {
     110: DENEGADA, 301: DENEGADA, 302: DENEGADA, 303: DENEGADA,
+    201: 'La SEFAZ inutiliza como máximo 10.000 números por pedido. Divide el rango.',
+    241: 'Un número del rango ya se usó en una NF-e: inutiliza solo números que nunca se usaron.',
+    256: 'Parte de ese rango ya está inutilizada en la SEFAZ.',
+    563: 'La SEFAZ ya tiene un pedido de inutilização para ese mismo rango.',
     203: 'Tu CNPJ todavía no está habilitado para emitir NF-e en la SEFAZ de tu estado (credenciamento). Complétalo y vuelve a emitir.',
     205: 'Ese número de NF-e está denegado en la SEFAZ.',
     206: 'Ese número de NF-e ya está inutilizado en la SEFAZ.',

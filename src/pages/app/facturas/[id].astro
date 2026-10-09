@@ -21,6 +21,7 @@ import { fmtTaxPct, splitTaxBucket } from '../../../lib/tax-components';
 import { estadoVerifactuFactura } from '../../../lib/fiscal/verifactu/incidencias';
 import ArcaEstadoFactura from '../../../components/app/facturas/ArcaEstadoFactura.astro';
 import NfseEstadoFactura from '../../../components/app/facturas/NfseEstadoFactura.astro';
+import NfeEstadoFactura from '../../../components/app/facturas/NfeEstadoFactura.astro';
 import SunatEstadoFactura from '../../../components/app/facturas/SunatEstadoFactura.astro';
 import DianEstadoFactura from '../../../components/app/facturas/DianEstadoFactura.astro';
 import SpfeEstadoFactura from '../../../components/app/facturas/SpfeEstadoFactura.astro';
@@ -697,7 +698,10 @@ const EINV_FIX: Record<string, { href: string; es: string; en: string }> = {
                             <ArcaEstadoFactura orgId={f.orgId ?? ''} documentoId={f.id} locale={L === 'en' ? 'en' : 'es'} />
                         )}
                         {String(f.pais || '').toUpperCase() === 'BR' && (
-                            <NfseEstadoFactura orgId={f.orgId ?? ''} documentoId={f.id} locale={L === 'en' ? 'en' : 'es'} />
+                            <Fragment>
+                                <NfseEstadoFactura orgId={f.orgId ?? ''} documentoId={f.id} locale={L === 'en' ? 'en' : 'es'} />
+                                <NfeEstadoFactura orgId={f.orgId ?? ''} documentoId={f.id} locale={L === 'en' ? 'en' : 'es'} />
+                            </Fragment>
                         )}
                         {String(f.pais || '').toUpperCase() === 'PE' && (
                             <SunatEstadoFactura orgId={f.orgId ?? ''} documentoId={f.id} locale={L === 'en' ? 'en' : 'es'} />

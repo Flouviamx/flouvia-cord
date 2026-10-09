@@ -1,0 +1,215 @@
+---
+// Estado de la factura ante la SEFAZ (NF-e modelo 55, Brasil), en el panel
+// lateral de /app/facturas/[id]: número, chave de acceso y protocolo; si se
+// emitió en contingencia (SVC); hasta cuándo puede cancelarse; los eventos
+// registrados (cancelación y Cartas de Correção) y el formulario de la CC-e;
+// y las descargas propias de la NF-e (el XML nfeProc). Lee el último intento
+// del riel (fiscal_rail_comprobantes); si la factura nunca pasó por la SEFAZ
+// (documento comercial o NFS-e) no dibuja nada.
+import { ultimoIntento } from '../../../lib/fiscal/latam/comprobantes';
+import { railConfig } from '../../../lib/fiscal/latam/config';
+import { autorizadaEm, dentroDoPrazoDeCancelamento, eventosDaNota } from '../../../lib/fiscal/latam/nfe/eventos';
+import { CANCELAMENTO_PRAZO_HORAS, EVENTO_CANCELAMENTO, EVENTO_CCE } from '../../../lib/fiscal/latam/nfe/constantes';
+import { fmtDate, fmtTime } from '../../../lib/fmt-server';
+import { iconInner } from '../../../lib/icons';
+
+interface Props { orgId: string; documentoId: string; locale: 'es' | 'en'; }
+const { orgId, documentoId, locale } = Astro.props;
+const en = locale === 'en';
+const intento = orgId ? await ultimoIntento(orgId, documentoId, 'nfe').catch(() => null) : null;
+
+const respuesta = (intento?.respuesta ?? {}) as { denegada?: boolean; prot?: { nProt?: string; dhRecbto?: string } };
+const denegada = !!respuesta.denegada;
+const TITULO: Record<string, [string, string]> = {
+    autorizado: ['NF-e autorizada por la SEFAZ', 'NF-e authorized by the SEFAZ'],
+    pendiente: ['Esperando la autorización de la SEFAZ', 'Waiting for the SEFAZ to authorize'],
+    incierto: ['Esperando la confirmación de la SEFAZ', 'Waiting for the SEFAZ to confirm'],
+    rechazado: ['La SEFAZ rechazó la NF-e', 'The SEFAZ rejected the NF-e'],
+    descartado: ['La SEFAZ no registró este intento', 'The SEFAZ did not register this attempt'],
+};
+const titulo = intento
+    ? (denegada ? (en ? 'The SEFAZ denied the use of the NF-e' : 'La SEFAZ denegó el uso de la NF-e') : (TITULO[intento.estado]?.[en ? 1 : 0] ?? intento.estado))
+    : '';
+const autorizado = intento?.estado === 'autorizado';
+const chave = autorizado ? String(intento?.autorizacion ?? '') : '';
+const chaveBonita = chave.replace(/(.{4})(?=.)/g, '$1 ');
+const solicitud = (intento?.solicitud ?? {}) as { tpEmis?: string; serie?: number };
+const contingencia = solicitud.tpEmis === '6' ? 'SVC-AN' : solicitud.tpEmis === '7' ? 'SVC-RS' : null;
+const nProt = respuesta.prot?.nProt ?? '';
+const em = intento && autorizado ? autorizadaEm(intento) : null;
+const quando = em ? `${fmtDate(em)} ${fmtTime(em)}` : '';
+const eventos = chave ? await eventosDaNota(orgId, chave).catch(() => []) : [];
+const cancelada = eventos.some((e) => e.tpEvento === EVENTO_CANCELAMENTO.tpEvento && e.estado === 'registrado');
+const config = railConfig('nfe');
+const mismoEntorno = !!intento && intento.entorno === config.entorno;
+const cancelable = !!intento && autorizado && !cancelada && dentroDoPrazoDeCancelamento(intento);
+const limiteCancelamento = em ? new Date(em.getTime() + CANCELAMENTO_PRAZO_HORAS * 3600_000) : null;
+const cceDisponible = config.habilitado && autorizado && !cancelada && mismoEntorno
+    && eventos.filter((e) => e.tpEvento === EVENTO_CCE.tpEvento && e.estado !== 'rechazado').length < EVENTO_CCE.nSeqMax;
+const observaciones = (intento?.observaciones ?? []).map((o) => o.mensaje || o.msg).filter(Boolean) as string[];
+const prueba = intento?.entorno === 'homologacion';
+
+const ESTADO_EVENTO: Record<string, [string, string]> = {
+    registrado: ['registrado', 'registered'],
+    pendiente: ['enviando', 'sending'],
+    incierto: ['sin confirmar', 'unconfirmed'],
+    rechazado: ['rechazado', 'rejected'],
+};
+const nombreEvento = (tp: string, n: number) => tp === EVENTO_CANCELAMENTO.tpEvento
+    ? (en ? 'Cancellation' : 'Cancelación')
+    : (en ? `Correction letter (CC-e) no. ${n}` : `Carta de Correção n.º ${n}`);
+---
+
+{intento && (
+    <section class="fd-meta-section nfe-fe" data-nfe-fe data-documento={documentoId}>
+        <div class="nfe-fe-head"><h2>NF-e</h2></div>
+        <div class={`nfe-fe-state is-${cancelada ? 'cancelada' : intento.estado}`}>
+            <span class="nfe-fe-dot" aria-hidden="true"></span>
+            <span class="nfe-fe-copy">
+                <strong>{cancelada ? (en ? 'NF-e cancelled at the SEFAZ' : 'NF-e cancelada ante la SEFAZ') : titulo}</strong>
+                {(autorizado || denegada) && <small>{en ? `NF-e no. ${intento.numero}, series ${intento.serie}` : `NF-e n.º ${intento.numero}, serie ${intento.serie}`}</small>}
+                {chave && <small class="nfe-fe-chave">{en ? 'Access key' : 'Chave de acceso'} {chaveBonita}</small>}
+                {nProt && <small>{en ? `Authorization protocol ${nProt}${quando ? ` · ${quando}` : ''}` : `Protocolo de autorización ${nProt}${quando ? ` · ${quando}` : ''}`}</small>}
+                {contingencia && autorizado && <small>{en ? `Issued in contingency at the ${contingencia} (state SEFAZ unavailable).` : `Emitida en contingencia en la ${contingencia} (la SEFAZ del estado no estaba disponible).`}</small>}
+                {!autorizado && intento.errorMensaje && <small>{intento.errorMensaje}</small>}
+                {cancelable && limiteCancelamento && (
+                    <small>{en
+                        ? `It can be cancelled until ${fmtDate(limiteCancelamento)} ${fmtTime(limiteCancelamento)} (Void invoice). After that, it is corrected with a return invoice or a correction letter.`
+                        : `Puede cancelarse hasta el ${fmtDate(limiteCancelamento)} ${fmtTime(limiteCancelamento)} (Anular factura). Después se corrige con una nota de devolución o una Carta de Correção.`}</small>
+                )}
+                {prueba && <small>{en ? 'SEFAZ test environment (homologação): no legal validity.' : 'Ambiente de pruebas de la SEFAZ (homologação): sin validez jurídica.'}</small>}
+            </span>
+        </div>
+        {observaciones.length > 0 && (
+            <ul class="nfe-fe-obs">
+                {observaciones.map((o) => <li>{o}</li>)}
+            </ul>
+        )}
+        {autorizado && (
+            <div class="nfe-fe-links">
+                <a class="nfe-fe-link" href={`/api/fiscal/documents/${documentoId}/xml`} target="_blank" rel="noopener">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('download')}></svg>
+                    <span>{en ? 'NF-e XML (nfeProc)' : 'XML de la NF-e (nfeProc)'}</span>
+                </a>
+            </div>
+        )}
+        <ul class="nfe-fe-eventos" data-nfe-eventos hidden={eventos.length === 0}>
+            {eventos.map((e) => (
+                <li>
+                    <strong>{nombreEvento(e.tpEvento, e.nSeq)}</strong>
+                    <span>{(ESTADO_EVENTO[e.estado]?.[en ? 1 : 0] ?? e.estado)}{e.nProt ? ` · ${en ? 'protocol' : 'protocolo'} ${e.nProt}` : ''}</span>
+                    {e.tpEvento === EVENTO_CCE.tpEvento && e.texto && <span class="nfe-fe-texto">{e.texto}</span>}
+                    {e.estado === 'rechazado' && e.erro && <span class="nfe-fe-texto">{e.erro}</span>}
+                </li>
+            ))}
+        </ul>
+        {cceDisponible && (
+            <details class="nfe-fe-cce">
+                <summary>{en ? 'Issue a correction letter (CC-e)' : 'Emitir una Carta de Correção (CC-e)'}</summary>
+                <p class="nfe-fe-aviso">{en
+                    ? 'A CC-e cannot change amounts, quantities, rates or tax bases; the issuer or recipient; or the issue or shipping date. Each new letter replaces the previous one and must repeat everything still to be corrected.'
+                    : 'Una CC-e no puede cambiar importes, cantidades, alícuotas ni bases; ni el emisor o el destinatario; ni la fecha de emisión o de salida. Cada carta nueva reemplaza a la anterior y debe repetir todo lo que siga por corregir.'}</p>
+                <textarea class="s-input nfe-fe-textarea" rows="3" maxlength="1000" data-nfe-cce-texto aria-label={en ? 'Correction text' : 'Texto de la corrección'} placeholder={en ? 'For example: the recipient district is Itaim Bibi, not Itaim.' : 'Por ejemplo: o bairro do destinatário é Itaim Bibi, e não Itaim.'}></textarea>
+                <div class="nfe-fe-actions">
+                    <button type="button" class="fd-btn fd-btn-secondary" data-nfe-cce-enviar>{en ? 'Send to the SEFAZ' : 'Enviar a la SEFAZ'}</button>
+                    <span class="nfe-fe-msg" data-nfe-cce-msg role="status"></span>
+                </div>
+            </details>
+        )}
+    </section>
+)}
+
+<style>
+    .nfe-fe-head h2 { font-size: 0.82rem; font-weight: 600; margin: 0 0 0.6rem; color: var(--color-text); }
+    .nfe-fe-state { display: flex; gap: 0.6rem; align-items: flex-start; }
+    .nfe-fe-dot { width: 7px; height: 7px; margin-top: 0.35rem; border-radius: 50%; background: var(--color-text-muted); flex-shrink: 0; }
+    .nfe-fe-state.is-autorizado .nfe-fe-dot { background: var(--color-ok); }
+    .nfe-fe-state.is-pendiente .nfe-fe-dot, .nfe-fe-state.is-incierto .nfe-fe-dot { background: #d97706; }
+    .nfe-fe-state.is-rechazado .nfe-fe-dot { background: var(--color-err, #dc2626); }
+    .nfe-fe-copy { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .nfe-fe-copy strong { font-size: 0.82rem; color: var(--color-text); }
+    .nfe-fe-copy small { font-size: 0.75rem; color: var(--color-text-muted); line-height: 1.45; overflow-wrap: anywhere; }
+    .nfe-fe-chave { font-variant-numeric: tabular-nums; }
+    .nfe-fe-obs { margin: 0.6rem 0 0; padding-left: 1.1rem; font-size: 0.75rem; color: var(--color-text-muted); line-height: 1.45; }
+    .nfe-fe-links { display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; margin-top: 0.7rem; }
+    .nfe-fe-link { display: inline-flex; align-items: center; gap: 6px; font-size: 0.78rem; font-weight: 600; color: var(--color-blue-deep); text-decoration: none; min-height: 32px; }
+    .nfe-fe-link svg { width: 16px; height: 16px; }
+    .nfe-fe-eventos { list-style: none; margin: 0.8rem 0 0; padding: 0.7rem 0 0; border-top: 1px solid var(--color-border); display: flex; flex-direction: column; gap: 0.55rem; }
+    .nfe-fe-eventos[hidden] { display: none; }
+    .nfe-fe-eventos li { display: flex; flex-direction: column; gap: 1px; font-size: 0.75rem; color: var(--color-text-muted); line-height: 1.45; }
+    .nfe-fe-eventos strong { font-size: 0.78rem; color: var(--color-text); font-weight: 600; }
+    .nfe-fe-texto { overflow-wrap: anywhere; }
+    .nfe-fe-cce { margin-top: 0.8rem; border-top: 1px solid var(--color-border); padding-top: 0.7rem; }
+    .nfe-fe-cce summary { font-size: 0.78rem; font-weight: 600; color: var(--color-blue-deep); cursor: pointer; min-height: 32px; display: flex; align-items: center; }
+    .nfe-fe-aviso { font-size: 0.74rem; color: var(--color-text-muted); line-height: 1.5; margin: 0.4rem 0 0.6rem; }
+    .nfe-fe-textarea { width: 100%; box-sizing: border-box; resize: vertical; font-family: var(--font-sans); font-size: 0.8rem; }
+    .nfe-fe-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 0.6rem; margin-top: 0.6rem; }
+    .nfe-fe-msg { font-size: 0.75rem; line-height: 1.45; }
+    .nfe-fe-msg.ok { color: var(--color-ok); }
+    .nfe-fe-msg.err { color: var(--color-err, #c0392b); }
+    @media (max-width: 880px) {
+        .nfe-fe-link, .nfe-fe-cce summary { min-height: 44px; }
+    }
+</style>
+
+<script>
+    function initNfeFe() {
+        const root = document.querySelector<HTMLElement>('[data-nfe-fe]');
+        const btn = root?.querySelector<HTMLButtonElement>('[data-nfe-cce-enviar]');
+        if (!root || !btn) return;
+        const en = document.documentElement.lang === 'en';
+        const texto = root.querySelector<HTMLTextAreaElement>('[data-nfe-cce-texto]');
+        const msg = root.querySelector<HTMLElement>('[data-nfe-cce-msg]');
+        const lista = root.querySelector<HTMLElement>('[data-nfe-eventos]');
+        const decir = (t: string, ok: boolean) => { if (msg) { msg.textContent = t; msg.className = 'nfe-fe-msg ' + (ok ? 'ok' : 'err'); } };
+        const ESTADO: Record<string, [string, string]> = {
+            registrado: ['registrado', 'registered'], pendiente: ['enviando', 'sending'],
+            incierto: ['sin confirmar', 'unconfirmed'], rechazado: ['rechazado', 'rejected'],
+        };
+        // Misma forma que el render del servidor (un solo constructor por superficie).
+        const pintar = (eventos: { tpEvento: string; nSeq: number; estado: string; nProt: string | null; texto: string | null; erro: string | null }[]) => {
+            if (!lista) return;
+            lista.replaceChildren(...eventos.map((e) => {
+                const li = document.createElement('li');
+                const s = document.createElement('strong');
+                s.textContent = e.tpEvento === '110111' ? (en ? 'Cancellation' : 'Cancelación') : (en ? `Correction letter (CC-e) no. ${e.nSeq}` : `Carta de Correção n.º ${e.nSeq}`);
+                const st = document.createElement('span');
+                st.textContent = (ESTADO[e.estado]?.[en ? 1 : 0] ?? e.estado) + (e.nProt ? ` · ${en ? 'protocol' : 'protocolo'} ${e.nProt}` : '');
+                li.append(s, st);
+                const extra = e.tpEvento === '110110' && e.texto ? e.texto : e.estado === 'rechazado' ? e.erro : null;
+                if (extra) { const x = document.createElement('span'); x.className = 'nfe-fe-texto'; x.textContent = extra; li.append(x); }
+                return li;
+            }));
+            lista.hidden = eventos.length === 0;
+        };
+        btn.addEventListener('click', async () => {
+            const correcao = (texto?.value ?? '').trim();
+            if (correcao.length < 15) { decir(en ? 'Write at least 15 characters.' : 'Escribe al menos 15 caracteres.', false); return; }
+            const ok = await (window as any).cordConfirm?.({
+                title: en ? 'Send the correction letter' : 'Enviar la Carta de Correção',
+                body: en
+                    ? 'The SEFAZ registers it and it cannot be deleted; a later letter replaces it. Send?'
+                    : 'La SEFAZ la registra y no se puede borrar; una carta posterior la reemplaza. ¿Enviar?',
+                confirmText: en ? 'Send' : 'Enviar',
+            });
+            if (ok === false) return;
+            btn.disabled = true;
+            try {
+                const res = await fetch('/api/fiscal/nfe-cce', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ documento_id: root.dataset.documento, correcao }),
+                });
+                const d = await res.json().catch(() => ({}));
+                if (Array.isArray(d.eventos)) pintar(d.eventos);
+                if (res.ok && d.ok) {
+                    if (texto) texto.value = '';
+                    decir(en ? 'Correction letter registered.' : 'Carta de Correção registrada.', true);
+                } else decir(d.error || (en ? 'Could not send the correction letter.' : 'No se pudo enviar la Carta de Correção.'), false);
+            } catch {
+                decir(en ? 'Could not send the correction letter.' : 'No se pudo enviar la Carta de Correção.', false);
+            } finally { btn.disabled = false; }
+        });
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initNfeFe);
+    else initNfeFe();
+</script>

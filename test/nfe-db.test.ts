@@ -108,6 +108,8 @@ const sefaz = {
     plan: [] as Plano[],
     status: {} as Record<string, string>,
     consultaCaida: false,
+    /** La próxima inutilização llega a la SEFAZ pero su respuesta se pierde. */
+    inutPerdida: false,
     llamadas: [] as { autorizador: string; servico: string; mensagem: string }[],
 };
 
@@ -130,7 +132,11 @@ async function fakeSefaz(_entorno: string, autorizador: string, servico: string,
             return ok(sim.consulta(mensagem));
         case 'NfeStatusServico': return ok(sim.status(mensagem, sefaz.status[autorizador] ?? '107'));
         case 'RecepcaoEvento': return ok(sim.evento(mensagem));
-        case 'NfeInutilizacao': return ok(sim.inutilizacao(mensagem));
+        case 'NfeInutilizacao': {
+            const r = sim.inutilizacao(mensagem);
+            if (sefaz.inutPerdida) { sefaz.inutPerdida = false; throw new NfeTransporteError('socket hang up', true); }
+            return ok(r);
+        }
         default: throw new Error(`servicio no simulado: ${servico}`);
     }
 }
@@ -583,6 +589,25 @@ describe('eventos', () => {
         const doc = await nuevoDocumento();
         await provider.issueDocument(request(doc));
         expect((await intentos(doc))[0].numero).toBe(ultimo + 4);
+    });
+
+    it('inutilização sin respuesta: el mismo rango se reenvía igual y la SEFAZ confirma que ya llegó', async () => {
+        const ultimo = Number((await m.db.query(`select max(numero) as n from fiscal_rail_comprobantes where rail = 'nfe'`)).rows[0].n);
+        const faixa = { serie: 1, inicio: ultimo + 1, fim: ultimo + 2, justificativa: 'Numeracao reservada e nao utilizada' };
+        sefaz.inutPerdida = true;
+        expect(await inutilizarFaixa(ORG, 'homologacion', CNPJ, faixa)).toMatchObject({ estado: 'incierta' });
+        // Un rango que se cruza con el incierto no se pide.
+        expect(await inutilizarFaixa(ORG, 'homologacion', CNPJ, { ...faixa, fim: ultimo + 5 })).toMatchObject({ estado: 'rechazada' });
+        const antes = sefaz.llamadas.filter((l) => l.servico === 'NfeInutilizacao');
+        expect(await inutilizarFaixa(ORG, 'homologacion', CNPJ, { ...faixa, justificativa: 'Outra justificativa qualquer aqui' })).toMatchObject({ estado: 'homologada' });
+        const despues = sefaz.llamadas.filter((l) => l.servico === 'NfeInutilizacao');
+        expect(despues.length).toBe(antes.length + 1);
+        expect(despues.at(-1)!.mensagem).toBe(antes.at(-1)!.mensagem);
+        const filas = (await m.db.query(`select estado, respuesta from nfe_inutilizacoes where n_ini = $1 and n_fin = $2`, [ultimo + 1, ultimo + 2])).rows;
+        expect(filas).toHaveLength(1);
+        expect(filas[0]).toMatchObject({ estado: 'homologada', respuesta: { cStat: '563', recuperado: true } });
+        // Y ya no se vuelve a enviar.
+        expect(await inutilizarFaixa(ORG, 'homologacion', CNPJ, faixa)).toMatchObject({ estado: 'rechazada' });
     });
 });
 

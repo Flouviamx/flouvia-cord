@@ -1,0 +1,589 @@
+---
+// Ajustes › Datos fiscales › NF-e (Brasil, venta de mercancías ante la SEFAZ).
+//
+// Lo que el negocio aporta (inscripción estadual, régimen, dirección del
+// establecimiento, serie, PIS/COFINS y el certificado ICP-Brasil de su CNPJ,
+// que puede ser el mismo de la NFS-e) y un estado honesto: mientras falte
+// cualquiera, o mientras Cord no tenga la NF-e activa, las facturas de
+// productos siguen como documento comercial y aquí se dice exactamente eso
+// (regla 15). Sin la NF-e activa en el despliegue no se ofrece ningún control:
+// no hay consumidor que lo lea.
+//
+// El certificado viaja una sola vez (multipart a /api/fiscal/nfe) y nunca
+// vuelve: la pantalla solo conoce el resumen (vigencia, titular).
+import type { EstadoNfe } from '../../../lib/fiscal/latam/nfe/estado';
+import { CRT, CST_PIS_COFINS, IND_PRES, MOD_FRETE, SERIE_MAX, SERIE_MIN } from '../../../lib/fiscal/latam/nfe/constantes';
+import { FALTANTE_EN, FALTANTE_ES } from '../../../lib/fiscal/latam/nfe/ajustes';
+import { fmtDate, fmtTime } from '../../../lib/fmt-server';
+
+interface Props { estado: EstadoNfe; locale: 'es' | 'en'; }
+const { estado, locale } = Astro.props;
+const en = locale === 'en';
+
+const FALTANTE = en ? FALTANTE_EN : FALTANTE_ES;
+const faltantes = estado.faltantes.map((f) => FALTANTE[f] ?? f);
+const prueba = estado.entorno === 'homologacion';
+const cred = estado.credencial;
+const caduca = cred?.caduca?.slice(0, 10) ?? '';
+const titulo = !estado.habilitado
+    ? (en ? 'Coming soon' : 'Próximamente')
+    : estado.listo
+        ? (prueba ? (en ? 'Connected to the SEFAZ test environment' : 'Conectado al ambiente de pruebas de la SEFAZ') : (en ? 'NF-e active' : 'NF-e activa'))
+        : (en ? 'Not connected yet' : 'Aún sin conectar');
+const sub = estado.listo
+    ? (prueba
+        ? (en ? 'NF-e are authorized in the SEFAZ test environment (homologação) and have no legal validity.' : 'Las NF-e se autorizan en el ambiente de pruebas de la SEFAZ (homologação) y no tienen validez jurídica.')
+        : (en ? `Certificate valid until ${caduca} · ${cred?.identificador}` : `Certificado vigente hasta ${caduca} · ${cred?.identificador}`))
+    : (en ? `Missing: ${faltantes.join(', ')}.` : `Falta: ${faltantes.join(', ')}.`);
+const A = estado.ajustes;
+const opcion = (o: { es: string; en: string }) => (en ? o.en : o.es);
+const contDesde = estado.contingencia ? new Date(estado.contingencia.desde) : null;
+---
+
+<div class="nfe" data-nfe data-entorno={estado.entorno}>
+    <p class="nfe-intro">{en
+        ? 'In Brazil, the sale of goods is documented with the NF-e (model 55), authorized by the SEFAZ of your state before the goods leave. Connect it so Cord sends each product invoice to the SEFAZ, prints the DANFE with its access key and barcode, and keeps the authorized XML. Until then, product invoices are issued as commercial documents without tax validity.'
+        : 'En Brasil la venta de mercancías se documenta con la NF-e (modelo 55), que autoriza la SEFAZ de tu estado antes de que salga la mercancía. Conéctala para que Cord envíe cada factura de productos a la SEFAZ, imprima el DANFE con su chave de acceso y su código de barras, y guarde el XML autorizado. Mientras tanto, las facturas de productos se emiten como documento comercial sin validez fiscal.'}</p>
+    <p class="nfe-intro">{en
+        ? 'Services are not part of the NF-e: they go in the NFS-e. An invoice that mixes products and services is not issued; split it in two.'
+        : 'Los servicios no van en la NF-e: van en la NFS-e. Una factura que mezcla productos y servicios no se emite; divídela en dos.'}</p>
+
+    <div class="nfe-state" data-on={estado.listo ? '1' : '0'} data-nfe-state>
+        <span class="nfe-dot" aria-hidden="true"></span>
+        <span class="nfe-state-info">
+            <span class="nfe-state-title" data-nfe-title>{titulo}</span>
+            <span class="nfe-state-sub" data-nfe-sub>{estado.habilitado
+                ? sub
+                : (en ? 'The NF-e is not available in Cord yet. Your product invoices are still issued as commercial documents; we will let you know when you can connect it.' : 'La NF-e todavía no está disponible en Cord. Tus facturas de productos se siguen emitiendo como documento comercial; te avisaremos cuando puedas conectarla.')}</span>
+            {estado.habilitado && estado.origenCredencial === 'nfse' && (
+                <span class="nfe-state-sub" data-nfe-origen>{en ? 'Signed with the certificate you uploaded for the NFS-e (same CNPJ).' : 'Se firma con el certificado que subiste para la NFS-e (mismo CNPJ).'}</span>
+            )}
+            {estado.habilitado && cred?.verificacionError && (
+                <span class="nfe-state-err" data-nfe-verif>{cred.verificacionError}</span>
+            )}
+        </span>
+        {estado.habilitado && (
+            <button type="button" class="nfe-btn-ghost" data-nfe-remove style={estado.origenCredencial === 'nfe' ? '' : 'display:none'}>
+                {en ? 'Disconnect' : 'Desconectar'}
+            </button>
+        )}
+    </div>
+
+    {estado.habilitado && estado.contingencia && contDesde && (
+        <p class="nfe-cont" role="status">{en
+            ? `The SEFAZ of your state is unavailable: since ${fmtDate(contDesde)} ${fmtTime(contDesde)} Cord authorizes your NF-e at the ${estado.contingencia.svc} (contingency). It returns to your state SEFAZ by itself when it is back.`
+            : `La SEFAZ de tu estado no está disponible: desde el ${fmtDate(contDesde)} ${fmtTime(contDesde)} Cord autoriza tus NF-e en la ${estado.contingencia.svc} (contingencia). Vuelve sola a la SEFAZ de tu estado cuando se restablezca.`}</p>
+    )}
+
+    {estado.habilitado && (
+        <Fragment>
+            <span class="nfe-sec">{en ? 'Establishment' : 'Establecimiento'}</span>
+            <div class="nfe-grid">
+                <div class="s-field">
+                    <label for="nfeCrt">{en ? 'Tax regime (CRT)' : 'Régimen tributario (CRT)'}</label>
+                    <select class="s-input" id="nfeCrt">
+                        <option value="" selected={!A.crt}>{en ? 'Choose…' : 'Elige…'}</option>
+                        {CRT.map((o) => <option value={o.id} selected={A.crt === o.id}>{opcion(o)}</option>)}
+                    </select>
+                </div>
+                <div class="s-field">
+                    <label for="nfeIe">{en ? 'State registration (Inscrição Estadual)' : 'Inscrição Estadual'}</label>
+                    <input class="s-input" id="nfeIe" inputmode="numeric" maxlength="18" autocomplete="off" value={A.ie ?? ''} />
+                </div>
+                <div class="s-field">
+                    <label for="nfeFant">{en ? 'Trade name (optional)' : 'Nombre de fantasía (opcional)'}</label>
+                    <input class="s-input" id="nfeFant" maxlength="60" autocomplete="off" value={A.nomeFantasia ?? ''} />
+                </div>
+                <div class="s-field">
+                    <label for="nfeTel">{en ? 'Phone with area code (optional)' : 'Teléfono con DDD (opcional)'}</label>
+                    <input class="s-input" id="nfeTel" inputmode="tel" maxlength="20" autocomplete="off" value={A.telefone ?? ''} />
+                </div>
+                <div class="s-field nfe-wide">
+                    <label for="nfeLog">{en ? 'Street (logradouro)' : 'Calle (logradouro)'}</label>
+                    <input class="s-input" id="nfeLog" maxlength="60" autocomplete="off" value={A.logradouro ?? ''} />
+                </div>
+                <div class="s-field">
+                    <label for="nfeNro">{en ? 'Number (or S/N)' : 'Número (o S/N)'}</label>
+                    <input class="s-input" id="nfeNro" maxlength="60" autocomplete="off" value={A.numero ?? ''} />
+                </div>
+                <div class="s-field">
+                    <label for="nfeCpl">{en ? 'Complement (optional)' : 'Complemento (opcional)'}</label>
+                    <input class="s-input" id="nfeCpl" maxlength="60" autocomplete="off" value={A.complemento ?? ''} />
+                </div>
+                <div class="s-field">
+                    <label for="nfeBairro">{en ? 'District (bairro)' : 'Barrio (bairro)'}</label>
+                    <input class="s-input" id="nfeBairro" maxlength="60" autocomplete="off" value={A.bairro ?? ''} />
+                </div>
+                <div class="s-field">
+                    <label for="nfeCep">CEP</label>
+                    <input class="s-input" id="nfeCep" inputmode="numeric" maxlength="9" autocomplete="off" value={A.cep ?? ''} placeholder="01310100" />
+                </div>
+                <div class="s-field">
+                    <label for="nfeMun">{en ? 'Municipality (IBGE code)' : 'Municipio (código IBGE)'}</label>
+                    <input class="s-input" id="nfeMun" inputmode="numeric" maxlength="7" autocomplete="off" value={A.municipio ?? ''} placeholder="3550308" />
+                    <span class="nfe-help" data-nfe-mun-nome>{estado.municipio ? `${estado.municipio.nome} / ${estado.municipio.uf}` : (en ? '7 digits; the state (UF) and its SEFAZ come from it.' : '7 dígitos; de él salen el estado (UF) y su SEFAZ.')}</span>
+                </div>
+                <div class="s-field">
+                    <label for="nfeIm">{en ? 'Municipal registration (optional)' : 'Inscripción municipal (opcional)'}</label>
+                    <input class="s-input" id="nfeIm" maxlength="15" autocomplete="off" value={A.im ?? ''} />
+                </div>
+                <div class="s-field">
+                    <label for="nfeCnae">{en ? 'CNAE (with the municipal registration)' : 'CNAE (junto a la inscripción municipal)'}</label>
+                    <input class="s-input" id="nfeCnae" inputmode="numeric" maxlength="9" autocomplete="off" value={A.cnae ?? ''} />
+                </div>
+            </div>
+
+            <span class="nfe-sec">{en ? 'Operation and taxes' : 'Operación e impuestos'}</span>
+            <div class="nfe-grid">
+                <div class="s-field">
+                    <label for="nfeSerie">{en ? `NF-e series (${SERIE_MIN} to ${SERIE_MAX}), exclusive to Cord` : `Serie de la NF-e (${SERIE_MIN} a ${SERIE_MAX}), exclusiva de Cord`}</label>
+                    <input class="s-input" id="nfeSerie" inputmode="numeric" maxlength="3" autocomplete="off" value={A.serie ?? ''} placeholder="1" />
+                </div>
+                <div class="s-field">
+                    <label for="nfeNum">{en ? 'First number (optional)' : 'Primer número (opcional)'}</label>
+                    <input class="s-input" id="nfeNum" inputmode="numeric" autocomplete="off" value={A.numeroInicial ?? ''} placeholder="1" />
+                </div>
+                <div class="s-field">
+                    <label for="nfeNatOp">{en ? 'Nature of the operation' : 'Naturaleza de la operación'}</label>
+                    <input class="s-input" id="nfeNatOp" maxlength="60" autocomplete="off" value={A.natOp ?? ''} placeholder="Venda de mercadoria" />
+                </div>
+                <div class="s-field">
+                    <label for="nfePres">{en ? 'How you sell' : 'Cómo vendes'}</label>
+                    <select class="s-input" id="nfePres">
+                        {IND_PRES.map((o) => <option value={o.id} selected={(A.indPres ?? '9') === o.id}>{opcion(o)}</option>)}
+                    </select>
+                </div>
+                <div class="s-field">
+                    <label for="nfeFrete">{en ? 'Freight' : 'Flete'}</label>
+                    <select class="s-input" id="nfeFrete">
+                        {MOD_FRETE.map((o) => <option value={o.id} selected={(A.modFrete ?? '9') === o.id}>{opcion(o)}</option>)}
+                    </select>
+                </div>
+                <div class="s-field" data-nfe-solo-crt="1">
+                    <label for="nfeCredSn">{en ? 'ICMS credit allowed by Simples (%) (CSOSN 101)' : 'Crédito de ICMS que permite el Simples (%) (CSOSN 101)'}</label>
+                    <input class="s-input" id="nfeCredSn" inputmode="decimal" autocomplete="off" value={A.pCredSN ?? ''} />
+                </div>
+                <div class="s-field">
+                    <label for="nfePisCst">{en ? 'PIS CST (default)' : 'CST del PIS (por defecto)'}</label>
+                    <select class="s-input" id="nfePisCst" data-nfe-cst="nfePisAliq">
+                        <option value="" selected={!A.pis}>{en ? 'Choose…' : 'Elige…'}</option>
+                        {CST_PIS_COFINS.map((o) => <option value={o.id} data-aliq={o.grupo === 'Aliq' ? '1' : '0'} selected={A.pis?.cst === o.id}>{`${o.id} · ${opcion(o)}`}</option>)}
+                    </select>
+                </div>
+                <div class="s-field" data-nfe-aliq="nfePisAliq">
+                    <label for="nfePisAliq">{en ? 'PIS rate (%)' : 'Alícuota del PIS (%)'}</label>
+                    <input class="s-input" id="nfePisAliq" inputmode="decimal" autocomplete="off" value={A.pis?.aliquota ?? ''} placeholder="1.65" />
+                </div>
+                <div class="s-field">
+                    <label for="nfeCofCst">{en ? 'COFINS CST (default)' : 'CST del COFINS (por defecto)'}</label>
+                    <select class="s-input" id="nfeCofCst" data-nfe-cst="nfeCofAliq">
+                        <option value="" selected={!A.cofins}>{en ? 'Choose…' : 'Elige…'}</option>
+                        {CST_PIS_COFINS.map((o) => <option value={o.id} data-aliq={o.grupo === 'Aliq' ? '1' : '0'} selected={A.cofins?.cst === o.id}>{`${o.id} · ${opcion(o)}`}</option>)}
+                    </select>
+                </div>
+                <div class="s-field" data-nfe-aliq="nfeCofAliq">
+                    <label for="nfeCofAliq">{en ? 'COFINS rate (%)' : 'Alícuota del COFINS (%)'}</label>
+                    <input class="s-input" id="nfeCofAliq" inputmode="decimal" autocomplete="off" value={A.cofins?.aliquota ?? ''} placeholder="7.6" />
+                </div>
+                <label class="nfe-check nfe-wide" data-nfe-solo-crt="3">
+                    <input type="checkbox" id="nfeSemIcms" checked={!!A.pisCofinsSemIcms} />
+                    <span>{en ? 'Exclude the ICMS from the PIS/COFINS base (Theme 69 of the STF)' : 'Excluir el ICMS de la base del PIS/COFINS (Tema 69 del STF)'}</span>
+                </label>
+                <div class="s-field nfe-wide">
+                    <label for="nfeInfCpl">{en ? 'Additional information printed on every NF-e (optional)' : 'Información complementaria que va en cada NF-e (opcional)'}</label>
+                    <textarea class="s-input nfe-textarea" id="nfeInfCpl" rows="2" maxlength="2000">{A.infCpl ?? ''}</textarea>
+                </div>
+            </div>
+            <p class="nfe-hint">{en
+                ? 'Each product in your catalog carries its NCM, CFOP, origin and unit, and its ICMS (CSOSN in Simples) and IPI. Cord issues sales within your state and, under Simples Nacional, to other states; prices include ICMS, PIS and COFINS, and the only tax that can be added on top of a line is the product IPI. Tax substitution (ST), DIFAL to non-contributors, exports and fuels are not issued yet. Use an NF-e series that no other system of yours uses.'
+                : 'Cada producto del catálogo lleva su NCM, CFOP, origen y unidad, y su ICMS (CSOSN en el Simples) e IPI. Cord emite ventas dentro de tu estado y, en el Simples Nacional, a otros estados; los precios incluyen ICMS, PIS y COFINS, y el único impuesto que puede sumarse a una línea es el IPI del producto. La sustitución tributaria (ST), el DIFAL a no contribuyentes, las exportaciones y los combustibles todavía no se emiten. Usa una serie de NF-e que no use ningún otro sistema tuyo.'}</p>
+            <div class="nfe-actions">
+                <button type="button" class="nfe-btn-solid" data-nfe-save>{en ? 'Save NF-e settings' : 'Guardar ajustes de la NF-e'}</button>
+                <span class="nfe-msg" data-nfe-msg-ajustes></span>
+            </div>
+
+            <div class="nfe-cert">
+                <span class="nfe-cert-title">{en ? 'ICP-Brasil digital certificate (A1, e-CNPJ)' : 'Certificado digital ICP-Brasil (A1, e-CNPJ)'}</span>
+                <p class="nfe-hint nfe-hint-top">{en
+                    ? 'If you already uploaded your e-CNPJ for the NFS-e, the NF-e uses it and you do not need to upload it again. Upload one here only to sign the NF-e with a different certificate of the same CNPJ.'
+                    : 'Si ya subiste tu e-CNPJ para la NFS-e, la NF-e lo usa y no hace falta subirlo de nuevo. Sube uno aquí solo para firmar la NF-e con otro certificado del mismo CNPJ.'}</p>
+                <div class="nfe-mode" role="radiogroup" aria-label={en ? 'Certificate format' : 'Formato del certificado'}>
+                    <label><input type="radio" name="nfeModo" value="p12" checked /> {en ? '.pfx / .p12 file' : 'Archivo .pfx / .p12'}</label>
+                    <label><input type="radio" name="nfeModo" value="pem" /> {en ? 'Certificate + private key' : 'Certificado + llave privada'}</label>
+                </div>
+                <div class="nfe-files is-single" data-nfe-p12>
+                    <label class="nfe-drop">
+                        <input type="file" id="nfeP12" accept=".pfx,.p12" />
+                        <span class="nfe-drop-ico">.pfx</span>
+                        <span class="nfe-drop-t">{en ? 'e-CNPJ certificate' : 'Certificado e-CNPJ'}</span>
+                        <span class="nfe-drop-s" data-nfe-name="nfeP12">{en ? 'Choose your .pfx/.p12 file' : 'Elige tu archivo .pfx/.p12'}</span>
+                    </label>
+                </div>
+                <div class="nfe-files" data-nfe-pem hidden>
+                    <label class="nfe-drop">
+                        <input type="file" id="nfeCrtFile" accept=".crt,.pem,.cer" />
+                        <span class="nfe-drop-ico">.crt</span>
+                        <span class="nfe-drop-t">{en ? 'Certificate' : 'Certificado'}</span>
+                        <span class="nfe-drop-s" data-nfe-name="nfeCrtFile">{en ? 'Issued to your CNPJ' : 'Emitido para tu CNPJ'}</span>
+                    </label>
+                    <label class="nfe-drop">
+                        <input type="file" id="nfeKeyFile" accept=".key,.pem" />
+                        <span class="nfe-drop-ico">.key</span>
+                        <span class="nfe-drop-t">{en ? 'Private key' : 'Llave privada'}</span>
+                        <span class="nfe-drop-s" data-nfe-name="nfeKeyFile">{en ? 'The key of that certificate' : 'La llave de ese certificado'}</span>
+                    </label>
+                </div>
+                <div class="s-field nfe-pass">
+                    <label for="nfePass">{en ? 'Certificate password' : 'Contraseña del certificado'}</label>
+                    <input class="s-input" id="nfePass" type="password" autocomplete="off" />
+                </div>
+                <div class="nfe-actions">
+                    <button type="button" class="nfe-btn-solid" data-nfe-upload>{en ? 'Upload certificate' : 'Subir certificado'}</button>
+                    <span class="nfe-msg" data-nfe-msg-cert></span>
+                </div>
+            </div>
+
+            <details class="nfe-inut" data-nfe-inut>
+                <summary>{en ? 'Unused numbers (inutilização)' : 'Números sin usar (inutilização)'}</summary>
+                <p class="nfe-hint nfe-hint-top">{en
+                    ? 'A number that Cord reserved and that never became an authorized NF-e (for example, after a rejection) leaves a gap in the series. The SEFAZ asks you to declare it. Cord lists the gaps and never declares them by itself.'
+                    : 'Un número que Cord reservó y nunca llegó a ser una NF-e autorizada (por ejemplo, tras un rechazo) deja un hueco en la serie. La SEFAZ pide declararlo. Cord lista los huecos y nunca los declara por su cuenta.'}</p>
+                <p class="nfe-hint" data-nfe-inut-huecos>{en ? 'Open this section to check.' : 'Abre esta sección para revisarlo.'}</p>
+                <div class="nfe-grid">
+                    <div class="s-field">
+                        <label for="nfeInutIni">{en ? 'From number' : 'Desde el número'}</label>
+                        <input class="s-input" id="nfeInutIni" inputmode="numeric" autocomplete="off" />
+                    </div>
+                    <div class="s-field">
+                        <label for="nfeInutFim">{en ? 'To number' : 'Hasta el número'}</label>
+                        <input class="s-input" id="nfeInutFim" inputmode="numeric" autocomplete="off" />
+                    </div>
+                    <div class="s-field nfe-wide">
+                        <label for="nfeInutJust">{en ? 'Reason (at least 15 characters, sent to the SEFAZ)' : 'Justificación (mínimo 15 caracteres, va a la SEFAZ)'}</label>
+                        <input class="s-input" id="nfeInutJust" maxlength="255" autocomplete="off" placeholder="Numeração não utilizada por falha na emissão" />
+                    </div>
+                </div>
+                <div class="nfe-actions">
+                    <button type="button" class="nfe-btn-ghost" data-nfe-inutilizar>{en ? 'Declare to the SEFAZ' : 'Declarar a la SEFAZ'}</button>
+                    <span class="nfe-msg" data-nfe-msg-inut></span>
+                </div>
+                <ul class="nfe-inut-hist" data-nfe-inut-hist></ul>
+            </details>
+        </Fragment>
+    )}
+</div>
+
+<style>
+    .nfe-intro { font-size: 0.82rem; color: var(--color-text-muted); line-height: 1.55; margin: 0 0 0.8rem; }
+    .nfe-state { display: flex; align-items: center; gap: 11px; border: 1px solid var(--color-border); border-radius: 10px; padding: 12px 14px; margin: 0.4rem 0 1.2rem; }
+    .nfe-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--color-text-muted); flex-shrink: 0; }
+    .nfe-state[data-on="1"] .nfe-dot { background: var(--color-ok); box-shadow: 0 0 0 3px rgba(16,185,129,0.18); }
+    .nfe-state-info { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+    .nfe-state-title { font-size: 0.86rem; font-weight: 600; color: var(--color-text); }
+    .nfe-state-sub { font-size: 0.76rem; color: var(--color-text-muted); line-height: 1.45; }
+    .nfe-state-err { font-size: 0.76rem; color: var(--color-err, #c0392b); line-height: 1.45; }
+    .nfe-cont { font-size: 0.78rem; line-height: 1.5; color: #92400e; background: rgba(217,119,6,0.08); border-radius: 10px; padding: 10px 13px; margin: -0.4rem 0 1.2rem; }
+    .nfe-sec { display: block; font-size: 0.78rem; font-weight: 600; color: var(--color-text); margin: 1.2rem 0 0.7rem; }
+    .nfe-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.9rem 1rem; }
+    .nfe-wide { grid-column: 1 / -1; }
+    .nfe-help { display: block; font-size: 0.72rem; color: var(--color-text-muted); margin-top: 4px; }
+    .nfe-hint { font-size: 0.76rem; color: var(--color-text-muted); line-height: 1.5; margin: 0.8rem 0 0; }
+    .nfe-hint-top { margin: 0 0 0.9rem; }
+    .nfe-check { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: var(--color-text); cursor: pointer; min-height: 32px; }
+    .nfe-textarea { resize: vertical; font-family: var(--font-sans); }
+    .nfe-cert, .nfe-inut { border-top: 1px solid var(--color-border); margin-top: 1.4rem; padding-top: 1.2rem; }
+    .nfe-cert-title { display: block; font-size: 0.84rem; font-weight: 600; color: var(--color-text); margin-bottom: 0.7rem; }
+    .nfe-inut summary { font-size: 0.84rem; font-weight: 600; color: var(--color-text); cursor: pointer; min-height: 32px; display: flex; align-items: center; margin-bottom: 0.6rem; }
+    .nfe-inut-hist { list-style: none; margin: 0.9rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.4rem; font-size: 0.76rem; color: var(--color-text-muted); line-height: 1.45; }
+    .nfe-mode { display: flex; flex-wrap: wrap; gap: 0.5rem 1.2rem; font-size: 0.8rem; color: var(--color-text); margin-bottom: 0.9rem; }
+    .nfe-mode label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; min-height: 32px; }
+    .nfe-files { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .nfe-files.is-single { grid-template-columns: minmax(0, 260px); }
+    .nfe-files[hidden] { display: none; }
+    .nfe-drop { display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; border: 1.5px dashed var(--color-border); border-radius: 12px; padding: 1.2rem 1rem; cursor: pointer; background: var(--color-bg-soft); transition: border-color 0.2s, background 0.2s; }
+    .nfe-drop:hover { border-color: var(--color-blue-deep); }
+    .nfe-drop.has-file { border-style: solid; border-color: var(--color-ok); background: rgba(16,185,129,0.06); }
+    .nfe-drop input { display: none; }
+    .nfe-drop:focus-within { outline: 2px solid var(--color-blue-deep); outline-offset: 2px; }
+    .nfe-drop-ico { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.04em; color: var(--color-blue-deep); }
+    .nfe-drop-t { font-size: 0.82rem; font-weight: 600; color: var(--color-text); }
+    .nfe-drop-s { font-size: 0.72rem; color: var(--color-text-muted); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .nfe-pass { max-width: 50%; margin-top: 1rem; }
+    .nfe-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 0.7rem; margin-top: 1.1rem; }
+    .nfe-btn-solid { font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; color: #fff; background: var(--color-blue-deep); border: none; border-radius: 999px; padding: 9px 18px; cursor: pointer; transition: transform 0.2s var(--ease-spring), opacity 0.2s; }
+    .nfe-btn-solid:hover { transform: scale(1.02); }
+    .nfe-btn-solid:active { transform: scale(0.98); }
+    .nfe-btn-solid:disabled, .nfe-btn-ghost:disabled { opacity: 0.6; cursor: progress; transform: none; }
+    .nfe-btn-ghost { font-family: var(--font-sans); font-size: 0.78rem; font-weight: 600; color: var(--color-text); background: transparent; border: 1px solid var(--color-border); border-radius: 999px; padding: 7px 14px; cursor: pointer; }
+    .nfe-msg { font-size: 0.78rem; line-height: 1.45; }
+    .nfe-msg.ok { color: var(--color-ok); }
+    .nfe-msg.err { color: var(--color-err, #c0392b); }
+    html[data-theme="dark"] .nfe-cont { color: #fbbf24; background: rgba(251,191,36,0.1); }
+    @media (max-width: 880px) {
+        .nfe-grid, .nfe-files { grid-template-columns: 1fr; }
+        .nfe-pass { max-width: none; }
+        .nfe-btn-solid, .nfe-btn-ghost, .nfe-check, .nfe-inut summary { min-height: 44px; }
+    }
+</style>
+
+<script>
+    // Etiquetas de lo que falta: el servidor manda códigos, la pantalla los dice.
+    const FALTANTE: Record<string, [string, string]> = {
+        documento: ['CNPJ del negocio', 'your business CNPJ'],
+        serie: ['serie de la NF-e', 'the NF-e series'],
+        crt: ['régimen tributario (Simples Nacional o Régimen Normal)', 'your tax regime (Simples Nacional or Regime Normal)'],
+        ie: ['Inscrição Estadual', 'the Inscrição Estadual'],
+        endereco: ['dirección del establecimiento (calle, número y barrio)', 'the establishment address (street, number and district)'],
+        municipio: ['municipio del establecimiento (código IBGE)', 'the municipality of your establishment (IBGE code)'],
+        cep: ['CEP del establecimiento', 'the establishment CEP'],
+        pis_cofins: ['CST del PIS y del COFINS', 'the PIS and COFINS CST'],
+        certificado: ['certificado digital ICP-Brasil', 'the ICP-Brasil digital certificate'],
+        certificado_vencido: ['certificado digital vigente', 'a valid digital certificate'],
+        certificado_documento: ['certificado a nombre del CNPJ del negocio', 'a certificate issued to your business CNPJ'],
+        responsavel_tecnico: ['la SEFAZ de tu estado exige datos que Cord todavía no tiene: escríbenos a soporte@flouvia.com', 'your state tax authority requires details Cord does not have yet: write to soporte@flouvia.com'],
+    };
+
+    function initNfe() {
+        const root = document.querySelector<HTMLElement>('[data-nfe]');
+        if (!root) return;
+        const en = document.documentElement.lang === 'en';
+        const i = en ? 1 : 0;
+        const q = <T extends Element>(s: string) => root.querySelector<T>(s);
+        const state = q<HTMLElement>('[data-nfe-state]');
+        const title = q<HTMLElement>('[data-nfe-title]');
+        const sub = q<HTMLElement>('[data-nfe-sub]');
+        const removeBtn = q<HTMLButtonElement>('[data-nfe-remove]');
+        const saveBtn = q<HTMLButtonElement>('[data-nfe-save]');
+        const uploadBtn = q<HTMLButtonElement>('[data-nfe-upload]');
+        if (!state || !saveBtn || !uploadBtn) return;
+        const val = (id: string) => (document.getElementById(id) as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | null)?.value ?? '';
+
+        // Campos que dependen del régimen y del CST.
+        const crtSel = document.getElementById('nfeCrt') as HTMLSelectElement | null;
+        const porRegimen = () => root.querySelectorAll<HTMLElement>('[data-nfe-solo-crt]').forEach((el) => { el.hidden = crtSel?.value !== el.dataset.nfeSoloCrt; });
+        crtSel?.addEventListener('change', porRegimen);
+        porRegimen();
+        root.querySelectorAll<HTMLSelectElement>('[data-nfe-cst]').forEach((sel) => {
+            const campo = root.querySelector<HTMLElement>(`[data-nfe-aliq="${sel.dataset.nfeCst}"]`);
+            const sync = () => { if (campo) campo.hidden = sel.selectedOptions[0]?.dataset.aliq !== '1'; };
+            sel.addEventListener('change', sync);
+            sync();
+        });
+
+        const flash = (sel: string, text: string, ok: boolean, sticky = false) => {
+            const el = q<HTMLElement>(sel);
+            if (!el) return;
+            el.textContent = text;
+            el.className = 'nfe-msg ' + (ok ? 'ok' : 'err');
+            if (ok && !sticky) setTimeout(() => { el.textContent = ''; el.className = 'nfe-msg'; }, 5000);
+        };
+
+        // Repinta el estado con la vista que devuelve /api/fiscal/nfe.
+        const pintar = (v: any) => {
+            const prueba = v.entorno === 'homologacion';
+            state.setAttribute('data-on', v.listo ? '1' : '0');
+            if (title) title.textContent = v.listo
+                ? (prueba ? (en ? 'Connected to the SEFAZ test environment' : 'Conectado al ambiente de pruebas de la SEFAZ') : (en ? 'NF-e active' : 'NF-e activa'))
+                : (en ? 'Not connected yet' : 'Aún sin conectar');
+            if (sub) sub.textContent = v.listo
+                ? (prueba
+                    ? (en ? 'NF-e are authorized in the SEFAZ test environment (homologação) and have no legal validity.' : 'Las NF-e se autorizan en el ambiente de pruebas de la SEFAZ (homologação) y no tienen validez jurídica.')
+                    : (en ? `Certificate valid until ${v.credencial?.caduca} · ${v.credencial?.identificador}` : `Certificado vigente hasta ${v.credencial?.caduca} · ${v.credencial?.identificador}`))
+                : (en ? 'Missing: ' : 'Falta: ') + (v.faltantes || []).map((f: string) => FALTANTE[f]?.[i] ?? f).join(', ') + '.';
+            q<HTMLElement>('[data-nfe-origen]')?.remove();
+            if (v.origen_credencial === 'nfse') {
+                const o = document.createElement('span');
+                o.className = 'nfe-state-sub';
+                o.setAttribute('data-nfe-origen', '');
+                o.textContent = en ? 'Signed with the certificate you uploaded for the NFS-e (same CNPJ).' : 'Se firma con el certificado que subiste para la NFS-e (mismo CNPJ).';
+                sub?.after(o);
+            }
+            q<HTMLElement>('[data-nfe-verif]')?.remove();
+            if (v.credencial?.verificacion_error) {
+                const e = document.createElement('span');
+                e.className = 'nfe-state-err';
+                e.setAttribute('data-nfe-verif', '');
+                e.textContent = v.credencial.verificacion_error;
+                (q<HTMLElement>('[data-nfe-origen]') ?? sub)?.after(e);
+            }
+            const mun = q<HTMLElement>('[data-nfe-mun-nome]');
+            if (mun && v.municipio) mun.textContent = `${v.municipio.nome} / ${v.municipio.uf}`;
+            if (removeBtn) removeBtn.style.display = v.origen_credencial === 'nfe' ? '' : 'none';
+        };
+
+        const pem = q<HTMLElement>('[data-nfe-pem]');
+        const p12 = q<HTMLElement>('[data-nfe-p12]');
+        root.querySelectorAll<HTMLInputElement>('input[name="nfeModo"]').forEach((r) => r.addEventListener('change', () => {
+            const esPem = r.value === 'pem' && r.checked;
+            if (pem) pem.hidden = !esPem;
+            if (p12) p12.hidden = esPem;
+        }));
+        root.querySelectorAll<HTMLInputElement>('input[type="file"]').forEach((input) => input.addEventListener('change', () => {
+            const f = input.files?.[0];
+            const name = q<HTMLElement>(`[data-nfe-name="${input.id}"]`);
+            if (name && f) name.textContent = f.name;
+            input.closest('.nfe-drop')?.classList.toggle('has-file', !!f);
+        }));
+
+        saveBtn.addEventListener('click', async () => {
+            const body: Record<string, unknown> = {
+                crt: val('nfeCrt') || undefined,
+                ie: val('nfeIe'),
+                nome_fantasia: val('nfeFant'),
+                telefone: val('nfeTel'),
+                logradouro: val('nfeLog'),
+                numero: val('nfeNro'),
+                complemento: val('nfeCpl'),
+                bairro: val('nfeBairro'),
+                cep: val('nfeCep'),
+                municipio: val('nfeMun'),
+                im: val('nfeIm'),
+                cnae: val('nfeCnae'),
+                serie: val('nfeSerie'),
+                numero_inicial: val('nfeNum'),
+                nat_op: val('nfeNatOp'),
+                ind_pres: val('nfePres'),
+                mod_frete: val('nfeFrete'),
+                p_cred_sn: val('nfeCredSn'),
+                pis_cst: val('nfePisCst'),
+                pis_aliquota: val('nfePisAliq'),
+                cofins_cst: val('nfeCofCst'),
+                cofins_aliquota: val('nfeCofAliq'),
+                pis_cofins_sem_icms: !!(document.getElementById('nfeSemIcms') as HTMLInputElement | null)?.checked,
+                inf_cpl: val('nfeInfCpl'),
+            };
+            saveBtn.disabled = true;
+            try {
+                const res = await fetch('/api/fiscal/nfe', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+                const d = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(d.error || '');
+                pintar(d);
+                flash('[data-nfe-msg-ajustes]', d.aviso || (en ? 'NF-e settings saved.' : 'Ajustes de la NF-e guardados.'), !d.aviso, !!d.aviso);
+            } catch (err: any) {
+                flash('[data-nfe-msg-ajustes]', err?.message || (en ? 'Could not save the NF-e settings' : 'No se pudieron guardar los ajustes de la NF-e'), false);
+            } finally { saveBtn.disabled = false; }
+        });
+
+        uploadBtn.addEventListener('click', async () => {
+            const modoPem = !!root.querySelector<HTMLInputElement>('input[name="nfeModo"][value="pem"]:checked');
+            const pass = (document.getElementById('nfePass') as HTMLInputElement | null)?.value ?? '';
+            const fd = new FormData();
+            if (!modoPem) {
+                const f = (document.getElementById('nfeP12') as HTMLInputElement | null)?.files?.[0];
+                if (!f) { flash('[data-nfe-msg-cert]', en ? 'Choose your .pfx/.p12 file first.' : 'Elige primero tu archivo .pfx/.p12.', false); return; }
+                fd.append('p12', f);
+                fd.append('password', pass);
+            } else {
+                const crt = (document.getElementById('nfeCrtFile') as HTMLInputElement | null)?.files?.[0];
+                const key = (document.getElementById('nfeKeyFile') as HTMLInputElement | null)?.files?.[0];
+                if (!crt || !key) { flash('[data-nfe-msg-cert]', en ? 'Choose the certificate and its private key.' : 'Elige el certificado y su llave privada.', false); return; }
+                fd.append('crt', crt);
+                fd.append('key', key);
+                if (pass) fd.append('key_password', pass);
+            }
+            uploadBtn.disabled = true;
+            const orig = uploadBtn.textContent;
+            uploadBtn.textContent = en ? 'Uploading…' : 'Subiendo…';
+            try {
+                const res = await fetch('/api/fiscal/nfe', { method: 'POST', body: fd });
+                const d = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(d.error || '');
+                const passIn = document.getElementById('nfePass') as HTMLInputElement | null;
+                if (passIn) passIn.value = '';
+                pintar(d);
+                flash('[data-nfe-msg-cert]', d.aviso || (en ? 'Certificate uploaded.' : 'Certificado cargado.'), !d.aviso, !!d.aviso);
+                if (!d.aviso) (window as any).cordToast?.(en ? 'Digital certificate uploaded' : 'Certificado digital cargado', 'ok');
+            } catch (err: any) {
+                flash('[data-nfe-msg-cert]', err?.message || (en ? 'Could not upload the certificate' : 'No se pudo subir el certificado'), false);
+            } finally { uploadBtn.disabled = false; uploadBtn.textContent = orig; }
+        });
+
+        removeBtn?.addEventListener('click', async () => {
+            const ok = await (window as any).cordConfirm?.({
+                title: en ? 'Disconnect the NF-e certificate' : 'Desconectar el certificado de la NF-e',
+                body: en
+                    ? 'If your NFS-e certificate is of the same CNPJ, the NF-e will use it; otherwise new product invoices will be issued as commercial documents until you upload a certificate again. Disconnect?'
+                    : 'Si el certificado de la NFS-e es del mismo CNPJ, la NF-e lo usará; si no, las facturas de productos nuevas se emitirán como documento comercial hasta que subas un certificado de nuevo. ¿Desconectar?',
+                danger: true,
+                confirmText: en ? 'Disconnect' : 'Desconectar',
+            });
+            if (!ok) return;
+            removeBtn.disabled = true;
+            try {
+                const res = await fetch('/api/fiscal/nfe', { method: 'DELETE' });
+                const d = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(res.status === 409 && typeof d.error === 'string' ? d.error : '');
+                pintar(d);
+                flash('[data-nfe-msg-cert]', en ? 'Digital certificate disconnected.' : 'Certificado digital desconectado.', true);
+            } catch (err: any) {
+                flash('[data-nfe-msg-cert]', err?.message || (en ? 'Could not disconnect the certificate' : 'No se pudo desconectar el certificado'), false);
+            } finally { removeBtn.disabled = false; }
+        });
+
+        // Inutilização: los huecos se consultan al abrir la sección.
+        const inut = q<HTMLDetailsElement>('[data-nfe-inut]');
+        const huecos = q<HTMLElement>('[data-nfe-inut-huecos]');
+        const hist = q<HTMLElement>('[data-nfe-inut-hist]');
+        const ESTADO_INUT: Record<string, [string, string]> = {
+            homologada: ['declarados', 'declared'], rechazada: ['rechazados', 'rejected'],
+            incierta: ['sin confirmar: vuelve a pedir el mismo rango', 'unconfirmed: request the same range again'], pendiente: ['enviando', 'sending'],
+        };
+        const pintarInut = (d: any) => {
+            const s: number[] = Array.isArray(d.sin_uso) ? d.sin_uso : [];
+            if (huecos) huecos.textContent = s.length
+                ? (en ? `Series ${d.serie}: numbers without an NF-e: ${s.join(', ')}.` : `Serie ${d.serie}: números sin NF-e: ${s.join(', ')}.`)
+                : (en ? `Series ${d.serie}: there are no gaps to declare.` : `Serie ${d.serie}: no hay huecos que declarar.`);
+            if (hist && Array.isArray(d.historial)) {
+                hist.replaceChildren(...d.historial.map((h: any) => {
+                    const li = document.createElement('li');
+                    const rango = h.inicio === h.fim ? `${h.inicio}` : `${h.inicio}–${h.fim}`;
+                    li.textContent = `${en ? 'Series' : 'Serie'} ${h.serie}, ${rango}: ${ESTADO_INUT[h.estado]?.[i] ?? h.estado}${h.n_prot ? ` · ${en ? 'protocol' : 'protocolo'} ${h.n_prot}` : ''}${h.error ? ` · ${h.error}` : ''}`;
+                    return li;
+                }));
+            }
+        };
+        let cargado = false;
+        inut?.addEventListener('toggle', async () => {
+            if (!inut.open || cargado) return;
+            cargado = true;
+            try {
+                const res = await fetch('/api/fiscal/nfe-inutilizacao');
+                const d = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(d.error || '');
+                pintarInut(d);
+            } catch (err: any) {
+                cargado = false;
+                if (huecos) huecos.textContent = err?.message || (en ? 'Could not check the series.' : 'No se pudo revisar la serie.');
+            }
+        });
+        const inutBtn = q<HTMLButtonElement>('[data-nfe-inutilizar]');
+        inutBtn?.addEventListener('click', async () => {
+            const inicio = Number(val('nfeInutIni'));
+            const fim = Number(val('nfeInutFim') || val('nfeInutIni'));
+            const justificativa = val('nfeInutJust').trim();
+            if (!Number.isInteger(inicio) || inicio < 1 || !Number.isInteger(fim) || fim < inicio) { flash('[data-nfe-msg-inut]', en ? 'Enter a valid range of numbers.' : 'Indica un rango de números válido.', false); return; }
+            if (justificativa.length < 15) { flash('[data-nfe-msg-inut]', en ? 'The reason needs at least 15 characters.' : 'La justificación necesita al menos 15 caracteres.', false); return; }
+            const ok = await (window as any).cordConfirm?.({
+                title: en ? 'Declare unused numbers' : 'Declarar números sin usar',
+                body: en
+                    ? `Numbers ${inicio} to ${fim} can never be used for an NF-e afterwards. Declare them to the SEFAZ?`
+                    : `Los números ${inicio} a ${fim} ya no podrán usarse nunca para una NF-e. ¿Declararlos a la SEFAZ?`,
+                danger: true,
+                confirmText: en ? 'Declare' : 'Declarar',
+            });
+            if (ok === false) return;
+            inutBtn.disabled = true;
+            try {
+                const res = await fetch('/api/fiscal/nfe-inutilizacao', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ inicio, fim, justificativa }) });
+                const d = await res.json().catch(() => ({}));
+                if (d.sin_uso) pintarInut(d);
+                if (res.ok && d.ok) flash('[data-nfe-msg-inut]', en ? 'Numbers declared to the SEFAZ.' : 'Números declarados a la SEFAZ.', true);
+                else flash('[data-nfe-msg-inut]', d.error || (en ? 'Could not declare the numbers.' : 'No se pudieron declarar los números.'), false);
+            } catch {
+                flash('[data-nfe-msg-inut]', en ? 'Could not declare the numbers.' : 'No se pudieron declarar los números.', false);
+            } finally { inutBtn.disabled = false; }
+        });
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initNfe);
+    else initNfe();
+</script>
