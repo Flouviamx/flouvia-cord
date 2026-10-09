@@ -10,6 +10,7 @@ import { money, lineTotal, quoteSubtotal, quoteTotal, quoteTaxBreakdown, quoteRe
 import { etiquetaDescuento } from '../../lib/descuentos';
 import { getCountryProfile } from '../../lib/countries';
 import { currencyDecimals } from '../../lib/currency';
+import { retencionBase } from '../../../packages/elements/src/engine';
 import { taxBreakdownRows } from '../../lib/tax-components';
 import { canCollectOnline } from '../../lib/payment-rail';
 import { payoutSpecFor } from '../../lib/payout-fields';
@@ -180,7 +181,7 @@ import { iconInner } from '../../lib/icons';
 ---
 
 <div class="q-card" data-brand-surface style={brandStyle(resolveBrandProfile(ORG.brandProfile), ORG.colorMarca, ORG.colorSecundario)} data-token={q.token} data-folio={folio} data-iva={ORG.ivaPct} data-iva-incluido={q.iva_incluido ? '1' : ''} data-currency={ORG.moneda || 'MXN'} data-pais={ORG.paisCode || 'MX'} data-org={ORG.nombre} data-init={yaAprobada ? 'approved' : yaRechazada ? 'rejected' : 'review'} data-demo={esDemo ? '1' : undefined} data-solo-lectura={soloLectura ? '1' : undefined} data-status={q.status}>
-    <script type="application/json" id="qRetenciones" is:inline set:html={jsonForScript((q.retenciones || []).map((r: any) => ({ nombre: r.nombre, tasa: r.tasa, tipo: r.tipo })))} />
+    <script type="application/json" id="qRetenciones" is:inline set:html={jsonForScript((q.retenciones || []).map((r: any) => ({ nombre: r.nombre, tasa: r.tasa, tipo: r.tipo, base: retencionBase(r.baseTipo) })))} />
     <script type="application/json" id="qDescuento" is:inline set:html={jsonForScript(q.descuento ? { tipo: q.descuento.tipo, valor: q.descuento.valor } : null)} />
     {esDemo && <script type="application/json" id="qDemo" is:inline set:html={demoRuntimeJson} />}
     {ORG.esPrueba && (
@@ -770,7 +771,7 @@ import { iconInner } from '../../lib/icons';
 
 <script>
     import { iconSvg } from '../../lib/icons';
-    import { calculateDocumentTotals } from '../../../packages/elements/src/engine';
+    import { calculateDocumentTotals, type RetencionBase } from '../../../packages/elements/src/engine';
     import { currencyDecimals } from '../../lib/currency';
 
     const card = document.querySelector('.q-card') as HTMLElement | null;
@@ -939,7 +940,7 @@ import { iconInner } from '../../lib/icons';
     // casillas, y debe decir lo mismo que el servidor va a guardar.
     const fallbackRate = Number(card?.dataset.iva ?? '0') / 100;
     const ivaIncluido = card?.dataset.ivaIncluido === '1';
-    let qRetenciones: { nombre: string; tasa: number; tipo?: string }[] = [];
+    let qRetenciones: { nombre: string; tasa: number; tipo?: string; base?: RetencionBase }[] = [];
     try { qRetenciones = JSON.parse(document.getElementById('qRetenciones')?.textContent || '[]'); } catch { /* deja [] */ }
     // Descuento de documento: en la vista previa de una aprobación parcial se
     // vuelve a aplicar sobre lo marcado, igual que el servidor al firmar (un
