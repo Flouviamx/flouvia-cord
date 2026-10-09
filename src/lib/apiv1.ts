@@ -189,6 +189,9 @@ export function invoiceDetail(f: any) {
             descuento: l.descuento ?? 0,
             impuesto: l.impuesto,
             total: l.total,
+            // México: claves SAT congeladas del concepto (null fuera de México).
+            clave_sat: l.productKey ?? null,
+            clave_unidad_sat: l.unitKey ?? null,
         })),
         pagos: (f.pagos ?? []).map((p: any) => ({
             monto: p.monto,

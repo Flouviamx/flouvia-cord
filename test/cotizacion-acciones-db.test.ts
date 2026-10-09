@@ -63,7 +63,8 @@ beforeAll(async () => {
             descuento numeric not null default 0, descuento_def jsonb);
         create table eventos(org_id uuid, cotizacion_id uuid, tipo text, detalle text);
         create table cotizacion_items(cotizacion_id uuid, producto_id uuid, descripcion text, cantidad numeric, precio_unitario numeric,
-            precio_negociado numeric, costo_unitario numeric, orden int, tax_rate numeric, exemption_reason text);
+            precio_negociado numeric, costo_unitario numeric, orden int, tax_rate numeric, exemption_reason text,
+            clave_sat text, clave_unidad_sat text);
         create table cotizacion_versiones(cotizacion_id uuid, org_id uuid, version int, subtotal numeric, iva numeric, total numeric,
             items jsonb, notas text, iva_incluido boolean);
         create table cotizacion_cobros(cotizacion_id uuid, status text, stripe_payment_intent_id text);

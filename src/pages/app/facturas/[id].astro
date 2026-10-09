@@ -26,6 +26,9 @@ import { getInvoiceTimeline } from '../../../lib/fiscal/timeline';
 import { invoiceEventDetail } from '../../../lib/fiscal/timeline-detail';
 import { fmtRelative } from '../../../lib/fmt-server';
 import { t } from '../../../i18n/app';
+import { DEFAULT_PRODUCT_KEY, DEFAULT_UNIT_KEY } from '../../../lib/fiscal/sat-claves';
+import { FORMAS_PAGO, MESES, MOTIVOS_CANCELACION, PERIODICIDADES } from '../../../lib/fiscal/cfdi-catalogos';
+import { repsBloqueantes, substitutionBlocker } from '../../../lib/fiscal/sustitucion';
 import { etiquetaDescuento } from '../../../lib/descuentos';
 
 export const prerender = false;
@@ -36,13 +39,57 @@ const hasPerm = memberCan(ME, 'cobranza');
 const f = hasPerm ? await getFacturaDetalle(Astro.params.id ?? '') : null;
 if (hasPerm && !f) return Astro.redirect('/app/facturas');
 // Un borrador se edita, no se contempla: su sitio es el editor.
-if (f && f.estado === 'draft' && !f.invoiceNumber && !f.notaCreditoDe) {
+// La factura global no tiene editor: su borrador se reintenta o se descarta aquí.
+if (f && f.estado === 'draft' && !f.invoiceNumber && !f.notaCreditoDe && !f.esGlobal) {
     return Astro.redirect(`/app/facturas/nueva?draft=${f.id}`);
 }
 
 // SAT, CFDI y "timbre" son vocabulario de México: una factura de Madrid o de
 // Lyon nunca pasa por el SAT, y decírselo es hablarle de un trámite ajeno.
 const esMx = String(f?.pais || '').toUpperCase() === 'MX';
+// Claves SAT con las que se timbró cada concepto: solo un CFDI las lleva. Sin
+// clave en el snapshot, el CFDI salió con los defaults del SAT.
+const muestraClavesSat = esMx && !!f && !['proforma', 'commercial_invoice', 'commercial_credit_note'].includes(f.tipo);
+
+// México: factura global, sustitución y motivo de cancelación del SAT.
+const esGlobal = !!f?.esGlobal;
+const IG = f?.informacionGlobal ?? null;
+const igPeriodicidad = IG ? (PERIODICIDADES as Record<string, { es: string; en: string }>)[IG.periodicidad] : null;
+const igMes = IG ? MESES[IG.meses] : null;
+const igForma = IG ? FORMAS_PAGO[IG.forma_pago] : null;
+const reemitirHref = IG
+    ? `/app/facturas/global?${new URLSearchParams({ periodicidad: IG.periodicidad, meses: IG.meses, anio: String(IG.anio) })}`
+    : null;
+// El servidor decide con la misma función pura: el botón no se ofrece si lo va a rechazar.
+const sustituible = !!f && muestraClavesSat && f.tipo === 'cfdi_40' && !esGlobal && !f.notaCreditoDe && !f.sustituidaPor;
+const bloqueoSustitucion = sustituible ? substitutionBlocker({
+    country_code: f!.pais, document_type: f!.tipo, status: f!.estadoFiscal, lifecycle: f!.estado,
+    credit_note_of: f!.notaCreditoDe, informacion_global: f!.informacionGlobal, sustituida_por: null,
+    provider_data: f!.providerData, has_credit_notes: f!.tieneNotasCredito,
+}) : 'no';
+const puedeSustituir = sustituible && bloqueoSustitucion === null && !f!.sustitutoVivo;
+// Lo que sí puede resolver el negocio se dice; el resto (emitida a otro país,
+// cancelación en curso) no merece un aviso.
+const sustitucionBloqueadaPor = sustituible && f!.estadoFiscal === 'issued' && f!.estado !== 'void' && !f!.sustitutoVivo
+    ? (f!.tieneNotasCredito ? t(L, 'fsust.bloq_notas') : repsBloqueantes(f!.providerData) > 0 ? t(L, 'fsust.bloq_reps') : null)
+    : null;
+// Un CFDI vigente se cancela con el motivo del SAT; el sustituido ya lo tiene (01).
+const pideMotivo = muestraClavesSat && f?.estadoFiscal === 'issued' && !f?.sustituidaPor;
+const MOTIVOS = (Object.keys(MOTIVOS_CANCELACION) as (keyof typeof MOTIVOS_CANCELACION)[]).map((code) => ({
+    code,
+    label: L === 'en' ? MOTIVOS_CANCELACION[code].en : MOTIVOS_CANCELACION[code].es,
+    ayuda: L === 'en' ? MOTIVOS_CANCELACION[code].ayudaEn : MOTIVOS_CANCELACION[code].ayudaEs,
+    // 01 se elige sustituyendo; 04 solo existe para la global.
+    disabled: code === '01' || (code === '04' && !esGlobal),
+}));
+const motivoPorDefecto = esGlobal ? '04' : '02';
+const sustCancel = f?.sustituidaPor && f.estado !== 'void'
+    ? (['pending', 'verifying'].includes(f.cancelacionEstado) ? t(L, 'fsust.cancel_pendiente')
+        : ['rejected', 'expired'].includes(f.cancelacionEstado) ? t(L, 'fsust.cancel_rechazada')
+        : f.cancelacionEstado ? null : t(L, 'fsust.cancel_sin_solicitar'))
+    : null;
+const puedeSolicitarCancel = !!f?.sustituidaPor && f.estado !== 'void'
+    && !['pending', 'verifying', 'accepted'].includes(f.cancelacionEstado);
 const cancellationLabels: Record<string, string> = {
     pending: L === 'en' ? 'Awaiting recipient acceptance.' : 'Pendiente de aceptación del receptor.',
     verifying: L === 'en' ? 'The tax authority is verifying the request.' : (esMx ? 'El SAT está verificando la solicitud.' : 'La autoridad fiscal está verificando la solicitud.'),
@@ -198,6 +245,9 @@ const EINV_FIX: Record<string, { href: string; es: string; en: string }> = {
                      copiar: t(L, 'fact.d_copiar'),
                      copiado: t(L, 'fact.d_copiado'),
                      repetirOk: t(L, 'rec.repetir_ok'),
+                     sustTitulo: t(L, 'fsust.titulo'),
+                     sustConfirmar: t(L, 'fsust.confirmar'),
+                     sustBoton: t(L, 'fsust.boton'),
                      verRecurrentes: t(L, 'rec.ver'),
                  })}>
 
@@ -234,7 +284,33 @@ const EINV_FIX: Record<string, { href: string; es: string; en: string }> = {
                     </div>
                 )}
 
-                <div class="fd-stepper" aria-label={L === 'en' ? 'Invoice progress' : 'Progreso de la factura'}>
+                {f.sustituidaPor && (
+                    <div class="fd-sust" role="status">
+                        <strong>
+                            {t(L, 'fsust.sustituida_por').split('{numero}')[0]}<a href={`/app/facturas/${f.sustituidaPor.id}`}>{f.sustituidaPor.numero ?? t(L, 'fact.st_draft')}</a>{t(L, 'fsust.sustituida_por').split('{numero}')[1] ?? ''}
+                        </strong>
+                        <small>{t(L, 'fsust.cobros_movidos')}</small>
+                        {sustCancel && <small>{sustCancel}</small>}
+                        {puedeSolicitarCancel && (
+                            <button type="button" class="fd-btn fd-btn-secondary" data-act="void" data-motivo="01">{t(L, 'fsust.solicitar')}</button>
+                        )}
+                    </div>
+                )}
+                {f.sustituyeA && (
+                    <div class="fd-sust" role="status">
+                        <strong>
+                            {t(L, 'fsust.sustituye_a').split('{numero}')[0]}<a href={`/app/facturas/${f.sustituyeA.id}`}>{f.sustituyeA.numero ?? '—'}</a>{t(L, 'fsust.sustituye_a').split('{numero}')[1] ?? ''}
+                        </strong>
+                    </div>
+                )}
+                {esGlobal && f.estado === 'void' && reemitirHref && (
+                    <div class="fd-sust" role="status">
+                        <small>{t(L, 'fglob.reemitir_ayuda')}</small>
+                        <a class="fd-btn fd-btn-secondary" href={reemitirHref}>{t(L, 'fglob.reemitir')}</a>
+                    </div>
+                )}
+
+                {!esGlobal && <div class="fd-stepper" aria-label={L === 'en' ? 'Invoice progress' : 'Progreso de la factura'}>
                     {INVOICE_STEPS.map((label, index) => (
                         <div class:list={['fd-step', { done: index < stepIdx, current: index === stepIdx }]}
                              aria-current={index === stepIdx ? 'step' : undefined}>
@@ -242,7 +318,7 @@ const EINV_FIX: Record<string, { href: string; es: string; en: string }> = {
                             <span class="fd-step-label">{label}</span>
                         </div>
                     ))}
-                </div>
+                </div>}
 
                 <div class="fd-grid">
                     <main class="fd-main">
@@ -254,9 +330,19 @@ const EINV_FIX: Record<string, { href: string; es: string; en: string }> = {
                                         <h2>{f.cliente ?? (L === 'en' ? 'No client' : 'Sin cliente')}</h2>
                                         {f.vencida && <span class="fd-badge fd-badge-danger">+{f.diasVencida}d</span>}
                                         {f.notaCreditoDe && <span class="fd-badge">{t(L, 'fact.d_nota_credito')}</span>}
+                                        {esGlobal && <span class="fd-badge">{t(L, 'fglob.badge')}</span>}
                                         {f.simulado && <span class="fd-badge fd-badge-test">{L === 'en' ? 'Test document' : 'Documento de prueba'}</span>}
                                         {!f.simulado && f.testMode && <span class="fd-badge fd-badge-test">{t(L, 'fact.badge_prueba')}</span>}
                                     </div>
+                                    {IG ? (
+                                        <p>
+                                            {L === 'en' ? 'Issued' : 'Emitida'} {f.creado}
+                                            <span>·</span>
+                                            {igPeriodicidad ? (L === 'en' ? igPeriodicidad.en : igPeriodicidad.es) : IG.periodicidad}
+                                            <span>·</span>
+                                            {igMes ? (L === 'en' ? igMes.en : igMes.es) : IG.meses} {IG.anio}
+                                        </p>
+                                    ) : (
                                     <p>
                                         {L === 'en' ? 'Issued' : 'Emitida'} {f.creado}
                                         <span>·</span>
@@ -264,6 +350,7 @@ const EINV_FIX: Record<string, { href: string; es: string; en: string }> = {
                                         <span>·</span>
                                         {f.enviada ? (L === 'en' ? 'Sent' : 'Enviada') : (L === 'en' ? 'Not sent' : 'Sin enviar')}
                                     </p>
+                                    )}
                                     {f.folio && f.cotizacionId && (
                                         <a class="fd-origin" href={`/app/cotizaciones/${f.cotizacionId}`}>
                                             {t(L, 'fact.d_desde_cot')} {f.folio}
@@ -288,7 +375,14 @@ const EINV_FIX: Record<string, { href: string; es: string; en: string }> = {
                             </div>
                             {f.lineas.map((linea) => (
                                 <div class="fd-item-row">
-                                    <span class="fd-desc">{linea.descripcion}</span>
+                                    <span class="fd-desc">
+                                        {linea.descripcion}
+                                        {muestraClavesSat && (
+                                            <small class="fd-sat" title={`${t(L, 'pmod.clave_sat')} · ${t(L, 'pmod.clave_unidad')}`}>
+                                                {t(L, 'satl.etiqueta')} {linea.productKey ?? DEFAULT_PRODUCT_KEY} · {linea.unitKey ?? DEFAULT_UNIT_KEY}
+                                            </small>
+                                        )}
+                                    </span>
                                     <span class="fd-qty">{linea.cantidad}</span>
                                     <span class="editorial fd-price">{money(hayDescuento && linea.cantidad > 0 ? brutoLinea(linea) / linea.cantidad : linea.precioUnitario)}</span>
                                     <span class="editorial fd-amount">{money(brutoLinea(linea))}</span>
@@ -335,6 +429,28 @@ const EINV_FIX: Record<string, { href: string; es: string; en: string }> = {
                             </section>
                         )}
 
+                        {IG && (
+                            <section class="fd-global">
+                                <div class="fd-section-head"><h2>{t(L, 'fglob.sec_info')}</h2></div>
+                                <div class="fd-meta">
+                                    <div><span>{t(L, 'fglob.periodicidad')}</span><span>{IG.periodicidad} · {igPeriodicidad ? (L === 'en' ? igPeriodicidad.en : igPeriodicidad.es) : ''}</span></div>
+                                    <div><span>{t(L, 'fglob.periodo')}</span><span>{IG.meses} · {igMes ? (L === 'en' ? igMes.en : igMes.es) : ''}</span></div>
+                                    <div><span>{t(L, 'fglob.anio')}</span><span>{IG.anio}</span></div>
+                                    <div><span>{t(L, 'fglob.forma_pago')}</span><span>{IG.forma_pago} · {igForma ? (L === 'en' ? igForma.en : igForma.es) : ''}</span></div>
+                                </div>
+                                <div class="fd-section-head fd-global-ventas"><h2>{t(L, 'fglob.ventas')}</h2><span>{f.ventasGlobal.length}</span></div>
+                                {f.ventasGlobal.map((v) => (
+                                    <div class="fd-pago">
+                                        <span>
+                                            <a href={`/app/cotizaciones/${v.cotizacionId}`}>{v.folio}</a>
+                                            {v.liberada && <span class="fd-badge">{t(L, 'fglob.liberada')}</span>}
+                                        </span>
+                                        {v.total !== null && <strong class="editorial">{money(v.total)}</strong>}
+                                    </div>
+                                ))}
+                            </section>
+                        )}
+
                         {f.notas && (
                             <section class="fd-notes">
                                 <div class="fd-section-head"><h2>{L === 'en' ? 'Notes' : 'Notas'}</h2></div>
@@ -351,7 +467,10 @@ const EINV_FIX: Record<string, { href: string; es: string; en: string }> = {
                                     {f.estadoFiscal === 'error' ? (L === 'en' ? 'Retry issuing' : 'Reintentar emisión') : (L === 'en' ? 'Issue credit note' : 'Emitir nota de crédito')}
                                 </button>
                             )}
-                            {f.estado !== 'draft' && !f.enviada && (
+                            {esGlobal && f.estado === 'draft' && (
+                                <button type="button" class="fd-btn fd-btn-secondary" data-act="void" data-descartar>{t(L, 'fglob.descartar')}</button>
+                            )}
+                            {f.estado !== 'draft' && !f.enviada && !esGlobal && !f.sustituidaPor && f.estado !== 'void' && (
                                 <button type="button" class="fd-btn fd-btn-primary" data-act="send">
                                     {t(L, 'fact.d_enviar')}
                                 </button>
@@ -396,6 +515,23 @@ const EINV_FIX: Record<string, { href: string; es: string; en: string }> = {
                                 </div>
                             )}
 
+                            {!linkPublico && esGlobal && f.estadoFiscal === 'issued' && (
+                                <div class="fd-util-grid">
+                                    <a href={`/api/fiscal/documents/${f.id}/pdf`} class="fd-util" target="_blank" rel="noopener" title={t(L, 'fact.d_pdf')}>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('download')}></svg>
+                                        <span>{t(L, 'fact.d_pdf')}</span>
+                                    </a>
+                                </div>
+                            )}
+
+                            {puedeSustituir && (
+                                <button type="button" class="fd-btn fd-btn-secondary" data-act="substitute">{t(L, 'fsust.boton')}</button>
+                            )}
+                            {f.sustitutoVivo && !f.sustituidaPor && (
+                                <a class="fd-btn fd-btn-secondary" href={`/app/facturas/${f.sustitutoVivo}`}>{t(L, 'fsust.continuar')}</a>
+                            )}
+                            {sustitucionBloqueadaPor && <p class="fd-note">{sustitucionBloqueadaPor}</p>}
+
                             {f.clienteId && (
                                 <button type="button" class="fd-btn fd-btn-secondary" data-act="duplicate">
                                     {L === 'en' ? 'Duplicate invoice' : 'Duplicar factura'}
@@ -411,16 +547,16 @@ const EINV_FIX: Record<string, { href: string; es: string; en: string }> = {
                                     {f.estado === 'open' && !f.notaCreditoDe && (
                                         <button type="button" class="fd-menu-btn" data-act="uncollectible">{t(L, 'fact.d_incobrable')}</button>
                                     )}
-                                    {f.estadoFiscal === 'issued' && !f.notaCreditoDe && (
+                                    {f.estadoFiscal === 'issued' && !f.notaCreditoDe && !esGlobal && !f.sustituidaPor && (
                                         <button type="button" class="fd-menu-btn" data-act="credit_note">{t(L, 'fact.d_nota_credito')}</button>
                                     )}
-                                    {f.estadoFiscal === 'issued' && !f.notaCreditoDe && (
+                                    {f.estadoFiscal === 'issued' && !f.notaCreditoDe && !esGlobal && (
                                         <button type="button" class="fd-menu-btn" id="fdRepetir">{t(L, 'rec.repetir')}</button>
                                     )}
                                     {f.pais === 'MX' && f.fiscalId && (
                                         <a class="fd-menu-btn fd-menu-link" href={`/api/fiscal/documents/${f.id}/xml`} target="_blank" rel="noopener">{t(L, 'fact.d_xml')}</a>
                                     )}
-                                    {f.estado === 'open' && f.pagado === 0 && (
+                                    {((f.estado === 'open' && f.pagado === 0) || (esGlobal && f.estado === 'paid')) && !f.sustituidaPor && (
                                         <button type="button" class="fd-menu-btn fd-menu-danger" data-act="void">{t(L, 'fact.d_anular')}</button>
                                     )}
                                 </div>
@@ -464,7 +600,7 @@ const EINV_FIX: Record<string, { href: string; es: string; en: string }> = {
                             </section>
                         )}
 
-                        {f.cancelacionEstado && f.estado !== 'void' && (
+                        {f.cancelacionEstado && f.estado !== 'void' && !(f.sustituidaPor && ['rejected', 'expired'].includes(f.cancelacionEstado)) && (
                             <section class="surface-card" aria-live="polite" style="padding: 16px; margin-bottom: 16px;">
                                 <p>{cancellationLabel}</p>
                                 <button type="button" class="fd-btn" data-act="cancellation_status">{L === 'en' ? 'Check cancellation status' : 'Consultar cancelación'}</button>
@@ -565,6 +701,35 @@ const EINV_FIX: Record<string, { href: string; es: string; en: string }> = {
                     </form>
                 </dialog>
 
+                {pideMotivo && (
+                    <dialog class="modal" id="fdMotivoModal">
+                        <form method="dialog">
+                            <div class="m-head">
+                                <h2>{t(L, 'fcan.titulo')}</h2>
+                                <button type="button" class="m-close" data-close aria-label="×">&times;</button>
+                            </div>
+                            <div class="m-body">
+                                <p class="fd-vf-note">{t(L, 'fcan.intro')}</p>
+                                <fieldset class="fd-motivos">
+                                    {MOTIVOS.map((m) => (
+                                        <label class:list={['fd-motivo', { 'is-disabled': m.disabled }]}>
+                                            <input type="radio" name="fdMotivo" value={m.code} disabled={m.disabled} checked={m.code === motivoPorDefecto} />
+                                            <span>
+                                                <strong>{m.code} · {m.label}</strong>
+                                                <small>{m.code === '01' ? t(L, 'fcan.usa_sustituir') : m.ayuda}</small>
+                                            </span>
+                                        </label>
+                                    ))}
+                                </fieldset>
+                            </div>
+                            <div class="m-foot">
+                                <button type="button" class="fd-btn" data-close>{t(L, 'fact.d_cancelar')}</button>
+                                <button type="button" class="fd-btn fd-btn-danger" id="fdMotivoOk">{t(L, 'fcan.confirmar')}</button>
+                            </div>
+                        </form>
+                    </dialog>
+                )}
+
                 {PUEDE_CORREGIR_VF && VF && (
                     <dialog class="modal" id="fdVfModal">
                         <form method="dialog">
@@ -611,6 +776,8 @@ const EINV_FIX: Record<string, { href: string; es: string; en: string }> = {
         const T = JSON.parse(raiz.dataset.i18n || '{}');
         const errEl = document.getElementById('fdErr');
         const pagoModal = document.getElementById('fdPagoModal') as HTMLDialogElement | null;
+        const motivoModal = document.getElementById('fdMotivoModal') as HTMLDialogElement | null;
+        let motivoBoton: HTMLButtonElement | null = null;
 
         document.getElementById('fdRepetir')?.addEventListener('click', async (ev) => {
             const btn = ev.currentTarget as HTMLButtonElement;
@@ -657,13 +824,18 @@ const EINV_FIX: Record<string, { href: string; es: string; en: string }> = {
                         return;
                     }
                     if (data.requires_credit_note) throw new Error(`${data.error} ${T.usaNota}`);
+                    // El sustituto ya existe: se continúa en él en vez de crear otro.
+                    if (payload.action === 'substitute' && data.id) {
+                        location.href = `/app/facturas/nueva?draft=${data.id}`;
+                        return;
+                    }
                     throw new Error(data.error || T.error);
                 }
                 if (payload.action === 'credit_note' && data.id) {
                     location.href = `/app/facturas/${data.id}`;
                     return;
                 }
-                if (payload.action === 'duplicate' && data.id) {
+                if ((payload.action === 'duplicate' || payload.action === 'substitute') && data.id) {
                     // Un cupón que ya no aplica no impide duplicar: la copia sale
                     // sin él y el servidor lo dice; se lee antes de ir al editor.
                     if (data.aviso) {
@@ -686,9 +858,23 @@ const EINV_FIX: Record<string, { href: string; es: string; en: string }> = {
                 const boton = ev.currentTarget as HTMLButtonElement;
                 const act = boton.dataset.act ?? '';
                 if (act === 'payment') { pagoModal?.showModal(); return; }
+                // México: un CFDI vigente se cancela con el motivo del SAT, elegido aquí.
+                if (act === 'void' && motivoModal && !boton.dataset.motivo && !('descartar' in boton.dataset)) {
+                    motivoBoton = boton;
+                    motivoModal.showModal();
+                    return;
+                }
+                if (act === 'substitute') {
+                    if (!await (window as any).cordConfirm({
+                        title: T.sustTitulo, body: T.sustConfirmar, confirmText: T.sustBoton,
+                    })) return;
+                    llamar({ action: act }, boton);
+                    return;
+                }
                 if (act === 'void' && !await (window as any).cordConfirm({
                     title: T.tituloAnular, body: T.confAnular, danger: true, confirmText: T.tituloAnular,
                 })) return;
+                if (act === 'void' && boton.dataset.motivo) { llamar({ action: act, motivo: boton.dataset.motivo }, boton); return; }
                 if (act === 'uncollectible' && !await (window as any).cordConfirm({
                     title: T.tituloIncobrable, body: T.confIncobrable, danger: true, confirmText: T.continuar,
                 })) return;
@@ -698,6 +884,16 @@ const EINV_FIX: Record<string, { href: string; es: string; en: string }> = {
 
         pagoModal?.querySelectorAll('[data-close]').forEach((el) => {
             el.addEventListener('click', () => pagoModal.close());
+        });
+
+        motivoModal?.querySelectorAll('[data-close]').forEach((el) => {
+            el.addEventListener('click', () => motivoModal.close());
+        });
+        document.getElementById('fdMotivoOk')?.addEventListener('click', () => {
+            const motivo = motivoModal?.querySelector<HTMLInputElement>('input[name="fdMotivo"]:checked')?.value;
+            if (!motivo) return;
+            motivoModal?.close();
+            llamar({ action: 'void', motivo }, motivoBoton ?? undefined);
         });
 
         // Verifactu: corregir y reenviar el registro rechazado. Cada concepto al
@@ -845,6 +1041,7 @@ const EINV_FIX: Record<string, { href: string; es: string; en: string }> = {
     .fd-item-row { border-bottom: 1px solid var(--color-border); transition: background 0.2s var(--ease-ios); }
     .fd-item-row:hover { background: var(--color-bg-soft); }
     .fd-desc { color: var(--color-text); font-size: 0.86rem; font-weight: 600; }
+    .fd-sat { display: block; margin-top: 2px; color: var(--color-text-muted); font-size: 0.68rem; font-weight: 600; font-variant-numeric: tabular-nums; }
     .fd-qty { color: var(--color-text-muted); font-size: 0.84rem; text-align: right; }
     .fd-price, .fd-amount { color: var(--color-blue-deep); font-size: 0.92rem; text-align: right; }
     .fd-amount { font-size: 0.98rem; }
@@ -876,6 +1073,34 @@ const EINV_FIX: Record<string, { href: string; es: string; en: string }> = {
     .fd-btn-primary { border-color: var(--color-blue-deep); background: var(--color-blue-deep); color: #fff; box-shadow: 0 8px 22px -10px rgba(10, 25, 47, 0.5); }
     .fd-btn-ok { border-color: #07996c; background: #18b889; color: #fff; box-shadow: 0 8px 22px -10px rgba(16, 185, 129, 0.55); }
     .fd-btn-secondary { background: var(--surface); }
+    .fd-btn-danger { border-color: var(--color-danger); background: var(--color-danger); color: #fff; }
+
+    /* México: sustitución, factura global y motivo de cancelación. */
+    .fd-sust {
+        display: flex; flex-direction: column; align-items: flex-start; gap: 0.35rem;
+        margin-bottom: 1.4rem; padding: 12px 16px; border-radius: 12px;
+        background: rgba(10, 25, 47, 0.05); color: var(--color-text); font-size: 0.84rem;
+    }
+    .fd-sust strong { font-weight: 650; }
+    .fd-sust a:not(.fd-btn) { color: var(--color-blue-deep); }
+    .fd-sust small { color: var(--color-text-muted); font-size: 0.78rem; line-height: 1.5; }
+    .fd-sust .fd-btn { width: auto; min-height: 36px; padding: 8px 14px; margin-top: 0.3rem; }
+    .fd-note { margin: 0; color: var(--color-text-muted); font-size: 0.76rem; line-height: 1.5; }
+    .fd-global { margin: 0 0 2.6rem; }
+    .fd-global .fd-meta { margin-bottom: 1.6rem; }
+    .fd-global-ventas span { color: var(--color-text-muted); font-size: 0.8rem; }
+    .fd-global .fd-pago a { color: var(--color-blue-deep); font-weight: 600; text-decoration: none; margin-right: 0.4rem; }
+    .fd-motivos { display: flex; flex-direction: column; gap: 0.5rem; margin: 0.8rem 0 0; padding: 0; border: 0; }
+    .fd-motivo {
+        display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 0.6rem; align-items: start;
+        padding: 10px 12px; border-radius: 10px; background: var(--color-bg-soft); cursor: pointer;
+    }
+    .fd-motivo input { margin-top: 3px; accent-color: var(--color-blue-deep); }
+    .fd-motivo span { display: flex; flex-direction: column; gap: 2px; }
+    .fd-motivo strong { font-size: 0.84rem; font-weight: 650; color: var(--color-text); }
+    .fd-motivo small { font-size: 0.76rem; color: var(--color-text-muted); line-height: 1.45; }
+    .fd-motivo.is-disabled { cursor: not-allowed; opacity: 0.6; }
+    .fd-motivo:has(input:focus-visible) { outline: 2px solid var(--color-blue-deep); outline-offset: 2px; }
 
     .fd-vf-state {
         display: grid; grid-template-columns: 8px minmax(0, 1fr); gap: 0.65rem; align-items: start;

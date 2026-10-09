@@ -12,6 +12,7 @@ import { materializeAnticipoCobros } from '../cobros';
 import { sanitizeItem, calculateDocumentTotals } from '../../../packages/elements/src/engine';
 import { taxCatalogFor, TaxCatalogUnavailableError } from '../impuestos-db';
 import { exemptionReasonFor } from '../fiscal/exemption';
+import { lineSatKeyError, lineSatKeysFrom } from '../fiscal/sat-claves';
 import { trackServer } from '../posthog-server';
 import { currencyDecimals, normalizeCurrency } from '../currency';
 import { FXService, FXUnavailableError } from '../fx/FXService';
@@ -158,8 +159,12 @@ export async function runQuoteAction(ctx: ActionContext, id: string, input: Reco
             const tax_rate = catalogo.resolve(rawItems[i]?.tax_rate, catalogo.defaultRate);
             // La causa de exención solo se conserva en España y en una línea al 0 %.
             const exemption_reason = exemptionReasonFor(catalogo.country, rawItems[i]?.exemption_reason, tax_rate);
-            return { ...sanitizeItem(raw), tax_rate, exemption_reason };
+            // Claves SAT propias de la línea; solo México timbra CFDI.
+            const sat = catalogo.country === 'MX' ? lineSatKeysFrom(rawItems[i]) : { productKey: null, unitKey: null };
+            return { ...sanitizeItem(raw), tax_rate, exemption_reason, clave_sat: sat.productKey, clave_unidad_sat: sat.unitKey };
         });
+        const satError = lineSatKeyError(items.map((it: any) => ({ descripcion: it.descripcion, productKey: it.clave_sat, unitKey: it.clave_unidad_sat })));
+        if (satError) return done(400, { error: satError, code: 'invalid_request' });
         const monedaVenta = normalizeCurrency(input.base_currency, normalizeCurrency(rows[0].base_currency as string));
 
         // Descuento de documento. Sin `descuento` ni `cupon` en el body se
@@ -287,8 +292,8 @@ export async function runQuoteAction(ctx: ActionContext, id: string, input: Reco
         const productosPropios = await productosDeOrg(orgId, items.map((it: any) => it.producto_id));
         writes.push(sql`delete from cotizacion_items where cotizacion_id = ${id}`);
         items.forEach((it: any, orden: number) => {
-            writes.push(sql`insert into cotizacion_items (cotizacion_id, producto_id, descripcion, cantidad, precio_unitario, precio_negociado, costo_unitario, orden, tax_rate, exemption_reason)
-                      values (${id}, ${it.producto_id && productosPropios.has(it.producto_id) ? it.producto_id : null}, ${it.descripcion}, ${Number(it.cantidad) || 1}, ${Number(it.precio_unitario) || 0}, ${it.precio_negociado === null || it.precio_negociado === undefined ? null : Number(it.precio_negociado)}, ${Number(it.costo_unitario) || 0}, ${orden}, ${it.tax_rate}, ${it.exemption_reason ?? null})`);
+            writes.push(sql`insert into cotizacion_items (cotizacion_id, producto_id, descripcion, cantidad, precio_unitario, precio_negociado, costo_unitario, orden, tax_rate, exemption_reason, clave_sat, clave_unidad_sat)
+                      values (${id}, ${it.producto_id && productosPropios.has(it.producto_id) ? it.producto_id : null}, ${it.descripcion}, ${Number(it.cantidad) || 1}, ${Number(it.precio_unitario) || 0}, ${it.precio_negociado === null || it.precio_negociado === undefined ? null : Number(it.precio_negociado)}, ${Number(it.costo_unitario) || 0}, ${orden}, ${it.tax_rate}, ${it.exemption_reason ?? null}, ${it.clave_sat ?? null}, ${it.clave_unidad_sat ?? null})`);
         });
 
         if (input.action === 'resend') {

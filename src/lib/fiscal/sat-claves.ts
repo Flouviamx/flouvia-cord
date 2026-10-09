@@ -150,7 +150,67 @@ export function resolveLineSatKeys(product: {
  * misma lista UN/ECE Rec. 20/21 de la que sale c_ClaveUnidad: cada clave de
  * `SAT_UNITS` está en la lista de códigos de EN 16931 (BR-CL-23).
  */
-export function resolveLineUnitKey(product: { claveUnidadSat?: unknown; unidad?: unknown } | null | undefined): { unitKey?: string } {
-    const { unitKey } = resolveLineSatKeys(product ? { claveUnidadSat: product.claveUnidadSat, unidad: product.unidad } : null);
+export function resolveLineUnitKey(
+    product: { claveUnidadSat?: unknown; unidad?: unknown } | null | undefined,
+    lineUnitKey?: unknown,
+): { unitKey?: string } {
+    // La unidad explícita de la línea gana sobre la del producto, igual que al timbrar.
+    const { unitKey } = effectiveLineSatKeys(
+        { unitKey: lineUnitKey },
+        product ? { claveUnidadSat: product.claveUnidadSat, unidad: product.unidad } : null,
+    );
     return unitKey ? { unitKey } : {};
+}
+
+/**
+ * Claves SAT capturadas en UNA línea (editor, API, cotización). Antes solo un
+ * producto del catálogo podía llevarlas: una línea libre —"Consultoría de
+ * marzo", "Flete"— se timbraba siempre como 01010101 aunque el negocio supiera
+ * su clave. `null` = la línea no trae clave propia. Acepta los nombres del
+ * contrato HTTP (`clave_sat`, `clave_unidad_sat`) y los del dominio.
+ */
+export function lineSatKeysFrom(raw: unknown): { productKey: string | null; unitKey: string | null } {
+    const r = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
+    return {
+        productKey: normalizeProductKey(r.clave_sat ?? r.claveSat ?? r.productKey),
+        unitKey: normalizeUnitKey(r.clave_unidad_sat ?? r.claveUnidadSat ?? r.unitKey),
+    };
+}
+
+/**
+ * Error de captura si alguna línea trae una clave con forma inválida. Se
+ * rechaza al GUARDAR, con la línea nombrada: descubrirlo al timbrar deja un
+ * borrador que no se puede emitir y un mensaje que llega tarde.
+ */
+export function lineSatKeyError(items: Array<{ descripcion?: unknown; productKey?: unknown; unitKey?: unknown }>): string | null {
+    for (const it of items) {
+        const nombre = String(it.descripcion || 'Concepto').slice(0, 60);
+        if (it.productKey !== null && it.productKey !== undefined && it.productKey !== '' && !isProductKey(it.productKey)) {
+            return `La clave de producto o servicio SAT de "${nombre}" debe tener 8 dígitos.`;
+        }
+        if (it.unitKey !== null && it.unitKey !== undefined && it.unitKey !== '' && !isUnitKey(it.unitKey)) {
+            return `La clave de unidad SAT de "${nombre}" no es válida (por ejemplo H87, E48 o HUR).`;
+        }
+    }
+    return null;
+}
+
+/**
+ * Claves con las que se timbra un concepto: la clave EXPLÍCITA de la línea gana
+ * sobre la de su producto, campo por campo; lo que la línea no trae se completa
+ * con el producto (y la unidad deducida de su `unidad`). Sin nada, `{}` y el
+ * emisor aplica los defaults del SAT. Nunca devuelve una clave inválida.
+ */
+export function effectiveLineSatKeys(
+    line: { productKey?: unknown; unitKey?: unknown } | null | undefined,
+    product: Parameters<typeof resolveLineSatKeys>[0],
+): { productKey?: string; unitKey?: string } {
+    const fromProduct = resolveLineSatKeys(product);
+    const productKey = normalizeProductKey(line?.productKey);
+    const unitKey = normalizeUnitKey(line?.unitKey);
+    return {
+        ...fromProduct,
+        ...(productKey && isProductKey(productKey) ? { productKey } : {}),
+        ...(unitKey && isUnitKey(unitKey) ? { unitKey } : {}),
+    };
 }

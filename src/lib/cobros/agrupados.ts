@@ -62,11 +62,17 @@ export async function facturasDelCliente(orgId: string, clienteId: string, limit
                d.due_date, d.issued_at, d.created_at, d.provider_data, d.pago_en_proceso_pi,
                exists (select 1 from pago_agrupado_documentos a
                         join pagos_agrupados p on p.id = a.pago_id and p.org_id = a.org_id
-                       where a.org_id = d.org_id and a.documento_id = d.id and p.estado = 'procesando') as agrupado_en_proceso
+                       where a.org_id = d.org_id and a.documento_id = d.id and p.estado = 'procesando') as agrupado_en_proceso,
+               -- México: un CFDI con un sustituto en curso ya no se cobra (sustitucion.ts).
+               exists (select 1 from documentos_fiscales r
+                        where r.sustituye_a = d.id and r.org_id = d.org_id and r.lifecycle <> 'void') as en_sustitucion
           from documentos_fiscales d
          where d.org_id = ${orgId} and d.cliente_id = ${clienteId}
            and d.status = 'issued' and d.lifecycle in ('open', 'paid')
            and d.credit_note_of is null and d.document_type not in ('credit_note', 'cfdi_egreso')
+           -- Un CFDI sustituido lo reemplaza su sustituto (que sí aparece), y la
+           -- factura global no es de ningún cliente.
+           and d.sustituida_por is null and d.informacion_global is null
          order by (d.lifecycle = 'open') desc, d.due_date asc nulls last, d.issued_at desc
          limit ${limite}`);
     return rows.map((r: any) => {
@@ -86,7 +92,7 @@ export async function facturasDelCliente(orgId: string, clienteId: string, limit
             vence: fechaIso(r.due_date),
             emitida: fechaIso(r.issued_at ?? r.created_at) ?? '',
             enProceso,
-            cobrable: r.lifecycle === 'open' && saldo > 0 && !enProceso && !prueba && !cancelando,
+            cobrable: r.lifecycle === 'open' && saldo > 0 && !enProceso && !prueba && !cancelando && !r.en_sustitucion,
         };
     });
 }
@@ -141,6 +147,10 @@ export async function crearPagoAgrupado(orgId: string, input: {
                and not exists (select 1 from pago_agrupado_documentos a
                                 join pagos_agrupados p on p.id = a.pago_id and p.org_id = a.org_id
                                where a.org_id = d.org_id and a.documento_id = d.id and p.estado = 'procesando')
+               -- México: ni un CFDI sustituido o en sustitución ni una factura global.
+               and d.sustituida_por is null and d.informacion_global is null
+               and not exists (select 1 from documentos_fiscales r
+                                where r.sustituye_a = d.id and r.org_id = d.org_id and r.lifecycle <> 'void')
         ), pago as (
             insert into pagos_agrupados (org_id, cliente_id, origen, currency, monto)
             select ${orgId}, ${input.clienteId}, ${input.origen}, ${currency}, sum(monto) from sel

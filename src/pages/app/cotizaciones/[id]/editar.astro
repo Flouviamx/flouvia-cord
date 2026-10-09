@@ -9,6 +9,8 @@ import { currentLocale } from '../../../../lib/context';
 import { t } from '../../../../i18n/app';
 import DiscountControl from '../../../../components/app/DiscountControl.astro';
 import '../../../../styles/editor.css';
+import '../../../../styles/sat-line.css';
+import { satLineI18n } from '../../../../lib/sat-line-i18n';
 
 const L = currentLocale();
 const tf = (key: string, vars: Record<string, string> = {}) => {
@@ -164,6 +166,8 @@ import { iconInner } from '../../../../lib/icons';
     taxOptions: TAX_OPTIONS, defaultTaxRate: DEFAULT_TAX_RATE, retenciones: RETENCIONES,
     taxLabel: TAX_LABEL, multiTax: MULTI_TAX,
     taxCountry: PAIS, taxRegion: ORG.fiscalMetadata?.region || null,
+    // Clave SAT por línea: solo México timbra CFDI (src/lib/sat-line-picker.ts).
+    sat: isMx, satI18n: satLineI18n(L),
 })} />
 <script>
     import { iconSvg } from '../../../../lib/icons';
@@ -175,6 +179,7 @@ import { iconInner } from '../../../../lib/icons';
     import { calculateDocumentTotals } from '../../../../../packages/elements/src/engine';
     import { currencyDecimals } from '../../../../lib/currency';
     import { canonicalTaxRate, taxBreakdownRows, taxOptionIndex } from '../../../../lib/tax-components';
+    import { createSatLinePicker, satKeysFromProduct, satPayload } from '../../../../lib/sat-line-picker';
     import { wireDiscountControl } from '../../../../lib/discount-client';
 
     const BOOT = JSON.parse(document.getElementById('edvBoot')?.textContent || '{}');
@@ -187,6 +192,9 @@ import { iconInner } from '../../../../lib/icons';
         && TAX_OPTIONS.some((o) => Math.abs(Number(o.rate) - Number(p.taxRate)) < 1e-9)) ? Number(p.taxRate) : DEFAULT_TAX;
     const escapeHtml = (v) => String(v ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
+    // Claves SAT con las que nace una línea: las del producto del catálogo.
+    const catById = Object.fromEntries((catalogo || []).map((p) => [p.id, p]));
+    const satDe = (p) => (BOOT.sat ? satKeysFromProduct(p) : {});
     const lines = [...qItems].map(it => ({
         id: it.producto_id || null, // Nota: el rowToQuote no incluye producto_id nativamente, requeriría arreglo si es vital, pero se asume nombre
         nombre: it.descripcion,
@@ -201,11 +209,20 @@ import { iconInner } from '../../../../lib/icons';
         taxRate: it.taxRate != null ? canonicalTaxRate(BOOT.taxCountry, Number(it.taxRate)) : DEFAULT_TAX,
         // Y su causa de exención (España), por la misma razón.
         exemptionReason: it.exemptionReason ?? null,
+        // México: la clave SAT propia de la línea gana; sin ella, la del producto.
+        ...(BOOT.sat ? {
+            productKey: it.claveSat ?? satDe(catById[it.producto_id]).productKey ?? null,
+            unitKey: it.claveUnidadSat ?? satDe(catById[it.producto_id]).unitKey ?? null,
+        } : {}),
     }));
 
     const $lines = document.getElementById('lines');
     const $empty = document.getElementById('linesEmpty');
     const $select = document.getElementById('productSelect');
+    // Clave SAT por línea (solo México): sub-fila bajo cada concepto.
+    const satPicker = BOOT.sat && $lines
+        ? createSatLinePicker({ container: $lines, getLine: (i) => lines[i], i18n: BOOT.satI18n })
+        : null;
     // Divisa de ESTA cotización, no la default del negocio: se está editando un
     // documento que ya se vendió en una divisa concreta. Con la del negocio, una
     // cotización en USD/JPY se releía con el símbolo y los decimales equivocados
@@ -332,6 +349,7 @@ import { iconInner } from '../../../../lib/icons';
                 </button>
             `;
             $lines.appendChild(row);
+            if (satPicker) $lines.insertAdjacentHTML('beforeend', satPicker.rowHtml(l, idx));
         });
         recalc();
     }
@@ -339,7 +357,7 @@ import { iconInner } from '../../../../lib/icons';
     $select.addEventListener('change', () => {
         const p = catMap[$select.value];
         if (!p) return;
-        lines.push({ id: p.id, nombre: p.nombre, unidad: p.unidad, lista: p.precio, costo: p.costo || 0, negociado: null, cantidad: 1, taxRate: productTax(p) });
+        lines.push({ id: p.id, nombre: p.nombre, unidad: p.unidad, lista: p.precio, costo: p.costo || 0, negociado: null, cantidad: 1, taxRate: productTax(p), ...satDe(p) });
         $select.selectedIndex = 0;
         render();
     });
@@ -365,6 +383,8 @@ import { iconInner } from '../../../../lib/icons';
     $lines.addEventListener('input', (e) => {
         const t = e.target;
         if (!(t instanceof HTMLInputElement)) return;
+        // La sub-fila SAT maneja sus propios campos (sat-line-picker.ts).
+        if (t.closest('.sat-row')) return;
         const idx = parseInt(t.dataset.idx, 10);
         
         if (t.dataset.field === 'nombre') {
@@ -393,6 +413,7 @@ import { iconInner } from '../../../../lib/icons';
         const btn = e.target.closest('.lr-del');
         if (!btn) return;
         lines.splice(parseInt(btn.dataset.del, 10), 1);
+        if (satPicker) satPicker.close();
         render();
     });
 
@@ -432,6 +453,7 @@ import { iconInner } from '../../../../lib/icons';
                 // predeterminada del catálogo de la organización.
                 tax_rate: l.taxRate,
                 exemption_reason: l.exemptionReason || undefined,
+                ...(BOOT.sat ? satPayload(l) : {}),
             }))
         };
 

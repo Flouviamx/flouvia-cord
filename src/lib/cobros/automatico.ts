@@ -99,6 +99,10 @@ export async function cobrarCliente(orgId: string, clienteId: string, currency: 
                and coalesce(d.provider_data->>'simulado', '') <> 'true'
                and coalesce(d.provider_data->>'livemode', '') <> 'false'
                and coalesce(d.provider_data->'cancelacion'->>'status', '') not in ('pending', 'verifying')
+               -- México: ni un CFDI sustituido o en sustitución ni una factura global.
+               and d.sustituida_por is null and d.informacion_global is null
+               and not exists (select 1 from documentos_fiscales r
+                                where r.sustituye_a = d.id and r.org_id = d.org_id and r.lifecycle <> 'void')
                and coalesce(d.due_date, d.issued_at::date) <= ${hoy}::date
                and coalesce(d.due_date, d.issued_at::date) >= ${desde}::date
                and coalesce(d.issued_at, d.created_at)::date < ${hoy}::date

@@ -27,12 +27,34 @@ estado de la solicitud y solo presenta la anulación cuando se confirma:
 - **Aceptada:** se actualiza su estado a anulada.
 
 Usa **Consultar cancelación** en el detalle para revisar una solicitud. La consulta
-es manual; no se promete seguimiento automático continuo. No emitas un sustituto
-asumiendo que la solicitud ya se completó.
+es manual; no se promete seguimiento automático continuo.
 
-El botón no ofrece un flujo completo de sustitución con todos los motivos y
-relaciones fiscales. Si tu caso requiere esa relación, consúltalo con tu asesor
-y soporte antes de continuar. No elijas una nota de crédito solo para simular una
+### El motivo del SAT
+
+Al anular un CFDI vigente, Cord te pide el motivo que exige el SAT:
+
+- **02 · Comprobante emitido con errores sin relación:** tiene un error y no vas
+  a emitir otro en su lugar (por ejemplo, lo emitiste dos veces o al cliente
+  equivocado).
+- **03 · No se llevó a cabo la operación:** la venta o el servicio no se concretó.
+- **04 · Operación nominativa relacionada en una factura global:** solo para una
+  factura global de la que un cliente pidió su factura.
+- **01 · Comprobante emitido con errores con relación:** no se elige aquí. Se usa
+  **Sustituir CFDI**.
+
+### Sustituir un CFDI
+
+Si la factura tiene un error que hay que corregir con otra, usa **Sustituir
+CFDI** en su detalle. Cord crea un borrador con los mismos datos para que lo
+corrijas. Al emitirlo, el nuevo CFDI se relaciona con el original (relación
+04), sus cobros pasan a la factura nueva y Cord pide la cancelación del original
+con el motivo 01 y el folio fiscal del sustituto. Si el receptor tiene que
+aceptarla, el detalle muestra el estado; si la rechaza, los dos CFDI siguen
+vigentes y puedes reintentar.
+
+Cord no ofrece sustituir una factura con notas de crédito vigentes o con
+complementos de pago emitidos: el SAT no deja cancelar un CFDI con comprobantes
+relacionados vigentes. No elijas una nota de crédito solo para simular una
 cancelación.
 
 ## Otros mercados

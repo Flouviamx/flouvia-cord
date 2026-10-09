@@ -80,7 +80,7 @@ export const InvoiceDetail = Invoice.extend({
         precio_unitario: money.describe('Precio unitario NETO (después del descuento de documento), sin impuesto.'),
         subtotal: money.describe('Base neta del concepto, después del descuento de documento.'),
         descuento: money.describe('Parte del descuento de documento que le tocó a este concepto, antes de impuestos; 0 si no hay.'),
-        impuesto: money, total: money,
+        impuesto: money, total: money, clave_sat: z.string().nullable(), clave_unidad_sat: z.string().nullable(),
     })),
     pagos: z.array(open({ monto: money, moneda: currency, metodo: z.string().nullable(), referencia: z.string().nullable(), cuando: z.string() })),
 });
@@ -142,6 +142,8 @@ const QuoteItemInput = z.object({
     tax_rate: z.number().optional().describe('Fracción 0–1, validada contra el catálogo de impuestos.'),
     exemption_reason: z.enum([...EXEMPTION_REASONS, ...EU_EXEMPTION_CODES]).optional()
         .describe('Solo en un concepto con tax_rate 0. España: causa de exención o no sujeción que declara Verifactu y cita la factura (E1–E6, N1, N2, S2). Resto de la UE: clasificación de la factura electrónica europea (código VATEX o Z para tipo cero). Sin ella se deriva del cliente.'),
+    clave_sat: z.string().optional(),
+    clave_unidad_sat: z.string().optional(),
 });
 
 export const CreateQuoteInput = z.object({
@@ -253,6 +255,8 @@ export const FIELD_DOCS: Record<string, string> = {
     body: 'Cuerpo crudo del evento; reenvíalo sin modificar para que la firma valide.',
     cantidad: 'Cantidad de unidades; admite decimales.',
     claveSat: 'Clave de producto o servicio del SAT (c_ClaveProdServ, 8 dígitos) para el CFDI en México; null si no se clasificó.',
+    clave_sat: 'Solo México: clave de producto o servicio del SAT (c_ClaveProdServ, 8 dígitos) de este concepto. Gana sobre la del producto del catálogo; sin ninguna, el CFDI usa 01010101 (No existe en el catálogo). Fuera de México se ignora.',
+    clave_unidad_sat: 'Solo México: clave de unidad del SAT (c_ClaveUnidad, como H87, E48 o HUR) de este concepto. Gana sobre la del producto; sin ninguna se deduce de la unidad del producto o se usa H87. Fuera de México se ignora.',
     claveUnidadSat: 'Clave de unidad del SAT (c_ClaveUnidad, como H87 o E48) para el CFDI en México; null = se deduce de la unidad.',
     cliente: 'Cliente al que va dirigido: nombre de la empresa, o los datos para darlo de alta si no existe.',
     cliente_id: 'ID de un cliente del directorio.',

@@ -749,6 +749,14 @@
                             "VATEX-EU-309",
                             "VATEX-FR-FRANCHISE"
                           ]
+                        },
+                        "clave_sat": {
+                          "type": "string",
+                          "description": "Solo México: clave de producto o servicio del SAT (c_ClaveProdServ, 8 dígitos) de este concepto. Gana sobre la del producto del catálogo; sin ninguna, el CFDI usa 01010101 (No existe en el catálogo). Fuera de México se ignora."
+                        },
+                        "clave_unidad_sat": {
+                          "type": "string",
+                          "description": "Solo México: clave de unidad del SAT (c_ClaveUnidad, como H87, E48 o HUR) de este concepto. Gana sobre la del producto; sin ninguna se deduce de la unidad del producto o se usa H87. Fuera de México se ignora."
                         }
                       },
                       "required": [
@@ -3460,6 +3468,14 @@
                             "VATEX-EU-309",
                             "VATEX-FR-FRANCHISE"
                           ]
+                        },
+                        "clave_sat": {
+                          "type": "string",
+                          "description": "Solo México: clave de producto o servicio del SAT (c_ClaveProdServ, 8 dígitos) de este concepto. Gana sobre la del producto del catálogo; sin ninguna, el CFDI usa 01010101 (No existe en el catálogo). Fuera de México se ignora."
+                        },
+                        "clave_unidad_sat": {
+                          "type": "string",
+                          "description": "Solo México: clave de unidad del SAT (c_ClaveUnidad, como H87, E48 o HUR) de este concepto. Gana sobre la del producto; sin ninguna se deduce de la unidad del producto o se usa H87. Fuera de México se ignora."
                         }
                       },
                       "required": [
@@ -3896,6 +3912,28 @@
                               "total": {
                                 "type": "number",
                                 "description": "Importe en la divisa indicada por `moneda`."
+                              },
+                              "clave_sat": {
+                                "anyOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ],
+                                "description": "Solo México: clave de producto o servicio del SAT (c_ClaveProdServ, 8 dígitos) de este concepto. Gana sobre la del producto del catálogo; sin ninguna, el CFDI usa 01010101 (No existe en el catálogo). Fuera de México se ignora."
+                              },
+                              "clave_unidad_sat": {
+                                "anyOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ],
+                                "description": "Solo México: clave de unidad del SAT (c_ClaveUnidad, como H87, E48 o HUR) de este concepto. Gana sobre la del producto; sin ninguna se deduce de la unidad del producto o se usa H87. Fuera de México se ignora."
                               }
                             },
                             "required": [
@@ -3905,7 +3943,9 @@
                               "subtotal",
                               "descuento",
                               "impuesto",
-                              "total"
+                              "total",
+                              "clave_sat",
+                              "clave_unidad_sat"
                             ],
                             "additionalProperties": {}
                           },

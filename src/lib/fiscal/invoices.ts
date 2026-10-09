@@ -58,7 +58,8 @@ import type {
   FiscalParty,
   FiscalRetencion,
 } from './index';
-import { resolveLineSatKeys, resolveLineUnitKey } from './sat-claves';
+import { effectiveLineSatKeys, lineSatKeyError, lineSatKeysFrom, resolveLineUnitKey } from './sat-claves';
+import { isFormaPago, isMotivoCancelacion, isUsoCfdi, motivoTexto, type MotivoCancelacion } from './cfdi-catalogos';
 import { exemptionReasonFor } from './exemption';
 import { descuentoDesdeJson, descuentoParaMotor, type DescuentoDef, type DescuentoSolicitud } from '../descuentos';
 import { DescuentoError, liberarCupon, redimirCupon, resolverDescuento } from '../cupones';
@@ -81,6 +82,13 @@ export interface DraftLineInput {
   taxRate?: number | null;
   /** España: causa de exención del concepto (E1–E6, N1, N2, S2). Ver fiscal/exemption.ts. */
   exemptionReason?: string | null;
+  /**
+   * México: claves SAT propias de la línea (c_ClaveProdServ / c_ClaveUnidad).
+   * Ganan sobre las del producto del catálogo; sin ellas se usan las del
+   * producto y, sin producto, los defaults del SAT al timbrar.
+   */
+  productKey?: string | null;
+  unitKey?: string | null;
 }
 
 export interface CreateDraftInput {
@@ -110,6 +118,22 @@ export interface CreateDraftInput {
    */
   descuento?: DescuentoSolicitud | null;
   /**
+   * México: uso del CFDI y forma de pago que el negocio fija para ESTE
+   * documento. `null` = automáticos (uso de la ficha del cliente; forma según
+   * los cobros). `undefined` al editar = no se tocan.
+   */
+  cfdiUso?: string | null;
+  cfdiFormaPago?: string | null;
+  /** México: CFDI emitido que este borrador va a sustituir (fiscal/sustitucion.ts). */
+  sustituyeA?: string | null;
+  /** Cotización de origen que hereda el sustituto de su original. */
+  cotizacionId?: string | null;
+  /**
+   * Solo servidor: descuento YA aplicado a otro documento que este hereda tal
+   * cual (el sustituto de un CFDI). No se revalida el cupón: ya se redimió.
+   */
+  descuentoHeredado?: { def: DescuentoDef; total: number; currency: string } | null;
+  /**
    * Referencia del comprador (BT-10; Leitweg-ID en la administración alemana)
    * y orden de compra (BT-13). `undefined` = sin cambio (al crear, la del
    * cliente); `null` = vacía a propósito.
@@ -127,6 +151,21 @@ export function parseInvoiceReferences(body: Record<string, unknown>): { buyerRe
   const ref = (v: unknown) => (v === undefined ? undefined
     : String(v ?? '').replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, 200) || null);
   return { buyerReference: ref(body.buyer_reference), purchaseOrder: ref(body.purchase_order) };
+}
+
+/**
+ * Valida el uso del CFDI y la forma de pago que el negocio fijó a mano. Solo
+ * México los consume; fuera se descartan (regla 15) en vez de guardarse.
+ */
+function cfdiOverrides(country: string, input: CreateDraftInput):
+  | { ok: true; uso: string | null | undefined; forma: string | null | undefined }
+  | { ok: false; error: string } {
+  if (country !== 'MX') return { ok: true, uso: null, forma: null };
+  const uso = input.cfdiUso === undefined ? undefined : (input.cfdiUso ? String(input.cfdiUso).toUpperCase() : null);
+  const forma = input.cfdiFormaPago === undefined ? undefined : (input.cfdiFormaPago ? String(input.cfdiFormaPago) : null);
+  if (uso && !isUsoCfdi(uso)) return { ok: false, error: 'El uso del CFDI no está en el catálogo del SAT.' };
+  if (forma && !isFormaPago(forma)) return { ok: false, error: 'La forma de pago no está en el catálogo del SAT.' };
+  return { ok: true, uso, forma };
 }
 
 /** Máximo de conceptos por factura. Mismo tope que una cotización. */
@@ -174,6 +213,10 @@ export function parseInvoiceItems(raw: unknown): DraftLineInput[] {
     taxRate: numOrNull(i?.tax_rate),
     // Hasta 24: además de E1–S2 (España) caben los códigos VATEX del resto de la UE.
     exemptionReason: i?.exemption_reason ? String(i.exemption_reason).slice(0, 24) : null,
+    // Claves SAT de la línea (`clave_sat`, `clave_unidad_sat`). La forma se
+    // valida al guardar (lineSatKeyError), no aquí: descartarlas en silencio
+    // timbraría 01010101 sin que el negocio supiera por qué.
+    ...lineSatKeysFrom(i),
     // Solo se descartan los renglones vacíos (cantidad 0 o en blanco). Una
     // cantidad negativa ya no se tira en silencio: llega a la validación y se
     // rechaza con un motivo (ver negativeLineError).
@@ -190,6 +233,15 @@ export function negativeLineError(items: Array<{ cantidad?: unknown; precioUnita
   const negative = items.some((i) => Number(i.cantidad) < 0 || Number(i.precioUnitario) < 0
     || (i.precioNegociado !== null && i.precioNegociado !== undefined && Number(i.precioNegociado) < 0));
   return negative ? 'Un concepto no puede tener cantidad ni precio negativos. Para un descuento, baja el precio del concepto.' : null;
+}
+
+/**
+ * Uso del CFDI y forma de pago que manda el editor (`cfdi_uso`,
+ * `cfdi_forma_pago`). Ausente = no se toca; vacío = automático.
+ */
+export function parseCfdiOverrides(body: Record<string, unknown>): { cfdiUso?: string | null; cfdiFormaPago?: string | null } {
+  const read = (key: string) => (Object.hasOwn(body, key) ? (String(body[key] ?? '').trim() || null) : undefined);
+  return { cfdiUso: read('cfdi_uso'), cfdiFormaPago: read('cfdi_forma_pago') };
 }
 
 export interface DraftResult {
@@ -241,18 +293,22 @@ async function descuentoDelBorrador(
  */
 async function withSatKeys(orgId: string, items: DraftLineInput[], lines: FiscalLineItem[], onlyUnit = false): Promise<FiscalLineItem[]> {
   const ids = Array.from(new Set(items.map((i) => i.productoId).filter((id): id is string => !!id && UUID_RE.test(id))));
-  if (!ids.length) return lines;
-  const [rows] = await withOrgTx(orgId, sql`
-    select id, clave_sat, clave_unidad_sat, unidad from productos
-     where org_id = ${orgId} and id = any(${ids}::uuid[])`);
-  const byId = new Map(rows.map((r: any) => [String(r.id), r]));
+  let byId = new Map<string, any>();
+  if (ids.length) {
+    const [rows] = await withOrgTx(orgId, sql`
+      select id, clave_sat, clave_unidad_sat, unidad from productos
+       where org_id = ${orgId} and id = any(${ids}::uuid[])`);
+    byId = new Map(rows.map((r: any) => [String(r.id), r]));
+  }
+  // La clave EXPLÍCITA de la línea gana sobre la del producto (campo por campo).
   return lines.map((line, i) => {
-    const p: any = items[i]?.productoId ? byId.get(String(items[i].productoId)) : null;
-    if (!p) return line;
+    const item = items[i];
+    const p: any = item?.productoId ? byId.get(String(item.productoId)) : null;
     // Fuera de México solo la unidad (BT-130 de la factura electrónica europea).
-    return { ...line, ...(onlyUnit
-      ? resolveLineUnitKey({ claveUnidadSat: p.clave_unidad_sat, unidad: p.unidad })
-      : resolveLineSatKeys({ claveSat: p.clave_sat, claveUnidadSat: p.clave_unidad_sat, unidad: p.unidad })) };
+    const keys = onlyUnit
+      ? resolveLineUnitKey(p ? { claveUnidadSat: p.clave_unidad_sat, unidad: p.unidad } : null, item?.unitKey)
+      : effectiveLineSatKeys(item, p ? { claveSat: p.clave_sat, claveUnidadSat: p.clave_unidad_sat, unidad: p.unidad } : null);
+    return Object.keys(keys).length ? { ...line, ...keys } : line;
   });
 }
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -421,6 +477,11 @@ export async function createInvoiceDraft(orgId: string, input: CreateDraftInput)
 
   const country = String(head.country_code || 'MX').toUpperCase();
   const profile = getCountryProfile(country);
+  // Claves SAT de la línea: solo México timbra con ellas (fuera no se leen).
+  const satError = country === 'MX' ? lineSatKeyError(items) : null;
+  if (satError) return { ok: false, error: satError };
+  const overrides = cfdiOverrides(country, input);
+  if (!overrides.ok) return { ok: false, error: overrides.error };
   let docType: string;
   try { docType = await documentTypeForOrg(orgId, country, input.documentMode); }
   catch (error) { return { ok: false, error: error instanceof Error ? error.message : 'No se pudo verificar el tipo de documento.' }; }
@@ -446,7 +507,8 @@ export async function createInvoiceDraft(orgId: string, input: CreateDraftInput)
   const currency = normalizeCurrency(input.currency || ledgerCurrency, ledgerCurrency);
   let descuento: DescuentoDef | null;
   try {
-    descuento = await descuentoDelBorrador(orgId, input.descuento ?? null, null, {
+    const heredado = input.descuento === undefined ? input.descuentoHeredado ?? null : null;
+    descuento = await descuentoDelBorrador(orgId, heredado ? undefined : (input.descuento ?? null), heredado, {
       moneda: currency, clienteId: String(head.cliente_id), ivaIncluido: input.ivaIncluido === true,
     });
   } catch (error) {
@@ -488,9 +550,9 @@ export async function createInvoiceDraft(orgId: string, input: CreateDraftInput)
       issuer_snapshot, recipient_snapshot, line_items_snapshot,
       schema_version, provider_data, updated_at, service_date, service_date_end,
       buyer_reference, purchase_order, payee_account,
-      descuento_total, descuento
+      descuento_total, descuento, cfdi_uso, cfdi_forma_pago, sustituye_a
     ) values (
-      ${orgId}, null, ${String(head.cliente_id)}, ${country}, ${docType}, 'pending',
+      ${orgId}, ${input.sustituyeA ? (input.cotizacionId || null) : null}, ${String(head.cliente_id)}, ${country}, ${docType}, 'pending',
       ${docType === 'cfdi_40' ? 'facturapi' : 'cord'},
       ${currency}, ${ledgerCurrency}, ${fxRate}, ${roundTo(total * fxRate, currencyDecimals(ledgerCurrency))},
       ${subtotal}, ${taxes}, ${total}, ${retencionTotal}, ${JSON.stringify(retenciones)}::jsonb,
@@ -499,7 +561,8 @@ export async function createInvoiceDraft(orgId: string, input: CreateDraftInput)
       ${JSON.stringify(issuer)}, ${JSON.stringify(recipient)}, ${JSON.stringify(lines)},
       'cord.invoice.v1', '{}'::jsonb, now(), ${input.serviceDate || null}::date, ${input.serviceDateEnd || null}::date,
       ${buyerReference}, ${input.purchaseOrder ?? null}, ${payee ? JSON.stringify(payee) : null}::jsonb,
-      ${built.descuentoTotal}, ${descuento ? JSON.stringify(descuento) : null}::jsonb
+      ${built.descuentoTotal}, ${descuento ? JSON.stringify(descuento) : null}::jsonb,
+      ${overrides.uso ?? null}, ${overrides.forma ?? null}, ${input.sustituyeA || null}
     )
     returning id, public_token`);
   const row = rows[0];
@@ -532,12 +595,14 @@ export async function updateInvoiceDraft(
 
   const [docRows] = await withOrgTx(orgId, sql`
     select id, lifecycle, invoice_number, public_token, amount_paid, credit_note_of, document_type, country_code, provider_data,
-           descuento, descuento_total, currency
+           descuento, descuento_total, currency, informacion_global
       from documentos_fiscales
      where id = ${documentId} and org_id = ${orgId}
      limit 1`);
   const doc = docRows[0];
   if (!doc) return { ok: false, error: 'Factura no encontrada.' };
+  // La global se arma con las ventas del periodo, no en el editor.
+  if (doc.informacion_global) return { ok: false, error: 'La factura global se arma desde sus ventas: descarta el borrador y emítela de nuevo.' };
   if (doc.credit_note_of) return { ok: false, error: 'La nota de crédito conserva el desglose de la factura original; descártala y crea otra para cambiar el importe.' };
   if (doc.lifecycle !== 'draft' || doc.invoice_number || doc.provider_data?.cord_issuance) {
     return { ok: false, error: 'Esta factura ya fue emitida y no se puede editar. Anúlala o emite una nota de crédito.' };
@@ -567,6 +632,11 @@ export async function updateInvoiceDraft(
 
   const country = String(head.country_code || 'MX').toUpperCase();
   const profile = getCountryProfile(country);
+  // Claves SAT de la línea: solo México timbra con ellas (fuera no se leen).
+  const satError = country === 'MX' ? lineSatKeyError(items) : null;
+  if (satError) return { ok: false, error: satError };
+  const overrides = cfdiOverrides(country, input);
+  if (!overrides.ok) return { ok: false, error: overrides.error };
   let docType = String(doc.document_type);
   if (input.documentMode !== undefined) {
     try { docType = await documentTypeForOrg(orgId, country, input.documentMode); }
@@ -642,6 +712,8 @@ export async function updateInvoiceDraft(
       buyer_reference = case when ${input.buyerReference === undefined}::boolean then buyer_reference else ${input.buyerReference ?? null}::text end,
       purchase_order = case when ${input.purchaseOrder === undefined}::boolean then purchase_order else ${input.purchaseOrder ?? null}::text end,
       payee_account = ${payee ? JSON.stringify(payee) : null}::jsonb,
+      cfdi_uso = case when ${overrides.uso !== undefined} then ${overrides.uso ?? null} else cfdi_uso end,
+      cfdi_forma_pago = case when ${overrides.forma !== undefined} then ${overrides.forma ?? null} else cfdi_forma_pago end,
       updated_at = now()
     where id = ${documentId} and org_id = ${orgId}
       and lifecycle = 'draft' and invoice_number is null and credit_note_of is null
@@ -678,13 +750,17 @@ async function finalizeReservedInvoice(orgId: string, documentId: string): Promi
            d.invoice_number, d.public_token, d.idempotency_key,
            d.issuer_snapshot, d.recipient_snapshot, d.line_items_snapshot,
            d.fiscal_id, d.provider, d.provider_data, d.credit_note_of,
+           d.informacion_global, d.sustituye_a, d.cfdi_uso, d.cfdi_forma_pago,
            d.cliente_id as doc_cliente_id, d.descuento, d.descuento_total,
            original.fiscal_id as original_fiscal_id, original.status as original_status,
+           sust.fiscal_id as sustituye_fiscal_id, sust.invoice_number as sustituye_numero,
+           sust.descuento as sustituye_descuento,
            cl.uso_cfdi as cliente_uso
       from documentos_fiscales d
       join orgs o on o.id = d.org_id
       left join clientes cl on cl.id = d.cliente_id and cl.org_id = d.org_id
       left join documentos_fiscales original on original.id = d.credit_note_of and original.org_id = d.org_id
+      left join documentos_fiscales sust on sust.id = d.sustituye_a and sust.org_id = d.org_id
      where d.id = ${documentId} and d.org_id = ${orgId}
      limit 1`);
   const head = headRows[0];
@@ -729,6 +805,23 @@ async function finalizeReservedInvoice(orgId: string, documentId: string): Promi
   if (regulatory && !planIncludes(await getEffectivePlan(orgId), 'cfdi')) {
     return { emitted: false, status: 'error', httpStatus: 402, error: 'La emisión fiscal integrada requiere Starter o un plan superior. El documento conserva su tipo original.' };
   }
+  // México: factura global (InformacionGlobal) y sustitución (relación 04).
+  const globalInfo = country === 'MX' && head.informacion_global && typeof head.informacion_global === 'object'
+    ? head.informacion_global as { periodicidad: string; meses: string; anio: number; forma_pago: string }
+    : null;
+  const sustituyeA = country === 'MX' && head.sustituye_a ? String(head.sustituye_a) : null;
+  if (sustituyeA) {
+    // Un CFDI solo se sustituye con otro CFDI: una proforma no lleva la
+    // relación 04 ni folio fiscal que citar al cancelar el original.
+    if (docType !== 'cfdi_40') {
+      return { emitted: false, status: 'error', httpStatus: 409, error: 'La factura que sustituye a un CFDI tiene que emitirse como CFDI.' };
+    }
+    // Antes de timbrar: el original sigue siendo sustituible y sus cobros en
+    // vuelo quedan cerrados (sustitucion.ts). Falla cerrada.
+    const { substitutionPreflight } = await import('./sustitucion');
+    const blocked = await substitutionPreflight(orgId, sustituyeA, documentId);
+    if (blocked) return { emitted: false, status: 'error', httpStatus: 409, error: blocked };
+  }
   const fiscalMetadata = metadata(head.fiscal_metadata);
   const prefix = documentPrefix(docType, cleanPrefix(
     fiscalMetadata.invoice_prefix || (country === 'MX' ? head.serie_folio : ''),
@@ -750,7 +843,11 @@ async function finalizeReservedInvoice(orgId: string, documentId: string): Promi
   // La redención es idempotente por documento (un reintento no cuenta dos
   // veces) y la factura de una cotización reusa la de la cotización.
   const descuentoDoc = descuentoDesdeJson(head.descuento);
-  if (descuentoDoc?.cupon_id && !head.credit_note_of) {
+  // El sustituto de un CFDI con el MISMO cupón no lo redime otra vez: la
+  // redención del original pasa a él en la transacción que lo marca emitido.
+  const cuponHeredado = !!sustituyeA && !!descuentoDoc?.cupon_id
+    && descuentoDesdeJson(head.sustituye_descuento)?.cupon_id === descuentoDoc.cupon_id;
+  if (descuentoDoc?.cupon_id && !head.credit_note_of && !cuponHeredado) {
     const redencion = await redimirCupon(orgId, descuentoDoc, {
       clienteId: head.doc_cliente_id ? String(head.doc_cliente_id) : null,
       cotizacionId: head.cotizacion_id ? String(head.cotizacion_id) : null,
@@ -825,10 +922,18 @@ async function finalizeReservedInvoice(orgId: string, documentId: string): Promi
   // El SAT exige PUE solo cuando el pago se recibió al emitir, con la forma
   // REAL; si no, PPD con forma 99 y un complemento de pago por cada cobro.
   const recipientRfc = String((head.recipient_snapshot as FiscalParty | null)?.taxId || '').toUpperCase().trim();
-  const cfdiPayment = country === 'MX' && !head.credit_note_of
+  // La global siempre es PUE, con la forma de la venta de mayor importe (Guía
+  // de llenado del CFDI global), decidida al armarla.
+  const cfdiPayment = globalInfo
+    ? { paymentMethod: 'PUE', paymentForm: String(globalInfo.forma_pago || '') }
+    : country === 'MX' && !head.credit_note_of
     ? await cfdiPaymentTerms(orgId, documentId, head.cotizacion_id ? String(head.cotizacion_id) : null, Number(head.total) || 0,
-      !recipientRfc || recipientRfc === 'XAXX010101000')
+      !recipientRfc || recipientRfc === 'XAXX010101000', sustituyeA,
+      isFormaPago(head.cfdi_forma_pago) ? String(head.cfdi_forma_pago) : null)
     : { paymentMethod: 'PUE', paymentForm: '03' };
+  // El sustituto se relaciona con el UUID del original. Un original simulado
+  // (sandbox) no tiene UUID: el sustituto también es de prueba y no se relaciona.
+  const sustituyeUuid = sustituyeA ? String(head.sustituye_fiscal_id || '') : '';
 
   const request: FiscalDocumentRequest = {
     documentId,
@@ -839,6 +944,8 @@ async function finalizeReservedInvoice(orgId: string, documentId: string): Promi
     countryCode: country,
     documentType: regulatory && country === 'ES' ? (head.credit_note_of ? 'verifactu_credit_note' : 'verifactu_invoice') : docType,
     relatedFiscalId: head.original_status === 'issued' ? String(head.original_fiscal_id || '') : undefined,
+    ...(sustituyeUuid ? { substitutesFiscalId: sustituyeUuid } : {}),
+    ...(globalInfo ? { global: { periodicidad: String(globalInfo.periodicidad), meses: String(globalInfo.meses), anio: Number(globalInfo.anio) } } : {}),
     issuer: head.issuer_snapshot as FiscalParty,
     recipient: head.recipient_snapshot as FiscalParty,
     lines: (head.line_items_snapshot as FiscalLineItem[]) || [],
@@ -860,7 +967,8 @@ async function finalizeReservedInvoice(orgId: string, documentId: string): Promi
       || (head.facturapi_live_key as string)
       || undefined,
     cfdi: {
-      use: String(head.cliente_uso || head.org_uso || 'G03'),
+      // El uso fijado en el documento gana sobre el de la ficha del cliente.
+      use: String((isUsoCfdi(head.cfdi_uso) ? head.cfdi_uso : null) || head.cliente_uso || head.org_uso || 'G03'),
       paymentForm: cfdiPayment.paymentForm,
       paymentMethod: cfdiPayment.paymentMethod,
     },
@@ -907,12 +1015,22 @@ async function finalizeReservedInvoice(orgId: string, documentId: string): Promi
   // Rieles con numeración propia (ARCA): el número legal lo asigna la
   // autoridad y reemplaza al folio interno reservado arriba.
   if (response.success && response.invoiceNumber) invoiceNumber = response.invoiceNumber;
+  // Sustitución timbrada: en la MISMA transacción, con el saldo de ambos
+  // bloqueado en orden estable, los cobros del original pasan al sustituto y
+  // el original queda marcado como sustituido. Desde aquí el que se cobra es
+  // el sustituto, aunque el SAT tarde en cancelar el otro.
+  const substituted = response.success && !!sustituyeA;
+  const substitutionLocks = substituted
+    ? [sustituyeA as string, documentId].sort().map((id) => invoiceBalanceLock(orgId, id))
+    : [];
   await withOrgTx(orgId,
     ...(head.credit_note_of ? [invoiceBalanceLock(orgId, String(head.credit_note_of))] : []),
+    ...substitutionLocks,
     sql`
     update documentos_fiscales
        set status = ${response.success ? 'issued' : 'error'},
-           lifecycle = ${response.success ? 'open' : 'draft'},
+           -- La global documenta ventas ya cobradas: nace saldada.
+           lifecycle = ${response.success ? (globalInfo ? 'paid' : 'open') : 'draft'},
            invoice_number = ${invoiceNumber},
            provider = ${response.provider},
            provider_document_id = ${response.documentId || null},
@@ -924,11 +1042,26 @@ async function finalizeReservedInvoice(orgId: string, documentId: string): Promi
                else coalesce(provider_data, '{}'::jsonb) end || ${JSON.stringify(providerData)}::jsonb,
            pdf_url = ${response.pdfUrl ?? null},
            xml_url = ${response.xmlUrl ?? null},
-           amount_remaining = case when credit_note_of is not null then 0 else coalesce(total, 0) - coalesce(amount_paid, 0) end,
+           amount_remaining = case when credit_note_of is not null then 0 when informacion_global is not null then 0
+             else coalesce(total, 0) - coalesce(amount_paid, 0) end,
            issued_at = ${response.success ? new Date(issuedAtFinal) : null},
            updated_at = now()
      where id = ${documentId} and org_id = ${orgId}`,
     ...(response.success && head.credit_note_of ? [invoiceBalanceQuery(orgId, String(head.credit_note_of))] : []),
+    ...(substituted ? [
+      sql`update documento_pagos set documento_id = ${documentId}
+           where documento_id = ${sustituyeA} and org_id = ${orgId}`,
+      // El reparto de reembolsos (cobros agrupados) sigue a sus pagos: sin
+      // moverlo, el sustituto contaría el cobro completo y no lo devuelto.
+      sql`update documento_reembolso_asignaciones set documento_id = ${documentId}
+           where documento_id = ${sustituyeA} and org_id = ${orgId}`,
+      ...(cuponHeredado ? [sql`update cupon_redenciones set documento_id = ${documentId}
+           where documento_id = ${sustituyeA} and org_id = ${orgId} and cupon_id = ${descuentoDoc!.cupon_id}`] : []),
+      sql`update documentos_fiscales set sustituida_por = ${documentId}, updated_at = now()
+           where id = ${sustituyeA} and org_id = ${orgId} and (sustituida_por is null or sustituida_por = ${documentId})`,
+      invoiceBalanceQuery(orgId, sustituyeA as string),
+      invoiceBalanceQuery(orgId, documentId),
+    ] : []),
   );
 
   await logInvoiceEvent(
@@ -936,6 +1069,23 @@ async function finalizeReservedInvoice(orgId: string, documentId: string): Promi
     response.success ? 'issued' : 'created',
     response.success ? `Factura ${invoiceNumber} emitida` : `Error al emitir: ${response.error || 'desconocido'}`,
   );
+
+  // Después de timbrar el sustituto se pide la cancelación del original con
+  // motivo 01 y el UUID del sustituto (FAQ de cancelación del SAT, pregunta 7).
+  // Nunca antes: sin el sustituto timbrado el motivo 01 no procede.
+  let substitution: EmitResult['substitution'];
+  if (substituted) {
+    const original = String(head.sustituye_numero || '').trim();
+    await logInvoiceEvent(orgId, documentId, 'issued', original ? `Sustituye a ${original}` : 'Sustituye a la factura original');
+    await logInvoiceEvent(orgId, sustituyeA as string, 'void', `Sustituida por ${invoiceNumber}`);
+    const cancel = await voidInvoice(orgId, sustituyeA as string, '01');
+    substitution = {
+      originalId: sustituyeA as string,
+      ok: cancel.ok,
+      cancellationStatus: cancel.cancellationStatus,
+      ...(cancel.ok ? {} : { error: cancel.error }),
+    };
+  }
 
   return {
     emitted: response.success,
@@ -947,6 +1097,7 @@ async function finalizeReservedInvoice(orgId: string, documentId: string): Promi
     billable: response.success && isBillableCfdi(country, providerData),
     status: response.success ? 'issued' : 'error',
     error: response.error,
+    ...(substitution ? { substitution } : {}),
   };
 }
 
@@ -957,7 +1108,15 @@ async function finalizeReservedInvoice(orgId: string, documentId: string): Promi
  * caso. Con PUE el SAT no admite la forma 99, así que se toma la del cobro de
  * mayor importe — la que el comprobante declara como "la" forma del pago.
  */
-async function cfdiPaymentTerms(orgId: string, documentId: string, cotizacionId: string | null, total: number, publicoGeneral = false) {
+async function cfdiPaymentTerms(
+  orgId: string, documentId: string, cotizacionId: string | null, total: number, publicoGeneral = false,
+  // Sustitución: los cobros del CFDI que este reemplaza todavía viven en él
+  // al timbrar (pasan al sustituto en la misma transacción que lo marca
+  // emitido). Sin contarlos, sustituir una factura pagada la timbraba PPD.
+  sustituyeA: string | null = null,
+  // Forma fijada a mano en el documento: solo aplica a un PUE (un PPD es 99).
+  formaFijada: string | null = null,
+) {
   const [rows] = await withOrgTx(orgId, sql`
     with pagos as (
       select cc.monto, cc.payment_method as metodo
@@ -967,12 +1126,19 @@ async function cfdiPaymentTerms(orgId: string, documentId: string, cotizacionId:
       union all
       select p.monto, p.metodo from documento_pagos p
        where p.documento_id = ${documentId} and p.org_id = ${orgId}
+      union all
+      -- Los cobros trasladados desde la cotización (cobro_id) ya se contaron
+      -- arriba: se cuentan una vez.
+      select p.monto, p.metodo from documento_pagos p
+       where ${sustituyeA}::uuid is not null and p.documento_id = ${sustituyeA}::uuid and p.org_id = ${orgId}
+         and (${cotizacionId}::uuid is null or p.cobro_id is null)
     )
     select coalesce(sum(monto), 0) as pagado,
            (select metodo from pagos order by monto desc limit 1) as metodo
       from pagos`);
   const pagado = Number(rows[0]?.pagado) || 0;
   if (total > 0 && pagado >= total - 0.005) {
+    if (formaFijada) return { paymentMethod: 'PUE', paymentForm: formaFijada };
     const form = satPaymentForm(rows[0]?.metodo);
     if (form !== '99') return { paymentMethod: 'PUE', paymentForm: form };
   }
@@ -980,7 +1146,7 @@ async function cfdiPaymentTerms(orgId: string, documentId: string, cotizacionId:
   // comprobante se emite PUE, con la forma del cobro si ya existe o
   // transferencia, que era el comportamiento previo.
   if (publicoGeneral) {
-    const form = satPaymentForm(rows[0]?.metodo);
+    const form = formaFijada || satPaymentForm(rows[0]?.metodo);
     return { paymentMethod: 'PUE', paymentForm: form === '99' ? '03' : form };
   }
   return { paymentMethod: 'PPD', paymentForm: '99' };
@@ -1003,6 +1169,12 @@ export interface VoidResult {
  * complemento de pago no se cancela, se corrige con un CFDI de egreso. Y aunque
  * el rail lo permitiera, borrar el documento que respalda dinero ya cobrado
  * deja el cobro sin comprobante. Esa ruta devuelve `requiresCreditNote`.
+ *
+ * México: `reason` es el motivo del SAT (01–04). El texto libre de la API y de
+ * los workflows conserva su contrato y viaja como 02. El 01 solo procede sobre
+ * un CFDI ya sustituido (se manda con el UUID del sustituto) y el 04 solo sobre
+ * una factura global; cancelar una global libera sus ventas para otra global o
+ * para facturarlas a nombre del cliente (fiscal/factura-global.ts).
  */
 export async function voidInvoice(
   orgId: string,
@@ -1015,9 +1187,12 @@ export async function voidInvoice(
            exists (select 1 from documentos_fiscales n where n.credit_note_of = d.id and n.org_id = d.org_id and n.lifecycle <> 'void') as has_credit_notes,
            d.provider_document_id, d.provider_data, d.document_type, d.provider,
            d.stripe_payment_intent_id, d.mp_preference_id, d.descuento,
+           d.informacion_global, d.sustituida_por, d.sustituye_a,
+           rep.fiscal_id as sustituta_fiscal_id, rep.status as sustituta_status,
            o.facturapi_live_key, o.facturapi_live_key_enc, o.sandbox_of, o.stripe_account_id
       from documentos_fiscales d
       join orgs o on o.id = d.org_id
+      left join documentos_fiscales rep on rep.id = d.sustituida_por and rep.org_id = d.org_id
      where d.id = ${documentId} and d.org_id = ${orgId}
      limit 1`);
   const doc = rows[0];
@@ -1036,6 +1211,13 @@ export async function voidInvoice(
     };
   }
 
+  // Las ventas de una global vuelven a estar disponibles en la misma
+  // transacción que la anula: una global cancelada ya no las documenta.
+  const releaseGlobal: ReturnType<typeof sql>[] = [];
+  if (doc.informacion_global) releaseGlobal.push(sql`
+      update factura_global_ventas set liberada_at = now()
+       where documento_id = ${documentId} and org_id = ${orgId} and liberada_at is null`);
+
   // Un borrador nunca llegó al proveedor: se anula localmente y ya.
   if (doc.status !== 'issued') {
     if (checkOnly || doc.provider_data?.cord_issuance || doc.provider_data?.delivery_uncertain || doc.provider_document_id && !String(doc.provider_document_id).startsWith('err_')) {
@@ -1049,6 +1231,7 @@ export async function voidInvoice(
              voided_at = now(), void_reason = ${reason || null}, updated_at = now()
        where id = ${documentId} and org_id = ${orgId}`,
       ...(doc.credit_note_of ? [invoiceBalanceQuery(orgId, String(doc.credit_note_of))] : []),
+      ...releaseGlobal,
     );
     if (descuentoDesdeJson(doc.descuento)?.cupon_id) await liberarCuponDe(orgId, documentId);
     return { ok: true };
@@ -1063,6 +1246,32 @@ export async function voidInvoice(
   const railDoc = railDeDocumento(doc.document_type);
   if (railDoc && !railDoc.anulable && !(doc.sandbox_of || doc.provider_data?.simulado === true)) {
     return { ok: false, requiresCreditNote: true, error: `En ${railDoc.pais === 'AR' ? 'Argentina' : 'este país'} un comprobante autorizado por ${railDoc.autoridad} no se anula: emite una nota de crédito por el importe que quieras compensar.` };
+  }
+
+  // ── Motivo del SAT (México) ─────────────────────────────────────────────
+  const cfdi = country === 'MX' && regulatory;
+  const simulatedCfdi = !!(doc.sandbox_of || doc.provider_data?.simulado === true);
+  let motive: MotivoCancelacion | undefined;
+  let voidReason = reason;
+  if (cfdi && checkOnly) {
+    // Consultar no pide otra cancelación: el motivo es el de la solicitud que ya se hizo.
+    const previo = doc.provider_data?.cancelacion?.motive;
+    motive = isMotivoCancelacion(previo) ? previo : undefined;
+    voidReason = motive ? motivoTexto(motive) : reason;
+  } else if (cfdi) {
+    motive = doc.sustituida_por ? '01' : (isMotivoCancelacion(reason) ? reason : '02');
+    if (!checkOnly && motive === '01' && !doc.sustituida_por) {
+      return { ok: false, error: 'El motivo 01 exige una factura que la sustituya: usa “Sustituir CFDI” y Cord cancela esta al timbrar la nueva.' };
+    }
+    if (!checkOnly && doc.sustituida_por && !simulatedCfdi && (doc.sustituta_status !== 'issued' || !doc.sustituta_fiscal_id)) {
+      return { ok: false, error: 'La factura que la sustituye todavía no está timbrada.' };
+    }
+    if (!checkOnly && motive === '04' && !doc.informacion_global) {
+      return { ok: false, error: 'El motivo 04 solo aplica a una factura global de la que un cliente pidió su factura.' };
+    }
+    voidReason = isMotivoCancelacion(reason) || doc.sustituida_por || !reason
+      ? motivoTexto(motive)
+      : `${motivoTexto(motive)} — ${reason}`;
   }
 
   // Antes de pedir la cancelación al proveedor fiscal, se cierra todo cobro en
@@ -1098,7 +1307,10 @@ export async function voidInvoice(
   const cancel: FiscalCancelResponse = simulated
     ? { success: true, status: 'accepted', rawProviderData: { simulado: true } }
     : await FiscalFactory.getProvider(country, regulatory && country === 'ES' ? 'verifactu_invoice' : String(doc.document_type || documentTypeFor(country))).cancelDocument(
-        String(doc.provider_document_id), { reason, checkOnly, providerApiKey: providerKey, orgId },
+        String(doc.provider_document_id), {
+          reason: motive ?? reason, checkOnly, providerApiKey: providerKey, orgId,
+          ...(motive === '01' && doc.sustituta_fiscal_id ? { substitution: String(doc.sustituta_fiscal_id) } : {}),
+        },
       );
   const confirmed = cancel.success && (cancel.status === 'accepted' || country !== 'MX' && !cancel.status || !regulatory && !cancel.status);
   if (!confirmed) {
@@ -1117,22 +1329,43 @@ export async function voidInvoice(
         : 'La cancelación aún no está confirmada; la factura sigue vigente.') };
   }
 
+  // Si este documento SUSTITUÍA a otro que sigue vigente, anularlo devuelve el
+  // saldo al original: ya no hay quién lo reemplace (sustitucion.ts).
+  const originalVivo = doc.sustituye_a ? String(doc.sustituye_a) : null;
   // Bajo el lock del saldo y sin pagos: un abono manual registrado mientras el
   // proveedor procesaba la cancelación no puede quedar sobre una factura anulada.
-  const voidResult = await withOrgTx(orgId,
+  const beforeVoid = [
     ...(doc.credit_note_of ? [invoiceBalanceLock(orgId, String(doc.credit_note_of))] : []),
-    invoiceBalanceLock(orgId, documentId),
+    ...[documentId, ...(originalVivo ? [originalVivo] : [])].sort().map((id) => invoiceBalanceLock(orgId, id)),
+  ];
+  const voidResult = await withOrgTx(orgId,
+    ...beforeVoid,
     sql`
     update documentos_fiscales
        set lifecycle = 'void', status = 'cancelled',
-           voided_at = now(), void_reason = ${reason || null},
+           voided_at = now(), void_reason = ${voidReason || null},
            provider_data = coalesce(provider_data, '{}'::jsonb) || ${JSON.stringify({ cancelacion: { ...cancel.rawProviderData, status: 'accepted' } })}::jsonb,
            updated_at = now()
      where id = ${documentId} and org_id = ${orgId} and coalesce(amount_paid, 0) = 0
      returning id`,
     ...(doc.credit_note_of ? [invoiceBalanceQuery(orgId, String(doc.credit_note_of))] : []),
+    ...releaseGlobal,
+    ...(originalVivo ? [
+      // El cupón que el sustituto heredó vuelve a su original vivo; uno propio
+      // del sustituto se libera después, como en cualquier anulación.
+      sql`update cupon_redenciones r set documento_id = ${originalVivo}
+           where r.documento_id = ${documentId} and r.org_id = ${orgId}
+             and exists (select 1 from documentos_fiscales o where o.id = ${originalVivo} and o.org_id = ${orgId}
+                          and o.sustituida_por = ${documentId} and o.lifecycle <> 'void'
+                          and o.descuento->>'cupon_id' = r.cupon_id::text)
+             and exists (select 1 from documentos_fiscales s where s.id = ${documentId} and s.org_id = ${orgId} and s.lifecycle = 'void')`,
+      sql`update documentos_fiscales set sustituida_por = null, updated_at = now()
+           where id = ${originalVivo} and org_id = ${orgId} and sustituida_por = ${documentId} and lifecycle <> 'void'
+             and exists (select 1 from documentos_fiscales r where r.id = ${documentId} and r.org_id = ${orgId} and r.lifecycle = 'void')`,
+      invoiceBalanceQuery(orgId, originalVivo),
+    ] : []),
   );
-  const voided = voidResult[doc.credit_note_of ? 2 : 1] as any[];
+  const voided = voidResult[beforeVoid.length] as any[];
   if (!voided?.length) {
     // La anulación ya está en la cadena Verifactu pero la factura sigue viva en
     // Cord: se reactiva el alta para que la AEAT no conserve una anulación de
@@ -1164,7 +1397,7 @@ export async function voidInvoice(
       error: 'Llegó un pago mientras se procesaba la anulación. Revisa la factura: corresponde una nota de crédito o la devolución del pago.',
     };
   }
-  await logInvoiceEvent(orgId, documentId, 'void', reason ? `Anulada: ${reason}` : 'Anulada');
+  await logInvoiceEvent(orgId, documentId, 'void', voidReason ? `Anulada: ${voidReason}` : 'Anulada');
   if (descuentoDesdeJson(doc.descuento)?.cupon_id) await liberarCuponDe(orgId, documentId);
   return { ok: true, cancellationStatus: 'accepted' };
 }
@@ -1186,7 +1419,7 @@ async function liberarCuponDe(orgId: string, documentId: string) {
  * dinero en camino y la factura no se anula: corresponde esperar el asiento y
  * emitir una nota de crédito.
  */
-async function releaseInvoicePaymentAttempts(orgId: string, doc: any): Promise<{ ok: true } | { ok: false; error: string }> {
+export async function releaseInvoicePaymentAttempts(orgId: string, doc: any): Promise<{ ok: true } | { ok: false; error: string }> {
   const pi = doc.stripe_payment_intent_id ? String(doc.stripe_payment_intent_id) : '';
   const account = doc.stripe_account_id ? String(doc.stripe_account_id) : '';
   if (pi && account) {
@@ -1265,6 +1498,7 @@ export async function createCreditNote(
     select id, cotizacion_id, cliente_id, country_code, document_type, provider, currency, ledger_currency,
            fx_rate, total, tax_total, subtotal, lifecycle, status, due_date,
            issuer_snapshot, recipient_snapshot, line_items_snapshot, retenciones_snapshot, retencion_total, credit_note_of,
+           informacion_global, sustituida_por,
            (select coalesce(sum(n.total), 0) from documentos_fiscales n
              where n.credit_note_of = documentos_fiscales.id and n.org_id = ${orgId}
                and n.lifecycle <> 'void') as reserved_total
@@ -1275,6 +1509,14 @@ export async function createCreditNote(
   if (!doc) return { ok: false, error: 'Factura no encontrada.' };
   if (doc.status !== 'issued' || doc.lifecycle === 'void' || doc.credit_note_of) {
     return { ok: false, error: 'Solo una factura de ingreso vigente admite nota de crédito.' };
+  }
+  // Una global se corrige cancelándola y emitiéndola de nuevo; una sustituida
+  // se corrige en su sustituto (una nota relacionada la volvería no cancelable).
+  if (doc.informacion_global) {
+    return { ok: false, error: 'Una factura global se corrige cancelándola y emitiéndola de nuevo para el periodo.' };
+  }
+  if (doc.sustituida_por) {
+    return { ok: false, error: 'Esta factura fue sustituida: emite la nota de crédito sobre la factura que la sustituye.' };
   }
 
   const total = money(Number(doc.total) || 0);

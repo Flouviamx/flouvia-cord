@@ -155,25 +155,105 @@ Código en `src/lib/cobros/`; esquema en la sección "PORTAL DEL CLIENTE…" de
   test compara). La UI usa `<TermPicker>` + `wireTermPicker()`: nunca se lee
   `.chip.active` a mano. Un código guardado que ya no se ofrece sigue venciendo en su
   fecha (`termDays('net120') = 120`) pero no se acepta como nuevo.
-- **Claves SAT por producto:** `productos.clave_sat` (c_ClaveProdServ, 8 dígitos) y
-  `productos.clave_unidad_sat` (c_ClaveUnidad). Sin clave de unidad explícita se deduce
-  de `productos.unidad` (`satUnitForUnit`, `src/lib/fiscal/sat-claves.ts`); sin nada, el
-  CFDI usa 01010101 / H87. Cotización → CFDI: `emit.ts` las lee con un `left join` al
-  timbrar. Factura directa: `invoices.ts` las adjunta al guardar el borrador. En ambos
-  rieles quedan congeladas en `line_items_snapshot`. `mexico-items.ts` rechaza una clave
-  con forma inválida antes del PAC. Búsqueda del catálogo: `GET /api/fiscal/catalogo-sat`
-  (proxy de `/v2/catalogs/products|units` de Facturapi con la llave del negocio o la de
-  plataforma; sin llave responde `disponible: false` y se escribe a mano).
+- **Claves SAT por producto y por línea:** `productos.clave_sat` (c_ClaveProdServ, 8
+  dígitos) y `productos.clave_unidad_sat` (c_ClaveUnidad); desde oct 2026 también por
+  LÍNEA: `cotizacion_items.clave_sat/clave_unidad_sat` y `productKey/unitKey` del
+  `DraftLineInput` de la factura (HTTP: `clave_sat`/`clave_unidad_sat` por concepto en el
+  editor y en `/api/v1`). Precedencia campo por campo (`effectiveLineSatKeys`,
+  `src/lib/fiscal/sat-claves.ts`): la clave explícita de la línea gana, luego la del
+  producto (sin clave de unidad se deduce de `productos.unidad`, `satUnitForUnit`) y, sin
+  nada, el CFDI usa 01010101 / H87. Formato inválido se rechaza al GUARDAR con el concepto
+  nombrado (`lineSatKeyError`), solo en México. Cotización → CFDI: `emit.ts` lee la de la
+  línea y la del producto con un `left join`. Factura directa: `invoices.ts` las resuelve
+  al guardar el borrador. En ambos rieles quedan congeladas en `line_items_snapshot`;
+  duplicar una factura las copia como claves propias de la línea. Los tres editores (MX)
+  pintan una sub-fila por concepto con la clave efectiva, el aviso cuando caería en
+  01010101 y un selector que reutiliza la búsqueda del catálogo
+  (`src/lib/sat-line-picker.ts`); el de facturas cuenta las genéricas antes de emitir. El
+  CSV de productos importa/exporta `clave_sat` y `clave_unidad_sat` (solo MX).
+  `mexico-items.ts` rechaza una clave con forma inválida antes del PAC. Búsqueda del
+  catálogo: `GET /api/fiscal/catalogo-sat` (permiso `productos` o `cotizar`; proxy de
+  `/v2/catalogs/products|units` de Facturapi con la llave del negocio o la de plataforma;
+  sin llave responde `disponible: false` y se escribe a mano).
 - **CFDI a receptor extranjero:** cliente con `country_code` ≠ MX → `customer` sin
   `tax_system`, `address.country` en ISO alfa-3 (`toAlpha3`, `countries.ts`), `tax_id` =
   su identificador fiscal extranjero (NumRegIdTrib, opcional) y uso S01 (también en
   notas de crédito). Facturapi pone XEXX010101000 cuando el país no es "MEX" (documentado
   en su guía de clientes). `provider_data.receptor_extranjero` guarda el país. Exportación
   queda en "01"; el complemento de Comercio Exterior (A1) no se emite.
+- **Receptor con RFC genérico (XAXX010101000):** régimen 616 forzado y, como
+  DomicilioFiscalReceptor, el código postal del EMISOR (LugarExpedicion), como pide el
+  Anexo 20; sin código postal fiscal del negocio el timbrado se niega antes del PAC. El
+  nombre es el del cliente: "PUBLICO EN GENERAL" con el RFC genérico obliga al nodo
+  InformacionGlobal, así que `facturapiCustomer` lo rechaza fuera de la factura global.
 - **Despliegue:** `scripts/migrate-catalogo-fiscal.mjs` corre en el `buildCommand` de
   Vercel antes del build (columnas de `db/catalogo-fiscal.sql` + función y vista extraídas
   de `db/schema.sql`). Si falla, el despliegue se detiene.
 
+## Factura global, sustitución y motivos del SAT — oct 2026
+
+Fuentes: Anexo 20 (CFDI 4.0, nodo InformacionGlobal y receptor genérico), "Guía de
+llenado del CFDI global" 4.0, RMF 2.7.1.21, "Preguntas frecuentes y escenarios de
+cancelación 2026" y "Esquema de cancelación de CFDI" del SAT; referencia de Facturapi
+para `global`, `related_documents` y `DELETE /invoices/{id}?motive&substitution`.
+Catálogos puros en `src/lib/fiscal/cfdi-catalogos.ts`.
+
+- **Factura global** (`/app/facturas/global`, `GET|POST /api/facturas/global`,
+  `src/lib/fiscal/factura-global.ts`): periodicidad (c_Periodicidad 01–05; 05 solo con
+  régimen 621), meses (01–12, o 13–18 con 05) y año (el de emisión o el anterior);
+  diaria/semanal/quincenal eligen además el tramo de días dentro del mes. Lista las
+  cotizaciones COBRADAS (`paid_at` en el calendario del negocio) sin factura vigente y sin
+  otra global viva, y dice por qué excluye las demás (otra divisa, retenciones, cliente
+  extranjero, tasa fuera de 0/8/16 %). Un concepto por venta y por tasa: 01010101, ACT,
+  `sku` (NoIdentificacion) = folio, ValorUnitario = base. Con descuento de documento
+  (`cotizaciones.descuento_def`) el motor lo reparte igual que en la factura
+  individual y cada concepto lleva su parte en `discount` (Concepto@Descuento); la base
+  neta y el descuento suman lo que se cobró, y una venta que el descuento deja en cero
+  se excluye (`sin_importe`). Receptor PUBLICO EN GENERAL /
+  XAXX010101000 / 616 / S01 / código postal del emisor, PUE y la forma de pago de la venta
+  de mayor importe (editable). El documento vive en `documentos_fiscales` con
+  `document_type = 'cfdi_40'`, sin cliente ni cotización y con `informacion_global`
+  (jsonb); por eso `chk_documentos_fiscales_origen` admite ese tercer caso. Nace
+  `paid` con saldo 0, sin `public_token`, y queda fuera de `invoiceBalanceQuery` y de
+  `applyPayment`: las ventas ya están cobradas en su cotización.
+- **Doble facturación:** `factura_global_ventas` liga cada venta a su global con
+  `uq_factura_global_ventas_viva` (único por cotización mientras `liberada_at` es nulo).
+  La global y `emit.ts` toman el mismo advisory lock por cotización; `emit.ts` se niega
+  si la venta está en una global viva (409 con el folio y la instrucción del motivo 04),
+  y la global excluye ventas con factura. Anular la global (motivo 04 si un cliente pidió
+  la suya) marca `liberada_at` en la misma transacción que la anula, y el detalle ofrece
+  emitirla de nuevo para el mismo periodo.
+- **Sustitución** (`src/lib/fiscal/sustitucion.ts`, acción `substitute` de
+  `PATCH /api/facturas/[id]`, permiso de cobranza): crea un borrador con los datos del
+  original y `sustituye_a` (`uq_documentos_sustituye_a`: un sustituto vivo por
+  original). El borrador copia los conceptos a su precio bruto y hereda el descuento
+  de documento tal cual (`descuentoHeredado`: con su cupón, sin revalidarlo). Al
+  emitirlo, `finalizeInvoice` corre `substitutionPreflight` (el original sigue siendo
+  sustituible; cierra sus cobros en vuelo, también los agrupados), timbra con
+  `related_documents` relación 04 y, en la MISMA transacción que lo marca emitido y con
+  los dos locks de saldo, mueve `documento_pagos` y el reparto de reembolsos
+  (`documento_reembolso_asignaciones`) del original al sustituto, pasa la redención
+  del cupón si es el mismo (no se redime dos veces) y fija `sustituida_por`. Un
+  reintento del webhook de un cobro ya movido sobre el original es un duplicado (sigue
+  la cadena `sustituida_por`), no un pago tardío. Un
+  original sustituido concilia con saldo 0 (`paid`; `refund_due` = pagado − reembolsado)
+  y rechaza pagos manuales; uno tardío del proveedor queda registrado con aviso. Después
+  se pide la cancelación del original con motivo 01 y el UUID del sustituto: `pending`,
+  `verifying` y `rejected` se guardan como cualquier cancelación y el detalle ofrece
+  reintentarla. Bloquean: notas de crédito vigentes y complementos de pago emitidos o en
+  proceso (el SAT marca "No cancelable" un CFDI con relacionados vigentes), una
+  cancelación en curso y la factura global (se corrige cancelándola). Anular un sustituto
+  sin pagos devuelve el saldo al original.
+- **Cobro agrupado y cobro automático:** un CFDI sustituido, uno con un sustituto en
+  curso y la factura global no entran en `crearPagoAgrupado` ni en el cron de cobro
+  automático; el portal no lista el sustituido (lo reemplaza su sustituto).
+- **Motivo de cancelación:** el detalle pide la clave (02, 03; 04 solo en la global; 01
+  deshabilitado con "usa Sustituir CFDI") y la ruta responde 400 sin ella en un CFDI
+  vigente. `void_reason` guarda "0N · descripción del SAT". API v1, MCP y workflows con
+  texto libre siguen cayendo al 02.
+- **Uso y forma de pago fijados en el documento:** `documentos_fiscales.cfdi_uso` y
+  `cfdi_forma_pago` (null = automáticos). El editor de facturas los ofrece en México; el
+  sustituto los hereda del original. La forma solo aplica a un CFDI PUE.
 ## Descuentos de documento y cupones — oct 2026
 
 - **Qué es:** una rebaja sobre la venta completa (`porcentaje` de 0 a 100 o
@@ -743,8 +823,9 @@ estado comercial. El detalle ofrece «Consultar cancelación» (`PATCH` con
 se consulta antes de solicitar una cancelación para recuperar respuestas
 perdidas y evitar repetir solicitudes pendientes. Se respeta el
 `credential_scope` original; una llave ausente no simula la cancelación de un
-comprobante real. El motivo 01 requiere un flujo de sustitución todavía no
-implementado aquí. No hay sincronización automática por webhook en este flujo.
+comprobante real. El motivo lo elige el negocio (02, 03 o 04; el 01 solo con
+sustitución, ver "Factura global, sustitución y motivos del SAT"). No hay
+sincronización automática por webhook en este flujo.
 
 **Corrección multi-tenant en la cancelación.** `MexicoSatProvider.cancelDocument`
 usaba la llave GLOBAL de Facturapi. Un CFDI timbrado bajo el CSD del cliente no

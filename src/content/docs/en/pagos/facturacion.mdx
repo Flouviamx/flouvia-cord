@@ -67,8 +67,8 @@ Cord takes the recipient's tax details from the customer record:
 
 | Item | Source | If missing |
 |---|---|---|
-| RFC | Customer record | Issued to "Público en General" (general public). |
-| Tax regime | Customer record | 601 (General corporate regime) if the customer has an RFC; 616 (No tax obligations) when issued to the general public. |
+| RFC | Customer record | Issued with the generic RFC XAXX010101000, in the customer's name and with your business's tax postal code. The name "PUBLICO EN GENERAL" is reserved for the global invoice. |
+| Tax regime | Customer record | 601 (General corporate regime) if the customer has an RFC; 616 (No tax obligations) whenever it is issued with the generic RFC. |
 | CFDI use | Customer record, or your account's default use | G03 (General expenses). |
 | Tax postal code | Customer record | There's no value that can safely replace it: CFDI 4.0 requires the postal code on the recipient's tax certificate, and stamping may be rejected. |
 
@@ -80,7 +80,7 @@ If the customer's country in their record isn't Mexico, the CFDI is issued to a 
 
 ### SAT keys for each item
 
-Each product can carry its **product or service key** (c_ClaveProdServ, 8 digits) and its **unit key** (c_ClaveUnidad) under **Products › E-invoicing (SAT)**. You search the product key by description in the SAT catalog; if you leave the unit key empty, it's derived from the product's unit ("hour" → HUR, "month" → MON, "kg" → KGM). Items without a product, or from an unclassified product, are stamped with the SAT generic keys: 01010101 and H87. Keys are read when stamping and saved in the document.
+Each product can carry its **product or service key** (c_ClaveProdServ, 8 digits) and its **unit key** (c_ClaveUnidad) under **Products › E-invoicing (SAT)**. You search the product key by description in the SAT catalog; if you leave the unit key empty, it's derived from the product's unit ("hour" → HUR, "month" → MON, "kg" → KGM). In the quote and invoice editors, each item can carry **its own keys**, which win over the product's; duplicating a document keeps them. Items with no keys of their own and no classified product are stamped with the SAT generic keys: 01010101 and H87, and the editor tells you how many are left that way before issuing. Keys are read when stamping and saved in the document.
 
 ### Taxes and issuing
 
@@ -90,10 +90,17 @@ A confirmed payment and an issued invoice are different states. Paying doesn't c
 
 Credit notes for a Mexican invoice are an expense CFDI (egreso) related to the original UUID. A cancellation request doesn't void the CFDI until the SAT confirms it; meanwhile you can click **Check cancellation status** on the detail page.
 
+### Cancellation and replacement
+
+When you void an issued CFDI, Cord asks for the **SAT reason**: 02 (with errors, without a replacement), 03 (the transaction did not take place) or 04 (named transaction in a global invoice, only on the global invoice). Reason 01 is used through **Replace CFDI**: Cord creates a draft with the original's data, relates it to the original when you issue it (relationship 04), moves the original's payments to it and requests the original's cancellation under reason 01 with the replacement's UUID. An invoice with valid credit notes or issued payment complements can't be replaced: the SAT doesn't allow cancelling a CFDI with valid related documents.
+
+### Global invoice
+
+Sales collected without the customer asking for an invoice are documented under **Invoices › Global invoice**: you choose the frequency, month and year, Cord lists the quotes collected in the period with no invoice of their own and no other global invoice, and issues a CFDI to PUBLICO EN GENERAL (XAXX010101000, regime 616, use S01, PUE) with one item per sale (key 01010101, unit ACT and the quote number as identification number). A sale in a valid global invoice can't be invoiced separately; if the customer asks for their invoice, the global invoice is cancelled under reason 04 and issued again without that sale.
+
 ### What Cord doesn't do in Mexico today
 
 - **Payment receipt complement (REP).** Cord stamps with the PUE payment method (single payment) and doesn't issue payment complements. If you invoice on credit with PPD and need the REP for each payment, you must do it outside Cord today.
-- **Cancellation with replacement (reason 01).** Not available.
 - **Foreign trade complement (Comercio Exterior).** Definitive export of goods (key A1) requires it; Cord stamps the operation as "not applicable" for export and doesn't issue that complement.
 
 ## Spain: Verifactu

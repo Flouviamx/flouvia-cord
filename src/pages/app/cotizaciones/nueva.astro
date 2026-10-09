@@ -17,6 +17,8 @@ import { CURRENCY_FLAG } from '../../../lib/flags';
 import { listOfferedCurrencies } from '../../../lib/currency';
 import '../../../styles/modal.css';
 import '../../../styles/editor.css';
+import '../../../styles/sat-line.css';
+import { satLineI18n } from '../../../lib/sat-line-i18n';
 
 const L = currentLocale();
 const ET = getEditorRuntimeI18n(L);
@@ -321,6 +323,8 @@ import { iconInner } from '../../../lib/icons';
     taxOptions: TAX_OPTIONS, defaultTaxRate: DEFAULT_TAX_RATE, retenciones: RETENCIONES,
     taxLabel: TAX_LABEL, multiTax: MULTI_TAX,
     taxCountry: PAIS, taxRegion: ORG.fiscalMetadata?.region || null,
+    // Clave SAT por línea: solo México timbra CFDI (src/lib/sat-line-picker.ts).
+    sat: isMx, satI18n: satLineI18n(L),
 })} />
 <script>
     import { iconSvg } from '../../../lib/icons';
@@ -340,6 +344,7 @@ import { iconInner } from '../../../lib/icons';
     import { currencyDecimals } from '../../../lib/currency';
     import { canonicalTaxRate, taxBreakdownRows, taxOptionIndex } from '../../../lib/tax-components';
     import { wireTermPicker } from '../../../lib/term-picker-client';
+    import { createSatLinePicker, satKeysFromProduct, satPayload } from '../../../lib/sat-line-picker';
     import { wireDiscountControl } from '../../../lib/discount-client';
 
     const BOOT = JSON.parse(document.getElementById('edBootQ')?.textContent || '{}');
@@ -367,9 +372,12 @@ import { iconInner } from '../../../lib/icons';
         return price;
     };
 
+    // Claves SAT con las que nace una línea: las del producto del catálogo.
+    const satDe = (p) => (BOOT.sat ? satKeysFromProduct(p) : {});
     if (draftQuote) {
         draftQuote.items.forEach(it => {
             const cat = it.producto_id ? catMap[it.producto_id] : null;
+            const satCat = satDe(cat);
             const l = {
                 id: it.producto_id || null,
                 nombre: it.descripcion,
@@ -383,6 +391,11 @@ import { iconInner } from '../../../lib/icons';
                 negoTouched: it.precioNegociado !== null,
                 taxRate: it.taxRate != null ? canonicalTaxRate(BOOT.taxCountry, Number(it.taxRate)) : DEFAULT_TAX,
                 exemptionReason: it.exemptionReason ?? null,
+                // La clave propia de la línea gana; sin ella, la del producto.
+                ...(BOOT.sat ? {
+                    productKey: it.claveSat ?? satCat.productKey ?? null,
+                    unitKey: it.claveUnidadSat ?? satCat.unitKey ?? null,
+                } : {}),
             };
             if (l.id) l.lista = volUnit(l);
             lines.push(l);
@@ -390,6 +403,10 @@ import { iconInner } from '../../../lib/icons';
     }
     const $lines = document.getElementById('lines');
     const $empty = document.getElementById('linesEmpty');
+    // Clave SAT por línea (solo México): sub-fila bajo cada concepto.
+    const satPicker = BOOT.sat && $lines
+        ? createSatLinePicker({ container: $lines, getLine: (i) => lines[i], i18n: BOOT.satI18n })
+        : null;
     // Divisa del EDITOR: la del selector de divisa si el vendedor eligió otra,
     // si no la del negocio (<body data-currency>, que publica AppLayout).
     //
@@ -678,6 +695,7 @@ import { iconInner } from '../../../lib/icons';
                 </button>
             `;
             $lines.appendChild(row);
+            if (satPicker) $lines.insertAdjacentHTML('beforeend', satPicker.rowHtml(l, idx));
         });
         recalc();
     }
@@ -690,7 +708,7 @@ import { iconInner } from '../../../lib/icons';
 
     function addProduct(p) {
         const b2b = precioB2B(p.id);
-        lines.push({ id: p.id, nombre: p.nombre, unidad: p.unidad, baseLista: p.precio, lista: p.precio, vol: p.preciosVolumen || [], costo: p.costo || 0, negociado: b2b ?? applyDesc(p.precio), cantidad: 1, negoTouched: false, taxRate: productTax(p), existencias: p.existencias ?? null, b2b: b2b !== null });
+        lines.push({ id: p.id, nombre: p.nombre, unidad: p.unidad, baseLista: p.precio, lista: p.precio, vol: p.preciosVolumen || [], costo: p.costo || 0, negociado: b2b ?? applyDesc(p.precio), cantidad: 1, negoTouched: false, taxRate: productTax(p), existencias: p.existencias ?? null, b2b: b2b !== null, ...satDe(p) });
         render();
         // Micro-feedback: la fila nueva parpadea suave para ubicarla.
         const rows = $lines.querySelectorAll('.line-row');
@@ -830,7 +848,7 @@ import { iconInner } from '../../../lib/icons';
             const qty = (Number(it.cantidad) || 1) * mult;
             const p = it.productoId ? catMap[it.productoId] : null;
             if (p) {
-                lines.push({ id: p.id, nombre: p.nombre, unidad: p.unidad, baseLista: p.precio, lista: p.precio, vol: p.preciosVolumen || [], costo: p.costo || 0, negociado: applyDesc(p.precio), cantidad: qty, negoTouched: false, taxRate: productTax(p) });
+                lines.push({ id: p.id, nombre: p.nombre, unidad: p.unidad, baseLista: p.precio, lista: p.precio, vol: p.preciosVolumen || [], costo: p.costo || 0, negociado: applyDesc(p.precio), cantidad: qty, negoTouched: false, taxRate: productTax(p), ...satDe(p) });
                 catalogIdxs.push(lines.length - 1);
                 sumaListaOne += (Number(it.cantidad) || 1) * p.precio;
             } else {
@@ -909,6 +927,8 @@ import { iconInner } from '../../../lib/icons';
     $lines.addEventListener('input', (e) => {
         const t = e.target;
         if (!(t instanceof HTMLInputElement)) return;
+        // La sub-fila SAT maneja sus propios campos (sat-line-picker.ts).
+        if (t.closest('.sat-row')) return;
         const idx = parseInt(t.dataset.idx, 10);
         
         if (t.dataset.field === 'nombre') {
@@ -971,6 +991,7 @@ import { iconInner } from '../../../lib/icons';
         const delBtn = e.target.closest('.lr-del');
         if (delBtn) {
             lines.splice(parseInt(delBtn.dataset.del, 10), 1);
+            if (satPicker) satPicker.close();
             render();
             return;
         }
@@ -1072,6 +1093,7 @@ import { iconInner } from '../../../lib/icons';
                 costo_unitario: l.costo || 0,
                 tax_rate: l.taxRate ?? DEFAULT_TAX,
                 exemption_reason: l.exemptionReason || undefined,
+                ...(BOOT.sat ? satPayload(l) : {}),
             })),
         };
     }
@@ -1371,6 +1393,7 @@ import { iconInner } from '../../../lib/icons';
                         negoTouched: it.negociado != null,
                         taxRate: it.taxRate != null ? canonicalTaxRate(BOOT.taxCountry, Number(it.taxRate)) : DEFAULT_TAX,
                         exemptionReason: it.exemptionReason ?? null,
+                        ...satDe(cat),
                     };
                     // Ajusta el precio de lista al nivel de volumen de su cantidad.
                     if (l.id) l.lista = volUnit(l);

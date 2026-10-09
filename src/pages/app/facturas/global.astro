@@ -1,0 +1,382 @@
+---
+// /app/facturas/global — factura global (CFDI 4.0) de las ventas al público en
+// general. Solo México.
+//
+// Un negocio que cobra sin que el cliente pida factura tiene que documentar
+// esas ventas en un CFDI global por periodo (RMF 2.7.1.21). Aquí se elige el
+// periodo con los catálogos del SAT (c_Periodicidad, c_Meses), se ven las
+// ventas COBRADAS sin factura —y por qué otras no entran— y se timbra. Toda la
+// regla vive en src/lib/fiscal/factura-global.ts y cfdi-catalogos.ts; esta
+// pantalla solo la presenta.
+import AppLayout from '../../../layouts/AppLayout.astro';
+import AccessGate from '../../../components/app/AccessGate.astro';
+import PlanGate from '../../../components/app/PlanGate.astro';
+import { getMyMembership } from '../../../lib/queries';
+import { memberCan } from '../../../lib/permissions';
+import { getActiveOrgId, sql, withOrgTx } from '../../../lib/db';
+import { checkEntitlement } from '../../../lib/org-entitlements';
+import { currentLocale } from '../../../lib/context';
+import { t } from '../../../i18n/app';
+import { FORMAS_PAGO, MESES, PERIODICIDADES, REGIMEN_BIMESTRAL } from '../../../lib/fiscal/cfdi-catalogos';
+import { anioEnMexico } from '../../../lib/fiscal/factura-global';
+import { jsonForScript } from '../../../lib/escape';
+
+export const prerender = false;
+
+const L = currentLocale();
+const ME = await getMyMembership();
+const hasPerm = memberCan(ME, 'cotizar');
+const orgId = await getActiveOrgId();
+const [[org]] = await withOrgTx(orgId, sql`select country_code, regimen_fiscal from orgs where id = ${orgId} limit 1`);
+const esMx = String(org?.country_code || 'MX').toUpperCase() === 'MX';
+// Regla 17: es un CFDI; se gatea igual que cualquier timbrado.
+const gate = hasPerm && esMx ? await checkEntitlement(orgId, 'cfdi') : null;
+const hasAccess = !!gate?.ok;
+const bimestralPermitida = String(org?.regimen_fiscal || '') === REGIMEN_BIMESTRAL;
+
+// Por defecto, el mes que acaba de cerrar: la global se emite al cierre.
+const anio = anioEnMexico();
+const mesActual = Number(new Intl.DateTimeFormat('en-US', { timeZone: 'America/Mexico_City', month: 'numeric' }).format(new Date()));
+const q = Astro.url.searchParams;
+const defPeriodicidad = Object.hasOwn(PERIODICIDADES, q.get('periodicidad') || '') ? String(q.get('periodicidad')) : '04';
+const defMeses = Object.hasOwn(MESES, q.get('meses') || '') ? String(q.get('meses')) : String(mesActual === 1 ? 12 : mesActual - 1).padStart(2, '0');
+const defAnio = [anio, anio - 1].includes(Number(q.get('anio'))) ? Number(q.get('anio')) : (mesActual === 1 ? anio - 1 : anio);
+
+const BOOT = {
+    locale: L,
+    periodicidad: defPeriodicidad, meses: defMeses, anio: defAnio,
+    meses13: Object.entries(MESES).map(([clave, m]) => ({ clave, label: L === 'en' ? m.en : m.es, bimestre: Number(clave) > 12 })),
+    i18n: {
+        buscando: t(L, 'fglob.buscando'),
+        sinVentas: t(L, 'fglob.sin_ventas'),
+        tieneRfc: t(L, 'fglob.tiene_rfc'),
+        excluidas: t(L, 'fglob.excluidas'),
+        motivos: {
+            en_global: t(L, 'fglob.motivo.en_global'), facturada: t(L, 'fglob.motivo.facturada'),
+            divisa: t(L, 'fglob.motivo.divisa'), retenciones: t(L, 'fglob.motivo.retenciones'),
+            extranjero: t(L, 'fglob.motivo.extranjero'), tasa: t(L, 'fglob.motivo.tasa'),
+            sin_importe: t(L, 'fglob.motivo.sin_importe'),
+        },
+        emitir: t(L, 'fglob.emitir'),
+        emitiendo: t(L, 'fglob.emitiendo'),
+        confirmarTitulo: t(L, 'fglob.confirmar_titulo'),
+        confirmar: t(L, 'fglob.confirmar'),
+        error: t(L, 'fglob.error'),
+        eligeForma: t(L, 'fglob.forma_pago_elige'),
+    },
+};
+---
+
+<AppLayout title={`${t(L, 'fglob.titulo')} - Cord`} page="facturas" heading={t(L, 'fact.heading')}
+    crumbs={[{ label: t(L, 'fact.heading'), href: '/app/facturas' }]}>
+
+    {!hasPerm && <AccessGate title={t(L, 'fact.sin_acceso_titulo')} desc={t(L, 'fact.sin_acceso_desc')} />}
+    {hasPerm && !esMx && <AccessGate title={t(L, 'fglob.sin_pais')} desc={t(L, 'fglob.sin_pais_desc')} />}
+    {hasPerm && esMx && !hasAccess && gate && (
+        <PlanGate
+            id="globalPlanModal"
+            title={t(L, 'fact.plan_titulo')}
+            desc={t(L, 'fact.plan_desc')}
+            requiredPlan={gate.requiredPlan}
+            locale={L === 'en' ? 'en' : 'es'}
+            preview="facturas" />
+    )}
+
+    {hasAccess && (
+        <div class="fg" data-fglob>
+            <script type="application/json" id="fgBoot" is:inline set:html={jsonForScript(BOOT)} />
+            <div class="fg-head">
+                <h1 class="sec-title">{t(L, 'fglob.titulo')}</h1>
+                <a class="fg-back" href="/app/facturas">{t(L, 'fact.heading')} →</a>
+            </div>
+            <p class="fg-intro">{t(L, 'fglob.intro')}</p>
+
+            <form class="fg-period" id="fgForm">
+                <label class="fg-field">
+                    <span>{t(L, 'fglob.periodicidad')}</span>
+                    <select id="fgPeriodicidad">
+                        {Object.entries(PERIODICIDADES).map(([clave, p]) => (
+                            <option value={clave} selected={clave === defPeriodicidad}
+                                disabled={clave === '05' && !bimestralPermitida}>{clave} · {L === 'en' ? p.en : p.es}</option>
+                        ))}
+                    </select>
+                </label>
+                <label class="fg-field">
+                    <span>{t(L, 'fglob.periodo')}</span>
+                    <select id="fgMeses"></select>
+                </label>
+                <label class="fg-field">
+                    <span>{t(L, 'fglob.anio')}</span>
+                    <select id="fgAnio">
+                        {[anio, anio - 1].map((a) => <option value={a} selected={a === defAnio}>{a}</option>)}
+                    </select>
+                </label>
+                <div class="fg-range" id="fgRange" hidden>
+                    <label class="fg-field">
+                        <span>{t(L, 'fglob.desde')}</span>
+                        <input type="date" id="fgDesde" />
+                    </label>
+                    <label class="fg-field">
+                        <span>{t(L, 'fglob.hasta')}</span>
+                        <input type="date" id="fgHasta" />
+                    </label>
+                    <p class="fg-hint">{t(L, 'fglob.rango_ayuda')}</p>
+                </div>
+                <button type="submit" class="fg-btn" id="fgBuscar">{t(L, 'fglob.buscar')}</button>
+            </form>
+            <p class="fg-hint">
+                {t(L, 'fglob.plazo')}
+                {!bimestralPermitida && <> {t(L, 'fglob.bimestral_621')}</>}
+            </p>
+
+            <div class="fg-grid">
+                <section class="fg-list">
+                    <div class="fg-section-head"><h2>{t(L, 'fglob.elegibles')}</h2></div>
+                    <p class="fg-status" id="fgStatus" aria-live="polite"></p>
+                    <div class="fg-table" id="fgTable" hidden>
+                        <div class="t-head fg-row">
+                            <span><input type="checkbox" id="fgAll" checked aria-label={t(L, 'fglob.ventas_sel')} /></span>
+                            <span>{t(L, 'fglob.th_folio')}</span>
+                            <span>{t(L, 'fglob.th_cliente')}</span>
+                            <span>{t(L, 'fglob.th_pagada')}</span>
+                            <span class="fg-num">{t(L, 'fglob.th_total')}</span>
+                        </div>
+                        <div id="fgRows"></div>
+                    </div>
+                    <details class="fg-excl" id="fgExcl" hidden>
+                        <summary id="fgExclSum"></summary>
+                        <ul id="fgExclList"></ul>
+                    </details>
+                </section>
+
+                <aside class="fg-side">
+                    <div class="fg-sum-line"><span>{t(L, 'fglob.ventas_sel')}</span><b class="editorial" id="fgCount">0</b></div>
+                    <div class="fg-sum-line" id="fgDescLine" hidden><span>{t(L, 'fglob.descuento')}</span><b class="editorial" id="fgDescuento">—</b></div>
+                    <div class="fg-sum-line"><span>{t(L, 'fglob.subtotal')}</span><b class="editorial" id="fgSubtotal">—</b></div>
+                    <div class="fg-sum-line"><span>{t(L, 'fglob.iva')}</span><b class="editorial" id="fgIva">—</b></div>
+                    <div class="fg-sum-line fg-total"><span>{t(L, 'fglob.total')}</span><b class="editorial" id="fgTotal">—</b></div>
+                    <label class="fg-field">
+                        <span>{t(L, 'fglob.forma_pago')}</span>
+                        <select id="fgForma">
+                            <option value="">{t(L, 'fglob.forma_pago_elige')}</option>
+                            {Object.entries(FORMAS_PAGO).map(([clave, f]) => <option value={clave}>{clave} · {L === 'en' ? f.en : f.es}</option>)}
+                        </select>
+                        <small class="fg-hint">{t(L, 'fglob.forma_pago_ayuda')}</small>
+                    </label>
+                    <button type="button" class="fg-emit" id="fgEmitir" disabled>{t(L, 'fglob.emitir')}</button>
+                </aside>
+            </div>
+        </div>
+    )}
+</AppLayout>
+
+<script>
+    import { createMoney } from '../../../lib/money-client';
+
+    const raiz = document.querySelector('[data-fglob]') as HTMLElement | null;
+    const bootEl = document.getElementById('fgBoot');
+    if (raiz && bootEl) {
+        const BOOT = JSON.parse(bootEl.textContent || '{}');
+        const T = BOOT.i18n;
+        const $ = (id: string) => document.getElementById(id)!;
+        const fmt = createMoney({ currency: 'MXN' });
+        const esc = (v: unknown) => String(v ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' } as Record<string, string>)[c]);
+        const per = $('fgPeriodicidad') as HTMLSelectElement;
+        const meses = $('fgMeses') as HTMLSelectElement;
+        const anio = $('fgAnio') as HTMLSelectElement;
+        const desde = $('fgDesde') as HTMLInputElement;
+        const hasta = $('fgHasta') as HTMLInputElement;
+        let ventas: any[] = [];
+        let periodo: Record<string, string> | null = null;
+
+        // c_Meses: 01–12 con cualquier periodicidad salvo bimestral; 13–18 solo con 05.
+        const pintarMeses = (valor?: string) => {
+            const bim = per.value === '05';
+            const actual = valor ?? meses.value;
+            meses.innerHTML = BOOT.meses13.filter((m: any) => m.bimestre === bim)
+                .map((m: any) => `<option value="${m.clave}">${m.clave} · ${esc(m.label)}</option>`).join('');
+            if ([...meses.options].some((o) => o.value === actual)) meses.value = actual;
+            $('fgRange').hidden = !['01', '02', '03'].includes(per.value);
+        };
+        // Diaria, semanal y quincenal declaran el mes; el tramo de días se elige.
+        const rangoPorDefecto = () => {
+            const m = Number(meses.value);
+            if (!m || m > 12) return;
+            const y = Number(anio.value);
+            const mm = String(m).padStart(2, '0');
+            const ultimo = new Date(Date.UTC(y, m, 0)).getUTCDate();
+            desde.min = hasta.min = `${y}-${mm}-01`;
+            desde.max = hasta.max = `${y}-${mm}-${String(ultimo).padStart(2, '0')}`;
+            if (!desde.value || desde.value < desde.min || desde.value > desde.max) desde.value = desde.min;
+            if (!hasta.value || hasta.value < hasta.min || hasta.value > hasta.max) hasta.value = per.value === '01' ? desde.value : hasta.max;
+        };
+        per.addEventListener('change', () => { pintarMeses(); rangoPorDefecto(); });
+        meses.addEventListener('change', rangoPorDefecto);
+        anio.addEventListener('change', rangoPorDefecto);
+        pintarMeses(BOOT.meses);
+        rangoPorDefecto();
+
+        const recalc = () => {
+            const sel = ventas.filter((v) => v.sel);
+            const sum = (k: string) => Math.round(sel.reduce((s, v) => s + Number(v[k] || 0), 0) * 100) / 100;
+            $('fgCount').textContent = String(sel.length);
+            // Descuento de documento de las ventas: el subtotal ya es la base neta.
+            const desc = sum('descuento');
+            $('fgDescLine').hidden = !(desc > 0);
+            $('fgDescuento').textContent = desc > 0 ? `−${fmt(desc)}` : '—';
+            $('fgSubtotal').textContent = sel.length ? fmt(sum('subtotal')) : '—';
+            $('fgIva').textContent = sel.length ? fmt(sum('impuestos')) : '—';
+            $('fgTotal').textContent = sel.length ? fmt(sum('total')) : '—';
+            ($('fgEmitir') as HTMLButtonElement).disabled = sel.length === 0;
+            ($('fgAll') as HTMLInputElement).checked = sel.length === ventas.length && ventas.length > 0;
+        };
+
+        const pintar = (data: any) => {
+            ventas = (data.elegibles || []).map((v: any) => ({ ...v, sel: true }));
+            $('fgStatus').textContent = ventas.length ? '' : T.sinVentas;
+            $('fgTable').hidden = ventas.length === 0;
+            $('fgRows').innerHTML = ventas.map((v, i) => `
+                <label class="t-row fg-row">
+                    <span><input type="checkbox" data-i="${i}" checked /></span>
+                    <a class="fg-folio" href="/app/cotizaciones/${encodeURIComponent(v.id)}">${esc(v.folio)}</a>
+                    <span class="fg-cliente">${esc(v.cliente || '—')}${v.cliente_rfc && v.cliente_rfc !== 'XAXX010101000' ? `<small>${esc(T.tieneRfc)}</small>` : ''}</span>
+                    <span>${esc(new Date(v.pagada).toLocaleDateString(BOOT.locale === 'en' ? 'en-US' : 'es-MX', { timeZone: 'America/Mexico_City' }))}</span>
+                    <span class="fg-num editorial">${fmt(v.total)}</span>
+                </label>`).join('');
+            const excl = data.excluidas || [];
+            $('fgExcl').hidden = excl.length === 0;
+            $('fgExclSum').textContent = T.excluidas.replace('{n}', String(excl.length));
+            $('fgExclList').innerHTML = excl.map((v: any) =>
+                `<li><b>${esc(v.folio)}</b> ${esc(v.cliente || '')} · ${esc(T.motivos[v.motivo] || v.motivo)}</li>`).join('');
+            const forma = $('fgForma') as HTMLSelectElement;
+            if (data.forma_pago_sugerida) forma.value = data.forma_pago_sugerida;
+            recalc();
+        };
+
+        $('fgRows').addEventListener('change', (e) => {
+            const el = e.target as HTMLInputElement;
+            const v = ventas[Number(el.dataset.i)];
+            if (v) { v.sel = el.checked; recalc(); }
+        });
+        $('fgAll').addEventListener('change', (e) => {
+            const on = (e.target as HTMLInputElement).checked;
+            ventas.forEach((v) => { v.sel = on; });
+            $('fgRows').querySelectorAll<HTMLInputElement>('input[type="checkbox"]').forEach((c) => { c.checked = on; });
+            recalc();
+        });
+
+        $('fgForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const params = new URLSearchParams({ periodicidad: per.value, meses: meses.value, anio: anio.value });
+            if (!$('fgRange').hidden) { params.set('desde', desde.value); params.set('hasta', hasta.value); }
+            periodo = Object.fromEntries(params);
+            $('fgStatus').textContent = T.buscando;
+            $('fgTable').hidden = true;
+            try {
+                const res = await fetch(`/api/facturas/global?${params}`);
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || T.error);
+                pintar(data);
+            } catch (err) {
+                ventas = []; recalc();
+                $('fgStatus').textContent = err instanceof Error ? err.message : T.error;
+            }
+        });
+
+        $('fgEmitir').addEventListener('click', async (ev) => {
+            const btn = ev.currentTarget as HTMLButtonElement;
+            const sel = ventas.filter((v) => v.sel);
+            const forma = ($('fgForma') as HTMLSelectElement).value;
+            if (!sel.length || !periodo) return;
+            if (!forma) { (window as any).cordToast?.(T.eligeForma, 'error'); return; }
+            const total = Math.round(sel.reduce((s, v) => s + Number(v.total || 0), 0) * 100) / 100;
+            const ok = await (window as any).cordConfirm?.({
+                title: T.confirmarTitulo, body: T.confirmar.replace('{total}', fmt(total)), confirmText: T.emitir,
+            });
+            if (!ok) return;
+            btn.disabled = true; btn.textContent = T.emitiendo;
+            try {
+                const res = await fetch('/api/facturas/global', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ...periodo, anio: Number(periodo.anio), cotizaciones: sel.map((v) => v.id), forma_pago: forma }),
+                });
+                const data = await res.json();
+                // Un borrador que no se pudo timbrar se abre en su detalle para reintentar.
+                if (data.id) { location.href = `/app/facturas/${encodeURIComponent(data.id)}`; return; }
+                throw new Error(data.error || T.error);
+            } catch (err) {
+                (window as any).cordToast?.(err instanceof Error ? err.message : T.error, 'error');
+                btn.disabled = false; btn.textContent = T.emitir;
+            }
+        });
+    }
+</script>
+
+<style>
+    .fg-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
+    .fg-back { font-size: 0.82rem; font-weight: 600; color: var(--color-text-muted); text-decoration: none; }
+    .fg-back:hover { color: var(--color-blue-deep); }
+    .fg-intro { font-size: 0.88rem; color: var(--color-text-muted); line-height: 1.55; max-width: 68ch; margin: 0.4rem 0 1.8rem; }
+    .fg-period { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 1rem 1.2rem; }
+    .fg-range { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 0.6rem 1.2rem; }
+    .fg-range[hidden] { display: none; }
+    .fg-field { display: flex; flex-direction: column; gap: 6px; font-size: 0.74rem; font-weight: 600; color: var(--color-text-muted); }
+    .fg-field select, .fg-field input {
+        font-family: var(--font-sans); font-size: 0.86rem; font-weight: 500; color: var(--color-text);
+        background: var(--color-bg-soft, #f5f5f7); border: 1.5px solid transparent; border-radius: 10px;
+        padding: 9px 12px; min-width: 150px;
+    }
+    .fg-field select:focus, .fg-field input:focus { outline: none; border-color: var(--color-blue-deep); box-shadow: 0 0 0 3px rgba(10, 25, 47, 0.12); }
+    .fg-hint { font-size: 0.76rem; color: var(--color-text-muted); line-height: 1.5; margin: 0.6rem 0 0; max-width: 72ch; font-weight: 500; }
+    .fg-btn, .fg-emit {
+        font-family: var(--font-sans); font-size: 0.84rem; font-weight: 600; cursor: pointer;
+        border-radius: 999px; padding: 10px 18px; border: 1px solid var(--color-border);
+        background: transparent; color: var(--color-text);
+        transition: transform 0.2s var(--ease-spring), border-color 0.25s;
+    }
+    .fg-btn:hover { border-color: var(--color-blue-deep); transform: scale(1.02); }
+    .fg-emit { width: 100%; margin-top: 1.2rem; background: var(--color-blue-deep); border-color: var(--color-blue-deep); color: #fff; }
+    .fg-emit:hover:not(:disabled) { transform: scale(1.02); }
+    .fg-emit:active:not(:disabled), .fg-btn:active { transform: scale(0.98); }
+    .fg-emit:disabled { opacity: 0.5; cursor: not-allowed; }
+    .fg-btn:focus-visible, .fg-emit:focus-visible { outline: 2px solid var(--color-blue-deep); outline-offset: 2px; }
+
+    .fg-grid { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 3rem; align-items: start; margin-top: 2.4rem; }
+    .fg-section-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 1rem; padding-bottom: 0.7rem; border-bottom: 1px solid var(--color-border); }
+    .fg-section-head h2 { margin: 0; font-size: 0.98rem; font-weight: 600; color: var(--color-text); }
+    .fg-status { font-size: 0.86rem; color: var(--color-text-muted); margin: 0; }
+    .fg-status:empty { display: none; }
+    .fg-row { display: grid; grid-template-columns: 34px 110px minmax(0, 1fr) 120px 130px; gap: 0.8rem; align-items: center; }
+    .fg-row input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--color-blue-deep); }
+    .fg-folio { font-size: 0.84rem; font-weight: 600; color: var(--color-blue-deep); text-decoration: none; }
+    .fg-folio:hover { text-decoration: underline; }
+    .fg-cliente { display: flex; flex-direction: column; min-width: 0; font-size: 0.85rem; color: var(--color-text); }
+    .fg-cliente small { font-size: 0.7rem; color: #92400e; }
+    .fg-num { text-align: right; }
+    .fg-excl { margin-top: 1.6rem; font-size: 0.82rem; color: var(--color-text-muted); }
+    .fg-excl[hidden] { display: none; }
+    .fg-excl summary { cursor: pointer; font-weight: 600; }
+    .fg-excl ul { margin: 0.6rem 0 0; padding-left: 1.1rem; line-height: 1.7; }
+    .fg-side { position: sticky; top: 76px; display: flex; flex-direction: column; gap: 0.7rem; }
+    .fg-sum-line { display: flex; justify-content: space-between; font-size: 0.86rem; color: var(--color-text-muted); }
+    .fg-sum-line[hidden] { display: none; }
+    .fg-sum-line b { color: var(--color-text); font-weight: 600; }
+    .fg-total { padding-top: 0.7rem; border-top: 1px solid var(--color-border); font-size: 0.95rem; }
+    .fg-total b { font-size: 1.15rem; }
+
+    /* Móvil: una columna y controles táctiles (regla 16). */
+    @media (max-width: 880px) {
+        .fg-grid { grid-template-columns: 1fr; gap: 2rem; }
+        .fg-side { position: static; }
+        .fg-field select, .fg-field input { min-height: 44px; font-size: 16px; width: 100%; }
+        .fg-period { flex-direction: column; align-items: stretch; }
+        .fg-btn, .fg-emit { min-height: 44px; }
+        .fg-row { grid-template-columns: 34px minmax(0, 1fr) auto; grid-template-areas: "chk folio total" "chk cliente fecha"; }
+        .t-head.fg-row { display: none; }
+        .fg-row > :nth-child(1) { grid-area: chk; }
+        .fg-row > :nth-child(2) { grid-area: folio; }
+        .fg-row > :nth-child(3) { grid-area: cliente; }
+        .fg-row > :nth-child(4) { grid-area: fecha; justify-self: end; font-size: 0.76rem; color: var(--color-text-muted); }
+        .fg-row > :nth-child(5) { grid-area: total; }
+    }
+</style>

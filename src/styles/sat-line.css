@@ -1,0 +1,74 @@
+/* ── Clave SAT por línea (solo México) ────────────────────────────────────
+ *
+ * Sub-fila que src/lib/sat-line-picker.ts inyecta bajo cada concepto de los
+ * tres editores. La pinta JavaScript, así que vive en una hoja global llaveada
+ * por `[data-editor]` (Regla 11): un `<style>` scopeado no la alcanzaría.
+ */
+
+[data-editor] .sat-row {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px;
+    padding: 0 0 0.7rem 2px; border-bottom: 1px solid var(--color-border);
+    font-size: 0.72rem; color: var(--color-text-muted);
+}
+/* La sub-fila pertenece al concepto de arriba: el separador va debajo de ella. */
+[data-editor] .line-row:has(+ .sat-row) { border-bottom: none; padding-bottom: 0.45rem; }
+[data-editor] .sat-row:last-child { border-bottom: none; }
+[data-editor] .sat-lbl { font-weight: 700; letter-spacing: 0.04em; font-size: 0.64rem; }
+[data-editor] .sat-chip {
+    font-family: var(--font-sans); font-size: 0.72rem; font-weight: 600;
+    font-variant-numeric: tabular-nums; color: var(--color-text);
+    background: var(--editor-field); border: 1.5px solid transparent; border-radius: 7px;
+    padding: 3px 9px; cursor: pointer; min-height: 26px;
+    transition: border-color 0.2s var(--ease-ios), background 0.2s;
+}
+[data-editor] .sat-chip:hover { background: var(--editor-field-hover); }
+[data-editor] .sat-chip:focus-visible { outline: none; border-color: var(--color-blue-deep); box-shadow: 0 0 0 3px var(--editor-focus-ring); }
+[data-editor] .sat-row.is-generic .sat-chip { color: #92400e; background: rgba(245, 158, 11, 0.1); }
+[data-editor] .sat-warn { color: #92400e; font-size: 0.7rem; }
+
+[data-editor] .sat-edit {
+    position: relative; flex-basis: 100%;
+    display: grid; grid-template-columns: minmax(0, 1fr) 120px; gap: 8px 10px;
+    margin-top: 4px; padding: 10px 12px; border-radius: 12px;
+    background: var(--editor-panel, var(--color-bg-soft)); border: 1px solid var(--color-border);
+}
+[data-editor] .sat-field { display: flex; flex-direction: column; gap: 4px; font-size: 0.7rem; font-weight: 600; color: var(--color-text-muted); }
+[data-editor] .sat-field input {
+    font-family: var(--font-sans); font-size: 0.82rem; font-weight: 500; color: var(--color-text);
+    background: var(--editor-field); border: 1.5px solid transparent; border-radius: 8px; padding: 7px 10px;
+}
+[data-editor] .sat-field input:focus { outline: none; border-color: var(--color-blue-deep); box-shadow: 0 0 0 3px var(--editor-focus-ring); }
+[data-editor] .sat-sug {
+    grid-column: 1 / -1; list-style: none; margin: 0; padding: 4px;
+    max-height: 220px; overflow-y: auto; border-radius: 10px;
+    background: var(--editor-panel, #fff); border: 1px solid var(--color-border);
+}
+[data-editor] .sat-sug[hidden] { display: none; }
+[data-editor] .sat-sug .sat-opt {
+    display: block; width: 100%; text-align: left; border: 0; background: none; cursor: pointer;
+    font-family: var(--font-sans); font-size: 0.76rem; color: var(--color-text);
+    padding: 6px 8px; border-radius: 7px; line-height: 1.35;
+}
+[data-editor] .sat-sug .sat-opt:hover, [data-editor] .sat-sug .sat-opt:focus-visible { background: var(--row-hover, rgba(10, 25, 47, 0.05)); outline: none; }
+[data-editor] .sat-sug .sat-opt b { font-variant-numeric: tabular-nums; margin-right: 6px; }
+[data-editor] .sat-sug-empty { padding: 6px 8px; font-size: 0.74rem; color: var(--color-text-muted); }
+[data-editor] .sat-msg { grid-column: 1 / -1; margin: 0; min-height: 0; color: var(--color-danger); font-size: 0.72rem; }
+[data-editor] .sat-msg:empty { display: none; }
+[data-editor] .sat-actions { grid-column: 1 / -1; display: flex; justify-content: flex-end; gap: 8px; }
+[data-editor] .sat-actions button {
+    font-family: var(--font-sans); font-size: 0.76rem; font-weight: 600; cursor: pointer;
+    border-radius: 999px; padding: 6px 14px; border: 1px solid var(--color-border);
+    background: transparent; color: var(--color-text);
+    transition: transform 0.2s var(--ease-spring);
+}
+[data-editor] .sat-actions .sat-apply { background: var(--color-blue-deep); border-color: var(--color-blue-deep); color: var(--editor-accent-ink, #fff); }
+[data-editor] .sat-actions button:hover { transform: scale(1.02); }
+[data-editor] .sat-actions button:active { transform: scale(0.98); }
+
+/* Móvil: táctil y en una columna (regla 16). */
+@media (max-width: 880px) {
+    [data-editor] .sat-chip { min-height: 44px; padding: 6px 12px; }
+    [data-editor] .sat-edit { grid-template-columns: 1fr; }
+    [data-editor] .sat-field input { min-height: 44px; font-size: 16px; }
+    [data-editor] .sat-actions button { min-height: 44px; }
+}

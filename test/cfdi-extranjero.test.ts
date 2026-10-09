@@ -83,8 +83,12 @@ describe('CFDI a un receptor extranjero', () => {
         expect(sent().use).toBe('G01');
 
         fetchMock.mockClear();
-        await (await provider()).issueDocument(fixture({ legalName: '', address: { countryCode: 'MX', postalCode: '06600' } }));
-        expect(sent().customer).toMatchObject({ tax_id: 'XAXX010101000', tax_system: '616' });
+        // Anexo 20: con XAXX010101000 el DomicilioFiscalReceptor es el código
+        // postal del EMISOR (LugarExpedicion), no el que traiga la ficha.
+        const generico = fixture({ legalName: '', address: { countryCode: 'MX', postalCode: '06600' } });
+        generico.issuer = { legalName: 'Emisor', address: { countryCode: 'MX', postalCode: '06000' } };
+        await (await provider()).issueDocument(generico);
+        expect(sent().customer).toMatchObject({ tax_id: 'XAXX010101000', tax_system: '616', address: { zip: '06000' } });
         expect(sent().use).toBe('S01');
     });
 
