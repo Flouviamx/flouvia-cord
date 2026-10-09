@@ -2612,12 +2612,15 @@ export async function getCommercialStageTiming(desde: string, hasta: string) {
                        min(e.created_at) filter (where e.tipo = 'sent') as sent_at,
                        min(e.created_at) filter (where e.tipo = 'viewed') as viewed_at,
                        min(e.created_at) filter (where e.tipo = 'approved') as approved_at,
-                       min(e.created_at) filter (where e.tipo = 'paid') as paid_at
+                       -- La fecha real de pago es la de la cotización: los eventos
+                       -- 'paid' también anotan pagos en proceso, reembolsos y
+                       -- duplicados. El evento queda solo para las anteriores a paid_at.
+                       coalesce(c.paid_at, min(e.created_at) filter (where e.tipo = 'paid' and c.status = 'paid')) as paid_at
                 from cotizaciones c
                 left join eventos e on e.cotizacion_id = c.id and e.org_id = ${orgId}
                 where c.org_id = ${orgId}
                   and c.created_at >= ${desde} and c.created_at < (${hasta}::date + interval '1 day')
-                group by c.id, c.created_at
+                group by c.id, c.created_at, c.paid_at, c.status
             )
             select
                 percentile_cont(0.5) within group (order by extract(epoch from (sent_at - created_at)) / 86400)
@@ -2760,10 +2763,10 @@ async function getPayBehaviorUncached() {
         select c.cliente_id,
                count(*) as muestra,
                coalesce(avg(extract(epoch from (
-                   e.paid_at - coalesce(c.approved_at, c.created_at)
+                   coalesce(c.paid_at, e.paid_at) - coalesce(c.approved_at, c.created_at)
                )) / 86400), 0) as avg_pago,
                coalesce(avg(extract(epoch from (
-                   e.paid_at - (
+                   coalesce(c.paid_at, e.paid_at) - (
                        coalesce(c.approved_at, c.created_at)
                        + make_interval(days => case coalesce(c.terminos, cl.terminos_default)
                            when 'net30' then 30 when 'net60' then 60 else 0 end)
@@ -2781,7 +2784,7 @@ async function getPayBehaviorUncached() {
           and (c.status = 'paid' or c.paid_at is not null)
         group by c.cliente_id`,
         sql`select extract(epoch from (
-                   e.paid_at - (
+                   coalesce(c.paid_at, e.paid_at) - (
                        coalesce(c.approved_at, c.created_at)
                        + make_interval(days => case coalesce(c.terminos, cl.terminos_default)
                            when 'net30' then 30 when 'net60' then 60 else 0 end)
@@ -3000,7 +3003,7 @@ async function getCFOUncached() {
             group by c.cliente_id`,
         // Días a cobro por cliente (approved → evento paid).
         sql`select c.cliente_id,
-                   coalesce(avg(extract(epoch from (e.paid_at - coalesce(c.approved_at, c.created_at)))/86400), 0) as avg_pago
+                   coalesce(avg(extract(epoch from (coalesce(c.paid_at, e.paid_at) - coalesce(c.approved_at, c.created_at)))/86400), 0) as avg_pago
             from cotizaciones c
             join (select cotizacion_id, max(created_at) as paid_at from eventos
                   where org_id = ${orgId} and tipo = 'paid' group by cotizacion_id) e

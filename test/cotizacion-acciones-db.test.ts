@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PGlite } from '@electric-sql/pglite';
 
-const m = vi.hoisted(() => ({ db: null as any, concurrent: null as null | string, cancel: vi.fn(), reserve: vi.fn() }));
+const m = vi.hoisted(() => ({ db: null as any, concurrent: null as null | string, cancel: vi.fn(), reserve: vi.fn(), invalidate: vi.fn(async () => {}) }));
 
 vi.mock('../src/lib/db', () => ({
     sql: (s: TemplateStringsArray, ...values: any[]) => ({ text: s.reduce((text, part, i) => text + (i ? `$${i}` : '') + part, ''), values }),
@@ -41,6 +41,13 @@ vi.mock('../src/lib/impuestos-db', () => ({
 vi.mock('../src/lib/posthog-server', () => ({ trackServer: vi.fn() }));
 vi.mock('../src/lib/fx/FXService', () => ({ FXService: { getExchangeRate: vi.fn() }, FXUnavailableError: class extends Error {} }));
 vi.mock('../src/lib/email', () => ({ notifyQuoteSent: async () => ({ sent: false }) }));
+// La factura viva tiene su propia prueba (quote-invoice-ledger-db); aquí solo
+// importa qué se cancela en el proveedor al marcar pagada.
+vi.mock('../src/lib/fiscal/quote-ledger', async (original) => ({
+    ...await original<typeof import('../src/lib/fiscal/quote-ledger')>(),
+    liveInvoiceForQuote: async () => ({ state: 'none' }),
+    invalidateLiveCharges: m.invalidate,
+}));
 
 const { runQuoteAction } = await import('../src/lib/actions/quotes');
 
@@ -63,7 +70,9 @@ beforeAll(async () => {
             precio_negociado numeric, costo_unitario numeric, orden int, tax_rate numeric);
         create table cotizacion_versiones(cotizacion_id uuid, org_id uuid, version int, subtotal numeric, iva numeric, total numeric,
             items jsonb, notas text, iva_incluido boolean);
-        create table cotizacion_cobros(cotizacion_id uuid, status text, stripe_payment_intent_id text);
+        create table cotizacion_cobros(id uuid primary key default gen_random_uuid(), org_id uuid, cotizacion_id uuid, status text,
+            stripe_payment_intent_id text, mp_preference_id text);
+        alter table cotizaciones add column pago_declarado_at timestamptz;
         create function falla_item() returns trigger language plpgsql as $$
         begin if new.descripcion = 'FALLA' then raise exception 'falla simulada'; end if; return new; end $$;
         create trigger trg_falla_item before insert on cotizacion_items for each row execute function falla_item();
@@ -75,7 +84,7 @@ beforeEach(async () => {
     vi.clearAllMocks();
     m.reserve.mockResolvedValue({ ok: true, id: 'res-1' });
     await m.db.exec(`
-        delete from eventos; delete from cotizacion_items; delete from cotizacion_versiones; delete from cotizaciones;
+        delete from eventos; delete from cotizacion_items; delete from cotizacion_versiones; delete from cotizacion_cobros; delete from cotizaciones;
         insert into cotizaciones(id, org_id, folio, status, base_currency, fiscal_currency, fx_rate, total, aprob_estado)
             values ('${QUOTE}', '${ORG}', 'COT-1', 'sent', 'MXN', 'MXN', 1, 100, null);
         insert into cotizacion_items(cotizacion_id, descripcion, cantidad, precio_unitario, orden) values ('${QUOTE}', 'original', 1, 100, 0);
@@ -153,5 +162,31 @@ describe('edición de líneas contra Postgres', () => {
         expect((await m.db.query('select descripcion from cotizacion_items')).rows).toEqual([{ descripcion: 'original' }]);
         expect((await one('select notas, total from cotizaciones'))).toMatchObject({ notas: null });
         expect(Number((await one('select total from cotizaciones')).total)).toBe(100);
+    });
+});
+
+describe('marcar pagada a mano (A2 de la auditoría de oct 2026)', () => {
+    it('cancela los cobros pendientes en la MISMA transacción y vence lo que todavía podía cobrar', async () => {
+        await m.db.exec(`
+            update cotizaciones set status = 'approved' where id = '${QUOTE}';
+            insert into cotizacion_cobros(org_id, cotizacion_id, status, stripe_payment_intent_id, mp_preference_id) values
+                ('${ORG}', '${QUOTE}', 'pendiente', 'pi_card', 'pref_1'),
+                ('${ORG}', '${QUOTE}', 'pagado', 'pi_paid', null);`);
+        const r = await runQuoteAction(ctx, QUOTE, { action: 'paid' });
+        expect(r.status).toBe(200);
+        expect((await m.db.query("select status, stripe_payment_intent_id from cotizacion_cobros order by stripe_payment_intent_id")).rows)
+            .toEqual([{ status: 'cancelado', stripe_payment_intent_id: 'pi_card' }, { status: 'pagado', stripe_payment_intent_id: 'pi_paid' }]);
+        expect(await one(`select status, pago_declarado_at is not null as declarado from cotizaciones where id = '${QUOTE}'`))
+            .toEqual({ status: 'paid', declarado: true });
+        // La preferencia de Mercado Pago también: antes solo se intentaba cancelar el PaymentIntent.
+        expect(m.invalidate).toHaveBeenCalledWith(ORG, [{ id: expect.any(String), pi: 'pi_card', preferencia: 'pref_1' }]);
+    });
+
+    it('una cotización que ya cambió de estado no toca sus cobros', async () => {
+        await m.db.exec(`insert into cotizacion_cobros(org_id, cotizacion_id, status) values ('${ORG}', '${QUOTE}', 'pendiente');`);
+        const r = await runQuoteAction(ctx, QUOTE, { action: 'paid' });
+        expect(r.status).not.toBe(200);
+        expect(await one("select status from cotizacion_cobros")).toEqual({ status: 'pendiente' });
+        expect(m.invalidate).not.toHaveBeenCalled();
     });
 });

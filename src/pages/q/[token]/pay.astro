@@ -73,6 +73,7 @@ const inicial = ((q.nombre as string) || 'C').trim().charAt(0).toUpperCase();
 
 let amount = '';
 let amountLabel = '';
+let pagoEnProceso = false;
 let totalNote = '';
 let cobroId = '';
 let metodos = '';
@@ -136,7 +137,7 @@ if (esRecurrente) {
     // cuya fecha ya llegó. Sin cobros: el total, gateado por términos de crédito
     // (contado = pagable ya; net30/net60 = hasta la fecha de vencimiento).
     let [cobros] = await withOrgTx(orgId, sql`
-        select id, tipo, numero_cuota, monto, status, vence
+        select id, tipo, numero_cuota, monto, status, vence, pago_en_proceso_at
         from cotizacion_cobros
         where org_id = ${orgId} and cotizacion_id = ${q.id}
         order by vence asc nulls first, created_at asc`);
@@ -147,7 +148,7 @@ if (esRecurrente) {
         try {
             await materializeAnticipoCobros(q.id as string, orgId);
             [cobros] = await withOrgTx(orgId, sql`
-                select id, tipo, numero_cuota, monto, status, vence
+                select id, tipo, numero_cuota, monto, status, vence, pago_en_proceso_at
                 from cotizacion_cobros
                 where org_id = ${orgId} and cotizacion_id = ${q.id}
                 order by vence asc nulls first, created_at asc`);
@@ -197,6 +198,10 @@ if (esRecurrente) {
         ? (L === 'en' ? `of a ${fmtMoney(Number(q.total))} total` : `del total de ${fmtMoney(Number(q.total))}`)
         : '';
     cobroId = nextCobro ? (nextCobro.id as string) : '';
+    // Un pago en efectivo que el cliente ya generó (ficha de OXXO, boleto) y que
+    // todavía no se acredita: se le dice antes de que pague por otra vía.
+    const enProceso = nextCobro?.pago_en_proceso_at ? new Date(nextCobro.pago_en_proceso_at as string).getTime() : 0;
+    pagoEnProceso = enProceso > 0 && Date.now() - enProceso < 72 * 3600 * 1000;
     metodos = TIENE_CORD
         ? [q.acepta_tarjeta ? (L === 'en' ? 'Card' : 'Tarjeta') : null, q.cobro_spei_auto ? (L === 'en' ? 'SPEI transfer' : 'Transferencia SPEI') : null].filter(Boolean).join(' · ')
         : (L === 'en' ? 'Card and Mercado Pago' : 'Tarjeta y Mercado Pago');
@@ -246,6 +251,12 @@ import { iconInner } from '../../../lib/icons';
                     </div>
                 ) : (
                     <Fragment>
+                        {pagoEnProceso && (
+                            <div class="payp-proceso" role="status">
+                                <strong>{t(L, 'pay.en_proceso_titulo')}</strong>
+                                <p>{t(L, 'pay.en_proceso_texto')}</p>
+                            </div>
+                        )}
                         {(TIENE_CORD || esRecurrente) && (
                             <div class="payp-element" style={`--theme-color: ${color};`}>
                                 <PaymentIsland client:only="react" token={token} color={color} amountLabel={amount} cobroId={cobroId} subscription={esRecurrente} acceptsCard={!!q.acepta_tarjeta} acceptsSpei={!!q.cobro_spei_auto} checkoutV2={!!q.checkout_v2} strings={PAY_STRINGS} locale={L} />
@@ -281,6 +292,17 @@ import { iconInner } from '../../../lib/icons';
 </Layout>
 
 <style is:global>
+    .payp-proceso {
+        margin: 0 0 18px;
+        padding: 14px 16px;
+        border-radius: 16px;
+        background: #fff7e6;
+        color: #5c3b00;
+        font-size: 14px;
+        line-height: 1.5;
+    }
+    .payp-proceso strong { display: block; margin-bottom: 2px; color: #3d2700; }
+    .payp-proceso p { margin: 0; }
     /* La página de pago es standalone — sin navbar/footer de la landing */
     body:has(.payp) #navbar,
     body:has(.payp) footer:not(.payp-foot) { display: none !important; }

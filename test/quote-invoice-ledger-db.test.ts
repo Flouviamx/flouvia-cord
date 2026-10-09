@@ -20,7 +20,7 @@ vi.mock('../src/lib/fiscal/timeline', () => ({ logInvoiceEvent: m.event }));
 vi.mock('../src/lib/crypto-secret', () => ({ decryptSecret: () => undefined }));
 vi.mock('../src/lib/fiscal/emit', () => ({ metadata: (v: unknown) => v || {}, cleanPrefix: () => 'F', documentTypeFor: () => 'cfdi_40', isBillableCfdi: () => false, money: (n: number) => Math.round(n * 100) / 100, newInvoiceToken: () => crypto.randomUUID() }));
 vi.mock('../src/lib/impuestos-db', () => ({ taxCatalogFor: vi.fn(), TaxCatalogUnavailableError: class extends Error {} }));
-vi.mock('../src/lib/webhooks', () => ({ dispatchQuoteEvent: vi.fn(async () => {}), dispatchInvoiceEvent: vi.fn(async () => {}) }));
+vi.mock('../src/lib/webhooks', () => ({ dispatchQuoteEvent: vi.fn(async () => {}), dispatchInvoiceEvent: vi.fn(async () => {}), dispatchPaymentPartial: vi.fn(async () => {}) }));
 vi.mock('../src/lib/notify', () => ({ notifyQuoteEvent: vi.fn(async () => {}) }));
 vi.mock('../src/lib/integraciones/contabilidad/pagos', () => ({ onPagoFactura: vi.fn(async () => {}) }));
 vi.mock('../src/lib/integraciones/hojas/service', () => ({ onAbonoFactura: vi.fn(async () => {}) }));
@@ -75,7 +75,8 @@ beforeAll(async () => {
     create table cotizacion_cobros (id uuid primary key, org_id uuid not null, cotizacion_id uuid not null references cotizaciones(id),
       tipo text not null, numero_cuota int not null default 0, monto numeric not null, status text not null default 'pendiente',
       stripe_payment_intent_id text, paid_payment_intent_id text, payment_method text, metodo_pago text, paid_at timestamptz,
-      mp_payment_id text, mp_preference_id text, created_at timestamptz default now());
+      mp_payment_id text, mp_preference_id text, pago_en_proceso_at timestamptz, pago_en_proceso_ref text,
+      created_at timestamptz default now());
     create table comisiones (id uuid primary key default gen_random_uuid(), org_id uuid not null, cobro_id uuid,
       stripe_payment_intent_id text not null, created_at timestamptz default now());
     create table cotizacion_pago_intentos (id uuid primary key default gen_random_uuid(), org_id uuid not null, cobro_id uuid not null,
@@ -300,6 +301,7 @@ describe('/q no cobra lo que la factura ya no debe', () => {
 describe('la liquidación de un cobro es atómica y reentrante', () => {
   const settle = (cobroId: string) => settleQuoteCobro(org, {
     cotizacionId: quote, cobroId, monto: 100, moneda: 'MXN', metodo: 'mercadopago', pagoId: 'mp_1', proveedor: 'Mercado Pago',
+    origen: { mpPaymentId: 'mp_1' },
   });
   it('salda la cotización cuando el último cobro se paga', async () => {
     await cobro(saldo, 'total', 100, 'pendiente');
@@ -307,7 +309,8 @@ describe('la liquidación de un cobro es atómica y reentrante', () => {
     expect((await cotizacion()).status).toBe('paid');
   });
   it('un reintento sobre un estado a medias (cobro pagado, cotización sin saldar) lo repara', async () => {
-    await cobro(saldo, 'total', 100, 'pagado');
+    // El intento anterior ya había reclamado el cobro para este mismo pago.
+    await cobro(saldo, 'total', 100, 'pagado', { mp: 'mp_1', metodo: 'mercadopago' });
     expect(await settle(saldo)).toBe('saldada');
     expect((await cotizacion()).status).toBe('paid');
     expect(await settle(saldo)).toBe('repetida');
@@ -408,6 +411,46 @@ describe('Mercado Pago: lo que Cord hace con un pago leído del proveedor', () =
   });
 });
 
+describe('Mercado Pago: un pago en proceso (OXXO, revisión) es visible y no se anuncia de más', () => {
+  const pagoMp = (over: Partial<MpPayment> = {}): MpPayment => ({
+    id: '9001', status: 'pending', monto: 100, moneda: 'MXN', referencia: saldo, metodo: 'ticket',
+    collectorId: '777', liveMode: true, reembolsos: [], ...over,
+  });
+  const fila = async () => (await q('select * from cotizacion_cobros where id=$1', [saldo])).rows[0];
+  const notas = async () => (await q("select detalle from eventos where detalle like '%todavía no se acredita%'")).rows;
+
+  it('marca el cobro y deja UNA nota aunque el aviso llegue varias veces', async () => {
+    await cobro(saldo, 'total', 100, 'pendiente');
+    await processMpPayment(org, '777', pagoMp());
+    await processMpPayment(org, '777', pagoMp());
+    expect(await fila()).toMatchObject({ pago_en_proceso_ref: '9001' });
+    expect(await notas()).toHaveLength(1);
+  });
+
+  it('un rechazo de OTRO pago no lo limpia; la cancelación del mismo sí', async () => {
+    await cobro(saldo, 'total', 100, 'pendiente');
+    await processMpPayment(org, '777', pagoMp());
+    await processMpPayment(org, '777', pagoMp({ id: '7777', status: 'rejected' }));
+    expect((await fila()).pago_en_proceso_ref).toBe('9001');
+    await processMpPayment(org, '777', pagoMp({ status: 'cancelled' }));
+    expect((await fila()).pago_en_proceso_ref).toBeNull();
+  });
+
+  it('sobre un cobro ya pagado no marca ni anuncia nada', async () => {
+    await cobro(saldo, 'total', 100, 'pagado', { mp: '1234', metodo: 'mercadopago' });
+    await processMpPayment(org, '777', pagoMp({ id: '555' }));
+    expect((await fila()).pago_en_proceso_ref).toBeNull();
+    expect(await notas()).toHaveLength(0);
+  });
+
+  it('al acreditarse, el cobro deja de estar en proceso y queda reclamado por ese pago', async () => {
+    await cobro(saldo, 'total', 100, 'pendiente');
+    await processMpPayment(org, '777', pagoMp());
+    await processMpPayment(org, '777', pagoMp({ status: 'approved' }));
+    expect(await fila()).toMatchObject({ status: 'pagado', mp_payment_id: '9001', pago_en_proceso_ref: null });
+  });
+});
+
 describe('revisión adversarial: el dinero que ya se registró a mano no se vuelve a contar', () => {
   it('A: factura ya cerrada con un pago A MANO: la reparación NO hereda el cobro y pide revisar', async () => {
     await emitida();
@@ -448,6 +491,7 @@ describe('revisión adversarial: el dinero que ya se registró a mano no se vuel
     await cobro(saldo, 'saldo', 70, 'cancelado');
     const r = await settleQuoteCobro(org, {
       cotizacionId: quote, cobroId: anticipo, monto: 30, moneda: 'MXN', metodo: 'mercadopago', pagoId: 'mp_x', proveedor: 'Mercado Pago',
+      origen: { mpPaymentId: 'mp_x' },
     });
     expect(r).toBe('parcial');
     expect((await cotizacion()).status).toBe('approved');

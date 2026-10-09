@@ -119,9 +119,13 @@ describe('carreras', () => {
 
     it('marcar pagada dos veces no cancela cobros en la segunda', async () => {
         withStatus('approved');
-        m.rows.set(statusUpdate, []);
+        m.rows.set(statusUpdate, [{ movida: 0, cancelados: [] }]);
         expect((await patch({ action: 'paid' })).status).toBe(409);
-        expect(ran(/update cotizacion_cobros/)).toBe(false);
+        // Los cobros se cancelan en la MISMA sentencia y solo si esa petición
+        // movió la cotización (CTE `movida`); la prueba contra Postgres está
+        // en cotizacion-acciones-db.test.ts.
+        const sentencia = m.queries.find((q) => /update cotizacion_cobros/.test(q.text));
+        expect(sentencia?.text).toMatch(/where cotizacion_id in \(select id from movida\)/);
     });
 
     it('una solicitud de aprobación ya decidida responde 409', async () => {
@@ -249,6 +253,7 @@ describe('approve, reject y paid', () => {
 
     it('paid cancela cobros pendientes y emite quote.paid', async () => {
         withStatus('approved');
+        m.rows.set(statusUpdate, [{ movida: 1, cancelados: [{ id: 'co-1', stripe_payment_intent_id: 'pi_1', mp_preference_id: null }] }]);
         expect((await patch({ action: 'paid' })).status).toBe(200);
         const upd = m.queries.find((q) => /update cotizaciones set status = 'paid'/.test(q.text));
         expect(upd?.values).toContain('transferencia');
@@ -331,6 +336,7 @@ describe('solicitud de aprobación interna', () => {
 describe('errores', () => {
     it('un error inesperado no expone el mensaje crudo', async () => {
         withStatus('approved');
+        m.rows.set(statusUpdate, [{ movida: 1, cancelados: [] }]);
         m.anticipo.mockRejectedValue(new Error('ignorado'));
         m.dispatch.mockImplementation(() => { throw new Error('pi_123 secret leak'); });
         const res = await patch({ action: 'paid' });

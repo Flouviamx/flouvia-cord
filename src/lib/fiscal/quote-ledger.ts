@@ -272,8 +272,14 @@ export function afterQuoteSettledByInvoice(orgId: string, documentoId: string, s
   })());
 }
 
-/** Cancela en el proveedor lo que todavía podría cobrar un cobro que ya no se debe. */
-async function invalidateLiveCharges(orgId: string, cancelados: QuoteSettledByInvoice['cancelados']): Promise<void> {
+/**
+ * Cancela en el proveedor lo que todavía podría cobrar un cobro que ya no se
+ * debe: PaymentIntents de tarjeta todavía cancelables y preferencias de Mercado
+ * Pago. Lo usan la factura que salda su cotización, "marcar pagada" y la
+ * anulación de una factura. Best-effort: lo que aun así se pague llega por el
+ * webhook y queda como importe por devolver, con aviso.
+ */
+export async function invalidateLiveCharges(orgId: string, cancelados: QuoteSettledByInvoice['cancelados']): Promise<void> {
   const pis = cancelados.map((c) => c.pi).filter((pi): pi is string => !!pi && pi.startsWith('pi_'));
   if (pis.length) {
     const [[org]] = await withOrgTx(orgId, sql`select stripe_account_id from orgs where id = ${orgId}`);
@@ -282,13 +288,17 @@ async function invalidateLiveCharges(orgId: string, cancelados: QuoteSettledByIn
       const { stripe } = await import('../billing');
       for (const pi of pis) {
         try {
-          // Un SPEI NO se cancela: su CLABE ya está en manos del cliente, y una
+          // Un SPEI cuya CLABE ya se le mostró al cliente NO se cancela: una
           // transferencia que llegue después de cancelar cae al saldo del
           // customer sin rastro en Cord. Vivo, si se paga, el webhook lo aplica
-          // a la factura como importe por devolver y avisa.
+          // a la factura como importe por devolver y avisa. Lo que decide es
+          // que la CLABE se haya EMITIDO, no que el PaymentIntent admita SPEI:
+          // uno mixto (tarjeta + SPEI) sin instrucciones emitidas sigue
+          // cobrable con tarjeta y sí se cancela.
           const actual = await stripe(`/v1/payment_intents/${encodeURIComponent(pi)}`, undefined, 'GET', { stripeAccount: account });
-          const tipos: string[] = Array.isArray(actual?.payment_method_types) ? actual.payment_method_types : [];
-          if (tipos.includes('customer_balance')) continue;
+          const clabeEmitida = String(actual?.status) === 'requires_action'
+            && actual?.next_action?.type === 'display_bank_transfer_instructions';
+          if (clabeEmitida) continue;
           if (!['requires_payment_method', 'requires_confirmation', 'requires_action'].includes(String(actual?.status))) continue;
           await stripe(`/v1/payment_intents/${encodeURIComponent(pi)}/cancel`, {}, 'POST', { stripeAccount: account });
         } catch (err) {

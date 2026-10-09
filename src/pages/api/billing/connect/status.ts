@@ -64,9 +64,12 @@ export const GET: APIRoute = async ({ request }) => {
                     document_details_code: account.individual.verification.document?.details_code ?? null,
                 } : null,
                 person_id: (org.stripe_person_id as string) || null,
-                external_accounts: (account.external_accounts?.data || []).map((ea: any) => ({
-                    bank_name: ea.bank_name, last4: ea.last4
-                }))
+                // La vigente primero: la UI muestra la primera de la lista.
+                external_accounts: [...(account.external_accounts?.data || [])]
+                    .sort((a: any, b: any) => Number(b?.default_for_currency === true) - Number(a?.default_for_currency === true))
+                    .map((ea: any) => ({
+                        bank_name: ea.bank_name, last4: ea.last4, default_for_currency: ea.default_for_currency === true,
+                    }))
             }
         }), { headers: { 'Content-Type': 'application/json' } });
     } catch (e: any) {

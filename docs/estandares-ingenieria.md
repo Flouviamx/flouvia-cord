@@ -813,6 +813,15 @@ cuatro, y `npm run security:payments` lo verifica derivando el universo del
 4. **Ningún mensaje crudo del proveedor** en la respuesta (regla 14): sólo
    `payerError()` / `merchantError()` / `translateStripeError()`.
 
+Corolario del resultado incierto: **un error al crear un objeto de dinero no
+prueba que no se creó.** Una red caída o un 5xx después de que el proveedor ya
+procesó la petición es tan posible como antes. Solo un rechazo definitivo (4xx que
+no sea 409 ni 429) marca el intento como fallido; todo lo demás deja la fila
+pendiente, reteniendo el saldo, hasta que el webhook o una conciliación la
+resuelvan por la metadata que la liga con su fila (`cord_refund_id` en
+reembolsos, `src/lib/refund-reconcile.ts`). Marcar `failed` a ciegas liberaba el
+saldo y dejaba reembolsar dos veces el mismo dinero.
+
 Corolario del carril público: `/api/q/*` e `/api/i/*` son públicas por diseño
 —el token es la credencial— pero **no** están exentas de CSRF, y ambas deben
 estar en `PUBLIC_API_PREFIXES`. `/api/i/` no lo estaba: los dos endpoints de la
@@ -992,11 +1001,25 @@ documentos: si no se hablan, se le cobra dos veces al cliente. El contrato vive 
   cobro no cabe en el saldo de la factura, el cliente paga desde la factura.
 
 Todo cambio de dinero de una cotización toma `quoteLedgerLock` como PRIMER
-candado de su transacción (webhook de Stripe, webhook de Mercado Pago, emisión y
-`applyPayment`): un orden único evita interbloqueos y cierra la ventana en que un
-cobro marcado pagado mientras la factura se emitía quedaba fuera de los dos
-ledgers. Un pago que llega a una factura que ya no lo debía no se pierde ni se
-oculta: queda como `refund_due` con aviso.
+candado de su transacción (webhook de Stripe, webhook de Mercado Pago, emisión,
+`applyPayment` y "marcar pagada"): un orden único evita interbloqueos y cierra la
+ventana en que un cobro marcado pagado mientras la factura se emitía quedaba fuera
+de los dos ledgers. Un pago que llega a una factura que ya no lo debía no se pierde
+ni se oculta: queda como `refund_due` con aviso.
+
+**Un cobro se liquida por UN solo camino** (`settleQuoteCobro`,
+`src/lib/cobros-settle.ts`), sea cual sea el riel: marcar el cobro, cancelar
+sobrantes, saldar la cotización y escribir su historia van en una transacción, y
+los avisos salen con `after()` antes de cualquier efecto que pueda fallar. La copia
+que el webhook de Stripe tenía en tres transacciones dejaba la cotización sin saldar
+para siempre si fallaba a la mitad, y esperaba a PostHog dentro del camino del
+dinero. El mismo camino distingue el **dinero de más**: un cobro que ya pagó OTRO
+pago, o un cobro cancelado de una cotización ya saldada, no se vuelve a marcar; se
+avisa una vez y se aplica a la factura viva como importe por devolver, sin contarlo
+como ingreso. El pago que paga el cobro queda escrito en la MISMA sentencia que lo
+marca (`paid_payment_intent_id` o `mp_payment_id`), y solo ese pago escribe después
+el cargo, el método y el neto del cobro: un duplicado registra su comisión, pero no
+pisa el cargo con el que se liga una disputa.
 
 Caso que originó la regla (oct 2026): el flujo más común de México —el cliente
 paga en `/q`, el vendedor timbra después— producía una factura abierta con el
@@ -1037,6 +1060,14 @@ respuesta es 5xx y el proveedor reintenta —Mercado Pago lo hace durante días�
 error PERMANENTE (factura anulada, divisa distinta) es lo contrario: se registra en
 la historia del documento, se avisa UNA vez y se responde 200, porque reintentarlo
 durante días solo produce una alerta por intento.
+
+En Stripe el mismo contrato tiene dos piezas (`src/pages/api/stripe/webhook.ts`):
+un `PermanentWebhookError` que da el evento por atendido con UN aviso, y un
+**presupuesto de reintentos**: el claim de `stripe_events` ya no se borra al fallar,
+así que su `attempt_count` sobrevive, y a los 8 intentos el evento se cierra con
+`last_error = 'revision: …'` para que Ops lo vea. Un error que solo es de orden (un
+evento que llegó antes que otro) se resuelve dentro de ese presupuesto; uno que no se
+resuelve deja de producir una alerta por intento durante tres días.
 
 Tres reglas de apoyo:
 

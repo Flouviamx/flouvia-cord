@@ -32,7 +32,7 @@ import { FiscalFactory } from './FiscalFactory';
 import { partiesFrom } from './parties';
 import { creditNoteBreakdown } from './credit-note';
 import { invoiceBalanceLock, invoiceBalanceQuery, reconcileInvoice } from './reconciliation';
-import { inheritanceQueries, quoteLedgerLock, readInheritance, recordInheritance } from './quote-ledger';
+import { inheritanceQueries, invalidateLiveCharges, quoteLedgerLock, readInheritance, recordInheritance } from './quote-ledger';
 import { taxCatalogFor, TaxCatalogUnavailableError } from '../impuestos-db';
 import {
   cleanPrefix,
@@ -729,6 +729,7 @@ export async function voidInvoice(
 ): Promise<VoidResult> {
   const [rows] = await withOrgTx(orgId, sql`
     select d.id, d.lifecycle, d.status, d.amount_paid, d.country_code, d.credit_note_of,
+           d.stripe_payment_intent_id, d.mp_preference_id,
            exists (select 1 from documentos_fiscales n where n.credit_note_of = d.id and n.org_id = d.org_id and n.lifecycle <> 'void') as has_credit_notes,
            d.provider_document_id, d.provider_data, d.document_type, d.provider,
            o.facturapi_live_key, o.facturapi_live_key_enc, o.sandbox_of
@@ -766,6 +767,7 @@ export async function voidInvoice(
        where id = ${documentId} and org_id = ${orgId}`,
       ...(doc.credit_note_of ? [invoiceBalanceQuery(orgId, String(doc.credit_note_of))] : []),
     );
+    invalidateVoidedInvoiceCharges(orgId, doc);
     return { ok: true };
   }
 
@@ -813,7 +815,22 @@ export async function voidInvoice(
     ...(doc.credit_note_of ? [invoiceBalanceQuery(orgId, String(doc.credit_note_of))] : []),
   );
   await logInvoiceEvent(orgId, documentId, 'void', reason ? `Anulada: ${reason}` : 'Anulada');
+  invalidateVoidedInvoiceCharges(orgId, doc);
   return { ok: true, cancellationStatus: 'accepted' };
+}
+
+/**
+ * Una factura anulada no se puede seguir cobrando: su PaymentIntent de tarjeta
+ * y su preferencia de Mercado Pago se cancelan. Antes quedaban vivos y el
+ * cliente podía pagar una factura que ya no existía. Lo que aun así se pague
+ * (un SPEI ya emitido) llega al webhook, queda en la historia de la factura y
+ * se avisa una vez.
+ */
+function invalidateVoidedInvoiceCharges(orgId: string, doc: Record<string, any>): void {
+  const pi = doc.stripe_payment_intent_id ? String(doc.stripe_payment_intent_id) : null;
+  const preferencia = doc.mp_preference_id ? String(doc.mp_preference_id) : null;
+  if (!pi && !preferencia) return;
+  after(invalidateLiveCharges(orgId, [{ id: String(doc.id), pi, preferencia }]));
 }
 
 /**

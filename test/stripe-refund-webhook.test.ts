@@ -62,7 +62,7 @@ describe('despacho de refund.updated', () => {
         mocks.tx.mockRejectedValue(new Error('database unavailable'));
         const result = await deliver({ id: 're_fixture', charge: 'ch_fixture', status: 'succeeded' });
         expect(result.status).toBe(500);
-        expect(queries.some(q => q.text.includes('delete from stripe_events'))).toBe(true);
+        expect(queries.some(q => q.text.includes('set claim_token = null, claimed_at = null'))).toBe(true);
         expect(queries.some(q => q.text.includes('set processed_at = now()'))).toBe(false);
     });
     it('concilia un refund de factura aunque no exista cobro de cotización', async () => {
@@ -84,7 +84,7 @@ describe('despacho de refund.updated', () => {
         mocks.stripe.mockRejectedValue(new Error('provider unavailable'));
         expect((await deliver({ id: 're_invoice' })).status).toBe(500);
         expect(queries.some(q => q.text.includes('insert into documento_reembolsos'))).toBe(false);
-        expect(queries.some(q => q.text.includes('delete from stripe_events'))).toBe(true);
+        expect(queries.some(q => q.text.includes('set claim_token = null, claimed_at = null'))).toBe(true);
     });
 
 });

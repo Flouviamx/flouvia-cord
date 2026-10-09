@@ -314,3 +314,14 @@ export function stripeExternalAccountFields(
     base['external_account[account_number]'] = values.account_number;
     return base;
 }
+
+/**
+ * La cuenta de depósito VIGENTE de una cuenta conectada: la marcada como
+ * predeterminada para su divisa. Una cuenta puede tener varias (la anterior se
+ * conserva al cambiar), y tomar la primera de la lista mostraba una cuenta a la
+ * que Stripe ya no depositaba.
+ */
+export function cuentaDeDepositoVigente<T extends { default_for_currency?: boolean | null }>(cuentas: T[] | null | undefined): T | null {
+    const lista = Array.isArray(cuentas) ? cuentas : [];
+    return lista.find((c) => c?.default_for_currency === true) ?? lista[0] ?? null;
+}

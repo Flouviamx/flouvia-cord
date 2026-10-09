@@ -4,7 +4,7 @@ import type { APIRoute } from 'astro';
 import { createHash, randomBytes } from 'node:crypto';
 import { z } from 'zod';
 import { sql, getActiveOrgId, logAudit, reqIp, withOrgTx } from '../../../../lib/db';
-import { currentUserId } from '../../../../lib/context';
+import { currentLocale, currentUserId } from '../../../../lib/context';
 import { requirePerm } from '../../../../lib/queries';
 import { requireFreshAuth } from '../../../../lib/step-up';
 import { strictLimitResponse, strictRateLimit } from '../../../../lib/ratelimit';
@@ -13,6 +13,7 @@ import { stripe } from '../../../../lib/billing';
 import { merchantError } from '../../../../lib/pay-errors';
 import { fromMinorUnits, normalizeCurrency, toMinorUnits } from '../../../../lib/currency';
 import { log } from '../../../../lib/log';
+import { conciliarReembolsosInciertos, esRechazoDefinitivo, REFUND_HOLDING_STATUSES } from '../../../../lib/refund-reconcile';
 
 const requestSchema = z.object({
     nonce: z.string().min(24).max(200),
@@ -32,10 +33,22 @@ export const GET: APIRoute = async ({ params }) => {
     const limited = strictLimitResponse(await strictRateLimit(`refund-nonce:${orgId}`, 20, 3600));
     if (limited) return limited;
 
+    // Antes de calcular cuánto queda por devolver, se resuelven los reembolsos
+    // cuyo resultado no se supo: un incierto que sí se creó retiene saldo.
+    const [[ctx]] = await withOrgTx(orgId, sql`
+        select coalesce(c.paid_payment_intent_id, c.stripe_payment_intent_id) as pi, o.stripe_account_id
+          from cotizacion_cobros c join orgs o on o.id = c.org_id
+         where c.id = ${cobroId} and c.org_id = ${orgId}`);
+    if (ctx) {
+        await conciliarReembolsosInciertos(orgId, cobroId, {
+            account: ctx.stripe_account_id ? String(ctx.stripe_account_id) : null,
+            paymentIntentId: ctx.pi ? String(ctx.pi) : null,
+        });
+    }
     const [[cobro]] = await withOrgTx(orgId, sql`
         select c.id, c.monto, c.payment_method, c.metodo_pago,
                coalesce(q.base_currency, o.moneda, 'MXN') as moneda,
-               coalesce(sum(r.amount_cents) filter (where r.status in ('pending','succeeded','pending_manual')), 0) as refunded
+               coalesce(sum(r.amount_cents) filter (where r.status = any(${REFUND_HOLDING_STATUSES as unknown as string[]}::text[])), 0) as refunded
           from cotizacion_cobros c
           join cotizaciones q on q.id = c.cotizacion_id
           join orgs o on o.id = c.org_id
@@ -84,11 +97,14 @@ export const POST: APIRoute = async ({ request, params }) => {
                and consumed_at is null and expires_at > now()
                and max_amount_cents >= ${parsed.data.amountCents}
             returning id`,
+        // El PaymentIntent que PAGÓ el cobro, no el último que se le presentó:
+        // un cobro puede tener varios intentos y reembolsar el equivocado falla.
         sql`select c.id, c.cotizacion_id, c.monto, c.payment_method, c.metodo_pago,
-                   c.stripe_payment_intent_id, o.stripe_account_id,
+                   coalesce(c.paid_payment_intent_id, c.stripe_payment_intent_id) as stripe_payment_intent_id,
+                   o.stripe_account_id,
                    coalesce(q.base_currency, o.moneda, 'MXN') as moneda,
                    coalesce((select sum(r.amount_cents) from cobro_reembolsos r
-                             where r.cobro_id = c.id and r.status in ('pending','succeeded','pending_manual')), 0) as refunded
+                             where r.cobro_id = c.id and r.status = any(${REFUND_HOLDING_STATUSES as unknown as string[]}::text[])), 0) as refunded
               from cotizacion_cobros c
               join cotizaciones q on q.id = c.cotizacion_id
               join orgs o on o.id = c.org_id
@@ -134,21 +150,44 @@ export const POST: APIRoute = async ({ request, params }) => {
             refund_application_fee: 'false',
             'metadata[cobro_id]': cobroId,
             'metadata[org_id]': orgId,
+            // Liga el reembolso con SU fila: el webhook y la conciliación la
+            // encuentran por aquí aunque esta petición no alcance a guardar el id.
+            'metadata[cord_refund_id]': String(nonce.id),
         }, 'POST', {
             stripeAccount: String(cobro.stripe_account_id),
             idempotencyKey: `refund-${nonceHash}`,
         });
+        // Si el webhook llegó antes, la fila ya tiene id y un estado más nuevo:
+        // no se pisa con el de la respuesta de creación.
         await withOrgTx(orgId, sql`
             update cobro_reembolsos set stripe_refund_id = ${refund.id},
                    status = ${refund.status || 'pending'}, updated_at = now()
-             where id = ${nonce.id} and org_id = ${orgId}`);
+             where id = ${nonce.id} and org_id = ${orgId} and stripe_refund_id is null`);
         await logAudit(orgId, { accion: 'cord_pagos.reembolso_solicitado', entidad: 'cobro', entidad_id: cobroId, detalle: auditDetail, ip: reqIp(request) });
         return json({ ok: true, status: refund.status || 'pending', refundId: refund.id }, 202);
     } catch (error) {
         const safe = merchantError(error);
+        if (!esRechazoDefinitivo(error)) {
+            // No se sabe si el reembolso se creó: la fila sigue `pending` y
+            // retiene el saldo. El webhook o la conciliación la resuelven; nunca
+            // se libera el saldo para un segundo reembolso del mismo dinero.
+            await withOrgTx(orgId, sql`
+                update cobro_reembolsos set failure_reason = ${`incierto:${safe.reference}`}, updated_at = now()
+                 where id = ${nonce.id} and org_id = ${orgId} and stripe_refund_id is null`);
+            log.error('resultado del reembolso incierto', { route: 'refund', orgId, cobroId, reference: safe.reference });
+            return json({
+                ok: true,
+                status: 'pending',
+                uncertain: true,
+                message: currentLocale() === 'en'
+                    ? "The processor didn't confirm the refund. We're checking it; don't request it again."
+                    : 'El procesador no confirmó el reembolso. Lo estamos verificando; no lo vuelvas a pedir.',
+                reference: safe.reference,
+            }, 202);
+        }
         await withOrgTx(orgId, sql`
             update cobro_reembolsos set status = 'failed', failure_reason = ${safe.reference}, updated_at = now()
-             where id = ${nonce.id} and org_id = ${orgId}`);
+             where id = ${nonce.id} and org_id = ${orgId} and stripe_refund_id is null`);
         log.error('proveedor rechazó operación', { route: 'refund', orgId, cobroId, reference: safe.reference });
         return json({ error: safe.message, reference: safe.reference }, 502);
     }

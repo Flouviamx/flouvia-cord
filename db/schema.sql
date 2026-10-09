@@ -1792,6 +1792,13 @@ alter table cotizacion_cobros add column if not exists metodo_pago text;
 -- unique del pago es lo que hace idempotente el webhook, que Mercado Pago
 -- reenvía varias veces por diseño.
 alter table cotizacion_cobros add column if not exists mp_preference_id text;
+-- Un pago que el cliente ya inició y todavía no se acredita (ficha de OXXO,
+-- boleto, pago en revisión). El link lo dice para que no se pague dos veces.
+alter table cotizacion_cobros add column if not exists pago_en_proceso_at timestamptz;
+alter table cotizacion_cobros add column if not exists pago_en_proceso_ref text;
+-- Los avisos "una sola vez" (src/lib/cobros-settle.ts, `avisarUnaVez`) buscan su
+-- marca en audit_log por acción y clave en cada aviso de proveedor.
+create index if not exists idx_audit_log_accion_entidad on audit_log(org_id, accion, entidad_id);
 alter table cotizacion_cobros add column if not exists mp_payment_id text;
 alter table cotizacion_cobros add column if not exists mp_preference_at timestamptz;
 create unique index if not exists uq_cobros_mp_payment on cotizacion_cobros(org_id, mp_payment_id)

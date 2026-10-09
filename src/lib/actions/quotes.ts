@@ -12,7 +12,7 @@ import { sanitizeItem, calculateDocumentTotals } from '../../../packages/element
 import { taxCatalogFor, TaxCatalogUnavailableError } from '../impuestos-db';
 import { trackServer } from '../posthog-server';
 import { normalizeCurrency } from '../currency';
-import { liveInvoiceForQuote, quoteLedgerLock, reconcileInvoiceWithQuote } from '../fiscal/quote-ledger';
+import { invalidateLiveCharges, liveInvoiceForQuote, quoteLedgerLock, readSettledQuote, reconcileInvoiceWithQuote } from '../fiscal/quote-ledger';
 import { FXService, FXUnavailableError } from '../fx/FXService';
 import { type ActionContext, type ActionOutcome, auditAction, done, fromResponse } from './outcome';
 
@@ -311,36 +311,31 @@ export async function runQuoteAction(ctx: ActionContext, id: string, input: Reco
         // la declaración EXPLÍCITA (`pago_declarado_at`): es lo único que la
         // factura hereda como "pagado a mano". Inferirlo de `paid_at` contaba
         // como declarado un saldo que en realidad pagó la factura.
-        const [, moved] = await withOrgTx(orgId,
+        // La cotización y sus cobros pendientes cambian en UNA sentencia: los
+        // cobros se cancelan solo si ESTA petición movió la cotización. Antes
+        // eran dos transacciones, y entre una y otra un pago podía caer sobre
+        // un cobro que ya no se debía.
+        const [, [paso]] = await withOrgTx(orgId,
             quoteLedgerLock(orgId, id),
-            sql`update cotizaciones set status = 'paid', paid_at = coalesce(paid_at, ${now}),
-                       payment_method = coalesce(payment_method, ${method}),
-                       pago_declarado_at = coalesce(pago_declarado_at, ${now})
-                 where id = ${id} and org_id = ${orgId} and status = any(${action.from}::text[]) returning id`);
-        if (!moved.length) return lostRace();
-        const stripeKey = import.meta.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY;
-        const [pendientesPI] = await withOrgTx(orgId, sql`
-            select co.stripe_payment_intent_id, o.stripe_account_id
-            from cotizacion_cobros co
-            join cotizaciones c on c.id = co.cotizacion_id
-            join orgs o on o.id = c.org_id
-            where co.cotizacion_id = ${id} and co.status = 'pendiente'
-              and co.stripe_payment_intent_id is not null`);
-        if (stripeKey) {
-            for (const p of pendientesPI) {
-                try {
-                    await fetch(`https://api.stripe.com/v1/payment_intents/${p.stripe_payment_intent_id}/cancel`, {
-                        method: 'POST',
-                        headers: {
-                            Authorization: `Bearer ${stripeKey}`,
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                            ...(p.stripe_account_id ? { 'Stripe-Account': p.stripe_account_id as string } : {}),
-                        },
-                    });
-                } catch { /* el webhook concilia si aun así se paga */ }
-            }
-        }
-        await withOrgTx(orgId, sql`update cotizacion_cobros set status = 'cancelado' where cotizacion_id = ${id} and org_id = ${orgId} and status = 'pendiente'`);
+            sql`with movida as (
+                    update cotizaciones set status = 'paid', paid_at = coalesce(paid_at, ${now}),
+                           payment_method = coalesce(payment_method, ${method}),
+                           pago_declarado_at = coalesce(pago_declarado_at, ${now})
+                     where id = ${id} and org_id = ${orgId} and status = any(${action.from}::text[])
+                    returning id),
+                cancelados as (
+                    update cotizacion_cobros set status = 'cancelado'
+                     where cotizacion_id in (select id from movida) and org_id = ${orgId} and status = 'pendiente'
+                    returning id, stripe_payment_intent_id, mp_preference_id)
+                select (select count(*) from movida)::int as movida,
+                       coalesce((select json_agg(cancelados) from cancelados), '[]'::json) as cancelados`);
+        if (!paso || !Number(paso.movida)) return lostRace();
+        const cancelados = Array.isArray(paso.cancelados) ? paso.cancelados : [];
+        // Lo que todavía podría cobrar esos cobros se cancela en el proveedor:
+        // tarjetas y preferencias de Mercado Pago. Un SPEI no se cancela (su
+        // CLABE ya está en manos del cliente); si llega, queda como pago de más
+        // con aviso, nunca perdido.
+        after(invalidateLiveCharges(orgId, readSettledQuote([], cancelados).cancelados));
         // Si la cotización ya tiene factura viva, "pagada" tiene que llegar a la
         // FACTURA: si no, seguía abierta en cartera, recordatorios, intereses y
         // con su link de pago vivo (regla 37). La herencia lo aplica como pago

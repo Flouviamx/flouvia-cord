@@ -26,6 +26,7 @@ import { stripe, getBalance, retrieveAccount } from './billing';
 import { cached } from './cache';
 import { rateLimit } from './ratelimit';
 import { fromMinorUnits } from './currency';
+import { cuentaDeDepositoVigente } from './payout-fields';
 import { sql, withOrgTx } from './db';
 
 import { log } from './log';
@@ -265,7 +266,7 @@ export async function getConnectHealth(orgId: string, acct: string, org: Record<
     return cached(`stripe:health:${orgId}`, 300, async () => {
         const acc = await retrieveAccount(acct);
         const r = acc?.requirements || {};
-        const ext = (acc?.external_accounts?.data || [])[0];
+        const ext = cuentaDeDepositoVigente<any>(acc?.external_accounts?.data);
         return {
             chargesEnabled: !!acc?.charges_enabled,
             payoutsEnabled: !!acc?.payouts_enabled,

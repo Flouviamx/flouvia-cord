@@ -76,7 +76,9 @@ describe('comisiones de factura por webhook firmado', () => {
         m.fee.mockRejectedValueOnce(new Error('provider unavailable'));
         m.apply.mockResolvedValueOnce({ ok: true, justPaid: true }).mockResolvedValueOnce({ ok: true, justPaid: false });
         expect((await deliver()).status).toBe(500);
-        expect(queries.some(q => q.includes('delete from stripe_events'))).toBe(true);
+        // El claim se libera para el reintento, pero la fila se queda: su
+        // contador de intentos es el presupuesto antes de mandarlo a revisión.
+        expect(queries.some(q => q.includes('set claim_token = null, claimed_at = null'))).toBe(true);
         expect(queries.some(q => q.includes('set processed_at = now()'))).toBe(false);
         expect(m.dispatch).toHaveBeenCalledWith('org-seller', 'doc_invoice', 'invoice.paid');
         expect(m.dispatch.mock.invocationCallOrder[0]).toBeLessThan(m.fee.mock.invocationCallOrder[0]);
@@ -86,9 +88,12 @@ describe('comisiones de factura por webhook firmado', () => {
         expect(m.track).toHaveBeenCalledTimes(1);
     });
     it('no registra comisión si el pago no pudo aplicarse a la factura', async () => {
+        // Un rechazo de applyPayment es permanente (regla 39): se avisa UNA vez y
+        // se responde 200; reintentarlo tres días no lo arregla.
         m.apply.mockResolvedValue({ ok: false, error: 'Documento inválido' });
-        expect((await deliver()).status).toBe(500);
+        expect((await deliver()).status).toBe(200);
         expect(m.fee).not.toHaveBeenCalled(); expect(m.dispatch).not.toHaveBeenCalled();
+        expect(m.alert).toHaveBeenCalledWith('Pago sin aplicar a factura', expect.stringContaining('pi_invoice'));
     });
     it('avisa de un desglose incierto sin negar un pago ya confirmado', async () => {
         m.fee.mockResolvedValue('needs_review');

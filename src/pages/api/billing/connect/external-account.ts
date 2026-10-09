@@ -3,7 +3,7 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { sql, getActiveOrgId, reqIp, withOrgTx } from '../../../../lib/db';
 import { requirePerm } from '../../../../lib/queries';
-import { createExternalAccount, retrieveAccount } from '../../../../lib/billing';
+import { createExternalAccount, retrieveAccount, stripe } from '../../../../lib/billing';
 import { translateStripeError } from '../../../../lib/stripe-catalogs';
 import { encryptRequiredSecret } from '../../../../lib/crypto-secret';
 import { auditConnect } from '../../../../lib/connect-audit';
@@ -74,7 +74,23 @@ export const POST: APIRoute = async ({ request }) => {
             values,
         );
 
-        const result = await createExternalAccount(org.stripe_account_id as string, reqFields);
+        // `default_for_currency`: sin esto Stripe AGREGABA la cuenta nueva y
+        // seguía depositando en la anterior, mientras Cord mostraba la nueva.
+        // La anterior se conserva (no se borra): si el cambio no lo hizo el
+        // dueño, es la cuenta a la que se regresa.
+        const result = await createExternalAccount(org.stripe_account_id as string, {
+            ...reqFields,
+            default_for_currency: 'true',
+        });
+        if (result?.default_for_currency !== true) {
+            // Stripe no la dejó como predeterminada: se borra, para que no quede
+            // colgada y cada reintento agregue otra.
+            if (result?.id) {
+                await stripe(`/v1/accounts/${encodeURIComponent(org.stripe_account_id as string)}/external_accounts/${encodeURIComponent(String(result.id))}`, undefined, 'DELETE')
+                    .catch(() => { /* la cuenta sigue sin ser predeterminada: no recibe depósitos */ });
+            }
+            throw new Error('La cuenta nueva no quedó como cuenta de depósito predeterminada.');
+        }
 
         // Las columnas se llaman `banco_clabe*` por herencia mexicana; guardan la
         // cuenta de depósito sea cual sea su formato. Renombrarlas es una

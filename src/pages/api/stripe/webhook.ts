@@ -24,14 +24,34 @@ import { sendOpsAlert } from '../../../lib/ops-alert';
 import { sendEmail, siteOrigin } from '../../../lib/email';
 import { computeSubscriptionFee } from '../../../lib/fees';
 import { quoteLedgerLock } from '../../../lib/fiscal/quote-ledger';
+import { avisarUnaVez, settleQuoteCobro, type SettleResult } from '../../../lib/cobros-settle';
+import { logInvoiceEvent } from '../../../lib/fiscal/timeline';
 import { applyPayment } from '../../../lib/fiscal/payments';
 import { recordInvoiceRefund } from '../../../lib/fiscal/reconciliation';
 import { reconcileInvoiceCommission } from '../../../lib/invoice-payment-fees';
 import { invalidateMoneyCaches } from '../../../lib/queries';
 import { fromMinorUnits, normalizeCurrency, toMinorUnits } from '../../../lib/currency';
 import { log } from '../../../lib/log';
+import { cordRefundIdDe } from '../../../lib/refund-reconcile';
 
 const WH_SECRET = import.meta.env.STRIPE_WEBHOOK_SECRET || process.env.STRIPE_WEBHOOK_SECRET;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Un error que reintentar no arregla: el evento se da por atendido, se guarda
+ * el motivo y se avisa UNA vez (regla 39). Responder 500 a algo permanente
+ * hacía que Stripe reintentara tres días con una alerta por intento.
+ */
+class PermanentWebhookError extends Error {}
+
+/**
+ * Presupuesto de reintentos. Un error que se repite tantas veces ya no es una
+ * falla momentánea ni un evento que llegó antes que otro: se manda a revisión
+ * con el mismo trato que un error permanente. El evento queda en
+ * `stripe_events` con su `last_error`; Ops lo reprocesa borrando su
+ * `processed_at` y reenviándolo desde el dashboard de Stripe.
+ */
+const MAX_ATTEMPTS = 8;
 const CONNECT_WH_SECRET = import.meta.env.STRIPE_CONNECT_WEBHOOK_SECRET || process.env.STRIPE_CONNECT_WEBHOOK_SECRET;
 
 export const POST: APIRoute = async ({ request }) => {
@@ -118,6 +138,7 @@ export const POST: APIRoute = async ({ request }) => {
     if (claim.state === 'in_flight') {
         return new Response('evento en proceso', { status: 409, headers: { 'Retry-After': '300' } });
     }
+    const claimToken = claim.token;
 
     try {
         await handleStripeEvent(event);
@@ -130,9 +151,32 @@ export const POST: APIRoute = async ({ request }) => {
         return ok();
     } catch (error) {
         log.error('fallo procesando el evento', { route: 'stripe-webhook', eventId: event.id, eventType: event.type, err: error });
+        const motivo = String((error as Error)?.message || error).slice(0, 500);
+        if (error instanceof PermanentWebhookError || claim.attempts >= MAX_ATTEMPTS) {
+            // Se da por atendido: Stripe deja de reintentar y Ops recibe UN aviso
+            // con el motivo. El dinero no se mueve aquí; el evento queda para
+            // revisión en stripe_events.
+            try {
+                const [cerrado] = await sql`
+                    update stripe_events
+                       set processed_at = now(), claim_token = null, last_error = ${`revision: ${motivo}`}
+                     where id = ${event.id} and claim_token = ${claimToken} and processed_at is null
+                    returning id`;
+                if (cerrado) {
+                    after(sendOpsAlert('Evento de Stripe enviado a revisión',
+                        `${event.type} ${event.id}; intentos ${claim.attempts}; ${motivo}`));
+                    return ok();
+                }
+            } catch (closeError) {
+                log.error('no se pudo cerrar el evento para revisión', { route: 'stripe-webhook', eventId: event.id, err: closeError });
+            }
+        }
         try {
-            await sql`delete from stripe_events
-                       where id = ${event.id} and claim_token = ${claim.token} and processed_at is null`;
+            // El claim se libera para el siguiente reintento, pero la fila se
+            // queda: su contador de intentos es el presupuesto de arriba.
+            await sql`update stripe_events
+                         set claim_token = null, claimed_at = null, last_error = ${motivo}
+                       where id = ${event.id} and claim_token = ${claimToken} and processed_at is null`;
         } catch (cleanupError) {
             log.error('no se pudo liberar el claim del evento', { route: 'stripe-webhook', eventId: event.id, err: cleanupError });
         }
@@ -141,7 +185,7 @@ export const POST: APIRoute = async ({ request }) => {
 };
 
 type StripeEventClaim =
-    | { state: 'claimed'; token: string }
+    | { state: 'claimed'; token: string; attempts: number }
     | { state: 'processed' }
     | { state: 'in_flight' };
 
@@ -152,17 +196,17 @@ async function claimStripeEvent(id: string, type: string): Promise<StripeEventCl
         values (${id}, ${type}, now(), ${token}, 1)
         on conflict (id) do nothing
         returning id`;
-    if (inserted.length) return { state: 'claimed', token };
+    if (inserted.length) return { state: 'claimed', token, attempts: 1 };
 
     const reclaimed = await sql`
         update stripe_events
            set type = ${type}, claimed_at = now(), claim_token = ${token},
-               attempt_count = attempt_count + 1, last_error = null
+               attempt_count = attempt_count + 1
          where id = ${id}
            and processed_at is null
            and (claimed_at is null or claimed_at < now() - interval '5 minutes')
-        returning id`;
-    if (reclaimed.length) return { state: 'claimed', token };
+        returning attempt_count`;
+    if (reclaimed.length) return { state: 'claimed', token, attempts: Number(reclaimed[0].attempt_count) || 1 };
 
     const [existing] = await sql`select processed_at from stripe_events where id = ${id}`;
     return existing?.processed_at ? { state: 'processed' } : { state: 'in_flight' };
@@ -184,10 +228,12 @@ async function handleStripeEvent(event: any): Promise<void> {
         }
         case 'payment_intent.succeeded': {
             await markBuildPayment(obj);
-            await markQuotePaid(obj, event.account, event.type);
+            const liquidacion = await markQuotePaid(obj, event.account, event.type);
             // Y, por separado, el saldo de la FACTURA. Son dos ledgers: el de
-            // la cotización (cotizacion_cobros) y el del documento fiscal.
-            await settleInvoiceFromIntent(obj, event.account);
+            // la cotización (cotizacion_cobros) y el del documento fiscal. Un
+            // pago duplicado también llega a la factura —ahí queda como importe
+            // por devolver—, pero sin ligarse al cobro que pagó otro.
+            await settleInvoiceFromIntent(obj, event.account, liquidacion === 'duplicado');
             break;
         }
         case 'payment_intent.payment_failed': {
@@ -365,7 +411,7 @@ async function orgForBilling(subscription: string | undefined, customer: string 
  * reintenta sus webhooks por diseño, y sin esa garantía un reintento aplicaría
  * el mismo dinero dos veces.
  */
-async function settleInvoiceFromIntent(intent: any, account?: string): Promise<void> {
+async function settleInvoiceFromIntent(intent: any, account?: string, duplicado = false): Promise<void> {
     const docId = intent?.metadata?.documento_id as string | undefined;
     const quoteId = intent?.metadata?.cotizacion_id as string | undefined;
     if (!docId && !quoteId) return;
@@ -406,12 +452,24 @@ async function settleInvoiceFromIntent(intent: any, account?: string): Promise<v
         metodo: 'stripe',
         stripePaymentIntentId: String(intent?.id || ''),
         referencia: String(intent?.id || ''),
-        cobroId: !docId && cobroId && /^[0-9a-f-]{36}$/i.test(cobroId) ? cobroId : null,
+        cobroId: !docId && !duplicado && cobroId && UUID_RE.test(cobroId) ? cobroId : null,
     });
     if (!result.ok) {
-        await sendOpsAlert('Pago sin aplicar a factura',
-            `Organización ${orgId}; documento ${targetId}; PI ${intent?.id}; ${result.error}`);
-        throw new Error('No se pudo conciliar el pago de la factura.');
+        // Un rechazo de `applyPayment` es PERMANENTE (factura anulada, divisa
+        // distinta, borrador): reintentarlo tres días solo producía una alerta
+        // por intento y el dinero seguía sin aparecer en ningún lado. Se
+        // registra en la historia de la factura y se avisa UNA vez (regla 39);
+        // el pago ya está en la cuenta del negocio y alguien decide si se
+        // devuelve. Las fallas temporales lanzan desde applyPayment y sí se
+        // reintentan.
+        const pagoId = String(intent?.id || '');
+        await avisarUnaVez(orgId, 'stripe.factura_no_aplicada', `${pagoId}:${targetId}`, async () => {
+            await logInvoiceEvent(orgId, targetId, 'payment',
+                `Llegó un pago de ${monto} ${currency} con Cord Payments que no se pudo aplicar a esta factura (${result.error}). Revisa si hay que devolverlo.`);
+            after(sendOpsAlert('Pago sin aplicar a factura',
+                `Organización ${orgId}; documento ${targetId}; PI ${pagoId}; ${result.error}`));
+        }, 'documento');
+        return;
     }
     // Enqueue the paid transition before fee reconciliation can request a retry;
     // applyPayment is idempotent and will not repeat justPaid on that retry.
@@ -619,7 +677,8 @@ async function recordRefundEvent(refundOrCharge: any, account: string | undefine
     const [[cobro]] = await withOrgTx(orgId, sql`
         select id from cotizacion_cobros
          where org_id = ${orgId}
-           and (stripe_charge_id = ${chargeId} or stripe_payment_intent_id = ${paymentIntentId})
+           and (stripe_charge_id = ${chargeId} or stripe_payment_intent_id = ${paymentIntentId}
+                or paid_payment_intent_id = ${paymentIntentId})
          limit 1`);
     const refundType: WebhookEvent | null = status === 'succeeded' ? 'refund.succeeded' : status === 'failed' ? 'refund.failed' : null;
     const refundData = async (cobroId: string | null) => ({
@@ -635,16 +694,29 @@ async function recordRefundEvent(refundOrCharge: any, account: string | undefine
         return;
     }
 
+    // El reembolso que pidió Cord trae en su metadata el id de SU fila: se
+    // completa esa fila en vez de insertar otra. Antes, si el webhook llegaba
+    // antes de que la petición guardara el id, el mismo reembolso quedaba dos
+    // veces y el saldo devuelto se contaba doble.
+    const cordRefundId = cordRefundIdDe(refundOrCharge);
     await withOrgTx(orgId,
-        sql`insert into cobro_reembolsos
+        sql`with propia as (
+              update cobro_reembolsos
+                 set stripe_refund_id = ${refundId}, currency = ${currency}, status = ${status},
+                     failure_reason = ${refundOrCharge?.failure_reason || null}, updated_at = now()
+               where id = ${cordRefundId}::uuid and org_id = ${orgId} and cobro_id = ${cobro.id}
+                 and (stripe_refund_id is null or stripe_refund_id = ${refundId})
+              returning id)
+            insert into cobro_reembolsos
               (org_id, cobro_id, stripe_refund_id, amount_cents, currency, status, reason, failure_reason, updated_at)
-            values (${orgId}, ${cobro.id}, ${refundId}, ${amount}, ${currency}, ${status},
-                    ${refundOrCharge?.reason || null}, ${refundOrCharge?.failure_reason || null}, now())
+            select ${orgId}, ${cobro.id}, ${refundId}, ${amount}, ${currency}, ${status},
+                   ${refundOrCharge?.reason || null}, ${refundOrCharge?.failure_reason || null}, now()
+             where not exists (select 1 from propia)
             on conflict (stripe_refund_id) do update set
               status = excluded.status, failure_reason = excluded.failure_reason, updated_at = now()`,
         sql`update cotizacion_cobros c set
               reembolsado_cents = coalesce((select sum(r.amount_cents) from cobro_reembolsos r
-                                            where r.cobro_id = c.id and r.status in ('succeeded','pending')), 0),
+                                            where r.cobro_id = c.id and r.status in ('succeeded','pending','requires_action')), 0),
               reembolso_status = ${status},
               refunded_at = case when ${status} = 'succeeded' then now() else refunded_at end
             where c.id = ${cobro.id} and c.org_id = ${orgId}`,
@@ -878,206 +950,137 @@ async function markBuildPositionPaid(intent: any): Promise<void> {
 // `account` = event.account de Stripe (la cuenta CONECTADA del dueño en charges
 // directas). Se valida contra la org de la cotización para que un merchant
 // conectado no pueda marcar pagada una cotización de OTRA org.
-async function markQuotePaid(sessionOrIntent: any, account?: string, eventType?: string) {
+//
+// Devuelve el resultado de la liquidación: `duplicado` le dice a
+// `settleInvoiceFromIntent` que este dinero NO es el pago de su cobro.
+async function markQuotePaid(sessionOrIntent: any, account?: string, eventType?: string): Promise<SettleResult | 'legacy' | null> {
     const cid = sessionOrIntent?.metadata?.cotizacion_id;
-    if (!cid) return;
+    if (!cid) return null;
 
     // Diferenciar entre CheckoutSession y PaymentIntent
     if (eventType === 'payment_intent.succeeded') {
-        if (sessionOrIntent.status !== 'succeeded') return;
+        if (sessionOrIntent.status !== 'succeeded') return null;
     } else {
         // CheckoutSession: Métodos diferidos (SPEI/customer_balance) llegan con payment_status 'unpaid'
         const ps = sessionOrIntent?.payment_status;
-        if (ps && ps !== 'paid' && ps !== 'no_payment_required') return;
+        if (ps && ps !== 'paid' && ps !== 'no_payment_required') return null;
     }
 
     const orgId = await orgForQuote(cid, account);
-    if (!orgId) return;
-    const [rows] = await withOrgTx(orgId, sql`select c.id, c.org_id, c.status,
-        o.stripe_account_id as acct, (o.sandbox_of is not null) as is_sandbox, o.is_demo
-        from cotizaciones c join orgs o on o.id = c.org_id
-        where c.id = ${cid} and c.org_id = ${orgId}`);
-    // La conciliación de cobros parciales corre INCLUSO si la cotización ya está
-    // 'paid' (un SPEI en vuelo puede liquidarse después de un pago manual — el
-    // dinero llegó y debe quedar registrado); el flip a 'paid' solo aplica desde
-    // approved/invoiced (el UPDATE de abajo ya lo garantiza).
-    const puedeConciliarCobro = !!(sessionOrIntent?.metadata?.cobro_id) && rows.length && rows[0].status === 'paid';
-    if (rows.length && (['approved', 'invoiced'].includes(rows[0].status as string) || puedeConciliarCobro)) {
-        let paymentMethod = 'tarjeta';
-        if (eventType === 'checkout.session.async_payment_succeeded') {
-            paymentMethod = 'spei';
-        } else if (eventType === 'payment_intent.succeeded') {
-            // En versiones nuevas de la API el PaymentIntent ya NO trae `charges`
-            // embebido (solo `latest_charge` como id) — se consulta el charge en la
-            // cuenta conectada para saber el método real. Fallback: 'tarjeta'.
-            let type = sessionOrIntent?.charges?.data?.[0]?.payment_method_details?.type;
-            const latest = sessionOrIntent?.latest_charge;
-            if (!type && latest) {
-                try {
-                    const chargeId = typeof latest === 'string' ? latest : latest?.id;
-                    if (chargeId) {
-                        const ch = await stripe(`/v1/charges/${chargeId}`, undefined, 'GET',
-                            account ? { stripeAccount: account } : undefined);
-                        type = ch?.payment_method_details?.type;
-                    }
-                } catch { /* best-effort: se queda 'tarjeta' */ }
-            }
-            if (type === 'customer_balance') paymentMethod = 'spei';
-        } else if (sessionOrIntent?.payment_method_types?.length === 1 && sessionOrIntent?.payment_method_types?.[0] === 'customer_balance') {
-            paymentMethod = 'spei';
+    if (!orgId) return null;
+    const [rows] = await withOrgTx(orgId, sql`select c.id, c.status
+        from cotizaciones c where c.id = ${cid} and c.org_id = ${orgId}`);
+    if (!rows.length) return null;
+    const estadoCotizacion = String(rows[0].status);
+
+    let paymentMethod = 'tarjeta';
+    if (eventType === 'checkout.session.async_payment_succeeded') {
+        paymentMethod = 'spei';
+    } else if (eventType === 'payment_intent.succeeded') {
+        // En versiones nuevas de la API el PaymentIntent ya NO trae `charges`
+        // embebido (solo `latest_charge` como id) — se consulta el charge en la
+        // cuenta conectada para saber el método real. Fallback: 'tarjeta'.
+        let type = sessionOrIntent?.charges?.data?.[0]?.payment_method_details?.type;
+        const latest = sessionOrIntent?.latest_charge;
+        if (!type && latest) {
+            try {
+                const chargeId = typeof latest === 'string' ? latest : latest?.id;
+                if (chargeId) {
+                    const ch = await stripe(`/v1/charges/${chargeId}`, undefined, 'GET',
+                        account ? { stripeAccount: account } : undefined);
+                    type = ch?.payment_method_details?.type;
+                }
+            } catch { /* best-effort: se queda 'tarjeta' */ }
         }
+        if (type === 'customer_balance') paymentMethod = 'spei';
+    } else if (sessionOrIntent?.payment_method_types?.length === 1 && sessionOrIntent?.payment_method_types?.[0] === 'customer_balance') {
+        paymentMethod = 'spei';
+    }
 
-        const cobroId = sessionOrIntent?.metadata?.cobro_id as string | undefined;
+    const currency = normalizeCurrency(String(sessionOrIntent?.currency || 'MXN'));
+    const amountPaid = fromMinorUnits(Number(sessionOrIntent?.amount_received ?? sessionOrIntent?.amount ?? sessionOrIntent?.amount_total ?? 0), currency);
+    const pagadoCon = eventType === 'payment_intent.succeeded'
+        ? String(sessionOrIntent?.id || '')
+        : String(typeof sessionOrIntent?.payment_intent === 'string' ? sessionOrIntent.payment_intent : sessionOrIntent?.payment_intent?.id || '');
 
-        if (cobroId && eventType === 'payment_intent.succeeded') {
+    const cobroId = sessionOrIntent?.metadata?.cobro_id as string | undefined;
+    if (cobroId) {
+        // El metadata lo escribe el servidor de Cord al crear el pago; un valor
+        // que no es uuid no es nuestro y no se le busca fila.
+        if (!UUID_RE.test(cobroId)) {
+            throw new PermanentWebhookError(`cobro_id inválido en el pago ${String(sessionOrIntent?.id || '')}`);
+        }
+        // ── Cobros parciales (anticipo/saldo/cuota/total) ─────────────────────
+        // Misma liquidación que Mercado Pago (src/lib/cobros-settle.ts): una
+        // transacción, bajo el candado de la cotización, reentrante y con la
+        // historia adentro. Detecta además el dinero de más: un cobro que ya
+        // pagó OTRO pago (Mercado Pago, otro PaymentIntent) ya no se pierde en
+        // silencio.
+        const result = await settleQuoteCobro(orgId, {
+            cotizacionId: cid,
+            cobroId,
+            monto: amountPaid,
+            moneda: currency,
+            metodo: paymentMethod,
+            pagoId: pagadoCon || String(sessionOrIntent?.id || ''),
+            proveedor: 'Cord Payments',
+            origen: { stripePaymentIntentId: pagadoCon },
+        });
+        // Los costos reales (cargo, comisión, neto) se concilian DESPUÉS de
+        // liquidar: así se sabe si este PaymentIntent es el que pagó el cobro.
+        // Un duplicado registra su comisión, pero no pisa el cargo, el método ni
+        // el neto del pago que sí pagó el cobro (una disputa sobre el cargo
+        // original dejaba de ligarse con su cobro).
+        if (eventType === 'payment_intent.succeeded') {
             await reconcilePaymentIntent(orgId, cobroId, sessionOrIntent, account, paymentMethod);
         }
-
-        if (cobroId) {
-            // ── Cobros parciales (anticipo/saldo/cuota/total v2) ──────────────
-            // 1) Marcar este cobro como pagado. Acepta también 'cancelado': un PI
-            // en vuelo (CLABE SPEI ya emitida) puede liquidarse DESPUÉS de que el
-            // cobro se canceló (pago manual del vendedor, plan de cuotas que lo
-            // reemplazó) — el dinero llegó de todos modos y hay que registrarlo.
-            //
-            // Bajo el candado de la cotización (src/lib/fiscal/quote-ledger.ts):
-            // si su factura se está emitiendo en este instante, o este cobro
-            // entra antes y la emisión lo hereda, o entra después y
-            // `settleInvoiceFromIntent` lo aplica a la factura ya emitida.
-            // Nunca queda fuera de los dos ledgers. Se guarda QUÉ PaymentIntent
-            // lo pagó: la herencia lo usa para no contarlo dos veces.
-            const pagadoCon = eventType === 'payment_intent.succeeded'
-                ? String(sessionOrIntent?.id || '')
-                : String(typeof sessionOrIntent?.payment_intent === 'string' ? sessionOrIntent.payment_intent : sessionOrIntent?.payment_intent?.id || '');
-            const [, marked] = await withOrgTx(orgId, quoteLedgerLock(orgId, cid), sql`
-                update cotizacion_cobros
-                set status = 'pagado', paid_at = now(), payment_method = ${paymentMethod},
-                    paid_payment_intent_id = ${pagadoCon.startsWith('pi_') ? pagadoCon : null}
-                where id = ${cobroId} and org_id = ${orgId} and cotizacion_id = ${cid}
-                  and status in ('pendiente', 'cancelado')
-                returning tipo, numero_cuota, monto`);
-
-            if (!marked.length) {
-                // Cobro inexistente o ya pagado. Si ya está 'pagado' es una
-                // redelivery de Stripe (idempotente, nada que hacer). Si la fila
-                // no existe, el dinero llegó sin cobro que lo respalde: dejar
-                // rastro para conciliación manual, sin flip automático.
-                const [existe] = await withOrgTx(orgId, sql`
-                    select 1 from cotizacion_cobros where id = ${cobroId} and org_id = ${orgId}`);
-                if (!existe.length) {
-                    const monto = fromMinorUnits(Number(sessionOrIntent?.amount ?? 0), String(sessionOrIntent?.currency || 'MXN'));
-                    await withOrgTx(orgId, sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
-                        values (${orgId}, ${cid}, 'paid', ${`Pago de $${monto.toFixed(2)} recibido para un cobro ya no vigente; revisar conciliación`})`);
-                    await logAudit(orgId, { accion: 'cotizacion.pago_no_conciliado', entidad: 'cotizacion', entidad_id: cid, detalle: `PI ${sessionOrIntent?.id ?? ''} sin cobro vigente` });
-                    after(sendOpsAlert('Pago sin fila conciliable', `Organización ${orgId}; cotización ${cid}; cobro ${cobroId}`));
-                }
-                return;
-            }
-
-            // 2) Si lo pagado ya cubre el total (p. ej. se liquidó el saldo
-            // original después de que un plan de cuotas lo había reemplazado),
-            // los cobros pendientes restantes se cancelan — ya no hay nada que deber.
-            const [[sums]] = await withOrgTx(orgId, sql`
-                select (select coalesce(sum(monto), 0) from cotizacion_cobros
-                        where org_id = ${orgId} and cotizacion_id = ${cid} and status = 'pagado') as pagado,
-                       total
-                from cotizaciones where id = ${cid} and org_id = ${orgId}`);
-            if (sums && Number(sums.pagado) >= Number(sums.total) - 0.01) {
-                await withOrgTx(orgId, sql`update cotizacion_cobros set status = 'cancelado'
-                    where org_id = ${orgId} and cotizacion_id = ${cid} and status = 'pendiente'`);
-            }
-
-            // 3) Flip atómico e idempotente: la cotización pasa a 'paid' SOLO si ya
-            // no queda ningún cobro pendiente. Se corre en cada pago de cobro; el
-            // que caiga al último (por orden de commit) es el que la salda.
-            // (y solo si lo pagado cubre el total: un plan que se quedó sin filas
-            // pendientes no salda una cotización cobrada a medias).
-            const [flipped] = await withOrgTx(orgId, sql`
-                update cotizaciones
-                set status = 'paid', paid_at = now(), payment_method = ${paymentMethod}
-                where id = ${cid} and org_id = ${orgId} and status in ('approved', 'invoiced')
-                  and not exists (
-                      select 1 from cotizacion_cobros
-                      where org_id = ${orgId} and cotizacion_id = ${cid} and status = 'pendiente')
-                  and (select coalesce(sum(monto), 0) from cotizacion_cobros
-                        where org_id = ${orgId} and cotizacion_id = ${cid} and status = 'pagado') >= total - 0.01
-                returning id`);
-
-            const currency = (sessionOrIntent?.currency ?? 'MXN').toUpperCase();
-            const amountPaid = fromMinorUnits(Number(sessionOrIntent?.amount ?? 0), currency);
-
-            if (flipped.length) {
-                await withOrgTx(orgId, sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
-                    values (${orgId}, ${cid}, 'paid', 'Pago recibido con Cord Payments; cotización saldada')`);
-                await logAudit(orgId, { accion: 'cotizacion.paid', entidad: 'cotizacion', entidad_id: cid, detalle: 'Pago en línea con Cord Payments' });
-                await trackPaymentReceived(
-                    orgId, amountPaid, currency, paymentMethod, false, cid,
-                    !!rows[0].is_sandbox, !!rows[0].is_demo,
-                    { payment_id: String(sessionOrIntent?.id || ''), cobro_id: cobroId, payment_kind: 'settlement' },
-                );
-                after(dispatchQuoteEvent(orgId, cid, 'quote.paid'));
-                after(notifyQuoteEvent(orgId, cid, 'quote_paid'));
-            } else if (marked.length) {
-                // Pago PARCIAL: evento informativo, sin quote.paid (avisar a las
-                // integraciones que "se pagó todo" cuando solo cayó el anticipo
-                // sería mentirles).
-                const co = marked[0];
-                const label = co.tipo === 'anticipo' ? 'Anticipo'
-                    : co.tipo === 'saldo' ? 'Saldo'
-                    : co.tipo === 'cuota' ? `Cuota ${co.numero_cuota}`
-                    : 'Pago';
-                const monto = money(Number(co.monto), String(sessionOrIntent?.currency || 'MXN'));
-                const sufijo = rows[0].status === 'paid' ? ' (la cotización ya estaba marcada como pagada — verificar)' : ' — saldo pendiente';
-                await withOrgTx(orgId, sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
-                    values (${orgId}, ${cid}, 'paid', ${`${label} de ${monto} pagado con Cord Payments${sufijo}`})`);
-                await logAudit(orgId, { accion: 'cotizacion.cobro_pagado', entidad: 'cotizacion', entidad_id: cid, detalle: `${label} pagado en línea con Cord Payments` });
-                await trackPaymentReceived(
-                    orgId, amountPaid, currency, paymentMethod, false, cid,
-                    !!rows[0].is_sandbox, !!rows[0].is_demo,
-                    { payment_id: String(sessionOrIntent?.id || ''), cobro_id: cobroId, payment_kind: 'partial' },
-                );
-                // payment.partial: antes NINGÚN webhook avisaba que cayó un
-                // anticipo/saldo/cuota — una integración solo se enteraba hasta
-                // que el TOTAL quedaba cubierto (quote.paid). `sums` ya refleja
-                // el pago recién marcado (se consultó después del UPDATE de arriba).
-                after(dispatchPaymentPartial(orgId, cid, {
-                    tipo: co.tipo as string,
-                    monto: Number(co.monto),
-                    numero_cuota: Number(co.numero_cuota ?? 0),
-                    saldo_pendiente: Math.max(0, Number(sums.total) - Number(sums.pagado)),
-                    payment_method: paymentMethod,
-                }));
-            }
-        } else {
-            // ── Legacy: PaymentIntent/Checkout creado antes de los cobros parciales ──
-            const [updated] = await withOrgTx(orgId,
-                sql`update cotizaciones set status = 'paid', paid_at = now(), payment_method = ${paymentMethod}
-                    where id = ${cid} and org_id = ${orgId} returning id`,
-                sql`update cotizacion_cobros set status = 'cancelado'
-                    where org_id = ${orgId} and cotizacion_id = ${cid} and status = 'pendiente'`,
-                sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
-                    values (${orgId}, ${cid}, 'paid', 'Pago recibido con Cord Payments')`,
-            );
-            if (!updated.length) throw new Error(`Cotización ${cid} no se actualizó después del pago`);
-            await logAudit(orgId, { accion: 'cotizacion.paid', entidad: 'cotizacion', entidad_id: cid, detalle: 'Pago en línea con Cord Payments' });
-            
-            const currency = (sessionOrIntent?.currency ?? 'MXN').toUpperCase();
-            const amountPaid = fromMinorUnits(Number(sessionOrIntent?.amount ?? 0), currency);
-            await trackPaymentReceived(
-                orgId, amountPaid, currency, paymentMethod, false, cid,
-                !!rows[0].is_sandbox, !!rows[0].is_demo,
-                { payment_id: String(sessionOrIntent?.id || ''), payment_kind: 'legacy' },
-            );
-
-            // No demorar el 200 a Stripe con nuestro webhook saliente, pero SIN perderlo:
-            // after()/waitUntil mantiene viva la invocación hasta que termine, a
-            // diferencia de un `.catch(()=>{})` suelto que Vercel puede congelar en
-            // cuanto el handler responde (el evento de dinero más crítico del sistema
-            // no puede depender de que la función siga viva por accidente).
-            after(dispatchQuoteEvent(orgId, cid, 'quote.paid'));
-            after(notifyQuoteEvent(orgId, cid, 'quote_paid'));
+        // Dinero que llegó a una cotización que ya no está en curso (vencida,
+        // rechazada, en borrador): queda registrado, pero alguien tiene que verlo.
+        if (result !== 'repetida' && !['approved', 'invoiced', 'paid'].includes(estadoCotizacion)) {
+            after(sendOpsAlert('Pago sobre una cotización que no está en curso',
+                `Organización ${orgId}; cotización ${cid} (${estadoCotizacion}); pago ${pagadoCon}; ${amountPaid} ${currency}`));
         }
+        return result;
     }
+
+    // ── Legacy: PaymentIntent/Checkout creado antes de los cobros parciales ──
+    // Solo desde una cotización en curso, bajo el candado y en una transacción.
+    const [, updated, , , [despues]] = await withOrgTx(orgId,
+        quoteLedgerLock(orgId, cid),
+        sql`update cotizaciones set status = 'paid', paid_at = now(), payment_method = ${paymentMethod}
+            where id = ${cid} and org_id = ${orgId} and status in ('approved', 'invoiced') and paid_at is null
+            returning id`,
+        sql`update cotizacion_cobros set status = 'cancelado'
+            where org_id = ${orgId} and cotizacion_id = ${cid} and status = 'pendiente'
+              and exists (select 1 from cotizaciones where id = ${cid} and org_id = ${orgId} and paid_at = now())`,
+        sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
+            select ${orgId}, ${cid}, 'paid', 'Pago recibido con Cord Payments'
+             where exists (select 1 from cotizaciones where id = ${cid} and org_id = ${orgId} and paid_at = now())`,
+        // Leído BAJO el candado: la entrega gemela (checkout.session y
+        // payment_intent del mismo pago) pudo saldarla un instante antes.
+        sql`select paid_at from cotizaciones where id = ${cid} and org_id = ${orgId}`,
+    );
+    if (!updated.length) {
+        // Ya pagada (reenvío o entrega gemela) o fuera de curso.
+        if (despues?.paid_at != null) return 'repetida';
+        throw new PermanentWebhookError(`Pago legacy ${pagadoCon} sobre la cotización ${cid} en estado ${estadoCotizacion}`);
+    }
+    after(dispatchQuoteEvent(orgId, cid, 'quote.paid'));
+    after(notifyQuoteEvent(orgId, cid, 'quote_paid'));
+    after((async () => {
+        const flags = await orgAnalyticsFlags(orgId);
+        await trackPaymentReceived(
+            orgId, amountPaid, currency, paymentMethod, false, cid,
+            flags.isSandbox, flags.isDemo,
+            { payment_id: String(sessionOrIntent?.id || ''), payment_kind: 'legacy' },
+        );
+    })());
+    try {
+        await logAudit(orgId, { accion: 'cotizacion.paid', entidad: 'cotizacion', entidad_id: cid, detalle: 'Pago en línea con Cord Payments' });
+    } catch (err) {
+        log.error('no se pudo auditar el pago legacy', { route: 'stripe-webhook', orgId, err });
+    }
+    return 'legacy';
 }
 
 /**
@@ -1125,6 +1128,9 @@ async function reconcilePaymentIntent(
     const status = bt ? 'settled' : 'pending';
 
     await withOrgTx(orgId,
+        // Solo el PaymentIntent que PAGÓ el cobro escribe su cargo y su neto.
+        // Un cobro pagado antes de existir `paid_payment_intent_id` se reconoce
+        // por el último PaymentIntent presentado, salvo que lo pagara Mercado Pago.
         sql`update cotizacion_cobros set
               metodo_pago = ${method}, payment_method = ${method},
               stripe_charge_id = ${chargeId},
@@ -1133,7 +1139,10 @@ async function reconcilePaymentIntent(
               stripe_fee_cents = ${processorFeeCents},
               application_fee_cents = ${applicationFeeCents},
               neto_cents = ${netCents}
-            where id = ${cobroId} and org_id = ${orgId}`,
+            where id = ${cobroId} and org_id = ${orgId}
+              and (paid_payment_intent_id = ${String(intent.id)}
+                   or (paid_payment_intent_id is null and mp_payment_id is null
+                       and status = 'pagado' and stripe_payment_intent_id = ${String(intent.id)}))`,
         sql`insert into comisiones
               (org_id, cobro_id, stripe_payment_intent_id, stripe_charge_id,
                stripe_balance_transaction_id, stripe_application_fee_id, metodo_pago,

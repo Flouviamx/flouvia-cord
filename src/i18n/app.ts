@@ -2963,6 +2963,8 @@ export const appStrings = {
         "pay.autorizar_monto": "Autorizar {monto} / mes",
         "pay.error_iniciar": "No se pudo iniciar el pago. Intenta de nuevo.",
         "pay.ya_pagada": "Esta cotización ya está pagada",
+        "pay.en_proceso_titulo": "Ya hay un pago en proceso",
+        "pay.en_proceso_texto": "Generaste un pago en efectivo o en revisión para este cobro y todavía no se acredita. Si ya lo pagaste, espera la confirmación y no pagues otra vez.",
         "pay.ver_cotizacion": "Ver la cotización →",
         // Link público — regreso de pago
         "q.regreso_pago": "Recibimos tu pago. Cord Payments marcará la cotización automáticamente al confirmarlo. Con tarjeta toma segundos; por transferencia, al liquidarse.",
@@ -6524,6 +6526,8 @@ export const appStrings = {
         "pay.autorizar_monto": "Authorize {monto} / month",
         "pay.error_iniciar": "We couldn't start the payment. Please try again.",
         "pay.ya_pagada": "This quote is already paid",
+        "pay.en_proceso_titulo": "A payment is already in progress",
+        "pay.en_proceso_texto": "A cash or under-review payment was started for this charge and hasn't cleared yet. If you already paid, wait for the confirmation and don't pay again.",
         "pay.ver_cotizacion": "View the quote →",
         // Link público — regreso de pago
         "q.regreso_pago": "We received your payment. Cord Payments will mark the quote automatically once it clears — seconds by card, or when the transfer settles.",

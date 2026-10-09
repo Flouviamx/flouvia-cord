@@ -740,6 +740,13 @@ const CBR_T = {
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error || T.errorActualizar);
                 refundDialog?.close();
+                // Un resultado incierto NO es un reembolso hecho: se dice, para
+                // que nadie lo vuelva a pedir mientras se verifica.
+                if (data.uncertain) {
+                    (window as any).cordToast?.(data.message, 'info', 9000);
+                    setTimeout(() => window.location.reload(), 2500);
+                    return;
+                }
                 (window as any).cordToast?.(locale.startsWith('es') ? 'Reembolso registrado' : 'Refund recorded');
                 window.location.reload();
             } catch (error) {

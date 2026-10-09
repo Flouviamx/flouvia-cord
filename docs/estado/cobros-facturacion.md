@@ -152,10 +152,27 @@ local en `test/quote-invoice-ledger-db.test.ts`.
 - **Saldar exige cubrir el total.** `settleQuoteCobro` y el webhook de Stripe solo
   pasan la cotización a `paid` si lo pagado cubre el total, no solo porque no quede
   ningún cobro pendiente.
-- **Liquidación atómica.** `settleQuoteCobro` (riel de Mercado Pago) marca el
-  cobro, cancela sobrantes y salda la cotización en UNA transacción; un reintento
-  repara un estado a medias. El riel de Stripe conserva su copia en el webhook
-  (pendiente unificar).
+- **Liquidación atómica y única.** `settleQuoteCobro` marca el cobro, cancela
+  sobrantes, salda la cotización y escribe su historia en UNA transacción, para los
+  dos rieles; un reintento repara un estado a medias. Los avisos (`quote.paid`,
+  `payment.partial` con el mismo payload en los dos rieles, PostHog) salen con
+  `after()` y nunca tumban el webhook. Pruebas de punta a punta con el webhook real
+  de Stripe en `test/stripe-cobros-altos-db.test.ts`.
+- **Dinero de más.** Un pago sobre un cobro que ya pagó otro pago (por ejemplo,
+  Stripe después de Mercado Pago), o sobre un cobro cancelado de una cotización ya
+  saldada, no se marca otra vez: se avisa una vez (historia + Ops) y se aplica a la
+  factura viva sin ligarse al cobro, donde queda como `refund_due`.
+- **Marcar pagada** cambia la cotización y cancela sus cobros pendientes en UNA
+  sentencia (CTE `movida`/`cancelados`, solo si esa petición movió la cotización),
+  y después cancela en el proveedor lo que todavía podía cobrar
+  (`invalidateLiveCharges`: tarjetas cancelables y preferencias de Mercado Pago;
+  nunca un SPEI). Anular una factura hace lo mismo con su PaymentIntent y su
+  preferencia.
+- **Pagos en proceso de Mercado Pago.** Un pago `pending`/`in_process` (ficha de
+  OXXO, boleto, revisión) queda en la historia una vez y en el cobro
+  (`pago_en_proceso_at`/`pago_en_proceso_ref`); la página de pago avisa durante 72 h
+  para que el cliente no pague por otra vía. Si el pago se cancela o vence, la
+  marca se limpia.
 - **Reparación de lo existente.** `/api/cron/conciliar-cotizacion-factura` (no
   calendarizado, a mano con `CRON_SECRET`): sin parámetros es vista previa; con
   `?aplicar=1` aplica la misma herencia a las facturas emitidas antes de este

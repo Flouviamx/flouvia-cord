@@ -25,7 +25,7 @@ import { sql, withOrgTx, logAudit } from './db';
 import { after } from './after';
 import { isSupportedCurrency, normalizeCurrency, toMinorUnits } from './currency';
 import { MP_INVOICE_REF, type MpPayment } from './mercadopago';
-import { settleQuoteCobro } from './cobros-settle';
+import { avisarPagoDuplicado, avisarUnaVez as avisarUnaVezCompartido, settleQuoteCobro } from './cobros-settle';
 import { applyPayment } from './fiscal/payments';
 import { recordMpInvoiceRefund } from './fiscal/reconciliation';
 import { sendOpsAlert } from './ops-alert';
@@ -86,6 +86,7 @@ async function procesarCobro(orgId: string, pago: MpPayment): Promise<MpProcessR
     // `approved` y saldría sin que nadie lo anotara.
     await registrarReembolsosDeCobro(orgId, pago, String(cobro.id), cotizacionId);
     if (pago.status !== 'approved') {
+        await registrarPagoEnProceso(orgId, pago, String(cobro.id), cotizacionId);
         await avisarReversa(orgId, pago, { cotizacionId });
         return { propio: true, estado: pago.status };
     }
@@ -118,33 +119,16 @@ async function procesarCobro(orgId: string, pago: MpPayment): Promise<MpProcessR
     // duplicado —factura con importe por devolver y aviso—, no como un
     // "anticipo pagado, saldo pendiente" que contaría ingreso que hay que devolver.
     if (cobro.status === 'cancelado' && cobro.paid_at && String(cobro.mp_payment_id ?? '') !== pago.id) {
-        await avisarUnaVez(orgId, 'cotizacion.pago_duplicado', pago.id, () => avisarDobleCobro(orgId, cotizacionId, pago));
+        await avisarDobleCobro(orgId, cotizacionId, pago);
         await aplicarAFactura(orgId, cotizacionId, pago, null);
         return { propio: true, estado: 'duplicado' };
     }
 
-    // El índice único hace el trabajo: el cobro se reclama UNA vez por un pago.
-    // Solo se reclama un cobro todavía cobrable: si otro riel ya lo pagó, este
-    // pago es un segundo cobro, no el primero.
-    const [reclamado] = await withOrgTx(orgId, sql`
-        update cotizacion_cobros set mp_payment_id = ${pago.id}
-         where id = ${cobro.id} and org_id = ${orgId} and mp_payment_id is null
-           and status in ('pendiente', 'cancelado')
-        returning id`);
-    if (!reclamado.length) {
-        const [[actual]] = await withOrgTx(orgId, sql`
-            select mp_payment_id from cotizacion_cobros where id = ${cobro.id} and org_id = ${orgId}`);
-        if (String(actual?.mp_payment_id ?? '') !== pago.id) {
-            // Dinero que llegó dos veces. No se pierde: se aplica a la factura
-            // (donde queda como importe por devolver) y se avisa.
-            await avisarUnaVez(orgId, 'cotizacion.pago_duplicado', pago.id, () => avisarDobleCobro(orgId, cotizacionId, pago));
-            await aplicarAFactura(orgId, cotizacionId, pago, null);
-            return { propio: true, estado: 'duplicado' };
-        }
-        // Mismo pago: un reintento. Si el intento anterior se cortó antes de
-        // liquidar, se liquida ahora (settleQuoteCobro es idempotente).
-    }
-
+    // El cobro se reclama DENTRO de la liquidación, bajo el candado de la
+    // cotización y en la misma sentencia que lo marca pagado: si otro riel lo
+    // pagó primero, este pago sale como duplicado; si es el mismo pago (un
+    // reintento), como repetido. El índice único de `mp_payment_id` impide que
+    // un pago reclame dos cobros.
     const resultado = await settleQuoteCobro(orgId, {
         cotizacionId,
         cobroId: String(cobro.id),
@@ -153,9 +137,47 @@ async function procesarCobro(orgId: string, pago: MpPayment): Promise<MpProcessR
         metodo: 'mercadopago',
         pagoId: pago.id,
         proveedor: 'Mercado Pago',
+        origen: { mpPaymentId: pago.id },
     });
-    await aplicarAFactura(orgId, cotizacionId, pago, String(cobro.id));
+    // Un duplicado (el cobro lo pagó Cord Payments mientras este pago estaba en
+    // vuelo) se aplica a la factura SIN cobro: no es el pago de ese cobro.
+    await aplicarAFactura(orgId, cotizacionId, pago, resultado === 'duplicado' ? null : String(cobro.id));
     return { propio: true, estado: resultado };
+}
+
+/** Estados de un pago que el cliente ya inició y todavía no se acredita (OXXO, boleto, revisión). */
+const EN_PROCESO = new Set(['pending', 'in_process', 'authorized']);
+
+/**
+ * Un pago en efectivo (OXXO, boleto, Pago Fácil) o en revisión ya existe
+ * aunque todavía no se acredite. Antes era invisible: el vendedor no sabía que
+ * el cliente ya había generado su ficha y el link seguía ofreciendo pagar por
+ * otra vía, así que el cliente podía pagar dos veces. Ahora queda en la historia
+ * (una vez por pago) y marcado en el cobro, para que el link lo diga.
+ */
+async function registrarPagoEnProceso(orgId: string, pago: MpPayment, cobroId: string, cotizacionId: string): Promise<void> {
+    if (EN_PROCESO.has(pago.status)) {
+        const [, [c]] = await withOrgTx(orgId,
+            sql`update cotizacion_cobros
+                   set pago_en_proceso_at = now(), pago_en_proceso_ref = ${pago.id}
+                 where id = ${cobroId} and org_id = ${orgId} and status = 'pendiente'
+                   and pago_en_proceso_ref is distinct from ${pago.id}`,
+            sql`select status, pago_en_proceso_ref from cotizacion_cobros where id = ${cobroId} and org_id = ${orgId}`);
+        // Un cobro ya pagado o cancelado no está "en proceso": no se anuncia.
+        if (c?.status !== 'pendiente' || String(c?.pago_en_proceso_ref ?? '') !== pago.id) return;
+        await avisarUnaVez(orgId, 'mercadopago.pago_en_proceso', pago.id, async () => {
+            await withOrgTx(orgId, sql`
+                insert into eventos (org_id, cotizacion_id, tipo, detalle)
+                values (${orgId}, ${cotizacionId}, 'paid',
+                        ${`El cliente inició un pago de ${pago.monto} ${pago.moneda} con Mercado Pago${pago.metodo === 'ticket' ? ' en efectivo' : ''}; todavía no se acredita`})`);
+        });
+        return;
+    }
+    // El pago en proceso se canceló o venció (una ficha de OXXO sin pagar): el
+    // cobro vuelve a estar libre para pagarse por otra vía.
+    await withOrgTx(orgId, sql`
+        update cotizacion_cobros set pago_en_proceso_at = null, pago_en_proceso_ref = null
+         where id = ${cobroId} and org_id = ${orgId} and pago_en_proceso_ref = ${pago.id}`);
 }
 
 /**
@@ -313,23 +335,13 @@ async function procesarFactura(orgId: string, pago: MpPayment): Promise<MpProces
  * avisos del mismo pago (creado, actualizado) y la conciliación diaria lo vuelve
  * a ver: sin esto, cada uno repetía la historia y la alerta.
  */
-async function avisarUnaVez(orgId: string, accion: string, clave: string, efecto: () => Promise<void>): Promise<void> {
-    const [ya] = await withOrgTx(orgId, sql`
-        select 1 from audit_log where org_id = ${orgId} and accion = ${accion} and entidad_id = ${clave} limit 1`);
-    if (ya.length) return;
-    // Primero el efecto, después la marca: si el efecto falla, el error sube,
-    // el proveedor reintenta y el aviso no se pierde.
-    await efecto();
-    await logAudit(orgId, { accion, entidad: 'mercadopago', entidad_id: clave, detalle: `Mercado Pago ${clave}` });
+function avisarUnaVez(orgId: string, accion: string, clave: string, efecto: () => Promise<void>): Promise<void> {
+    return avisarUnaVezCompartido(orgId, accion, clave, efecto, 'mercadopago');
 }
 
-/** Un cobro recibió dinero por segunda vez: queda a la vista del vendedor y de operaciones. */
-async function avisarDobleCobro(orgId: string, cotizacionId: string, pago: MpPayment): Promise<void> {
-    await withOrgTx(orgId, sql`
-        insert into eventos (org_id, cotizacion_id, tipo, detalle)
-        values (${orgId}, ${cotizacionId}, 'paid',
-                ${`Se recibió un segundo pago de ${pago.monto} ${pago.moneda} por Mercado Pago para un cobro ya pagado; revisa si hay que reembolsarlo`})`);
-    after(sendOpsAlert('Pago duplicado en Mercado Pago', `Organización ${orgId}; cotización ${cotizacionId}; pago ${pago.id}; ${pago.monto} ${pago.moneda}`));
+/** Un cobro recibió dinero de más: mismo aviso que Cord Payments (src/lib/cobros-settle.ts). */
+function avisarDobleCobro(orgId: string, cotizacionId: string, pago: MpPayment): Promise<void> {
+    return avisarPagoDuplicado(orgId, cotizacionId, { proveedor: 'Mercado Pago', pagoId: pago.id, monto: pago.monto, moneda: pago.moneda });
 }
 
 /**

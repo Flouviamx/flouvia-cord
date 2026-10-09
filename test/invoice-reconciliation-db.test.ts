@@ -53,7 +53,8 @@ beforeAll(async () => {
       retencion_total numeric default 0, retenciones_snapshot jsonb default '[]',
       issuer_snapshot jsonb default '{}', recipient_snapshot jsonb default '{}', line_items_snapshot jsonb,
       due_date date, public_token text, provider text, notes text, created_by uuid,
-      schema_version text, provider_data jsonb, updated_at timestamptz default now()
+      schema_version text, provider_data jsonb, stripe_payment_intent_id text, mp_preference_id text,
+      updated_at timestamptz default now()
     );
     create table documento_pagos (
       id uuid primary key default gen_random_uuid(), org_id uuid not null, documento_id uuid not null,

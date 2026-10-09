@@ -382,7 +382,23 @@ vencen a las 72 h, renovación de credenciales que no se apaga por un 5xx, conex
 con `cobros_config` + reautenticación + país de la cuenta verificado + aviso a los
 dueños, contracargos y mediaciones visibles (historia + alerta). Ver reglas 37–39.
 
+**Hecho (9 oct, altos de la auditoría):** la liquidación de un cobro es la misma
+para Mercado Pago y Cord Payments (`settleQuoteCobro`), un segundo pago del mismo
+cobro por el otro riel se avisa y queda por devolver, los pagos en efectivo
+pendientes (OXXO, boleto) se ven en la historia y en la página de pago, y "marcar
+pagada" o anular una factura vence su preferencia.
+
+**Falta, código (siguiente lote de la auditoría):**
+- [ ] Conciliación periódica de PaymentIntents de cobros (regla 39): hoy un
+  `payment_intent.succeeded` que se agota o se cierra a revisión deja el cobro
+  `pendiente` hasta que alguien lo vea en la alerta. Mercado Pago ya la tiene.
+- [ ] Invalidación cruzada al pagar: tras pagar por tarjeta, la preferencia o la
+  ficha de OXXO de Mercado Pago del mismo cobro sigue viva (y viceversa). El pago
+  tardío llega como duplicado con aviso, pero el efectivo es difícil de devolver.
+
 **Falta, operativo (después del despliegue de la auditoría):**
+- [ ] `npm run db:migrate` ANTES de desplegar: `pay.astro` lee
+  `cotizacion_cobros.pago_en_proceso_at` y responde 500 sin la columna.
 - [ ] Correr `/api/cron/conciliar-cotizacion-factura` en vista previa, revisar la
   lista y luego con `?aplicar=1` (repara facturas que nacieron con un saldo ya
   cobrado).

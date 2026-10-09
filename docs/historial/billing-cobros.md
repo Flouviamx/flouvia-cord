@@ -7,6 +7,38 @@
 
 ---
 
+**Auditoría de pagos: los altos de dinero directo (9 oct 2026)** — segundo lote de la
+auditoría, cada arreglo con pruebas que fallan contra el código anterior:
+- **A1, liquidación de Stripe a medias.** El webhook de Stripe liquidaba en tres
+  transacciones y esperaba a PostHog en medio; una falla dejaba la cotización en
+  `approved` para siempre. Ahora usa el mismo `settleQuoteCobro` que Mercado Pago.
+- **A2, doble cobro sin aviso.** Un pago de Stripe sobre un cobro que ya pagó
+  Mercado Pago se ignoraba en silencio; "marcar pagada" no vencía las preferencias
+  y los pagos en efectivo pendientes no se veían. Ahora el dinero de más se avisa y
+  queda por devolver, marcar pagada cancela todo lo cobrable y la página de pago
+  avisa de un pago en proceso.
+- **A3 y M22, errores permanentes.** Pagar una factura anulada tronaba el webhook
+  tres días con una alerta por intento. Ahora queda en la historia de la factura con
+  un aviso; anular cancela su PaymentIntent y su preferencia, y el webhook de Stripe
+  tiene presupuesto de reintentos.
+- **A4, la cuenta de depósito no cambiaba.** La cuenta nueva se agregaba sin ser
+  predeterminada y Stripe seguía depositando en la anterior.
+- **A7, doble reembolso.** Un reembolso de resultado incierto se marcaba fallido y
+  liberaba el saldo. Ahora queda pendiente hasta conciliarse, se liga a su fila por
+  metadata y se pide contra el PaymentIntent que pagó.
+- **Lo que encontró la revisión adversarial del lote.** Un PaymentIntent mixto
+  (tarjeta + SPEI) no se cancelaba al saldar porque admitía SPEI, aunque nunca se
+  hubiera emitido su CLABE: ahora decide la CLABE emitida. Un PaymentIntent
+  duplicado pisaba el cargo, el método y el neto del pago que sí pagó el cobro, y
+  una disputa sobre el cargo original dejaba de ligarse: ahora solo el
+  PaymentIntent que pagó escribe esas columnas. La entrega gemela del camino legacy
+  (`checkout.session` + `payment_intent` del mismo pago) se mandaba a revisión por
+  leer `paid_at` fuera del candado. La reclamación del pago de Mercado Pago iba en
+  una transacción aparte y otro riel podía ganar en medio: ahora es la misma
+  sentencia que marca el cobro pagado. Las métricas de "días a cobro" usaban el
+  primer o último evento `paid` (que también anota reembolsos y pagos en proceso):
+  ahora usan `cotizaciones.paid_at`.
+
 **Auditoría de pagos: los tres críticos (7 oct 2026)** — una auditoría de punta a
 punta de Cord Payments y Mercado Pago (seis frentes revisados en paralelo y cada
 hallazgo grave verificado contra el código) encontró que el cobro en sí estaba bien
