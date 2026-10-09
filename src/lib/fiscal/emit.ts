@@ -22,6 +22,7 @@ import type {
 import { resolveLineSatKeys } from './sat-claves';
 import { exemptionReasonFor } from './exemption';
 import { serieCompartida, serieCompartidaMensaje } from './serie';
+import { descuentoDesdeJson, descuentoParaMotor } from '../descuentos';
 
 export interface EmitResult {
   emitted: boolean;
@@ -331,7 +332,7 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string, do
           c.cliente_id, c.terminos as quote_terminos, c.created_at as quote_created,
           coalesce(c.approved_at, c.created_at) as quote_base_date,
           c.base_currency, c.fiscal_currency, c.fx_rate, c.fx_rate_source, c.fx_locked_until,
-          c.iva_incluido, c.retencion_total, c.retenciones_snapshot,
+          c.iva_incluido, c.retencion_total, c.retenciones_snapshot, c.descuento_def,
           o.moneda as org_moneda,
           cl.empresa as cliente_empresa, cl.rfc as cliente_rfc,
           cl.email as cliente_email, cl.contacto as cliente_contacto,
@@ -382,6 +383,11 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string, do
   );
   const decimals = currencyDecimals(saleCurrency);
   const round = (value: number) => roundTo(value, decimals);
+  // El descuento de la cotización viaja a la factura como DEFINICIÓN, no como
+  // importe: un porcentaje se vuelve a aplicar sobre las líneas aprobadas y un
+  // monto se topa en su bruto (aprobación parcial). El cupón conserva su
+  // `cupon_id`: al emitir, la factura reusa la redención de la cotización.
+  const descuento = descuentoDesdeJson(head.descuento_def);
 
   let totals;
   try {
@@ -406,6 +412,7 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string, do
         // Cada concepto redondeado y los totales como su suma: es lo que el CFDI
         // valida (subtotal = Σ importes) y lo que Verifactu desglosa por línea.
         roundLines: decimals,
+        descuento: descuentoParaMotor(descuento),
       },
     );
   } catch (error: unknown) {
@@ -432,6 +439,7 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string, do
     subtotal: round(l.base),
     taxAmount: round(l.impuesto),
     total: round(l.total),
+    ...(l.descuento > 0 ? { discount: round(l.descuento) } : {}),
     ...(country === 'MX' ? resolveLineSatKeys({
       claveSat: approvedItems[i]?.clave_sat,
       claveUnidadSat: approvedItems[i]?.clave_unidad_sat,
@@ -443,6 +451,7 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string, do
   const taxes = round(totals.impuestos);
   const total = round(totals.total);
   const retencionTotal = round(totals.retencionTotal);
+  const descuentoTotal = round(totals.descuentoTotal);
 
   const fiscalMetadata = metadata(head.fiscal_metadata);
   const { issuer, recipient } = partiesFrom(head, country);
@@ -557,7 +566,8 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string, do
             subtotal, tax_total, total, retencion_total, retenciones_snapshot,
             lifecycle, due_date, amount_paid, amount_remaining, public_token,
             issuer_snapshot, recipient_snapshot, line_items_snapshot,
-            idempotency_key, schema_version, provider_data, updated_at
+            idempotency_key, schema_version, provider_data, updated_at,
+            descuento_total, descuento
           )
           select ${orgId}, ${cotizacionId}, ${(head.cliente_id as string) || null},
                  ${country}, ${docType}, 'pending',
@@ -567,7 +577,8 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string, do
                  ${subtotal}, ${taxes}, ${total}, ${retencionTotal}, ${JSON.stringify(totals.retenciones)}::jsonb,
                  'draft', ${dueDate}::date, 0, ${total}, ${publicToken},
                  ${JSON.stringify(issuer)}, ${JSON.stringify(recipient)}, ${JSON.stringify(lines)},
-                 ${idempotencyKey}, 'cord.invoice.v1', ${JSON.stringify(isPartial ? { aprobacion_parcial: true, lineas_facturadas: approvedItems.length, lineas_totales: allItems.length } : {})}::jsonb, now()
+                 ${idempotencyKey}, 'cord.invoice.v1', ${JSON.stringify(isPartial ? { aprobacion_parcial: true, lineas_facturadas: approvedItems.length, lineas_totales: allItems.length } : {})}::jsonb, now(),
+                 ${descuentoTotal}, ${descuento && descuentoTotal > 0 ? JSON.stringify({ ...descuento, ...(head.iva_incluido && descuento.tipo === 'monto' ? { iva_incluido: true } : {}) }) : null}::jsonb
             from next_number
           returning id, invoice_number, fiscal_id, status, provider_data, pdf_url, xml_url, public_token, created_at, updated_at
         )

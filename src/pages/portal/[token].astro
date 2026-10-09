@@ -1,0 +1,543 @@
+---
+// Portal del cliente: todas sus facturas con un negocio, su saldo por divisa,
+// el pago de varias a la vez y el cobro automático.
+//
+// El token es la credencial (igual que /i/[token]): la ruta va sin referrer,
+// sin caché, sin indexar (middleware) y sin analítica, porque la URL entera es
+// la llave. Regla 19: aquí no se registra ninguna señal del cliente.
+export const prerender = false;
+
+import Layout from '../../layouts/Layout.astro';
+import { datosPortal } from '../../lib/cobros/portal';
+import { etiquetaMetodo } from '../../lib/cobros/metodos';
+import { currencyDecimals } from '../../lib/currency';
+import { fmtCalendarDate, fmtDateLong, intlLocale } from '../../lib/fmt-server';
+import { currentLocale } from '../../lib/context';
+import { t } from '../../i18n/app';
+import { iconInner } from '../../lib/icons';
+
+const token = Astro.params.token ?? '';
+const d = await datosPortal(token, !!(import.meta.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY));
+if (!d) return Astro.redirect('/404');
+
+const L = currentLocale();
+const locale = intlLocale();
+const fmt = (n: number, currency: string) => {
+    const dec = currencyDecimals(currency);
+    return new Intl.NumberFormat(locale, { style: 'currency', currency, minimumFractionDigits: dec, maximumFractionDigits: dec }).format(n);
+};
+const sub = (key: Parameters<typeof t>[1], vars: Record<string, string>) => {
+    let s = t(L, key);
+    for (const [k, v] of Object.entries(vars)) s = s.split(`{${k}}`).join(v);
+    return s;
+};
+const hoy = new Date().toISOString().slice(0, 10);
+const abiertas = d.facturas.filter((f) => f.estado === 'open' && f.saldo > 0);
+const pagadas = d.facturas.filter((f) => f.estado === 'paid').slice(0, 24);
+const seleccionable = (f: typeof d.facturas[number]) => f.cobrable && (d.metodos[f.currency]?.length ?? 0) > 0;
+const regresoDePago = Astro.url.searchParams.get('pagado') === '1';
+const color = d.org.color;
+
+const MOTIVO: Record<string, Parameters<typeof t>[1]> = {
+    metodo_invalido: 'portal.autopay_detenido_metodo',
+    bloqueado: 'portal.autopay_detenido_metodo',
+    mandato_revocado: 'portal.autopay_detenido_mandato',
+    requiere_autenticacion: 'portal.autopay_detenido_autenticacion',
+    agotado: 'portal.autopay_detenido_agotado',
+};
+const avisosAutopay = d.autopay.detenido.map((e) => e.motivo === 'reintento' && e.siguienteAt
+    ? sub('portal.autopay_reintento', { moneda: e.currency, fecha: fmtDateLong(e.siguienteAt) })
+    : sub(MOTIVO[e.motivo] ?? 'portal.autopay_detenido_agotado', { moneda: e.currency }));
+const domiciliacionGuardable = d.metodosGuardables.filter((m) => m !== 'card');
+const consentimiento = sub('portal.consentimiento', { org: d.org.nombre });
+
+const datosCliente = {
+    token, locale, color,
+    facturas: abiertas.filter(seleccionable).map((f) => ({ id: f.id, currency: f.currency, saldo: f.saldo, decimales: currencyDecimals(f.currency) })),
+    autopayActivo: d.autopay.activo,
+    i18n: {
+        preparando: t(L, 'fact.p_preparando'), procesando: t(L, 'fact.p_procesando'),
+        errorPago: t(L, 'fact.p_error_pago'), errorConfirmar: t(L, 'fact.p_error_confirmar'),
+        seleccion1: t(L, 'portal.seleccion_1'), seleccionN: t(L, 'portal.seleccion_n'),
+        pagarMonto: t(L, 'portal.pagar_monto'), continuar: t(L, 'fact.p_continuar'),
+        guardando: t(L, 'portal.autopay_guardando'), guardar: t(L, 'portal.autopay_guardar'),
+        listo: t(L, 'portal.autopay_listo'), verificando: t(L, 'portal.autopay_verificando'),
+        confirmarDesactivar: t(L, 'portal.autopay_desactivar_confirm'), aceptaPrimero: t(L, 'portal.acepta_primero'),
+    },
+};
+---
+
+<Layout title={`${t(L, 'portal.titulo')} - ${d.org.nombre}`} noindex={true} analyticsDisabled={true}>
+    <div class="pv-bg" aria-hidden="true"></div>
+    <main class="pv-main" data-portal={JSON.stringify(datosCliente)}>
+        {d.prueba && (
+            <div class="pv-note pv-note-warn" role="status">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('alert')}></svg>
+                <span>{t(L, 'portal.prueba')}</span>
+            </div>
+        )}
+        {regresoDePago && (
+            <div class="pv-note" role="status">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('clock')}></svg>
+                <span>{t(L, 'portal.regreso')}</span>
+            </div>
+        )}
+        <p class="pv-note" id="pvAutopayNote" role="status" hidden></p>
+
+        <header class="pv-head">
+            <div class="pv-brand">
+                {d.org.logoUrl
+                    ? <img src={d.org.logoUrl} alt={d.org.nombre} class="pv-logo" />
+                    : <span class="pv-brand-mark" style={`background:${color}`}>{d.org.nombre.slice(0, 1).toUpperCase()}</span>}
+                <strong>{d.org.nombre}</strong>
+            </div>
+            <h1>{t(L, 'portal.titulo')}</h1>
+            {d.cliente.nombre && <p class="pv-sub">{d.cliente.nombre}</p>}
+        </header>
+
+        <section class="pv-saldos" aria-label={t(L, 'portal.saldo')}>
+            {d.saldos.length === 0 && <p class="pv-al-dia">{t(L, 'portal.al_dia')}</p>}
+            {d.saldos.map((s) => (
+                <div class="pv-saldo">
+                    <span class="pv-label">{t(L, 'portal.saldo')} · {s.currency}</span>
+                    <strong class="editorial">{fmt(s.saldo, s.currency)}</strong>
+                    <span class="pv-saldo-meta">
+                        {s.facturas === 1 ? t(L, 'portal.abierta_1') : sub('portal.abiertas_n', { n: String(s.facturas) })}
+                        {s.vencido > 0 && <span class="pv-vencido"> · {sub('portal.vencido', { monto: fmt(s.vencido, s.currency) })}</span>}
+                    </span>
+                </div>
+            ))}
+        </section>
+
+        {(d.autopayPermitido || d.autopay.activo) && (
+            <section class="pv-card pv-autopay" aria-labelledby="pvAutopayTitulo">
+                <div class="pv-autopay-head">
+                    <span class="pv-icon" style={`color:${color}`}>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('refresh')}></svg>
+                    </span>
+                    <div>
+                        <h2 id="pvAutopayTitulo">{t(L, 'portal.autopay_titulo')}</h2>
+                        <p>{d.autopay.activo
+                            ? sub('portal.autopay_on', { metodo: etiquetaMetodo(d.autopay.metodo, L), fecha: d.autopay.desde ? fmtDateLong(d.autopay.desde) : '—' })
+                            : t(L, 'portal.autopay_off')}</p>
+                    </div>
+                </div>
+                {avisosAutopay.map((a) => <p class="pv-aviso-autopay" role="note">{a}</p>)}
+                {d.autopay.activo && d.autopay.metodo?.tipo && d.autopay.metodo.tipo !== 'card' && (
+                    <p class="pv-hint">{sub('portal.autopay_cubre', { moneda: d.autopay.metodo.tipo === 'sepa_debit' ? 'EUR' : 'USD' })}</p>
+                )}
+                <div class="pv-autopay-acts">
+                    {d.autopayPermitido && (
+                        <button type="button" class="pv-btn pv-btn-primary" id="pvAutopayAbrir" style={`background:${color}`}>
+                            {d.autopay.activo ? t(L, 'portal.autopay_cambiar') : t(L, 'portal.autopay_activar')}
+                        </button>
+                    )}
+                    {d.autopay.activo && <button type="button" class="pv-btn" id="pvAutopayOff">{t(L, 'portal.autopay_desactivar')}</button>}
+                </div>
+                <div class="pv-sheet" id="pvAutopaySheet" hidden>
+                    <label class="pv-consent">
+                        <input type="checkbox" id="pvAutopayAcepto" />
+                        <span>{consentimiento}</span>
+                    </label>
+                    {domiciliacionGuardable.length > 0 && <p class="pv-hint">{t(L, 'portal.debito_aviso')}</p>}
+                    <div id="pvAutopayEl" class="pv-element"></div>
+                    <button type="button" class="pv-btn pv-btn-primary pv-btn-block" id="pvAutopayGo" style={`background:${color}`}>{t(L, 'fact.p_continuar')}</button>
+                    <p class="pv-err" id="pvAutopayErr" role="alert" hidden></p>
+                </div>
+            </section>
+        )}
+
+        <section class="pv-card" aria-labelledby="pvAbiertasTitulo">
+            <h2 id="pvAbiertasTitulo">{t(L, 'portal.abiertas')}</h2>
+            {abiertas.length === 0 && <p class="pv-empty">{d.facturas.length ? t(L, 'portal.al_dia') : t(L, 'portal.vacio')}</p>}
+            {abiertas.length > 0 && (
+                <ul class="pv-list" id="pvLista">
+                    {abiertas.map((f) => (
+                        <li class="pv-row">
+                            {seleccionable(f) && d.pagoEnLinea
+                                ? <input type="checkbox" class="pv-check" value={f.id} data-currency={f.currency} aria-label={`${t(L, 'portal.col_factura')} ${f.numero ?? ''}`} />
+                                : <span class="pv-check-placeholder" aria-hidden="true"></span>}
+                            <div class="pv-row-main">
+                                <span class="pv-num">{f.numero ?? '—'}</span>
+                                <span class="pv-row-meta">
+                                    {f.vence ? `${t(L, 'portal.col_vence')} ${fmtCalendarDate(f.vence)}` : sub('portal.emitida', { fecha: fmtCalendarDate(f.emitida) })}
+                                    {f.enProceso && <span class="pv-badge pv-badge-wait">{t(L, 'portal.en_proceso')}</span>}
+                                    {!f.enProceso && f.vence && f.vence < hoy && <span class="pv-badge pv-badge-late">{t(L, 'portal.vencida')}</span>}
+                                </span>
+                            </div>
+                            <div class="pv-row-amt">
+                                <strong class="editorial">{fmt(f.saldo, f.currency)}</strong>
+                                {f.saldo !== f.total && <span class="pv-row-meta">{t(L, 'portal.de_total')} {fmt(f.total, f.currency)}</span>}
+                            </div>
+                            {f.token && (
+                                <div class="pv-row-links">
+                                    <a href={`/i/${f.token}`} target="_blank" rel="noopener noreferrer">{t(L, 'portal.ver')}</a>
+                                    <a href={`/api/i/${f.token}/documents/pdf`} aria-label={`PDF ${f.numero ?? ''}`}>PDF</a>
+                                </div>
+                            )}
+                        </li>
+                    ))}
+                </ul>
+            )}
+            {!d.pagoEnLinea && abiertas.length > 0 && !d.prueba && (
+                <p class="pv-hint">{sub('portal.sin_pago', { org: d.org.nombre })}</p>
+            )}
+            {d.saldos.length > 1 && d.pagoEnLinea && <p class="pv-hint">{t(L, 'portal.una_divisa')}</p>}
+        </section>
+
+        {pagadas.length > 0 && (
+            <details class="pv-card pv-pagadas">
+                <summary><h2>{t(L, 'portal.pagadas')}</h2><span class="pv-count">{pagadas.length}</span></summary>
+                <ul class="pv-list">
+                    {pagadas.map((f) => (
+                        <li class="pv-row">
+                            <span class="pv-check-placeholder" aria-hidden="true"></span>
+                            <div class="pv-row-main">
+                                <span class="pv-num">{f.numero ?? '—'}</span>
+                                <span class="pv-row-meta">{sub('portal.emitida', { fecha: fmtCalendarDate(f.emitida) })}</span>
+                            </div>
+                            <div class="pv-row-amt"><strong class="editorial">{fmt(f.total, f.currency)}</strong></div>
+                            {f.token && (
+                                <div class="pv-row-links">
+                                    <a href={`/i/${f.token}`} target="_blank" rel="noopener noreferrer">{t(L, 'portal.ver')}</a>
+                                    <a href={`/api/i/${f.token}/documents/pdf`} aria-label={`PDF ${f.numero ?? ''}`}>PDF</a>
+                                </div>
+                            )}
+                        </li>
+                    ))}
+                </ul>
+            </details>
+        )}
+
+        <footer class="pv-foot">
+            {d.org.email && <p>{t(L, 'portal.dudas')} <a href={`mailto:${d.org.email}`}>{d.org.email}</a></p>}
+            <p class="pv-aviso">{sub('portal.aviso', { org: d.org.nombre })}</p>
+            {d.org.powered && <p class="pv-powered">{d.org.nombre} · {t(L, 'fact.p_enviado_con')}</p>}
+        </footer>
+
+        <div class="pv-paybar" id="pvPaybar" hidden>
+            <span id="pvPaySummary"></span>
+            <button type="button" class="pv-btn pv-btn-primary" id="pvPayOpen" style={`background:${color}`}>{t(L, 'portal.pagar_sel')}</button>
+        </div>
+
+        <div class="pv-overlay" id="pvPaySheet" hidden>
+            <div class="pv-sheet pv-sheet-modal" role="dialog" aria-modal="true" aria-labelledby="pvPayTitulo">
+                <div class="pv-sheet-head">
+                    <h2 id="pvPayTitulo">{t(L, 'portal.pagar_sel')}</h2>
+                    <button type="button" class="pv-x" id="pvPayClose" aria-label={t(L, 'fact.p_cancelar')}>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('x')}></svg>
+                    </button>
+                </div>
+                <p class="pv-sheet-total editorial" id="pvPayTotal"></p>
+                {d.autopayPermitido && !d.autopay.activo && (
+                    <label class="pv-consent" id="pvGuardarWrap">
+                        <input type="checkbox" id="pvGuardar" />
+                        <span><strong>{t(L, 'portal.guardar')}</strong> {consentimiento}</span>
+                    </label>
+                )}
+                <div id="pvPayEl" class="pv-element"></div>
+                <button type="button" class="pv-btn pv-btn-primary pv-btn-block" id="pvPayGo" style={`background:${color}`}>{t(L, 'fact.p_continuar')}</button>
+                <p class="pv-err" id="pvPayErr" role="alert" hidden></p>
+            </div>
+        </div>
+    </main>
+</Layout>
+
+<script>
+    const main = document.querySelector('.pv-main') as HTMLElement | null;
+    const D = JSON.parse(main?.dataset.portal || '{}');
+    const T = D.i18n || {};
+    const api = (path: string, body: unknown) => fetch(`/api/portal/${encodeURIComponent(D.token)}/${path}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+    }).then(async (r) => ({ ok: r.ok, data: await r.json().catch(() => ({})) }));
+    const fmt = (n: number, currency: string, dec: number) => new Intl.NumberFormat(D.locale, {
+        style: 'currency', currency, minimumFractionDigits: dec, maximumFractionDigits: dec,
+    }).format(n);
+    const fill = (s: string, vars: Record<string, string>) => Object.entries(vars).reduce((acc, [k, v]) => acc.split(`{${k}}`).join(v), s);
+
+    let stripeJs: Promise<void> | null = null;
+    const cargarStripe = () => stripeJs ??= new Promise<void>((ok, no) => {
+        if ((window as any).Stripe) return ok();
+        const s = document.createElement('script');
+        s.src = 'https://js.stripe.com/v3/';
+        s.onload = () => ok(); s.onerror = no;
+        document.head.appendChild(s);
+    });
+    const mostrarError = (el: HTMLElement | null, msg: string) => { if (el) { el.textContent = msg; el.hidden = false; } };
+
+    // ── Selección de facturas ─────────────────────────────────────────────
+    const checks = [...document.querySelectorAll<HTMLInputElement>('.pv-check')];
+    const paybar = document.getElementById('pvPaybar');
+    const summary = document.getElementById('pvPaySummary');
+    const seleccion = () => checks.filter((c) => c.checked).map((c) => D.facturas.find((f: any) => f.id === c.value)).filter(Boolean);
+    const total = (sel: any[]) => Math.round(sel.reduce((s, f) => s + Number(f.saldo), 0) * 1000) / 1000;
+    const actualizar = () => {
+        const sel = seleccion();
+        const cur = sel[0]?.currency;
+        // Una divisa a la vez: las de otra divisa se bloquean mientras haya selección.
+        for (const c of checks) c.disabled = !!cur && c.dataset.currency !== cur;
+        if (!paybar || !summary) return;
+        paybar.hidden = !sel.length;
+        if (sel.length) {
+            const monto = fmt(total(sel), cur, sel[0].decimales);
+            summary.textContent = sel.length === 1 ? fill(T.seleccion1, { monto }) : fill(T.seleccionN, { n: String(sel.length), monto });
+        }
+    };
+    checks.forEach((c) => c.addEventListener('change', actualizar));
+
+    // ── Pago de las seleccionadas ─────────────────────────────────────────
+    const sheet = document.getElementById('pvPaySheet');
+    const payGo = document.getElementById('pvPayGo') as HTMLButtonElement | null;
+    const payErr = document.getElementById('pvPayErr');
+    const payTotal = document.getElementById('pvPayTotal');
+    const guardar = document.getElementById('pvGuardar') as HTMLInputElement | null;
+    let payStripe: any = null, payElements: any = null;
+    const cerrarPago = () => {
+        if (sheet) sheet.hidden = true;
+        payStripe = null; payElements = null;
+        const el = document.getElementById('pvPayEl'); if (el) el.innerHTML = '';
+        if (payGo) { payGo.disabled = false; payGo.textContent = T.continuar; }
+        if (guardar) guardar.disabled = false;
+    };
+    document.getElementById('pvPayOpen')?.addEventListener('click', () => {
+        const sel = seleccion();
+        if (!sel.length || !sheet) return;
+        if (payTotal) payTotal.textContent = fmt(total(sel), sel[0].currency, sel[0].decimales);
+        if (payErr) payErr.hidden = true;
+        sheet.hidden = false;
+        payGo?.focus();
+    });
+    document.getElementById('pvPayClose')?.addEventListener('click', cerrarPago);
+    sheet?.addEventListener('click', (e) => { if (e.target === sheet) cerrarPago(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && sheet && !sheet.hidden) cerrarPago(); });
+
+    payGo?.addEventListener('click', async () => {
+        if (payErr) payErr.hidden = true;
+        // Segundo clic: confirmar el pago con el formulario ya montado.
+        if (payStripe && payElements) {
+            payGo.disabled = true; payGo.textContent = T.procesando;
+            const { error } = await payStripe.confirmPayment({
+                elements: payElements,
+                confirmParams: { return_url: `${location.origin}${location.pathname}?pagado=1` },
+            });
+            if (error) { payGo.disabled = false; payGo.textContent = fill(T.pagarMonto, { monto: payTotal?.textContent || '' }); mostrarError(payErr, error.message || T.errorConfirmar); }
+            return;
+        }
+        const sel = seleccion();
+        if (!sel.length) return;
+        payGo.disabled = true; payGo.textContent = T.preparando;
+        try {
+            const { ok, data } = await api('payment-intent', {
+                documentos: sel.map((f: any) => f.id),
+                guardar: !!guardar?.checked, acepto: !!guardar?.checked,
+            });
+            if (!ok || !data.clientSecret) throw new Error(data.error || T.errorPago);
+            await cargarStripe();
+            payStripe = (window as any).Stripe(data.publishableKey, { stripeAccount: data.accountId });
+            payElements = payStripe.elements({ clientSecret: data.clientSecret });
+            payElements.create('payment').mount('#pvPayEl');
+            if (guardar) guardar.disabled = true;
+            payGo.disabled = false;
+            payGo.textContent = fill(T.pagarMonto, { monto: payTotal?.textContent || '' });
+        } catch (e) {
+            payGo.disabled = false; payGo.textContent = T.continuar;
+            mostrarError(payErr, e instanceof Error ? e.message : T.errorPago);
+        }
+    });
+
+    // ── Cobro automático ──────────────────────────────────────────────────
+    const apSheet = document.getElementById('pvAutopaySheet');
+    const apGo = document.getElementById('pvAutopayGo') as HTMLButtonElement | null;
+    const apErr = document.getElementById('pvAutopayErr');
+    const apAcepto = document.getElementById('pvAutopayAcepto') as HTMLInputElement | null;
+    const apNote = document.getElementById('pvAutopayNote');
+    let apStripe: any = null, apElements: any = null;
+    document.getElementById('pvAutopayAbrir')?.addEventListener('click', () => {
+        if (apSheet) apSheet.hidden = false;
+        apAcepto?.focus();
+    });
+    apGo?.addEventListener('click', async () => {
+        if (apErr) apErr.hidden = true;
+        if (apStripe && apElements) {
+            apGo.disabled = true; apGo.textContent = T.guardando;
+            const { error } = await apStripe.confirmSetup({
+                elements: apElements,
+                confirmParams: { return_url: `${location.origin}${location.pathname}?autopay=1` },
+            });
+            if (error) { apGo.disabled = false; apGo.textContent = T.guardar; mostrarError(apErr, error.message || T.errorConfirmar); }
+            return;
+        }
+        if (!apAcepto?.checked) { mostrarError(apErr, T.aceptaPrimero); return; }
+        apGo.disabled = true; apGo.textContent = T.preparando;
+        try {
+            const { ok, data } = await api('autopay', { accion: 'preparar', acepto: true });
+            if (!ok || !data.clientSecret) throw new Error(data.error || T.errorPago);
+            await cargarStripe();
+            apStripe = (window as any).Stripe(data.publishableKey, { stripeAccount: data.accountId });
+            apElements = apStripe.elements({ clientSecret: data.clientSecret });
+            apElements.create('payment').mount('#pvAutopayEl');
+            apAcepto.disabled = true;
+            apGo.disabled = false; apGo.textContent = T.guardar;
+        } catch (e) {
+            apGo.disabled = false; apGo.textContent = T.continuar;
+            mostrarError(apErr, e instanceof Error ? e.message : T.errorPago);
+        }
+    });
+    document.getElementById('pvAutopayOff')?.addEventListener('click', async (e) => {
+        if (!confirm(T.confirmarDesactivar)) return;
+        const btn = e.currentTarget as HTMLButtonElement;
+        btn.disabled = true;
+        const { ok } = await api('autopay', { accion: 'desactivar' });
+        if (ok) location.replace(location.pathname); else btn.disabled = false;
+    });
+
+    // Al volver del formulario del proveedor: activar con el SetupIntent.
+    const params = new URLSearchParams(location.search);
+    const si = params.get('setup_intent');
+    if (params.get('autopay') === '1' && si && /^seti_[A-Za-z0-9]+$/.test(si)) {
+        api('autopay', { accion: 'confirmar', setup_intent: si }).then(({ ok, data }) => {
+            if (apNote) {
+                apNote.textContent = ok ? (data.pendiente ? T.verificando : T.listo) : (data.error || T.errorConfirmar);
+                apNote.hidden = false;
+            }
+            // La URL deja de llevar el id del intento; el estado se relee del servidor.
+            history.replaceState(null, '', location.pathname);
+            if (ok && !data.pendiente) setTimeout(() => location.replace(location.pathname), 1500);
+        });
+    }
+</script>
+
+<style>
+    .pv-bg { position: fixed; inset: 0; z-index: -1; background: #f5f5f7; }
+    .pv-main { max-width: 760px; margin: 0 auto; padding: 48px 20px 140px; }
+    .pv-note {
+        display: flex; align-items: center; gap: 10px; background: #fff; border-radius: 14px;
+        padding: 12px 16px; margin: 0 0 16px; font-size: 14px; color: #4b5563;
+        box-shadow: 0 1px 2px rgba(10, 25, 47, 0.04);
+    }
+    .pv-note-warn { color: #92400e; }
+    .pv-head { margin: 8px 0 28px; }
+    .pv-brand { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; }
+    .pv-brand strong { font-size: 15px; color: #111827; }
+    .pv-logo { max-height: 40px; max-width: 150px; width: auto; object-fit: contain; }
+    .pv-brand-mark {
+        display: flex; align-items: center; justify-content: center; width: 40px; height: 40px;
+        border-radius: 12px; color: #fff; font-weight: 700;
+    }
+    .pv-head h1 { font-size: clamp(28px, 5vw, 40px); letter-spacing: -0.04em; line-height: 1.1; color: #050505; margin: 0; }
+    .pv-sub { margin: 8px 0 0; color: #6b7280; font-size: 15px; }
+
+    .pv-saldos { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 20px; }
+    .pv-saldo {
+        display: flex; flex-direction: column; gap: 6px; background: #fff; border-radius: 24px; padding: 24px;
+        box-shadow: 0 1px 2px rgba(10, 25, 47, 0.04), 0 12px 40px -18px rgba(10, 25, 47, 0.12);
+    }
+    .pv-saldo strong { font-size: 32px; color: #050505; }
+    .pv-label { font-size: 12px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.04em; }
+    .pv-saldo-meta { font-size: 13px; color: #6b7280; }
+    .pv-vencido { color: #b45309; font-weight: 600; }
+    .pv-al-dia { margin: 0; padding: 24px; background: #fff; border-radius: 24px; color: #14683f; font-weight: 500; }
+
+    .pv-card {
+        background: #fff; border-radius: 28px; padding: 28px 28px 20px; margin-bottom: 16px;
+        border: 1px solid rgba(10, 25, 47, 0.05);
+        box-shadow: 0 4px 6px rgba(10, 25, 47, 0.02), 0 20px 60px -24px rgba(10, 25, 47, 0.12);
+    }
+    .pv-card h2 { font-size: 17px; letter-spacing: -0.02em; color: #050505; margin: 0 0 12px; }
+    .pv-autopay-head { display: flex; gap: 14px; align-items: flex-start; }
+    .pv-autopay-head p { margin: 0; color: #4b5563; font-size: 14px; line-height: 1.55; }
+    .pv-autopay-head h2 { margin-bottom: 4px; }
+    .pv-icon { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 12px; background: #f5f5f7; flex-shrink: 0; }
+    .pv-aviso-autopay { margin: 14px 0 0; padding: 12px 14px; border-radius: 14px; background: #fff7ed; color: #92400e; font-size: 13.5px; line-height: 1.5; }
+    .pv-autopay-acts { display: flex; flex-wrap: wrap; gap: 10px; margin: 18px 0 8px; }
+
+    .pv-btn {
+        display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 10px 20px;
+        border-radius: 999px; border: 1px solid #e5e7eb; background: #fff; color: #111827;
+        font: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
+        transition: transform 0.15s ease, border-color 0.2s;
+    }
+    .pv-btn:hover { border-color: #0a192f; }
+    .pv-btn:active { transform: scale(0.98); }
+    .pv-btn:disabled { opacity: 0.6; cursor: wait; }
+    .pv-btn:focus-visible, .pv-check:focus-visible, .pv-row-links a:focus-visible { outline: 2px solid #0a192f; outline-offset: 3px; }
+    .pv-btn-primary { color: #fff; border-color: transparent; }
+    .pv-btn-block { width: 100%; margin-top: 14px; }
+
+    .pv-sheet { margin-top: 12px; }
+    .pv-consent {
+        display: flex; gap: 10px; align-items: flex-start; padding: 14px; border-radius: 14px; background: #f5f5f7;
+        font-size: 13px; line-height: 1.55; color: #374151; cursor: pointer;
+    }
+    .pv-consent input { margin-top: 3px; width: 18px; height: 18px; flex-shrink: 0; }
+    .pv-element { margin-top: 14px; }
+    .pv-err { margin: 10px 0 0; color: #b42318; font-size: 13.5px; }
+    .pv-hint { margin: 10px 0 4px; color: #6b7280; font-size: 13px; line-height: 1.5; }
+    .pv-empty { color: #6b7280; margin: 4px 0 8px; }
+
+    .pv-list { list-style: none; margin: 0; padding: 0; }
+    .pv-row {
+        display: grid; grid-template-columns: 28px 1fr auto auto; align-items: center; gap: 14px;
+        padding: 14px 0; border-top: 1px solid #f0f0f2;
+    }
+    .pv-row:first-child { border-top: 0; }
+    .pv-check { width: 20px; height: 20px; cursor: pointer; }
+    .pv-check:disabled { opacity: 0.35; cursor: not-allowed; }
+    .pv-check-placeholder { width: 20px; }
+    .pv-row-main { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+    .pv-num { font-weight: 600; color: #111827; font-size: 15px; }
+    .pv-row-meta { font-size: 12.5px; color: #6b7280; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+    .pv-row-amt { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+    .pv-row-amt strong { font-size: 16px; color: #050505; }
+    .pv-row-links { display: flex; gap: 4px; }
+    .pv-row-links a {
+        display: inline-flex; align-items: center; min-height: 44px; padding: 0 8px;
+        color: #0a192f; font-size: 13px; font-weight: 600; text-decoration: none;
+    }
+    .pv-row-links a:hover { text-decoration: underline; text-underline-offset: 4px; }
+    .pv-badge { display: inline-flex; padding: 2px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 600; }
+    .pv-badge-wait { background: #eef2ff; color: #3730a3; }
+    .pv-badge-late { background: #fff7ed; color: #b45309; }
+
+    .pv-pagadas summary { display: flex; align-items: center; gap: 10px; cursor: pointer; list-style: none; min-height: 44px; }
+    .pv-pagadas summary::-webkit-details-marker { display: none; }
+    .pv-pagadas summary h2 { margin: 0; }
+    .pv-count { font-size: 12px; font-weight: 600; color: #6b7280; background: #f5f5f7; border-radius: 999px; padding: 2px 9px; }
+
+    .pv-foot { margin-top: 28px; text-align: center; font-size: 13px; color: #6b7280; }
+    .pv-foot p { margin: 6px 0; }
+    .pv-foot a { color: #0a192f; }
+    .pv-aviso { max-width: 520px; margin: 10px auto !important; line-height: 1.5; }
+    .pv-powered { font-size: 12px; color: #9ca3af; }
+
+    .pv-paybar {
+        position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); z-index: 20;
+        display: flex; align-items: center; gap: 16px; width: min(720px, calc(100% - 32px));
+        padding: 12px 12px 12px 22px; border-radius: 999px; background: #fff;
+        box-shadow: 0 10px 40px -10px rgba(10, 25, 47, 0.35), 0 0 0 1px rgba(10, 25, 47, 0.05);
+    }
+    .pv-paybar span { flex: 1; font-size: 14px; font-weight: 600; color: #111827; }
+    .pv-overlay {
+        position: fixed; inset: 0; z-index: 30; display: flex; align-items: flex-end; justify-content: center;
+        background: rgba(10, 25, 47, 0.28); padding: 16px;
+    }
+    .pv-overlay[hidden] { display: none; }
+    .pv-sheet-modal {
+        width: min(520px, 100%); max-height: calc(100vh - 32px); overflow: auto; margin: 0;
+        background: #fff; border-radius: 28px; padding: 24px;
+        box-shadow: 0 24px 80px -20px rgba(10, 25, 47, 0.4);
+    }
+    @media (min-width: 640px) { .pv-overlay { align-items: center; } }
+    .pv-sheet-head { display: flex; justify-content: space-between; align-items: center; }
+    .pv-sheet-head h2 { margin: 0; font-size: 17px; letter-spacing: -0.02em; }
+    .pv-x { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border: 0; border-radius: 999px; background: #f5f5f7; cursor: pointer; color: #374151; }
+    .pv-sheet-total { font-size: 30px; margin: 10px 0 16px; color: #050505; }
+
+    @media (max-width: 560px) {
+        .pv-card { padding: 22px 18px 14px; border-radius: 24px; }
+        .pv-row { grid-template-columns: 24px 1fr auto; }
+        .pv-row-links { grid-column: 2 / -1; justify-content: flex-start; margin-left: -8px; }
+        .pv-paybar { border-radius: 22px; flex-direction: column; align-items: stretch; gap: 10px; padding: 14px; }
+        .pv-paybar span { text-align: center; }
+    }
+</style>

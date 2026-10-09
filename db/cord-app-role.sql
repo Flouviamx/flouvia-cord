@@ -30,6 +30,11 @@ grant execute on function cord_effective_plan(uuid) to cord_app;
 -- accesible solo porque nadie la había revocado de public.
 grant execute on function cord_resolve_public_invoice(text) to cord_app;
 grant execute on function cord_resolve_customer_domain(text) to cord_app;
+-- Portal del cliente /portal/[token] (oct 2026): mismo contrato que la factura.
+grant execute on function cord_resolve_portal(text) to cord_app;
+-- Outbox de los rieles fiscales de LatAm (oct 2026): el barrido del cron solo
+-- responde con app.scope = 'system'; está revocada de public en db/schema.sql.
+grant execute on function cord_fiscal_rail_orgs_por_resolver(text, int) to cord_app;
 
 -- Carriles resueltos en la auditoría de ago 2026 (ver db/RUNBOOK-cord-app.md).
 -- Todos son funciones ESTRECHAS para flujos que corren antes de que exista

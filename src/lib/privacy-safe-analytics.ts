@@ -15,6 +15,7 @@ export const ANALYTICS_PRIVATE_ROUTE_RULES: readonly AnalyticsRouteRule[] = [
   { prefix: '/app/ajustes/sso/', replacement: '/app/ajustes/sso/[id]' },
   { prefix: '/q/', replacement: '/q/[token]' },
   { prefix: '/i/', replacement: '/i/[token]' },
+  { prefix: '/portal/', replacement: '/portal/[token]' },
   { prefix: '/embed/', replacement: '/embed/[token]' },
   { prefix: '/unirse/', replacement: '/unirse/[token]' },
   { prefix: '/verificar-identidad/', replacement: '/verificar-identidad/[token]' },

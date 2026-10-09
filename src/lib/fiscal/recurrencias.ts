@@ -16,6 +16,7 @@ import { notifyInvoiceIssued } from '../email';
 import { logInvoiceEvent } from './timeline';
 import { checkEntitlement } from '../org-entitlements';
 import { venceDia } from '../cobros';
+import { descuentoDesdeJson, type TipoDescuento } from '../descuentos';
 
 import { recurrenceDay, proximaEmision, type Cadencia } from './recurrence-calendar';
 export { proximaEmision, type Cadencia } from './recurrence-calendar';
@@ -33,6 +34,12 @@ export interface RecurrenciaInput {
     primeraEmision?: string | null;
     endDate?: string | null;
     autopay?: boolean;
+    /**
+     * Descuento MANUAL de documento que lleva cada factura emitida (sin cupón:
+     * un cupón es de un solo uso por documento y no se repite solo). Se expresa
+     * sobre precios sin impuesto, que es como se guardan las líneas.
+     */
+    descuento?: { tipo: TipoDescuento; valor: number } | null;
 }
 
 export async function createRecurrencia(orgId: string, input: RecurrenciaInput, createdBy?: string | null) {
@@ -79,16 +86,20 @@ export async function createRecurrencia(orgId: string, input: RecurrenciaInput, 
         return { ok: false as const, error: 'Los conceptos necesitan cantidad y precio válidos.' };
     }
 
+    // Solo tipo y valor: nada de código ni cupón en una plantilla que se repite.
+    const descuento = descuentoDesdeJson(input.descuento ?? null);
+    const descuentoPlano = descuento ? { tipo: descuento.tipo, valor: descuento.valor } : null;
+
     const [[row]] = await withOrgTx(orgId, sql`
         insert into documento_recurrencias
             (org_id, cliente_id, nombre, lineas_snapshot, currency, notas,
-             cadencia, dia_mes, dias_credito, next_run_at, end_date, autopay, created_by)
+             cadencia, dia_mes, dias_credito, next_run_at, end_date, autopay, created_by, descuento)
         select
             ${orgId}, ${input.clienteId}, ${input.nombre.slice(0, 120)},
              ${JSON.stringify(lineas)}::jsonb, ${input.currency}, ${input.notas || null},
              ${input.cadencia}, ${dia}, ${Math.max(0, Math.round(input.diasCredito) || 0)},
              ${primera}, ${endDate},
-             ${!!input.autopay}, ${createdBy || null}
+             ${!!input.autopay}, ${createdBy || null}, ${descuentoPlano ? JSON.stringify(descuentoPlano) : null}::jsonb
         from clientes where id = ${input.clienteId} and org_id = ${orgId}
         returning id`);
 
@@ -119,7 +130,7 @@ export async function runRecurrencias(opts: { limit?: number } = {}): Promise<Ru
     const limite = Math.min(500, Math.max(1, Math.floor(opts.limit || 200)));
 
     const pendientes = await withSystemTx(sql`
-        select r.id, r.org_id, r.cliente_id, r.lineas_snapshot, r.currency, r.notas,
+        select r.id, r.org_id, r.cliente_id, r.lineas_snapshot, r.currency, r.notas, r.descuento,
                r.cadencia, r.dia_mes, r.dias_credito, r.next_run_at, r.end_date, r.autopay,
                r.updated_at::text as updated_at, o.country_code as org_country_code
           from documento_recurrencias r
@@ -176,6 +187,10 @@ export async function runRecurrencias(opts: { limit?: number } = {}): Promise<Ru
                 currency: String(r.currency),
                 dueDate: vence.toISOString().slice(0, 10),
                 notes: (r.notas as string) || null,
+                descuento: (() => {
+                    const d = descuentoDesdeJson(r.descuento);
+                    return d ? { manual: { tipo: d.tipo, valor: d.valor }, cupon: null } : null;
+                })(),
             });
 
             if (!draft.ok || !draft.documentId) {

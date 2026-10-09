@@ -84,6 +84,8 @@ export function representacionArca(d: DatosRepresentacionArca): RepresentacionIm
         const a = DESCRIPCION_COMPROBANTE[d.asociado.cbteTipo];
         filas.push({ k: 'Comprobante asociado', v: `${a ? `${a.titulo} ${a.clase}` : `Tipo ${d.asociado.cbteTipo}`} ${numeroLegal(d.asociado.ptoVta, d.asociado.numero)}` });
     }
+    // Descuento de documento: los importes autorizados ya son netos de él.
+    if (s.bonificacion && Number(s.bonificacion) > 0) filas.push({ k: 'Bonificación', v: importe(s.bonificacion, det.MonId) });
     if (det.MonId !== 'PES') filas.push({ k: 'Moneda / cotización', v: `${det.MonId} · ${det.MonCotiz}` });
     filas.push({ k: 'CAE N°', v: d.cae });
     if (d.caeVence) filas.push({ k: 'Fecha de Vto. de CAE', v: fechaDma(d.caeVence) });

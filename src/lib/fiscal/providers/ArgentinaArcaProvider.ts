@@ -98,6 +98,7 @@ function respuestaAutorizada(request: FiscalDocumentRequest, intento: IntentoRai
                     moneda: sol.detalle.MonId,
                     cotizacion: sol.detalle.MonCotiz,
                     importe_total: sol.detalle.ImpTotal,
+                    ...(sol.bonificacion ? { bonificacion: sol.bonificacion } : {}),
                 },
                 autorizacion: { tipo: 'CAE', codigo: cae, vence: intento.autorizacionVence },
                 observaciones: intento.observaciones,

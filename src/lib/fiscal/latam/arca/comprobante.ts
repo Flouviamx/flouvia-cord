@@ -17,6 +17,12 @@
 //   - Servicios (concepto 2 y 3) llevan FchServDesde/Hasta/VtoPago [MAN 10049, 10036].
 //   - Nota de crédito: misma clase, receptor y moneda que la factura que
 //     ajusta, con CbtesAsoc [MAN 10040, 10197].
+//   - Descuento de documento (bonificación): WSFEv1 no lleva conceptos, solo
+//     totales, y ImpNeto es el "importe neto gravado" [MAN, FECAEDetRequest].
+//     Cada concepto llega con su base YA neta (`subtotal`) y su parte del
+//     descuento aparte (`discount`, motor de Cord): el neto, las bases de
+//     AlicIva y el IVA se informan sobre lo neto, y la bonificación queda
+//     registrada en la solicitud para imprimirla.
 //
 // Lo que no se puede armar bien NO se manda: se lanza RailDatosError con un
 // mensaje para el dueño del negocio. Puro (sin red ni base): scripts/arca-check.mjs
@@ -78,6 +84,12 @@ export interface SolicitudArca {
     cbteTipo: number;
     clase: ClaseComprobante;
     detalle: DetalleArca;
+    /**
+     * Bonificación (descuento de documento) ya deducida de ImpNeto/ImpOpEx,
+     * texto decimal. No viaja a ARCA (WSFEv1 no tiene campo para ella): es
+     * para la representación impresa. Ausente = sin descuento.
+     */
+    bonificacion?: string;
 }
 
 export interface EntradaComprobante {
@@ -217,6 +229,14 @@ interface Desglose {
     alicuotas: AlicIva[];
 }
 
+/** Descuento repartido a un concepto, en centavos. Negativo o no numérico: error. */
+function descuentoDe(l: FiscalLineItem): number {
+    if (l.discount === undefined || l.discount === null) return 0;
+    const d = Number(l.discount);
+    if (!Number.isFinite(d) || d < 0) throw new RailDatosError('El descuento de un concepto no es válido.');
+    return centavos(d);
+}
+
 function desglose(lineas: FiscalLineItem[], clase: ClaseComprobante): Desglose {
     if (clase === 'C') {
         if (lineas.some((l) => centavos(l.taxAmount) !== 0)) {
@@ -249,6 +269,9 @@ function desglose(lineas: FiscalLineItem[], clase: ClaseComprobante): Desglose {
     let neto = 0;
     let iva = 0;
     for (const [id, g] of [...grupos.entries()].sort((a, b) => a[0] - b[0])) {
+        // Un concepto que el descuento dejó en cero no aporta base ni IVA: no
+        // se informa una alícuota vacía.
+        if (g.base === 0 && g.importe === 0) continue;
         // [MAN 10051] el importe de cada alícuota debe corresponder a su base.
         if (!dentroDelMargen(g.base * g.tasa / 100, g.importe / 100)) {
             throw new RailDatosError('El IVA de los conceptos no cuadra con su base por redondeo. Revisa los precios unitarios y vuelve a emitir.');
@@ -314,6 +337,14 @@ export function armarSolicitud(e: EntradaComprobante): SolicitudArca {
 
     const d = desglose(e.lineas, clase);
     const total = d.neto + d.iva + d.exento;
+    // El descuento de cada concepto ya bajó su base; el del documento es su
+    // suma. Si el documento declara otro, los importes no son los que se
+    // imprimen.
+    const bonificacion = e.lineas.reduce((sum, l) => sum + descuentoDe(l), 0);
+    if (e.totales.discountTotal !== undefined && e.totales.discountTotal !== null
+        && !dentroDelMargen(bonificacion / 100, Number(e.totales.discountTotal), e.lineas.length)) {
+        throw new RailDatosError('El descuento del documento no cuadra con el de sus conceptos. Vuelve a guardarlo antes de emitir.');
+    }
     // [MAN 10048] y coherencia con el documento: lo que ARCA autoriza es lo
     // que el cliente ve impreso.
     const totalDoc = centavos(Number(e.totales.subtotal) + Number(e.totales.taxes));
@@ -382,6 +413,7 @@ export function armarSolicitud(e: EntradaComprobante): SolicitudArca {
         cbteTipo: tipoComprobante(clase, !!original),
         clase,
         detalle,
+        ...(bonificacion > 0 ? { bonificacion: importe(bonificacion) } : {}),
     };
 }
 

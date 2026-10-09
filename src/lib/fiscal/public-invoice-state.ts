@@ -1,11 +1,12 @@
 /** Public copy follows the document ledger, never a redirect's success flag. */
 export function publicInvoiceGuidance(f: {
     estado: string; esNotaCredito: boolean; porDevolver: number; saldo: number;
-    acreditado: number; puedePagar: boolean; regresoDePago: boolean;
+    acreditado: number; puedePagar: boolean; regresoDePago: boolean; pagoEnProceso?: boolean;
 }, locale: string) {
     const en = locale === 'en';
     if (f.estado === 'void') return en ? 'This document was cancelled. No payment is required.' : 'Este documento fue cancelado. No necesitas pagarlo.';
     if (f.esNotaCredito) return en ? 'This credit note reduces the original invoice. It is not a payment request.' : 'Esta nota de crédito reduce la factura original. No es una solicitud de pago.';
+    if (f.pagoEnProceso && f.estado === 'open') return en ? 'A bank debit for this invoice is processing. It can take a few days to confirm; you don\'t need to pay again.' : 'Hay un cargo a cuenta bancaria en proceso para esta factura. Puede tardar unos días en confirmarse; no necesitas volver a pagar.';
     if (f.regresoDePago) return en ? 'We are checking your payment. Wait for confirmation before paying again.' : 'Estamos verificando tu pago. Espera la confirmación antes de volver a pagar.';
     if (f.porDevolver > 0) return en ? 'There is an amount to be returned to you. Contact the business to arrange it.' : 'Hay un importe por devolverte. Contacta a la empresa para coordinarlo.';
     if (f.estado === 'paid' && f.saldo <= 0) return en ? 'There is no balance due. You can download your document below.' : 'No tienes saldo pendiente. Puedes descargar tu comprobante abajo.';
@@ -33,11 +34,16 @@ export function publicPaymentIntent(value: string | null) {
 export function publicInvoicePayability(f: {
     esNotaCredito: boolean; esPrueba: boolean; simulado: boolean; testMode: boolean;
     pagoDisponible: boolean; aceptaTarjeta: boolean; mercadoPago: boolean;
+    /** Métodos de Cord Payments para la divisa de la factura (tarjeta, domiciliación). */
+    metodosEnLinea?: string[];
+    /** Un débito bancario en proceso: no se ofrece pagar otra vez mientras tanto. */
+    pagoEnProceso?: boolean;
 }, stripeConfigured: boolean) {
-    const cobrable = !f.esNotaCredito && !f.esPrueba && !f.simulado && !f.testMode;
+    const cobrable = !f.esNotaCredito && !f.esPrueba && !f.simulado && !f.testMode && !f.pagoEnProceso;
+    const enLinea = f.metodosEnLinea ? f.metodosEnLinea.length > 0 : f.aceptaTarjeta;
     // Mercado Pago no depende de Cord Payments ni de la llave de Stripe.
     return {
-        puedePagar: cobrable && stripeConfigured && f.pagoDisponible && f.aceptaTarjeta,
+        puedePagar: cobrable && stripeConfigured && f.pagoDisponible && enLinea,
         puedePagarMp: cobrable && f.mercadoPago,
     };
 }

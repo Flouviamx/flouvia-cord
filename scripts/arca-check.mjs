@@ -23,8 +23,9 @@
 //   5. Reglas del manual del desarrollador (RG 4291, v4.7): matriz de clases
 //      A/B/C × condición frente al IVA del receptor (anexo, RG 5616), tipos de
 //      comprobante, cuadres (10048, 10023, 10061, 10051…), umbral de
-//      identificación del consumidor final (RG 5700/2025) y los rechazos que
-//      Cord hace ANTES de pedir el CAE.
+//      identificación del consumidor final (RG 5700/2025), el descuento de
+//      documento calculado por el motor de Cord (neto, bases e IVA netos) y los
+//      rechazos que Cord hace ANTES de pedir el CAE.
 //   6. Respuestas reales de homologación (fixtures): parsers, códigos de error
 //      y faults del WSAA.
 import assert from 'node:assert/strict';
@@ -50,6 +51,7 @@ import {
 import { ArcaWsaaError, construirTRA, firmarTRA, parsearLoginCms, sobreLoginCms } from '../src/lib/fiscal/latam/arca/wsaa.ts';
 import { CODIGOS_AUTENTICACION, mensajeRechazo, mensajeWsaa, wsaaTransitorio } from '../src/lib/fiscal/latam/arca/errores.ts';
 import { RailDatosError } from '../src/lib/fiscal/latam/errores.ts';
+import { calculateDocumentTotals } from '../packages/elements/src/engine.ts';
 
 const FIX = fileURLToPath(new URL('./fixtures/arca/', import.meta.url));
 const leer = (f) => readFileSync(join(FIX, f), 'utf8');
@@ -190,6 +192,44 @@ const SOLICITUDES = {};
     assert.deepEqual(nc.detalle.CbtesAsoc, [{ Tipo: 1, PtoVta: 3, Nro: 42, Cuit: CUIT_EMISOR, CbteFch: '20261008' }]);
     SOLICITUDES.notaCredito = conNumero(nc, 5);
 
+    // Descuento de documento (bonificación), calculado por el MOTOR de Cord tal
+    // como lo hace la factura: WSFEv1 no tiene conceptos, así que el neto
+    // gravado, las bases de AlicIva y el IVA van netos del descuento y cuadran
+    // con el documento; la bonificación queda en la solicitud para imprimirla.
+    const motor = calculateDocumentTotals([
+        { descripcion: 'Servicio', cantidad: 3, precio_unitario: 333.33, tax_rate: 0.21 },
+        { descripcion: 'Libro', cantidad: 1, precio_unitario: 250, tax_rate: 0.105 },
+        { descripcion: 'Exento', cantidad: 2, precio_unitario: 100, tax_rate: 0 },
+    ], { roundLines: 2, descuento: { tipo: 'porcentaje', valor: 12.5 } });
+    const lineasMotor = motor.lineas.map((l) => ({
+        description: l.descripcion, quantity: l.cantidad, unitPrice: l.cantidad ? l.base / l.cantidad : l.base, taxRate: l.tax_rate,
+        subtotal: l.base, taxAmount: l.impuesto, total: l.total, ...(l.descuento > 0 ? { discount: l.descuento } : {}),
+    }));
+    assert.ok(motor.descuentoTotal > 0);
+    const conDesc = armarSolicitud(base({
+        lineas: lineasMotor,
+        totales: { subtotal: motor.subtotal, taxes: motor.impuestos, total: motor.total, currency: 'ARS', discountTotal: motor.descuentoTotal },
+    }));
+    const n = (v) => Number(v);
+    assert.ok(dentroDelMargen(n(conDesc.detalle.ImpTotal), motor.total), 'ImpTotal = total del documento con descuento');
+    assert.ok(dentroDelMargen(n(conDesc.detalle.ImpNeto) + n(conDesc.detalle.ImpOpEx), motor.subtotal), 'neto + exento = subtotal NETO del motor');
+    assert.ok(dentroDelMargen(n(conDesc.detalle.ImpIVA), motor.impuestos), 'IVA sobre la base neta');
+    for (const t of motor.porTasa.filter((x) => x.tasa > 0)) {
+        const a = conDesc.detalle.Iva.find((x) => Math.abs(n(x.BaseImp) - t.base) < 0.011);
+        assert.ok(a && dentroDelMargen(n(a.Importe), t.impuesto), `AlicIva de la tasa ${t.tasa} con base neta`);
+    }
+    assert.equal(conDesc.bonificacion, motor.descuentoTotal.toFixed(2));
+    assert.deepEqual(problemasDeCuadre(conDesc.detalle, 'A'), []);
+    SOLICITUDES.facturaDescuento = conNumero(conDesc, 44);
+    // Un descuento que deja un concepto gravado en cero no informa una alícuota vacía.
+    const enCero = armarSolicitud(base({
+        lineas: [{ ...linea(0, 0.21), discount: 100 }, linea(500, 0.105)],
+        totales: { subtotal: 500, taxes: 52.5, total: 552.5, currency: 'ARS', discountTotal: 100 },
+    }));
+    assert.deepEqual(enCero.detalle.Iva, [{ Id: 4, BaseImp: '500.00', Importe: '52.50' }]);
+    rechaza(() => armarSolicitud(base({ lineas: lineasMotor, totales: { subtotal: motor.subtotal, taxes: motor.impuestos, total: motor.total, currency: 'ARS', discountTotal: motor.descuentoTotal + 5 } })), /descuento del documento no cuadra/, 'descuento declarado distinto del de los conceptos');
+    rechaza(() => armarSolicitud(base({ lineas: [{ ...linea(100, 0.21), discount: -5 }] })), /descuento de un concepto/, 'descuento negativo');
+
     // Controles negativos: lo que ARCA rechazaría no se envía.
     rechaza(() => armarSolicitud(base({ condicionEmisor: 'monotributo', lineas: [linea(100, 0.21)] })), /Factura C no se discrimina/, 'C con IVA');
     rechaza(() => armarSolicitud(base({ lineas: [linea(100, 0.16)] })), /no es una alícuota vigente/, 'tasa inexistente');
@@ -291,6 +331,7 @@ const SOLICITUDES = {};
                 caeC: sobreCAESolicitar(AUTH, SOLICITUDES.facturaC, SOLICITUDES.facturaC.detalle),
                 caeUsd: sobreCAESolicitar(AUTH, SOLICITUDES.facturaUsd, SOLICITUDES.facturaUsd.detalle),
                 caeNc: sobreCAESolicitar(AUTH, SOLICITUDES.notaCredito, SOLICITUDES.notaCredito.detalle),
+                caeDescuento: sobreCAESolicitar(AUTH, SOLICITUDES.facturaDescuento, SOLICITUDES.facturaDescuento.detalle),
                 ultimo: sobreUltimoAutorizado(AUTH, 3, 1),
                 consultar: sobreCompConsultar(AUTH, 3, 1, 42),
                 cotizacion: sobreCotizacion(AUTH, 'DOL'),

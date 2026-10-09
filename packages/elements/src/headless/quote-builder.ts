@@ -46,6 +46,12 @@ export interface QuoteBuilderState {
     vigencia_dias: number;
     notas: string;
     precios_incluyen_impuesto: boolean;
+    /**
+     * Código de cupón que capturó el comprador. Lo valida y aplica el servidor
+     * al crear la cotización: `totals` no lo incluye porque su valor no se
+     * conoce de este lado, y el total de `result` sí.
+     */
+    cupon: string;
     items: BuilderItem[];
     totals: DocumentTotals;
     issues: BuilderIssue[];
@@ -64,6 +70,8 @@ export interface QuoteBuilder extends ReadableStore<QuoteBuilderState> {
     setVigencia(dias: number): void;
     setNotas(notas: string): void;
     setPreciosIncluyenImpuesto(value: boolean): void;
+    /** Código de cupón; vacío lo quita. Se normaliza a mayúsculas. */
+    setCupon(codigo: string): void;
     addItem(item?: Partial<Omit<BuilderItem, 'key'>>): string;
     addProduct(product: CordProduct, cantidad?: number): string;
     updateItem(key: string, patch: Partial<Omit<BuilderItem, 'key'>>): void;
@@ -148,6 +156,7 @@ export function createQuoteBuilder(opts: QuoteBuilderOptions): QuoteBuilder {
         setVigencia: (dias) => commit({ vigencia_dias: Math.round(Number(dias)) }),
         setNotas: (notas) => commit({ notas: String(notas).slice(0, 5000) }),
         setPreciosIncluyenImpuesto: (value) => commit({ precios_incluyen_impuesto: !!value }),
+        setCupon: (codigo) => commit({ cupon: String(codigo ?? '').trim().toUpperCase().slice(0, 32) }),
         addItem(item = {}) {
             const s = store.get();
             const key = nextKey();
@@ -258,6 +267,7 @@ function initialState(config: CordElementsConfig | null): QuoteBuilderState {
         vigencia_dias: config?.vigencia_dias_default ?? 30,
         notas: '',
         precios_incluyen_impuesto: config?.impuestos.precios_incluyen_impuesto ?? false,
+        cupon: '',
         items: [{ key: nextKey(), producto_id: null, descripcion: '', cantidad: 1, precio_unitario: 0, tax_rate: config?.impuestos.tasa_default ?? 0 }],
         totals: EMPTY_TOTALS,
         issues: [],
@@ -275,6 +285,7 @@ function keepUserInput(prev: QuoteBuilderState, config: CordElementsConfig): Par
         cliente: prev.cliente,
         fiscal: prev.fiscal,
         notas: prev.notas,
+        cupon: prev.cupon,
         items: prev.items.map((it) => ({ ...it, tax_rate: config.impuestos.tasa_default })),
     };
 }
@@ -329,6 +340,7 @@ function toPayload(s: QuoteBuilderState): CreateQuoteInput {
         notas: s.notas.trim() || undefined,
         base_currency: s.moneda,
         iva_incluido: s.precios_incluyen_impuesto,
+        ...(s.cupon ? { cupon: s.cupon } : {}),
         items: s.items.map((it) => ({
             producto_id: it.producto_id ?? undefined,
             descripcion: it.descripcion.trim(),

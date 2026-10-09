@@ -20,6 +20,7 @@ export type InvoiceEventType =
     | 'sent'         // correo al cliente
     | 'viewed'       // el CLIENTE abrió el link (regla 19: nunca desde el SSR)
     | 'payment'      // abono aplicado
+    | 'payment_failed' // un cobro en línea (portal o automático) no pasó
     | 'paid'         // saldo en cero
     | 'reminder'     // etapa de la escalera de cobranza
     | 'void'         // anulada

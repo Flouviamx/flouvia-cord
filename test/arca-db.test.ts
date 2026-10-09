@@ -367,6 +367,31 @@ describe('autorización', () => {
         expect(rep.leyendas.join(' ')).toMatch(/Transparencia Fiscal/);
     });
 
+    it('descuento de documento: ARCA recibe el neto gravado y la bonificación se imprime', async () => {
+        const doc = await nuevoDocumento();
+        // 10 % sobre 1.000 + 500: cada concepto llega con su base neta y su parte.
+        const lines = [
+            { description: 'Servicio', quantity: 1, unitPrice: 900, taxRate: 0.21, subtotal: 900, taxAmount: 189, total: 1089, discount: 100 },
+            { description: 'Exento', quantity: 1, unitPrice: 450, taxRate: 0, subtotal: 450, taxAmount: 0, total: 450, discount: 50 },
+        ];
+        const r = await provider.issueDocument(request(doc, {
+            lines, totals: { subtotal: 1350, taxes: 189, total: 1539, currency: 'ARS', discountTotal: 150 },
+        }));
+        expect(r.success).toBe(true);
+        const pedido = llamadas('FECAESolicitar').at(-1)!.body;
+        expect([tag(pedido, 'ImpNeto'), tag(pedido, 'ImpOpEx'), tag(pedido, 'ImpIVA'), tag(pedido, 'ImpTotal')]).toEqual(['900.00', '450.00', '189.00', '1539.00']);
+        expect(tag(pedido, 'BaseImp')).toBe('900.00');
+        expect((r.rawProviderData as any).latam.comprobante.bonificacion).toBe('150.00');
+        expect(representacionDe(r.rawProviderData)?.filas.find((f) => f.k === 'Bonificación')?.v).toBe('$ 150,00');
+
+        // Un descuento declarado que no cuadra con el de los conceptos no se envía.
+        const mal = await provider.issueDocument(request(await nuevoDocumento(), {
+            lines, totals: { subtotal: 1350, taxes: 189, total: 1539, currency: 'ARS', discountTotal: 160 },
+        }));
+        expect(mal.success).toBe(false);
+        expect(mal.error).toMatch(/descuento del documento no cuadra/);
+    });
+
     it('error de datos ANTES de pedir el CAE: no toca ARCA y explica qué corregir', async () => {
         const doc = await nuevoDocumento({ condicion: null });
         const r = await provider.issueDocument(request(doc));

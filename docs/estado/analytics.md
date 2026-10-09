@@ -137,6 +137,11 @@ invoice_created → invoice_finalized → invoice_sent → invoice_viewed → in
 `invoice_paid` NO es revenue (el ingreso real lo declara `payment_received`, que
 `settleInvoiceFromIntent` emite con `payment_kind: 'invoice'` sólo en el camino
 `metadata.documento_id` — el camino `cotizacion_id` ya lo cuenta `markQuotePaid`).
+Un cobro que paga VARIAS facturas (portal del cliente o cobro automático) lo
+emite `cobroConfirmado` en `src/lib/cobros/webhook.ts`, una vez por
+PaymentIntent, con `payment_kind: 'grouped'` o `'autopay'` e `invoice_id` solo si
+pagó una factura; `payment_method` distingue `tarjeta`, `sepa` y `ach`. El portal
+no carga analítica: su URL es la credencial.
 
 ## Dinero y suscripción
 
