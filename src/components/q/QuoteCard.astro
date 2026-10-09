@@ -6,12 +6,12 @@ import { jsonForScript } from '../../lib/escape';
 import BrandHeader from './BrandHeader.astro';
 import { resolveBrandProfile, brandStyle } from '../../lib/brand-profile';
 import '../../styles/brand-surface.css';
-import { money, lineTotal, quoteSubtotal, quoteTotal, quoteTaxBreakdown, quoteRetenciones, quoteDescuento } from '../../lib/queries';
+import { money, lineTotal, quoteSubtotal, quoteTotal, quoteTaxBreakdown, quoteRetenciones, quoteDescuento, quoteTaxLines } from '../../lib/queries';
 import { etiquetaDescuento } from '../../lib/descuentos';
 import { getCountryProfile } from '../../lib/countries';
 import { currencyDecimals } from '../../lib/currency';
 import { retencionBase } from '../../../packages/elements/src/engine';
-import { taxBreakdownRows } from '../../lib/tax-components';
+import { taxBreakdownRows, taxNotes } from '../../lib/tax-components';
 import { canCollectOnline } from '../../lib/payment-rail';
 import { payoutSpecFor } from '../../lib/payout-fields';
 import { splitAnticipo } from '../../lib/cobros';
@@ -56,10 +56,14 @@ const viva = !yaAprobada && !yaRechazada;
 // "Tax" genérico en vez de "VAT" y a uno en Sídney en vez de "GST".
 const TAX_LABEL = getCountryProfile(ORG.paisCode || 'MX', L).taxLabel;
 // Un renglón por impuesto: en Canadá el 14.975% de Quebec es GST + QST.
+// En EE. UU., con el sales tax por dirección, un renglón por jurisdicción
+// (estado, condado, ciudad, distritos) y la nota de un 0 % legítimo.
+const TAX_LINES = quoteTaxLines(q);
 const TAX_ROWS = taxBreakdownRows(quoteTaxBreakdown(q), {
     country: ORG.paisCode || 'MX', region: ORG.fiscalRegion, taxLabel: TAX_LABEL,
-    decimals: currencyDecimals(q.baseCurrency || 'MXN'),
+    decimals: currencyDecimals(q.baseCurrency || 'MXN'), lineas: TAX_LINES,
 });
+const TAX_NOTES = taxNotes(TAX_LINES, L);
 // Riel bancario del EMISOR. La fila de transferencia decía "CLABE" a cualquier
 // cliente, y un IBAN de Madrid o un routing number de Austin no lo son. Se
 // nombra con los mismos datos que pide Ajustes › Cobros para ese país.
@@ -331,6 +335,7 @@ import { iconInner } from '../../lib/icons';
                 <div class="qt-row qt-ret" data-total="ret"><span>{r.nombre}</span><span class="editorial">−{money(r.monto)}</span></div>
             ))}
             <div class="qt-row qt-grand" data-total="grand"><span>{t(L, 'q.total')}</span><span class="editorial">{money(quoteTotal(q))}</span></div>
+            {TAX_NOTES.map((nota) => <div class="qt-row" data-total="note"><span>{nota}</span></div>)}
         </div>
     </div>
 

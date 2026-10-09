@@ -182,6 +182,9 @@
 [data-editor] .lr-tax:hover { background: var(--editor-field-hover); }
 [data-editor] .lr-tax:focus { outline: none; border-color: var(--color-blue-deep); background: var(--editor-panel); }
 [data-editor] .lr-tax.is-exento { color: var(--color-text-muted); }
+/* EE. UU., sales tax por dirección: la tasa no se elige; la calcula el servidor. */
+[data-editor] .lr-tax-auto { cursor: default; color: var(--color-text-muted); font-size: 0.72rem; display: flex; align-items: center; justify-content: center; }
+[data-editor] .lr-tax-auto:hover { background: var(--editor-field); }
 [data-editor] .lr-del {
     background: none; border: none; cursor: pointer;
     color: #94a3b8; display: flex; align-items: center; justify-content: center;
@@ -333,6 +336,7 @@
 /* Desglose por tasa: una línea por tipo de impuesto, sangrada bajo el subtotal. */
 [data-editor] .sum-tax { font-size: 0.78rem; padding-left: 0.6rem; }
 [data-editor] .sum-tax .editorial { font-size: 0.85rem; }
+[data-editor] .sum-tax-pending span:first-child { color: var(--color-text-muted); line-height: 1.45; }
 /* Retención: se RESTA del total. El renglón se distingue del impuesto porque
    van juntos y apuntan en direcciones contrarias — leerlos iguales es cómo un
    documento termina cuadrando consigo mismo y no con lo que el cliente paga.

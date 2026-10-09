@@ -19,6 +19,8 @@ import { currencyDecimals, normalizeCurrency } from '../currency';
 import { FXService, FXUnavailableError } from '../fx/FXService';
 import { descuentoDesdeJson, descuentoParaMotor, leerDescuentoBody, type DescuentoDef } from '../descuentos';
 import { DescuentoError, liberarCupon, resolverDescuento } from '../cupones';
+import { prepareUsTaxForDocument } from '../us-tax/calculo';
+import { UsTaxError } from '../us-tax/core';
 import { type ActionContext, type ActionOutcome, auditAction, done, fromResponse } from './outcome';
 
 export type { ActionContext, ActionOutcome };
@@ -149,7 +151,7 @@ export async function runQuoteAction(ctx: ActionContext, id: string, input: Reco
         const rawItems = input.items;
         const iva_incluido = Boolean(input.iva_incluido);
 
-        let catalogo;
+        let catalogo: Awaited<ReturnType<typeof taxCatalogFor>>;
         try {
             catalogo = await taxCatalogFor(orgId);
         } catch (error) {
@@ -199,6 +201,36 @@ export async function runQuoteAction(ctx: ActionContext, id: string, input: Reco
                 }
             }
         }
+        // Sales tax de EE. UU. por dirección (src/lib/us-tax/): con un cliente
+        // en EE. UU., la tasa de cada línea sale de un cálculo real guardado
+        // para ESTA venta; la del navegador se ignora. Sin cálculo posible no
+        // se guarda y se dice qué falta (regla 22). Un borrador puede quedarse
+        // sin cliente; enviar, no.
+        const reescribeCliente = input.action === 'update_draft' || (input.action === 'send' && actual === 'draft');
+        const clienteFinal = reescribeCliente ? (input.cliente_id ? String(input.cliente_id) : null) : ((rows[0].cliente_id as string | null) ?? null);
+        let usTaxCalculoId: string | null = null;
+        try {
+            const usTax = await prepareUsTaxForDocument(orgId, {
+                clienteId: clienteFinal, currency: monedaVenta, ivaIncluido: iva_incluido,
+                descuento: descuentoParaMotor(descuento), items, calculoId: input.us_tax_calculo_id,
+                requireClient: input.action !== 'update_draft', venta: `cotizacion:${id}`, orgCountry: catalogo.country,
+            });
+            if (usTax) {
+                catalogo = await taxCatalogFor(orgId, { usTaxCalculoId: usTax.calculoId });
+                usTaxCalculoId = usTax.calculoId;
+                const conCalculo = catalogo;
+                items.forEach((it: any, i: number) => {
+                    it.tax_rate = conCalculo.resolve(null, conCalculo.defaultRate, i);
+                    it.tax_breakdown = conCalculo.breakdown(i);
+                    it.exemption_reason = null;
+                });
+            }
+        } catch (error) {
+            if (error instanceof UsTaxError) return done(error.status, { error: error.message, code: `us_tax_${error.code}` });
+            if (error instanceof TaxCatalogUnavailableError) return done(503, { error: error.message, code: 'tax_catalog_unavailable' });
+            throw error;
+        }
+
         // Editar recalcula TODO con la regla vigente del país (CL: impuesto por
         // documento) y la guarda: desde aquí, los recálculos usan esta.
         const taxRounding = taxRoundingFor(catalogo.country);
@@ -285,20 +317,22 @@ export async function runQuoteAction(ctx: ActionContext, id: string, input: Reco
                         retenciones_snapshot = ${retencionesSnapshot}::jsonb,
                         descuento = ${descuentoTotal}, descuento_def = ${descuentoJson}::jsonb,
                         version = ${nextVersion}, iva_incluido = ${iva_incluido}, tax_rounding = ${taxRounding},
-                        anticipo_pct = ${anticipoPct}, es_recurrente = ${esRecurrente}
+                        anticipo_pct = ${anticipoPct}, es_recurrente = ${esRecurrente},
+                        us_tax_calculo_id = ${usTaxCalculoId}::uuid
                       where id = ${id}`);
         } else {
             writes.push(sql`update cotizaciones set subtotal = ${realSubtotal}, iva = ${iva}, total = ${total},
                         retencion_total = ${retencionTotal}, retenciones_snapshot = ${retencionesSnapshot}::jsonb,
                         descuento = ${descuentoTotal}, descuento_def = ${descuentoJson}::jsonb,
-                        version = ${nextVersion}, iva_incluido = ${iva_incluido}, tax_rounding = ${taxRounding} where id = ${id}`);
+                        version = ${nextVersion}, iva_incluido = ${iva_incluido}, tax_rounding = ${taxRounding},
+                        us_tax_calculo_id = ${usTaxCalculoId}::uuid where id = ${id}`);
         }
 
         const productosPropios = await productosDeOrg(orgId, items.map((it: any) => it.producto_id));
         writes.push(sql`delete from cotizacion_items where cotizacion_id = ${id}`);
         items.forEach((it: any, orden: number) => {
-            writes.push(sql`insert into cotizacion_items (cotizacion_id, producto_id, descripcion, cantidad, precio_unitario, precio_negociado, costo_unitario, orden, tax_rate, exemption_reason, clave_sat, clave_unidad_sat)
-                      values (${id}, ${it.producto_id && productosPropios.has(it.producto_id) ? it.producto_id : null}, ${it.descripcion}, ${Number(it.cantidad) || 1}, ${Number(it.precio_unitario) || 0}, ${it.precio_negociado === null || it.precio_negociado === undefined ? null : Number(it.precio_negociado)}, ${Number(it.costo_unitario) || 0}, ${orden}, ${it.tax_rate}, ${it.exemption_reason ?? null}, ${it.clave_sat ?? null}, ${it.clave_unidad_sat ?? null})`);
+            writes.push(sql`insert into cotizacion_items (cotizacion_id, producto_id, descripcion, cantidad, precio_unitario, precio_negociado, costo_unitario, orden, tax_rate, exemption_reason, clave_sat, clave_unidad_sat, tax_breakdown)
+                      values (${id}, ${it.producto_id && productosPropios.has(it.producto_id) ? it.producto_id : null}, ${it.descripcion}, ${Number(it.cantidad) || 1}, ${Number(it.precio_unitario) || 0}, ${it.precio_negociado === null || it.precio_negociado === undefined ? null : Number(it.precio_negociado)}, ${Number(it.costo_unitario) || 0}, ${orden}, ${it.tax_rate}, ${it.exemption_reason ?? null}, ${it.clave_sat ?? null}, ${it.clave_unidad_sat ?? null}, ${it.tax_breakdown ? JSON.stringify(it.tax_breakdown) : null}::jsonb)`);
         });
 
         if (input.action === 'resend') {

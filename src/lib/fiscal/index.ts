@@ -1,3 +1,4 @@
+import type { UsTaxDesglose } from '../us-tax/core';
 import type { RetencionBase } from '../../../packages/elements/src/engine';
 
 export interface FiscalAddress {
@@ -86,6 +87,12 @@ export interface FiscalLineItem {
    * reportan (solo servicios, art. 290 A del CGI). Ausente = no declarada.
    */
   nature?: 'goods' | 'services';
+  /**
+   * EE. UU., sales tax por dirección: desglose por jurisdicción (estado,
+   * condado, ciudad, distritos) congelado con el concepto. `taxRate` es la
+   * tasa EFECTIVA del cálculo; lo que se imprime son estas tasas legales.
+   */
+  taxBreakdown?: UsTaxDesglose | null;
 }
 
 export interface FiscalRetencion {

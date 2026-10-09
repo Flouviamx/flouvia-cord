@@ -40,6 +40,7 @@ import { t } from '../../../i18n/app';
 import { satLineI18n } from '../../../lib/sat-line-i18n';
 import { FORMAS_PAGO, USOS_CFDI } from '../../../lib/fiscal/cfdi-catalogos';
 import { normalizeTerm, termDueDate } from '../../../lib/payment-terms';
+import { usTaxEditorBoot } from '../../../lib/us-tax/editor';
 import '../../../styles/modal.css';
 import '../../../styles/editor.css';
 import '../../../styles/sat-line.css';
@@ -153,8 +154,11 @@ const SERVICE_DATE_HINT = country === 'DE'
 
 // Payload para el script. Va como JSON en el DOM y no por `define:vars` para
 // que el script pueda ser un módulo bundleado y así importar de verdad.
+// EE. UU.: sales tax por dirección (src/lib/us-tax-client.ts).
+const US_TAX = hasAccess ? await usTaxEditorBoot(orgId, country, CLIENTES as any[], L) : null;
 const BOOT = {
     locale: L,
+    usTax: US_TAX,
     draftId: draft?.id ?? null,
     orgCurrency: String(ORG.moneda || profile.currency),
     orgCountry: country,
@@ -626,7 +630,8 @@ import { iconInner } from '../../../lib/icons';
     import { createMoney } from '../../../lib/money-client';
     import { calculateDocumentTotals } from '../../../../packages/elements/src/engine';
     import { currencyDecimals } from '../../../lib/currency';
-    import { canonicalTaxRate, taxBreakdownRows, taxOptionIndex } from '../../../lib/tax-components';
+    import { canonicalTaxRate, taxBreakdownRows, taxNotes, taxOptionIndex } from '../../../lib/tax-components';
+    import { createUsTaxPreview } from '../../../lib/us-tax-client';
     import { termDueDate } from '../../../lib/payment-terms';
     import { wireTermPicker } from '../../../lib/term-picker-client';
     import { createSatLinePicker, genericKeyCount, satKeysFromProduct, satPayload } from '../../../lib/sat-line-picker';
@@ -718,6 +723,8 @@ import { iconInner } from '../../../lib/icons';
         // El valor de cada opción es su ÍNDICE: dos perfiles al 0 % ("Exento" y
         // "Exportación (art. 21)") comparten tasa y solo se distinguen por la causa.
         const taxSelect = (l: Linea, i: number) => {
+            // Sales tax por dirección: la tasa no se elige, la calcula el servidor.
+            if (usTax.applies()) return `<span class="lr-tax lr-tax-auto">${escapeHtml(usTax.auto())}</span>`;
             const actual = taxOptionIndex(BOOT.taxOptions || [], l.taxRate, l.exemptionReason);
             const opts = (BOOT.taxOptions || []).map((o: any, k: number) =>
                 `<option value="${k}"${k === actual ? ' selected' : ''}>${escapeHtml(o.label)}</option>`).join('');
@@ -767,14 +774,33 @@ import { iconInner } from '../../../lib/icons';
             onChange: () => recalc(),
         });
 
+        // EE. UU.: sales tax por la dirección del cliente. El editor pide un
+        // cálculo real y lo pinta con el mismo motor; nunca decide la tasa.
+        const usTax = createUsTaxPreview({
+            boot: BOOT.usTax,
+            getClienteId: () => ($('clientSelect') as HTMLSelectElement | null)?.value || null,
+            buildRequest: () => ({
+                currency,
+                iva_incluido: ivaIncluidoEl.checked,
+                items: lines.map((l) => ({ cantidad: l.cantidad, precio_unitario: l.lista, precio_negociado: l.negociado })),
+                ...descuento.payload(),
+            }),
+            onChange: () => render(),
+        });
+
         const recalc = () => {
+            // Sales tax por dirección: la tasa de cada línea es la del cálculo;
+            // sin él (calculando, o falta un dato) el impuesto no se inventa.
+            usTax.schedule();
+            const usEstado = usTax.estado();
+            const usActivo = usEstado !== 'no_aplica';
             const totals = calculateDocumentTotals(
-                lines.map((l) => ({
+                lines.map((l, i) => ({
                     descripcion: l.nombre,
                     cantidad: l.cantidad,
                     precio_unitario: l.lista,
                     precio_negociado: l.negociado,
-                    tax_rate: l.taxRate,
+                    tax_rate: usActivo ? (usTax.rateFor(i) ?? 0) : l.taxRate,
                 })),
                 // Mismo redondeo que `buildLines` al guardar.
                 {
@@ -793,9 +819,19 @@ import { iconInner } from '../../../lib/icons';
             // Desglose por tasa: una línea por tipo. Con una sola tasa se ve
             // igual que antes; con varias es la única forma de cuadrar.
             // En Canadá un 14.975% son dos impuestos (GST + QST): un renglón por cada uno.
-            const filasImpuesto = taxBreakdownRows(totals.porTasa, {
-                country: BOOT.taxCountry, region: BOOT.taxRegion, taxLabel: BOOT.taxLabel, decimals: currencyDecimals(currency),
-            }).map((t) => `<div class="sum-line sum-tax"><span>${escapeHtml(t.label)}</span><span class="editorial">${fmt(t.impuesto)}</span></div>`);
+            // EE. UU.: un renglón por jurisdicción del cálculo por dirección.
+            const lineasUs = usEstado === 'listo'
+                ? totals.lineas.map((l, i) => ({ base: l.base, impuesto: l.impuesto, taxBreakdown: usTax.desgloseFor(i) }))
+                : undefined;
+            const filasImpuesto = usActivo && usEstado !== 'listo'
+                ? [`<div class="sum-line sum-tax sum-tax-pending"><span>${escapeHtml(usTax.mensaje())}</span><span class="editorial">—</span></div>`]
+                : [
+                    ...taxBreakdownRows(totals.porTasa, {
+                        country: BOOT.taxCountry, region: BOOT.taxRegion, taxLabel: BOOT.taxLabel, decimals: currencyDecimals(currency),
+                        lineas: lineasUs,
+                    }).map((t) => `<div class="sum-line sum-tax"><span>${escapeHtml(t.label)}</span><span class="editorial">${fmt(t.impuesto)}</span></div>`),
+                    ...(lineasUs ? taxNotes(lineasUs, BOOT.locale) : []).map((n) => `<div class="sum-line sum-tax"><span>${escapeHtml(n)}</span><span></span></div>`),
+                ];
             // Una retención se RESTA. Se dibuja con el signo a la vista porque
             // un renglón positivo que en realidad baja el total es la clase de
             // detalle que nadie audita hasta que el cliente paga de menos.
@@ -1030,6 +1066,9 @@ import { iconInner } from '../../../lib/icons';
             const c = detail.cliente || {};
             const id = detail.id;
             if (!id) return;
+            // Un cliente nuevo en EE. UU. (o sin país: hereda el del negocio)
+            // entra al cálculo por dirección.
+            if (BOOT.usTax && (!c.country_code || String(c.country_code).toUpperCase() === 'US')) BOOT.usTax.clientesUs.push(id);
             const opt = document.createElement('option');
             opt.value = id;
             opt.textContent = c.contacto ? `${c.empresa} — ${c.contacto}` : (c.empresa || '');
@@ -1196,6 +1235,9 @@ import { iconInner } from '../../../lib/icons';
                 cfdi_forma_pago: ($('cfdiForma') as HTMLSelectElement).value,
             } : {}),
             ...descuento.payload(),
+            // EE. UU.: el cálculo de la vista previa; el servidor lo reusa solo
+            // si coincide con lo que se guarda.
+            us_tax_calculo_id: usTax.calculoId(),
             fx_buffer_pct: currency === BOOT.orgCurrency ? 0 : Number(($('fxBuffer') as HTMLInputElement).value) || 0,
             items: lines.map((l) => ({
                 producto_id: l.id,
