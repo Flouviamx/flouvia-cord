@@ -124,6 +124,23 @@ describe('createQuoteBuilder', () => {
         expect(b.get().result?.folio).toBe('COT-0001');
     });
 
+    it('manda el código de cupón normalizado, nunca un importe de descuento', async () => {
+        const { client, createQuote } = fakeClient();
+        const b = createQuoteBuilder({ client });
+        await flush();
+        b.setCliente({ empresa: 'Acme' });
+        b.updateItem(b.get().items[0].key, { descripcion: 'X', precio_unitario: 10 });
+        b.setCupon(' bienvenida10 ');
+        expect(b.get().cupon).toBe('BIENVENIDA10');
+        await b.submit();
+        const payload = (createQuote.mock.calls[0] as any[])[0];
+        expect(payload.cupon).toBe('BIENVENIDA10');
+        expect(payload).not.toHaveProperty('descuento');
+        b.setCupon('');
+        await b.submit();
+        expect((createQuote.mock.calls[1] as any[])[0]).not.toHaveProperty('cupon');
+    });
+
     it('valida los datos fiscales antes de enviar', async () => {
         const { client, createQuote } = fakeClient();
         const b = createQuoteBuilder({ client });

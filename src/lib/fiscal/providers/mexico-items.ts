@@ -44,7 +44,20 @@ export function mexicoItems(request: FiscalDocumentRequest) {
   }
   let subtotal = 0;
   let taxes = 0;
-  const items = lines.map((line) => {
+  // Descuento de documento repartido por concepto (`line.discount`). Facturapi
+  // lo recibe como `items[].discount`, "monto total de descuento aplicado a este
+  // concepto" (API de Facturapi, LineItemInput), y el CFDI lo declara en
+  // Concepto@Descuento: Importe = cantidad × ValorUnitario (BRUTO), la base del
+  // impuesto es Importe − Descuento (la neta, nuestro `subtotal`) y
+  // Comprobante@Descuento es la suma de los de los conceptos (Anexo 20, CFDI
+  // 4.0: SubTotal antes de descuentos e impuestos; Total = SubTotal − Descuento
+  // + trasladados − retenidos).
+  const discounts = lines.map((line) => {
+    const d = line.discount === undefined || line.discount === null ? 0 : Number(line.discount);
+    if (!Number.isFinite(d) || d < 0) throw new Error('El descuento de un concepto no es válido.');
+    return d;
+  });
+  const items = lines.map((line, i) => {
     // El catálogo actual distingue IVA 16%, 8% y exento (tasa 0).
     // IEPS y tasa cero gravada requieren metadatos distintos; no se inventan.
     if (![0, 0.08, 0.16].includes(line.taxRate) || !Number.isFinite(line.quantity) || line.quantity <= 0
@@ -52,14 +65,24 @@ export function mexicoItems(request: FiscalDocumentRequest) {
       || !matches(line.taxAmount, rounded(line.subtotal * line.taxRate))) {
       throw new Error('El concepto no tiene un desglose de IVA compatible con su snapshot fiscal.');
     }
+    const discount = discounts[i];
+    // El Anexo 20 exige que la Base de cada traslado sea mayor que cero: un
+    // concepto que el descuento dejó en cero no se puede timbrar.
+    if (discount > 0 && !(line.subtotal > 0)) {
+      throw new Error(`El concepto "${String(line.description || 'Concepto').slice(0, 60)}" quedó en cero con el descuento, y el SAT no admite un concepto con base cero. Reduce el descuento.`);
+    }
     subtotal += line.subtotal;
     taxes += line.taxAmount;
     // El snapshot anterior redondeaba el unitario a centavos aun para cantidades
-    // fraccionarias. Recuperamos hasta 6 decimales desde la base congelada.
-    const price = Math.round(line.subtotal / line.quantity * 1e6) / 1e6;
-    if (!matches(rounded(price * line.quantity), line.subtotal)) throw new Error('No se puede representar la base del concepto con precisión fiscal.');
+    // fraccionarias. Recuperamos hasta 6 decimales desde la base congelada; con
+    // descuento, el ValorUnitario es el BRUTO (base + descuento) y el descuento
+    // viaja aparte.
+    const gross = rounded(line.subtotal + discount);
+    const price = Math.round(gross / line.quantity * 1e6) / 1e6;
+    if (!matches(rounded(price * line.quantity), gross)) throw new Error('No se puede representar la base del concepto con precisión fiscal.');
     return {
       quantity: line.quantity,
+      ...(discount > 0 ? { discount: rounded(discount) } : {}),
       product: {
         description: String(line.description || 'Concepto').slice(0, 1000),
         // Claves SAT del producto (sat-claves.ts) o los defaults del SAT: 01010101
@@ -84,7 +107,8 @@ export function mexicoItems(request: FiscalDocumentRequest) {
   retentions.forEach((r, i) => {
     const expected = rounded(items.reduce((sum, item, j) => {
       const rate = lineRetentionRate(r.tasa, bases[i], lines[j].taxRate);
-      return sum + item.quantity * item.product.price * rate;
+      // La base de la retención por concepto también es Importe − Descuento.
+      return sum + (item.quantity * item.product.price - discounts[j]) * rate;
     }, 0));
     if (!matches(expected, r.monto)) throw new Error('La retención no se puede representar sin cambiar su importe.');
   });

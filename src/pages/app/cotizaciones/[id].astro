@@ -2,7 +2,8 @@
 // Detalle de cotización — items, totales, timeline de eventos y acciones. Datos reales (Neon).
 import AppLayout from '../../../layouts/AppLayout.astro';
 import WhatsAppIcon from '../../../components/app/WhatsAppIcon.astro';
-import { getCotizacion, getDocumentosFiscales, getMyMembership, getOrg, getSuscripcionByCotizacion, STATUS_META, money, lineTotal, quoteSubtotal, quoteTotal, quoteTaxBreakdown, quoteRetenciones } from '../../../lib/queries';
+import { getCotizacion, getDocumentosFiscales, getMyMembership, getOrg, getSuscripcionByCotizacion, STATUS_META, money, lineTotal, quoteSubtotal, quoteTotal, quoteTaxBreakdown, quoteRetenciones, quoteDescuento } from '../../../lib/queries';
+import { etiquetaDescuento } from '../../../lib/descuentos';
 import { documentTypeForOrg } from '../../../lib/fiscal/document-kind';
 import { getCountryProfile } from '../../../lib/countries';
 import { currencyDecimals } from '../../../lib/currency';
@@ -69,7 +70,10 @@ const TAX_ROWS = taxBreakdownRows(quoteTaxBreakdown(q), {
     decimals: currencyDecimals(q.baseCurrency || ORG.moneda || 'MXN'),
 });
 const TAX_INCLUDED_LABEL = tf('id.precios_con_iva', { tax: TAX_LABEL });
-const PARTIAL_TAX_COPY = tf('id.de_mas_iva', { subtotal: money(quoteSubtotal(q)), tax: TAX_LABEL });
+// Descuento de documento: el subtotal que se lee es el BRUTO (antes del
+// descuento), y el renglón de descuento lo baja antes de los impuestos.
+const DESCUENTO = quoteDescuento(q);
+const PARTIAL_TAX_COPY = tf('id.de_mas_iva', { subtotal: money(quoteSubtotal(q) + DESCUENTO), tax: TAX_LABEL });
 
 // Stepper de estado (solo flujo positivo; rechazada/expirada lo omiten — basta el pill)
 const STEPS = [
@@ -213,7 +217,10 @@ import { iconInner } from '../../../lib/icons';
                     </div>
                 )}
                 <div class="di-totals">
-                    <div class="dt-line"><span>{t(L, 'id.subtotal')}</span><span class="editorial">{money(quoteSubtotal(q))}</span></div>
+                    <div class="dt-line"><span>{t(L, 'id.subtotal')}</span><span class="editorial">{money(quoteSubtotal(q) + DESCUENTO)}</span></div>
+                    {DESCUENTO > 0 && (
+                        <div class="dt-line dt-desc"><span>{etiquetaDescuento(q.descuento, L)}</span><span class="editorial">−{money(DESCUENTO)}</span></div>
+                    )}
                     {TAX_ROWS.map((tr) => (
                         <div class="dt-line"><span>{tr.label}</span><span class="editorial">{money(tr.impuesto)}</span></div>
                     ))}

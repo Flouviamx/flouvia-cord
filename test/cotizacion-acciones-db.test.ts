@@ -59,7 +59,8 @@ beforeAll(async () => {
             base_currency text, fiscal_currency text, moneda text, fx_rate numeric, fx_rate_source text, fx_locked_until timestamptz,
             sent_at timestamptz, approved_at timestamptz, paid_at timestamptz, payment_method text, aprob_estado text,
             cliente_id uuid, terminos text, vigencia date, notas text, subtotal numeric, iva numeric, total numeric,
-            retencion_total numeric, retenciones_snapshot jsonb, iva_incluido boolean, anticipo_pct numeric, es_recurrente boolean);
+            retencion_total numeric, retenciones_snapshot jsonb, iva_incluido boolean, anticipo_pct numeric, es_recurrente boolean,
+            descuento numeric not null default 0, descuento_def jsonb);
         create table eventos(org_id uuid, cotizacion_id uuid, tipo text, detalle text);
         create table cotizacion_items(cotizacion_id uuid, producto_id uuid, descripcion text, cantidad numeric, precio_unitario numeric,
             precio_negociado numeric, costo_unitario numeric, orden int, tax_rate numeric, exemption_reason text);

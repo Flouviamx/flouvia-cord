@@ -22,6 +22,8 @@ import { intlLocale } from './fmt-server';
 import { validateFiscalReceptor, type FiscalReceptor, type FiscalReceptorInput } from '../../packages/elements/src/fiscal/receptor';
 import { validateTaxId } from './tax-id';
 import { normalizeTerm } from './payment-terms';
+import { descuentoParaMotor, leerDescuentoBody, type DescuentoDef } from './descuentos';
+import { DescuentoError, resolverDescuento } from './cupones';
 
 // El motivo de aprobación lo lee el aprobador: el tope y el total van con la
 // divisa real de la cotización, no con un '$' que puede significar otra cosa.
@@ -101,6 +103,14 @@ export interface NewQuoteInput {
     // Iguala / retainer: se cobra el total automáticamente cada mes vía Stripe
     // Subscription (solo con términos de contado; excluyente con anticipo/cuotas).
     es_recurrente?: boolean;
+    /**
+     * Descuento de documento, antes de impuestos. El servidor calcula el
+     * importe; nunca se confía en uno que mande el cliente. Con publishable key
+     * solo se admite `cupon` (lo filtra publishableQuoteInput).
+     */
+    descuento?: { tipo: 'porcentaje' | 'monto'; valor: number } | null;
+    /** Código de cupón del negocio. Si viene, manda sobre `descuento`. */
+    cupon?: string | null;
 }
 
 export interface CreateQuoteResult {
@@ -275,6 +285,25 @@ export async function createCotizacion(
         throw error;
     }
     const fallbackRate = catalogo.defaultRate;
+    const monedaVenta = normalizeCurrency(input.base_currency, normalizeCurrency(org.moneda));
+
+    // Descuento de documento: manual o cupón. El cupón se valida aquí (vigencia,
+    // divisa, usos) y se REDIME cuando la cotización se aprueba.
+    const pedido = leerDescuentoBody(input as unknown as Record<string, unknown>);
+    if ('error' in pedido) throw new QuoteError(pedido.error, 400, 'invalid_discount');
+    let descuento: DescuentoDef | null = null;
+    if (pedido.presente) {
+        try {
+            descuento = await resolverDescuento(orgId, pedido.solicitud, {
+                moneda: monedaVenta,
+                clienteId: input.cliente_id ? String(input.cliente_id) : null,
+            });
+        } catch (error) {
+            if (error instanceof DescuentoError) throw new QuoteError(error.message, error.status, error.code);
+            throw error;
+        }
+    }
+
     const itemsConImpuesto = items.map((it, i) => {
         const tax_rate = catalogo.resolve(rawItems[i]?.tax_rate, fallbackRate);
         // La causa de exención solo se conserva en España y en una línea al 0 %.
@@ -286,9 +315,11 @@ export async function createCotizacion(
         ivaIncluido: iva_incluido,
         retenciones: catalogo.retenciones,
         // Redondeo por línea en la divisa de venta (ver RoundingOptions).
-        roundLines: currencyDecimals(normalizeCurrency(input.base_currency, normalizeCurrency(org.moneda))),
+        roundLines: currencyDecimals(monedaVenta),
+        descuento: descuentoParaMotor(descuento),
     });
     const realSubtotal = totals.subtotal;
+    const descuentoTotal = totals.descuentoTotal;
     const iva = totals.impuestos;
     const total = totals.total;
     const retencionTotal = totals.retencionTotal;
@@ -305,22 +336,30 @@ export async function createCotizacion(
     }
 
     // Flujo de aprobación: ¿el descuento, monto o margen rebasan los topes?
+    // Un descuento MANUAL de documento cuenta como descuento de cada línea (si
+    // no, bastaba con mover la rebaja al pie para esquivar el tope). Un cupón
+    // no: lo creó quien administra Ajustes, y ya es una rebaja autorizada.
     let maxDescPct = 0;
     let minMargenPct = Infinity;
     let hayLineasConCosto = false;
-    for (const it of items) {
+    const cuentaDescuentoDoc = !!descuento && !descuento.cupon_id;
+    items.forEach((it, i) => {
         const lista = Number(it.precio_unitario) || 0;
         const nego = it.precio_negociado;
-        if (nego !== null && nego !== undefined && lista > 0 && Number(nego) < lista) {
-            maxDescPct = Math.max(maxDescPct, (1 - Number(nego) / lista) * 100);
+        const linea = totals.lineas[i];
+        const bruta = linea ? linea.base + linea.descuento : 0;
+        // Fracción de la línea que se lleva el descuento de documento.
+        const fraccionDoc = cuentaDescuentoDoc && linea && bruta > 0 ? linea.descuento / bruta : 0;
+        const precioFinal = ((nego !== null && nego !== undefined) ? Number(nego) : lista) * (1 - fraccionDoc);
+        if (lista > 0 && precioFinal < lista) {
+            maxDescPct = Math.max(maxDescPct, (1 - precioFinal / lista) * 100);
         }
         const costo = Number(it.costo_unitario) || 0;
-        const precioFinal = (nego !== null && nego !== undefined) ? Number(nego) : lista;
         if (costo > 0 && precioFinal > 0) {
             hayLineasConCosto = true;
             minMargenPct = Math.min(minMargenPct, (precioFinal - costo) / precioFinal * 100);
         }
-    }
+    });
     if (!hayLineasConCosto) minMargenPct = Infinity;
 
     const aprobDesc = approvalsEnabled ? Number(org.aprob_descuento_max) || 0 : 0;
@@ -401,14 +440,14 @@ export async function createCotizacion(
             insert into cotizaciones
                 (org_id, cliente_id, folio, status, subtotal, iva, total, terminos, vigencia, notas, sent_at, aprob_estado, aprob_motivo,
                  moneda, base_currency, fiscal_currency, fx_rate, fx_rate_source, fx_locked_until, iva_incluido, anticipo_pct, es_recurrente, creado_por,
-                 retencion_total, retenciones_snapshot)
+                 retencion_total, retenciones_snapshot, descuento, descuento_def)
             values
                 (${orgId}, ${clienteId}, (select ${prefix} || '-' || case when n < 10000 then lpad(n::text, 4, '0') else n::text end
                    from (select coalesce(max(substring(folio from '(\\d+)$')::numeric), 0) + 1 as n
                            from cotizaciones where org_id = ${orgId}) s), ${status}, ${realSubtotal}, ${iva}, ${total},
                  ${terminos}, ${vigencia.toISOString()}, ${input.notas || null}, ${sentAt}, ${aprobEstado}, ${aprobMotivo},
                  ${baseCurrency}, ${baseCurrency}, ${fiscalCurrency}, ${fxRate}, ${fxSource}, ${fxLockedUntil}, ${iva_incluido}, ${anticipoPct}, ${esRecurrente}, ${creadoPor},
-                 ${retencionTotal}, ${retencionesSnapshot}::jsonb)
+                 ${retencionTotal}, ${retencionesSnapshot}::jsonb, ${descuentoTotal}, ${descuento ? JSON.stringify(descuento) : null}::jsonb)
             returning id, public_token, folio`);
     } catch (error) {
         const limit = parsedResourceLimit(error);
