@@ -87,15 +87,22 @@ function revisarNodeYDependencias() {
   if (nvmrc && mayor(nvmrc) !== mayor(process.versions.node)) {
     avisos.push(`Node ${process.versions.node} activo y .nvmrc fija ${nvmrc}: cambia de versión (\`fnm use\` o \`nvm use\`).`);
   }
-  if (!existsSync('node_modules')) {
+  if (!existsSync('node_modules/.package-lock.json')) {
     avisos.push('Faltan las dependencias: `npm ci`.');
-  } else if (
-    existsSync('package-lock.json') &&
-    existsSync('node_modules/.package-lock.json') &&
-    statSync('package-lock.json').mtimeMs > statSync('node_modules/.package-lock.json').mtimeMs
-  ) {
-    avisos.push('package-lock.json cambió desde la última instalación: `npm ci`.');
+  } else if (existsSync('package-lock.json') && dependenciasDesfasadas()) {
+    avisos.push('Lo instalado en node_modules no coincide con package-lock.json: `npm ci`.');
   }
+}
+
+// Compara versión por versión el lockfile con el que npm deja en node_modules.
+// Las opcionales se saltan: las de otra plataforma nunca se instalan.
+function dependenciasDesfasadas() {
+  const esperado = JSON.parse(readFileSync('package-lock.json', 'utf8')).packages ?? {};
+  const instalado = JSON.parse(readFileSync('node_modules/.package-lock.json', 'utf8')).packages ?? {};
+  return Object.entries(esperado).some(
+    ([ruta, paquete]) =>
+      ruta.startsWith('node_modules/') && !paquete.optional && instalado[ruta]?.version !== paquete.version,
+  );
 }
 
 function revisarEnv() {
