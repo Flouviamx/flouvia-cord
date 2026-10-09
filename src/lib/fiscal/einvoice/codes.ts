@@ -61,6 +61,80 @@ export function splitEInvoiceAddress(value: unknown): { scheme: string; id: stri
     return { scheme: normalized.slice(0, i), id: normalized.slice(i + 1) };
 }
 
+// ── Leitweg-ID ───────────────────────────────────────────────────────────────
+//
+// Formatspezifikation Leitweg-ID v2.0.2 (KoSIT, 28.07.2021), caps. 2.1–2.4:
+//   - Grobadressierung: 2 a 12 dígitos; los dos primeros son el Land (01–16)
+//     o el Bund (99);
+//   - Feinadressierung opcional: hasta 30 letras latinas o dígitos, sin
+//     distinguir mayúsculas, precedida de "-";
+//   - Prüfziffer: dos dígitos precedidos de "-", ISO/IEC 7064 MOD 97-10 sobre
+//     Grob + Fein sin guiones, con las letras traducidas A=10 … Z=35.
+// Ejemplo de la propia especificación: 04011000-1234512345-06.
+
+export type LeitwegCheck =
+    | { ok: true; normalized: string }
+    | { ok: false; reason: 'shape' | 'land' | 'checksum' };
+
+const LEITWEG_RE = /^(\d{2,12})(?:-([A-Z0-9]{1,30}))?-(\d{2})$/;
+
+/** Cadena numérica de la spec: letras → 10…35, dígitos tal cual. */
+function leitwegDigits(value: string): string {
+    return value.replace(/[A-Z]/g, (c) => String(c.charCodeAt(0) - 55));
+}
+
+/** Resto módulo 97 de un número decimal arbitrariamente largo (por tramos). */
+function mod97(digits: string): number {
+    let rest = 0;
+    for (let i = 0; i < digits.length; i += 7) rest = Number(String(rest) + digits.slice(i, i + 7)) % 97;
+    return rest;
+}
+
+/** Prüfziffer de "Grob[-Fein]" (sin Prüfziffer), dos dígitos. */
+export function leitwegCheckDigits(withoutCheck: string): string {
+    const base = String(withoutCheck).toUpperCase().replace(/-/g, '');
+    return String(98 - mod97(leitwegDigits(base) + '00')).padStart(2, '0');
+}
+
+export function checkLeitwegId(value: unknown): LeitwegCheck {
+    const v = String(value ?? '').trim().toUpperCase();
+    const m = LEITWEG_RE.exec(v);
+    if (!m) return { ok: false, reason: 'shape' };
+    const land = Number(m[1].slice(0, 2));
+    if (!((land >= 1 && land <= 16) || land === 99)) return { ok: false, reason: 'land' };
+    if (mod97(leitwegDigits(m[1] + (m[2] ?? '') + m[3])) !== 1) return { ok: false, reason: 'checksum' };
+    return { ok: true, normalized: v };
+}
+
+/** Mensaje accionable para quien capturó el Leitweg-ID. */
+export function leitwegProblem(reason: 'shape' | 'land' | 'checksum', lang: 'es' | 'en'): string {
+    if (reason === 'checksum') {
+        return lang === 'en'
+            ? 'The Leitweg-ID check digits do not match: copy it again, complete, from the purchase order or the public body.'
+            : 'Los dígitos de control del Leitweg-ID no coinciden: vuelve a copiarlo completo de la orden de compra o del organismo.';
+    }
+    if (reason === 'land') {
+        return lang === 'en'
+            ? 'A Leitweg-ID starts with the code of a German state (01 to 16) or of the Federation (99).'
+            : 'Un Leitweg-ID empieza con el código de un estado federado alemán (01 a 16) o de la Federación (99).';
+    }
+    return lang === 'en'
+        ? 'The Leitweg-ID has 2 to 12 digits, an optional part of up to 30 letters or digits and 2 check digits, separated by hyphens (for example 04011000-1234512345-06).'
+        : 'El Leitweg-ID lleva de 2 a 12 dígitos, una parte opcional de hasta 30 letras o dígitos y 2 dígitos de control, separados por guiones (por ejemplo 04011000-1234512345-06).';
+}
+
+/**
+ * La dirección electrónica con esquema 0204 ES un Leitweg-ID (código EAS 0204,
+ * registrado en ISO/IEC 6523 para la Leitweg-ID: cap. 1.5 de la spec). `null`
+ * si la dirección no lo es o el Leitweg-ID es válido.
+ */
+export function einvoiceAddressLeitwegProblem(value: unknown): LeitwegCheck & { ok: false } | null {
+    const parts = splitEInvoiceAddress(value);
+    if (!parts || parts.scheme !== '0204') return null;
+    const c = checkLeitwegId(parts.id);
+    return c.ok ? null : c;
+}
+
 /** BIC/SWIFT: 8 u 11 caracteres (ISO 9362). Normalizado o null. */
 export function normalizeBic(value: unknown): string | null {
     const v = String(value ?? '').toUpperCase().replace(/\s+/g, '');

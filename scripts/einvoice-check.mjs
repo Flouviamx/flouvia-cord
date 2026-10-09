@@ -422,6 +422,20 @@ async function main() {
     negative(D.fxXml, 'fr-b2b.xml', 'neg-xsd.xml', (s) => s.replace('<ram:SellerTradeParty>', '<ram:SellerTradePartyX>').replace('</ram:SellerTradeParty>', '</ram:SellerTradePartyX>'), ['xsd'], 'elemento fuera del esquema');
     negative(D.fxXml, 'fr-b2b.xml', 'neg-total.xml', once(/<ram:GrandTotalAmount>1344\.00</, '<ram:GrandTotalAmount>1345.00<'), ['facturx-sch', 'cen-cii'], 'total con IVA que no cuadra (BR-CO-15)');
     negative(D.fxPdf, 'fr-b2b.pdf', 'neg-pdfa.pdf', (s) => s.replace('/OutputIntents', '/OutputIntentX'), ['verapdf'], 'PDF sin OutputIntent (ISO 19005-3, 6.2.4.2)');
+    // IGIC (categoría L): una causa de exención en su desglose la prohíbe BR-AF-10.
+    negative(D.peppol, 'igic.xml', 'neg-igic-exencion.xml', (s) => s.replace(
+        /(<cac:TaxSubtotal>(?:(?!<\/cac:TaxSubtotal>)[\s\S])*?<cac:TaxCategory><cbc:ID>L<\/cbc:ID><cbc:Percent>[^<]*<\/cbc:Percent>)/,
+        '$1<cbc:TaxExemptionReason>Exento</cbc:TaxExemptionReason>'), ['cen-ubl', 'peppol-cen'], 'IGIC con causa de exención (BR-AF-10)');
+    // IGIC al 0 % en CII: el motivo de que Cord no genere Factur-X ni XRechnung
+    // CII para ese caso. Se escribe saltándose `formatProblems` a propósito.
+    {
+        const s = EINVOICE_SAMPLES.find((x) => x.id === 'igic-zero');
+        const inv = s ? assessEInvoice(s.source).invoice : null;
+        if (!inv) throw new Error('control negativo neg-igic-cero-cii: falta la muestra igic-zero');
+        const f = join(D.xrCii, 'neg-igic-cero-cii.xml');
+        writeFileSync(f, serializeCii(inv, 'xrechnung'));
+        negatives[f] = { expect: ['cen-cii', 'kosit'], why: 'IGIC al 0 % en la sintaxis CII (BR-AF-05)' };
+    }
 
     const filesIn = (dir) => readdirSync(dir).map((n) => join(dir, n)).sort();
     const ublSchema = (f) => (readFileSync(f, 'utf8').includes('<CreditNote ') ? UBL_XSD.CreditNote : UBL_XSD.Invoice);

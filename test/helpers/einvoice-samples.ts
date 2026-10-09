@@ -105,6 +105,32 @@ const US_BUYER: FiscalParty = {
     address: { line1: '500 Market Street', city: 'San Francisco', postalCode: '94105', region: 'CA', countryCode: 'US' },
 };
 
+// España fuera del territorio del IVA: Canarias (IGIC, provincias 35 y 38) y
+// Ceuta y Melilla (IPSI, 51 y 52). `region` es el código INE de la provincia,
+// el mismo que guarda Ajustes › Perfil fiscal.
+export const CANARIAS_SELLER: FiscalParty = {
+    legalName: 'Atlántico Digital SL', taxId: 'B35001239', email: 'facturas@atlanticodigital.es',
+    contactName: 'Nayra Santana', phone: '+34 928 123 456',
+    electronicAddress: { scheme: '0088', id: '8437000000006' },
+    address: { line1: 'Calle Triana 12', city: 'Las Palmas de Gran Canaria', postalCode: '35002', region: '35', countryCode: 'ES' },
+};
+const CANARIAS_BUYER: FiscalParty = {
+    legalName: 'Hoteles Teide SA', taxId: 'A38007894', email: 'proveedores@hotelesteide.es',
+    electronicAddress: { scheme: '0088', id: '8437000000013' },
+    address: { line1: 'Avenida de Anaga 40', city: 'Santa Cruz de Tenerife', postalCode: '38001', region: '38', countryCode: 'ES' },
+};
+export const CEUTA_SELLER: FiscalParty = {
+    legalName: 'Estrecho Servicios SL', taxId: 'B51004562', email: 'admin@estrechoservicios.es',
+    contactName: 'Hamid Mohamed', phone: '+34 956 123 456',
+    electronicAddress: { scheme: '0088', id: '8437000000020' },
+    address: { line1: 'Paseo del Revellín 5', city: 'Ceuta', postalCode: '51001', region: '51', countryCode: 'ES' },
+};
+const MADRID_BUYER: FiscalParty = {
+    legalName: 'Distribuciones Centro SL', taxId: 'B28003218', email: 'cuentas@dcentro.es',
+    electronicAddress: { scheme: '9920', id: 'ESB28003218' },
+    address: { line1: 'Calle de Alcalá 100', city: 'Madrid', postalCode: '28009', region: '28', countryCode: 'ES' },
+};
+
 const ISSUED = { status: 'issued', lifecycle: 'open', currency: 'EUR' } as const;
 
 // ── Muestras ───────────────────────────────────────────────────────────────
@@ -257,6 +283,40 @@ export const EINVOICE_SAMPLES: EInvoiceSample[] = [
         recipient: FR_BUYER,
         lines: [sampleLine('Création graphique', 1, 850, 0)],
         iban: 'FR7630006000011234567890189',
+    }),
+    sample('igic', 'Canarias: IGIC 7 % y 3 % (categoría L)', ALL, ['L', 'L'], {
+        ...ISSUED, invoiceNumber: 'AD-2026-000311', documentType: 'commercial_invoice', countryCode: 'ES',
+        issuedAt: '2026-10-08T10:00:00Z', timeZone: 'Atlantic/Canary', dueDate: '2026-11-07', paymentTermsCode: 'net30',
+        buyerReference: 'HT-COMPRAS-2026', purchaseOrder: 'PED-4471',
+        issuer: CANARIAS_SELLER, recipient: CANARIAS_BUYER,
+        lines: [
+            sampleLine('Mantenimiento de la red wifi', 12, 85, 0.07, { unitKey: 'HUR' }),
+            sampleLine('Guía impresa de uso', 40, 4.5, 0.03),
+        ],
+        iban: 'ES9121000418450200051332', bic: 'CAIXESBBXXX',
+    }),
+    sample('igic-zero', 'Canarias: IGIC 7 % con un concepto al 0 % (sin CII)', ['xrechnung', 'peppol'], ['L', 'L'], {
+        ...ISSUED, invoiceNumber: 'AD-2026-000312', documentType: 'commercial_invoice', countryCode: 'ES',
+        issuedAt: '2026-10-08T10:00:00Z', timeZone: 'Atlantic/Canary', dueDate: '2026-11-07', paymentTermsCode: 'net30',
+        buyerReference: 'HT-COMPRAS-2026',
+        issuer: CANARIAS_SELLER, recipient: CANARIAS_BUYER,
+        lines: [
+            sampleLine('Licencia anual del software de reservas', 1, 1200, 0.07),
+            sampleLine('Pan y bollería', 30, 1.2, 0),
+        ],
+        iban: 'ES9121000418450200051332', bic: 'CAIXESBBXXX',
+    }),
+    sample('ipsi', 'Ceuta: IPSI 4 %, 10 % y 0 % (categoría M)', ALL, ['M', 'M', 'M'], {
+        ...ISSUED, invoiceNumber: 'ES-2026-000052', documentType: 'commercial_invoice', countryCode: 'ES',
+        issuedAt: '2026-10-08T10:00:00Z', timeZone: 'Europe/Madrid', dueDate: '2026-11-07', paymentTermsCode: 'net30',
+        buyerReference: 'DC-PROV-0193', purchaseOrder: 'OC-2026-77',
+        issuer: CEUTA_SELLER, recipient: MADRID_BUYER,
+        lines: [
+            sampleLine('Asesoría logística', 6, 70, 0.04, { unitKey: 'HUR' }),
+            sampleLine('Transporte marítimo de mercancía', 1, 320, 0.1),
+            sampleLine('Material formativo', 10, 12.5, 0),
+        ],
+        iban: 'ES9121000418450200051332',
     }),
 ];
 

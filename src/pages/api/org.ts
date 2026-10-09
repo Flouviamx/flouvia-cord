@@ -31,7 +31,7 @@ import { isValidTimeZone } from '../../lib/timezones';
 import { validateLateInterestRate } from '../../lib/late-interest-policy';
 import { normalizeTerm } from '../../lib/payment-terms';
 import { serieCompartida, serieCompartidaMensaje } from '../../lib/fiscal/serie';
-import { EINVOICE_EMAIL_MODES, normalizeBic, normalizeEInvoiceAddress } from '../../lib/fiscal/einvoice/codes';
+import { EINVOICE_EMAIL_MODES, einvoiceAddressLeitwegProblem, leitwegProblem, normalizeBic, normalizeEInvoiceAddress } from '../../lib/fiscal/einvoice/codes';
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
 
@@ -257,6 +257,11 @@ export const PATCH: APIRoute = async ({ request }) => {
                     : 'La dirección electrónica va como "esquema:identificador" con un esquema de la lista EAS, por ejemplo 0088:4000001000005.',
                 field: 'fiscal_einvoice_address',
             }, 400);
+        }
+        // Esquema 0204: es un Leitweg-ID y su dígito de control se comprueba.
+        const leitweg = einvoiceAddressLeitwegProblem(address);
+        if (leitweg) {
+            return json({ error: leitwegProblem(leitweg.reason, currentLocale() === 'en' ? 'en' : 'es'), field: 'fiscal_einvoice_address' }, 400);
         }
         if (address) currentFiscalMetadata.einvoice_address = address;
         else delete currentFiscalMetadata.einvoice_address;

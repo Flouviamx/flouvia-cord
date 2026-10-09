@@ -13,7 +13,7 @@ import { resolveBrandProfile, onBrandColor } from '../brand-profile';
 
 import QRCode from 'qrcode';
 import { mmAPuntos, VERIFACTU_QR_PRESENTACION } from './verifactu/qr';
-import { countryName, getCountryProfile, isEuCountry } from '../countries';
+import { countryName, getCountryProfile, isEuCountry, taxLabelFor } from '../countries';
 import { currencyDecimals, normalizeCurrency } from '../currency';
 import { fmtTaxPct, splitTaxBucket } from '../tax-components';
 import { EU_EXEMPTION_INFO, EXEMPTION_INFO, isEuExemptionCode, isExemptionReason } from './exemption';
@@ -340,6 +340,8 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
   const wrapText = (text:string,width:number,size:number,font:FontKey='regular') => wrap(text,width,size,font,fontFamily);
   const corner = {precise:0,soft:5,round:10}[appearance.corners];
   const profile = getCountryProfile(input.countryCode);
+  // IGIC en Canarias, IPSI en Ceuta y Melilla; el del país en el resto.
+  const taxName = taxLabelFor(input.countryCode, input.issuer.address?.region);
   const lang = docLangFor(profile.locale);
   const tx = (key: keyof typeof PDF_TEXT) => PDF_TEXT[key][lang];
   const timeZone = validTimeZone(input.timeZone);
@@ -574,7 +576,7 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
     // El nombre real del impuesto del país ('IVA', 'VAT', 'Sales tax'…), no un
     // "Tax" genérico — una factura española decía "Impuesto 21%" en la tabla
     // y "IVA" en el editor de origen; ahora dicen lo mismo.
-    { title: truncateText(profile.taxLabel, 58, 6.8, 'bold'), width: 58, align: 'right' },
+    { title: truncateText(taxName, 58, 6.8, 'bold'), width: 58, align: 'right' },
     { title: tx('amount'), width: 82, align: 'right' },
   ];
   const colX = (index: number) => MARGIN + COLS.slice(0, index).reduce((sum, c) => sum + c.width, 0);
@@ -656,7 +658,7 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
     });
     const filas = partes
       ? partes.map((p) => ({ label: `${p.nombre} ${fmtTaxPct(p.tasa)}`, base: bucket.base, amount: p.impuesto }))
-      : [{ label: `${profile.taxLabel} ${taxLabel(rate)}`, base: bucket.base, amount: bucket.amount }];
+      : [{ label: `${taxName} ${taxLabel(rate)}`, base: bucket.base, amount: bucket.amount }];
     // El GST del 5 % solo y el del 14.975 % son el MISMO impuesto: un renglón
     // con la base y la cuota sumadas, no dos "GST 5%" seguidos.
     for (const f of filas) {
@@ -700,7 +702,7 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
       totalRow(`${row.label} · ${tx('base')} ${money(row.base)}`, `${money(row.amount)} ${currency}`, true);
     }
   } else if (Number(input.taxTotal) > 0) {
-    totalRow(profile.taxLabel, `${money(input.taxTotal)} ${currency}`, true);
+    totalRow(taxName, `${money(input.taxTotal)} ${currency}`, true);
   }
   // Una retención se RESTA: va junto a los impuestos pero con el signo a la
   // vista, porque apunta en dirección contraria (regla 20 de estándares
@@ -743,7 +745,7 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
       const text = new Intl.NumberFormat(profile.locale, {
         minimumFractionDigits: decimals, maximumFractionDigits: decimals, useGrouping: 'always',
       }).format(taxLedger);
-      doc.text(`${profile.taxLabel} ${ledger}: ${text}`,
+      doc.text(`${taxName} ${ledger}: ${text}`,
         totalsX, ty + 30, { size: 7.6, color: MUTED, align: 'right', width: totalsW });
       ty += 11;
     }
