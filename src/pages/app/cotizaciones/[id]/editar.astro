@@ -11,6 +11,7 @@ import DiscountControl from '../../../../components/app/DiscountControl.astro';
 import '../../../../styles/editor.css';
 import '../../../../styles/sat-line.css';
 import { satLineI18n } from '../../../../lib/sat-line-i18n';
+import { usTaxEditorBoot } from '../../../../lib/us-tax/editor';
 
 const L = currentLocale();
 const tf = (key: string, vars: Record<string, string> = {}) => {
@@ -38,6 +39,9 @@ const { id } = Astro.params;
 const [productos, CLIENTES, ORG, q, IMPUESTOS] = await Promise.all([
     getProductos(), getClientes(), getOrg(), getCotizacion(id ?? ''), getImpuestos(),
 ]);
+// EE. UU.: sales tax por dirección (src/lib/us-tax-client.ts). El cliente de
+// una versión nueva es el de la cotización.
+const US_TAX = await usTaxEditorBoot(ORG.id, String(ORG.countryCode || ''), CLIENTES, L);
 
 if (!q || (q.status !== 'sent' && q.status !== 'viewed' && q.status !== 'expired' && q.status !== 'draft')) {
     return Astro.redirect(`/app/cotizaciones/${id}`);
@@ -171,6 +175,7 @@ import { iconInner } from '../../../../lib/icons';
     taxRounding: taxRoundingFor(PAIS),
     // Clave SAT por línea: solo México timbra CFDI (src/lib/sat-line-picker.ts).
     sat: isMx, satI18n: satLineI18n(L),
+    usTax: US_TAX, lang: L,
 })} />
 <script>
     import { iconSvg } from '../../../../lib/icons';
@@ -181,7 +186,8 @@ import { iconInner } from '../../../../lib/icons';
     // compartido. El vendedor veía un total en pantalla y se guardaba otro.
     import { calculateDocumentTotals } from '../../../../../packages/elements/src/engine';
     import { currencyDecimals } from '../../../../lib/currency';
-    import { canonicalTaxRate, taxBreakdownRows, taxOptionIndex } from '../../../../lib/tax-components';
+    import { canonicalTaxRate, taxBreakdownRows, taxNotes, taxOptionIndex } from '../../../../lib/tax-components';
+    import { createUsTaxPreview } from '../../../../lib/us-tax-client';
     import { createSatLinePicker, satKeysFromProduct, satPayload } from '../../../../lib/sat-line-picker';
     import { wireDiscountControl } from '../../../../lib/discount-client';
 
@@ -259,6 +265,20 @@ import { iconInner } from '../../../../lib/icons';
         onChange: () => recalc(),
     });
 
+    // EE. UU.: sales tax por la dirección del cliente de la cotización. El
+    // editor pide un cálculo real y lo pinta con el mismo motor.
+    const usTax = createUsTaxPreview({
+        boot: BOOT.usTax,
+        getClienteId: () => BOOT.clienteId || null,
+        buildRequest: () => ({
+            currency: CORD_CURRENCY,
+            iva_incluido: document.getElementById('ivaIncluido') ? document.getElementById('ivaIncluido').checked : false,
+            items: lines.map((l) => ({ cantidad: l.cantidad, precio_unitario: l.lista, precio_negociado: l.negociado })),
+            ...descuento.payload(),
+        }),
+        onChange: () => render(),
+    });
+
     const catMap = Object.fromEntries(catalogo.map(p => [p.id, p]));
 
     // Selector de impuesto de la línea. Solo aparece cuando la org tiene más
@@ -267,6 +287,8 @@ import { iconInner } from '../../../../lib/icons';
     // dejar un concepto exento y no.
     function taxSelect(l, idx) {
         if (!BOOT.multiTax) return '';
+        // Sales tax por dirección: la tasa no se elige, la calcula el servidor.
+        if (usTax.applies()) return `<span class="lr-tax lr-tax-auto">${escapeHtml(usTax.auto())}</span>`;
         // El valor es el ÍNDICE de la opción: dos perfiles al 0 % comparten
         // tasa y solo se distinguen por la causa de exención (España).
         const actual = taxOptionIndex(TAX_OPTIONS, l.taxRate ?? DEFAULT_TAX, l.exemptionReason);
@@ -279,16 +301,21 @@ import { iconInner } from '../../../../lib/icons';
 
     function recalc() {
         const ivaIncluido = document.getElementById('ivaIncluido') ? document.getElementById('ivaIncluido').checked : false;
+        // Sales tax por dirección: la tasa de cada línea es la del cálculo; sin
+        // él (calculando, o falta un dato) el impuesto no se inventa.
+        usTax.schedule();
+        const usEstado = usTax.estado();
+        const usActivo = usEstado !== 'no_aplica';
 
         // El MISMO motor que usa el servidor para escribir los totales
         // (api/cotizaciones/[id].ts, acción resend/update_draft/send).
         const totals = calculateDocumentTotals(
-            lines.map((l) => ({
+            lines.map((l, i) => ({
                 descripcion: l.nombre,
                 cantidad: l.cantidad,
                 precio_unitario: l.lista,
                 precio_negociado: l.negociado,
-                tax_rate: l.taxRate ?? DEFAULT_TAX,
+                tax_rate: usActivo ? (usTax.rateFor(i) ?? 0) : (l.taxRate ?? DEFAULT_TAX),
             })),
             // Mismo redondeo que el servidor, en la divisa de la cotización.
             {
@@ -312,12 +339,22 @@ import { iconInner } from '../../../../lib/icons';
         const $taxes = document.getElementById('sumTaxes');
         if ($taxes) {
             // En Canadá un 14.975% son dos impuestos (GST + QST): un renglón por cada uno.
-            const filasImpuesto = taxBreakdownRows(totals.porTasa, {
-                country: BOOT.taxCountry, region: BOOT.taxRegion, taxLabel: BOOT.taxLabel, decimals: currencyDecimals(quoteCurrency || 'MXN'),
-            }).map((tr) => `<div class="sum-line sum-tax"><span>${escapeHtml(tr.label)}</span><span class="editorial">${fmt(tr.impuesto)}</span></div>`);
+            // EE. UU.: un renglón por jurisdicción del cálculo por dirección.
+            const lineasUs = usEstado === 'listo'
+                ? totals.lineas.map((l, i) => ({ base: l.base, impuesto: l.impuesto, taxBreakdown: usTax.desgloseFor(i) }))
+                : undefined;
+            const filasImpuesto = usActivo && usEstado !== 'listo'
+                ? [`<div class="sum-line sum-tax sum-tax-pending"><span>${escapeHtml(usTax.mensaje())}</span><span class="editorial">—</span></div>`]
+                : taxBreakdownRows(totals.porTasa, {
+                    country: BOOT.taxCountry, region: BOOT.taxRegion, taxLabel: BOOT.taxLabel, decimals: currencyDecimals(quoteCurrency || 'MXN'),
+                    lineas: lineasUs,
+                }).map((tr) => `<div class="sum-line sum-tax"><span>${escapeHtml(tr.label)}</span><span class="editorial">${fmt(tr.impuesto)}</span></div>`);
+            const filasNota = lineasUs
+                ? taxNotes(lineasUs, BOOT.lang).map((n) => `<div class="sum-line sum-tax"><span>${escapeHtml(n)}</span><span></span></div>`)
+                : [];
             const filasRetencion = (totals.retenciones || [])
                 .map((r) => `<div class="sum-line sum-ret"><span>${escapeHtml(r.nombre)}</span><span class="editorial">−${fmt(r.monto)}</span></div>`);
-            $taxes.innerHTML = [...filasImpuesto, ...filasRetencion].join('');
+            $taxes.innerHTML = [...filasImpuesto, ...filasNota, ...filasRetencion].join('');
         }
     }
 
@@ -446,6 +483,9 @@ import { iconInner } from '../../../../lib/icons';
             iva_incluido: document.getElementById('ivaIncluido') ? document.getElementById('ivaIncluido').checked : false,
             // Definición o código, nunca el importe: el servidor lo recalcula.
             ...descuento.payload(),
+            // EE. UU.: el cálculo de la vista previa; el servidor lo reusa solo
+            // si coincide con lo que se guarda.
+            us_tax_calculo_id: usTax.calculoId(),
             items: lines.map(l => ({
                 producto_id: l.id || null,
                 descripcion: l.nombre || T.lineaLibreDefault,

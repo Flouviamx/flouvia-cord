@@ -17,7 +17,7 @@ import { memberCan } from '../../../lib/permissions';
 import { publicDocumentUrl } from '../../../lib/public-links';
 import { getCountryProfile } from '../../../lib/countries';
 import { currencyDecimals } from '../../../lib/currency';
-import { fmtTaxPct, splitTaxBucket } from '../../../lib/tax-components';
+import { fmtTaxPct, splitTaxBucket, taxJurisdictionRows, taxNotes } from '../../../lib/tax-components';
 import { estadoVerifactuFactura } from '../../../lib/fiscal/verifactu/incidencias';
 import ArcaEstadoFactura from '../../../components/app/facturas/ArcaEstadoFactura.astro';
 import NfseEstadoFactura from '../../../components/app/facturas/NfseEstadoFactura.astro';
@@ -182,8 +182,14 @@ for (const l of f?.lineas ?? []) {
     acc.base += l.subtotal; acc.impuesto += l.impuesto;
     porTasa.set(tasa, acc);
 }
+// EE. UU., sales tax por dirección: un renglón por jurisdicción (la tasa de
+// la línea es la efectiva del cálculo, no la que se imprime).
+const jurisdicciones = taxJurisdictionRows((f?.lineas ?? []).map((l) => ({ base: l.subtotal, impuesto: l.impuesto, taxBreakdown: l.taxBreakdown })), {
+    decimals: currencyDecimals(f?.currency || 'MXN'),
+});
+const notasImpuesto = taxNotes(f?.lineas ?? [], L);
 // Un renglón por impuesto: en Canadá un 14.975% es GST + QST.
-const tasas = [...porTasa.entries()].sort((a, b) => a[0] - b[0]).filter(([, v]) => v.impuesto > 0)
+const tasas = jurisdicciones ? jurisdicciones.filter((r) => r.impuesto !== 0).map((r) => ({ label: r.label, impuesto: r.impuesto })) : [...porTasa.entries()].sort((a, b) => a[0] - b[0]).filter(([, v]) => v.impuesto > 0)
     .flatMap(([tasa, v]) => {
         const partes = splitTaxBucket(f?.pais ?? '', tasa * 100, v.base, v.impuesto, {
             region: f?.emisor?.address?.region, decimals: currencyDecimals(f?.currency || 'MXN'),
@@ -404,6 +410,7 @@ const EINV_FIX: Record<string, { href: string; es: string; en: string }> = {
                                 {tasas.map((row) => (
                                     <div class="fd-tline fd-tax"><span>{row.label}</span><span class="editorial">{money(row.impuesto)}</span></div>
                                 ))}
+                                {notasImpuesto.map((nota) => <div class="fd-tline fd-tax"><span>{nota}</span><span></span></div>)}
                                 <div class="fd-tline fd-total"><span>{t(L, 'fact.d_total')}</span><span class="editorial">{money(f.total)}</span></div>
                                 {f.acreditado > 0 && <div class="fd-tline"><span>{L === 'en' ? 'Credit notes applied' : 'Notas de crédito aplicadas'}</span><span class="editorial">−{money(f.acreditado)}</span></div>}
                                 {f.reembolsado > 0 && <div class="fd-tline"><span>{L === 'en' ? 'Refunded' : 'Reembolsado'}</span><span class="editorial">+{money(f.reembolsado)}</span></div>}

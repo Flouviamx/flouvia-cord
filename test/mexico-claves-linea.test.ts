@@ -7,8 +7,18 @@ vi.mock('../src/lib/db', () => ({ withOrgTx: m.tx, withSystemTx: m.tx, sql: (str
 vi.mock('../src/lib/org-entitlements', () => ({ getEffectivePlan: async () => 'starter' }));
 vi.mock('../src/lib/fiscal/timeline', () => ({ logInvoiceEvent: m.event }));
 vi.mock('../src/lib/impuestos-db', () => ({
-    taxCatalogFor: async () => ({ resolve: (r: number | null | undefined, d: number) => r ?? d, defaultRate: 0.16, retenciones: [], country: 'MX' }),
+    taxCatalogFor: async () => ({ resolve: (r: number | null | undefined, d: number) => r ?? d, defaultRate: 0.16, retenciones: [], country: 'MX', breakdown: () => null }),
     TaxCatalogUnavailableError: class extends Error {},
+}));
+// El sales tax por dirección de EE. UU. tiene su propia prueba (us-tax-db): aquí
+// la cuenta no lo tiene encendido.
+vi.mock('../src/lib/us-tax/calculo', () => ({
+    prepareUsTaxForDocument: async () => null,
+    claimUsTaxCalculo: async () => {},
+    recordUsTaxTransaction: async () => 'no_aplica',
+    reverseUsTaxForDocument: async () => 'no_aplica',
+    usTaxVentaKey: (d: { cotizacionId?: string; documentoId?: string }) =>
+        d.cotizacionId ? `cotizacion:${d.cotizacionId}` : d.documentoId ? `documento:${d.documentoId}` : null,
 }));
 
 import {

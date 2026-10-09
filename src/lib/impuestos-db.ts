@@ -8,6 +8,7 @@ import { sql, withOrgTx } from './db';
 import { taxPresetsFor, usStateTaxPresets, isUsState } from './countries';
 import { retencionBase } from '../../packages/elements/src/engine';
 import { canonicalTaxRate } from './tax-components';
+import { UsTaxError, type UsTaxDesglose, type UsTaxLinea } from './us-tax/core';
 
 /**
  * Un catálogo genuinamente vacío (org nueva, sin sembrar aún) es distinto de
@@ -70,24 +71,43 @@ export async function seedTaxCatalog(orgId: string, countryCode: string, region?
  * declarar `tax_rate: 0` en una venta gravada y la factura saldría mal — el
  * emisor no es de confianza aunque traiga una llave válida.
  */
-export async function taxCatalogFor(orgId: string) {
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export async function taxCatalogFor(orgId: string, opts: { usTaxCalculoId?: string | null } = {}) {
     let rows: any[];
     let orgRate: number;
     let country: string;
+    // Sales tax de EE. UU. por dirección: la tasa de cada línea sale de un
+    // cálculo REAL guardado en `us_tax_calculos`, de esta organización y
+    // vigente. Nunca de lo que mande el navegador: una tasa calculada (9.5 %)
+    // no está en el catálogo, y la única forma de que el servidor la acepte es
+    // que exista la fila que la prueba (src/lib/us-tax/calculo.ts).
+    const calculoId = opts.usTaxCalculoId && UUID_RE.test(opts.usTaxCalculoId) ? opts.usTaxCalculoId : null;
+    if (opts.usTaxCalculoId && !calculoId) throw new UsTaxError('calculo_vencido');
+    let calculo: { id: string; lineas: UsTaxLinea[] } | null = null;
     try {
-        const [impuestoRows, orgRows] = await withOrgTx(orgId,
+        const [impuestoRows, orgRows, calculoRows] = await withOrgTx(orgId,
             sql`select tasa, kind, tipo, nombre, es_default, activo, retencion_base from impuestos where org_id = ${orgId} and activo = true`,
             sql`select iva_pct, country_code from orgs where id = ${orgId}`,
+            ...(calculoId ? [sql`select id, lineas from us_tax_calculos
+                                  where org_id = ${orgId} and id = ${calculoId}::uuid and expires_at > now()`] : []),
         );
         rows = impuestoRows;
         orgRate = Number(orgRows?.[0]?.iva_pct ?? 0) || 0;
         country = String(orgRows?.[0]?.country_code || '').toUpperCase();
+        if (calculoId) {
+            const fila = calculoRows?.[0];
+            calculo = fila ? { id: String(fila.id), lineas: Array.isArray(fila.lineas) ? fila.lineas : [] } : null;
+        }
     } catch (cause) {
         // Falla CERRADA: un catálogo que no se pudo leer no es un catálogo
         // vacío. El llamador traduce esto a un 503 accionable, nunca a un
         // documento con 0% de impuesto.
         throw new TaxCatalogUnavailableError(cause);
     }
+    // Un cálculo que no existe, es de otra organización o ya venció no prueba
+    // ninguna tasa: el documento no se guarda con una inventada.
+    if (calculoId && !calculo) throw new UsTaxError('calculo_vencido');
 
     const consumo = rows.filter((r) => (r.kind ?? 'consumo') !== 'retencion');
     // Toda tasa que el negocio configuró, más la plana heredada y el 0 (exento,
@@ -105,13 +125,33 @@ export async function taxCatalogFor(orgId: string) {
             base: retencionBase(r.retencion_base),
         }));
 
+    const lineaCalculada = (linea: number | undefined): UsTaxLinea => {
+        const l = linea === undefined ? undefined : calculo!.lineas[linea];
+        const tasa = Number(l?.tasa);
+        // El cálculo guardado se hizo sobre ESTE documento (su huella); una
+        // línea que no está en él es un documento distinto.
+        if (!l || !Number.isFinite(tasa) || tasa < 0 || tasa > 1) throw new UsTaxError('calculo_vencido');
+        return l;
+    };
+
     return {
         defaultRate,
         retenciones,
         /** País de la organización: decide si un concepto conserva su causa de exención. */
         country,
-        /** Tasa validada, o el fallback si la propuesta no está en el catálogo. */
-        resolve(proposed: unknown, fallback: number): number {
+        /** Cálculo por dirección que respalda las tasas (EE. UU.), o null. */
+        usTaxCalculoId: calculo?.id ?? null,
+        /** Desglose por jurisdicción de la línea `linea` del cálculo, o null sin cálculo. */
+        breakdown(linea: number): UsTaxDesglose | null {
+            return calculo ? (lineaCalculada(linea).desglose ?? null) : null;
+        },
+        /**
+         * Tasa validada, o el fallback si la propuesta no está en el catálogo.
+         * Con un cálculo por dirección, la tasa de la línea `linea` es la del
+         * cálculo guardado y la propuesta del cliente se ignora.
+         */
+        resolve(proposed: unknown, fallback: number, linea?: number): number {
+            if (calculo) return Number(lineaCalculada(linea).tasa);
             if (proposed === null || proposed === undefined || proposed === '') return fallback;
             // Canadá: una tasa provincial suelta congelada antes (QST 9.975 %)
             // se lee como la combinada con GST que hoy está en el catálogo.

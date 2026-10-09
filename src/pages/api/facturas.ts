@@ -70,6 +70,8 @@ export const POST: APIRoute = async ({ request }) => {
         notes: String(body.notas ?? '').trim().slice(0, 1000) || null,
         bufferPct: Number(body.fx_buffer_pct) || 0,
         ivaIncluido: body.iva_incluido === true,
+        // EE. UU.: el cálculo de sales tax de la vista previa (solo se reusa si coincide).
+        usTaxCalculoId: body.us_tax_calculo_id,
         // Referencia del comprador (Leitweg-ID) y orden de compra: opcionales;
         // XRechnung exige la primera y Peppol una de las dos.
         ...parseInvoiceReferences(body),

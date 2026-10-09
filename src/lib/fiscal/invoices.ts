@@ -66,6 +66,8 @@ import { DescuentoError, liberarCupon, redimirCupon, resolverDescuento } from '.
 import { railDeDocumento } from './latam/rieles';
 import { checkLeitwegId, leitwegProblem, splitEInvoiceAddress } from './einvoice/codes';
 import { currentLocale } from '../context';
+import { claimUsTaxCalculo, prepareUsTaxForDocument, recordUsTaxTransaction, reverseUsTaxForDocument, usTaxVentaKey } from '../us-tax/calculo';
+import { UsTaxError, type UsTaxDesglose } from '../us-tax/core';
 
 export interface DraftLineInput {
   descripcion: string;
@@ -91,6 +93,8 @@ export interface DraftLineInput {
    */
   productKey?: string | null;
   unitKey?: string | null;
+  /** EE. UU.: desglose por jurisdicción del cálculo por dirección. Solo servidor. */
+  taxBreakdown?: UsTaxDesglose | null;
 }
 
 export interface CreateDraftInput {
@@ -142,6 +146,53 @@ export interface CreateDraftInput {
    */
   buyerReference?: string | null;
   purchaseOrder?: string | null;
+  /**
+   * EE. UU.: el cálculo de sales tax de la vista previa del editor. Solo se
+   * reusa si coincide con este documento; las tasas nunca vienen del cliente.
+   */
+  usTaxCalculoId?: unknown;
+}
+
+/**
+ * Sales tax de EE. UU. por dirección (src/lib/us-tax/). Con un cliente en
+ * EE. UU. y la preferencia encendida, cada concepto toma la tasa efectiva y el
+ * desglose de un cálculo real guardado —`taxCatalogFor` solo la acepta si
+ * existe esa fila—; sin cálculo posible el borrador no se guarda y dice qué
+ * falta (regla 22). `calculoId: null` = no aplica: el catálogo de siempre.
+ */
+async function conUsTax<C extends { resolve: (p: unknown, f: number, l?: number) => number; breakdown: (l: number) => UsTaxDesglose | null; defaultRate: number }>(
+  orgId: string,
+  catalogo: C,
+  input: { clienteId: string; currency: string; ivaIncluido: boolean; descuento: DescuentoDef | null; items: DraftLineInput[]; calculoId: unknown; venta: string | null; orgCountry: string },
+): Promise<{ ok: true; catalogo: C; items: DraftLineInput[]; calculoId: string | null } | { ok: false; error: string; status: number; code: string }> {
+  try {
+    const usTax = await prepareUsTaxForDocument(orgId, {
+      clienteId: input.clienteId,
+      currency: input.currency,
+      ivaIncluido: input.ivaIncluido,
+      descuento: descuentoParaMotor(input.descuento),
+      items: input.items.map((it) => ({
+        cantidad: it.cantidad, precio_unitario: it.precioUnitario, precio_negociado: it.precioNegociado ?? null,
+      })),
+      calculoId: input.calculoId,
+      requireClient: true,
+      venta: input.venta,
+      orgCountry: input.orgCountry,
+    });
+    if (!usTax) return { ok: true, catalogo, items: input.items, calculoId: null };
+    const conCalculo = await taxCatalogFor(orgId, { usTaxCalculoId: usTax.calculoId }) as unknown as C;
+    const items = input.items.map((it, i) => ({
+      ...it,
+      taxRate: conCalculo.resolve(null, conCalculo.defaultRate, i),
+      taxBreakdown: conCalculo.breakdown(i),
+      exemptionReason: null,
+    }));
+    return { ok: true, catalogo: conCalculo, items, calculoId: usTax.calculoId };
+  } catch (error) {
+    if (error instanceof UsTaxError) return { ok: false, error: error.message, status: error.status, code: `us_tax_${error.code}` };
+    if (error instanceof TaxCatalogUnavailableError) return { ok: false, error: error.message, status: 503, code: 'tax_catalog_unavailable' };
+    throw error;
+  }
 }
 
 /**
@@ -390,6 +441,8 @@ function buildLines(
     ...(l.descuento > 0 ? { discount: round(l.descuento) } : {}),
     // `totals.lineas` conserva el orden de `items`. Ya validada por el llamador.
     ...(items[i]?.exemptionReason ? { exemptionReason: items[i].exemptionReason as string } : {}),
+    // EE. UU.: el desglose por jurisdicción congelado con la línea.
+    ...(items[i]?.taxBreakdown ? { taxBreakdown: items[i].taxBreakdown as UsTaxDesglose } : {}),
   }));
 
   return {
@@ -511,14 +564,14 @@ export async function createInvoiceDraft(orgId: string, input: CreateDraftInput)
   // eligen por línea — son la política de retención del negocio, resuelta aquí.
   // `catalogo.defaultRate` ya incorpora `orgs.iva_pct` como respaldo cuando el
   // catálogo no tiene un consumo marcado `es_default` (impuestos-db.ts).
-  let catalogo;
+  let catalogo: Awaited<ReturnType<typeof taxCatalogFor>>;
   try {
     catalogo = await taxCatalogFor(orgId);
   } catch (error) {
     if (error instanceof TaxCatalogUnavailableError) return { ok: false, error: error.message };
     throw error;
   }
-  const itemsConTasaValidada = items.map((it) => {
+  let itemsConTasaValidada: DraftLineInput[] = items.map((it) => {
     const taxRate = catalogo.resolve(it.taxRate, catalogo.defaultRate);
     // La causa de exención se conserva solo en España y en una línea al 0 %.
     return { ...it, taxRate, exemptionReason: exemptionReasonFor(country, it.exemptionReason, taxRate) };
@@ -535,6 +588,16 @@ export async function createInvoiceDraft(orgId: string, input: CreateDraftInput)
     if (error instanceof DescuentoError) return { ok: false, error: error.message, status: error.status, code: error.code };
     throw error;
   }
+  // Un borrador nuevo todavía no tiene id: reclama su cálculo al insertarse.
+  const ventaCotizacion = input.sustituyeA ? (input.cotizacionId || null) : null;
+  const usTax = await conUsTax(orgId, catalogo, {
+    clienteId: String(head.cliente_id), currency, ivaIncluido: input.ivaIncluido === true, descuento,
+    items: itemsConTasaValidada, calculoId: input.usTaxCalculoId,
+    venta: ventaCotizacion ? usTaxVentaKey({ cotizacionId: ventaCotizacion }) : null, orgCountry: country,
+  });
+  if (!usTax.ok) return usTax;
+  catalogo = usTax.catalogo;
+  itemsConTasaValidada = usTax.items;
   let built;
   try {
     built = buildLines(itemsConTasaValidada, catalogo.defaultRate, input.ivaIncluido === true, catalogo.retenciones, currencyDecimals(currency), descuento, taxRoundingFor(catalogo.country));
@@ -570,7 +633,7 @@ export async function createInvoiceDraft(orgId: string, input: CreateDraftInput)
       issuer_snapshot, recipient_snapshot, line_items_snapshot,
       schema_version, provider_data, updated_at, service_date, service_date_end,
       buyer_reference, purchase_order, payee_account,
-      descuento_total, descuento, cfdi_uso, cfdi_forma_pago, sustituye_a
+      descuento_total, descuento, cfdi_uso, cfdi_forma_pago, sustituye_a, us_tax_calculo_id
     ) values (
       ${orgId}, ${input.sustituyeA ? (input.cotizacionId || null) : null}, ${String(head.cliente_id)}, ${country}, ${docType}, 'pending',
       ${docType === 'cfdi_40' ? 'facturapi' : 'cord'},
@@ -582,11 +645,12 @@ export async function createInvoiceDraft(orgId: string, input: CreateDraftInput)
       'cord.invoice.v1', '{}'::jsonb, now(), ${input.serviceDate || null}::date, ${input.serviceDateEnd || null}::date,
       ${buyerReference}, ${input.purchaseOrder ?? null}, ${payee ? JSON.stringify(payee) : null}::jsonb,
       ${built.descuentoTotal}, ${descuento ? JSON.stringify(descuento) : null}::jsonb,
-      ${overrides.uso ?? null}, ${overrides.forma ?? null}, ${input.sustituyeA || null}
+      ${overrides.uso ?? null}, ${overrides.forma ?? null}, ${input.sustituyeA || null}, ${usTax.calculoId}::uuid
     )
     returning id, public_token`);
   const row = rows[0];
   if (!row) return { ok: false, error: 'No se pudo crear el borrador.' };
+  await claimUsTaxCalculo(orgId, usTax.calculoId, usTaxVentaKey({ cotizacionId: ventaCotizacion, documentoId: String(row.id) }));
   await logInvoiceEvent(orgId, String(row.id), 'created', 'Borrador creado');
   return { ok: true, documentId: String(row.id), publicToken: String(row.public_token) };
 }
@@ -615,7 +679,7 @@ export async function updateInvoiceDraft(
 
   const [docRows] = await withOrgTx(orgId, sql`
     select id, lifecycle, invoice_number, public_token, amount_paid, credit_note_of, nota_debito_de, document_type, country_code, provider_data,
-           descuento, descuento_total, currency, informacion_global
+           descuento, descuento_total, currency, informacion_global, cotizacion_id
       from documentos_fiscales
      where id = ${documentId} and org_id = ${orgId}
      limit 1`);
@@ -667,14 +731,14 @@ export async function updateInvoiceDraft(
     try { docType = await documentTypeForOrg(orgId, country, input.documentMode); }
     catch (error) { return { ok: false, error: error instanceof Error ? error.message : 'Tipo de documento no disponible.' }; }
   } else if (country !== doc.country_code) return { ok: false, error: 'El país del emisor cambió. Crea un borrador nuevo.' };
-  let catalogo;
+  let catalogo: Awaited<ReturnType<typeof taxCatalogFor>>;
   try {
     catalogo = await taxCatalogFor(orgId);
   } catch (error) {
     if (error instanceof TaxCatalogUnavailableError) return { ok: false, error: error.message };
     throw error;
   }
-  const itemsConTasaValidada = items.map((it) => {
+  let itemsConTasaValidada: DraftLineInput[] = items.map((it) => {
     const taxRate = catalogo.resolve(it.taxRate, catalogo.defaultRate);
     // La causa de exención se conserva solo en España y en una línea al 0 %.
     return { ...it, taxRate, exemptionReason: exemptionReasonFor(country, it.exemptionReason, taxRate) };
@@ -690,6 +754,14 @@ export async function updateInvoiceDraft(
     if (error instanceof DescuentoError) return { ok: false, error: error.message, status: error.status, code: error.code };
     throw error;
   }
+  const venta = usTaxVentaKey({ cotizacionId: (doc.cotizacion_id as string | null) || null, documentoId: documentId });
+  const usTax = await conUsTax(orgId, catalogo, {
+    clienteId: String(head.cliente_id), currency, ivaIncluido: input.ivaIncluido === true, descuento,
+    items: itemsConTasaValidada, calculoId: input.usTaxCalculoId, venta, orgCountry: country,
+  });
+  if (!usTax.ok) return usTax;
+  catalogo = usTax.catalogo;
+  itemsConTasaValidada = usTax.items;
   let built;
   try {
     built = buildLines(itemsConTasaValidada, catalogo.defaultRate, input.ivaIncluido === true, catalogo.retenciones, currencyDecimals(currency), descuento, taxRoundingFor(catalogo.country));
@@ -739,6 +811,7 @@ export async function updateInvoiceDraft(
       payee_account = ${payee ? JSON.stringify(payee) : null}::jsonb,
       cfdi_uso = case when ${overrides.uso !== undefined} then ${overrides.uso ?? null} else cfdi_uso end,
       cfdi_forma_pago = case when ${overrides.forma !== undefined} then ${overrides.forma ?? null} else cfdi_forma_pago end,
+      us_tax_calculo_id = ${usTax.calculoId}::uuid,
       updated_at = now()
     where id = ${documentId} and org_id = ${orgId}
       and lifecycle = 'draft' and invoice_number is null and credit_note_of is null and nota_debito_de is null
@@ -1112,6 +1185,14 @@ async function finalizeReservedInvoice(orgId: string, documentId: string): Promi
     };
   }
 
+  // EE. UU.: la venta emitida se registra para la declaración del negocio
+  // (una vez por cálculo). Si falla, el cron /api/cron/us-tax la reintenta:
+  // la emisión ya ocurrió y no se deshace por esto.
+  if (response.success && country === 'US') {
+    try { await recordUsTaxTransaction(orgId, { documentoId: documentId }); }
+    catch (error) { log.warn('us-tax: registro de la venta pendiente', { orgId, route: 'fiscal/invoices', err: error }); }
+  }
+
   return {
     emitted: response.success,
     documentId,
@@ -1424,6 +1505,13 @@ export async function voidInvoice(
   }
   await logInvoiceEvent(orgId, documentId, 'void', voidReason ? `Anulada: ${voidReason}` : 'Anulada');
   if (descuentoDesdeJson(doc.descuento)?.cupon_id) await liberarCuponDe(orgId, documentId);
+  // EE. UU.: la venta que se registró al emitir se revierte (salvo que su
+  // cálculo respalde una cotización ya cobrada). Si falla, queda en el log:
+  // la anulación ya ocurrió.
+  if (String(doc.country_code || '').toUpperCase() === 'US') {
+    try { await reverseUsTaxForDocument(orgId, documentId); }
+    catch (error) { log.warn('us-tax: reversión de la venta pendiente', { orgId, route: 'fiscal/invoices', err: error }); }
+  }
   return { ok: true, cancellationStatus: 'accepted' };
 }
 

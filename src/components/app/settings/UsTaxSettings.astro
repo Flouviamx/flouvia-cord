@@ -1,0 +1,200 @@
+---
+// Ajustes › Impuestos › Sales tax por dirección (Estados Unidos).
+//
+// El sales tax de EE. UU. es la suma de estado + condado + ciudad + distritos
+// especiales del domicilio del cliente: una tasa por estado no alcanza (Los
+// Ángeles cobra ~9.5 %, no el 7.25 % estatal). Aquí el negocio enciende el
+// cálculo automático, captura su domicilio, qué vende y en qué estados
+// recauda. El estado es honesto: si falta algo, se dice qué y la preferencia
+// no queda encendida (regla 15). Nunca nombra al proveedor (regla 14).
+import { US_STATES } from '../../../lib/countries';
+import { US_TAX_CODES, usTaxMessage, type UsTaxErrorCode } from '../../../lib/us-tax/core';
+import type { UsTaxConfig } from '../../../lib/us-tax/calculo';
+
+interface Props {
+    config: UsTaxConfig;
+    entitled: boolean;
+    activo: boolean;
+    problema: string | null;
+    locale: 'es' | 'en';
+}
+const { config, entitled, activo, problema, locale } = Astro.props;
+const en = locale === 'en';
+const o = config.origen;
+const registrados = new Set(config.registros.map((r) => r.estado));
+const titulo = activo
+    ? (en ? 'Automatic sales tax is on' : 'El cálculo automático está encendido')
+    : config.auto && !entitled
+        ? (en ? 'Paused: your current plan does not include it' : 'En pausa: tu plan actual no lo incluye')
+        : (en ? 'Off' : 'Apagado');
+const sub = activo
+    ? (en
+        ? `Calculating for clients in the United States. Collecting in: ${[...registrados].join(', ')}.`
+        : `Se calcula para clientes en Estados Unidos. Recaudas en: ${[...registrados].join(', ')}.`)
+    : !entitled
+        ? usTaxMessage('plan', locale)
+        : problema
+            ? usTaxMessage(problema as UsTaxErrorCode, locale)
+            : (en ? 'Quotes and invoices use the rates in your catalog above.' : 'Las cotizaciones y facturas usan las tasas de tu catálogo de arriba.');
+---
+
+<div class="ust" data-ust data-err-red={en ? 'Could not save. Check your connection and try again.' : 'No se pudo guardar. Revisa tu conexión e intenta de nuevo.'}>
+    <p class="ust-intro">{en
+        ? 'In the United States, sales tax is the sum of the state, county, city and special district rates at the client’s address. With this on, each line of a quote or invoice for a client in the United States takes the combined rate for that address, frozen with its breakdown by jurisdiction (it is printed on the PDF and on the client’s link). In a state where you are not registered the line carries 0 % and the document says so. Every issued invoice and every paid quote is recorded for your sales tax filing.'
+        : 'En Estados Unidos el sales tax es la suma de las tasas del estado, el condado, la ciudad y los distritos especiales del domicilio del cliente. Con esto encendido, cada línea de una cotización o factura para un cliente en Estados Unidos toma la tasa combinada de esa dirección, congelada con su desglose por jurisdicción (se imprime en el PDF y en el link del cliente). En un estado donde no estás registrado la línea lleva 0 % y el documento lo dice. Cada factura emitida y cada cotización cobrada se registra para tu declaración de sales tax.'}</p>
+
+    <div class="ust-state" data-on={activo ? '1' : '0'}>
+        <span class="ust-dot" aria-hidden="true"></span>
+        <span class="ust-state-info">
+            <span class="ust-state-title" data-ust-title>{titulo}</span>
+            <span class="ust-state-sub" data-ust-sub>{sub}</span>
+            {problema === 'cuenta_cobros' && <a class="ust-link" href="/app/ajustes/cobros">{en ? 'Go to Settings › Payments' : 'Ir a Ajustes › Cobros'}</a>}
+            {!entitled && <a class="ust-link" href="/app/ajustes/plan">{en ? 'See plans' : 'Ver planes'}</a>}
+        </span>
+    </div>
+
+    <label class="s-toggle ust-toggle">
+        <input type="checkbox" id="ustAuto" checked={config.auto} disabled={!entitled && !config.auto} />
+        <span class="s-toggle-track"><span class="s-toggle-thumb"></span></span>
+        <span class="s-toggle-text">{en ? 'Calculate sales tax from the client’s address' : 'Calcular el sales tax por la dirección del cliente'}</span>
+    </label>
+
+    <span class="ust-sec">{en ? 'Your business address' : 'Domicilio de tu negocio'}</span>
+    <div class="ust-grid">
+        <div class="s-field ust-wide">
+            <label for="ustLine1">{en ? 'Street address' : 'Calle y número'}</label>
+            <input class="s-input" id="ustLine1" value={o?.line1 ?? ''} maxlength="200" autocomplete="address-line1" />
+        </div>
+        <div class="s-field ust-wide">
+            <label for="ustLine2">{en ? 'Suite, unit (optional)' : 'Interior, suite (opcional)'}</label>
+            <input class="s-input" id="ustLine2" value={o?.line2 ?? ''} maxlength="200" autocomplete="address-line2" />
+        </div>
+        <div class="s-field">
+            <label for="ustCity">{en ? 'City' : 'Ciudad'}</label>
+            <input class="s-input" id="ustCity" value={o?.city ?? ''} maxlength="100" autocomplete="address-level2" />
+        </div>
+        <div class="s-field">
+            <label for="ustState">{en ? 'State' : 'Estado'}</label>
+            <select class="s-input" id="ustState" autocomplete="address-level1">
+                <option value="" selected={!o?.state}>{en ? 'Choose…' : 'Elige…'}</option>
+                {US_STATES.map((s) => <option value={s.code} selected={o?.state === s.code}>{`${s.name} (${s.code})`}</option>)}
+            </select>
+        </div>
+        <div class="s-field">
+            <label for="ustZip">ZIP</label>
+            <input class="s-input" id="ustZip" value={o?.postal_code ?? ''} maxlength="10" inputmode="numeric" autocomplete="postal-code" placeholder="90012" />
+        </div>
+        <div class="s-field">
+            <label for="ustCode">{en ? 'What you sell' : 'Qué vendes'}</label>
+            <select class="s-input" id="ustCode">
+                {US_TAX_CODES.map((c) => <option value={c.code} selected={config.taxCode === c.code}>{en ? c.en : c.es}</option>)}
+            </select>
+        </div>
+    </div>
+    <p class="ust-hint">{en
+        ? 'Your place of business decides the rate in states that tax at the seller’s location. What you sell decides whether a state taxes it at all (many states do not tax services).'
+        : 'Tu domicilio decide la tasa en los estados que gravan en el lugar del vendedor. Qué vendes decide si un estado lo grava (muchos estados no gravan los servicios).'}</p>
+
+    <span class="ust-sec">{en ? 'States where you collect sales tax' : 'Estados donde recaudas sales tax'}</span>
+    <div class="ust-states" role="group" aria-label={en ? 'States where you collect sales tax' : 'Estados donde recaudas sales tax'}>
+        {US_STATES.map((s) => (
+            <label title={s.name}><input type="checkbox" name="ustEstado" value={s.code} checked={registrados.has(s.code)} /> <span>{s.code}</span> <span class="ust-state-name">{s.name}</span></label>
+        ))}
+    </div>
+    <p class="ust-hint">{en
+        ? 'Mark only the states where you have a sales tax permit. Sales to clients in other states carry 0 % and the document says there is no obligation to collect there. Removing a state stops collecting from today; documents already calculated keep their tax.'
+        : 'Marca solo los estados donde tienes permiso para recaudar sales tax. Las ventas a clientes en otros estados llevan 0 % y el documento dice que ahí no hay obligación de recaudar. Quitar un estado deja de recaudar desde hoy; los documentos ya calculados conservan su impuesto.'}</p>
+    <p class="ust-hint">{en
+        ? 'Included in your plan: you are not charged per calculation. Mark a client as exempt from its profile, with its exemption certificate.'
+        : 'Incluido en tu plan: no se te cobra por cálculo. Un cliente exento se marca desde su ficha, con su certificado de exención.'}</p>
+
+    <div class="ust-actions">
+        <button type="button" class="ust-btn" data-ust-save disabled={!entitled && !config.auto}>{en ? 'Save' : 'Guardar'}</button>
+        <span class="ust-msg" data-ust-msg role="status" aria-live="polite"></span>
+    </div>
+</div>
+
+<style>
+    .ust-intro { font-size: 0.82rem; color: var(--color-text-muted); line-height: 1.55; margin: 0 0 1.1rem; max-width: 72ch; }
+    .ust-state { display: flex; align-items: center; gap: 11px; border: 1px solid var(--color-border); border-radius: 10px; padding: 12px 14px; margin-bottom: 1.1rem; }
+    .ust-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--color-text-muted); flex-shrink: 0; }
+    .ust-state[data-on="1"] .ust-dot { background: var(--color-ok); box-shadow: 0 0 0 3px rgba(16,185,129,0.18); }
+    .ust-state-info { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+    .ust-state-title { font-size: 0.86rem; font-weight: 600; color: var(--color-text); }
+    .ust-state-sub { font-size: 0.76rem; color: var(--color-text-muted); line-height: 1.45; }
+    .ust-link { font-size: 0.76rem; font-weight: 600; color: var(--color-blue-deep); margin-top: 3px; }
+    .ust-toggle { margin-bottom: 1.2rem; }
+    .ust-sec { display: block; font-size: 0.84rem; font-weight: 600; color: var(--color-text); margin: 1.1rem 0 0.7rem; }
+    .ust-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.9rem 1rem; }
+    .ust-wide { grid-column: 1 / -1; }
+    .ust-hint { font-size: 0.76rem; color: var(--color-text-muted); line-height: 1.5; margin: 0.8rem 0 0; max-width: 72ch; }
+    .ust-states { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0.15rem 0.8rem; font-size: 0.78rem; color: var(--color-text); }
+    .ust-states label { display: flex; align-items: center; gap: 6px; min-height: 30px; cursor: pointer; min-width: 0; }
+    .ust-states label span:first-of-type { font-weight: 600; min-width: 1.8em; }
+    .ust-state-name { color: var(--color-text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ust-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 0.7rem; margin-top: 1.2rem; }
+    .ust-btn { font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; color: #fff; background: var(--color-blue-deep); border: none; border-radius: 999px; padding: 9px 18px; cursor: pointer; transition: transform 0.2s var(--ease-spring), opacity 0.2s; }
+    .ust-btn:hover { transform: scale(1.02); }
+    .ust-btn:active { transform: scale(0.98); }
+    .ust-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    .ust-msg { font-size: 0.78rem; line-height: 1.45; }
+    .ust-msg.ok { color: var(--color-ok); }
+    .ust-msg.err { color: var(--color-err, #c0392b); }
+    @media (max-width: 880px) {
+        .ust-grid { grid-template-columns: 1fr; }
+        .ust-states { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .ust-states label { min-height: 44px; }
+        .ust-btn { min-height: 44px; }
+        .ust-grid .s-input { font-size: 16px; min-height: 46px; }
+    }
+</style>
+
+<script>
+    function initUsTax() {
+        const root = document.querySelector<HTMLElement>('[data-ust]');
+        if (!root) return;
+        const btn = root.querySelector<HTMLButtonElement>('[data-ust-save]');
+        const msg = root.querySelector<HTMLElement>('[data-ust-msg]');
+        const val = (id: string) => (document.getElementById(id) as HTMLInputElement | HTMLSelectElement | null)?.value.trim() ?? '';
+        const CAMPO: Record<string, string> = { line1: 'ustLine1', city: 'ustCity', state: 'ustState', postal_code: 'ustZip' };
+        btn?.addEventListener('click', async () => {
+            if (!msg) return;
+            btn.disabled = true;
+            msg.className = 'ust-msg';
+            msg.textContent = '';
+            const estados = [...root.querySelectorAll<HTMLInputElement>('input[name="ustEstado"]:checked')].map((c) => c.value);
+            try {
+                const res = await fetch('/api/impuestos/us-config', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        auto: (document.getElementById('ustAuto') as HTMLInputElement | null)?.checked === true,
+                        origen: { line1: val('ustLine1'), line2: val('ustLine2'), city: val('ustCity'), state: val('ustState'), postal_code: val('ustZip') },
+                        tax_code: val('ustCode'),
+                        estados,
+                    }),
+                });
+                const d = await res.json().catch(() => ({}));
+                if (!res.ok) {
+                    msg.className = 'ust-msg err';
+                    msg.textContent = d.error || '';
+                    if (d.campo && CAMPO[d.campo]) (document.getElementById(CAMPO[d.campo]) as HTMLElement | null)?.focus();
+                    // La preferencia no quedó encendida: el interruptor lo refleja.
+                    if (String(d.code || '').startsWith('us_tax_')) {
+                        const auto = document.getElementById('ustAuto') as HTMLInputElement | null;
+                        if (auto) auto.checked = false;
+                    }
+                    return;
+                }
+                location.reload();
+            } catch {
+                msg.className = 'ust-msg err';
+                msg.textContent = root.dataset.errRed || '';
+            } finally {
+                btn.disabled = false;
+            }
+        });
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initUsTax);
+    else initUsTax();
+</script>

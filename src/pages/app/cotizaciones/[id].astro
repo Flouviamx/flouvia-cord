@@ -2,12 +2,12 @@
 // Detalle de cotización — items, totales, timeline de eventos y acciones. Datos reales (Neon).
 import AppLayout from '../../../layouts/AppLayout.astro';
 import WhatsAppIcon from '../../../components/app/WhatsAppIcon.astro';
-import { getCotizacion, getDocumentosFiscales, getMyMembership, getOrg, getSuscripcionByCotizacion, STATUS_META, money, lineTotal, quoteSubtotal, quoteTotal, quoteTaxBreakdown, quoteRetenciones, quoteDescuento } from '../../../lib/queries';
+import { getCotizacion, getDocumentosFiscales, getMyMembership, getOrg, getSuscripcionByCotizacion, STATUS_META, money, lineTotal, quoteSubtotal, quoteTotal, quoteTaxBreakdown, quoteRetenciones, quoteDescuento, quoteTaxLines } from '../../../lib/queries';
 import { etiquetaDescuento } from '../../../lib/descuentos';
 import { documentTypeForOrg } from '../../../lib/fiscal/document-kind';
 import { getCountryProfile } from '../../../lib/countries';
 import { currencyDecimals } from '../../../lib/currency';
-import { taxBreakdownRows } from '../../../lib/tax-components';
+import { taxBreakdownRows, taxNotes } from '../../../lib/tax-components';
 import { memberCan } from '../../../lib/permissions';
 import { publicDocumentUrl } from '../../../lib/public-links';
 import { currentLocale } from '../../../lib/context';
@@ -65,10 +65,13 @@ const quoteDocumentType = docsFiscales.find(d => ['pending', 'error'].includes(d
 // decía "Tax" genérico a todo negocio fuera de México.
 const TAX_LABEL = getCountryProfile(ORG.countryCode || 'MX', L).taxLabel;
 // Un renglón por impuesto: en Canadá el 14.975% de Quebec es GST + QST.
+// EE. UU.: renglones por jurisdicción del sales tax por dirección.
+const TAX_LINES = quoteTaxLines(q);
 const TAX_ROWS = taxBreakdownRows(quoteTaxBreakdown(q), {
     country: ORG.countryCode || 'MX', region: ORG.fiscalMetadata?.region, taxLabel: TAX_LABEL,
-    decimals: currencyDecimals(q.baseCurrency || ORG.moneda || 'MXN'),
+    decimals: currencyDecimals(q.baseCurrency || ORG.moneda || 'MXN'), lineas: TAX_LINES,
 });
+const TAX_NOTES = taxNotes(TAX_LINES, L);
 const TAX_INCLUDED_LABEL = tf('id.precios_con_iva', { tax: TAX_LABEL });
 // Descuento de documento: el subtotal que se lee es el BRUTO (antes del
 // descuento), y el renglón de descuento lo baja antes de los impuestos.
@@ -224,6 +227,7 @@ import { iconInner } from '../../../lib/icons';
                     {TAX_ROWS.map((tr) => (
                         <div class="dt-line"><span>{tr.label}</span><span class="editorial">{money(tr.impuesto)}</span></div>
                     ))}
+                    {TAX_NOTES.map((nota) => <div class="dt-line"><span>{nota}</span><span></span></div>)}
                     {quoteRetenciones(q).map((r) => (
                         <div class="dt-line dt-ret"><span>{r.nombre}</span><span class="editorial">−{money(r.monto)}</span></div>
                     ))}

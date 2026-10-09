@@ -52,7 +52,7 @@ vi.mock('../src/lib/cotizaciones', () => ({
 }));
 vi.mock('../src/lib/cobros', () => ({ materializeAnticipoCobros: m.anticipo }));
 vi.mock('../src/lib/impuestos-db', () => ({
-    taxCatalogFor: async () => ({ resolve: () => 0.16, defaultRate: 0.16, retenciones: [] }),
+    taxCatalogFor: async () => ({ resolve: () => 0.16, defaultRate: 0.16, retenciones: [], country: 'MX', breakdown: () => null }),
     TaxCatalogUnavailableError: class extends Error {},
 }));
 vi.mock('../src/lib/posthog-server', () => ({ trackServer: m.track }));
