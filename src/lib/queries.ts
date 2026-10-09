@@ -841,6 +841,8 @@ function mapProducto(p: DbRow) {
         // Claves SAT del CFDI (México); null = sin clasificar.
         claveSat: (p.clave_sat as string) ?? null,
         claveUnidadSat: (p.clave_unidad_sat as string) ?? null,
+        // Francia: bien o servicio (categoría de la operación de la factura).
+        naturaleza: p.naturaleza === 'goods' || p.naturaleza === 'services' ? p.naturaleza as 'goods' | 'services' : null,
     };
 }
 
@@ -948,6 +950,7 @@ export async function getProducto(id: string) {
         taxRate: p.tax_rate === null || p.tax_rate === undefined ? null : num(p.tax_rate),
         claveSat: (p.clave_sat as string) ?? null,
         claveUnidadSat: (p.clave_unidad_sat as string) ?? null,
+        naturaleza: p.naturaleza === 'goods' || p.naturaleza === 'services' ? p.naturaleza as 'goods' | 'services' : null,
         metricas: {
             cotizaciones, cerradas,
             tasaCierre: cotizaciones ? Math.round((cerradas / cotizaciones) * 100) : 0,
@@ -1638,6 +1641,10 @@ function rowToFactura(r: any) {
         // BT-13); como la fecha de prestación, solo las trae el detalle (`d.*`).
         referenciaComprador: (r.buyer_reference as string) || null,
         ordenCompra: (r.purchase_order as string) || null,
+        // Dirección de entrega de los bienes (BG-15); solo la trae el detalle.
+        entrega: r.delivery_address && typeof r.delivery_address === 'object'
+            ? r.delivery_address as { line1?: string; line2?: string; city?: string; postalCode?: string; countryCode?: string }
+            : null,
         servicio: r.service_date
             ? (r.service_date_end
                 ? `${fmtCalendarDate(r.service_date as string)} – ${fmtCalendarDate(r.service_date_end as string)}`

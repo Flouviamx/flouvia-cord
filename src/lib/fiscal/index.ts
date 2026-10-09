@@ -19,6 +19,14 @@ export interface FiscalParty {
    * imprime describe el régimen del día en que se emitió, no el de hoy.
    */
   vatRegime?: 'small_business';
+  /**
+   * Solo emisor francés: optó por pagar la TVA sobre los débitos (« option
+   * pour le paiement de la TVA d'après les débits », art. 269-2-c del CGI).
+   * Congelado al emitir: es una mención de la factura (BT-8, código 5 en CII
+   * y 3 en UBL; Annexe 7 v1.9 de la DGFiP, regla G1.43) y decide si sus cobros
+   * se reportan (la TVA de un servicio sin la opción es exigible al cobro).
+   */
+  vatOnDebits?: boolean;
   email?: string;
   contactName?: string;
   address?: FiscalAddress;
@@ -69,6 +77,15 @@ export interface FiscalLineItem {
    * concepto documenta (NoIdentificacion del CFDI). Ausente en un concepto normal.
    */
   identification?: string;
+  /**
+   * Francia: qué se vende en la línea, bien (`goods`) o prestación de
+   * servicios (`services`). Sale del producto del catálogo o, sin él, de lo
+   * que el negocio declaró en Ajustes › Perfil fiscal; se congela al emitir.
+   * De aquí sale la categoría de la operación de la factura (cadre de
+   * facturation B1/S1/M1, BT-23; Annexe 7 de la DGFiP, G1.02) y qué cobros se
+   * reportan (solo servicios, art. 290 A del CGI). Ausente = no declarada.
+   */
+  nature?: 'goods' | 'services';
 }
 
 export interface FiscalRetencion {

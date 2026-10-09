@@ -74,6 +74,10 @@ const [productos, CLIENTES, ORG, kits, IMPUESTOS] = hasAccess
 const country = String(ORG.countryCode || 'MX').toUpperCase();
 const profile = getCountryProfile(country);
 const isMx = country === 'MX';
+// Francia: la dirección de entrega es mención obligatoria si difiere de la del
+// cliente (reforma de la facturación electrónica, Annexe 7 G6.16).
+const isFr = country === 'FR';
+const ENTREGA = draft?.entrega ?? null;
 const defaultDocumentType = draft?.tipo || (hasAccess ? await documentTypeForOrg(orgId, country) : 'proforma');
 const fiscalAccess = hasAccess ? await checkEntitlement(orgId, 'cfdi') : null;
 const fiscalSelected = isFiscalDocument(defaultDocumentType, country);
@@ -497,6 +501,23 @@ import { iconInner } from '../../../lib/icons';
                             ? 'Printed on the invoice and carried by its e-invoice. XRechnung requires the buyer reference; if empty, the client’s default is used.'
                             : 'Se imprimen en la factura y viajan en su factura electrónica. XRechnung exige la referencia del comprador; vacía, se usa la del cliente.'}</p>
                     </div>
+
+                    {isFr && (
+                        <div class="sum-field" id="deliveryFields">
+                            <label class="sum-lbl" for="deliveryLine1">{L === 'en' ? 'Delivery address (optional)' : 'Dirección de entrega (opcional)'}</label>
+                            <input id="deliveryLine1" class="ed-input" maxlength="200" autocomplete="off" value={ENTREGA?.line1 ?? ''}
+                                placeholder={L === 'en' ? 'Street and number' : 'Calle y número'} />
+                            <input id="deliveryPostal" class="ed-input" maxlength="20" autocomplete="off" value={ENTREGA?.postalCode ?? ''}
+                                placeholder={L === 'en' ? 'Postal code' : 'Código postal'} />
+                            <input id="deliveryCity" class="ed-input" maxlength="100" autocomplete="off" value={ENTREGA?.city ?? ''}
+                                placeholder={L === 'en' ? 'City' : 'Ciudad'} />
+                            <input id="deliveryCountry" class="ed-input" maxlength="2" autocomplete="off" value={ENTREGA?.countryCode ?? 'FR'}
+                                aria-label={L === 'en' ? 'Country code (2 letters)' : 'Código de país (2 letras)'} />
+                            <p class="sum-hint">{L === 'en'
+                                ? 'Only if the goods are delivered somewhere other than the client’s address: French e-invoices must state it. It is not stated for a supply of services.'
+                                : 'Solo si los bienes se entregan en otro lugar que la dirección del cliente: la factura electrónica francesa debe decirlo. No se declara en una prestación de servicios.'}</p>
+                        </div>
+                    )}
 
                     <div class="sum-field">
                         <label for="fxBaseTrigger">{L === 'en' ? 'Invoice currency' : 'Divisa de la factura'}</label>
@@ -1159,6 +1180,15 @@ import { iconInner } from '../../../lib/icons';
             // cliente; al editar un borrador, vacías la borran.
             buyer_reference: ($('buyerReference') as HTMLInputElement).value.trim() || (activeDraftId ? '' : undefined),
             purchase_order: ($('purchaseOrder') as HTMLInputElement).value.trim() || (activeDraftId ? '' : undefined),
+            // Francia: dirección de entrega de los bienes; vacía = sin dirección.
+            ...(document.getElementById('deliveryFields') ? {
+                delivery_address: ($('deliveryLine1') as HTMLInputElement).value.trim() ? {
+                    line1: ($('deliveryLine1') as HTMLInputElement).value.trim(),
+                    postalCode: ($('deliveryPostal') as HTMLInputElement).value.trim(),
+                    city: ($('deliveryCity') as HTMLInputElement).value.trim(),
+                    countryCode: ($('deliveryCountry') as HTMLInputElement).value.trim().toUpperCase() || 'FR',
+                } : null,
+            } : {}),
             iva_incluido: ivaIncluidoEl.checked,
             // México: uso y forma de pago del CFDI ('' = automáticos).
             ...(document.getElementById('cfdiUso') ? {

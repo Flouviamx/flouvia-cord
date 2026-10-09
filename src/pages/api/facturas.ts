@@ -10,7 +10,7 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { getActiveOrgId, logAudit, reqIp } from '../../lib/db';
 import { requirePerm, getFacturas, invalidateMoneyCaches } from '../../lib/queries';
-import { createInvoiceDraft, parseInvoiceItems, parseInvoiceReferences, parseServiceDates, MAX_INVOICE_ITEMS, parseCfdiOverrides } from '../../lib/fiscal/invoices';
+import { createInvoiceDraft, parseDeliveryAddress, parseInvoiceItems, parseInvoiceReferences, parseServiceDates, MAX_INVOICE_ITEMS, parseCfdiOverrides } from '../../lib/fiscal/invoices';
 import { requireEntitlement } from '../../lib/org-entitlements';
 import { currentUserId } from '../../lib/context';
 import { invoicingFeatureFor } from '../../lib/fiscal/gate';
@@ -73,6 +73,8 @@ export const POST: APIRoute = async ({ request }) => {
         // Referencia del comprador (Leitweg-ID) y orden de compra: opcionales;
         // XRechnung exige la primera y Peppol una de las dos.
         ...parseInvoiceReferences(body),
+        // Dirección de entrega de los bienes (Francia: mención obligatoria si difiere).
+        ...parseDeliveryAddress(body),
         descuento: descuento.presente ? descuento.solicitud : null,
         createdBy: currentUserId(),
         ...parseCfdiOverrides(body),

@@ -51,6 +51,7 @@ import {
   type EmitResult,
 } from './emit';
 import type {
+  FiscalAddress,
   FiscalDocumentRequest,
   FiscalDocumentResponse,
   FiscalCancelResponse,
@@ -142,6 +143,12 @@ export interface CreateDraftInput {
    */
   buyerReference?: string | null;
   purchaseOrder?: string | null;
+  /**
+   * Dirección de entrega de los bienes (BG-15), si no es la del cliente. En
+   * Francia es mención obligatoria cuando difiere. `undefined` = sin cambio;
+   * `null` = sin dirección de entrega.
+   */
+  deliveryAddress?: FiscalAddress | null;
 }
 
 /**
@@ -306,12 +313,15 @@ async function descuentoDelBorrador(
  * de `buildLines` conservan el orden de `items`. Se leen en servidor y acotadas
  * a la organización: el navegador no decide con qué clave se timbra.
  */
-async function withSatKeys(orgId: string, items: DraftLineInput[], lines: FiscalLineItem[], onlyUnit = false): Promise<FiscalLineItem[]> {
+async function withSatKeys(
+  orgId: string, items: DraftLineInput[], lines: FiscalLineItem[], onlyUnit = false,
+  francia: { defecto: FiscalLineItem['nature'] | null } | null = null,
+): Promise<FiscalLineItem[]> {
   const ids = Array.from(new Set(items.map((i) => i.productoId).filter((id): id is string => !!id && UUID_RE.test(id))));
   let byId = new Map<string, any>();
   if (ids.length) {
     const [rows] = await withOrgTx(orgId, sql`
-      select id, clave_sat, clave_unidad_sat, unidad from productos
+      select id, clave_sat, clave_unidad_sat, unidad, naturaleza from productos
        where org_id = ${orgId} and id = any(${ids}::uuid[])`);
     byId = new Map(rows.map((r: any) => [String(r.id), r]));
   }
@@ -323,8 +333,43 @@ async function withSatKeys(orgId: string, items: DraftLineInput[], lines: Fiscal
     const keys = onlyUnit
       ? resolveLineUnitKey(p ? { claveUnidadSat: p.clave_unidad_sat, unidad: p.unidad } : null, item?.unitKey)
       : effectiveLineSatKeys(item, p ? { claveSat: p.clave_sat, claveUnidadSat: p.clave_unidad_sat, unidad: p.unidad } : null);
-    return Object.keys(keys).length ? { ...line, ...keys } : line;
+    // Francia: bien o servicio, del producto o, sin él, lo que el negocio
+    // declaró en Ajustes (categoría de la operación, BT-23; fr-ctc.ts).
+    const nature = francia ? natureFr(p?.naturaleza) ?? francia.defecto ?? undefined : undefined;
+    const out = Object.keys(keys).length ? { ...line, ...keys } : line;
+    return nature ? { ...out, nature } : out;
   });
+}
+
+const natureFr = (v: unknown): FiscalLineItem['nature'] | null => (v === 'goods' || v === 'services' ? v : null);
+
+/** Francia: lo que la línea hereda cuando su producto no dice si es bien o servicio. */
+function franciaDe(country: string, fiscalMetadata: unknown): { defecto: FiscalLineItem['nature'] | null } | null {
+  return country === 'FR' ? { defecto: natureFr(metadata(fiscalMetadata).fr_nature_defaut) } : null;
+}
+
+/**
+ * Dirección de entrega de los bienes (BG-15) desde el body HTTP
+ * (`delivery_address`). Ausente = `undefined` (no se toca); vacía = `null`.
+ * Se guarda tal cual en `documentos_fiscales.delivery_address`; la factura
+ * electrónica la declara solo si difiere de la del cliente (fr-ctc.ts).
+ */
+export function parseDeliveryAddress(body: Record<string, unknown>): { deliveryAddress?: FiscalAddress | null } {
+  if (body.delivery_address === undefined) return {};
+  const raw = body.delivery_address;
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return { deliveryAddress: null };
+  const r = raw as Record<string, unknown>;
+  const txt = (v: unknown, max: number) => String(v ?? '').replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, max);
+  const address: FiscalAddress = {
+    line1: txt(r.line1, 200),
+    line2: txt(r.line2, 200) || undefined,
+    city: txt(r.city, 100),
+    postalCode: txt(r.postalCode ?? r.postal_code, 20).toUpperCase(),
+    countryCode: txt(r.countryCode ?? r.country_code, 2).toUpperCase(),
+  };
+  if (!address.line1 && !address.city && !address.postalCode) return { deliveryAddress: null };
+  if (!/^[A-Z]{2}$/.test(address.countryCode)) address.countryCode = '';
+  return { deliveryAddress: address };
 }
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -547,7 +592,7 @@ export async function createInvoiceDraft(orgId: string, input: CreateDraftInput)
   const { subtotal, taxes, total, retenciones, retencionTotal } = built;
   // México: cada concepto lleva las claves SAT de su producto (sat-claves.ts);
   // el resto, la unidad.
-  const lines = await withSatKeys(orgId, itemsConTasaValidada, built.lines, country !== 'MX');
+  const lines = await withSatKeys(orgId, itemsConTasaValidada, built.lines, country !== 'MX', franciaDe(country, head.fiscal_metadata));
 
   const fx = await resolveFxRate(currency, ledgerCurrency, total, country, isFiscalDocument(docType, country));
   if ('error' in fx) return { ok: false, error: fx.error };
@@ -569,7 +614,7 @@ export async function createInvoiceDraft(orgId: string, input: CreateDraftInput)
       lifecycle, due_date, amount_paid, amount_remaining, public_token, notes, created_by,
       issuer_snapshot, recipient_snapshot, line_items_snapshot,
       schema_version, provider_data, updated_at, service_date, service_date_end,
-      buyer_reference, purchase_order, payee_account,
+      buyer_reference, purchase_order, payee_account, delivery_address,
       descuento_total, descuento, cfdi_uso, cfdi_forma_pago, sustituye_a
     ) values (
       ${orgId}, ${input.sustituyeA ? (input.cotizacionId || null) : null}, ${String(head.cliente_id)}, ${country}, ${docType}, 'pending',
@@ -581,6 +626,7 @@ export async function createInvoiceDraft(orgId: string, input: CreateDraftInput)
       ${JSON.stringify(issuer)}, ${JSON.stringify(recipient)}, ${JSON.stringify(lines)},
       'cord.invoice.v1', '{}'::jsonb, now(), ${input.serviceDate || null}::date, ${input.serviceDateEnd || null}::date,
       ${buyerReference}, ${input.purchaseOrder ?? null}, ${payee ? JSON.stringify(payee) : null}::jsonb,
+      ${input.deliveryAddress ? JSON.stringify(input.deliveryAddress) : null}::jsonb,
       ${built.descuentoTotal}, ${descuento ? JSON.stringify(descuento) : null}::jsonb,
       ${overrides.uso ?? null}, ${overrides.forma ?? null}, ${input.sustituyeA || null}
     )
@@ -697,7 +743,7 @@ export async function updateInvoiceDraft(
   const { subtotal, taxes, total, retenciones, retencionTotal } = built;
   // México: cada concepto lleva las claves SAT de su producto (sat-claves.ts);
   // el resto, la unidad.
-  const lines = await withSatKeys(orgId, itemsConTasaValidada, built.lines, country !== 'MX');
+  const lines = await withSatKeys(orgId, itemsConTasaValidada, built.lines, country !== 'MX', franciaDe(country, head.fiscal_metadata));
 
   const fx = await resolveFxRate(currency, ledgerCurrency, total, country, isFiscalDocument(docType, country));
   if ('error' in fx) return { ok: false, error: fx.error };
@@ -733,6 +779,8 @@ export async function updateInvoiceDraft(
       line_items_snapshot = ${JSON.stringify(lines)},
       buyer_reference = case when ${input.buyerReference === undefined}::boolean then buyer_reference else ${input.buyerReference ?? null}::text end,
       purchase_order = case when ${input.purchaseOrder === undefined}::boolean then purchase_order else ${input.purchaseOrder ?? null}::text end,
+      delivery_address = case when ${input.deliveryAddress === undefined}::boolean then delivery_address
+        else ${input.deliveryAddress ? JSON.stringify(input.deliveryAddress) : null}::jsonb end,
       payee_account = ${payee ? JSON.stringify(payee) : null}::jsonb,
       cfdi_uso = case when ${overrides.uso !== undefined} then ${overrides.uso ?? null} else cfdi_uso end,
       cfdi_forma_pago = case when ${overrides.forma !== undefined} then ${overrides.forma ?? null} else cfdi_forma_pago end,

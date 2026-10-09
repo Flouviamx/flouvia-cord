@@ -21,7 +21,8 @@ import {
   PdfDocument, measureText as measure, prepareImage, truncateText as truncate, wrapText as wrap,
   type Align, type FontKey, type RGB,
 } from '../pdf/writer';
-import type { FiscalLineItem, FiscalParty, FiscalRetencion } from './index';
+import type { FiscalAddress, FiscalLineItem, FiscalParty, FiscalRetencion } from './index';
+import { cadreDe, entregaDistinta, sirenDe, type CadreFacturation } from './einvoice/fr-ctc';
 import type { RepresentacionImpresa } from './latam/representacion';
 import { termDays } from '../payment-terms';
 
@@ -85,6 +86,8 @@ export interface InvoicePdfInput {
   timeZone?: string | null;
   /** Referencia u orden de compra del cliente. */
   reference?: string | null;
+  /** Dirección de entrega de los bienes, si no es la del cliente (`documentos_fiscales.delivery_address`). */
+  deliveryAddress?: FiscalAddress | null;
   /** Folio de la factura ORIGINAL, si este documento es su nota de crédito/rectificativa. */
   creditNoteOfNumber?: string | null;
   /** Registro Verifactu (España) ya encadenado — `provider_data.verifactu` de SpainVerifactuProvider. */
@@ -229,6 +232,10 @@ const PDF_TEXT = {
   totalIn: P('Total en', 'Total in', 'Total en', 'Gesamt in', 'Total em'),
   howToPay: P('Cómo pagar', 'How to pay', 'Comment payer', 'Zahlung', 'Como pagar'),
   legalNotice: P('Mención legal', 'Legal notice', 'Mention légale', 'Rechtlicher Hinweis', 'Menção legal'),
+  // Francia, reforma de la facturación electrónica: las cuatro menciones nuevas.
+  operationCategory: P('Categoría de la operación', 'Transaction category', "Catégorie de l'opération", 'Art des Umsatzes', 'Categoria da operação'),
+  clientSiren: P('SIREN del cliente', 'Client SIREN', 'SIREN du client', 'SIREN des Kunden', 'SIREN do cliente'),
+  deliveryAddress: P('Dirección de entrega', 'Delivery address', 'Adresse de livraison', 'Lieferanschrift', 'Endereço de entrega'),
   notes: P('Notas', 'Notes', 'Notes', 'Hinweise', 'Observações'),
   conditions: P('Términos y condiciones', 'Terms and conditions', 'Conditions générales', 'Allgemeine Bedingungen', 'Termos e condições'),
   reason: P('Motivo', 'Reason', 'Motif', 'Grund', 'Motivo'),
@@ -311,6 +318,16 @@ export function smallBusinessNotice(issuerCountry: string): string | null {
 }
 
 const FR_B2B_NOTICE = "En cas de retard de paiement, pénalités au taux d'intérêt de la BCE majoré de 10 points et indemnité forfaitaire pour frais de recouvrement de 40 € (art. L441-10 du Code de commerce). Pas d'escompte pour paiement anticipé.";
+
+/** Mención de la opción por los débitos (Francia), en el idioma de la ley. */
+const FR_DEBITS_NOTICE = 'Option pour le paiement de la taxe d’après les débits.';
+
+/** Categoría de la operación (BT-23) en palabras: B1 bienes, S1 servicios, M1 ambas. */
+const FR_CADRE_TEXT: Record<CadreFacturation, { es: string; en: string; fr: string }> = {
+  B1: { es: 'Entrega de bienes', en: 'Supply of goods', fr: 'Livraison de biens' },
+  S1: { es: 'Prestación de servicios', en: 'Supply of services', fr: 'Prestation de services' },
+  M1: { es: 'Bienes y servicios', en: 'Goods and services', fr: 'Livraison de biens et prestation de services' },
+};
 
 /**
  * Fecha de calendario (`date` de Postgres, sin hora). El driver la entrega
@@ -555,6 +572,7 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
 
   // ── Franja de datos clave ──────────────────────────────────────────────────
   const facts: { k: string; v: string }[] = [];
+  const issuerCountryForFacts = String(input.issuer.address?.countryCode || input.countryCode).toUpperCase();
   // La referencia a la factura ORIGINAL es obligatoria en una rectificativa —
   // sin ella, el documento se lee como una factura nueva y no como lo que
   // corrige. Va primero: es el dato más importante de todo el documento.
@@ -570,6 +588,20 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
   if (input.paymentTermsCode) facts.push({ k: tx('terms'), v: termText(input.paymentTermsCode, lang) });
   facts.push({ k: tx('currency'), v: currency });
   if (input.reference) facts.push({ k: tx('reference'), v: input.reference });
+  // Francia: categoría de la operación, SIREN del cliente y dirección de
+  // entrega si difiere (menciones obligatorias desde la reforma; la opción
+  // por los débitos va en las menciones legales). Solo en un documento que
+  // declara la naturaleza de sus conceptos: uno anterior se imprime como antes.
+  const frCadre = issuerCountryForFacts === 'FR' ? cadreDe(input.lines) : null;
+  if (frCadre) {
+    facts.push({ k: tx('operationCategory'), v: FR_CADRE_TEXT[frCadre][lang === 'fr' ? 'fr' : lang === 'es' ? 'es' : 'en'] });
+    const clientSiren = sirenDe(input.recipient);
+    if (clientSiren && String(input.recipient.address?.countryCode || 'FR').toUpperCase() === 'FR') facts.push({ k: tx('clientSiren'), v: clientSiren.siren });
+    if (frCadre !== 'S1' && input.deliveryAddress && entregaDistinta(input.deliveryAddress, input.recipient.address)) {
+      const a = input.deliveryAddress;
+      facts.push({ k: tx('deliveryAddress'), v: [a.line1, [a.postalCode, a.city].filter(Boolean).join(' '), a.countryCode].filter(Boolean).join(', ') });
+    }
+  }
 
   // Más de cuatro datos van en dos filas: en una sola, cada uno tenía una
   // sexta parte del ancho y un dato legal ("entspricht dem Rechnungsdatum",
@@ -826,6 +858,12 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
     exemptionNotes.length ? { title: tx('legalNotice'), body: exemptionNotes.join(' ') } : null,
     ...(input.autoridad?.leyendas ?? []).map((body) => ({ title: tx('legalNotice'), body })),
     frenchB2b ? { title: tx('legalNotice'), body: FR_B2B_NOTICE } : null,
+    // BT-8: la opción por pagar la TVA sobre los débitos es mención de la
+    // factura de servicios desde la reforma (DGFiP, Annexe 7 v1.9, G1.43, y
+    // FAQ "Tout savoir sur la facturation électronique"). Una venta de bienes
+    // no la lleva.
+    issuerCountry === 'FR' && input.issuer.vatOnDebits && (cadreDe(input.lines) === 'S1' || cadreDe(input.lines) === 'M1')
+      ? { title: tx('legalNotice'), body: FR_DEBITS_NOTICE } : null,
     input.documentNotes ? { title: isCreditNote ? tx('reason') : tx('notes'), body: input.documentNotes } : null,
     input.notes ? { title: tx('conditions'), body: input.notes } : null,
   ].filter(Boolean) as { title: string; body: string }[];

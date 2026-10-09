@@ -25,6 +25,10 @@ export function cleanProductInput(input: Record<string, any>) {
         // los defaults del SAT.
         claveSat: normalizeProductKey(input.clave_sat),
         claveUnidadSat: normalizeUnitKey(input.clave_unidad_sat),
+        // Francia: bien (`goods`) o prestación de servicios (`services`). De
+        // aquí sale la categoría de la operación de la factura (BT-23) y qué
+        // cobros se reportan. `null` = sin declarar.
+        naturaleza: input.naturaleza === 'goods' || input.naturaleza === 'services' ? input.naturaleza as 'goods' | 'services' : null,
         // Un campo que no viene en la petición NO se toca al actualizar: la
         // pantalla solo muestra el impuesto si hay más de una tasa y las claves
         // SAT si el negocio factura en México, y omitirlos no puede borrarlos.
@@ -32,6 +36,7 @@ export function cleanProductInput(input: Record<string, any>) {
             taxRate: input.tax_rate !== undefined,
             claveSat: input.clave_sat !== undefined,
             claveUnidadSat: input.clave_unidad_sat !== undefined,
+            naturaleza: input.naturaleza !== undefined,
         },
     };
 }
@@ -81,9 +86,9 @@ export async function createProduct(ctx: ActionContext, input: Record<string, an
     try {
         [[row]] = await withOrgTx(ctx.orgId, sql`
             insert into productos (org_id, sku, nombre, unidad, descripcion, precio_lista, costo, activo, precios_volumen, tax_rate,
-                                   clave_sat, clave_unidad_sat)
+                                   clave_sat, clave_unidad_sat, naturaleza)
             values (${ctx.orgId}, ${p.sku}, ${p.nombre}, ${p.unidad}, ${p.descripcion}, ${p.precio}, ${p.costo}, ${p.activo}, ${JSON.stringify(p.preciosVolumen)}, ${p.taxRate},
-                    ${p.claveSat}, ${p.claveUnidadSat})
+                    ${p.claveSat}, ${p.claveUnidadSat}, ${p.naturaleza})
             returning *`);
     } catch (error) {
         const limit = resourceLimitError(error);
@@ -112,7 +117,8 @@ export async function updateProduct(ctx: ActionContext, id: string, input: Recor
             precios_volumen = ${JSON.stringify(p.preciosVolumen)},
             tax_rate = case when ${p.provided.taxRate} then ${p.taxRate}::numeric else tax_rate end,
             clave_sat = case when ${p.provided.claveSat} then ${p.claveSat}::text else clave_sat end,
-            clave_unidad_sat = case when ${p.provided.claveUnidadSat} then ${p.claveUnidadSat}::text else clave_unidad_sat end
+            clave_unidad_sat = case when ${p.provided.claveUnidadSat} then ${p.claveUnidadSat}::text else clave_unidad_sat end,
+            naturaleza = case when ${p.provided.naturaleza} then ${p.naturaleza}::text else naturaleza end
         where id = ${id} and org_id = ${ctx.orgId}
         returning *`);
     if (!rows.length) return NO_ENCONTRADO;

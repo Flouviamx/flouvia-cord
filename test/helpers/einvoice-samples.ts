@@ -23,7 +23,7 @@ import type { InvoicePdfInput } from '../../src/lib/fiscal/invoice-pdf';
 const cents = (n: number) => Math.round((Number(n) + Number.EPSILON) * 100);
 const round2 = (n: number) => cents(n) / 100;
 
-interface LineOptions { discount?: number; unitKey?: string; exemptionReason?: string }
+interface LineOptions { discount?: number; unitKey?: string; exemptionReason?: string; nature?: 'goods' | 'services' }
 
 export function sampleLine(description: string, quantity: number, unitPrice: number, taxRate: number, opts: LineOptions = {}): FiscalLineItem {
     const gross = round2(quantity * unitPrice);
@@ -35,6 +35,7 @@ export function sampleLine(description: string, quantity: number, unitPrice: num
         ...(discount ? { discount } : {}),
         ...(opts.unitKey ? { unitKey: opts.unitKey } : {}),
         ...(opts.exemptionReason ? { exemptionReason: opts.exemptionReason } : {}),
+        ...(opts.nature ? { nature: opts.nature } : {}),
     };
 }
 
@@ -134,6 +135,15 @@ const MADRID_BUYER: FiscalParty = {
 
 const ISSUED = { status: 'issued', lifecycle: 'open', currency: 'EUR' } as const;
 
+// Reforma francesa: emisor con la opción por la TVA sobre los débitos y
+// clientes identificados por su TVA, por su SIRET (sin dirección electrónica
+// propia: se usa la de su SIREN en el annuaire) o con dirección 0225.
+const FR_SELLER_DEBITS: FiscalParty = { ...FR_SELLER, vatOnDebits: true };
+const FR_BUYER_SIRET: FiscalParty = {
+    legalName: 'Menuiserie Garnier SAS', taxId: '55210055400013', email: 'compta@garnier.fr', contactName: 'Luc Garnier',
+    address: { line1: '18 quai de la Loire', city: 'Nantes', postalCode: '44000', countryCode: 'FR' },
+};
+
 // ── Muestras ───────────────────────────────────────────────────────────────
 
 export interface EInvoiceSample {
@@ -144,10 +154,16 @@ export interface EInvoiceSample {
     formats: En16931Format[];
     /** Categorías UNTDID 5305 esperadas en el desglose, en orden. */
     categories: string[];
+    /**
+     * Factura de la reforma francesa (CTC): además de EN 16931, su Factur-X
+     * pasa por el schematron BR-FR del flujo 2 (FNFE-MPE) en el check oficial
+     * y por `frCtcProblems` en el vitest.
+     */
+    frCtc?: boolean;
 }
 
-function sample(id: string, title: string, formats: En16931Format[], categories: string[], src: Omit<EInvoiceSource, 'subtotal' | 'taxTotal' | 'total'>): EInvoiceSample {
-    return { id, title, formats, categories, source: { ...src, ...totals(src.lines) } };
+function sample(id: string, title: string, formats: En16931Format[], categories: string[], src: Omit<EInvoiceSource, 'subtotal' | 'taxTotal' | 'total'>, extra: { frCtc?: boolean } = {}): EInvoiceSample {
+    return { id, title, formats, categories, source: { ...src, ...totals(src.lines) }, ...extra };
 }
 
 const ALL: En16931Format[] = ['facturx', 'xrechnung', 'xrechnung-cii', 'peppol'];
@@ -285,6 +301,50 @@ export const EINVOICE_SAMPLES: EInvoiceSample[] = [
         lines: [sampleLine('Création graphique', 1, 850, 0)],
         iban: 'FR7630006000011234567890189',
     }),
+    sample('fr-ctc-services', 'Francia CTC: servicios con la opción débits (S1, BT-8)', ALL, ['S'], {
+        ...ISSUED, invoiceNumber: 'F-2026-000201', documentType: 'commercial_invoice', countryCode: 'FR',
+        issuedAt: '2026-10-08T10:00:00Z', timeZone: 'Europe/Paris', dueDate: '2026-11-07', paymentTermsCode: 'net30',
+        buyerReference: 'DUP-ACH-2026', purchaseOrder: 'PO-7790',
+        issuer: FR_SELLER_DEBITS, recipient: FR_BUYER,
+        lines: [
+            sampleLine('Audit comptable', 3, 650, 0.2, { unitKey: 'DAY', nature: 'services' }),
+            sampleLine('Formation (heures)', 4, 90, 0.2, { unitKey: 'HUR', nature: 'services' }),
+        ],
+        iban: 'FR7630006000011234567890189', bic: 'AGRIFRPP', accountName: 'Atelier Lumière SAS',
+    }, { frCtc: true }),
+    sample('fr-ctc-mixte', 'Francia CTC: bienes y servicios (M1), cliente por SIRET y entrega en otra dirección', ALL, ['S', 'S'], {
+        ...ISSUED, invoiceNumber: 'F-2026-000202', documentType: 'commercial_invoice', countryCode: 'FR',
+        issuedAt: '2026-10-08T10:00:00Z', timeZone: 'Europe/Paris', dueDate: '2026-11-07', paymentTermsCode: 'net30',
+        buyerReference: 'GARNIER-2026-14', purchaseOrder: 'BC-3310',
+        issuer: FR_SELLER_DEBITS, recipient: FR_BUYER_SIRET,
+        deliveryAddress: { line1: 'ZA des Trois Moulins, lot 7', city: 'Saint-Herblain', postalCode: '44800', countryCode: 'FR' },
+        lines: [
+            sampleLine('Luminaire suspendu, laiton', 6, 245.5, 0.2, { nature: 'goods' }),
+            sampleLine('Pose et raccordement', 5, 70, 0.1, { unitKey: 'HUR', nature: 'services' }),
+            sampleLine('Ampoule LED E27', 0.5, 6.35, 0.2, { unitKey: 'C62', nature: 'goods' }),
+        ],
+        iban: 'FR7630006000011234567890189', bic: 'AGRIFRPP',
+    }, { frCtc: true }),
+    sample('fr-ctc-biens-usd', 'Francia CTC: bienes (B1) facturados en USD con la TVA en euros', ['facturx', 'peppol'], ['S', 'S'], {
+        ...ISSUED, currency: 'USD', ledgerCurrency: 'EUR', fxRate: 0.9182,
+        invoiceNumber: 'F-2026-000203', documentType: 'commercial_invoice', countryCode: 'FR',
+        issuedAt: '2026-10-08T10:00:00Z', timeZone: 'Europe/Paris', dueDate: '2026-11-07', paymentTermsCode: 'net30',
+        purchaseOrder: 'PO-7791',
+        issuer: FR_SELLER_DEBITS, recipient: FR_BUYER,
+        lines: [
+            sampleLine('Lampe de bureau', 10, 120, 0.2, { nature: 'goods' }),
+            sampleLine('Livre « Lumières »', 4, 32, 0.055, { nature: 'goods' }),
+        ],
+        iban: 'FR7630006000011234567890189', bic: 'AGRIFRPP',
+    }, { frCtc: true }),
+    sample('fr-ctc-avoir', 'Francia CTC: avoir (381) que cita la factura y su fecha', ['facturx'], ['S'], {
+        ...ISSUED, invoiceNumber: 'AV-2026-000004', documentType: 'commercial_credit_note', countryCode: 'FR',
+        issuedAt: '2026-10-09T10:00:00Z', timeZone: 'Europe/Paris',
+        notes: 'Avoir pour une journée d’audit non réalisée.',
+        creditNoteOf: { number: 'F-2026-000201', issuedAt: '2026-10-08T10:00:00Z' },
+        issuer: FR_SELLER_DEBITS, recipient: FR_BUYER,
+        lines: [sampleLine('Audit comptable (annulation)', 1, 650, 0.2, { unitKey: 'DAY', nature: 'services' })],
+    }, { frCtc: true }),
     sample('igic', 'Canarias: IGIC 7 % y 3 % (categoría L)', ALL, ['L', 'L'], {
         ...ISSUED, invoiceNumber: 'AD-2026-000311', documentType: 'commercial_invoice', countryCode: 'ES',
         issuedAt: '2026-10-08T10:00:00Z', timeZone: 'Atlantic/Canary', dueDate: '2026-11-07', paymentTermsCode: 'net30',
@@ -332,6 +392,7 @@ export function samplePdfInput(src: EInvoiceSource): InvoicePdfInput {
         paymentTermsCode: src.paymentTermsCode ?? null,
         reference: [src.buyerReference, src.purchaseOrder].filter(Boolean).join(' · ') || null,
         creditNoteOfNumber: src.creditNoteOf?.number ?? null,
+        deliveryAddress: src.deliveryAddress ?? null,
         documentNotes: src.notes ?? null,
         paymentInstructions: src.iban ? `IBAN ${src.iban}${src.bic ? ` · BIC ${src.bic}` : ''}` : null,
         brandColor: '#0a192f',
