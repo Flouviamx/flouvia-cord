@@ -118,6 +118,14 @@ export async function downloadInvoiceDocument(orgId: string, id: string, format:
     });
   }
 
+  // Perú: el ejemplar electrónico es el XML firmado que SUNAT aceptó.
+  if (format === 'xml' && (doc.document_type === 'sunat_invoice' || doc.document_type === 'sunat_credit_note')) {
+    const { xmlAceptadoSunat } = await import('./latam/sunat/descarga');
+    const aceptado = await xmlAceptadoSunat(orgId, id);
+    if (!aceptado) return new Response('XML no disponible', { status: 404 });
+    return new Response(aceptado.xml, { status: 200, headers: downloadHeaders('application/xml', `${safeFilename(aceptado.archivo)}.xml`) });
+  }
+
   if (format !== 'pdf') return new Response('Esta factura no genera XML', { status: 404 });
   return invoicePdf(orgId, doc, Boolean(doc.provider_data?.simulado));
 }

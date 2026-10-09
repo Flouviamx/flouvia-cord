@@ -1,0 +1,285 @@
+  ANEXO A
+  ANEXO N.° 6
+  ASPECTOS TÉCNICOS – SEE Del contribuyente
+6.1  Sobre los envíos a la SUNAT mediante el servicio web
+  6.1.1 Métodos para el envío
+  El envío se realiza a través del servicio web si se usa alguno de los métodos
+  siguientes:
+  a) sendBill, el cual permite recibir un archivo ZIP con un único comprobante
+  en formato digital y devuelve un archivo Zip que contiene la Constancia de
+  Recepción – SUNAT.
+  b) sendSummary, el cual permite recibir un archivo Zip con un único
+  comprobante en formato digital del Resumen Diario o Comunicación de
+  Baja. Devuelve un ticket con el que posteriormente, utilizando el método
+  getStatus, se puede obtener el archivo Zip que contiene la Constancia de
+  Recepción – SUNAT.
+  c) getStatus, el cual permite recibir el ticket como parámetro y devuelve un
+  objeto que indica el estado del proceso y en caso de haber terminado,
+  devuelve adjunta la Constancia de Recepción – SUNAT.
+  d) sendPack, el cual permite recibir un archivo Zip con multiples
+  comprobantes en formato digital (facturas y sus notas, boletas y sus notas y
+  servicios publicos). Devuelve un ticket con el que posteriormente, utilizando
+  el método getStatus, se puede obtener el archivo Zip que contiene las
+  Constancias de Recepción – SUNAT.
+  El servicio web será protegido vía SSL y la dirección será comunicada a través
+  de la página web de la SUNAT.
+  6.1.2 Seguridad en el envío: WS-Security
+  Para acceder al servicio web de la SUNAT, el emisor electrónico debe usar el
+  protocolo de seguridad WS-Security, el modelo UsernameToken y usar como
+  credenciales su código de usuario y la Clave SOL.
+  En caso de utilizar los servicios de un Proveedor de Servicios Electrónicos, las
+  referidas credenciales deberán corresponder a dicho proveedor.
+  6.1.3 Sobre el empaquetado y nombres de los archivos generados
+  a) El comprobante en formato digital con la firma digital debe ser
+  empaquetado en un archivo ZIP antes de su envío a la SUNAT.
+b) Nombre del formato digital y del archivo ZIP
+  El formato digital y el archivo ZIP que contiene al primero debe ser
+  generado con los nombres que se detallan a continuación:
+  b.1) Factura electrónica, boleta de venta electrónica y las notas
+  electrónicas enviadas individualmente:
+  Posición  Nemotécnico  Descripción
+  RRRRRRRRRR  RUC del emisor electrónico.
+  01-11
+  R
+  12  -  Guión separador.
+  TT  Tipo de comprobante de pago
+  13-14
+  electrónico o nota electrónica.
+  01  Factura electrónica.
+  03  Boleta de venta electrónica
+  07  Nota de crédito electrónica.
+  08  Nota de débito electrónica.
+  15  -  Guión separador.
+  FSSS  Serie de la factura electrónica o
+  nota electrónica vinculada a ésta.
+  16-19  Se espera que el primer carácter
+  sea la constante “F” seguido por
+  tres caracteres alfanuméricos.
+  20  -  Guión separador.
+  CCCCCCCC  Número correlativo de la factura
+  electrónica o nota electrónica
+  21-28  vinculado a ésta. Este campo es
+  variante.Se espera un mínimo de
+  1 y máximo de 8 dígitos.
+  29 (*)  .  Punto de extensión.
+  30-32 (*)  EEE  Extensión del archivo.
+  XML  Para el caso del formato XML.
+  ZIP  Para el caso del archivo ZIP.
+  (*) Las posiciones pueden variar dependiendo de la longitud del
+  correlativo.
+  Ejemplo:
+  Nombre del archivo ZIP: 20100066603-01-F001-1.ZIP
+  Nombre del archivo XML: 20100066603-01-F001-1.XML
+  b.2) Comunicación de baja:
+  Posición  Nemotécnico  Descripción
+  01-11  RRRRRRRRRRR  RUC del emisor electrónico.
+  12  -  Guión separador.
+  13-14  TT  Tipo de resumen.
+  RA  Comunicación de Baja.
+  15  -  Guión separador.
+  YYYYMMDD  Fecha de la generación del
+  16-23  archivo  en  formato
+  YYYYMMDD.
+  24  -  Guión separador.
+  CCCCC  Numero correlativo. Este
+  campo es variante, se
+  25-29
+  espera un mínimo de 1 y
+  máximo de 5.
+  30 (*)  .  Punto de extensión.
+  31-33(*)  EEE  Extensión del archivo.
+  XML  Para el caso del formato
+  XML.
+  ZIP  Para el caso del archivo ZIP.
+  (*) Las posiciones pueden variar dependiendo de la longitud del
+  correlativo.
+  Ejemplo:
+  Nombre del archivo ZIP: 20100066603-RA-20110522.ZIP
+  Nombre del archivo XML: 20100066603-RA-20110522.XML
+b.3) Resumen Diario
+  Posición  Nemotécnico  Descripción
+  01-11  RRRRRRRRRRR  RUC del emisor electrónico.
+  12  -  Guión separador.
+  13-14  TT  Tipo de resumen.
+  RC  Resumen Diario.
+  15  -  Guión separador.
+  YYYYMMDD  Fecha de la generación del
+  archivo  en  formato
+  YYYYMMDD. Fecha que
+  16-23
+  corresponde a la fecha de
+  emisión de la boletas y notas
+  vinculadas.
+  24  -  Guión separador.
+  CCCCC  Numero correlativo. Este
+  campo es variante, se
+  25-29
+  espera un mínimo de 1 y
+  máximo de 5.
+  30 (*)  .  Punto de extensión.
+  31-33(*)  EEEE  Extensión del archivo, puede
+  31-34(*)  contener hasta 4 caracteres.
+  XML  Para el caso del formato
+  XML.
+  ZIP  Para el caso del archivo ZIP.
+  (*) Las posiciones pueden variar dependiendo de la longitud del
+  correlativo.
+  Ejemplo:
+  Nombre del archivo ZIP: 20100066603-RC-20110522.ZIP
+  Nombre del archivo XML: 20100066603-RC-20110522.XML
+  La cantidad de comprobantes que podrá contener un lote es de 500
+  comprobantes como máximo.
+  IMPORTANTE: A partir del 01 de enero de 2018, considerando la
+  nueva estructura de Resumen Diario, deberá enviarse en bloques de
+  500 líneas. Cada bloque corresponderá a un número correlativo
+  diferente. Los envíos son complementarios, es decir, se puede enviar
+  más de un archivo por día, y los archivos enviados no sustituyen los
+  anteriormente enviados.
+b.4) Envio por lotes
+  Métodos para el envío
+  El envío se realizará a través del servicio web, utilizando los siguientes
+  métodos asíncronos:
+  1. SendPack, el cual permitirá un archivo Zip con un único lote.
+  Devuelve un ticket con el que posteriormente, utilizando el método
+  getStatus, se puede obtener el archivo Zip que contiene la CDR –
+  OSE.
+  2. GetStatus, el cual permite recibir el ticket como parámetro y
+  devuelve un objeto que indica el estado del proceso y en caso de
+  haber terminado, devuelve adjunta la CDR – OSE.
+  Validaciones de lotes
+  1. Se podrán recibir lotes de un máximo de 1000 XML.
+  2. Los XML de cada lote deben cumplir con lo siguiente:
+  a) Deben corresponder todos a una misma fecha de emisión.
+  b) Deben corresponder a un mismo número de RUC.
+  c) La firma debe corresponder al RUC del emisor o del PSE
+  autorizado para dicho RUC.
+  d) Cada XML deberá estar firmado por el emisor o por el PSE
+  autorizado para dicho RUC.
+  e) Las validaciones para cada XML, incluido en cada lote, serán las
+  mismas que las realizadas para los envíos unitarios de XML.
+  f) No debe existir numeración duplicada en cada lote (serie y
+  correlativo igual para más de un documento por lote). De existir
+  se rechaza el (los) XML duplicados.
+  g) La identificación de cada lote tendrá un correlativo por día. La
+  nomenclatura será la siguiente:
+  Ruc/prefijo de lote/fecha/correlativo
+  20100066603-LT-20110522-1
+  20100066603-LT-20110522-2
+  El correlativo es un identificador y debe ser único, no
+  necesariamente correlativo.
+  3. Si algún documento no cumple con lo indicado en el numeral 2, sólo
+  se rechazará el XML que incumple con la regla de validación,
+  dejando procesar el resto de documentos.
+6.2  Valor resumen
+  El valor resumen es la cadena resumen en base 64, el cual es el resultado de
+  aplicar el algoritmo matemático (denominado función hash) al formato XML que
+  representa el comprobante de pago electrónico o la nota electrónica. Corresponde al
+  valor del elemento <ds:DigestValue> de los referidos documentos.
+  La impresión debe cumplir las siguientes características:
+  1. Posición dentro de la representación impresa: Parte inferior de la representación
+  impresa.
+  2. Color de impresión: Negro.
+6.3  Código de barras PDF417
+  6.3.1 Simbología
+  Para la generación del código de barras se hará uso de la simbología PDF417
+  de acuerdo a la Norma ISO/IEC 15438:2010 Tecnología de la información.
+  Técnicas de identificación automática y de captura de datos. Especificaciones
+  de los símbolos de códigos de barras PDF417. No debe usarse las variantes:
+  a) PDF417 Compactado (Compact PDF417).
+  b) Micro PDF417.
+  c) Macro PDF417.
+  6.3.2 Características técnicas
+  – Nivel de corrección de error (Error CorrectionLevel): nivel 5.
+  – Modo de compactación: Modo de compactación de Bytes (Byte Compaction
+  Mode).
+  – Dimensiones mínimas de los elementos del código de barras:
+   Ancho mínimo de un módulo (X-Dimension): 0,0067 pulgadas (0,170
+  mm).
+   Altura de fila (Y-Dimension): 3 veces el valor del Ancho mínimo de un
+  módulo (3 veces X-Dimension).
+6.3.3 Información a consignar en el código de barras
+  En el código de barras se consignará la información siguiente en la medida
+  que exista en el comprobante de pago electrónico o la nota electrónica:
+  a) Número de RUC del emisor electrónico.
+  b) Tipo de comprobante de pago electrónico
+  c) Numeración conformada por serie y número correlativo.
+  d) Sumatoria IGV, de ser el caso.
+  e) Importe total de la venta, cesión en uso o servicio prestado.
+  f) Fecha de emisión.
+  g) Tipo de documento del adquirente o usuario, de ser el caso.
+  h) Número de documento del adquirente o usuario, de ser el caso.
+  i) Valor resumen a que se refiere el numeral 6.2
+  j) Valor de la firma digital. Corresponde al valor del elemento
+  <ds:SignatureValue> del comprobante de pago electrónico o nota
+  electrónica.
+  La información señalada en los incisos anteriores de este numeral deberá
+  consignarse con el mismo formato empleado en el comprobante de pago
+  electrónico o la nota electrónica y se estructura de acuerdo al siguiente orden,
+  siendo el separador de campo el carácter pipe (“|”):
+  RUC | TIPO DE DOCUMENTO | SERIE | NUMERO | MTO TOTAL IGV | MTO
+  TOTAL DEL COMPROBANTE | FECHA DE EMISION | TIPO DE
+  DOCUMENTO ADQUIRENTE | NUMERO DE DOCUMENTO ADQUIRENTE |
+  VALOR RESUMEN | VALOR DE LA FIRMA |
+  Se debe respetar la cantidad de campos especificados en la estructura
+  anterior, es decir, en caso no exista alguna información en el comprobante de
+  pago electrónico o la nota electrónica, se deberá mantener el campo vacío
+  como información.
+  6.3.4 Características de la Impresión
+  La impresión debe cumplir las siguientes características:
+  a) Posición del código de barras dentro de la representación impresa: Parte
+  inferior de la representación impresa.
+  b) Tamaño máximo: 2 cm de alto y 6 cm de ancho (incluye el espacio en
+  blanco alrededor del código).
+  c) Zona de silencio mínimo (QuietZone) o ancho mínimo obligatorio en blanco
+  alrededor del código impreso para delimitarlo: 1 mm.
+  d) Color de impresión: Negro.
+6.4  Código de barras QR
+  6.4.1 Simbología
+  Para la generación del código de barras se hará uso de la simbología QR
+  Code 2005 de acuerdo a la Norma ISO/IEC 18004:2006. Denominado
+  “Information technology – Automatic identification and data capture techniques
+  – QR Code 2005 bar code symbology specification”. No debe usarse las
+  variantes:
+  a)  Micro QR.
+  6.4.2 Características técnicas
+  a) Nivel de corrección de error (Error Correction Level): nivel Q.
+  b) Dimensiones mínimas de los elementos del código de barras:
+   Ancho mínimo de un módulo (X-Dimension): 0,0075 pulgadas (0,190
+  mm).
+   Codificacion de caracteres UTF8
+  6.4.3 Información a consignar en el código de barras
+  En el código de barras se consignará la información siguiente en la medida
+  que exista en el comprobante de pago electrónico o la nota electrónica:
+  a) Número de RUC del emisor electrónico.
+  b) Tipo de comprobante de pago electrónico
+  c) Numeración conformada por serie y número correlativo.
+  d) Sumatoria IGV, de ser el caso.
+  e) Importe total de la venta, cesión en uso o servicio prestado.
+  f) Fecha de emisión.
+  g) Tipo de documento del adquirente o usuario, de ser el caso.
+  h) Número de documento del adquirente o usuario, de ser el caso.
+  i) Valor resumen
+  El valor resumen es la cadena resumen en base 64, el cual es el resultado
+  de aplicar el algoritmo matemático (denominado función hash) al formato
+  XML que representa el comprobante de pago electrónico o la nota
+  electrónica. Corresponde al valor del elemento <ds:DigestValue> del
+  documento.
+  La información señalada en los incisos anteriores de este numeral debe
+  consignarse con el mismo formato empleado en el comprobante de pago
+  electrónico o la nota electrónica y se estructura de acuerdo al siguiente orden,
+  siendo el separador de campo el carácter pipe (“|”):
+  RUC | TIPO DE DOCUMENTO | SERIE | NUMERO | MTO TOTAL IGV | MTO
+  TOTAL DEL COMPROBANTE | FECHA DE EMISION | TIPO DE
+  DOCUMENTO ADQUIRENTE | NUMERO DE DOCUMENTO ADQUIRENTE |
+  VALOR RESUMEN
+  En caso del valor resumen, esta información podrá consignarse en la
+  representación impresa, fuera del código QR.
+6.4.4 Características de la Impresión:
+  La impresión debe cumplir las siguientes características:
+  a) Posición del código de barras dentro de la representación impresa: Parte
+  inferior de la representación impresa.
+  b) Tamaño máximo: 6 cm de alto y 6 cm de ancho (incluye el espacio en
+  blanco alrededor del código).
+  c) Zona de silencio mínimo (Quiet Zone) o ancho mínimo obligatorio en blanco
+  alrededor del código impreso para delimitarlo: 1 mm.
+  d) Color de impresión: Negro.

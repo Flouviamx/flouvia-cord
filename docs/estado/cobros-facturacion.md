@@ -575,9 +575,9 @@ subsanación.
 
 Factura electrónica autorizada por la autoridad de cada país, con motor propio
 (sin PAC ni intermediario), igual que Verifactu. Rieles: **ARCA
-(Argentina)** y **NFS-e de Padrão Nacional (Brasil)**. El marco está hecho para
-que DIAN (Colombia), SUNAT (Perú) y SII (Chile) se monten encima sin tocar la
-emisión.
+(Argentina)**, **NFS-e de Padrão Nacional (Brasil)** y **SUNAT (Perú)**. El
+marco está hecho para que DIAN (Colombia) y SII (Chile) se monten encima sin
+tocar la emisión.
 
 ### El marco (`src/lib/fiscal/latam/`)
 
@@ -819,6 +819,127 @@ formato exacto de `codigo` en `erros[]` (Cord acepta `E0014` y `0014`), el
 dígito verificador de la chave (Cord no lo recalcula: la recibe) y los
 mensajes vivos de cada municipio. El Swagger que fija los nombres de los campos
 JSON es una captura publicada de la página de producción restringida.
+
+### SUNAT (Perú)
+
+SEE - Del Contribuyente: el negocio envía cada comprobante DIRECTAMENTE a
+SUNAT (sin OSE ni PSE), firmado con su propio certificado digital, por
+`billService/sendBill` (SOAP 1.1, WS-Security con RUC + usuario SOL
+secundario). La respuesta es la CDR (constancia de recepción). Proveedor:
+`providers/PeruSunatProvider.ts`; riel: `latam/sunat/`. Cobertura:
+
+- **Comprobantes**: factura electrónica (01) y nota de crédito (07) en UBL 2.1
+  (anexos 9-A de la RS 123-2022 y 9 de la RS 340-2017), serie `F###` propia
+  del negocio y correlativo de Cord con `conSecuencia`. El primer número
+  continúa al último emitido fuera de Cord (`ultimoNumeroFactura` /
+  `ultimoNumeroNotaCredito` en Ajustes). La nota de crédito comparte la serie
+  de facturas con su propia secuencia.
+- **Boleta de venta (03)**: NO se emite. Exige el resumen diario y su ticket
+  asíncrono; un cliente peruano sin RUC se rechaza antes de enviar con un
+  mensaje que lo dice ("se le emite una boleta de venta, que Cord todavía no
+  emite").
+- **Receptor**: RUC con dígito verificador (catálogo 06, tipo 6). Un cliente
+  del exterior es exportación: tipo 0 con su identificación tributaria,
+  operación 0200 (bienes) o 0201 (servicios, con país de uso), afectación 40.
+- **IGV** por concepto (catálogo 07): 18 % gravado; 0 % se declara exonerado
+  (20) o inafecto (30) según lo que el negocio indica en Ajustes, nunca se
+  adivina. Régimen MYPE de restaurantes y hoteles (Leyes 31556 y 32219) solo
+  con el régimen declarado: 10,5 % en 2026 y 15 % en 2027; sin tasa publicada
+  para el año no se acepta. Una sola tasa de IGV por factura (SUNAT 3462).
+- **Descuento por concepto** (`discount`): cargo/descuento del ítem, código 00
+  del catálogo 53, con factor y base; el valor unitario va bruto.
+- **Monto en letras** (leyenda 1000) y **forma de pago** (RS 193-2020): contado,
+  o crédito con el monto neto pendiente y la cuota con su vencimiento
+  (`due_date`), descontando lo ya cobrado (`documento_pagos` y el cobro de la
+  cotización).
+- **Retención del IGV**: no la practica el emisor, la practica el cliente
+  agente de retención. El negocio lista en Ajustes los RUC de sus clientes
+  agentes (o se declara excluido): en una venta gravada al crédito por encima
+  de S/ 700 la factura lleva el cargo 62 (3 % del total) y el neto pendiente
+  lo descuenta. En otra moneda hace falta el tipo de cambio a soles congelado
+  del documento o no se envía. Un `retencionTotal` restado del total se
+  rechaza.
+- **Detracciones (SPOT) y percepciones**: no se modelan. Marcarlas en Ajustes
+  deja el riel sin activar (`faltantes`), así que no se emite a medias.
+- **Firma**: XMLDSig enveloped, C14N inclusiva, RSA-SHA256 con el certificado
+  del negocio (cifrado por org, riel y entorno). El valor resumen (DigestValue)
+  va al QR y a la representación impresa. El usuario SOL y su clave viajan
+  cifrados en `secretos_enc` de la misma credencial; el certificado debe estar a
+  nombre del RUC del negocio.
+- **Resultado**: CDR con código 0 o con observaciones (4000+) → autorizado; CDR
+  o `soap:Fault` de rechazo (2000–3999) → número usado
+  (`respuesta.numero_consumido`), el siguiente intento toma otro; excepción
+  (0100–1999) → no informado, el número se reutiliza (en producción, un código
+  ≥ 1000 se consulta antes: 1033 con el número ocupado desde otro sistema lo
+  marca usado y se toma el siguiente). Los mensajes los escribe Cord
+  (`sunat/errores.ts`); solo se traducen los códigos cuya respuesta real se
+  capturó del servicio beta, el resto por su rango del manual.
+- **Recuperación**: respuesta perdida → consulta inmediata (`getStatus` +
+  `getStatusCdr` de `billConsultService`) y, si no alcanza, el cron. Nunca se
+  reenvía en producción. Beta no guarda estado ni tiene consulta: ahí lo
+  incierto se resuelve presentando OTRA VEZ el mismo XML firmado.
+- **Baja**: `anulable: false`. La comunicación de baja solo procede para una
+  factura que no se entregó al cliente, y Cord la entrega al emitirla; se
+  compensa con nota de crédito: tipo 01 (anulación) si la acredita completa, 09
+  (disminución en el valor) si acredita una parte.
+- **Impresión y XML**: título, RUC, serie-número, adquirente, operaciones por
+  afectación, IGV, total, forma de pago y cuotas, retención, constancia,
+  "SON: …", valor resumen y la leyenda de representación impresa. QR al pie con
+  nivel de corrección Q (RS 113-2018, anexo 6) y contenido
+  `RUC|TIPO|SERIE|NUMERO|IGV|TOTAL|FECHA|TIPODOC|NUMDOC|VALOR RESUMEN`. El XML
+  aceptado (exactamente el enviado) se descarga desde la factura en la app y en
+  el link público (`latam/sunat/descarga.ts`).
+- **Homologación**: servicio beta, usuario `<RUC>MODDATOS` si el negocio no
+  cargó uno, número con prefijo `H-`, `simulado: true`, `livemode: false`.
+
+**No cubierto:** boleta y resumen diario, comunicación de baja, nota de
+débito, detracciones, percepciones, anticipos, operaciones gratuitas, ISC,
+ICBPER, IVAP, varias cuotas por factura y la guía de remisión. Los cambios de
+la RS 000048-2026 se postergaron al 1 de enero de 2027 (RS 000143-2026) y
+están pendientes.
+
+**Verificación:** `npm run security:sunat` (en `test:payments`) coteja las
+constantes con los catálogos, el manual y los WSDL vendorizados
+(`scripts/fixtures/sunat/fuentes.json`, con URL, versión y sha256 de cada
+fuente), valida cada comprobante contra los XSD de UBL 2.1 de OASIS y los
+sobres SOAP contra el XSD del WSDL (xmllint), compara la canonicalización
+propia con la de libxml2, verifica la firma con lxml/cryptography cuando están
+disponibles (también la de los XML que el servicio beta aceptó), y lee
+respuestas REALES del servicio beta: aceptadas y rechazos 2335, 3280, 3462 y
+3267. `test/sunat-db.test.ts` (PGlite + SUNAT simulado) cubre aceptación,
+observaciones, rechazos, excepciones, número ajeno, respuesta perdida, cron,
+beta, nota de crédito, concurrencia, descarga y RLS;
+`test/sunat-comprobante.test.ts` las piezas puras. No se obtuvieron las
+reglas de validación de SUNAT (Excel/XSL de cpe.sunat.gob.pe, detrás de un
+bloqueo de Cloudflare): lo que dicen se cubrió con el validador real del
+servicio beta.
+
+### Activación de SUNAT paso a paso
+
+1. Sin migración: SUNAT usa las tablas del marco.
+2. **Beta.** `npm run sunat:prueba` firma con un certificado desechable y el
+   usuario de pruebas que SUNAT publica, envía una factura y su nota de crédito
+   y muestra cada CDR (comprueba red, TLS y el validador). Con el certificado y
+   el usuario SOL del negocio:
+   `SUNAT_PRUEBA_PASSWORD='…' SUNAT_PRUEBA_CLAVE_SOL='…' npm run sunat:prueba -- --p12 cert.p12 --ruc <RUC> --usuario <USUARIO>`.
+   El entorno está fijado a beta: nunca toca producción ni la base.
+3. **De punta a punta en un Preview** con `SUNAT_ENABLED=true` y
+   `SUNAT_ENTORNO=homologacion`: una org peruana de prueba con plan Starter
+   carga RUC y razón social, sube un certificado a nombre de su RUC, completa
+   serie, concepto y afectación sin IGV, y emite una factura, una al crédito y
+   una nota de crédito.
+4. **Producción.** Cada negocio, en SUNAT Operaciones en Línea: se afilia como
+   emisor electrónico desde sus sistemas (SEE - Del Contribuyente), registra su
+   certificado digital, crea un usuario SOL secundario con el perfil de envío de
+   comprobantes y reserva una serie `F###` para Cord (o indica el último número
+   emitido en ella). En Cord sube el certificado de producción y el usuario SOL
+   (se prueba con una consulta sin efectos). Después `SUNAT_ENTORNO=produccion`
+   y `SUNAT_ENABLED=true` en Production.
+
+**Lo que no se pudo verificar sin un emisor real:** el envío a producción, la
+consulta `billConsultService` (no existe en beta; su contrato se tomó del WSDL
+y del anexo del manual) y el rechazo por certificado no registrado en SOL
+(beta no valida la cadena del certificado ni el usuario SOL).
 
 ## Documento de factura — ago 2026
 

@@ -3,6 +3,7 @@ import { MexicoSatProvider } from './providers/MexicoSatProvider';
 import { SpainVerifactuProvider } from './providers/SpainVerifactuProvider';
 import { ArgentinaArcaProvider } from './providers/ArgentinaArcaProvider';
 import { BrazilNfseProvider } from './providers/BrazilNfseProvider';
+import { PeruSunatProvider } from './providers/PeruSunatProvider';
 import { CommercialInvoiceProvider } from './providers/CommercialInvoiceProvider';
 
 export class FiscalFactory {
@@ -18,6 +19,7 @@ export class FiscalFactory {
     // contrato que Verifactu: sin la cuenta lista degradan a "commercial_only".
     new ArgentinaArcaProvider(),
     new BrazilNfseProvider(),
+    new PeruSunatProvider(),
     new CommercialInvoiceProvider(),
     // Un adapter regulatorio nuevo se registra antes del provider comercial.
     // El documento canónico y el folio permanecen iguales.

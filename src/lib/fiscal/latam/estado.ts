@@ -15,6 +15,10 @@ export async function railListo(orgId: string, rail: RailId): Promise<boolean> {
             const { nfseListo } = await import('./nfse/estado');
             return nfseListo(orgId);
         }
+        case 'sunat': {
+            const { sunatListo } = await import('./sunat/estado');
+            return sunatListo(orgId);
+        }
         default:
             return false;
     }

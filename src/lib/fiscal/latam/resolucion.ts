@@ -91,6 +91,43 @@ export async function resolverPendientesDeOrg(orgId: string, rail: RailId, deadl
             const { finalizeInvoice } = await import('../invoices');
             return { orgId, ...(await resolverIntentosDeOrg(orgId, config.entorno, intentos, deadline, (id) => finalizeInvoice(orgId, id))) };
         }
+        case 'sunat': {
+            const { contextoSunat, resolverPorConsulta } = await import('./sunat/autorizacion');
+            const { emisorSunat } = await import('./sunat/estado');
+            let ctx;
+            try {
+                ctx = await contextoSunat(orgId, config.entorno, await emisorSunat(orgId));
+            } catch (error) {
+                // Sin certificado, usuario SOL o ajustes no se puede consultar: el
+                // intento queda incierto (bloqueando la anulación) hasta que vuelvan.
+                r.sinResolver = intentos.length;
+                r.error = esErrorSeguro(error) ? error.message : 'contexto no disponible';
+                return r;
+            }
+            for (const intento of intentos) {
+                if (Date.now() >= deadline) break;
+                r.revisados++;
+                try {
+                    const resultado = await conSecuencia(orgId, { rail, entorno: intento.entorno, serie: intento.serie, tipo: intento.tipo },
+                        () => resolverPorConsulta(ctx, intento), { esperaMaxMs: 2_000 });
+                    if (resultado === 'autorizado') {
+                        r.autorizados++;
+                        const { finalizeInvoice } = await import('../invoices');
+                        await finalizeInvoice(orgId, intento.documentoId);
+                    } else if (resultado === 'descartado') {
+                        r.descartados++;
+                    } else {
+                        r.sinResolver++;
+                    }
+                } catch (error) {
+                    r.sinResolver++;
+                    if (!esErrorSeguro(error)) {
+                        log.error('rieles-latam: no se pudo resolver un intento', { route: 'fiscal/latam', orgId, intento: intento.id, err: error });
+                    }
+                }
+            }
+            return r;
+        }
         default:
             return r;
     }

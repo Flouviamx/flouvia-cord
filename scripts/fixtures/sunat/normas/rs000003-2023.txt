@@ -1,0 +1,130 @@
+  RESOLUCIÓN DE SUPERINTENDENCIA
+  N.° 000003-2023/SUNAT
+  MODIFICAN LA NORMATIVA SOBRE EMISIÓN ELECTRÓNICA EN RELACIÓN
+  CON EL PLAZO DE ENVÍO DE LA FACTURA ELECTRÓNICA
+Lima, 4 de enero de 2023
+CONSIDERANDO:
+Que la Resolución de Superintendencia N.° 000193-2020/SUNAT modifica la normativa
+sobre emisión electrónica, entre otros, para reducir el plazo máximo de envío -a la
+SUNAT o al Operador de Servicios Electrónicos (OSE), según corresponda- de la
+factura electrónica que se emite en el Sistema de Emisión Electrónica desarrollado
+desde los sistemas del contribuyente (SEE - Del contribuyente), en el SEE Facturador
+SUNAT (SEE - SFS) y en el SEE - OSE, de siete días calendario al día calendario
+siguiente al de la fecha de emisión;
+Que la modificación referida en el considerando anterior atendió a la conveniencia que
+el adquirente o usuario pueda tener certeza en un menor plazo que lo que se emitió
+cumple con las condiciones de emisión para ser considerado un documento electrónico
+y teniendo en cuenta que -aproximadamente- el 90% de los emisores electrónicos
+cumplía con los envíos a la SUNAT o al OSE, a más tardar al día siguiente a la fecha
+de emisión, por lo que se esperaba que el resto de contribuyentes también pudieran
+adecuarse a dicho plazo;
+Que se ha relevado que las facturas electrónicas remitidas hasta el día calendario
+siguiente desde la fecha de emisión alcanzan un porcentaje inferior al 90% del total de
+facturas electrónicas enviadas, por lo que se ha visto la conveniencia de reevaluar lo
+dispuesto por la Resolución de Superintendencia N.° 000193-2020/SUNAT, en este
+extremo, y ampliar el citado plazo hasta el tercer día calendario siguiente al de la fecha
+de emisión de la factura electrónica;
+Que al amparo del numeral 3.2 del artículo 14 del “Reglamento que establece
+disposiciones relativas a la publicidad, publicación de proyectos normativos y difusión
+de normas legales de carácter general”, aprobado por el Decreto Supremo N.° 001-
+2009-JUS, no se prepublica la presente norma porque ello resulta innecesario, toda vez
+que solo se está ampliando el plazo de envío de la factura electrónica a la SUNAT o al
+OSE, según corresponda, además que haría impracticable que el nuevo plazo de envío
+sea aplicable a la brevedad en beneficio de los emisores electrónicos;
+En uso de las facultades conferidas por el Decreto Ley N.° 25632; el artículo 11 del
+Decreto Legislativo N.° 501, Ley General de la SUNAT; el artículo 5 de la Ley N.° 29816,
+Ley de Fortalecimiento de la SUNAT y el inciso k) del artículo 10 del Documento de
+Organización y Funciones Provisional – DOFP de la Superintendencia Nacional de
+Aduanas y de Administración Tributaria - SUNAT, aprobado por Resolución de
+Superintendencia N.° 000042-2022/SUNAT;
+SE RESUELVE:
+Artículo 1. Objeto
+La presente resolución tiene por objeto ampliar el plazo máximo de envío, a la SUNAT
+o al Operador de Servicios Electrónicos (OSE), según corresponda, de la factura
+electrónica, así como de la nota electrónica vinculada a esta, que se emita en el Sistema
+de Emisión Electrónica desarrollado desde los sistemas del contribuyente (SEE - Del
+contribuyente), aprobado por la Resolución de Superintendencia N.° 097-2012/SUNAT,
+el SEE Facturador SUNAT (SEE - SFS), aprobado por la Resolución de
+Superintendencia N.° 182-2016/SUNAT, y el SEE - OSE, aprobado por la Resolución
+de Superintendencia N.° 117-2017/SUNAT.
+Artículo 2. Finalidad
+La presente resolución tiene por finalidad establecer un plazo máximo de envío, a la
+SUNAT o al OSE, según corresponda, de la factura electrónica, así como de la nota
+electrónica vinculada a esta, que se emita en el SEE - Del contribuyente, el SEE - SFS
+y el SEE - OSE, que atienda la realidad operativa del máximo de contribuyentes posible,
+para que estos puedan cumplir con la normativa sobre emisión electrónica y, con ello,
+evitar contingencias tributarias que podría generar la inobservancia de dicha normativa.
+Artículo 3. Modificación de la Resolución de Superintendencia N.° 097-
+2012/SUNAT
+Sustitúyase el numeral 12.1 del artículo 12 de la Resolución de Superintendencia N.°
+097-2012/SUNAT, en los siguientes términos:
+“Artículo 12. ENVÍO A LA SUNAT DE LA FACTURA ELECTRÓNICA, EL DAE, LA
+BOLETA DE VENTA ELECTRÓNICA, EL RECIBO ELECTRÓNICO SP, LA NOTA
+ELECTRÓNICA VINCULADA A AQUELLOS Y LA LIQUIDACIÓN DE COMPRA
+ELECTRÓNICA
+12.1 El emisor electrónico debe remitir a la SUNAT un ejemplar de:
+a) El DAE, el recibo electrónico SP y la nota electrónica vinculada a aquellos en la fecha
+de emisión consignada en dichos documentos o incluso hasta en un plazo máximo de
+siete días calendario contado desde el día calendario siguiente a esa fecha.
+b) La liquidación de compra electrónica en la fecha de emisión consignada en dichos
+documentos o incluso hasta el día calendario siguiente a esa fecha.
+c) La factura y la nota electrónica vinculada a aquella en la fecha de emisión consignada
+en dichos documentos o, incluso, hasta en un plazo máximo de tres días calendario
+contado desde el día calendario siguiente a esa fecha.”
+Artículo 4. Modificación de la Resolución de Superintendencia N.° 182-
+2016/SUNAT
+Modifícase el primer párrafo del inciso 12.2 del artículo 12 de la Resolución de
+Superintendencia N.° 182-2016/SUNAT, en los siguientes términos:
+“Artículo 12. Remisión a la SUNAT
+La remisión a la SUNAT del ejemplar del comprobante de pago o de la nota electrónica,
+según corresponda, debe realizarse teniendo en cuenta lo siguiente:
+(...)
+12.2 Factura electrónica y nota electrónica vinculada a aquella
+En la fecha de emisión consignada en la factura electrónica y/o en la nota electrónica
+vinculada a aquella o, incluso, hasta en un plazo máximo de tres días calendario contado
+desde el día calendario siguiente a esa fecha, el emisor electrónico debe remitir a la
+SUNAT un ejemplar de dicha factura y/o nota. Vencido ese plazo lo no enviado no tendrá
+la calidad de factura electrónica ni de nota electrónica, aun cuando hubiera sido
+entregada al adquirente o usuario. La fecha de emisión consignada en el comprobante
+de pago electrónico puede ser anterior a la fecha en que este se debe emitir según el
+primer párrafo del artículo 5 del RCP, si el emisor electrónico desea anticipar la emisión
+de acuerdo con el segundo párrafo de ese artículo.”
+Artículo 5. Modificación de la Resolución de Superintendencia N.° 117-
+2017/SUNAT
+Modifícase el párrafo 15.1 del artículo 15 de la Resolución de Superintendencia N.° 117-
+2017/SUNAT, en los siguientes términos:
+“Artículo 15. Envío al OSE
+15.1 Factura electrónica, DAE y nota electrónica vinculada a aquellas
+El emisor electrónico debe remitir al OSE un ejemplar de la factura electrónica, del DAE
+y de la nota electrónica vinculada a aquella(aquel) en los plazos que se indican a
+continuación:
+a) Factura electrónica y nota electrónica vinculada a aquella: En la fecha de emisión
+consignada en esos documentos o, incluso, hasta un plazo máximo de tres días
+calendario contado desde el día siguiente a esa fecha.
+b) DAE y nota electrónica vinculada a aquel: En la fecha de emisión consignada en esos
+documentos o, incluso, hasta un plazo máximo de siete días calendario contado desde
+el día siguiente a esa fecha.
+Vencidos aquellos plazos, el OSE no puede realizar la comprobación material de las
+condiciones de emisión de esos documentos y, en consecuencia, lo que reciba no tendrá
+la calidad de factura electrónica, DAE ni nota electrónica vinculada a aquella(aquel), aun
+cuando hubiera sido entregada al adquirente o usuario, según corresponda.
+La fecha de emisión consignada en la factura electrónica y en el DAE puede ser anterior
+a aquella en que se debe emitir según el primer párrafo del artículo 5 del RCP, si el
+emisor electrónico desea anticipar la emisión de acuerdo con el segundo párrafo de ese
+artículo.”
+  DISPOSICIÓN COMPLEMENTARIA FINAL
+ÚNICA. Vigencia
+La presente resolución entra en vigencia al día siguiente de su publicación.
+  DISPOSICIÓN COMPLEMENTARIA TRANSITORIA
+ÚNICA. Aplicación nuevo plazo de envío
+El plazo de envío que señalan el literal c) del numeral 12.1 del artículo 12 de la
+Resolución de Superintendencia N.° 097-2012/SUNAT, el primer párrafo del inciso 12.2
+del artículo 12 de la Resolución de Superintendencia N.° 182-2016/SUNAT y el inciso
+a) del párrafo 15.1 del artículo 15 de la Resolución de Superintendencia N.° 117-
+2017/SUNAT, modificadas por la presente resolución de superintendencia, se aplica a
+las facturas electrónicas que se emitan en la fecha de su publicación.
+Regístrese, comuníquese y publíquese.
+  LUIS ENRIQUE VERA CASTILLO
+  Superintendente Nacional
+  SUPERINTENDENCIA NACIONAL DE ADUANAS
+  Y DE ADMINISTRACIÓN TRIBUTARIA
