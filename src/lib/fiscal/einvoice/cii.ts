@@ -103,7 +103,14 @@ export function serializeCii(inv: En16931Invoice, profile: CiiProfile): string {
     // Vacía es válida: ApplicableHeaderTradeDelivery es obligatoria en CII
     // aunque la factura no declare entrega.
     const deliveryBody = [
-        inv.delivery?.country ? group('ram:ShipToTradeParty', [group('ram:PostalTradeAddress', [el('ram:CountryID', inv.delivery.country)])]) : '',
+        inv.delivery?.address ? group('ram:ShipToTradeParty', [group('ram:PostalTradeAddress', [
+            el('ram:PostcodeCode', inv.delivery.address.postalCode),
+            el('ram:LineOne', inv.delivery.address.line1),
+            el('ram:LineTwo', inv.delivery.address.line2),
+            el('ram:CityName', inv.delivery.address.city),
+            el('ram:CountryID', inv.delivery.address.country),
+            el('ram:CountrySubDivisionName', inv.delivery.address.region),
+        ])]) : '',
         inv.delivery?.date ? group('ram:ActualDeliverySupplyChainEvent', [date102('ram:OccurrenceDateTime', inv.delivery.date)]) : '',
     ].join('');
     const delivery = deliveryBody ? `<ram:ApplicableHeaderTradeDelivery>${deliveryBody}</ram:ApplicableHeaderTradeDelivery>` : '<ram:ApplicableHeaderTradeDelivery/>';

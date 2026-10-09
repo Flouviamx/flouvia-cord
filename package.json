@@ -49,7 +49,8 @@
     "security:analytics": "node --experimental-strip-types scripts/analytics-contract-check.mjs",
     "seo:indexnow": "node scripts/indexnow.mjs",
     "api:spec": "node --experimental-strip-types --no-warnings scripts/openapi.mjs",
-    "security:api-spec": "node --experimental-strip-types --no-warnings scripts/openapi.mjs --check"
+    "security:api-spec": "node --experimental-strip-types --no-warnings scripts/openapi.mjs --check",
+    "security:einvoice": "node --experimental-strip-types --no-warnings --import ./scripts/lib/ts-resolve.mjs scripts/einvoice-check.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.104.1",

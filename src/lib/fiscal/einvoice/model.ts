@@ -157,8 +157,8 @@ export interface En16931Invoice {
     preceding?: { number: string; issueDate?: string };
     seller: EnParty;
     buyer: EnParty;
-    /** BT-72 y BT-80. */
-    delivery?: { date?: string; country?: string };
+    /** BT-72 y BG-15 (dirección de entrega, con su país BT-80). */
+    delivery?: { date?: string; address?: EnAddress };
     /** BG-14. */
     period?: { start: string; end: string };
     /** BG-16. */
@@ -563,6 +563,13 @@ export function assessEInvoice(src: EInvoiceSource): EInvoiceAssessment {
         ...(g.codes.size === 1 ? { exemptionCode: [...g.codes][0] } : {}),
         ...(g.texts.length ? { exemptionText: g.texts.join(' ') } : {}),
     }));
+    // El IVA de cada grupo es la suma de los impuestos YA redondeados por línea
+    // (lo que dice el PDF). EN 16931 lo admite mientras difiera menos de una
+    // unidad de base × tasa (BR-CO-17 y BR-S-09, schematron CEN v1.3.16); más
+    // allá no hay forma honesta de escribirlo.
+    if (ordered.some((g) => g.category === 'S' && Math.abs(g.tax - Math.round(g.taxable * g.rate / 100)) >= 100)) {
+        problems.push(p('vat_rounding', 'El IVA de esta factura, redondeado concepto por concepto, se aleja más de una unidad del calculado sobre la base de cada tasa; la factura electrónica europea no lo admite.', 'The VAT on this invoice, rounded line by line, differs by more than one unit from the VAT computed on each rate base; European e-invoices do not allow it.'));
+    }
     const allowances: EnAllowance[] = ordered.filter((g) => g.discount > 0).map((g) => ({
         amount: g.discount / 100, category: g.category, rate: g.rate, reason: DISCOUNT_TEXT[lang], reasonCode: '95',
     }));
@@ -605,10 +612,12 @@ export function assessEInvoice(src: EInvoiceSource): EInvoiceAssessment {
     // Rechnungsdatum" (§ 14 Abs. 4 Nr. 6 UStG). El XML dice lo mismo con datos.
     if (!deliveryDate && !period && issuerCountry === 'DE' && !isCredit) deliveryDate = issueDate;
     // Entrega intracomunitaria: BR-IC-11 pide fecha de entrega o periodo y
-    // BR-IC-12 el país de destino, que Cord toma del domicilio del cliente.
+    // BR-IC-12 el país de destino, que Cord toma del domicilio del cliente. Va
+    // la dirección completa y no solo el país: XRechnung pide ciudad y código
+    // postal en cuanto hay dirección de entrega (BR-DE-10, BR-DE-11).
     if (categories.has('K') && !deliveryDate && !period) deliveryDate = issueDate;
     const delivery = deliveryDate || categories.has('K')
-        ? { ...(deliveryDate ? { date: deliveryDate } : {}), ...(categories.has('K') && buyerCountry ? { country: buyerCountry } : {}) }
+        ? { ...(deliveryDate ? { date: deliveryDate } : {}), ...(categories.has('K') && buyerCountry ? { address: { ...buyer.address } } : {}) }
         : undefined;
 
     // ── Divisa contable del IVA (BT-6 / BT-111): Directiva, art. 230 ──
@@ -622,8 +631,14 @@ export function assessEInvoice(src: EInvoiceSource): EInvoiceAssessment {
     // ── Pago ──
     const iban = clean(src.iban).replace(/\s+/g, '').toUpperCase();
     const ibanOk = !!iban && ibanValido(iban);
+    // Nota de crédito: el dinero va del vendedor al comprador y Cord no tiene la
+    // cuenta del comprador. XRechnung (BR-DE-1) y Peppol entre empresas
+    // alemanas (DE-R-001) exigen igualmente el grupo de instrucciones de pago,
+    // así que se declara con UNTDID 4461 "1" (instrumento no definido): cierto,
+    // y sin pretender una transferencia hacia una cuenta que no es la del
+    // comprador.
     const paymentMeans = isCredit
-        ? undefined
+        ? { code: '1' }
         : ibanOk
             ? {
                 // 58 = transferencia SEPA (IBAN de la zona SEPA y euros); 30 = transferencia.
@@ -733,6 +748,10 @@ export function formatProblems(format: EInvoiceFormat, assessment: EInvoiceAsses
         }
         if (!inv.buyer.electronicAddress || inv.buyer.electronicAddress.scheme === 'EM') {
             out.push(p('buyer_endpoint', 'Peppol pide el identificador de participante del cliente. Agrégalo en el cliente.', "Peppol requires the client's participant identifier. Add it on the client.", 'cliente'));
+        }
+        // DE-R-001: entre empresas alemanas, la factura lleva instrucciones de pago.
+        if (inv.seller.address.country === 'DE' && inv.buyer.address.country === 'DE' && !inv.paymentMeans) {
+            out.push(p('iban', 'Peppol pide, entre empresas alemanas, cómo pagar: agrega tu IBAN en Ajustes › Cobros.', 'Between German companies Peppol requires payment instructions: add your IBAN in Settings › Payments.', 'cobros'));
         }
     }
     return out;

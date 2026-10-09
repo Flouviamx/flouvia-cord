@@ -106,7 +106,14 @@ export function serializeUbl(inv: En16931Invoice, profile: UblProfile): string {
         party('cac:AccountingCustomerParty', inv.buyer, xr),
         inv.delivery ? group('cac:Delivery', [
             el('cbc:ActualDeliveryDate', inv.delivery.date),
-            inv.delivery.country ? group('cac:DeliveryLocation', [group('cac:Address', [group('cac:Country', [el('cbc:IdentificationCode', inv.delivery.country)])])]) : '',
+            inv.delivery.address ? group('cac:DeliveryLocation', [group('cac:Address', [
+                el('cbc:StreetName', inv.delivery.address.line1),
+                el('cbc:AdditionalStreetName', inv.delivery.address.line2),
+                el('cbc:CityName', inv.delivery.address.city),
+                el('cbc:PostalZone', inv.delivery.address.postalCode),
+                el('cbc:CountrySubentity', inv.delivery.address.region),
+                group('cac:Country', [el('cbc:IdentificationCode', inv.delivery.address.country)]),
+            ])]) : '',
         ]) : '',
         pm ? group('cac:PaymentMeans', [
             el('cbc:PaymentMeansCode', pm.code),
