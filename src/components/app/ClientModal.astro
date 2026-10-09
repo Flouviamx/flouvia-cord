@@ -32,6 +32,7 @@ import TermPicker from './TermPicker.astro';
 import { EAS_COMMON } from '../../lib/fiscal/einvoice/codes';
 import { CONDICIONES_IVA_RECEPTOR } from '../../lib/fiscal/latam/arca/constantes';
 import { railConfig } from '../../lib/fiscal/latam/config';
+import { RESPONSABILIDADES, TIPOS_DOCUMENTO, TRIBUTOS_PARTE } from '../../lib/fiscal/latam/dian/constantes';
 
 interface Props {
     showDelete?: boolean;
@@ -50,6 +51,10 @@ const orgIsEu = EU_COUNTRIES.has(ORG_COUNTRY);
 // factura (RG 5616/2024); sin ella, un cliente con CUIT no se puede facturar.
 // Solo con el riel encendido: sin él nada la lee (regla 15).
 const orgIsAr = ORG_COUNTRY === 'AR' && railConfig('arca').habilitado;
+// Colombia: la DIAN exige del adquiriente su tipo de documento, tipo de
+// persona, tributo y responsabilidades; Cord solo deduce lo inequívoco
+// (consumidor final, NIT con DV). Solo con el riel encendido (regla 15).
+const orgIsCo = ORG_COUNTRY === 'CO' && railConfig('dian').habilitado;
 // Chile: el DTE exige giro y comuna del receptor en cada factura. Solo con el
 // riel del SII encendido: sin él nada los lee (regla 15).
 const orgIsCl = ORG_COUNTRY === 'CL' && railConfig('sii').habilitado;
@@ -315,6 +320,43 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
                 </section>
             )}
 
+            {orgIsCo && (
+                <section class="cm-sec" id="cmFiscalCo" aria-labelledby="cmSecFiscalCo">
+                    <header class="cm-sec-h"><span class="cm-sec-i"><Icon name="document" size={15} /></span><h3 id="cmSecFiscalCo">{L === 'en' ? 'Electronic invoicing data (DIAN)' : 'Datos para factura electrónica (DIAN)'}</h3></header>
+                    <div class="m-row">
+                        <div class="m-field">
+                            <label for="cmDianDoc">{L === 'en' ? 'ID document type' : 'Tipo de documento'}</label>
+                            <select class="m-input" id="cmDianDoc">
+                                <option value="">{L === 'en' ? 'Automatic (NIT with check digit, or final consumer without ID)' : 'Automático (NIT con DV, o consumidor final sin identificación)'}</option>
+                                {TIPOS_DOCUMENTO.map((d) => <option value={d.id}>{d.id} · {L === 'en' ? d.nombreEn : d.nombre}</option>)}
+                            </select>
+                        </div>
+                        <div class="m-field">
+                            <label for="cmDianPersona">{L === 'en' ? 'Type of taxpayer' : 'Tipo de persona'}</label>
+                            <select class="m-input" id="cmDianPersona">
+                                <option value="">{L === 'en' ? 'Not set' : 'Sin indicar'}</option>
+                                <option value="1">{L === 'en' ? 'Legal entity' : 'Persona jurídica'}</option>
+                                <option value="2">{L === 'en' ? 'Individual' : 'Persona natural'}</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="m-field">
+                        <label for="cmDianTributo">{L === 'en' ? 'VAT responsibility' : 'Responsabilidad frente al IVA'}</label>
+                        <select class="m-input" id="cmDianTributo">
+                            <option value="">{L === 'en' ? 'Not set' : 'Sin indicar'}</option>
+                            {TRIBUTOS_PARTE.map((tr) => <option value={tr.id}>{L === 'en' ? tr.etiquetaEn : tr.etiqueta}</option>)}
+                        </select>
+                    </div>
+                    <fieldset class="m-field cm-dian-resp">
+                        <legend>{L === 'en' ? 'Tax responsibilities in their RUT' : 'Responsabilidades fiscales de su RUT'}</legend>
+                        {RESPONSABILIDADES.map((r) => <label><input type="checkbox" name="cmDianResp" value={r.id} /> {r.id} · {L === 'en' ? r.nombreEn : r.nombre}</label>)}
+                    </fieldset>
+                    <span class="m-hint">{L === 'en'
+                        ? 'The DIAN requires them for a customer with a NIT. Without an ID, the invoice goes to "final consumer".'
+                        : 'La DIAN los exige para un cliente con NIT. Sin identificación, la factura va a "consumidor final".'}</span>
+                </section>
+            )}
+
             {orgIsMx && (
                 <section class="cm-sec" id="cmFiscal" aria-labelledby="cmSecFiscal">
                     <header class="cm-sec-h"><span class="cm-sec-i"><Icon name="document" size={15} /></span><h3 id="cmSecFiscal">{t(L, 'cmod.fiscal_summary')}</h3></header>
@@ -353,6 +395,10 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
 </dialog>
 
 <style>
+    .cm-dian-resp { border: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--color-text); }
+    .cm-dian-resp legend { font-size: 0.78rem; font-weight: 600; margin-bottom: 0.35rem; }
+    .cm-dian-resp label { display: inline-flex; align-items: center; gap: 7px; min-height: 30px; cursor: pointer; }
+    @media (max-width: 880px) { .cm-dian-resp label { min-height: 44px; } }
     .cm-headline { display: flex; align-items: center; gap: 0.85rem; min-width: 0; }
     .cm-avatar {
         flex: 0 0 auto; width: 40px; height: 40px; border-radius: 12px;
@@ -476,6 +522,7 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
         const cpLabel = document.getElementById('cmCpLabel')!;
         const fiscal = document.getElementById('cmFiscal');
         const fiscalAr = document.getElementById('cmFiscalAr');
+        const fiscalCo = document.getElementById('cmFiscalCo');
         const fiscalCl = document.getElementById('cmFiscalCl');
         const cfdiExt = document.getElementById('cmCfdiExt');
         const input = (id: string) => document.getElementById(id) as HTMLInputElement;
@@ -642,6 +689,14 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
             input('cmLimite').value = data?.limite ?? '';
             input('cmDescuento').value = data?.descuento ?? '';
             if (select('cmRegimen')) select('cmRegimen')!.value = data?.regimen ?? '';
+            if (fiscalCo) {
+                let ficha: Record<string, any> = {};
+                try { ficha = data?.dian ? JSON.parse(data.dian) : {}; } catch { ficha = {}; }
+                select('cmDianDoc')!.value = ficha.tipoDocumento ?? '';
+                select('cmDianPersona')!.value = ficha.tipoPersona ?? '';
+                select('cmDianTributo')!.value = ficha.tributo ?? '';
+                fiscalCo.querySelectorAll<HTMLInputElement>('input[name="cmDianResp"]').forEach((c) => { c.checked = (ficha.responsabilidades ?? []).includes(c.value); });
+            }
             if (select('cmUso')) select('cmUso')!.value = data?.uso ?? '';
             if (select('cmCondIva')) select('cmCondIva')!.value = data?.condicionIva ?? '';
             if (fiscalCl) { input('cmGiro').value = data?.giro ?? ''; input('cmComuna').value = data?.comuna ?? ''; }
@@ -719,6 +774,15 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
                 descuento_pct: input('cmDescuento').value,
                 // Régimen y uso del CFDI solo existen para un receptor mexicano.
                 regimen_fiscal: fiscal && !fiscal.hidden ? select('cmRegimen')!.value : '',
+                // Sin la sección (riel apagado) `undefined`: el servidor conserva lo guardado.
+                ...(fiscalCo ? {
+                    dian: {
+                        tipoDocumento: select('cmDianDoc')!.value,
+                        tipoPersona: select('cmDianPersona')!.value,
+                        tributo: select('cmDianTributo')!.value,
+                        responsabilidades: [...fiscalCo.querySelectorAll<HTMLInputElement>('input[name="cmDianResp"]:checked')].map((c) => c.value),
+                    },
+                } : {}),
                 uso_cfdi: fiscal && !fiscal.hidden ? select('cmUso')!.value : '',
                 // Sin el bloque (otro país u organización) se conserva lo guardado.
                 condicion_iva: fiscalAr && !fiscalAr.hidden ? select('cmCondIva')!.value : (editId ? (currentCondIva ?? '') : ''),

@@ -575,9 +575,9 @@ subsanación.
 
 Factura electrónica autorizada por la autoridad de cada país, con motor propio
 (sin PAC ni intermediario), igual que Verifactu. Rieles: **ARCA
-(Argentina)**, **NFS-e de Padrão Nacional (Brasil)**, **SUNAT (Perú)** y **SII
-(Chile)**. El marco está hecho para que DIAN (Colombia) se monte encima sin
-tocar la emisión.
+(Argentina)**, **NFS-e de Padrão Nacional (Brasil)**, **SUNAT (Perú)**, **SII
+(Chile)** y **DIAN (Colombia)**: los cinco países de LatAm del set ofrecido. Un
+riel nuevo se monta encima del marco sin tocar la emisión.
 
 ### El marco (`src/lib/fiscal/latam/`)
 
@@ -1081,6 +1081,161 @@ la firma `FRMA` de un CAF real. Sí se verificó contra el SII real: la semilla
 de maullin, que GetTokenFromSeed evalúa la firma de Cord (10 con firma válida de
 un certificado no registrado frente a 11 con la firma alterada), las respuestas
 sin token de las dos consultas, el upload sin autenticar (STATUS 5) y el TLS.
+
+### DIAN (Colombia)
+
+Factura electrónica de venta con **validación previa**, Anexo Técnico 1.9
+(Resolución DIAN 000165 de 2023), directo con el web service de la DIAN
+(`WcfDianCustomerServices`, SOAP 1.2) como **software propio** de cada
+facturador: Cord no es proveedor tecnológico ni usa uno. Proveedor:
+`providers/ColombiaDianProvider.ts`; riel: `latam/dian/`. Fuentes oficiales
+vendorizadas en `scripts/fixtures/dian/` (XSD UBL 2.1 + `DIAN_UBL_Structures`,
+WSDL de habilitación y producción, tablas de la Caja de herramientas, política
+de firma v2, dos ejemplos oficiales y respuestas del Anexo).
+
+- **Documentos**: factura (`Invoice`, tipo 01, operación 10), nota crédito
+  (`CreditNote` 91, operación 20, concepto 2 "anulación" si acredita el total y
+  3 "rebaja" si no) y nota débito (92, operación 30; solo la usa el set de
+  pruebas). Una factura validada no se anula (`anulable: false`): se ajusta con
+  nota crédito, que lleva el adquiriente, la moneda y la tasa de la factura.
+- **Numeración**: la asigna Cord dentro de la resolución configurada (prefijo,
+  rango, vigencia): el siguiente es el mayor entre los intentos vivos y el
+  último usado, + 1, bajo el lease de `fiscal_rail_secuencias`. Un rechazo
+  libera su número. Fuera del rango o de la vigencia no se envía; Ajustes avisa
+  al quedar menos de 50 números (o del 5 %) o menos de 30 días. Las notas usan
+  un prefijo propio. El consecutivo de los nombres de archivo (`fv`/`nc`/`nd` +
+  NIT + `000` + año + 8 hexadecimales, Anexo 6.5.7) es el número del documento
+  en hexadecimal: el ejemplo del Anexo lo muestra en decimal, pero un número de
+  9 cifras no cabe en 8 dígitos decimales.
+- **CUFE/CUDE y QR**: SHA-384 con la clave técnica del rango (factura) o el PIN
+  del software (notas); `SoftwareSecurityCode` = SHA-384(software + PIN +
+  número). QR con el texto del numeral 11.7 y la URL de consulta por CUFE.
+- **Firma**: XAdES-EPES enveloped en `UBLExtensions`, C14N inclusiva,
+  RSA-SHA256, tres referencias (documento, KeyInfo, SignedProperties),
+  `SigningCertificate` con la cadena completa (titular, subordinada y raíz:
+  reglas DC25 y siguientes), política v2 con su hash y rol `supplier`. El XML
+  se escribe directamente en forma canónica (`dian/xml.ts`) y se firma sin
+  reparsear. El certificado se sube como .p12 o .crt + .key, con la cadena en el
+  propio archivo o aparte; se reconstruye verificando cada eslabón y se exige
+  firma digital + no repudio.
+- **Web service**: sobre SOAP 1.2 con WS-Addressing y WS-Security según la
+  WS-Policy del WSDL (`HttpsToken RequireClientCertificate="false"`,
+  `Basic256Sha256Rsa15`, Timestamp, `BinarySecurityToken` y firma de
+  `wsu:Timestamp` y `wsa:To` con C14N exclusiva). `SendBillSync` valida en la
+  misma llamada; `GetStatus(CUFE)` resuelve lo incierto; `SendTestSetAsync` +
+  `GetStatusZip` para el set de pruebas; `GetNumberingRange` trae los rangos de
+  producción y guarda cifrada la clave técnica del rango configurado.
+- **Recuperación**: respuesta perdida o fault que no es de seguridad →
+  `incierto` y consulta inmediata por CUFE; "Regla 90, documento procesado
+  anteriormente" → consulta (es el mismo CUFE, luego el mismo documento); 66/90
+  en la consulta y envío viejo → descartado y número libre. Un fault de
+  seguridad del remitente o el `s:Client` sin motivo con que habilitación
+  responde a un certificado no avalado (fixture real del 2026-10-09) →
+  rechazado, sin quedar incierto, y la pantalla lo dice.
+- **Emisor**: NIT con DV, razón social y dirección salen de Identidad de
+  facturación; tipo de persona, responsabilidades (casilla 53 del RUT),
+  tributo, municipio DIVIPOLA (tablas 13.4.2 y 13.4.3, generadas por
+  `scripts/dian-tablas.mjs`), nombre comercial, matrícula y correo de
+  recepción, de la sección DIAN. El correo del emisor solo se informa si se
+  configuró (regla FAJ71).
+- **Adquiriente** (`clientes.dian`, ficha en el modal del cliente): sin
+  identificación y del país, **consumidor final** (222222222222, R-99-PN, ZZ);
+  NIT con DV correcto; cédula y otros documentos de persona (persona natural,
+  tributo "No aplica"); exterior como NIT de otro país (50). Lo que no se puede
+  deducir (persona natural o jurídica, responsable de IVA) se pide en la ficha;
+  sin ello no se envía.
+- **Impuestos**: IVA por línea con las tarifas de la tabla 13.3.11 (19, 5, 16 y
+  0). Las líneas al 0 % son **exentas** (IVA 0.00) o **excluidas** (sin
+  `TaxTotal`) según elige el negocio en Ajustes; sin esa decisión una factura
+  con líneas al 0 % no se envía. Cualquier otra tarifa (INC, ICUI, ICA) se
+  rechaza antes de enviar: Cord todavía no la informa.
+- **Retenciones**: las del catálogo se informan en `WithholdingTaxTotal` solo
+  cuando el tributo es inequívoco: la que se calcula sobre el IVA es ReteIVA
+  (05) y la de tipo ISR es ReteRenta (06). Una retención sobre el subtotal de
+  otro tipo (que podría ser ReteICA o ReteFuente) no se informa, se lista en
+  `retenciones_no_informadas` y sigue restando en Cord. No entran en
+  `LegalMonetaryTotal` [AT 11.9.1]: el `PayableAmount` de la DIAN es bruto +
+  IVA y el total de Cord es ese importe menos las retenciones.
+- **Descuentos**: el descuento de documento de Cord llega repartido por línea y
+  viaja como `AllowanceCharge` de la línea (precio bruto, porcentaje, importe y
+  base); `PriceAmount × cantidad − descuento = LineExtensionAmount` (FAV06) y el
+  total se cuadra contra el documento de Cord al centavo.
+- **Moneda**: fuera de COP se informa `PaymentExchangeRate` con la tasa a COP
+  congelada del documento y la fecha en que se guardó (regla 22); si la divisa
+  contable no es COP o no hay tasa, falla cerrado.
+- **Conservación y entrega**: el XML firmado se guarda ANTES de enviarse
+  (`dian_documentos`, inmutable por trigger) y se le une el
+  ApplicationResponse al validarse. El contenedor (`AttachedDocument`, firmado
+  por el emisor, con ambos en CDATA) se descarga como el XML de la factura y
+  viaja en el correo como un único .zip con el PDF (AT 9.1).
+- **Impresión**: título, número, fechas de generación y validación, NIT y
+  responsabilidades, adquiriente, autorización de numeración (resolución,
+  prefijo, rango y vigencia), forma de pago, factura ajustada y concepto, tasa a
+  COP; CUFE/CUDE en el pie de todas las páginas y el QR en la primera y, a 2 cm,
+  en el pie de las siguientes (`qrCadaPagina`, AT 11.7).
+- **Habilitación**: número del rango de pruebas, `simulado: true` y
+  `livemode: false`, leyenda "sin validez fiscal".
+
+**No cubierto (se rechaza o se dice antes de enviar):** factura de exportación
+(02), contingencia (03/04), INC, ICUI, ICA e impuestos saludables, ReteICA
+informado, AIU, mandatos, propinas y cargos de documento, documento soporte,
+nómina electrónica, eventos RADIAN (acuse, aceptación) y el formato del asunto
+del correo de recepción (AT 9.1: `NIT;Nombre;Número;Tipo;Nombre comercial`).
+
+**Verificación:** `npm run security:dian` (en `test:payments`) reproduce los
+CUFE/CUDE de los ejemplos del Anexo (11.2, 11.4.1, 11.4.3; de la nota débito,
+11.4.5, la composición: su hash impreso es una errata), coteja cada código con
+las tablas oficiales, recalcula el hash de la política, comprueba endpoints,
+acciones y WS-Policy de los WSDL, arma y firma factura, nota crédito, nota
+débito, consumidor final, excluida, en USD y el contenedor, los valida con
+xmllint contra los XSD oficiales (la única diferencia tolerada es la
+enumeración de `ProviderID/@schemeID` del XSD, que contradice al Anexo y que
+el ejemplo oficial `Generica.xml` también incumple), confirma con
+`xmllint --c14n` que el serializador escribe la forma canónica y verifica cada
+firma —y la del sobre SOAP— con el validador XMLDSig del JDK, con controles
+negativos. `test/dian-db.test.ts` (PGlite + DIAN simulada que recalcula el
+CUFE) cubre validación, rechazo, recuperación, cron, "procesado
+anteriormente", fault de certificado, nota crédito, concurrencia, rango
+agotado, contenedor, set de pruebas, trigger y RLS;
+`test/dian-comprobante.test.ts` las piezas puras.
+
+### Activación de la DIAN paso a paso
+
+1. `npm run db:migrate` (o el despliegue, que aplica
+   `db/deploy/2026-10-09-dian.sql`).
+2. **Habilitación (cada facturador).** En el portal de la DIAN, "Registro y
+   habilitación" › "Documentos electrónicos" › "Factura electrónica": modo de
+   operación **Software propio**, con el nombre del software y un **PIN** de 5
+   dígitos. La DIAN asigna el **identificador del software** y un **set de
+   pruebas** (TestSetId, rango de pruebas con su prefijo, resolución, vigencia
+   y clave técnica).
+3. **En Cord**, con `DIAN_ENABLED=true` y `DIAN_ENTORNO=homologacion`: el
+   negocio completa Identidad de facturación (NIT con DV, razón social,
+   domicilio) y la sección DIAN (tipo de persona, responsabilidades, tributo,
+   municipio, software, PIN, rango de pruebas con su clave técnica, prefijo de
+   notas, exento/excluido, TestSetId), sube su certificado de firma con la
+   cadena y pulsa "Enviar set de pruebas" con las cantidades que pide el detalle
+   del set; "Ver resultado" consulta cada envío. En local, con el certificado:
+   `DIAN_PRUEBA_PASSWORD=… DIAN_PRUEBA_PIN=… DIAN_PRUEBA_CLAVE_TECNICA=… npm run dian:prueba -- --p12 … --nit … --software-id … --test-set-id … --resolucion … --prefijo … --desde … --hasta … --vigente-desde … --vigente-hasta … [--enviar]`
+   (sin `--enviar` solo arma y firma; sin certificado, solo sondea el servicio).
+   Nunca toca producción ni la base.
+4. **Producción.** Superado el set, el facturador sincroniza a producción desde
+   el portal, solicita su resolución de numeración en MUISCA y la **asocia al
+   software**. En Production: `DIAN_ENTORNO=produccion` y `DIAN_ENABLED=true`.
+   Cada negocio sube su certificado para producción, registra la resolución
+   real y pulsa "Traer de la DIAN" (`GetNumberingRange`) para guardar la clave
+   técnica del rango. Los certificados y la numeración se guardan por entorno.
+
+**Lo que no se pudo verificar sin un certificado real avalado por la ONAC:** que
+la DIAN acepte la firma WS-Security del sobre y la XAdES del documento (el
+ambiente de habilitación responde `s:Client` sin motivo a cualquier
+certificado no avalado, con firma buena o alterada: no llega a evaluarla), la
+validación real de un documento y su ApplicationResponse, el formato real de
+`GetNumberingRange` en producción y la forma exacta en que la DIAN informa el
+NIT del titular del certificado (regla ZE03; Cord rechaza solo un NIT distinto
+declarado en el `serialNumber` del sujeto). Sí se verificó: los CUFE/CUDE
+oficiales, los XSD, la forma canónica con libxml2, las firmas con el JDK, los
+endpoints y el TLS de habilitación.
 
 ## Documento de factura — ago 2026
 

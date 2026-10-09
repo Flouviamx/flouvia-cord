@@ -1,0 +1,32 @@
+<!-- Transcrito del Anexo Técnico de Factura Electrónica de Venta v1.9 (Resolución DIAN 000165 de 2023), numeral 7.10.3 "Mensaje de respuesta" de SendBillSync. Solo se corrigieron los artefactos de extracción del PDF (comillas tipográficas, prefijo b sin declarar); XmlBase64Bytes es el marcador del propio Anexo. -->
+<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope" xmlns:a="http://www.w3.org/2005/08/addressing" xmlns:u="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">
+<s:Header>
+<a:Action s:mustUnderstand="1">http://wcf.dian.colombia/IWcfDianCustomerServices/SendBillSyncResponse</a:Action>
+<o:Security s:mustUnderstand="1" xmlns:o="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
+<u:Timestamp u:Id="_0">
+<u:Created>2019-02-19T21:33:41.785Z</u:Created>
+<u:Expires>2019-02-19T21:38:41.785Z</u:Expires>
+</u:Timestamp>
+</o:Security>
+</s:Header>
+<s:Body>
+<SendBillSyncResponse xmlns="http://wcf.dian.colombia">
+<SendBillSyncResult xmlns:b="http://schemas.datacontract.org/2004/07/DianResponse" xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+<b:ErrorMessage xmlns:c="http://schemas.microsoft.com/2003/10/Serialization/Arrays">
+<c:string>Regla: AC38b Documento fue enviado para el ambiente errado (producción o pruebas)</c:string>
+<c:string>Regla: ZB01 Fallo en el Schema XML del archivo - The XmlSchemaSet on the document is either null or has no schemas in it. Provide schema information before calling Validate. -</c:string>
+<c:string>Regla: AA08d Número de factura debe estar contenido en el rango de numeración otorgado</c:string>
+<c:string>Regla: AA09 Valor del CUFE no está calculado correctamente.</c:string>
+</b:ErrorMessage>
+<b:IsValid>false</b:IsValid>
+<b:StatusCode>99</b:StatusCode>
+<b:StatusDescription>Validación contiene errores en campos mandatorios.</b:StatusDescription>
+<b:StatusMessage i:nil="true"/>
+<b:XmlBase64Bytes>xmlbase64</b:XmlBase64Bytes>
+<b:XmlBytes i:nil="true"/>
+<b:XmlDocumentKey>A08f2283e5dd6c1878e6ea9ec3a695a9431c924e1086607f6ae7123d081af7b88</b:XmlDocumentKey>
+<b:XmlFileName>invoice-1-firmado-SHA256</b:XmlFileName>
+</SendBillSyncResult>
+</SendBillSyncResponse>
+</s:Body>
+</s:Envelope>

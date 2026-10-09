@@ -16,7 +16,7 @@
 // los scripts de contrato y la UI.
 
 /** Identificador estable del riel. Es parte de la clave de las tablas `fiscal_rail_*`. */
-export type RailId = 'arca' | 'nfse' | 'sunat' | 'sii';
+export type RailId = 'arca' | 'nfse' | 'sunat' | 'sii' | 'dian';
 
 /**
  * Entorno de la autoridad. `homologacion` es el ambiente de pruebas de la
@@ -111,6 +111,17 @@ export const RIELES: Readonly<Record<RailId, RailDefinicion>> = {
         // una nota de crédito que lo referencia (formato DTE, CodRef 1 y 3).
         anulable: false,
         // El folio sale del CAF que autorizó el SII.
+        numeracionPropia: true,
+    },
+    dian: {
+        id: 'dian',
+        pais: 'CO',
+        autoridad: 'DIAN',
+        documentos: { factura: 'dian_invoice', notaCredito: 'dian_credit_note' },
+        envPrefijo: 'DIAN',
+        // Una factura validada se ajusta con una nota crédito (Anexo Técnico 1.9).
+        anulable: false,
+        // Prefijo y consecutivo de la resolución de numeración de la DIAN.
         numeracionPropia: true,
     },
 };

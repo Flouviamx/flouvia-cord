@@ -126,6 +126,15 @@ export async function downloadInvoiceDocument(orgId: string, id: string, format:
     if (!aceptado) return new Response('XML no disponible', { status: 404 });
     return new Response(aceptado.xml, { status: 200, headers: downloadHeaders('application/xml', `${safeFilename(aceptado.archivo)}.xml`) });
   }
+  // Colombia: el XML de un documento validado por la DIAN es su contenedor
+  // (AttachedDocument) con el documento firmado y la respuesta de la DIAN.
+  if (format === 'xml' && String(doc.document_type || '').startsWith('dian_')) {
+    const { contenedorDeDocumento } = await import('./latam/dian/contenedor');
+    const contenedor = await contenedorDeDocumento(orgId, String(doc.id)).catch(() => null);
+    if (!contenedor) return new Response('XML no disponible para este documento', { status: 404 });
+    return new Response(contenedor.xml, { status: 200, headers: downloadHeaders('application/xml', contenedor.nombre) });
+  }
+
 
   // Chile: el XML legal es el DTE firmado, en un sobre de intercambio
   // dirigido al cliente; la copia cedible es el mismo PDF con el acuse de

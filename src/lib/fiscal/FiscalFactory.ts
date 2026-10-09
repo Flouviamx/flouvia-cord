@@ -4,6 +4,7 @@ import { SpainVerifactuProvider } from './providers/SpainVerifactuProvider';
 import { ArgentinaArcaProvider } from './providers/ArgentinaArcaProvider';
 import { BrazilNfseProvider } from './providers/BrazilNfseProvider';
 import { PeruSunatProvider } from './providers/PeruSunatProvider';
+import { ColombiaDianProvider } from './providers/ColombiaDianProvider';
 import { ChileSiiProvider } from './providers/ChileSiiProvider';
 import { CommercialInvoiceProvider } from './providers/CommercialInvoiceProvider';
 
@@ -20,6 +21,7 @@ export class FiscalFactory {
     // contrato que Verifactu: sin la cuenta lista degradan a "commercial_only".
     new ArgentinaArcaProvider(),
     new BrazilNfseProvider(),
+    new ColombiaDianProvider(),
     new PeruSunatProvider(),
     new ChileSiiProvider(),
     new CommercialInvoiceProvider(),

@@ -68,6 +68,14 @@ export async function buildInvoiceAttachments(orgId: string, documentoId: string
     try {
         const doc = await loadInvoiceDocumentRow(orgId, documentoId);
         if (!doc || doc.status !== 'issued') return [];
+        // Colombia: un único .zip con el contenedor de la DIAN (documento
+        // firmado + respuesta de validación) y el PDF [Anexo Técnico 9.1].
+        if (String(doc.document_type || '').startsWith('dian_')) {
+            const pdf = await buildInvoicePdfAttachment(orgId, documentoId);
+            const { adjuntoDian } = await import('./latam/dian/contenedor');
+            const zip = await adjuntoDian(orgId, documentoId, pdf).catch(() => null);
+            return zip ? [zip] : pdf ? [pdf] : [];
+        }
         const { einvoiceEmailMode } = await import('./einvoice/codes');
         const mode = einvoiceEmailMode(String(doc.country_code || ''), doc.org_fiscal_metadata?.einvoice_email);
         if (mode === 'off') return soloPdf();

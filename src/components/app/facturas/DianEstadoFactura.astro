@@ -1,0 +1,61 @@
+---
+// Estado del documento ante la DIAN (Colombia), en el panel lateral de
+// /app/facturas/[id]: CUFE (o CUDE de una nota), notificaciones con que la
+// DIAN lo validó, o por qué no lo validó (el contenedor XML se descarga desde
+// el menú del documento). Lee el último intento del riel
+// (fiscal_rail_comprobantes); si el documento nunca pasó por la DIAN
+// (documento comercial) no dibuja nada.
+import { ultimoIntento } from '../../../lib/fiscal/latam/comprobantes';
+
+interface Props { orgId: string; documentoId: string; locale: 'es' | 'en'; }
+const { orgId, documentoId, locale } = Astro.props;
+const en = locale === 'en';
+const intento = orgId ? await ultimoIntento(orgId, documentoId, 'dian').catch(() => null) : null;
+
+const TITULO: Record<string, [string, string]> = {
+    autorizado: ['Validada por la DIAN', 'Validated by the DIAN'],
+    pendiente: ['Esperando la confirmación de la DIAN', 'Waiting for the DIAN to confirm'],
+    incierto: ['Esperando la confirmación de la DIAN', 'Waiting for the DIAN to confirm'],
+    rechazado: ['La DIAN rechazó el documento', 'The DIAN rejected the document'],
+    descartado: ['La DIAN no registró este intento', 'The DIAN did not register this attempt'],
+};
+const titulo = intento ? (TITULO[intento.estado]?.[en ? 1 : 0] ?? intento.estado) : '';
+const nota = String(intento?.tipo ?? '') !== '01';
+const observaciones = (intento?.observaciones ?? []).map((o) => o.mensaje || (o.code ? `${o.code}: ${o.msg ?? ''}` : o.msg)).filter(Boolean) as string[];
+const prueba = intento?.entorno === 'homologacion';
+---
+
+{intento && (
+    <section class="fd-meta-section dian-fe">
+        <div class="dian-fe-head"><h2>DIAN</h2></div>
+        <div class={`dian-fe-state is-${intento.estado}`}>
+            <span class="dian-fe-dot" aria-hidden="true"></span>
+            <span class="dian-fe-copy">
+                <strong>{titulo}</strong>
+                {intento.estado === 'autorizado' && intento.autorizacion && (
+                    <small>{nota ? 'CUDE' : 'CUFE'} {intento.autorizacion}</small>
+                )}
+                {intento.estado !== 'autorizado' && intento.errorMensaje && <small>{intento.errorMensaje}</small>}
+                {prueba && <small>{en ? 'DIAN enablement environment: no tax validity.' : 'Ambiente de habilitación de la DIAN: sin validez fiscal.'}</small>}
+            </span>
+        </div>
+        {observaciones.length > 0 && (
+            <ul class="dian-fe-obs">
+                {observaciones.map((o) => <li>{o}</li>)}
+            </ul>
+        )}
+    </section>
+)}
+
+<style>
+    .dian-fe-head h2 { font-size: 0.82rem; font-weight: 600; margin: 0 0 0.6rem; color: var(--color-text); }
+    .dian-fe-state { display: flex; gap: 0.6rem; align-items: flex-start; }
+    .dian-fe-dot { width: 7px; height: 7px; margin-top: 0.35rem; border-radius: 50%; background: var(--color-text-muted); flex-shrink: 0; }
+    .dian-fe-state.is-autorizado .dian-fe-dot { background: var(--color-ok); }
+    .dian-fe-state.is-pendiente .dian-fe-dot, .dian-fe-state.is-incierto .dian-fe-dot { background: #d97706; }
+    .dian-fe-state.is-rechazado .dian-fe-dot { background: var(--color-err, #dc2626); }
+    .dian-fe-copy { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .dian-fe-copy strong { font-size: 0.82rem; color: var(--color-text); }
+    .dian-fe-copy small { font-size: 0.75rem; color: var(--color-text-muted); line-height: 1.45; overflow-wrap: anywhere; }
+    .dian-fe-obs { margin: 0.6rem 0 0; padding-left: 1.1rem; font-size: 0.75rem; color: var(--color-text-muted); line-height: 1.45; }
+</style>

@@ -23,6 +23,10 @@ export async function railListo(orgId: string, rail: RailId): Promise<boolean> {
             const { siiListo } = await import('./sii/estado');
             return siiListo(orgId);
         }
+        case 'dian': {
+            const { dianListo } = await import('./dian/estado');
+            return dianListo(orgId);
+        }
         default:
             return false;
     }

@@ -43,6 +43,12 @@ export interface RepresentacionImpresa {
      * 'inferior': al final del documento, como exige SUNAT (§6.4.4 a).
      */
     qrPosicion?: 'inferior';
+    /**
+     * La norma exige el QR en TODAS las páginas (Colombia: Anexo Técnico de la
+     * DIAN, numeral 11.7, mínimo 2 cm). El PDF lo repite en el pie de cada
+     * página siguiente a la primera.
+     */
+    qrCadaPagina?: boolean;
     /** Leyendas obligatorias del comprobante, cada una completa. */
     leyendas: string[];
     /** Pie legal: reemplaza al aviso de "documento comercial" de Cord. */
@@ -124,6 +130,7 @@ export function representacionDe(providerData: unknown): RepresentacionImpresa |
         ...(texto(r.qrLeyenda) ? { qrLeyenda: texto(r.qrLeyenda) } : {}),
         ...(['L', 'M', 'Q', 'H'].includes(texto(r.qrNivel)) ? { qrNivel: texto(r.qrNivel) as RepresentacionImpresa['qrNivel'] } : {}),
         ...(r.qrPosicion === 'inferior' ? { qrPosicion: 'inferior' as const } : {}),
+        ...(r.qrCadaPagina === true && texto(r.qrUrl) ? { qrCadaPagina: true } : {}),
         leyendas: Array.isArray(r.leyendas) ? (r.leyendas as unknown[]).filter((l): l is string => typeof l === 'string' && !!l) : [],
         pie,
         ...(r.prueba === true ? { prueba: true } : {}),

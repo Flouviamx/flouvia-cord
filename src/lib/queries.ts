@@ -1243,6 +1243,8 @@ function mapCliente(c: DbRow) {
         einvoiceAddress: (c.einvoice_address as string) ?? '',
         buyerReference: (c.buyer_reference as string) ?? '',
         condicionIva: c.condicion_iva === null || c.condicion_iva === undefined ? '' : String(c.condicion_iva),
+        // Ficha DIAN (Colombia), serializada para el data-attribute del modal.
+        dian: c.dian && typeof c.dian === 'object' ? JSON.stringify(c.dian) : '',
         giro: (c.giro as string) ?? '',
         comuna: (c.comuna as string) ?? '',
         origen: (c.origen as string) || 'app',
@@ -1359,6 +1361,8 @@ export async function getCliente(id: string) {
         ciudad: (c.ciudad as string) ?? '',
         region: (c.region as string) ?? '',
         einvoiceAddress: (c.einvoice_address as string) ?? '',
+        // Ficha DIAN (Colombia), serializada para el data-attribute del modal.
+        dian: c.dian && typeof c.dian === 'object' ? JSON.stringify(c.dian) : '',
         buyerReference: (c.buyer_reference as string) ?? '',
         condicionIva: c.condicion_iva === null || c.condicion_iva === undefined ? '' : String(c.condicion_iva),
         giro: (c.giro as string) ?? '',
