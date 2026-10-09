@@ -19,7 +19,7 @@ import type {
   FiscalDocumentResponse,
   FiscalLineItem,
 } from './index';
-import { resolveLineSatKeys } from './sat-claves';
+import { effectiveLineSatKeys } from './sat-claves';
 import { exemptionReasonFor } from './exemption';
 import { serieCompartida, serieCompartidaMensaje } from './serie';
 import { descuentoDesdeJson, descuentoParaMotor } from '../descuentos';
@@ -36,6 +36,12 @@ export interface EmitResult {
   status: 'issued' | 'error';
   error?: string;
   httpStatus?: number;
+  /**
+   * México, sustitución: tras timbrar el sustituto se pide la cancelación del
+   * original (motivo 01). Su resultado viaja aparte: el sustituto ya existe
+   * aunque el SAT tarde en aceptar la cancelación.
+   */
+  substitution?: { originalId: string; ok: boolean; cancellationStatus?: string; error?: string };
 }
 
 export const money = (value: number) => Math.round((value + Number.EPSILON) * 100) / 100;
@@ -319,6 +325,26 @@ export async function emitSubscriptionInvoice(
   };
 }
 
+/**
+ * Mensaje accionable si la venta está en una factura global viva (borrador o
+ * emitida), o null. Lo comparten la guarda previa y la de la reserva.
+ */
+async function globalDeLaVenta(orgId: string, cotizacionId: string): Promise<string | null> {
+  const [rows] = await withOrgTx(orgId, sql`
+    select d.invoice_number, d.status
+      from factura_global_ventas g
+      join documentos_fiscales d on d.id = g.documento_id and d.org_id = g.org_id
+     where g.org_id = ${orgId} and g.cotizacion_id = ${cotizacionId} and g.liberada_at is null
+     limit 1`);
+  const g = rows[0];
+  if (!g) return null;
+  if (g.status !== 'issued') {
+    return 'Esta venta está reservada en un borrador de factura global. Descarta ese borrador para facturarla a nombre del cliente.';
+  }
+  const folio = g.invoice_number ? ` ${String(g.invoice_number)}` : '';
+  return `Esta venta ya está en la factura global${folio}. Para facturarla a nombre del cliente, cancela esa factura global con el motivo 04, vuelve a emitirla sin esta venta y después emite esta factura.`;
+}
+
 export async function emitFiscalDocument(orgId: string, cotizacionId: string, documentMode?: unknown): Promise<EmitResult> {
   const [headRows, allItems] = await withOrgTx(orgId,
     sql`select
@@ -345,9 +371,11 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string, do
         left join clientes cl on cl.id = c.cliente_id
         where c.id = ${cotizacionId} and c.org_id = ${orgId}
         limit 1`,
-    // Las claves SAT son clasificación, no aritmética: se leen del producto al
-    // timbrar y quedan congeladas en `line_items_snapshot` del documento.
+    // Las claves SAT son clasificación, no aritmética: la de la LÍNEA gana y lo
+    // que falte se lee del producto al timbrar; quedan congeladas en
+    // `line_items_snapshot` del documento.
     sql`select ci.descripcion, ci.cantidad, ci.precio_unitario, ci.precio_negociado, ci.aprobado, ci.tax_rate, ci.exemption_reason,
+               ci.clave_sat as linea_clave_sat, ci.clave_unidad_sat as linea_clave_unidad_sat,
                p.clave_sat, p.clave_unidad_sat, p.unidad as producto_unidad
         from cotizacion_items ci
         join cotizaciones c on c.id = ci.cotizacion_id
@@ -440,11 +468,14 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string, do
     taxAmount: round(l.impuesto),
     total: round(l.total),
     ...(l.descuento > 0 ? { discount: round(l.descuento) } : {}),
-    ...(country === 'MX' ? resolveLineSatKeys({
-      claveSat: approvedItems[i]?.clave_sat,
-      claveUnidadSat: approvedItems[i]?.clave_unidad_sat,
-      unidad: approvedItems[i]?.producto_unidad,
-    }) : {}),
+    ...(country === 'MX' ? effectiveLineSatKeys(
+      { productKey: approvedItems[i]?.linea_clave_sat, unitKey: approvedItems[i]?.linea_clave_unidad_sat },
+      {
+        claveSat: approvedItems[i]?.clave_sat,
+        claveUnidadSat: approvedItems[i]?.clave_unidad_sat,
+        unidad: approvedItems[i]?.producto_unidad,
+      },
+    ) : {}),
     ...causaDe(i, l.tax_rate),
   }));
   const subtotal = round(totals.subtotal);
@@ -511,6 +542,12 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string, do
     return { emitted: false, status: 'error', error: serieCompartidaMensaje(cleanPrefix(fiscalMetadata.invoice_prefix, profile.invoicePrefix)) };
   }
   const idempotencyKey = `quote:${cotizacionId}:invoice:v1`;
+  // Una venta ya incluida en una factura global no se factura a nombre del
+  // cliente mientras esa global siga viva: el SAT pide cancelar la global con
+  // el motivo 04, volver a emitirla sin la venta y entonces emitir la
+  // nominativa (FAQ de cancelación, pregunta 10). Se dice antes de reservar.
+  const enGlobal = docType === 'cfdi_40' ? await globalDeLaVenta(orgId, cotizacionId) : null;
+  if (enGlobal) return { emitted: false, status: 'error', httpStatus: 409, error: enGlobal };
   const issuedAt = new Date().toISOString();
   // Serie + ejercicio: `invoice_sequences` numeraba indefinidamente sin año ni
   // serie, y cambiar `invoice_prefix` en Ajustes reescribía la MISMA fila sin
@@ -554,6 +591,10 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string, do
           insert into invoice_sequences (org_id, country_code, document_type, serie, ejercicio, prefix, next_value)
           select ${orgId}, ${country}, ${docType}, ${serie}, ${ejercicio}, ${folioPrefix}, 2
            where not exists (select 1 from existing)
+             -- Misma guarda que arriba, dentro del candado: una global creada
+             -- entre la consulta y la reserva no deja pasar la factura.
+             and not exists (select 1 from factura_global_ventas g
+                              where g.org_id = ${orgId} and g.cotizacion_id = ${cotizacionId} and g.liberada_at is null)
           on conflict (org_id, country_code, document_type, serie, ejercicio) do update
              set next_value = invoice_sequences.next_value + 1,
                  prefix = excluded.prefix,
@@ -588,7 +629,10 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string, do
         limit 1`,
   );
   const reserved = reservedRows[0];
-  if (!reserved) return { emitted: false, status: 'error', error: 'no se pudo reservar el folio fiscal' };
+  if (!reserved) {
+    const carrera = docType === 'cfdi_40' ? await globalDeLaVenta(orgId, cotizacionId) : null;
+    return { emitted: false, status: 'error', ...(carrera ? { httpStatus: 409 } : {}), error: carrera || 'no se pudo reservar el folio fiscal' };
+  }
   // Cotizaciones y facturas independientes comparten cuota, autorización,
   // proveedor y confirmación. El documento guardado conserva tipo y snapshots.
   const { finalizeInvoice } = await import('./invoices');

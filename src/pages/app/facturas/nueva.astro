@@ -37,9 +37,12 @@ import { CURRENCY_FLAG } from '../../../lib/flags';
 import { listOfferedCurrencies } from '../../../lib/currency';
 import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
+import { satLineI18n } from '../../../lib/sat-line-i18n';
+import { FORMAS_PAGO, USOS_CFDI } from '../../../lib/fiscal/cfdi-catalogos';
 import { normalizeTerm, termDueDate } from '../../../lib/payment-terms';
 import '../../../styles/modal.css';
 import '../../../styles/editor.css';
+import '../../../styles/sat-line.css';
 
 export const prerender = false;
 
@@ -167,6 +170,8 @@ const BOOT = {
         precio: Number(p.precio) || 0,
         volumen: p.preciosVolumen ?? null,
         taxRate: p.taxRate ?? null,
+        // México: claves SAT del producto, con las que nace la línea.
+        ...(isMx ? { claveSat: p.claveSat ?? null, claveUnidadSat: p.claveUnidadSat ?? null } : {}),
     })),
     kits: kits.map((k: any) => ({
         id: k.id, nombre: k.nombre, precioCombo: Number(k.precioCombo) || 0,
@@ -194,7 +199,14 @@ const BOOT = {
         // reproduce (5.33 / 33.33 no es 0.16) y el selector no la encontraba.
         taxRate: Number.isFinite(Number(l.taxRate)) ? Number(l.taxRate) : DEFAULT_TAX_RATE,
         exemptionReason: l.exemptionReason ?? null,
+        // Claves SAT congeladas del borrador: el snapshot no conserva el
+        // producto, así que viajan como claves propias de la línea.
+        productKey: l.productKey ?? null,
+        unitKey: l.unitKey ?? null,
     })),
+    // Clave SAT por línea: solo México timbra CFDI (src/lib/sat-line-picker.ts).
+    sat: isMx,
+    satI18n: satLineI18n(L),
     i18n: {
         sinResultados: L === 'en' ? 'No products match' : 'Ningún producto coincide',
         usaLineaLibre: L === 'en' ? 'Use “Free line” to add it by hand' : 'Usa “Línea libre” para capturarlo a mano',
@@ -253,6 +265,9 @@ import { iconInner } from '../../../lib/icons';
     <div data-editor="invoice">
         <script type="application/json" id="edBoot" is:inline set:html={jsonForScript(BOOT)} />
 
+        {draft?.sustituyeA && (
+            <p class="ed-sust" role="status">{t(L, 'fsust.editor_banner').replace('{numero}', draft.sustituyeA.numero ?? '—')}</p>
+        )}
         <div class="editor-grid">
             <div class="ed-main">
                 <!-- Armar con IA — el mismo endpoint que el editor de cotizaciones:
@@ -386,13 +401,33 @@ import { iconInner } from '../../../lib/icons';
                 <section class="ed-block">
                     <div class="section-head"><h2>{L === 'en' ? 'Document type' : 'Tipo de documento'}</h2></div>
                     <label for="documentMode">{L === 'en' ? 'Issuance' : 'Emisión'}</label>
-                    <select id="documentMode" class="ed-select">
+                    <select id="documentMode" class="ed-select" disabled={!!draft?.sustituyeA}>
                         <option value="commercial" selected={!fiscalSelected}>{['MX', 'ES'].includes(country) ? 'Proforma' : (L === 'en' ? 'Commercial invoice' : 'Factura comercial')}</option>
                         {(selectableFiscal || fiscalSelected) && <option value="fiscal" selected={fiscalSelected} disabled={!selectableFiscal}>{isMx ? 'CFDI 4.0' : 'VERI*FACTU'}</option>}
                     </select>
                     <p class="add-hint">{L === 'en'
                         ? 'Commercial documents are included in Free. Integrated fiscal issuance requires Starter and an enabled fiscal setup. A pro forma does not replace a tax invoice.'
                         : 'Los documentos comerciales están incluidos en Gratis. La emisión fiscal integrada requiere Starter y configuración fiscal habilitada. Una proforma no sustituye una factura fiscal.'}</p>
+                    {isMx && (
+                        <div class="ed-cfdi" id="cfdiBlock" hidden={!fiscalSelected}>
+                            <h3 class="ed-cfdi-title">{t(L, 'fcfdi.titulo')}</h3>
+                            <label for="cfdiUso">{t(L, 'fcfdi.uso')}</label>
+                            <select id="cfdiUso" class="ed-select">
+                                <option value="">{t(L, 'fcfdi.uso_auto')}</option>
+                                {Object.entries(USOS_CFDI).map(([clave, u]) => (
+                                    <option value={clave} selected={draft?.cfdiUso === clave}>{clave} · {L === 'en' ? u.en : u.es}</option>
+                                ))}
+                            </select>
+                            <label for="cfdiForma">{t(L, 'fcfdi.forma')}</label>
+                            <select id="cfdiForma" class="ed-select">
+                                <option value="">{t(L, 'fcfdi.forma_auto')}</option>
+                                {Object.entries(FORMAS_PAGO).map(([clave, fp]) => (
+                                    <option value={clave} selected={draft?.cfdiFormaPago === clave}>{clave} · {L === 'en' ? fp.en : fp.es}</option>
+                                ))}
+                            </select>
+                            <p class="ed-cfdi-hint">{t(L, 'fcfdi.forma_ayuda')}</p>
+                        </div>
+                    )}
                 </section>
 
                 <!-- Notas -->
@@ -535,6 +570,7 @@ import { iconInner } from '../../../lib/icons';
                         <div><dt>{L === 'en' ? 'Due date' : 'Vencimiento'}</dt><dd id="confirmDue">…</dd></div>
                         <div><dt>{L === 'en' ? 'Delivery' : 'Entrega'}</dt><dd id="confirmDelivery">…</dd></div>
                     </dl>
+                    {isMx && <p class="issue-warning" id="confirmSatWarn" hidden></p>}
                 </div>
                 <div class="m-foot">
                     <div class="m-actions">
@@ -557,6 +593,7 @@ import { iconInner } from '../../../lib/icons';
     import { canonicalTaxRate, taxBreakdownRows, taxOptionIndex } from '../../../lib/tax-components';
     import { termDueDate } from '../../../lib/payment-terms';
     import { wireTermPicker } from '../../../lib/term-picker-client';
+    import { createSatLinePicker, genericKeyCount, satKeysFromProduct, satPayload } from '../../../lib/sat-line-picker';
     import { wireDiscountControl } from '../../../lib/discount-client';
 
     const raiz = document.querySelector('[data-editor="invoice"]') as HTMLElement | null;
@@ -572,6 +609,9 @@ import { iconInner } from '../../../lib/icons';
             cantidad: number; taxRate: number; negoTouched: boolean;
             /** España: causa de exención congelada con la opción elegida. */
             exemptionReason?: string | null;
+            /** México: claves SAT propias de la línea (ganan sobre las del producto). */
+            productKey?: string | null;
+            unitKey?: string | null;
             volumen?: any;
         }
         const lines: Linea[] = (BOOT.lineas || []).map((l: any) => ({
@@ -581,6 +621,7 @@ import { iconInner } from '../../../lib/icons';
             // como la combinada con GST, igual que la valida el servidor.
             cantidad: l.cantidad, taxRate: canonicalTaxRate(BOOT.taxCountry, l.taxRate), negoTouched: false,
             exemptionReason: l.exemptionReason ?? null,
+            productKey: l.productKey ?? null, unitKey: l.unitKey ?? null,
         }));
 
         // El formateo lee la divisa elegida en el editor, no la del documento:
@@ -590,8 +631,19 @@ import { iconInner } from '../../../lib/icons';
         const refmt = () => { fmt = createMoney({ currency }); };
 
         const $ = (id: string) => document.getElementById(id);
+        // Datos del CFDI: solo tienen sentido si el documento se timbra.
+        $('documentMode')?.addEventListener('change', (e) => {
+            const bloque = $('cfdiBlock');
+            if (bloque) bloque.hidden = (e.target as HTMLSelectElement).value !== 'fiscal';
+        });
         const $lines = $('lines')!;
         const $empty = $('linesEmpty')!;
+        // Clave SAT por línea (solo México): sub-fila bajo cada concepto.
+        const satPicker = BOOT.sat
+            ? createSatLinePicker({ container: $lines, getLine: (i) => lines[i], i18n: BOOT.satI18n })
+            : null;
+        const satDeProducto = (id: string | null | undefined) =>
+            satKeysFromProduct((BOOT.catalogo || []).find((p: any) => p.id === id));
 
         // ── Toast ───────────────────────────────────────────────────────────
         let toastEl: HTMLElement | null = null;
@@ -655,7 +707,7 @@ import { iconInner } from '../../../lib/icons';
                     <button type="button" class="lr-del" data-i="${i}" aria-label="Quitar">
                         ${iconSvg('x', '', 1.5, 15)}
                     </button>
-                </div>`;
+                </div>${satPicker ? satPicker.rowHtml(l, i) : ''}`;
             }).join('');
             recalc();
         };
@@ -766,6 +818,7 @@ import { iconInner } from '../../../lib/icons';
             const btn = (e.target as HTMLElement).closest('.lr-del') as HTMLElement | null;
             if (!btn) return;
             lines.splice(Number(btn.dataset.i), 1);
+            satPicker?.close();
             render();
         });
 
@@ -815,11 +868,13 @@ import { iconInner } from '../../../lib/icons';
                 lista: desc > 0 ? Math.round(p.precio * (1 - desc / 100) * 100) / 100 : p.precio,
                 negociado: null, cantidad: 1,
                 taxRate: productTax(p.id), negoTouched: false, volumen: p.volumen,
+                ...(BOOT.sat ? satKeysFromProduct(p) : {}),
             });
             render();
             // Flash sobre la fila nueva: el feedback de "ya se agregó" que
             // permite seguir capturando sin mirar la lista.
-            const fila = $lines.lastElementChild as HTMLElement | null;
+            const filas = $lines.querySelectorAll<HTMLElement>('.line-row');
+            const fila = filas[filas.length - 1] ?? null;
             if (fila) { fila.classList.add('line-added'); setTimeout(() => fila.classList.remove('line-added'), 900); }
         };
 
@@ -858,7 +913,9 @@ import { iconInner } from '../../../lib/icons';
                 negociado: null, cantidad: 1, taxRate: BOOT.defaultTaxRate, negoTouched: false,
             });
             render();
-            const input = $lines.querySelector('.line-row:last-child .lr-desc-input') as HTMLInputElement | null;
+            // La última `.line-row`, no `:last-child`: en México la sigue su sub-fila SAT.
+            const filas = $lines.querySelectorAll<HTMLElement>('.line-row');
+            const input = filas[filas.length - 1]?.querySelector('.lr-desc-input') as HTMLInputElement | null;
             input?.focus();
         });
 
@@ -891,6 +948,7 @@ import { iconInner } from '../../../lib/icons';
                         negoTouched: ratio !== 1,
                         cantidad: it.cantidad * mult,
                         taxRate: productTax(it.productoId),
+                        ...(BOOT.sat ? satDeProducto(it.productoId) : {}),
                     });
                 }
                 render();
@@ -1060,6 +1118,7 @@ import { iconInner } from '../../../lib/icons';
                         negociado: it.negociado === null || it.negociado === undefined ? null : Number(it.negociado),
                         cantidad: Number(it.cantidad) || 1,
                         taxRate: BOOT.defaultTaxRate, negoTouched: false,
+                        ...(BOOT.sat ? satDeProducto(it.id) : {}),
                     });
                 }
                 render();
@@ -1081,6 +1140,11 @@ import { iconInner } from '../../../lib/icons';
             service_date_end: ($('serviceDateEnd') as HTMLInputElement).value || undefined,
             notas: ($('notas') as HTMLTextAreaElement).value.trim() || undefined,
             iva_incluido: ivaIncluidoEl.checked,
+            // México: uso y forma de pago del CFDI ('' = automáticos).
+            ...(document.getElementById('cfdiUso') ? {
+                cfdi_uso: ($('cfdiUso') as HTMLSelectElement).value,
+                cfdi_forma_pago: ($('cfdiForma') as HTMLSelectElement).value,
+            } : {}),
             ...descuento.payload(),
             fx_buffer_pct: currency === BOOT.orgCurrency ? 0 : Number(($('fxBuffer') as HTMLInputElement).value) || 0,
             items: lines.map((l) => ({
@@ -1091,6 +1155,7 @@ import { iconInner } from '../../../lib/icons';
                 precio_negociado: l.negociado,
                 tax_rate: l.taxRate,
                 exemption_reason: l.exemptionReason || undefined,
+                ...(BOOT.sat ? satPayload(l) : {}),
             })),
         });
 
@@ -1147,6 +1212,13 @@ import { iconInner } from '../../../lib/icons';
             $('confirmTotal')!.textContent = fmt(ultimoTotal);
             $('confirmDue')!.textContent = ($('dueDate') as HTMLInputElement).value || T.sinFecha;
             $('confirmDelivery')!.textContent = sendEmail ? email : T.sinEntrega;
+            // Antes de emitir se dice cuántos conceptos saldrían con 01010101.
+            const satWarn = $('confirmSatWarn');
+            if (satWarn) {
+                const n = genericKeyCount(lines);
+                satWarn.hidden = n === 0;
+                satWarn.textContent = n ? BOOT.satI18n.resumenGenericas.replace('{n}', String(n)) : '';
+            }
             $('issueOk')!.textContent = sendEmail
                 ? (BOOT.locale === 'en' ? 'Issue and send' : 'Emitir y enviar')
                 : (BOOT.locale === 'en' ? 'Issue invoice' : 'Emitir factura');
@@ -1211,3 +1283,15 @@ import { iconInner } from '../../../lib/icons';
         if (currency !== BOOT.orgCurrency) refreshFx();
     }
 </script>
+
+<style>
+    /* México: datos del CFDI y aviso de sustitución. */
+    .ed-sust {
+        margin: 0 0 1.4rem; padding: 12px 16px; border-radius: 12px;
+        background: rgba(10, 25, 47, 0.05); color: var(--color-text); font-size: 0.84rem; line-height: 1.5;
+    }
+    .ed-cfdi { display: flex; flex-direction: column; gap: 0.45rem; margin-top: 1.4rem; }
+    .ed-cfdi[hidden] { display: none; }
+    .ed-cfdi-title { margin: 0 0 0.2rem; font-size: 0.86rem; font-weight: 650; color: var(--color-text); }
+    .ed-cfdi-hint { margin: 0.2rem 0 0; font-size: 0.74rem; line-height: 1.5; color: var(--color-text-muted); }
+</style>

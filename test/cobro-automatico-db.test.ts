@@ -39,7 +39,8 @@ beforeAll(async () => {
             id uuid primary key, org_id uuid not null references orgs(id), cliente_id uuid, invoice_number text,
             total numeric not null, currency text not null, amount_remaining numeric, lifecycle text, status text,
             document_type text default 'invoice', credit_note_of uuid, provider_data jsonb, stripe_payment_intent_id text,
-            due_date date, issued_at timestamptz, created_at timestamptz default now(), updated_at timestamptz default now());
+            due_date date, issued_at timestamptz, created_at timestamptz default now(), updated_at timestamptz default now(),
+            sustituye_a uuid, sustituida_por uuid, informacion_global jsonb);
         create table documento_pagos (
             id uuid primary key default gen_random_uuid(), org_id uuid not null, documento_id uuid not null,
             monto numeric, currency text, stripe_payment_intent_id text, aplicado_at timestamptz default now());
@@ -137,6 +138,15 @@ describe('cobro automático', () => {
         await conciliarPendiente(org, String(pago.id), new Date(ahora.getTime() + 2 * 3_600_000));
         const llaves = m.stripe.mock.calls.filter(([p]) => p === '/v1/payment_intents').map(([, , , o]) => o.idempotencyKey);
         expect(llaves).toEqual([`cord-grupo-${pago.id}`, `cord-grupo-${pago.id}`]);
+    });
+
+    it('México: un CFDI sustituido o con su sustituto en curso no se carga', async () => {
+        const S = '33333333-3333-4333-8333-333333333333';
+        await q(`insert into documentos_fiscales(id, org_id, cliente_id, total, currency, amount_remaining, lifecycle, status, sustituye_a)
+                 values ($1, $2, $3, 100, 'MXN', 100, 'draft', 'pending', $4)`, [S, org, cli, A]);
+        await q('update documentos_fiscales set sustituida_por = $1 where id = $2', [S, B]);
+        expect(await cobrarCliente(org, cli, 'MXN', ahora)).toBe('sin_facturas');
+        expect(m.stripe).not.toHaveBeenCalled();
     });
 
     it('un cliente detenido no se carga', async () => {

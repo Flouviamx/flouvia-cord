@@ -67,8 +67,8 @@ Cord toma los datos fiscales del receptor de la ficha del cliente:
 
 | Dato | De dónde sale | Si falta |
 |---|---|---|
-| RFC | Ficha del cliente | Se emite a "Público en General". |
-| Régimen fiscal | Ficha del cliente | 601 (General de Ley Personas Morales) si el cliente tiene RFC; 616 (Sin obligaciones fiscales) si se emite a público en general. |
+| RFC | Ficha del cliente | Se emite con el RFC genérico XAXX010101000, a nombre del cliente y con el código postal fiscal de tu negocio. El nombre "PUBLICO EN GENERAL" queda para la factura global. |
+| Régimen fiscal | Ficha del cliente | 601 (General de Ley Personas Morales) si el cliente tiene RFC; 616 (Sin obligaciones fiscales) siempre que se emite con el RFC genérico. |
 | Uso de CFDI | Ficha del cliente, o el uso predeterminado de tu cuenta | G03 (Gastos en general). |
 | Código postal fiscal | Ficha del cliente | No hay un valor que lo sustituya con certeza: el CFDI 4.0 exige el código postal de la constancia del receptor, y el timbrado puede ser rechazado. |
 
@@ -80,7 +80,7 @@ Si el país del cliente en su ficha no es México, el CFDI se emite como a un **
 
 ### Claves del SAT de cada concepto
 
-Cada producto puede llevar su **clave de producto o servicio** (c_ClaveProdServ, 8 dígitos) y su **clave de unidad** (c_ClaveUnidad) en **Productos › Facturación electrónica (SAT)**. La clave de producto se busca por descripción en el catálogo del SAT; la de unidad, si la dejas vacía, se deduce de la unidad del producto ("hora" → HUR, "mes" → MON, "kg" → KGM). Los conceptos sin producto, o de un producto sin clasificar, se timbran con las claves genéricas del SAT: 01010101 y H87. Las claves se toman al timbrar y quedan guardadas en el documento.
+Cada producto puede llevar su **clave de producto o servicio** (c_ClaveProdServ, 8 dígitos) y su **clave de unidad** (c_ClaveUnidad) en **Productos › Facturación electrónica (SAT)**. La clave de producto se busca por descripción en el catálogo del SAT; la de unidad, si la dejas vacía, se deduce de la unidad del producto ("hora" → HUR, "mes" → MON, "kg" → KGM). En el editor de cotizaciones y facturas, cada concepto puede llevar **sus propias claves**, que ganan sobre las del producto; duplicar un documento las conserva. Los conceptos sin clave propia ni producto clasificado se timbran con las claves genéricas del SAT: 01010101 y H87, y el editor avisa cuántos quedan así antes de emitir. Las claves se toman al timbrar y quedan guardadas en el documento.
 
 ### Impuestos y emisión
 
@@ -90,10 +90,17 @@ Un pago confirmado y una factura emitida son estados diferentes. Pagar no crea, 
 
 Las notas de crédito de una factura mexicana son un CFDI de egreso relacionado con el UUID original. Una solicitud de cancelación no anula el CFDI hasta que el SAT la confirma; mientras tanto puedes pulsar **Consultar cancelación** en el detalle.
 
+### Cancelación y sustitución
+
+Al anular un CFDI emitido, Cord pide el **motivo del SAT**: 02 (con errores, sin relación), 03 (la operación no se llevó a cabo) o 04 (operación nominativa en una factura global, solo en la global). El motivo 01 se usa con **Sustituir CFDI**: Cord crea un borrador con los datos del original, al emitirlo lo relaciona con el original (relación 04), pasa a él los cobros del original y pide la cancelación del original con el motivo 01 y el UUID del sustituto. Una factura con notas de crédito vigentes o con complementos de pago emitidos no se puede sustituir: el SAT no deja cancelar un CFDI con comprobantes relacionados vigentes.
+
+### Factura global
+
+Las ventas cobradas sin que el cliente pidiera factura se documentan en **Facturas › Factura global**: eliges periodicidad, mes y año, Cord lista las cotizaciones cobradas del periodo sin factura propia ni otra global, y emite un CFDI a PUBLICO EN GENERAL (XAXX010101000, régimen 616, uso S01, método PUE) con un concepto por venta (clave 01010101, unidad ACT y el folio como número de identificación). Una venta en una global vigente no puede facturarse aparte; si el cliente pide su factura, se cancela la global con el motivo 04 y se emite de nuevo sin esa venta.
+
 ### Lo que Cord no hace hoy en México
 
 - **Complemento de Recepción de Pagos (REP).** Cord timbra con método de pago PUE (una sola exhibición) y no emite complementos de pago. Si facturas a crédito con PPD y necesitas el REP de cada abono, hoy debes hacerlo fuera de Cord.
-- **Cancelación con sustitución (motivo 01).** No está disponible.
 - **Complemento de Comercio Exterior.** La exportación definitiva de mercancías (clave A1) lo exige; Cord timbra la operación como "No aplica" en exportación y no emite ese complemento.
 
 ## España: Verifactu

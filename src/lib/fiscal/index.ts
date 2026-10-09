@@ -51,6 +51,11 @@ export interface FiscalLineItem {
    * (AllowanceCharge).
    */
   discount?: number;
+  /**
+   * México, factura global: folio o número de operación de la venta que el
+   * concepto documenta (NoIdentificacion del CFDI). Ausente en un concepto normal.
+   */
+  identification?: string;
 }
 
 export interface FiscalRetencion {
@@ -102,6 +107,17 @@ export interface FiscalDocumentRequest {
   documentType?: string;
   /** Folio fiscal del comprobante original de una nota de crédito. */
   relatedFiscalId?: string;
+  /**
+   * México: folio fiscal (UUID) del CFDI que este comprobante SUSTITUYE. Viaja
+   * como relación 04 ("Sustitución de los CFDI previos"); después, el original
+   * se cancela con motivo 01 citando el UUID de este.
+   */
+  substitutesFiscalId?: string;
+  /**
+   * México: nodo InformacionGlobal de una factura global a "PUBLICO EN GENERAL".
+   * Claves del SAT: c_Periodicidad (01–05), c_Meses (01–18) y el año.
+   */
+  global?: { periodicidad: string; meses: string; anio: number };
   issuer: FiscalParty;
   recipient: FiscalParty;
   lines: FiscalLineItem[];
@@ -138,6 +154,8 @@ export interface FiscalDocumentResponse {
 export interface FiscalCancelRequest {
   /** Motivo del rail regulatorio. CFDI: 01..04; 02 = comprobante con errores. */
   reason?: string;
+  /** CFDI, motivo 01: folio fiscal (UUID) del comprobante que sustituye al cancelado. */
+  substitution?: string;
   /** Consulta sin iniciar otra cancelación. */
   checkOnly?: boolean;
   /**

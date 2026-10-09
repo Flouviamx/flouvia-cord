@@ -43,7 +43,8 @@ beforeAll(async () => {
             total numeric not null, currency text not null, amount_paid numeric default 0, amount_remaining numeric,
             amount_credited numeric default 0, amount_refunded numeric default 0, refund_due numeric default 0,
             lifecycle text, status text, document_type text default 'invoice', credit_note_of uuid, provider_data jsonb,
-            due_date date, issued_at timestamptz default now(), created_at timestamptz default now(), updated_at timestamptz default now());
+            due_date date, issued_at timestamptz default now(), created_at timestamptz default now(), updated_at timestamptz default now(),
+            sustituye_a uuid, sustituida_por uuid, informacion_global jsonb);
         create table documento_pagos (
             id uuid primary key default gen_random_uuid(), org_id uuid not null, documento_id uuid not null,
             monto numeric, currency text, stripe_payment_intent_id text, mp_payment_id text, metodo text, referencia text,
@@ -109,6 +110,22 @@ describe('crear el cobro agrupado', () => {
         expect((await crearPagoAgrupado(org, { clienteId: cli, origen: 'portal', currency: 'MXN', documentos: [A, C] })).ok).toBe(false);
         await q("update documentos_fiscales set pago_en_proceso_pi = 'pi_x' where id = $1", [B]);
         expect((await crearPagoAgrupado(org, { clienteId: cli, origen: 'portal', currency: 'MXN', documentos: [A, B] })).ok).toBe(false);
+        expect((await q('select * from pagos_agrupados')).rows).toHaveLength(0);
+    });
+    it('México: ni un CFDI sustituido o en sustitución ni una factura global entran en el cobro', async () => {
+        const S = '55555555-5555-4555-8555-555555555555';
+        // A tiene un sustituto en borrador: sigue en el portal, pero ya no se cobra.
+        await q(`insert into documentos_fiscales(id, org_id, cliente_id, total, currency, amount_remaining, lifecycle, status, sustituye_a)
+                 values ($1, $2, $3, 100, 'MXN', 100, 'draft', 'pending', $4)`, [S, org, cli, A]);
+        expect((await crearPagoAgrupado(org, { clienteId: cli, origen: 'portal', currency: 'MXN', documentos: [A, B] })).ok).toBe(false);
+        expect((await facturasDelCliente(org, cli)).find((f) => f.id === A)).toMatchObject({ cobrable: false });
+        // B ya fue sustituida: no aparece (la reemplaza su sustituto) ni se cobra.
+        await q("update documentos_fiscales set sustituida_por = $1 where id = $2", [S, B]);
+        expect((await facturasDelCliente(org, cli)).map((f) => f.id)).not.toContain(B);
+        expect((await crearPagoAgrupado(org, { clienteId: cli, origen: 'portal', currency: 'MXN', documentos: [B] })).ok).toBe(false);
+        // Una global (aunque se le asignara un cliente por error) tampoco.
+        await q("update documentos_fiscales set informacion_global = '{}'::jsonb where id = $1", [C]);
+        expect((await crearPagoAgrupado(org, { clienteId: cli, origen: 'portal', currency: 'USD', documentos: [C] })).ok).toBe(false);
         expect((await q('select * from pagos_agrupados')).rows).toHaveLength(0);
     });
     it('dos corridas del cron no abren dos cobros automáticos vivos', async () => {

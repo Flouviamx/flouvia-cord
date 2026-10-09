@@ -2,13 +2,15 @@
 // Productos — catálogo con precios de lista. CRUD real (Neon).
 import AppLayout from '../../../layouts/AppLayout.astro';
 import ProductModal from '../../../components/app/ProductModal.astro';
-import { getProductos, getMyMembership, money } from '../../../lib/queries';
+import { getProductos, getMyMembership, getOrg, money } from '../../../lib/queries';
 import { memberCan } from '../../../lib/permissions';
 import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
 import '../../../styles/modal.css';
 
-const [PRODUCTOS, ME] = await Promise.all([getProductos(), getMyMembership()]);
+const [PRODUCTOS, ME, ORG] = await Promise.all([getProductos(), getMyMembership(), getOrg()]);
+// Las claves SAT del CFDI solo se importan en México (mismo criterio que el modal).
+const SAT = String(ORG.countryCode || 'MX').toUpperCase() === 'MX';
 const canEdit = memberCan(ME, 'productos');
 const L = currentLocale();
 const tf = (key: string, vars: Record<string, string> = {}) => {
@@ -155,6 +157,9 @@ import { iconInner } from '../../../lib/icons';
         data-i18n-field-unidad={t(L, 'prod.field_unidad')}
         data-i18n-field-precio={t(L, 'prod.field_precio')}
         data-i18n-field-activo={t(L, 'prod.field_activo')}
+        data-sat={SAT ? '1' : ''}
+        data-i18n-field-clave-sat={t(L, 'pmod.clave_sat')}
+        data-i18n-field-clave-unidad-sat={t(L, 'pmod.clave_unidad')}
     >
         <div class="m-form">
             <div class="m-head">
@@ -454,12 +459,19 @@ import { iconInner } from '../../../lib/icons';
         const btnNext = $('impNext') as HTMLButtonElement;
         const btnBack = $('impBack') as HTMLButtonElement;
 
-        const FIELDS = [
-            { key: 'nombre', label: I.i18nFieldNombre || 'Nombre', req: true, guess: ['nombre', 'producto', 'descripcion', 'description', 'name', 'concepto', 'articulo'] },
-            { key: 'sku', label: I.i18nFieldSku || 'SKU / Clave', req: false, guess: ['sku', 'clave', 'codigo', 'code'] },
-            { key: 'unidad', label: I.i18nFieldUnidad || 'Unidad', req: false, guess: ['unidad', 'unit', 'medida', 'um'] },
+        // `avoid`: una columna "clave_sat" contiene "clave" y "clave_unidad_sat"
+        // contiene "unidad"; sin esto se adivinaban como SKU y como unidad.
+        const SAT_GUESS = ['sat', 'prodserv', 'product_key', 'unit_key'];
+        const FIELDS: { key: string; label: string; req: boolean; guess: string[]; avoid?: string[] }[] = [
+            { key: 'nombre', label: I.i18nFieldNombre || 'Nombre', req: true, guess: ['nombre', 'producto', 'descripcion', 'description', 'name', 'concepto', 'articulo'], avoid: SAT_GUESS },
+            { key: 'sku', label: I.i18nFieldSku || 'SKU / Clave', req: false, guess: ['sku', 'clave', 'codigo', 'code'], avoid: SAT_GUESS },
+            { key: 'unidad', label: I.i18nFieldUnidad || 'Unidad', req: false, guess: ['unidad', 'unit', 'medida', 'um'], avoid: SAT_GUESS },
             { key: 'precio', label: I.i18nFieldPrecio || 'Precio de lista', req: false, guess: ['precio', 'price', 'lista', 'costo', 'importe', 'monto'] },
             { key: 'activo', label: I.i18nFieldActivo || 'Activo', req: false, guess: ['activo', 'active', 'estatus', 'status', 'estado'] },
+            ...(I.sat ? [
+                { key: 'clave_sat', label: I.i18nFieldClaveSat || 'Clave SAT', req: false, guess: ['clave_sat', 'clave sat', 'claveprodserv', 'clave_prod', 'product_key'], avoid: ['unidad', 'unit'] },
+                { key: 'clave_unidad_sat', label: I.i18nFieldClaveUnidadSat || 'Clave de unidad SAT', req: false, guess: ['clave_unidad', 'clave unidad', 'claveunidad', 'unit_key'] },
+            ] : []),
         ];
 
         let grid: string[][] = [];
@@ -523,7 +535,8 @@ import { iconInner } from '../../../lib/icons';
             mapsEl.innerHTML = FIELDS.map(f => {
                 let guessed = -1;
                 if (useHeader) {
-                    guessed = headers.findIndex(h => f.guess.some(g => norm(h).includes(g)));
+                    guessed = headers.findIndex(h => f.guess.some(g => norm(h).includes(g))
+                        && !(f.avoid || []).some(a => norm(h).includes(a)));
                 }
                 const opts = [`<option value="-1">${I.i18nNinguna || '— ninguna —'}</option>`];
                 for (let i = 0; i < n; i++) {
@@ -550,6 +563,8 @@ import { iconInner } from '../../../lib/icons';
                 unidad: m.unidad >= 0 ? (r[m.unidad] ?? '').trim() : '',
                 precio: m.precio >= 0 ? parseNum(r[m.precio]) : 0,
                 activo: m.activo >= 0 ? parseBool(r[m.activo]) : true,
+                ...((m.clave_sat ?? -1) >= 0 ? { clave_sat: (r[m.clave_sat] ?? '').trim() } : {}),
+                ...((m.clave_unidad_sat ?? -1) >= 0 ? { clave_unidad_sat: (r[m.clave_unidad_sat] ?? '').trim().toUpperCase() } : {}),
             }));
             const valid = prepared.filter(p => p.nombre);
             const skipped = prepared.length - valid.length;

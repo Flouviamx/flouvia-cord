@@ -71,7 +71,7 @@ export function publishableQuoteInput(body: any): any | Response {
     if (body.send) return fail('Enviar la cotización requiere una Secret Key desde tu servidor.', 'insufficient_scope', 403);
     const items = Array.isArray(body.items)
         ? body.items.map((it: any) => (it && typeof it === 'object'
-            ? { producto_id: it.producto_id, descripcion: it.descripcion, cantidad: it.cantidad, precio_unitario: it.precio_unitario, tax_rate: it.tax_rate, exemption_reason: it.exemption_reason }
+            ? { producto_id: it.producto_id, descripcion: it.descripcion, cantidad: it.cantidad, precio_unitario: it.precio_unitario, tax_rate: it.tax_rate, exemption_reason: it.exemption_reason, clave_sat: it.clave_sat, clave_unidad_sat: it.clave_unidad_sat }
             : it))
         : body.items;
     return {

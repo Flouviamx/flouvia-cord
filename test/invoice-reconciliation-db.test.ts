@@ -54,8 +54,11 @@ beforeAll(async () => {
       due_date date, public_token text, provider text, notes text, created_by uuid,
       schema_version text, provider_data jsonb, updated_at timestamptz default now(),
       stripe_payment_intent_id text, mp_preference_id text,
-      descuento_total numeric not null default 0, descuento jsonb
+      informacion_global jsonb, sustituye_a uuid, sustituida_por uuid, cfdi_uso text, cfdi_forma_pago text,
+      descuento_total numeric not null default 0, descuento jsonb,
+      service_date date, service_date_end date
     );
+    create table cotizacion_cobros (cotizacion_id uuid, org_id uuid, monto numeric, payment_method text, status text);
     create table documento_pagos (
       id uuid primary key default gen_random_uuid(), org_id uuid not null, documento_id uuid not null,
       monto numeric, currency text, stripe_payment_intent_id text, mp_payment_id text, metodo text, referencia text,
@@ -246,6 +249,41 @@ describe('conciliación ejecutada en PostgreSQL local', () => {
       // Repetir el reparto no lo duplica.
       await allocatePendingInvoiceRefunds(org, 'pi_g');
       expect((await q("select * from documento_reembolso_asignaciones where stripe_refund_id = 're_g1'")).rows).toHaveLength(1);
+    });
+    it('sustituir el CFDI lleva sus cobros y su parte de los reembolsos al sustituto', async () => {
+      const idS = '33333333-3333-4333-8333-333333333333';
+      const readS = async () => (await q('select * from documentos_fiscales where id=$1', [idS])).rows[0];
+      await payGroup();
+      await refundG('re_g1', 130);
+      expect(await read()).toMatchObject({ amount_refunded: '70', amount_remaining: '70' });
+      await q("update documentos_fiscales set fiscal_id = 'uuid-original', provider_document_id = 'prov-original', invoice_number = 'F-000099' where id = $1", [id]);
+      const lineasA = JSON.stringify([{ description: 'Servicio', quantity: 1, unitPrice: 100, taxRate: 0, subtotal: 100, taxAmount: 0, total: 100 }]);
+      await q(`insert into documentos_fiscales(id,org_id,total,subtotal,tax_total,currency,amount_remaining,lifecycle,status,
+                 line_items_snapshot,sustituye_a,recipient_snapshot)
+               values ($1,$2,100,100,0,'MXN',100,'draft','pending',$3,$4,'{"legalName":"Cliente","taxId":"AAA010101AAA"}')`, [idS, org, lineasA, id]);
+      m.issue.mockResolvedValueOnce({ success: true, provider: 'facturapi', documentId: 'prov-sustituto', fiscalId: 'uuid-sustituto' });
+
+      const r = await finalizeInvoice(org, idS);
+      expect(r).toMatchObject({ emitted: true, substitution: { originalId: id, ok: true, cancellationStatus: 'accepted' } });
+      expect(m.issue).toHaveBeenLastCalledWith(expect.objectContaining({ substitutesFiscalId: 'uuid-original' }));
+      expect(m.cancel).toHaveBeenLastCalledWith('prov-original', expect.objectContaining({ reason: '01', substitution: 'uuid-sustituto' }));
+
+      // El cobro y lo que el reparto le devolvió a ESTA factura viajan juntos.
+      expect((await q("select documento_id from documento_pagos where stripe_payment_intent_id = 'pi_g' order by monto")).rows.map((x: any) => x.documento_id))
+        .toEqual([idB, idS]);
+      expect((await q("select documento_id, monto from documento_reembolso_asignaciones where stripe_refund_id = 're_g1' order by monto")).rows)
+        .toEqual([{ documento_id: idB, monto: '60' }, { documento_id: idS, monto: '70' }]);
+      expect(await readS()).toMatchObject({ amount_paid: '100', amount_refunded: '70', amount_remaining: '70', lifecycle: 'open' });
+      expect(await read()).toMatchObject({ lifecycle: 'void', sustituida_por: idS, amount_paid: '0', amount_remaining: '0', refund_due: '0' });
+      expect(await readB()).toMatchObject({ amount_refunded: '60', amount_remaining: '60' });
+
+      // Un reembolso posterior del mismo cobro encuentra el pago en el sustituto.
+      await refundG('re_g2', 30);
+      expect(await readS()).toMatchObject({ amount_refunded: '100', amount_remaining: '100' });
+      // Un reintento del webhook del cobro sobre el original es un duplicado,
+      // no un pago tardío que haya que devolver.
+      expect(await applyPayment(org, id, { monto: 100, currency: 'MXN', stripePaymentIntentId: 'pi_g' })).toMatchObject({ ok: true, duplicate: true });
+      expect((await q("select * from documento_pagos where documento_id = $1", [id])).rows).toHaveLength(0);
     });
   });
   it('RLS impide leer e insertar reembolsos de otra organización con rol de aplicación', async () => {

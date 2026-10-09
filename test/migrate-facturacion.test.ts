@@ -20,7 +20,10 @@ const BASE = `
         id uuid primary key, org_id uuid not null references orgs(id) on delete cascade, credit_note_of uuid,
         invoice_number text, issued_at timestamptz, issuer_snapshot jsonb, recipient_snapshot jsonb,
         line_items_snapshot jsonb, currency text, subtotal numeric, tax_total numeric, total numeric,
-        provider_data jsonb, updated_at timestamptz);
+        provider_data jsonb, updated_at timestamptz,
+        cotizacion_id uuid, cliente_id uuid, document_type text, lifecycle text);
+    alter table documentos_fiscales add constraint chk_documentos_fiscales_origen
+        check (cotizacion_id is not null or cliente_id is not null);
     create table impuestos (
         id uuid primary key default gen_random_uuid(), org_id uuid not null references orgs(id) on delete cascade,
         nombre text not null, tipo text not null default 'iva', tasa numeric not null default 0,
@@ -129,7 +132,46 @@ describe('migración de despliegue de facturación', () => {
             expect(await causas()).toEqual(['E2', 'E5', 'S2']);
             // Las restricciones siguen mandando.
             await expect(db.exec(`insert into impuestos (org_id, nombre, tasa, kind, exemption_reason) values ('${ORG_ES}', 'x', 21, 'consumo', 'E2')`)).rejects.toThrow();
-            await expect(db.exec(`insert into documentos_fiscales (id, org_id, service_date, service_date_end) values (gen_random_uuid(), '${ORG_ES}', '2026-10-02', '2026-10-01')`)).rejects.toThrow();
+            await expect(db.exec(`insert into documentos_fiscales (id, org_id, cliente_id, service_date, service_date_end) values (gen_random_uuid(), '${ORG_ES}', gen_random_uuid(), '2026-10-02', '2026-10-01')`)).rejects.toThrow();
+        } finally {
+            await db.close();
+        }
+    }, 60_000);
+
+    it('México: la factura global cabe en el origen y una venta vive en una sola global', async () => {
+        const db = new PGlite();
+        try {
+            await db.exec(BASE);
+            await db.exec(`
+                insert into users values ('00000000-0000-4000-8000-0000000000f1');
+                insert into orgs (id, owner_id, country_code) values ('${ORG_ES}', '00000000-0000-4000-8000-0000000000f1', 'MX');
+                insert into cotizaciones (id, org_id) values ('00000000-0000-4000-8000-00000000c001', '${ORG_ES}');`);
+            await migrar(db);
+            const doc = (id: string, extra: string, values: string) =>
+                db.exec(`insert into documentos_fiscales (id, org_id${extra}) values ('${id}', '${ORG_ES}'${values})`);
+            const GLOBAL = '00000000-0000-4000-8000-00000000d001';
+            await doc(GLOBAL, ', document_type, informacion_global', `, 'cfdi_40', '{"periodicidad":"04","meses":"09","anio":2026}'`);
+            // Sin cliente, sin cotización y sin InformacionGlobal: sigue prohibido.
+            await expect(doc('00000000-0000-4000-8000-00000000d002', ', document_type', `, 'cfdi_40'`)).rejects.toThrow();
+            // Una proforma no es una factura global.
+            await expect(doc('00000000-0000-4000-8000-00000000d003', ', document_type, informacion_global', `, 'proforma', '{}'`)).rejects.toThrow();
+            // Uso del CFDI y forma de pago solo del catálogo del SAT.
+            await expect(doc('00000000-0000-4000-8000-00000000d004', ', cliente_id, cfdi_uso', `, gen_random_uuid(), 'X99'`)).rejects.toThrow();
+            await expect(doc('00000000-0000-4000-8000-00000000d005', ', cliente_id, cfdi_forma_pago', `, gen_random_uuid(), '99'`)).rejects.toThrow();
+
+            const vincular = () => db.exec(`insert into factura_global_ventas (org_id, documento_id, cotizacion_id, folio)
+                values ('${ORG_ES}', '${GLOBAL}', '00000000-0000-4000-8000-00000000c001', 'COT-1')`);
+            await vincular();
+            await expect(vincular()).rejects.toThrow();
+            // Cancelar la global libera la venta: puede entrar en otra.
+            await db.exec(`update factura_global_ventas set liberada_at = now()`);
+            await vincular();
+            // Un solo sustituto vivo por original.
+            await doc('00000000-0000-4000-8000-00000000d006', ', cliente_id, lifecycle, sustituye_a', `, gen_random_uuid(), 'draft', '${GLOBAL}'`);
+            await expect(doc('00000000-0000-4000-8000-00000000d007', ', cliente_id, lifecycle, sustituye_a', `, gen_random_uuid(), 'draft', '${GLOBAL}'`)).rejects.toThrow();
+            // Descartado el primero, se puede intentar de nuevo.
+            await db.exec(`update documentos_fiscales set lifecycle = 'void' where id = '00000000-0000-4000-8000-00000000d006'`);
+            await doc('00000000-0000-4000-8000-00000000d007', ', cliente_id, lifecycle, sustituye_a', `, gen_random_uuid(), 'draft', '${GLOBAL}'`);
         } finally {
             await db.close();
         }

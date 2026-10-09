@@ -38,15 +38,23 @@ export const invoiceBalanceQuery = (orgId: string, id: string) => sql`
               or p.mp_payment_id = r.mp_payment_id))), 0) as refunded
     from documentos_fiscales d where d.id = ${id} and d.org_id = ${orgId}
       and d.credit_note_of is null and d.document_type not in ('credit_note', 'cfdi_egreso')
+      -- La factura global documenta ventas ya cobradas en su cotización: no
+      -- tiene ledger propio que recalcular (fiscal/factura-global.ts).
+      and d.informacion_global is null
   )
   update documentos_fiscales d set
     amount_paid = a.paid, amount_credited = a.credited, amount_refunded = a.refunded,
-    amount_remaining = greatest(d.total - a.credited - a.paid + a.refunded, 0),
+    -- Un CFDI ya sustituido por otro timbrado no se cobra: su saldo y sus pagos
+    -- viven en el que lo sustituye (fiscal/sustitucion.ts), aunque el SAT aún
+    -- no confirme su cancelación.
+    amount_remaining = case when d.sustituida_por is not null then 0
+      else greatest(d.total - a.credited - a.paid + a.refunded, 0) end,
     -- Una factura anulada no debe nada: todo lo que le llegó (un pago tardío
     -- sobre un cobro que ya estaba en vuelo) se devuelve completo.
-    refund_due = case when d.lifecycle = 'void' then greatest(a.paid - a.refunded, 0)
+    refund_due = case when d.lifecycle = 'void' or d.sustituida_por is not null then greatest(a.paid - a.refunded, 0)
       else greatest(a.paid - a.refunded - greatest(d.total - a.credited, 0), 0) end,
     lifecycle = case when d.lifecycle in ('void', 'draft') then d.lifecycle
+      when d.sustituida_por is not null then 'paid'
       when d.total - a.credited - a.paid + a.refunded <= 0 then 'paid'
       when d.lifecycle = 'uncollectible' then 'uncollectible' else 'open' end,
     updated_at = now()

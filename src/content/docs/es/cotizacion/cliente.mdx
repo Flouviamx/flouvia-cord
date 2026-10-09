@@ -80,7 +80,7 @@ Si el cliente es mexicano (o no le asignas país y tu negocio está en México),
 
 ## Comportamiento y casos límite
 
-- **Datos fiscales incompletos:** la cotización sigue siendo válida comercialmente. En México, sin RFC el CFDI se emite a "público en general"; con RFC pero sin régimen, Cord usa el 601. Verifica RFC, código postal y régimen contra la constancia del cliente antes de timbrar.
+- **Datos fiscales incompletos:** la cotización sigue siendo válida comercialmente. En México, sin RFC el CFDI se emite con el RFC genérico de público en general (XAXX010101000); con RFC pero sin régimen, Cord usa el 601. Verifica RFC, código postal y régimen contra la constancia del cliente antes de timbrar.
 - **Cambiar de cliente después de enviar** no es posible con **Modificar y reenviar**: duplica la cotización y envíala al cliente correcto.
 - **Editar la ficha** no reescribe documentos fiscales ya emitidos: conservan los datos del receptor con que se emitieron.
 - **Límite de crédito:** si el cliente lo tiene, su ficha muestra cuánto saldo abierto tiene contra ese límite. Es una señal para ti, no un bloqueo.
@@ -97,7 +97,7 @@ Si el cliente es mexicano (o no le asignas país y tu negocio está en México),
 
 **El descuento del nivel no se aplicó.** Solo baja productos de catálogo; las líneas libres no tienen precio de lista.
 
-**El CFDI salió a "público en general".** El cliente no tenía RFC capturado al timbrar.
+**El CFDI salió con el RFC genérico (XAXX010101000).** El cliente no tenía RFC capturado al timbrar.
 
 ## Relacionadas
 
