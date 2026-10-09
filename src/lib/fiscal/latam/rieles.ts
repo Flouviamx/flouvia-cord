@@ -16,7 +16,7 @@
 // los scripts de contrato y la UI.
 
 /** Identificador estable del riel. Es parte de la clave de las tablas `fiscal_rail_*`. */
-export type RailId = 'arca';
+export type RailId = 'arca' | 'sii';
 
 /**
  * Entorno de la autoridad. `homologacion` es el ambiente de pruebas de la
@@ -72,6 +72,18 @@ export const RIELES: Readonly<Record<RailId, RailDefinicion>> = {
         documentos: { factura: 'arca_invoice', notaCredito: 'arca_credit_note' },
         envPrefijo: 'ARCA',
         anulable: false,
+        numeracionPropia: true,
+    },
+    sii: {
+        id: 'sii',
+        pais: 'CL',
+        autoridad: 'SII',
+        documentos: { factura: 'sii_invoice', notaCredito: 'sii_credit_note' },
+        envPrefijo: 'SII',
+        // Un DTE aceptado no se anula ante el SII: se corrige o se anula con
+        // una nota de crédito que lo referencia (formato DTE, CodRef 1 y 3).
+        anulable: false,
+        // El folio sale del CAF que autorizó el SII.
         numeracionPropia: true,
     },
 };

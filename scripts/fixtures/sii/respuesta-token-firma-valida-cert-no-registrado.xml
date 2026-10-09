@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+ <soapenv:Body>
+  <ns1:getTokenResponse soapenv:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" xmlns:ns1="http://DefaultNamespace">
+   <ns1:getTokenReturn xsi:type="xsd:string">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&lt;SII:RESPUESTA xmlns:SII=&quot;http://www.sii.cl/XMLSchema&quot;&gt;&lt;SII:RESP_HDR&gt;&lt;ESTADO&gt;10&lt;/ESTADO&gt;&lt;GLOSA&gt;XML Inv&#239;&#191;&#189;lido, elemento &#239;&#191;&#189;Certificate&#239;&#191;&#189; no existe, funci&#239;&#191;&#189;n getCertificado&lt;/GLOSA&gt;&lt;/SII:RESP_HDR&gt;&lt;/SII:RESPUESTA&gt;</ns1:getTokenReturn>
+  </ns1:getTokenResponse>
+ </soapenv:Body>
+</soapenv:Envelope>

@@ -12,6 +12,7 @@ import { currentLocale } from '../context';
 import { publicDocumentUrl } from '../public-links';
 import { isTermCode, termDays } from '../payment-terms';
 import { representacionDe } from './latam/representacion';
+import { railDeDocumento } from './latam/rieles';
 
 const FACTURAPI_KEY = process.env.FACTURAPI_API_KEY || process.env.FACTURAPI_KEY || '';
 const FACTURAPI_BASE = (process.env.FACTURAPI_URL || 'https://www.facturapi.io/v2').replace(/\/$/, '');
@@ -58,7 +59,7 @@ export async function loadInvoiceDocumentRow(orgId: string, id: string, publicTo
 
 export async function downloadInvoiceDocument(orgId: string, id: string, format: string, publicToken?: string): Promise<Response> {
   const einvoice = isEInvoiceFormat(format);
-  if (!UUID_RE.test(id) || (!['pdf', 'xml'].includes(format) && !einvoice)) return new Response('Formato no encontrado', { status: 404 });
+  if (!UUID_RE.test(id) || (!['pdf', 'xml', 'cedible'].includes(format) && !einvoice)) return new Response('Formato no encontrado', { status: 404 });
 
   const doc = await loadInvoiceDocumentRow(orgId, id, publicToken);
   if (!doc || doc.status !== 'issued') return new Response('Documento no encontrado', { status: 404 });
@@ -118,6 +119,22 @@ export async function downloadInvoiceDocument(orgId: string, id: string, format:
     });
   }
 
+  // Chile: el XML legal es el DTE firmado, en un sobre de intercambio
+  // dirigido al cliente; la copia cedible es el mismo PDF con el acuse de
+  // recibo (Ley 19.983).
+  if (format === 'xml' && railDeDocumento(doc.document_type)?.id === 'sii') {
+    const { xmlIntercambio } = await import('./latam/sii/intercambio');
+    const xml = await xmlIntercambio(orgId, doc);
+    if (!xml) return new Response('XML no disponible para este documento', { status: 404 });
+    return new Response(new Uint8Array(xml), {
+      status: 200,
+      headers: downloadHeaders('application/xml; charset=ISO-8859-1', `${safeFilename(doc.invoice_number || 'dte')}.xml`),
+    });
+  }
+  if (format === 'cedible') {
+    if (!representacionDe(doc.provider_data)?.cedible) return new Response('Este documento no tiene copia cedible', { status: 404 });
+    return invoicePdf(orgId, doc, Boolean(doc.provider_data?.simulado), true);
+  }
   if (format !== 'pdf') return new Response('Esta factura no genera XML', { status: 404 });
   return invoicePdf(orgId, doc, Boolean(doc.provider_data?.simulado));
 }
@@ -134,11 +151,11 @@ export function dueDateFrom(terminos: unknown, baseDate: unknown): Date | null {
   return due;
 }
 
-async function invoicePdf(orgId: string, doc: any, simulated: boolean): Promise<Response> {
-  const pdf = await renderInvoicePdf(orgId, doc, simulated);
+async function invoicePdf(orgId: string, doc: any, simulated: boolean, copiaCedible = false): Promise<Response> {
+  const pdf = createInvoicePdf({ ...(await invoicePdfInput(orgId, doc, simulated)), copiaCedible });
   return new Response(new Uint8Array(pdf), {
     status: 200,
-    headers: downloadHeaders('application/pdf', `${safeFilename(doc.invoice_number || 'invoice')}.pdf`),
+    headers: downloadHeaders('application/pdf', `${safeFilename(doc.invoice_number || 'invoice')}${copiaCedible ? '-cedible' : ''}.pdf`),
   });
 }
 

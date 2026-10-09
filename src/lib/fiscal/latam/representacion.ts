@@ -39,9 +39,52 @@ export interface RepresentacionImpresa {
     pie: string;
     /** Autorizado en el entorno de pruebas de la autoridad: sin validez fiscal. */
     prueba?: boolean;
+    /**
+     * Recuadro enmarcado del tipo de documento, arriba a la derecha (Chile:
+     * RUT del emisor, nombre del documento y N° de folio), con un pie debajo
+     * (la unidad del SII). Reemplaza el título y el número de la cabecera.
+     */
+    recuadro?: { lineas: string[]; pie?: string };
+    /**
+     * Código de barras 2D que la norma exige al pie del documento, ya
+     * calculado por el riel (Chile: el timbre electrónico en PDF417). Cada
+     * fila es hexadecimal (1 = módulo oscuro) con `modulos` módulos útiles.
+     */
+    timbre?: { filas: string[]; modulos: number; moduloMm: number; altoFilaMm: number; leyendas: string[] };
+    /**
+     * Copia cedible (Chile, Ley 19.983): recuadro de acuse de recibo y la
+     * leyenda de destino. Solo se imprime cuando se pide esa copia.
+     */
+    cedible?: { leyenda: string; acuseTitulo: string; acuseCampos: string[]; acuseTexto: string };
 }
 
 const texto = (v: unknown) => (typeof v === 'string' ? v : '');
+const textos = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string' && !!x) : []);
+const positivo = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : 0);
+
+function recuadroDe(v: unknown): RepresentacionImpresa['recuadro'] | null {
+    if (!v || typeof v !== 'object') return null;
+    const r = v as Record<string, unknown>;
+    const lineas = textos(r.lineas);
+    return lineas.length ? { lineas, ...(texto(r.pie) ? { pie: texto(r.pie) } : {}) } : null;
+}
+
+function timbreDe(v: unknown): RepresentacionImpresa['timbre'] | null {
+    if (!v || typeof v !== 'object') return null;
+    const t = v as Record<string, unknown>;
+    const filas = textos(t.filas);
+    const modulos = positivo(t.modulos);
+    if (!filas.length || !modulos || !filas.every((f) => /^[0-9a-f]+$/.test(f) && f.length * 4 >= modulos)) return null;
+    if (!positivo(t.moduloMm) || !positivo(t.altoFilaMm)) return null;
+    return { filas, modulos, moduloMm: positivo(t.moduloMm), altoFilaMm: positivo(t.altoFilaMm), leyendas: textos(t.leyendas) };
+}
+
+function cedibleDe(v: unknown): RepresentacionImpresa['cedible'] | null {
+    if (!v || typeof v !== 'object') return null;
+    const c = v as Record<string, unknown>;
+    if (!texto(c.leyenda) || !texto(c.acuseTexto)) return null;
+    return { leyenda: texto(c.leyenda), acuseTitulo: texto(c.acuseTitulo), acuseCampos: textos(c.acuseCampos), acuseTexto: texto(c.acuseTexto) };
+}
 
 /**
  * Lee la representación guardada en `provider_data`. Devuelve null si el
@@ -72,5 +115,8 @@ export function representacionDe(providerData: unknown): RepresentacionImpresa |
         leyendas: Array.isArray(r.leyendas) ? (r.leyendas as unknown[]).filter((l): l is string => typeof l === 'string' && !!l) : [],
         pie,
         ...(r.prueba === true ? { prueba: true } : {}),
+        ...(recuadroDe(r.recuadro) ? { recuadro: recuadroDe(r.recuadro)! } : {}),
+        ...(timbreDe(r.timbre) ? { timbre: timbreDe(r.timbre)! } : {}),
+        ...(cedibleDe(r.cedible) ? { cedible: cedibleDe(r.cedible)! } : {}),
     };
 }

@@ -11,6 +11,10 @@ export async function railListo(orgId: string, rail: RailId): Promise<boolean> {
             const { arcaListo } = await import('./arca/estado');
             return arcaListo(orgId);
         }
+        case 'sii': {
+            const { siiListo } = await import('./sii/estado');
+            return siiListo(orgId);
+        }
         default:
             return false;
     }
