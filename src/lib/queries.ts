@@ -841,6 +841,8 @@ function mapProducto(p: DbRow) {
         // Claves SAT del CFDI (México); null = sin clasificar.
         claveSat: (p.clave_sat as string) ?? null,
         claveUnidadSat: (p.clave_unidad_sat as string) ?? null,
+        // Datos de NF-e (Brasil), serializados para el data-attribute del modal.
+        nfe: p.nfe && typeof p.nfe === 'object' ? JSON.stringify(p.nfe) : '',
     };
 }
 
@@ -948,6 +950,8 @@ export async function getProducto(id: string) {
         taxRate: p.tax_rate === null || p.tax_rate === undefined ? null : num(p.tax_rate),
         claveSat: (p.clave_sat as string) ?? null,
         claveUnidadSat: (p.clave_unidad_sat as string) ?? null,
+        // Datos de NF-e (Brasil), serializados para el data-attribute del modal.
+        nfe: p.nfe && typeof p.nfe === 'object' ? JSON.stringify(p.nfe) : '',
         metricas: {
             cotizaciones, cerradas,
             tasaCierre: cotizaciones ? Math.round((cerradas / cotizaciones) * 100) : 0,

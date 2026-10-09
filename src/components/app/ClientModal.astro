@@ -62,6 +62,10 @@ const orgIsCl = ORG_COUNTRY === 'CL' && railConfig('sii').habilitado;
 // gobierno) se marca con su certificado. Lo lee el cálculo automático por
 // dirección (src/lib/us-tax/), que solo existe para un negocio de EE. UU.
 const orgIsUs = ORG_COUNTRY === 'US';
+// Brasil, NF-e: la nota exige del destinatario número, barrio, municipio
+// (código IBGE) y si es contribuyente del ICMS. Solo con el riel NF-e
+// encendido: sin él nada los lee (regla 15).
+const orgIsBrNfe = ORG_COUNTRY === 'BR' && railConfig('nfe').habilitado;
 const US_STATE_OPTIONS = subdivisionsFor('US') ?? [];
 
 // El cliente puede ser de CUALQUIER país, no solo de los que Cord ofrece al
@@ -362,6 +366,48 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
                 </section>
             )}
 
+            {orgIsBrNfe && (
+                <section class="cm-sec" id="cmFiscalBr" aria-labelledby="cmSecFiscalBr">
+                    <header class="cm-sec-h"><span class="cm-sec-i"><Icon name="document" size={15} /></span><h3 id="cmSecFiscalBr">{L === 'en' ? 'Details for the NF-e' : 'Datos para la NF-e'}</h3></header>
+                    <div class="m-row">
+                        <div class="m-field">
+                            <label for="cmNfeNro">{L === 'en' ? 'Street number (or S/N)' : 'Número (o S/N)'}</label>
+                            <input class="m-input" id="cmNfeNro" maxlength="60" autocomplete="off" />
+                        </div>
+                        <div class="m-field">
+                            <label for="cmNfeBairro">{L === 'en' ? 'District (bairro)' : 'Barrio (bairro)'}</label>
+                            <input class="m-input" id="cmNfeBairro" maxlength="60" autocomplete="off" />
+                        </div>
+                        <div class="m-field">
+                            <label for="cmNfeMun">{L === 'en' ? 'Municipality (IBGE code)' : 'Municipio (código IBGE)'}</label>
+                            <input class="m-input cm-mono" id="cmNfeMun" inputmode="numeric" maxlength="7" autocomplete="off" placeholder="3550308" />
+                        </div>
+                    </div>
+                    <div class="m-row">
+                        <div class="m-field">
+                            <label for="cmNfeInd">{L === 'en' ? 'ICMS taxpayer' : 'Contribuyente del ICMS'}</label>
+                            <select class="m-input" id="cmNfeInd">
+                                <option value="">{L === 'en' ? 'Not set' : 'Sin indicar'}</option>
+                                <option value="1">{L === 'en' ? 'Taxpayer with state registration (IE)' : 'Contribuyente con Inscrição Estadual'}</option>
+                                <option value="2">{L === 'en' ? 'Taxpayer exempt from state registration' : 'Contribuyente exento de Inscrição Estadual'}</option>
+                                <option value="9">{L === 'en' ? 'Not a taxpayer (individual or end consumer)' : 'No contribuyente (persona física o consumidor final)'}</option>
+                            </select>
+                        </div>
+                        <div class="m-field" id="cmNfeIeRow" hidden>
+                            <label for="cmNfeIe">{L === 'en' ? 'State registration (IE)' : 'Inscrição Estadual'}</label>
+                            <input class="m-input cm-mono" id="cmNfeIe" inputmode="numeric" maxlength="18" autocomplete="off" />
+                        </div>
+                    </div>
+                    <label class="cm-exento" id="cmNfeFinalRow" hidden>
+                        <input type="checkbox" id="cmNfeFinal" />
+                        <span>{L === 'en' ? 'Buys for its own use (end consumer), not for resale or production' : 'Compra para uso propio (consumidor final), no para revender ni producir'}</span>
+                    </label>
+                    <span class="m-hint">{L === 'en'
+                        ? 'The NF-e also takes the street (Address) and the CEP (Postal code). Without these details, a product invoice for this client is not sent to the SEFAZ.'
+                        : 'La NF-e toma además la calle (Dirección) y el CEP (Código postal). Sin estos datos, una factura de productos a este cliente no se envía a la SEFAZ.'}</span>
+                </section>
+            )}
+
             {orgIsUs && (
                 <section class="cm-sec" id="cmFiscalUs" aria-labelledby="cmSecFiscalUs">
                     <header class="cm-sec-h"><span class="cm-sec-i"><Icon name="document" size={15} /></span><h3 id="cmSecFiscalUs">{L === 'en' ? 'Sales tax exemption' : 'Exención de sales tax'}</h3></header>
@@ -475,6 +521,7 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
     .cm-mono { font-variant-numeric: tabular-nums; letter-spacing: 0.02em; }
     .cm-exento { display: flex; align-items: flex-start; gap: 0.55rem; font-size: 0.84rem; line-height: 1.45; color: var(--color-text); cursor: pointer; }
     .cm-exento input { margin-top: 0.2rem; min-width: 16px; min-height: 16px; }
+    .cm-exento[hidden], #cmNfeIeRow[hidden] { display: none; }
     @media (max-width: 880px) { .cm-exento { min-height: 44px; align-items: center; } .cm-exento input { margin-top: 0; } }
     .cm-check { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.72rem; font-weight: 500; line-height: 1.4; min-height: 1em; }
     .cm-check:empty { display: none; }
@@ -563,6 +610,16 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
         const fiscalCo = document.getElementById('cmFiscalCo');
         const fiscalCl = document.getElementById('cmFiscalCl');
         const fiscalUs = document.getElementById('cmFiscalUs');
+        const fiscalBr = document.getElementById('cmFiscalBr');
+        // NF-e: la IE solo con contribuyente (1); "consumidor final" solo si no es no contribuyente (9 lo es siempre).
+        const syncNfeInd = () => {
+            const ind = select('cmNfeInd')?.value ?? '';
+            const ieRow = document.getElementById('cmNfeIeRow');
+            const finalRow = document.getElementById('cmNfeFinalRow');
+            if (ieRow) ieRow.hidden = ind !== '1';
+            if (finalRow) finalRow.hidden = ind === '' || ind === '9';
+        };
+        document.getElementById('cmNfeInd')?.addEventListener('change', syncNfeInd);
         const taxExemptBox = document.getElementById('cmTaxExempt') as HTMLInputElement | null;
         const taxCertRow = document.getElementById('cmTaxExemptCert');
         const syncTaxExempt = () => { if (taxCertRow && taxExemptBox) taxCertRow.hidden = !taxExemptBox.checked; };
@@ -676,6 +733,7 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
             if (fiscalAr) fiscalAr.hidden = c !== 'AR';
             if (fiscalCl) fiscalCl.hidden = c !== 'CL';
             if (fiscalUs) fiscalUs.hidden = c !== 'US';
+            if (fiscalBr) fiscalBr.hidden = c !== 'BR';
             if (cfdiExt) {
                 cfdiExt.hidden = c === 'MX';
                 const pais = select('cmCountry')?.selectedOptions[0]?.textContent?.trim() || c;
@@ -744,6 +802,17 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
             if (select('cmUso')) select('cmUso')!.value = data?.uso ?? '';
             if (select('cmCondIva')) select('cmCondIva')!.value = data?.condicionIva ?? '';
             if (fiscalCl) { input('cmGiro').value = data?.giro ?? ''; input('cmComuna').value = data?.comuna ?? ''; }
+            if (fiscalBr) {
+                let ficha: Record<string, any> = {};
+                try { ficha = data?.nfe ? JSON.parse(data.nfe) : {}; } catch { ficha = {}; }
+                input('cmNfeNro').value = ficha.numero ?? '';
+                input('cmNfeBairro').value = ficha.bairro ?? '';
+                input('cmNfeMun').value = ficha.municipio ?? '';
+                select('cmNfeInd')!.value = ficha.indIEDest ?? '';
+                input('cmNfeIe').value = ficha.ie ?? '';
+                input('cmNfeFinal').checked = ficha.consumidorFinal === true;
+                syncNfeInd();
+            }
             if (fiscalUs && taxExemptBox) {
                 let cert: Record<string, any> = {};
                 try { cert = data?.taxExemptCert ? JSON.parse(data.taxExemptCert) : {}; } catch { cert = {}; }
@@ -842,6 +911,18 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
                 // Chile: sin el bloque visible no se mandan (undefined) y se conserva lo guardado.
                 giro: fiscalCl && !fiscalCl.hidden ? input('cmGiro').value : undefined,
                 comuna: fiscalCl && !fiscalCl.hidden ? input('cmComuna').value : undefined,
+                // Brasil, NF-e: sin el bloque visible (otro país o riel apagado)
+                // no se manda (undefined) y se conserva lo guardado.
+                ...(fiscalBr && !fiscalBr.hidden ? {
+                    nfe: {
+                        numero: input('cmNfeNro').value,
+                        bairro: input('cmNfeBairro').value,
+                        municipio: input('cmNfeMun').value,
+                        indIEDest: select('cmNfeInd')!.value,
+                        ie: input('cmNfeIe').value,
+                        consumidorFinal: input('cmNfeFinal').checked,
+                    },
+                } : {}),
                 // EE. UU.: exención de sales tax. Sin el bloque visible (otro
                 // país) se conserva lo guardado.
                 ...(fiscalUs && !fiscalUs.hidden && taxExemptBox ? {

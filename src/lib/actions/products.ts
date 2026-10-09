@@ -2,6 +2,7 @@ import { sql, withOrgTx } from '../db';
 import { normVolumen } from '../queries';
 import { TaxCatalogUnavailableError, taxCatalogFor } from '../impuestos-db';
 import { isProductKey, isUnitKey, normalizeProductKey, normalizeUnitKey } from '../fiscal/sat-claves';
+import { produtoNfeDe } from '../fiscal/latam/nfe/produto';
 import { requireResourceCapacity, resourceLimitError } from '../org-entitlements';
 import { after } from '../after';
 import { dispatchEvent } from '../webhooks';
@@ -9,6 +10,10 @@ import { productEventData, productPrevData } from '../event-payloads';
 import { type ActionContext, type ActionOutcome, auditAction, done, fromResponse, isUuid } from './outcome';
 
 export function cleanProductInput(input: Record<string, any>) {
+    // Brasil, NF-e: NCM, CFOP, origen, unidad y régimen del producto. `undefined`
+    // = la petición no los trae y no se tocan; vacío = el producto deja de
+    // declararse en NF-e (null).
+    const nfe = input.nfe === undefined ? undefined : produtoNfeDe(input.nfe);
     return {
         sku: String(input.sku ?? '').trim().toUpperCase() || null,
         nombre: String(input.nombre ?? '').trim(),
@@ -25,6 +30,8 @@ export function cleanProductInput(input: Record<string, any>) {
         // los defaults del SAT.
         claveSat: normalizeProductKey(input.clave_sat),
         claveUnidadSat: normalizeUnitKey(input.clave_unidad_sat),
+        nfe: nfe && nfe.ok ? nfe.valor : null,
+        nfeError: nfe && !nfe.ok ? nfe.error : null,
         // Un campo que no viene en la petición NO se toca al actualizar: la
         // pantalla solo muestra el impuesto si hay más de una tasa y las claves
         // SAT si el negocio factura en México, y omitirlos no puede borrarlos.
@@ -32,6 +39,7 @@ export function cleanProductInput(input: Record<string, any>) {
             taxRate: input.tax_rate !== undefined,
             claveSat: input.clave_sat !== undefined,
             claveUnidadSat: input.clave_unidad_sat !== undefined,
+            nfe: nfe !== undefined,
         },
     };
 }
@@ -43,6 +51,7 @@ function invalidSatKeys(p: ReturnType<typeof cleanProductInput>): ActionOutcome 
     if (p.claveUnidadSat !== null && !isUnitKey(p.claveUnidadSat)) {
         return done(400, { error: 'La clave de unidad del SAT tiene de 1 a 3 letras o números (por ejemplo H87 o E48).', code: 'invalid_request' });
     }
+    if (p.nfeError) return done(400, { error: p.nfeError, code: 'invalid_request', field: 'nfe' });
     return null;
 }
 
@@ -81,9 +90,9 @@ export async function createProduct(ctx: ActionContext, input: Record<string, an
     try {
         [[row]] = await withOrgTx(ctx.orgId, sql`
             insert into productos (org_id, sku, nombre, unidad, descripcion, precio_lista, costo, activo, precios_volumen, tax_rate,
-                                   clave_sat, clave_unidad_sat)
+                                   clave_sat, clave_unidad_sat, nfe)
             values (${ctx.orgId}, ${p.sku}, ${p.nombre}, ${p.unidad}, ${p.descripcion}, ${p.precio}, ${p.costo}, ${p.activo}, ${JSON.stringify(p.preciosVolumen)}, ${p.taxRate},
-                    ${p.claveSat}, ${p.claveUnidadSat})
+                    ${p.claveSat}, ${p.claveUnidadSat}, ${p.nfe ? JSON.stringify(p.nfe) : null}::jsonb)
             returning *`);
     } catch (error) {
         const limit = resourceLimitError(error);
@@ -112,7 +121,8 @@ export async function updateProduct(ctx: ActionContext, id: string, input: Recor
             precios_volumen = ${JSON.stringify(p.preciosVolumen)},
             tax_rate = case when ${p.provided.taxRate} then ${p.taxRate}::numeric else tax_rate end,
             clave_sat = case when ${p.provided.claveSat} then ${p.claveSat}::text else clave_sat end,
-            clave_unidad_sat = case when ${p.provided.claveUnidadSat} then ${p.claveUnidadSat}::text else clave_unidad_sat end
+            clave_unidad_sat = case when ${p.provided.claveUnidadSat} then ${p.claveUnidadSat}::text else clave_unidad_sat end,
+            nfe = case when ${p.provided.nfe} then ${p.nfe ? JSON.stringify(p.nfe) : null}::jsonb else nfe end
         where id = ${id} and org_id = ${ctx.orgId}
         returning *`);
     if (!rows.length) return NO_ENCONTRADO;

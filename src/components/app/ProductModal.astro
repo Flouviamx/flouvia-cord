@@ -17,6 +17,10 @@ import Icon from '../Icon.astro';
 import { SAT_UNITS } from '../../lib/fiscal/sat-claves';
 import { PRODUCT_UNITS } from '../../lib/product-units';
 import { jsonForScript } from '../../lib/escape';
+import { railConfig } from '../../lib/fiscal/latam/config';
+import { leerAjustes } from '../../lib/fiscal/latam/credenciales';
+import { CCLASSTRIB_SOPORTADAS, CFOP_INTERNO, CSOSN, ORIGEM } from '../../lib/fiscal/latam/nfe/constantes';
+import type { AjustesNfe } from '../../lib/fiscal/latam/nfe/ajustes';
 
 interface Props {
     showDelete?: boolean;
@@ -37,6 +41,15 @@ const DEFAULT_TAX_LABEL = TAX_OPTIONS.find((o) => Math.abs(o.rate - DEFAULT_RATE
 const MULTI_TAX = TAX_OPTIONS.length > 1;
 // Las claves SAT existen para el CFDI: solo las ve un negocio que factura en México.
 const SAT = PAIS === 'MX';
+// Los datos de NF-e existen para la nota fiscal de mercancías de Brasil: solo
+// con el riel encendido (regla 15). El régimen del negocio decide qué grupo
+// del ICMS se pide (CSOSN en el Simples, alícuota en el Régimen Normal); sin
+// régimen todavía en Ajustes se muestran los dos.
+const NFE = PAIS === 'BR' && railConfig('nfe').habilitado;
+const NFE_CRT = NFE ? Number((await leerAjustes<AjustesNfe>(ORG.id, 'nfe').catch(() => ({} as Partial<AjustesNfe>))).crt) || 0 : 0;
+const NFE_SIMPLES = NFE_CRT === 0 || NFE_CRT === 1 || NFE_CRT === 4;
+const NFE_NORMAL = NFE_CRT === 0 || NFE_CRT === 3;
+const enL = L === 'en';
 
 const UNITS = PRODUCT_UNITS[L];
 ---
@@ -156,6 +169,90 @@ const UNITS = PRODUCT_UNITS[L];
                         </datalist>
                         <span class="m-hint" id="pmClaveUnidadHint"></span>
                     </div>
+                </section>
+            )}
+
+            {NFE && (
+                <section class="pm-sec" id="pmNfe" aria-labelledby="pmSecNfe">
+                    <header class="pm-sec-h"><span class="pm-sec-i"><Icon name="document" size={15} /></span><h3 id="pmSecNfe">{enL ? 'NF-e (sale of goods)' : 'NF-e (venta de mercancías)'} <span class="m-optlbl">{t(L, 'pmod.vol_opcional')}</span></h3></header>
+                    <span class="m-hint">{enL
+                        ? 'Fill these in for goods you invoice with an NF-e. Leave them empty for a service: services go in the NFS-e.'
+                        : 'Complétalos para las mercancías que facturas con NF-e. Déjalos vacíos si es un servicio: los servicios van en la NFS-e.'}</span>
+                    <div class="m-row">
+                        <div class="m-field">
+                            <label for="pmNfeNcm">NCM</label>
+                            <input class="m-input pm-mono" id="pmNfeNcm" inputmode="numeric" maxlength="10" autocomplete="off" spellcheck="false" placeholder="84713012" />
+                        </div>
+                        <div class="m-field">
+                            <label for="pmNfeCest">CEST <span class="m-optlbl">{t(L, 'pmod.vol_opcional')}</span></label>
+                            <input class="m-input pm-mono" id="pmNfeCest" inputmode="numeric" maxlength="9" autocomplete="off" spellcheck="false" />
+                        </div>
+                    </div>
+                    <div class="m-row">
+                        <div class="m-field">
+                            <label for="pmNfeCfop">{enL ? 'CFOP (sale within your state)' : 'CFOP (venta dentro de tu estado)'}</label>
+                            <select class="m-input" id="pmNfeCfop">
+                                {CFOP_INTERNO.map((c) => <option value={c}>{c === '5101'
+                                    ? (enL ? '5101 · Own production' : '5101 · Producción propia')
+                                    : (enL ? '5102 · Resale of goods bought from third parties' : '5102 · Reventa de mercancía de terceros')}</option>)}
+                            </select>
+                        </div>
+                        <div class="m-field">
+                            <label for="pmNfeOrigem">{enL ? 'Origin of the goods' : 'Origen de la mercancía'}</label>
+                            <select class="m-input" id="pmNfeOrigem">
+                                {ORIGEM.map((o) => <option value={o.id}>{`${o.id} · ${enL ? o.en : o.es}`}</option>)}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="m-row">
+                        <div class="m-field">
+                            <label for="pmNfeUnidade">{enL ? 'NF-e unit (UN, KG, CX…)' : 'Unidad de la NF-e (UN, KG, CX…)'}</label>
+                            <input class="m-input pm-mono" id="pmNfeUnidade" maxlength="6" autocomplete="off" spellcheck="false" placeholder="UN" />
+                        </div>
+                        <div class="m-field">
+                            <label for="pmNfeGtin">{enL ? 'GTIN / EAN barcode' : 'Código de barras GTIN / EAN'} <span class="m-optlbl">{t(L, 'pmod.vol_opcional')}</span></label>
+                            <input class="m-input pm-mono" id="pmNfeGtin" inputmode="numeric" maxlength="14" autocomplete="off" spellcheck="false" />
+                        </div>
+                    </div>
+                    {NFE_SIMPLES && (
+                        <div class="m-field">
+                            <label for="pmNfeCsosn">{enL ? 'ICMS under Simples Nacional (CSOSN)' : 'ICMS en el Simples Nacional (CSOSN)'}</label>
+                            <select class="m-input" id="pmNfeCsosn">
+                                <option value="">{enL ? 'Choose…' : 'Elige…'}</option>
+                                {CSOSN.map((o) => <option value={o.id}>{`${o.id} · ${enL ? o.en : o.es}`}</option>)}
+                            </select>
+                        </div>
+                    )}
+                    {NFE_NORMAL && (
+                        <Fragment>
+                            <div class="m-row">
+                                <div class="m-field">
+                                    <label for="pmNfeIcms">{enL ? 'ICMS rate, Regime Normal (%)' : 'Alícuota del ICMS, Régimen Normal (%)'}</label>
+                                    <input class="m-input" id="pmNfeIcms" inputmode="decimal" autocomplete="off" placeholder="18" />
+                                </div>
+                                <div class="m-field">
+                                    <label for="pmNfeFcp">{enL ? 'Poverty fund, FCP (%)' : 'Fondo de pobreza, FCP (%)'} <span class="m-optlbl">{t(L, 'pmod.vol_opcional')}</span></label>
+                                    <input class="m-input" id="pmNfeFcp" inputmode="decimal" autocomplete="off" />
+                                </div>
+                            </div>
+                            <div class="m-row">
+                                <div class="m-field">
+                                    <label for="pmNfeIpi">{enL ? 'IPI rate (%)' : 'Alícuota del IPI (%)'} <span class="m-optlbl">{t(L, 'pmod.vol_opcional')}</span></label>
+                                    <input class="m-input" id="pmNfeIpi" inputmode="decimal" autocomplete="off" />
+                                </div>
+                                <div class="m-field">
+                                    <label for="pmNfeClass">{enL ? 'IBS/CBS classification' : 'Clasificación del IBS/CBS'}</label>
+                                    <select class="m-input" id="pmNfeClass">
+                                        <option value="">{enL ? 'Choose…' : 'Elige…'}</option>
+                                        {CCLASSTRIB_SOPORTADAS.map((o) => <option value={o.id}>{`${o.id} · ${enL ? o.en : o.es}`}</option>)}
+                                    </select>
+                                </div>
+                            </div>
+                            <span class="m-hint">{enL
+                                ? 'Prices include ICMS, PIS and COFINS. IPI is added on top: the tax of the line must be exactly this IPI rate.'
+                                : 'Los precios incluyen ICMS, PIS y COFINS. El IPI se suma al precio: el impuesto de la línea debe ser exactamente esta alícuota de IPI.'}</span>
+                        </Fragment>
+                    )}
                 </section>
             )}
 
@@ -391,6 +488,14 @@ const UNITS = PRODUCT_UNITS[L];
         });
         input('pmUnidad').addEventListener('change', () => setKind(kindOf(input('pmUnidad').value), false));
 
+        // ── Datos de NF-e (solo Brasil, con el riel encendido) ──
+        // Lo que la pantalla no muestra (PIS/COFINS propios del producto) se
+        // conserva: se guarda lo leído más lo que cambió.
+        const nfeSection = document.getElementById('pmNfe');
+        let nfeFicha: Record<string, unknown> = {};
+        const nfeVal = (id: string) => (document.getElementById(id) as HTMLInputElement | HTMLSelectElement | null)?.value.trim() ?? '';
+        const nfeSet = (id: string, v: unknown) => { const el = document.getElementById(id) as HTMLInputElement | HTMLSelectElement | null; if (el) el.value = v === undefined || v === null ? '' : String(v); };
+
         // ── Claves SAT (solo México) ──
         // Producto/servicio: el catálogo tiene más de 50 000 claves, así que se
         // busca en vivo; 8 dígitos escritos a mano también valen. Unidad: vacía =
@@ -502,6 +607,21 @@ const UNITS = PRODUCT_UNITS[L];
             }
             if (claveSat) { claveSat.value = data?.claveSat ?? ''; closeSat(); if (satHint) satHint.textContent = ''; }
             if (claveUnidad) claveUnidad.value = data?.claveUnidadSat ?? '';
+            if (nfeSection) {
+                try { nfeFicha = data?.nfe ? JSON.parse(data.nfe) : {}; } catch { nfeFicha = {}; }
+                if (!nfeFicha || typeof nfeFicha !== 'object') nfeFicha = {};
+                nfeSet('pmNfeNcm', nfeFicha.ncm);
+                nfeSet('pmNfeCest', nfeFicha.cest);
+                nfeSet('pmNfeCfop', nfeFicha.cfop ?? '5102');
+                nfeSet('pmNfeOrigem', nfeFicha.origem ?? '0');
+                nfeSet('pmNfeUnidade', nfeFicha.unidade);
+                nfeSet('pmNfeGtin', nfeFicha.gtin);
+                nfeSet('pmNfeCsosn', nfeFicha.csosn);
+                nfeSet('pmNfeIcms', nfeFicha.aliquotaIcms);
+                nfeSet('pmNfeFcp', nfeFicha.aliquotaFcp);
+                nfeSet('pmNfeIpi', nfeFicha.aliquotaIpi);
+                nfeSet('pmNfeClass', nfeFicha.cClassTrib);
+            }
             setActivo(data ? Boolean(data.activo) : true);
             try { volTiers = JSON.parse(data?.volumen || '[]'); } catch { volTiers = []; }
             if (!Array.isArray(volTiers)) volTiers = [];
@@ -555,6 +675,25 @@ const UNITS = PRODUCT_UNITS[L];
                 // Solo se mandan los campos que esta pantalla muestra: el servidor no
                 // toca los que faltan (actions/products.ts).
                 ...(taxSel ? { tax_rate: taxSel.value !== '' ? Number(taxSel.value) : null } : {}),
+                // NF-e: sin NCM el producto no se declara en NF-e (null).
+                ...(nfeSection ? {
+                    nfe: nfeVal('pmNfeNcm') ? {
+                        ...nfeFicha,
+                        ncm: nfeVal('pmNfeNcm'),
+                        cest: nfeVal('pmNfeCest'),
+                        cfop: nfeVal('pmNfeCfop'),
+                        origem: nfeVal('pmNfeOrigem'),
+                        unidade: nfeVal('pmNfeUnidade'),
+                        gtin: nfeVal('pmNfeGtin'),
+                        ...(document.getElementById('pmNfeCsosn') ? { csosn: nfeVal('pmNfeCsosn') } : {}),
+                        ...(document.getElementById('pmNfeIcms') ? {
+                            aliquotaIcms: nfeVal('pmNfeIcms'),
+                            aliquotaFcp: nfeVal('pmNfeFcp'),
+                            aliquotaIpi: nfeVal('pmNfeIpi'),
+                            cClassTrib: nfeVal('pmNfeClass'),
+                        } : {}),
+                    } : null,
+                } : {}),
                 ...(satSection ? {
                     clave_sat: satKeyValue() || null,
                     clave_unidad_sat: claveUnidad?.value.trim().toUpperCase() || null,

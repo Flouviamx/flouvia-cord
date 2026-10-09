@@ -42,10 +42,10 @@ beforeAll(async () => {
             telefono text, rfc text, terminos_default text, limite_credito numeric, nivel text, descuento_pct numeric, regimen_fiscal text,
             uso_cfdi text, cp_fiscal text, country_code text, direccion_line1 text, direccion_line2 text, ciudad text, region text, condicion_iva smallint,
             einvoice_address text, buyer_reference text, giro text, comuna text, dian jsonb,
-            tax_exempt boolean not null default false, tax_exempt_cert jsonb);
+            tax_exempt boolean not null default false, tax_exempt_cert jsonb, nfe jsonb);
         create table productos(id uuid primary key default gen_random_uuid(), org_id uuid not null, sku text, nombre text not null, unidad text,
             descripcion text, precio_lista numeric, costo numeric, activo boolean, precios_volumen jsonb, tax_rate numeric,
-            clave_sat text, clave_unidad_sat text);
+            clave_sat text, clave_unidad_sat text, nfe jsonb);
         create table cotizaciones(id uuid primary key, org_id uuid not null, base_currency text default 'MXN');
         create table orgs(id uuid primary key, iva_pct numeric, country_code text not null default 'MX');
         create table impuestos(id uuid primary key default gen_random_uuid(), org_id uuid not null, tasa numeric, kind text, tipo text,
@@ -168,6 +168,27 @@ describe('eventos del camino normal', () => {
         // Mandarlas vacías sí las limpia.
         expect((await products.updateProduct(ctxA, id, { nombre: 'Consultoría', precio: 120, tax_rate: null, clave_sat: '', clave_unidad_sat: null })).status).toBe(200);
         expect(await read()).toEqual({ clave_sat: null, clave_unidad_sat: null, tax_rate: null });
+    });
+
+    it('producto y cliente: datos de NF-e validados, y lo que no viene no se borra', async () => {
+        expect((await products.createProduct(ctxA, { nombre: 'Parafuso', precio: 1, nfe: { ncm: '7318', unidade: 'UN' } })).status).toBe(400);
+        expect((await products.createProduct(ctxA, { nombre: 'Diesel', precio: 1, nfe: { ncm: '27101921', unidade: 'L' } })).status).toBe(400);
+        const ok = await products.createProduct(ctxA, { nombre: 'Parafuso', precio: 1, nfe: { ncm: '73181500', cfop: '5102', origem: '0', unidade: 'un', csosn: '102' } });
+        expect(ok.status).toBe(200);
+        const id = ok.body.id as string;
+        const leer = async () => (await m.db.query(`select nfe from productos where id = '${id}'`)).rows[0].nfe;
+        expect(await leer()).toEqual({ ncm: '73181500', cfop: '5102', origem: '0', unidade: 'UN', csosn: '102' });
+        // Sin el campo (otra pantalla, la API) no se toca; vacío lo quita.
+        expect((await products.updateProduct(ctxA, id, { nombre: 'Parafuso', precio: 2 })).status).toBe(200);
+        expect(await leer()).toMatchObject({ ncm: '73181500' });
+        expect((await products.updateProduct(ctxA, id, { nombre: 'Parafuso', precio: 2, nfe: null })).status).toBe(200);
+        expect(await leer()).toBeNull();
+
+        expect((await clients.createClient(ctxA, { empresa: 'Loja', nfe: { numero: '10', bairro: 'Centro', municipio: '9999999', indIEDest: '9' } })).status).toBe(400);
+        const c = await clients.createClient(ctxA, { empresa: 'Loja', nfe: { numero: 'sn', bairro: 'Centro', municipio: '3550308', indIEDest: '1', ie: '110.042.490.114' } });
+        expect(c.status).toBe(200);
+        const ficha = (await m.db.query(`select nfe from clientes where id = '${c.body.id}'`)).rows[0].nfe;
+        expect(ficha).toEqual({ numero: 'S/N', bairro: 'Centro', municipio: '3550308', indIEDest: '1', ie: '110042490114', consumidorFinal: false });
     });
 
     it('tarea: completar dos veces emite task.completed una sola vez', async () => {

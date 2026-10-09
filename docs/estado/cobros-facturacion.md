@@ -951,9 +951,10 @@ subsanación.
 
 Factura electrónica autorizada por la autoridad de cada país, con motor propio
 (sin PAC ni intermediario), igual que Verifactu. Rieles: **ARCA
-(Argentina)**, **NFS-e de Padrão Nacional (Brasil)**, **SUNAT (Perú)**, **SII
-(Chile)** y **DIAN (Colombia)**: los cinco países de LatAm del set ofrecido. Un
-riel nuevo se monta encima del marco sin tocar la emisión.
+(Argentina)**, **NFS-e de Padrão Nacional** y **NF-e modelo 55 (Brasil)**,
+**SUNAT (Perú)**, **SII (Chile)** y **DIAN (Colombia)**: los cinco países de
+LatAm del set ofrecido. Un riel nuevo se monta encima del marco sin tocar la
+emisión.
 
 ### El marco (`src/lib/fiscal/latam/`)
 
@@ -1077,8 +1078,8 @@ y el TLS de los cuatro endpoints.
 Emisión directa ante la **Sefin Nacional** (Sistema Nacional NFS-e, API del
 emisor público nacional), sin agregador. Proveedor:
 `providers/BrazilNfseProvider.ts`; riel: `latam/nfse/`. Solo **servicios**: la
-NF-e de productos la autoriza la SEFAZ de cada estado y Cord no la emite (la
-pantalla lo dice).
+NF-e de productos la autoriza la SEFAZ de cada estado y es otro riel (abajo);
+mientras esté apagado, la pantalla dice que Cord no la emite.
 
 - **Transporte**: mTLS con el certificado ICP-Brasil A1 del contribuyente
   (e-CNPJ o e-CPF), JSON, y los XML en GZip + base64. `POST /nfse` genera la
@@ -1150,8 +1151,8 @@ pantalla lo dice).
 exterior) y moneda extranjera, servicios con incidencia en el lugar de
 prestación o en el tomador, obras y eventos, deducciones/reducciones de base,
 beneficios municipales, imunidade/não incidência, retenciones federales,
-intermediario, sustitución de NFS-e (cancelar y emitir de nuevo), el grupo
-IBSCBS y la NF-e de productos. Tampoco se consultan los parámetros municipales
+intermediario, sustitución de NFS-e (cancelar y emitir de nuevo) y el grupo
+IBSCBS. Los productos no van en la NFS-e: van en la NF-e (abajo). Tampoco se consultan los parámetros municipales
 (alícuotas, convenio): un municipio no adherido o sin convenio activo lo dice
 la Sefin (E0037–E0039, E0619/E0640) y Cord lo traduce.
 
@@ -1195,6 +1196,191 @@ formato exacto de `codigo` en `erros[]` (Cord acepta `E0014` y `0014`), el
 dígito verificador de la chave (Cord no lo recalcula: la recibe) y los
 mensajes vivos de cada municipio. El Swagger que fija los nombres de los campos
 JSON es una captura publicada de la página de producción restringida.
+
+### NF-e modelo 55 (Brasil)
+
+Nota fiscal de **venta de mercancías**, autorizada directamente ante la SEFAZ
+autorizadora del estado del emisor (o SVAN/SVRS, según la tabla del Portal
+Nacional), sin intermediario. Proveedor: `providers/BrazilNfeProvider.ts`
+(registrado antes del de la NFS-e); riel: `latam/nfe/`. Interruptor
+`NFE_ENABLED` / `NFE_ENTORNO` (`homologacion` por defecto). Nace apagado.
+
+**Fuentes primarias** en `scripts/fixtures/nfe/`, cada una con su SHA-256, URL
+y versión en `fuentes.json`: MOC 7.0 (visión general y Anexos I, II y III);
+PL_010f v1.04 (leiaute de la NF-e con la Reforma Tributaria, NT 2025.002 v1.50
+y NT 2026.007), PL_010d v1.03 (consulta, inutilização y eventos, CNPJ
+alfanumérico), PL 9q (raíces síncronas de la NT 2025.001) y los paquetes de los
+eventos 110111 y 110110; NT 2025.001, 2025.002 v1.52, 2018.005 v1.52,
+2026.010 y la Conjunta 2025.001; las tablas de cStat, cClassTrib/CST del
+IBS/CBS, CFOP y medios de pago; la relación de servicios web de producción y
+de homologação; los WSDL de los seis servicios; y las raíces v5, v10, v11 y
+v12 de la ICP-Brasil (ITI).
+
+**Ruteo.** `enrutamiento.ts` decide el tipo de documento de una factura de
+Brasil por sus conceptos: si todos son productos con datos de NF-e
+(`productos.nfe`, congelados en la línea al guardar el borrador) va a
+`nfe_invoice`; si ninguno, sigue a la NFS-e (o al documento comercial); si los
+mezcla, **falla cerrado** y explica que servicios y mercancías son dos
+documentos distintos (NFS-e municipal y NF-e estatal).
+
+- **Transporte** (`soap.ts`): SOAP 1.2 document/literal, mTLS TLS 1.2 con el
+  certificado A1 del contribuyente y la cadena verificada contra las raíces
+  estándar **más** las de la ICP-Brasil (`icp-raizes.ts`), solo en estas
+  llamadas; la verificación nunca se desactiva. Se distingue "no salió"
+  (sin conexión: se puede reintentar o pasar a la SVC) de "salió y no hubo
+  respuesta legible" (incierto: se consulta).
+- **Certificado**: el de la NFS-e sirve cuando es un e-CNPJ del mismo CNPJ
+  raíz (un A1 firma los dos sistemas); el negocio puede subir uno propio para
+  la NF-e. Al subirlo, Cord consulta `NfeStatusServico` de su UF (sin
+  efectos).
+- **Firma**: XMLDSig enveloped de `infNFe` (C14N 1.0, RSA-SHA1), escrito
+  directamente en forma canónica, como la NFS-e. El DigestValue se guarda y se
+  compara con el `digVal` del protocolo.
+- **Chave de acceso** (`chave.ts`): 44 posiciones con DV módulo 11 sobre
+  ASCII − 48 (NTC 2025.001, ya válido para el CNPJ alfanumérico); el cNF evita
+  la lista prohibida del MOC (B03-10).
+- **Autorización síncrona** (`autorizacao.ts`): lote de UNA nota con
+  `indSinc = 1`, obligatorio desde el 13/10/2025 (rechazo 452 de la NT
+  2025.001). Si el autorizador responde 103 (recibo), Cord lo guarda y lo
+  consulta con NFeRetAutorizacao. Una serie tiene un solo pedido en vuelo
+  (lease de `conSecuencia`, sin advisory locks), y los intentos colgados de la
+  serie se resuelven antes de numerar otro.
+- **Numeración**: serie de Cord de 0 a 889 (las de 890 en adelante son de
+  otros usos). El número es el mayor **consumido** de la serie (vivo,
+  autorizado, denegado, usado por otra chave o inutilizado) + 1, o el número
+  inicial configurado: un número rechazado o que nunca salió se reutiliza, así
+  que no deja huecos.
+- **Duda = consulta, nunca reenvío.** Sin respuesta legible el intento queda
+  `incierto` y se consulta la chave (NfeConsultaProtocolo): autorizada → es la
+  nuestra; denegada → número consumido; 217 (no consta) pasado el margen → no
+  se registró. 204 (misma chave) es la misma consulta; 539, 562 y 613 (el
+  número lo tiene otra chave) consumen el número y la nota sale con el
+  siguiente. Lo que queda colgado lo resuelve el outbox de los rieles
+  (`/api/cron/fiscal-latam`).
+- **Contingencia SVC** (MOC Anexo III): si la SEFAZ normal no recibió el
+  pedido (sin conexión o 108/109) y la SVC de la UF (SVC-AN o SVC-RS) responde
+  107, Cord abre la contingencia (`nfe_contingencias`, una por organización y
+  entorno) y emite con `tpEmis` 6/7 + `dhCont` + `xJust`. La cierra sola
+  cuando la SEFAZ normal vuelve a responder 107 (se comprueba cada 5 minutos
+  al emitir). Un intento incierto de la SEFAZ normal **no** pasa a la SVC: se
+  consulta. Ajustes muestra el aviso mientras dura.
+- **Alcance tributario** (`nfe.ts`), lo demás falla cerrado ANTES de numerar:
+  venta (finNFe 1) en reales a un destinatario brasileño con CNPJ o CPF;
+  **Simples Nacional / MEI** (CRT 1 y 4) con CSOSN 101, 102, 103, 300 y 400,
+  dentro del estado y a otros estados; **Régimen Normal** (CRT 3) con ICMS
+  propio CST 00 dentro del estado, IPI (CST 50, cEnq 999), PIS/COFINS (CST de
+  Ajustes o del producto, con la opción de excluir el ICMS de la base) e
+  **IBS/CBS** (grupo obligatorio para CRT 3 desde el 03/08/2026: CST 000,
+  cClassTrib 000001, alícuotas de 2026 de 0,1 % y 0,9 %, sin sumar al vNF). No
+  se emiten: sustitución tributaria, DIFAL a no contribuyente de otro estado,
+  exportación, combustibles y lubricantes, retenciones, el Régimen Normal a
+  otro estado, y el Simples Nacional desde el 04/01/2027 (cuando su grupo
+  IBS/CBS se vuelve obligatorio sin reglas publicadas todavía).
+- **Al centavo con Cord**: ICMS, PIS, COFINS, IBS y CBS van por dentro del
+  precio; el único impuesto que se suma es el IPI, así que la tasa de la línea
+  en Cord debe ser exactamente la alícuota de IPI del producto y
+  `vNF = vProd − vDesc + vIPI` = el total de Cord. El descuento de documento
+  viaja como `vDesc` por ítem; `vUnCom` lleva hasta 10 decimales.
+- **Pago**: `tPag 91` (pago posterior, vigente desde el 03/11/2025) para una
+  factura que se cobra después de emitirse, con `vPag = 0`.
+- **Responsable técnico** (NT 2018.005): `infRespTec` con los datos de
+  `NFE_RESP_TEC_*` cuando la UF lo exige (AM, MS, PE, PR, SC y TO), y el
+  `hashCSRT` en PR (`NFE_CSRT_PR_ID` / `NFE_CSRT_PR`). Sin esos datos, un
+  negocio de esas UF ve en Ajustes que su estado exige algo que Cord todavía no
+  tiene, y no emite.
+- **Cancelación** (110111, `eventos.ts`): por "Anular factura", dentro de las
+  24 horas de la autorización (después, rechazo 501 y la factura sigue
+  vigente). La de una nota emitida en la SVC va a la SVC. Un evento sin
+  respuesta se consulta (la consulta de la nota trae sus eventos) antes de
+  reenviarse; 573 (duplicidad) recupera el protocolo.
+- **Carta de Correção** (110110): desde el panel de la factura, hasta 20 por
+  nota, cada una reemplaza a la anterior; la pantalla advierte lo que una CC-e
+  no puede corregir (valores, partes, fechas), que la SEFAZ no valida. Siempre
+  a la SEFAZ normal.
+- **Inutilização**: Ajustes lista los números de la serie que quedaron sin
+  NF-e por debajo del último consumido; quien administra los datos fiscales
+  declara un rango (hasta 10.000, nunca uno con nota viva, autorizada o
+  denegada) con step-up. Un pedido sin respuesta se reenvía **igual** (el mismo
+  XML firmado: el servicio no tiene consulta) y 563/256 confirman que el
+  primero llegó.
+- **Sin nota de crédito**: la devolución de mercancía es otra NF-e (finNFe 4)
+  que Cord todavía no emite; una nota de crédito de una `nfe_invoice` se
+  rechaza con el motivo.
+- **DANFE** (`danfe.ts`): A4 retrato del Anexo II §3.8.1, con la chave en
+  CODE-128 C (híbrido C/A para el CNPJ alfanumérico, NTC 2025.001), los
+  bloques de emisor, destinatario, impuestos, transporte y productos con
+  folhas adicionales, el bloque de IBS/CBS de la NT 2026.010 y, en
+  homologação, "SEM VALOR FISCAL". Sin QR: el modelo 55 no tiene regla
+  publicada (NT 2026.010 §4.5). Se dibuja solo con datos de la NF-e
+  autorizada, por `representacion.ts` y la rama de `invoice-pdf.ts`.
+- **XML legal**: el `nfeProc` (NF-e firmada + protocolo) se descarga desde el
+  panel de la factura y desde `/i/[token]`; los eventos e inutilizações
+  guardan su `procEventoNFe` / `ProcInutNFe`.
+- **Datos que pide la UI** (solo con el riel encendido, regla 15): en Ajustes
+  › Datos fiscales › NF-e, régimen (CRT), Inscrição Estadual, dirección del
+  establecimiento con municipio IBGE (de él salen la UF y su SEFAZ), serie,
+  PIS/COFINS por defecto, naturaleza de la operación, presencia y flete; en el
+  producto, NCM, CEST, CFOP (5101/5102), origen, unidad, GTIN y el ICMS del
+  régimen (CSOSN o alícuota + FCP), IPI e IBS/CBS; en el cliente, número,
+  barrio, municipio IBGE, indicador de IE (contribuyente, exento o no
+  contribuyente), IE y si compra como consumidor final.
+
+**Esquema** (`db/deploy/2026-10-09-nfe.sql`, espejo de la sección `-- END nfe`
+de `db/schema.sql`): `nfe_eventos`, `nfe_inutilizacoes` y `nfe_contingencias`
+con RLS forzada, un trigger que vuelve definitivo lo que la SEFAZ registró, y
+las columnas `productos.nfe` y `clientes.nfe`. La nota, su número y su
+protocolo viven en `fiscal_rail_comprobantes` como en los demás rieles.
+
+**Verificación:** `npm run security:nfe` (en `test:payments`, sin red) comprueba
+las fuentes contra su SHA-256; las tablas del Portal (autorizadores y URL de
+cada UF en los dos ambientes, cStat, cClassTrib, CFOP, medios de pago) contra
+las constantes; los vectores oficiales (DV de la chave del MOC y de la NTC, el
+CODE-128 del Anexo II decodificado de vuelta, el hashCSRT de la NT 2018.005);
+valida con xmllint la NF-e, el lote, el nfeProc, las consultas, la
+inutilização y los eventos contra los XSD vendorizados, con controles
+negativos; y verifica la firma por separado (lxml + openssl), también dentro
+del lote, del sobre SOAP y del nfeProc. `test/nfe-db.test.ts` (PGlite + SEFAZ
+simulada en `scripts/lib/nfe-simulada.mjs`, que verifica la firma de cada
+pedido) cubre autorización y DANFE, reintento idempotente, rechazo que
+reutiliza el número, paralisado, respuesta perdida recuperada por consulta,
+outbox, 539, denegación, 103, fallas cerradas, interestatal del Simples,
+concurrencia, contingencia SVC de ida y vuelta, cancelación dentro y fuera de
+plazo, CC-e, inutilização (también sin respuesta) y RLS.
+
+### Activación de la NF-e, paso a paso
+
+1. El despliegue aplica `db/deploy/2026-10-09-nfe.sql` antes del build.
+2. **Credenciamento.** El negocio debe estar habilitado como emisor de NF-e en
+   la SEFAZ de su estado (sin eso, rechazo 203) y tener un e-CNPJ A1 vigente.
+3. **Responsable técnico.** Para atender AM, MS, PE, PR, SC y TO, cargar en
+   Vercel `NFE_RESP_TEC_CNPJ`, `_CONTATO`, `_EMAIL` y `_FONE` con un CNPJ de
+   Flouvia como desarrollador del sistema, y para PR además el CSRT que emite
+   la SEFAZ-PR (`NFE_CSRT_PR_ID`, `NFE_CSRT_PR`). Flouvia no tiene CNPJ hoy:
+   hasta entonces esas seis UF quedan fuera (Ajustes lo dice).
+4. **Homologação.** Con el e-CNPJ de un contribuyente credenciado:
+   `NFE_PRUEBA_PASSWORD='…' npm run nfe:prueba -- --p12 empresa.pfx --uf SP --ie <IE> --crt 1 --municipio <IBGE> --emitir --cce --cancelar`
+   (sin certificado solo comprueba red y la cadena TLS con las raíces de la
+   ICP-Brasil; `--svc` prueba la SVC; `--inutilizar N`, la inutilização).
+   Nunca toca producción ni la base.
+5. **De punta a punta en un Preview** con `NFE_ENABLED=true` y
+   `NFE_ENTORNO=homologacion`: una org brasileña de prueba con plan Starter
+   completa Ajustes › Datos fiscales › NF-e, da de alta un producto con NCM y
+   un cliente con municipio e indicador de IE, emite una factura (con y sin
+   descuento, y con IPI en Régimen Normal), registra una CC-e y la anula.
+6. **Producción.** `NFE_ENTORNO=produccion` y `NFE_ENABLED=true` en
+   Production. Si el negocio usaba un certificado propio de la NF-e, lo sube
+   de nuevo para el entorno nuevo (se guardan por separado); el de la NFS-e
+   sirve si es del mismo CNPJ y del mismo entorno.
+
+**Lo que no se pudo verificar sin un certificado ICP-Brasil real:** la
+autorización real de una nota (la SEFAZ exige certificado de cliente aun para
+consultar el estado del servicio), la aceptación de la firma y del lote por
+cada autorizador, que todos respondan en síncrono, los textos vivos de cada
+cStat, la SVC en operación, el CSRT de PR y el responsable técnico de las UF
+que lo exigen. La cadena TLS sí: los 25 hosts de producción y homologação de
+la tabla del Portal se verificaron con openssl contra la ICP-Brasil v10 o las
+raíces públicas. En este entorno, `nfe:prueba` no completa el TLS porque el
+proxy de salida reemplaza la cadena; fuera de él, la verificación es la normal.
 
 ### SUNAT (Perú)
 
