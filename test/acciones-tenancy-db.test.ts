@@ -44,7 +44,7 @@ beforeAll(async () => {
             einvoice_address text, buyer_reference text, giro text, comuna text, dian jsonb);
         create table productos(id uuid primary key default gen_random_uuid(), org_id uuid not null, sku text, nombre text not null, unidad text,
             descripcion text, precio_lista numeric, costo numeric, activo boolean, precios_volumen jsonb, tax_rate numeric,
-            clave_sat text, clave_unidad_sat text);
+            clave_sat text, clave_unidad_sat text, naturaleza text check (naturaleza in ('goods', 'services')));
         create table cotizaciones(id uuid primary key, org_id uuid not null, base_currency text default 'MXN');
         create table orgs(id uuid primary key, iva_pct numeric, country_code text not null default 'MX');
         create table impuestos(id uuid primary key default gen_random_uuid(), org_id uuid not null, tasa numeric, kind text, tipo text,
@@ -167,6 +167,17 @@ describe('eventos del camino normal', () => {
         // Mandarlas vacías sí las limpia.
         expect((await products.updateProduct(ctxA, id, { nombre: 'Consultoría', precio: 120, tax_rate: null, clave_sat: '', clave_unidad_sat: null })).status).toBe(200);
         expect(await read()).toEqual({ clave_sat: null, clave_unidad_sat: null, tax_rate: null });
+    });
+
+    it('producto: la naturaleza (bien o servicio) se guarda y lo que no viene no se borra', async () => {
+        const ok = await products.createProduct(ctxA, { nombre: 'Audit', precio: 650, naturaleza: 'services' });
+        expect(ok.status).toBe(200);
+        const read = async () => (await m.db.query(`select naturaleza from productos where id = '${ok.body.id}'`)).rows[0].naturaleza;
+        expect(await read()).toBe('services');
+        expect((await products.updateProduct(ctxA, ok.body.id as string, { nombre: 'Audit', precio: 700 })).status).toBe(200);
+        expect(await read()).toBe('services');
+        expect((await products.updateProduct(ctxA, ok.body.id as string, { nombre: 'Audit', precio: 700, naturaleza: 'otra' })).status).toBe(200);
+        expect(await read()).toBeNull();
     });
 
     it('tarea: completar dos veces emite task.completed una sola vez', async () => {

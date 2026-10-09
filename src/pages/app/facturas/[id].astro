@@ -24,6 +24,7 @@ import NfseEstadoFactura from '../../../components/app/facturas/NfseEstadoFactur
 import SunatEstadoFactura from '../../../components/app/facturas/SunatEstadoFactura.astro';
 import DianEstadoFactura from '../../../components/app/facturas/DianEstadoFactura.astro';
 import SpfeEstadoFactura from '../../../components/app/facturas/SpfeEstadoFactura.astro';
+import FrPaEstadoFactura from '../../../components/app/facturas/FrPaEstadoFactura.astro';
 import SiiEstadoFactura from '../../../components/app/facturas/SiiEstadoFactura.astro';
 import { EXEMPTION_INFO, EXEMPTION_REASONS } from '../../../lib/fiscal/exemption';
 import { currentLocale } from '../../../lib/context';
@@ -147,6 +148,7 @@ const EV_LABEL: Record<string, string> = {
     reminder: t(L, 'fact.ev.reminder'), void: t(L, 'fact.ev.void'),
     credit_note: t(L, 'fact.ev.credit_note'), uncollectible: t(L, 'fact.ev.uncollectible'),
     verifactu: t(L, 'fact.ev.verifactu'),
+    plataforma: t(L, 'fact.ev.plataforma'),
 };
 const waLink = f && linkPublico
     ? `https://wa.me/?text=${encodeURIComponent(`${f.invoiceNumber ?? ''} · ${linkPublico}`.trim())}`
@@ -691,6 +693,12 @@ const EINV_FIX: Record<string, { href: string; es: string; en: string }> = {
                             la AEAT: "Próximamente" hasta que la AEAT publique su servicio. */}
                         {String(f.pais || '').toUpperCase() === 'ES' && hasIssued && f.estado !== 'draft' && (
                             <SpfeEstadoFactura orgId={f.orgId ?? ''} documentoId={f.id} locale={L} />
+                        )}
+
+                        {/* Francia: transmisión por la plataforma autorizada o e-reporting,
+                            con cada estado que notificó la plataforma. */}
+                        {String(f.pais || '').toUpperCase() === 'FR' && hasIssued && f.estado !== 'draft' && (
+                            <FrPaEstadoFactura orgId={f.orgId ?? ''} documentoId={f.id} locale={L} />
                         )}
 
                         {String(f.pais || '').toUpperCase() === 'AR' && (

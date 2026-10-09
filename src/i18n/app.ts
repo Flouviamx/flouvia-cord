@@ -3483,6 +3483,7 @@ export const appStrings = {
         "fact.ev.credit_note": "Nota de crédito",
         "fact.ev.uncollectible": "Marcada incobrable",
         "fact.ev.verifactu": "Verifactu",
+        "fact.ev.plataforma": "Plataforma de facturación electrónica",
         // Facturas recurrentes
         "rec.titulo": "Facturas recurrentes",
         "rec.plan_titulo": "Factura una vez y deja que se repita sola",
@@ -7609,6 +7610,7 @@ export const appStrings = {
         "fact.ev.credit_note": "Credit note",
         "fact.ev.uncollectible": "Marked uncollectible",
         "fact.ev.verifactu": "Verifactu",
+        "fact.ev.plataforma": "E-invoicing platform",
         // Facturas recurrentes
         "rec.titulo": "Recurring invoices",
         "rec.plan_titulo": "Invoice once and let it repeat itself",

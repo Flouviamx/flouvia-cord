@@ -68,6 +68,10 @@
       "schedule": "40 9 * * *"
     },
     {
+      "path": "/api/cron/fiscal-plataforma",
+      "schedule": "50 9 * * *"
+    },
+    {
       "path": "/api/cron/anclas-tiempo",
       "schedule": "0 12 * * *"
     },
