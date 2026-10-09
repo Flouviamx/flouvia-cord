@@ -119,7 +119,8 @@ function dependenciasDesfasadas() {
 
 function revisarEnv() {
   const proyecto = JSON.parse(readFileSync('package.json', 'utf8')).name;
-  if (!existsSync('.vercel/project.json')) {
+  // `vercel link --project` deja project.json; el vínculo por repositorio de git deja repo.json.
+  if (!existsSync('.vercel/project.json') && !existsSync('.vercel/repo.json')) {
     avisos.push(
       `Carpeta sin vincular a Vercel: \`vercel link --yes --project ${proyecto} --scope flouvia\` (una vez por computadora).`,
     );
