@@ -24,7 +24,7 @@ import { emitSetupSteps } from './setup-analytics';
 import { decryptSecret } from './crypto-secret';
 import { publicDocumentUrl } from './public-links';
 import { currencyDecimals, normalizeCurrency } from './currency';
-import { getCountryProfile, supportsMercadoPago, taxKindLabel } from './countries';
+import { getCountryProfile, supportsMercadoPago, taxKindLabel, taxRoundingGuardado } from './countries';
 import { normalizeTerm, termDays, termLabel as termLabelFor } from './payment-terms';
 import { onlinePaymentsSetup } from './payment-rail';
 import { fmtCalendarDate, fmtDate, fmtRelative, intlLocale, money } from './fmt-server';
@@ -1432,6 +1432,8 @@ function rowToQuote(c: any, items: any[], eventos: any[], versiones: any[] = [],
         retenciones: Array.isArray(c.retenciones_snapshot) ? c.retenciones_snapshot : [],
         descuento: descuentoDesdeJson(c.descuento_def),
         descuentoTotal: num(c.descuento),
+        // Regla de redondeo con la que se guardaron sus totales (nulo = por línea).
+        taxRounding: taxRoundingGuardado(c.tax_rounding),
         anticipoPct: c.anticipo_pct != null ? num(c.anticipo_pct) : null,
         esRecurrente: Boolean(c.es_recurrente),
         items: items.map((it): QuoteItem => ({
@@ -2305,7 +2307,7 @@ export interface LiveSnapshot {
 export async function getLiveSnapshot(orgId: string, cotizacionId: string): Promise<LiveSnapshot | null> {
     const [cabecera, items, cobros] = await withOrgTx(orgId,
         sql`select c.rev, c.status, c.subtotal, c.iva, c.total, c.vigencia, c.notas,
-                   c.iva_incluido, c.retenciones_snapshot, o.iva_pct as org_iva_pct,
+                   c.iva_incluido, c.retenciones_snapshot, c.tax_rounding, o.iva_pct as org_iva_pct,
                    c.descuento_def, o.idioma as org_idioma,
                    o.country_code as org_country_code, o.fiscal_metadata->>'region' as org_region,
                    coalesce(c.base_currency, o.moneda) as quote_currency
@@ -2354,6 +2356,9 @@ export async function getLiveSnapshot(orgId: string, cotizacionId: string): Prom
                     nombre: r.nombre, tipo: r.tipo, tasa: r.tasa, base: retencionBase(r.baseTipo),
                 })),
                 roundLines: currencyDecimals(normalizeCurrency(c.quote_currency as string)),
+                // La regla con la que se guardaron subtotal/iva/total: el desglose
+                // debe cuadrar con ellos.
+                taxRounding: taxRoundingGuardado(c.tax_rounding),
                 descuento: descuentoParaMotor(descuentoDef),
             },
         );

@@ -29,6 +29,8 @@ import { currentLocale } from '../context';
 import { log } from '../log';
 import { calculateDocumentTotals, type DescuentoInput, type InvoiceItemInput } from '../../../packages/elements/src/engine';
 import { currencyDecimals, normalizeCurrency, toMinorUnits } from '../currency';
+import { taxRoundingFor, taxRoundingGuardado } from '../countries';
+import { descuentoDesdeJson, descuentoParaMotor } from '../descuentos';
 import {
     US_TAX_DEFAULT_CODE, US_TAX_MAX_LINEAS, US_TAX_REUSO_MS, UsTaxError, huellaTexto, isUsTaxCode,
     lineasFromStripe, normalizeUsAddress, usAddressFaltante, usTaxApplies,
@@ -235,8 +237,11 @@ function basesMinor(items: InvoiceItemInput[], currency: string, incluido: boole
     // con el descuento de documento repartido— en los términos capturados:
     // sin impuesto, o con él si los precios lo incluyen. Es el mismo reparto
     // que el motor hará después con la tasa calculada.
+    // `taxRounding` es la regla de EE. UU. (por línea, como el proveedor):
+    // con tasa 0 no cambia nada, pero la base sale del mismo motor y con la
+    // misma regla que el documento.
     const t = calculateDocumentTotals(items.map((it) => ({ ...it, tax_rate: 0 })), {
-        ivaIncluido: incluido, roundLines: currencyDecimals(currency), descuento,
+        ivaIncluido: incluido, roundLines: currencyDecimals(currency), taxRounding: taxRoundingFor('US'), descuento,
     });
     return t.lineas.map((l) => toMinorUnits(l.base, currency));
 }
@@ -348,7 +353,7 @@ async function documentoParaTx(orgId: string, target: { documentoId?: string; co
     }
     if (!target.cotizacionId || !UUID_RE.test(target.cotizacionId)) return null;
     const [head, items] = await withOrgTx(orgId,
-        sql`select us_tax_calculo_id, base_currency, iva_incluido, descuento_def from cotizaciones
+        sql`select us_tax_calculo_id, base_currency, iva_incluido, descuento_def, tax_rounding from cotizaciones
              where org_id = ${orgId} and id = ${target.cotizacionId} and (status = 'paid' or paid_at is not null)`,
         sql`select ci.cantidad, ci.precio_unitario, ci.precio_negociado, ci.tax_rate, ci.aprobado
               from cotizacion_items ci join cotizaciones c on c.id = ci.cotizacion_id
@@ -357,15 +362,15 @@ async function documentoParaTx(orgId: string, target: { documentoId?: string; co
     const q = head[0];
     if (!q?.us_tax_calculo_id) return null;
     const currency = normalizeCurrency(q.base_currency as string);
-    const def = q.descuento_def && typeof q.descuento_def === 'object' ? q.descuento_def : null;
     const t = calculateDocumentTotals(
         items.filter((it: any) => it.aprobado !== false).map((it: any) => ({
             cantidad: it.cantidad, precio_unitario: it.precio_unitario, precio_negociado: it.precio_negociado,
             tax_rate: Number(it.tax_rate) || 0,
         })),
         {
-            ivaIncluido: !!q.iva_incluido, roundLines: currencyDecimals(currency),
-            descuento: def && (def.tipo === 'porcentaje' || def.tipo === 'monto') ? { tipo: def.tipo, valor: Number(def.valor) || 0 } : null,
+            // La regla con la que se GUARDARON los totales (cotizaciones.tax_rounding).
+            ivaIncluido: !!q.iva_incluido, roundLines: currencyDecimals(currency), taxRounding: taxRoundingGuardado(q.tax_rounding),
+            descuento: descuentoParaMotor(descuentoDesdeJson(q.descuento_def)),
         },
     );
     return {

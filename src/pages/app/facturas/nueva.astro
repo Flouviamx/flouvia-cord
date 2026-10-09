@@ -31,7 +31,7 @@ import { getActiveOrgId } from '../../../lib/db';
 import { checkEntitlement } from '../../../lib/org-entitlements';
 import { documentTypeForOrg, isFiscalDocument } from '../../../lib/fiscal/document-kind';
 import { invoicingFeatureFor } from '../../../lib/fiscal/gate';
-import { getCountryProfile } from '../../../lib/countries';
+import { getCountryProfile, taxRoundingFor } from '../../../lib/countries';
 import { buildTaxOptions, defaultTaxRate, retencionesFrom } from '../../../lib/impuestos';
 import { CURRENCY_FLAG } from '../../../lib/flags';
 import { listOfferedCurrencies } from '../../../lib/currency';
@@ -163,6 +163,9 @@ const BOOT = {
     taxLabel: TAX_LABEL,
     taxCountry: country,
     taxRegion: ORG.fiscalMetadata?.region || null,
+    // Regla de redondeo del impuesto del país (CL: por documento), la misma
+    // con la que `buildLines` guarda: el resumen cuadra con lo guardado.
+    taxRounding: taxRoundingFor(country),
     ivaIncluido: DEFAULT_IVA_INCLUIDO,
     preselectCliente,
     catalogo: catalogo.map((p: any) => ({
@@ -752,9 +755,10 @@ import { iconInner } from '../../../lib/icons';
                     precio_negociado: l.negociado,
                     tax_rate: l.taxRate,
                 })),
-                // Mismo redondeo por línea que `buildLines` al guardar.
+                // Mismo redondeo que `buildLines` al guardar.
                 {
                     ivaIncluido: ivaIncluidoEl.checked, retenciones: BOOT.retenciones, roundLines: currencyDecimals(currency),
+                    taxRounding: BOOT.taxRounding === 'document' ? 'document' : 'line',
                     descuento: descuento.engine(),
                 },
             );

@@ -17,6 +17,7 @@ import { trackServer } from './posthog-server';
 import { sanitizeItem, calculateDocumentTotals } from '../../packages/elements/src/engine';
 import { currencyDecimals, listOfferedCurrencies, normalizeCurrency } from './currency';
 import { taxCatalogFor, TaxCatalogUnavailableError } from './impuestos-db';
+import { taxRoundingFor } from './countries';
 import { exemptionReasonFor } from './fiscal/exemption';
 import { lineSatKeyError, lineSatKeysFrom } from './fiscal/sat-claves';
 import { intlLocale } from './fmt-server';
@@ -356,11 +357,15 @@ export async function createCotizacion(
     const satError = lineSatKeyError(itemsConImpuesto.map((it) => ({ descripcion: it.descripcion, productKey: it.clave_sat, unitKey: it.clave_unidad_sat })));
     if (satError) throw new QuoteError(satError, 400, 'invalid_request');
 
+    // Regla de redondeo del impuesto del país del emisor (CL: por documento).
+    // Se guarda con la cotización: todo recálculo posterior usa la misma.
+    const taxRounding = taxRoundingFor(catalogo.country);
     const totals = calculateDocumentTotals(itemsConImpuesto as any[], {
         ivaIncluido: iva_incluido,
         retenciones: catalogo.retenciones,
-        // Redondeo por línea en la divisa de venta (ver RoundingOptions).
+        // Redondeo en la divisa de venta (ver RoundingOptions).
         roundLines: currencyDecimals(monedaVenta),
+        taxRounding,
         descuento: descuentoParaMotor(descuento),
     });
     const realSubtotal = totals.subtotal;
@@ -484,14 +489,14 @@ export async function createCotizacion(
             insert into cotizaciones
                 (org_id, cliente_id, folio, status, subtotal, iva, total, terminos, vigencia, notas, sent_at, aprob_estado, aprob_motivo,
                  moneda, base_currency, fiscal_currency, fx_rate, fx_rate_source, fx_locked_until, iva_incluido, anticipo_pct, es_recurrente, creado_por,
-                 retencion_total, retenciones_snapshot, descuento, descuento_def, us_tax_calculo_id)
+                 retencion_total, retenciones_snapshot, descuento, descuento_def, tax_rounding, us_tax_calculo_id)
             values
                 (${orgId}, ${clienteId}, (select ${prefix} || '-' || case when n < 10000 then lpad(n::text, 4, '0') else n::text end
                    from (select coalesce(max(substring(folio from '(\\d+)$')::numeric), 0) + 1 as n
                            from cotizaciones where org_id = ${orgId}) s), ${status}, ${realSubtotal}, ${iva}, ${total},
                  ${terminos}, ${vigencia.toISOString()}, ${input.notas || null}, ${sentAt}, ${aprobEstado}, ${aprobMotivo},
                  ${baseCurrency}, ${baseCurrency}, ${fiscalCurrency}, ${fxRate}, ${fxSource}, ${fxLockedUntil}, ${iva_incluido}, ${anticipoPct}, ${esRecurrente}, ${creadoPor},
-                 ${retencionTotal}, ${retencionesSnapshot}::jsonb, ${descuentoTotal}, ${descuento ? JSON.stringify(descuento) : null}::jsonb,
+                 ${retencionTotal}, ${retencionesSnapshot}::jsonb, ${descuentoTotal}, ${descuento ? JSON.stringify(descuento) : null}::jsonb, ${taxRounding},
                  ${usTaxCalculoId}::uuid)
             returning id, public_token, folio`);
     } catch (error) {

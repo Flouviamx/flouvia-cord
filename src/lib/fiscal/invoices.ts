@@ -21,12 +21,12 @@ import { planIncludes } from '../entitlements';
 import { meterInvoiceEmission } from './issuance-usage';
 import { sql, withOrgTx } from '../db';
 import { decryptSecret } from '../crypto-secret';
-import { getCountryProfile } from '../countries';
+import { getCountryProfile, taxRoundingFor } from '../countries';
 import { logInvoiceEvent } from './timeline';
 import { currencyDecimals, normalizeCurrency } from '../currency';
 import { dueDateFor, isoDay } from '../cobros';
 import { FXService, FXUnavailableError } from '../fx/FXService';
-import { calculateDocumentTotals, type TaxBreakdown } from '../../../packages/elements/src/engine';
+import { calculateDocumentTotals, type TaxBreakdown, type TaxRounding } from '../../../packages/elements/src/engine';
 import { FiscalFactory } from './FiscalFactory';
 import { partiesFrom, payeeAccountFrom } from './parties';
 import { creditNoteBreakdown } from './credit-note';
@@ -344,6 +344,7 @@ function buildLines(
   retenciones: { nombre: string; tasa: number; tipo?: string }[] = [],
   decimals = 2,
   descuento: DescuentoDef | null = null,
+  taxRounding: TaxRounding = 'line',
 ): {
   lines: FiscalLineItem[]; subtotal: number; taxes: number; total: number; byRate: TaxBreakdown[];
   retenciones: FiscalRetencion[]; retencionTotal: number; descuentoTotal: number;
@@ -369,7 +370,9 @@ function buildLines(
     // desglosa (ver RoundingOptions en engine.ts).
     // El descuento de documento se reparte por línea antes de impuestos: cada
     // concepto lleva su parte (`discount`) y `subtotal` queda como la base neta.
-    { ivaIncluido, retenciones, roundLines: decimals, descuento: descuentoParaMotor(descuento) },
+    // `taxRounding` es la regla del país del emisor (CL: el IVA se redondea
+    // una vez por documento, como lo calcula el DTE).
+    { ivaIncluido, retenciones, roundLines: decimals, taxRounding, descuento: descuentoParaMotor(descuento) },
   );
   const round = (value: number) => roundTo(value, decimals);
 
@@ -534,7 +537,7 @@ export async function createInvoiceDraft(orgId: string, input: CreateDraftInput)
   }
   let built;
   try {
-    built = buildLines(itemsConTasaValidada, catalogo.defaultRate, input.ivaIncluido === true, catalogo.retenciones, currencyDecimals(currency), descuento);
+    built = buildLines(itemsConTasaValidada, catalogo.defaultRate, input.ivaIncluido === true, catalogo.retenciones, currencyDecimals(currency), descuento, taxRoundingFor(catalogo.country));
   } catch (error: unknown) {
     // RangeError del motor = tasa fuera de [0,1]. Se traduce a un error de
     // captura en vez de dejar que reviente como 500 sin explicación.
@@ -686,7 +689,7 @@ export async function updateInvoiceDraft(
   }
   let built;
   try {
-    built = buildLines(itemsConTasaValidada, catalogo.defaultRate, input.ivaIncluido === true, catalogo.retenciones, currencyDecimals(currency), descuento);
+    built = buildLines(itemsConTasaValidada, catalogo.defaultRate, input.ivaIncluido === true, catalogo.retenciones, currencyDecimals(currency), descuento, taxRoundingFor(catalogo.country));
   } catch (error: unknown) {
     if (error instanceof RangeError) return { ok: false, error: 'Alguna línea tiene una tasa de impuesto inválida.' };
     throw error;

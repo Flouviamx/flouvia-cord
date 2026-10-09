@@ -476,6 +476,14 @@ selector; `taxCatalogFor()` en `src/lib/impuestos-db.ts` **valida en servidor** 
 tasa que manda el cliente contra el catálogo real — un POST a `/api/v1` no puede
 declarar `tax_rate: 0` en una venta gravada.
 
+El redondeo del impuesto también es del país, no del llamador: `taxRounding`
+(`'line'` por defecto, `'document'` en Chile, donde el SII calcula el IVA sobre el
+neto total y no la suma de líneas redondeadas) sale de `taxRoundingFor(country)`
+en `src/lib/countries.ts`, y todo llamador que pasa `roundLines` al motor pasa
+también `taxRounding` (`npm run security:tax` lo verifica). La regla con que se
+calcularon los totales se guarda con la cotización (`cotizaciones.tax_rounding`):
+lo que el cliente ya vio no se recalcula con otra.
+
 El nombre del impuesto sale del país (`taxKindLabel()` + `getCountryProfile()`):
 IVA en México, VAT en Reino Unido, GST en Australia, Moms en Suecia. Nunca un
 ternario `isMx ? 'IVA' : 'Tax'`, que le decía "Tax" genérico a medio mundo.

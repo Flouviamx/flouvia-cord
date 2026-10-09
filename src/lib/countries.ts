@@ -1,3 +1,5 @@
+import type { TaxRounding } from '../../packages/elements/src/engine';
+
 // Catálogo de países de Cord. Dos listas con trabajos distintos:
 //
 //   · COUNTRY_CODES  — el vocabulario ISO 3166-1 alpha-2 completo. Valida un
@@ -155,9 +157,18 @@ export interface CountryProfile {
     regulatoryRail: 'cfdi_40' | 'commercial_invoice';
     /** `stripe_connect` = se puede cobrar en línea; `manual` = solo registro de pagos. */
     paymentsRail: 'stripe_connect' | 'manual';
+    /**
+     * Cómo se redondea el impuesto de un documento (opción `taxRounding` del
+     * motor, packages/elements/src/engine.ts). `'line'`: cada concepto redondea
+     * su impuesto y el documento los suma (CFDI, Verifactu). `'document'`: el
+     * impuesto de cada tasa es round(Σ bases × tasa), la regla del DTE chileno.
+     * Es la ÚNICA fuente: cotización, factura, PDF, /q, /i, API, MCP y el riel
+     * fiscal la leen de aquí (`taxRoundingFor`).
+     */
+    taxRounding: TaxRounding;
 }
 
-type ProfileDefaults = Pick<CountryProfile, 'currency' | 'locale' | 'timeZone' | 'taxIdLabel' | 'taxLabel' | 'invoicePrefix'>;
+type ProfileDefaults = Pick<CountryProfile, 'currency' | 'locale' | 'timeZone' | 'taxIdLabel' | 'taxLabel' | 'invoicePrefix' | 'taxRounding'>;
 
 const DEFAULT_PROFILE: ProfileDefaults = {
     currency: 'USD',
@@ -166,6 +177,7 @@ const DEFAULT_PROFILE: ProfileDefaults = {
     taxIdLabel: 'Tax ID',
     taxLabel: 'Tax',
     invoicePrefix: 'INV',
+    taxRounding: 'line',
 };
 
 // Defaults operativos, no reglas tributarias. Evitan que una cuenta nueva en
@@ -178,7 +190,9 @@ const PROFILE_DEFAULTS: Partial<Record<CountryCode, Partial<ProfileDefaults>>> =
     BR: { currency: 'BRL', locale: 'pt-BR', timeZone: 'America/Sao_Paulo', taxIdLabel: 'CNPJ / CPF', taxLabel: 'ICMS / ISS' },
     CA: { currency: 'CAD', locale: 'en-CA', timeZone: 'America/Toronto', taxIdLabel: 'BN / GST/HST no.', taxLabel: 'GST/HST' },
     CH: { currency: 'CHF', locale: 'de-CH', timeZone: 'Europe/Zurich', taxIdLabel: 'UID / VAT ID', taxLabel: 'MWST / TVA' },
-    CL: { currency: 'CLP', locale: 'es-CL', timeZone: 'America/Santiago', taxIdLabel: 'RUT', taxLabel: 'IVA' },
+    // IVA del documento = Monto neto × tasa, en pesos enteros (Formato DTE
+    // v2.2 del SII, campos 107, 111 y 112): se redondea una vez por documento.
+    CL: { currency: 'CLP', locale: 'es-CL', timeZone: 'America/Santiago', taxIdLabel: 'RUT', taxLabel: 'IVA', taxRounding: 'document' },
     CN: { currency: 'CNY', locale: 'zh-CN', timeZone: 'Asia/Shanghai', taxIdLabel: 'Unified social credit code', taxLabel: 'VAT' },
     CO: { currency: 'COP', locale: 'es-CO', timeZone: 'America/Bogota', taxIdLabel: 'NIT', taxLabel: 'IVA' },
     CR: { currency: 'CRC', locale: 'es-CR', timeZone: 'America/Costa_Rica', taxIdLabel: 'Cédula jurídica / NITE', taxLabel: 'IVA' },
@@ -498,6 +512,25 @@ export function countryName(code: string, locale: string = 'es'): string {
 
 export function isCountryCode(value: string): value is CountryCode {
     return (COUNTRY_CODES as readonly string[]).includes(value.toUpperCase());
+}
+
+/**
+ * Redondeo del impuesto del país del EMISOR (ver CountryProfile.taxRounding).
+ * Un código desconocido o vacío cae a `'line'`, el comportamiento de siempre.
+ */
+export function taxRoundingFor(country: unknown): TaxRounding {
+    const code = String(country ?? '').trim().toUpperCase();
+    if (!isCountryCode(code)) return DEFAULT_PROFILE.taxRounding;
+    return PROFILE_DEFAULTS[code]?.taxRounding ?? DEFAULT_PROFILE.taxRounding;
+}
+
+/**
+ * La regla GUARDADA con un documento (`cotizaciones.tax_rounding`). Nulo o
+ * desconocido = `'line'`: es con la que se guardó todo lo anterior a la columna.
+ * Un documento se recalcula con la regla con la que nació, no con la vigente.
+ */
+export function taxRoundingGuardado(value: unknown): TaxRounding {
+    return value === 'document' ? 'document' : 'line';
 }
 
 export function getCountryProfile(code: string, displayLocale: 'es' | 'en' = 'es'): CountryProfile {

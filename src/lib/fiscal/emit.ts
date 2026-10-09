@@ -6,7 +6,7 @@
 import { documentTypeForOrg, documentPrefix } from './document-kind';
 import { sql, withOrgTx, withSystemTx } from '../db';
 import { decryptSecret } from '../crypto-secret';
-import { getCountryProfile } from '../countries';
+import { getCountryProfile, taxRoundingGuardado } from '../countries';
 import { currencyDecimals, normalizeCurrency, toMinorUnits } from '../currency';
 import { dueDateFor, isoDay } from '../cobros';
 import { FiscalFactory } from './FiscalFactory';
@@ -358,7 +358,7 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string, do
           c.cliente_id, c.terminos as quote_terminos, c.created_at as quote_created,
           coalesce(c.approved_at, c.created_at) as quote_base_date,
           c.base_currency, c.fiscal_currency, c.fx_rate, c.fx_rate_source, c.fx_locked_until,
-          c.iva_incluido, c.retencion_total, c.retenciones_snapshot, c.descuento_def,
+          c.iva_incluido, c.retencion_total, c.retenciones_snapshot, c.descuento_def, c.tax_rounding,
           o.moneda as org_moneda,
           cl.empresa as cliente_empresa, cl.rfc as cliente_rfc,
           cl.email as cliente_email, cl.contacto as cliente_contacto,
@@ -442,6 +442,9 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string, do
         // Cada concepto redondeado y los totales como su suma: es lo que el CFDI
         // valida (subtotal = Σ importes) y lo que Verifactu desglosa por línea.
         roundLines: decimals,
+        // La regla con la que se guardó la cotización (CL: impuesto por
+        // documento): la factura cuadra con lo cotizado y cobrado.
+        taxRounding: taxRoundingGuardado(head.tax_rounding),
         descuento: descuentoParaMotor(descuento),
       },
     );

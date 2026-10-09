@@ -26,6 +26,7 @@ import { resolveViewer } from '../../../lib/public-viewer';
 import { recordHeartbeat, recordHito } from '../../../lib/atencion';
 import { markViewed } from '../../../lib/queries';
 import { currencyDecimals, normalizeCurrency } from '../../../lib/currency';
+import { taxRoundingGuardado } from '../../../lib/countries';
 import { calculateDocumentTotals, retencionBase } from '../../../../packages/elements/src/engine';
 import { money as roundMoney } from '../../../lib/fiscal/emit';
 import { descuentoDesdeJson, descuentoParaMotor } from '../../../lib/descuentos';
@@ -60,7 +61,7 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
     if (!identity) return json({ error: 'Cotización no encontrada' }, 404);
     const [rows] = await withOrgTx(identity.orgId, sql`
         select c.id, c.org_id, c.status, c.rev, c.base_currency, c.iva_incluido, c.retenciones_snapshot, o.moneda,
-               c.descuento, c.descuento_def,
+               c.descuento, c.descuento_def, c.tax_rounding,
                (o.sandbox_of is not null) as is_sandbox, o.is_demo
         from cotizaciones c join orgs o on o.id = c.org_id
         where c.id = ${identity.id} and c.org_id = ${identity.orgId}`);
@@ -187,6 +188,8 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
                             base: retencionBase(r.baseTipo),
                         })),
                         roundLines: currencyDecimals(quoteCurrency),
+                        // La regla con la que se cotizó (y que el cliente vio).
+                        taxRounding: taxRoundingGuardado(c.tax_rounding),
                         // Un porcentaje rebaja lo aprobado; un monto se topa en su bruto.
                         descuento: descuentoParaMotor(descuentoQuote),
                     },

@@ -18,12 +18,15 @@ const dist = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'dist
 // repartido por línea en unidades mínimas por mayor residuo) y el Quote
 // Builder manda el código de cupón: ~0.45 KB gzip en todo entrypoint que trae
 // el motor (index, headless y los que montan el builder).
+// Oct 2026: el motor redondea el impuesto por documento cuando el país lo pide
+// (`taxRounding: 'document'`, Chile): un reparto por mayor residuo de base e
+// impuesto por tasa, ~0.4 KB gzip en los mismos entrypoints.
 const BUDGET_KB = {
-    'index.mjs': 16,
-    'headless.mjs': 14.75,
-    'react.mjs': 27,
-    'vue.mjs': 15.5,
-    'framer.mjs': 23.5,
+    'index.mjs': 16.5,
+    'headless.mjs': 15.25,
+    'react.mjs': 27.5,
+    'vue.mjs': 15.75,
+    'framer.mjs': 24,
     'webflow.mjs': 7,
     'webflow.js': 7,
     'embed.js': 7,

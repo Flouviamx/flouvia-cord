@@ -185,12 +185,62 @@ export interface DescuentoInput {
  */
 export interface RoundingOptions {
     roundLines?: number;
+    /**
+     * Cómo se redondea el IMPUESTO cuando hay `roundLines` (sin `roundLines` no
+     * hay nada que redondear y los dos modos dan lo mismo).
+     *
+     * - `'line'` (default, el comportamiento de siempre): cada línea redondea
+     *   su impuesto y el del documento es la SUMA de esos importes. Es lo que
+     *   valida el CFDI y lo que la AEAT desglosa.
+     * - `'document'`: el impuesto de cada tasa es el redondeo de
+     *   (suma de las bases de esa tasa × tasa), no la suma de impuestos ya
+     *   redondeados. Es la regla de Chile: en el DTE el IVA es
+     *   "Monto neto × tasa IVA" (Formato DTE v2.2 del SII, campos 107, 111 y
+     *   112) y los montos son enteros. Con redondeo por línea, tres líneas de
+     *   $ 1.003 al 19 % suman $ 573 de IVA (191 + 191 + 191) contra los $ 572
+     *   del documento (round(3.009 × 0,19)).
+     *
+     *   Lo que se ve por LÍNEA sigue cuadrando: el impuesto de cada tasa se
+     *   reparte entre sus líneas por mayor residuo (unidades mínimas, empate
+     *   por orden de línea), así que la suma de las líneas es exactamente el
+     *   impuesto del documento y cada línea difiere a lo más en una unidad de
+     *   round(base × tasa). Con precios con impuesto incluido, la base de cada
+     *   tasa es el redondeo de (suma de importes con impuesto ÷ (1 + tasa))
+     *   —el "Monto neto" del SII con montos brutos, campo 107— repartida igual
+     *   entre sus líneas, y el impuesto es esa base × tasa redondeado: el total
+     *   puede quedar a una unidad de la suma capturada, como ya pasa por línea.
+     */
+    taxRounding?: TaxRounding;
 }
+
+export type TaxRounding = 'line' | 'document';
 
 const roundTo = (n: number, decimals: number): number => {
     const f = 10 ** decimals;
     return Math.round((n + Number.EPSILON) * f) / f;
 };
+
+/**
+ * Reparte `total` (ya en los decimales de la divisa) entre las líneas en
+ * proporción a `exactos` (sus valores SIN redondear, que suman ≈ `total`) por
+ * mayor residuo, en unidades mínimas: la suma del reparto es exactamente
+ * `total` y cada parte queda a menos de una unidad de su valor exacto. Empates
+ * por orden de línea, para que el mismo documento dé siempre lo mismo.
+ */
+function repartirPorResiduo(total: number, exactos: number[], decimals: number): number[] {
+    const f = 10 ** decimals;
+    const meta = Math.round(total * f);
+    const x = exactos.map((v) => v * f);
+    const pisos = x.map((v) => Math.floor(v + 1e-7));
+    let resto = meta - pisos.reduce((s, v) => s + v, 0);
+    const orden = x.map((_, i) => i).sort((a, b) => (x[b] - pisos[b]) - (x[a] - pisos[a]) || a - b);
+    for (let k = 0; resto > 0 && orden.length; k++) { pisos[orden[k % orden.length]]++; resto--; }
+    for (let k = orden.length - 1; resto < 0 && k >= 0; k--) {
+        const i = orden[k];
+        if (pisos[i] > 0) { pisos[i]--; resto++; }
+    }
+    return pisos.map((v) => v / f);
+}
 
 /**
  * Reparte el descuento de documento entre los importes brutos de las líneas,
@@ -258,6 +308,9 @@ export function calculateInvoiceTotals(
     if (decimals !== undefined && !(Number.isInteger(decimals) && decimals >= 0 && decimals <= 4)) {
         throw new RangeError(`calculateInvoiceTotals: roundLines debe ser un entero entre 0 y 4 (recibido: ${decimals}).`);
     }
+    if (opts.taxRounding !== undefined && opts.taxRounding !== 'line' && opts.taxRounding !== 'document') {
+        throw new RangeError(`calculateInvoiceTotals: taxRounding inválido (${String(opts.taxRounding)}).`);
+    }
     const r = (n: number) => (decimals === undefined ? n : roundTo(n, decimals));
     const previas = items.map((raw) => {
         const it = sanitizeItem(raw);
@@ -279,9 +332,11 @@ export function calculateInvoiceTotals(
     // abajo queda idéntica a la de siempre.
     const rebajas = repartirDescuento(previas.map((p) => p.bruto), opts.descuento, decimals);
 
+    const netos: number[] = [];
     const lineas: InvoiceItem[] = previas.map(({ it, rate, precioFinal, bruto }, i) => {
         const rebaja = rebajas[i];
         const neto = rebaja === 0 ? bruto : (decimals === undefined ? bruto - rebaja : r(bruto - rebaja));
+        netos.push(neto);
         let base: number;
         let impuesto: number;
         let descuento: number;
@@ -312,6 +367,37 @@ export function calculateInvoiceTotals(
             descuento,
         };
     });
+
+    // Impuesto por documento (RoundingOptions.taxRounding): por cada tasa, la
+    // base y el impuesto del documento se redondean UNA vez y se reparten
+    // entre sus líneas por mayor residuo, así que todo lo que suma (subtotal,
+    // impuestos, desglose por tasa, retenciones) sale de las mismas líneas.
+    if (decimals !== undefined && opts.taxRounding === 'document') {
+        const grupos = new Map<number, number[]>();
+        lineas.forEach((l, i) => {
+            const key = Math.round(l.tax_rate * 1e9) / 1e9;
+            grupos.set(key, [...(grupos.get(key) ?? []), i]);
+        });
+        for (const indices of grupos.values()) {
+            const rate = lineas[indices[0]].tax_rate;
+            if (ivaIncluido) {
+                const exactas = indices.map((i) => netos[i] / (1 + rate));
+                const bases = repartirPorResiduo(r(exactas.reduce((s, v) => s + v, 0)), exactas, decimals);
+                indices.forEach((i, k) => {
+                    const l = lineas[i];
+                    l.base = bases[k];
+                    l.descuento = rebajas[i] === 0 ? 0 : Math.max(0, r(r(previas[i].bruto / (1 + rate)) - l.base));
+                });
+            }
+            const baseTasa = r(indices.reduce((s, i) => s + lineas[i].base, 0));
+            const impuestos = repartirPorResiduo(r(baseTasa * rate), indices.map((i) => lineas[i].base * rate), decimals);
+            indices.forEach((i, k) => {
+                const l = lineas[i];
+                l.impuesto = impuestos[k];
+                l.total = r(l.base + l.impuesto);
+            });
+        }
+    }
 
     const subtotal = r(lineas.reduce((sum, l) => sum + l.base, 0));
     const impuestos = r(lineas.reduce((sum, l) => sum + l.impuesto, 0));
@@ -435,7 +521,9 @@ export function calculateDocumentTotals(
 ): DocumentTotals {
     // Las retenciones se calculan sobre las bases YA descontadas: el descuento
     // baja el valor de la operación, y con él lo que se retiene.
-    const base = calculateInvoiceTotals(items, { ivaIncluido: opts.ivaIncluido, roundLines: opts.roundLines, descuento: opts.descuento });
+    const base = calculateInvoiceTotals(items, {
+        ivaIncluido: opts.ivaIncluido, roundLines: opts.roundLines, taxRounding: opts.taxRounding, descuento: opts.descuento,
+    });
     const rnd = (n: number) => (opts.roundLines === undefined ? n : roundTo(n, opts.roundLines));
 
     const retenciones: RetencionApplied[] = (opts.retenciones ?? []).map((r) => {
