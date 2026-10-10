@@ -9,6 +9,8 @@
 import type { Plan, CompareGroup } from './precios';
 import { PLANES, overageRow } from './precios';
 
+const US_TAX_HINT_EN = 'US only: invoices with sales tax calculated by address in states where you collect.';
+
 const precioDe = (id: Plan['id']): Plan['precio'] => {
     const plan = PLANES.find((p) => p.id === id);
     if (!plan) throw new Error(`precios.en.ts: no existe el plan ${id} en precios.ts`);
@@ -119,6 +121,7 @@ export const COMPARATIVA_EN: CompareGroup[] = [
             { label: 'Commercial invoices', free: '10 / mo', starter: 'Unlimited', pro: 'Unlimited', scale: 'Unlimited', developer: 'Unlimited', hint: 'In Mexico and Spain the commercial document is a pro forma.' },
             { label: 'Tax-compliant invoices', free: false, starter: '30 / mo', pro: '200 / mo', scale: '500 / mo', developer: '1,000 / mo', hint: 'CFDI 4.0 in Mexico; VERI*FACTU in Spain once activation is complete. In other markets Cord issues a commercial invoice and does not file with other tax authorities.' },
             { label: 'Public API calls', free: '100 / mo', starter: '1,000 / mo', pro: '5,000 / mo', scale: '10,000 / mo', developer: '50,000 / mo' },
+            { label: 'Invoices with automatic sales tax', free: false, starter: '10 / mo', pro: '25 / mo', scale: '60 / mo', developer: '150 / mo', hint: US_TAX_HINT_EN },
         ],
     },
     {
@@ -241,6 +244,7 @@ export const COMPARATIVA_EN: CompareGroup[] = [
             overageRow('ia', 'Extra AI generation'),
             overageRow('timbrado', 'Extra tax invoice'),
             overageRow('api', 'Extra API (per 100 req)'),
+            overageRow('us_tax', 'Extra invoice with automatic sales tax', US_TAX_HINT_EN),
         ],
     },
 ];
@@ -256,7 +260,7 @@ export const FAQ_PRECIOS_EN: { q: string; a: string }[] = [
     },
     {
         q: 'What happens if I exceed the included consumption?',
-        a: 'Free has hard limits. From Starter, extra AI actions, tax invoices and API requests are billed at the published rates; commercial invoices have no cap on paid plans. Starter retains one user. On Professional and Scale each additional user is billed every month while active. You can review usage in the app.',
+        a: 'Free has hard limits. From Starter, extra AI actions, tax invoices and API requests are billed at the published rates; commercial invoices have no cap on paid plans. Starter retains one user. On Professional and Scale each additional user is billed every month while active. Invoices with automatic sales tax (US only) have their own monthly quota and their own overage rate. You can review usage in the app.',
     },
     {
         q: 'Can I change plans anytime?',
