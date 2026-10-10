@@ -590,7 +590,7 @@ export const FEATURES_EN: Feature[] = [
         plan: 'Commercial documents from the Free plan (10 a month; no cap from Starter). CFDI 4.0 in Mexico from Starter, with 30 tax invoices included each month. Recurring invoices from Professional.',
         stats: [
             { valor: '5', countup: 5, label: 'invoice statuses: draft, open, paid, void and uncollectible' },
-            { valor: '6', countup: 6, label: 'reminders per open invoice: 7 days and 1 day before the due date, and 3, 7, 14 and 30 days after' },
+            { valor: '6', countup: 6, label: 'reminders per open invoice by default: 7 days and 1 day before the due date, and 3, 7, 14 and 30 days after' },
             { valor: '12', countup: 12, label: 'countries where you invoice: CFDI 4.0 in Mexico and a commercial document in the other 11' },
         ],
         blocks: [
@@ -657,7 +657,7 @@ export const FEATURES_EN: Feature[] = [
             },
             {
                 q: 'When does my client get reminders?',
-                a: "Seven days and one day before the due date, and 3, 7, 14 and 30 days after it, on every plan. Each reminder goes out only once, and they stop as soon as the invoice is paid, voided or marked uncollectible. For a different message or channel, build it with Cord Workflows; for someone to chase overdue accounts one by one, that's AI collections.",
+                a: "By default, seven days and one day before the due date, and 3, 7, 14 and 30 days after it, on every plan; you choose the schedule in Settings › Reminders, and you can turn them off there too. Each reminder goes out only once, and they stop as soon as the invoice is paid, voided or marked uncollectible. For a different message or channel, build it with Cord Workflows; for someone to chase overdue accounts one by one, that's AI collections.",
             },
             {
                 q: 'How many invoices can I issue each month?',

@@ -634,7 +634,7 @@ export const FEATURES: Feature[] = [
         plan: 'Documentos comerciales desde el plan Gratis (10 al mes; sin tope desde Starter). CFDI 4.0 en México desde Starter, con 30 facturas fiscales incluidas al mes. Facturas recurrentes desde Profesional.',
         stats: [
             { valor: '5', countup: 5, label: 'estados de una factura: borrador, abierta, pagada, anulada e incobrable' },
-            { valor: '6', countup: 6, label: 'recordatorios por factura abierta: 7 y 1 día antes de vencer, y a los 3, 7, 14 y 30 días de vencida' },
+            { valor: '6', countup: 6, label: 'recordatorios por factura abierta por defecto: 7 y 1 día antes de vencer, y a los 3, 7, 14 y 30 días de vencida' },
             { valor: '12', countup: 12, label: 'países donde emites: CFDI 4.0 en México y documento comercial en los otros 11' },
         ],
         blocks: [
@@ -701,7 +701,7 @@ export const FEATURES: Feature[] = [
             },
             {
                 q: '¿Cuándo le llegan recordatorios a mi cliente?',
-                a: 'Siete días y un día antes del vencimiento, y a los 3, 7, 14 y 30 días de vencida, en todos los planes. Cada aviso sale una sola vez y se detienen en cuanto la factura se paga, se anula o se marca incobrable. Si quieres otro mensaje u otro canal, lo armas con Cord Workflows; si quieres que alguien persiga la cartera vencida cuenta por cuenta, eso es la cobranza con IA.',
+                a: 'Por defecto, siete días y un día antes del vencimiento, y a los 3, 7, 14 y 30 días de vencida, en todos los planes; el calendario lo eliges tú en Ajustes › Recordatorios, y ahí también los apagas. Cada aviso sale una sola vez y se detienen en cuanto la factura se paga, se anula o se marca incobrable. Si quieres otro mensaje u otro canal, lo armas con Cord Workflows; si quieres que alguien persiga la cartera vencida cuenta por cuenta, eso es la cobranza con IA.',
             },
             {
                 q: '¿Cuántas facturas puedo emitir al mes?',

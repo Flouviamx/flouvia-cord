@@ -401,6 +401,21 @@ APIs de cobros (ago 2026)
                    mientras las pestañas no se mostraban, notorio en cuanto el índice
                    empezó a listarlas. El breadcrumb de `SettingsShell` ahora incluye la
                    pestaña activa (`‹ Configuración / Impuestos`), no sólo la categoría.
+/app/ajustes/recordatorios → (oct 2026) pestaña de Facturación, después de Datos
+                   fiscales. Interruptor de los recordatorios automáticos al
+                   cliente (`orgs.recordatorios_activos`), calendario de la
+                   escalera de facturas con casillas de un menú cerrado (14/7/3/1
+                   días antes, el día, 1/3/7/14/30/60/90 después; máximo 8) y una
+                   vista previa en vivo ("Tu cliente recibe: …", la misma
+                   `describirEtapas()` de `src/lib/recordatorios.ts` en servidor y
+                   navegador), y la lista de clientes en pausa con "Reanudar". Barra
+                   de guardar propia → PATCH /api/org/recordatorios (permiso
+                   `ajustes`; no pasa por el guardado genérico de /api/org). La
+                   pausa se crea desde la ficha del cliente (`/app/clientes/[id]`,
+                   bloque "Recordatorios automáticos", permiso `cobranza`) → POST
+                   /api/org/recordatorios; es la fila del cliente en
+                   `cobranza_exclusiones`. Consumidor: /api/cron/recordatorios.
+                   Detalle en `cobros-facturacion.md` › Escalera de recordatorios.
 
 /app/facturas            → bandeja de facturas (`documentos_fiscales`, ago 2026).
                    Paginada por CURSOR en servidor. Distingue "Sin folio" de
@@ -703,8 +718,17 @@ APIs de cobros (ago 2026)
                    no solo al crear.
 /api/cron/recordatorios → escalera de cobranza de facturas (ago 2026, antes un
                    correo en una ventana de 5 días). Cadencia configurable por
-                   org (`orgs.recordatorio_etapas`); dedup real en
-                   `documento_recordatorios`, no en el calendario.
+                   org (`orgs.recordatorio_etapas`, Ajustes › Recordatorios desde
+                   oct 2026); dedup real en `documento_recordatorios`, no en el
+                   calendario. Oct 2026: agrupa el barrido por organización y
+                   corre cada una con SU idioma y zona (`withPresentation`), cuenta
+                   los días con el día civil del negocio, respeta el interruptor
+                   `recordatorios_activos` y la pausa por cliente
+                   (`cobranza_exclusiones`, leída por org).
+/api/org/recordatorios → PATCH `{activos?, etapas?}` (permiso `ajustes`, menú
+                   cerrado de `src/lib/recordatorios.ts`) y POST
+                   `{cliente_id, pausado}` (permiso `cobranza`) para pausar o
+                   reanudar a un cliente.
 /api/cron/intereses → intereses moratorios sobre los DOS rieles (ago 2026, vía
                    `cuentas_por_cobrar`), calculados sobre el SALDO.
 /api/recurrencias → CRUD de `documento_recurrencias`. POST admite

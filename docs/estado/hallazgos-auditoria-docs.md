@@ -12,11 +12,6 @@
 
 ## P0 — producción rota, dinero o privacidad
 
-2. **[verificado 10 oct] `origin` sin declarar en el agente de cobranza.**
-   `src/lib/agents/cobranza-run.ts` (~406) llama `renderDigestEmail(..., origin)` sin
-   `origin` declarado en `runCobranzaOrg`: el correo resumen del modo aprobación falla
-   después de guardar los borradores. Arreglo: `siteOrigin()` de `src/lib/email.ts`,
-   como ya hace `cron/recordatorios.ts`.
 3. **[verificado] Fuga de eventos internos al cliente.** Los eventos internos se
    guardan con `tipo = 'comment'`: "Solicitud de aprobación: …" (puede incluir el
    % de margen, `src/lib/cotizaciones.ts:415`), "Versión N creada" y "Borrador
@@ -138,9 +133,7 @@
     servidor, eventos "Propuesta:"/"Firmado digitalmente por" en
     `src/pages/api/q/[token].ts`, títulos de tareas automáticas ("Responder
     contracargo", "Transferir reembolso SPEI"), "(iguala)" y la nota de nivel en
-    `nueva.astro`, `plan.astro` con `PLANES` en español, recordatorios de
-    **factura** siempre en español (`notifyInvoiceReminder` corre en el cron sin
-    locale y `currentLocale()` cae a `es`; los de cotización ya usan `orgs.idioma`),
+    `nueva.astro`, `plan.astro` con `PLANES` en español,
     error de "100 suscripciones" en `src/lib/actions/webhooks.ts`,
     falta `set.api.rec.setup` en `src/i18n/app.ts` (la UI muestra la clave cruda).
 25. **Copy de la UI que no coincide con el comportamiento**: "Tasa de cierre ·

@@ -2813,6 +2813,49 @@ Cadencia configurable por organización (`orgs.recordatorio_etapas`, por defecto
 con unicidad `(documento_id, etapa)`: se registra **antes** de mandar y se libera
 si el envío falla.
 
+**Calendario, interruptor y pausa (oct 2026).** La cadencia se elige en Ajustes ›
+Facturación › Recordatorios (`/app/ajustes/recordatorios`, todos los planes, sin
+gate nuevo) y la guarda `PATCH /api/org/recordatorios` (permiso `ajustes`). El
+vocabulario es cerrado y vive en `src/lib/recordatorios.ts`: 14/7/3/1 días antes,
+el día del vencimiento (etapa `0`, con su propio correo "vence hoy") y
+1/3/7/14/30/60/90 días después; máximo `MAX_ETAPAS = 8`, mínimo una. La API valida
+contra ese menú y solo conserva una etapa fuera de él si la organización ya la
+tenía guardada (regla 28). `orgs.recordatorios_activos` (default `true`) apaga
+los correos al CLIENTE —facturas y los dos avisos fijos de cotizaciones, 3 días
+antes y el día—; no apaga el aviso `payment_overdue` al dueño ni el webhook
+`invoice.overdue`. Columnas en `db/deploy/2026-10-10-recordatorios.sql`.
+
+Reglas del cron (`src/pages/api/cron/recordatorios.ts`), probadas en
+`test/recordatorios.test.ts` y `test/recordatorios-cron-db.test.ts`:
+
+- **Día civil del negocio.** `diasVencida` se cuenta contra el día de hoy en
+  `orgs.zona_horaria` (`localClock`), no contra `current_date` del servidor. El
+  vencimiento de una cotización es el día civil de su aprobación más el término.
+- **Etapa que toca** (`etapaQueToca`): la MAYOR alcanzada y no enviada, y nunca
+  una ANTERIOR a otra ya enviada. Eso hace seguro cambiar el calendario: agregar
+  "14 días antes" cuando ya salió "7 días antes" no manda un aviso atrasado, y una
+  etapa nueva posterior sale cuando se alcanza. Al reencender, cada factura recibe
+  solo la etapa más reciente que alcanzó. Apagado no registra etapas.
+- **Pausa por cliente = `cobranza_exclusiones`.** No hay lista nueva: la fila del
+  cliente (o de la cotización o factura) en "No escribir a" detiene también los
+  recordatorios. Se pausa desde la ficha del cliente y se reanuda ahí o en
+  Ajustes › Recordatorios (`POST /api/org/recordatorios`, permiso `cobranza`, sin
+  gate de plan aunque el agente sea Pro). Su RLS es por organización, así que el
+  cron la lee en el trabajo de cada organización, no en el barrido de sistema.
+- **Idioma y zona por organización.** El trabajo de cada cuenta corre dentro de
+  `withPresentation()` (`src/lib/org-presentation.ts`), un contexto anidado que
+  termina con esa cuenta. Además, los correos al cliente de `src/lib/email.ts`
+  (`notifyQuoteSent`, `notifyInvoiceIssued`, `notifyInvoiceReminder`,
+  `notifyQuoteReminder`) toman el idioma de `orgs.idioma` de su propia fila, así
+  que también salen bien desde la API pública, que no resuelve el idioma de la
+  organización (`src/middleware.ts` lo excluye a propósito).
+- **Texto propio.** Los recordatorios llevan la FIRMA, el remitente y la respuesta
+  de Ajustes › Correo con el mismo gate (`custom_email`, Starter) que la factura;
+  la introducción no, porque sustituiría el mensaje de vencimiento.
+- **Dedup de lo que no tiene tabla.** El aviso de cotización, el
+  `payment_overdue` al dueño y el webhook `invoice.overdue` usan su fila de
+  `audit_log` de las últimas 36 h como marca: el endpoint lo disparan dos relojes.
+
 ### Facturas recurrentes
 
 `documento_recurrencias` guarda qué se factura; cada emisión congela sus propios

@@ -1611,6 +1611,7 @@ Cord Invoicing reúne el documento comercial, la emisión fiscal que corresponda
 - **Creación y emisión directa:** arma conceptos, guarda borradores sin folio y emite sólo después de revisar cliente, total, vencimiento y destino.
 - **Entrega con contexto:** envía por correo, comparte el link del cliente, descarga PDF/XML y consulta si la factura fue enviada, vista, vencida o pagada.
 - **Cobranza completa:** registra pagos manuales o parciales, cobra en el link público cuando Cord Payments está habilitado y convierte una factura en recurrencia mensual.
+- **Recordatorios a tu ritmo:** eliges cuándo recibe tu cliente cada recordatorio (antes, el día y después del vencimiento, hasta 8 por factura), los apagas o pausas a un cliente; salen en el idioma de tu cuenta, con tu firma y una sola vez por etapa.
 - **Operación verificable:** actividad por documento, selección masiva sólo para facturas elegibles, exportación CSV y documentos de prueba marcados sin mezclarlos con estados comerciales.
 - **Automatizable:** lista y administra facturas mediante la API pública de Cord y sus herramientas MCP.`,
             en: `## From capture to collection, without leaving Cord
@@ -1620,6 +1621,7 @@ Cord Invoicing brings together the commercial document, the fiscal issuance requ
 - **Direct creation and issuance:** build line items, save drafts without a number, and issue only after reviewing the client, total, due date, and recipient.
 - **Delivery with context:** send by email, share the client link, download PDF/XML, and see whether an invoice was sent, viewed, overdue, or paid.
 - **Complete collection:** record manual or partial payments, collect through the public link when Cord Payments is enabled, and turn an invoice into a monthly recurrence.
+- **Reminders on your schedule:** choose when your client gets each reminder (before, on, and after the due date, up to 8 per invoice), turn them off, or pause a client; they go out in your account's language, with your signature, and once per stage.
 - **Verifiable operations:** per-document activity, bulk selection restricted to eligible invoices, CSV export, and test documents labeled separately from commercial status.
 - **Automatable:** list and manage invoices through Cord's public API and MCP tools.`
         },
@@ -2340,7 +2342,7 @@ const roadmapEnhancements = {
             es: ['Crea un borrador desde cero o desde una cotización aprobada.', 'Revisa y emite por el carril fiscal o comercial que corresponda.', 'Entrega el link, registra pagos y sigue saldo, actividad, recurrencia y documentos.'],
             en: ['Create a draft from scratch or from an approved quote.', 'Review and issue through the applicable fiscal or commercial rail.', 'Deliver the link and track payments, balance, activity, recurrence, and files.']
         },
-        scope: { es: 'Bandeja completa de facturas con borradores, folios, emisión, actividad, pago manual o en línea, exportación y automatización por API y MCP.', en: 'Complete invoice inbox with drafts, numbering, issuance, activity, manual or online payment, export, and automation through API and MCP.' },
+        scope: { es: 'Bandeja completa de facturas con borradores, folios, emisión, actividad, pago manual o en línea, recordatorios con calendario propio, exportación y automatización por API y MCP.', en: 'Complete invoice inbox with drafts, numbering, issuance, activity, manual or online payment, reminders on your own schedule, export, and automation through API and MCP.' },
         boundaries: { es: 'El documento fiscal depende del país y de la configuración real. Cord Invoicing no transforma una factura comercial en clearance local cuando ese proveedor regulatorio no existe.', en: 'The fiscal document depends on the country and actual configuration. Cord Invoicing does not turn a commercial invoice into local clearance where no regulatory provider exists.' },
         related: ['facturacion-internacional', 'portal-del-cliente', 'cord-payments']
     },

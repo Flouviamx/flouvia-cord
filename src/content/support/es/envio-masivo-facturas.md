@@ -40,4 +40,5 @@ si aplica y la manda sola en la fecha que definas. Lo administras desde
 
 Para las que sí se vencen, la escalera de recordatorios ya trabaja por su cuenta:
 Cord avisa antes del vencimiento y vuelve a insistir después, sin que tengas que
-seleccionar nada.
+seleccionar nada. El calendario lo eliges en **Ajustes › Facturación ›
+Recordatorios**.
