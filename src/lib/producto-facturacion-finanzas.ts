@@ -144,11 +144,12 @@ const FINANZAS: Record<Lang, FinanzasCopy> = {
                 // fiscal/payments.ts → emitPaymentComplement (CFDI PPD).
                 { tarea: 'Emitir el complemento de pago en México', detalle: 'Uno por cada abono a un CFDI emitido para pagarse después.', estado: 'auto' },
                 // integraciones/contabilidad/xero.ts (DRAFT) + pagos.ts (Payments con Idempotency-Key).
-                { tarea: 'Mandar la factura y el cobro a tu contabilidad', detalle: 'En Xero, la factura como borrador para tu contador y cada cobro contra ella. QuickBooks Online, próximamente.', estado: 'auto' },
+                { tarea: 'Mandar la factura a tu contabilidad', detalle: 'En Xero, la factura como borrador para tu contador; el envío de cada cobro se está habilitando. QuickBooks Online, próximamente.', estado: 'auto' },
                 // Hoy: botón "Registrar pago" del detalle de la factura (fiscal/payments.ts
-                // applyPayment, acotado al saldo). Cuando la CLABE por factura salga, esta
-                // fila pasa a 'auto' cambiando solo `estado` y `detalle`.
-                { tarea: 'Conciliar una transferencia con su factura', detalle: 'Registrar pago en la factura: baja el mismo saldo y no puede pasarlo.', estado: 'click' },
+                // applyPayment, acotado al saldo). SPEI con CLABE por factura está construido
+                // (cobros/spei.ts) y en beta en el roadmap: cuando salga de beta, esta fila
+                // pasa a 'auto' cambiando solo `estado` y `detalle`.
+                { tarea: 'Conciliar una transferencia con su factura', detalle: 'Registrar pago en la factura: baja el mismo saldo y no puede pasarlo. En México, el SPEI a una CLABE propia de cada factura que se concilia sola se está habilitando.', estado: 'click' },
             ],
         },
         integraciones: {
@@ -215,8 +216,8 @@ const FINANZAS: Record<Lang, FinanzasCopy> = {
                 { tarea: 'Detect an online payment and apply it to its invoice', detalle: 'Card with Cord Payments or Mercado Pago: the payment lowers that invoice’s balance.', estado: 'auto' },
                 { tarea: 'Mark it paid and tell your team', detalle: 'It is marked paid when settled; your systems get invoice.paid and a workflow posts to Slack.', estado: 'auto' },
                 { tarea: 'Issue the payment complement in Mexico', detalle: 'One for each payment on a CFDI issued to be paid later.', estado: 'auto' },
-                { tarea: 'Send the invoice and the payment to your books', detalle: 'In Xero, the invoice as a draft for your accountant and each payment against it. QuickBooks Online, coming soon.', estado: 'auto' },
-                { tarea: 'Match a bank transfer to its invoice', detalle: 'Record payment on the invoice: it lowers the same balance and can never exceed it.', estado: 'click' },
+                { tarea: 'Send the invoice to your books', detalle: 'In Xero, the invoice as a draft for your accountant; sending each payment is being rolled out. QuickBooks Online, coming soon.', estado: 'auto' },
+                { tarea: 'Match a bank transfer to its invoice', detalle: 'Record payment on the invoice: it lowers the same balance and can never exceed it. In Mexico, SPEI to a CLABE of each invoice that reconciles itself is being rolled out.', estado: 'click' },
             ],
         },
         integraciones: {
