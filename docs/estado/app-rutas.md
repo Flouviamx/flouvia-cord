@@ -470,7 +470,12 @@ APIs de cobros (ago 2026)
                    el monto lo propone el cliente y el servidor lo acota contra
                    el saldo real y el piso del proveedor
                    (POST /api/i/[token]/payment-intent con `{monto}` opcional).
-                   Solo tarjeta — SPEI es un riel de México y liquida solo MXN.
+                   Tarjeta y domiciliación por el Payment Element; en facturas MXN
+                   de negocios mexicanos con SPEI encendido, también Transferencia
+                   SPEI (oct 2026, `{ metodo: 'spei' }`): el servidor devuelve
+                   CLABE de ESA factura, banco, referencia e importe y la página
+                   los pinta (selector Tarjeta / Transferencia SPEI si hay ambos).
+                   Contrato en "SPEI con CLABE en facturas" de cobros-facturacion.md.
                    Mismo tratamiento de actor que /q (regla 19): la vista se
                    marca solo la primera vez y solo si el actor es cliente.
 /q/[token]       → vista PÚBLICA — aprobar/rechazar REALES via POST /api/q/[token]

@@ -27,7 +27,7 @@ Cord tiene **dos rieles de cobro en línea** y una opción manual:
 | Método | Países | Divisa del cobro | Cotización | Factura | Portal del cliente | Iguala | Cobro automático |
 |---|---|---|---|---|---|---|---|
 | **Tarjeta** (Cord Payments) | MX, US, CA, BR, ES, GB, DE, FR | La divisa de venta del documento, si el procesador la admite | Sí | Sí | Sí | Sí | Sí |
-| **SPEI automático** (Cord Payments) | Solo MX | Solo MXN | Sí | No | No | No | No |
+| **SPEI automático** (Cord Payments) | Solo MX | Solo MXN | Sí | Sí | No | No | No |
 | **Domiciliación SEPA** (Cord Payments) | ES, DE, FR | Solo EUR | No | Sí | Sí | No | Sí |
 | **Cargo a cuenta bancaria ACH** (Cord Payments) | Solo US | Solo USD | No | Sí | Sí | No | Sí |
 | **Mercado Pago** | MX, BR, CO, AR, CL, PE | La que Mercado Pago admita en tu cuenta | Sí | Sí | No | No | No |
@@ -56,7 +56,7 @@ La tarjeta es el único método para [igualas recurrentes](/docs/pagos/igualas),
 
 ## SPEI automático
 
-SPEI es la transferencia interbancaria de México y solo liquida en pesos. Aparece únicamente en cobros en **MXN** de negocios en México con SPEI activado; si la cotización está en otra divisa, tu cliente paga con tarjeta aunque tengas SPEI encendido.
+SPEI es la transferencia interbancaria de México y solo liquida en pesos. Aparece únicamente en cobros en **MXN** de negocios en México con SPEI activado, en el link de la cotización y en el link de la factura; si el documento está en otra divisa, tu cliente paga con tarjeta aunque tengas SPEI encendido.
 
 Al elegir **Transferencia SPEI**, tu cliente ve las **Instrucciones SPEI**:
 
@@ -78,6 +78,23 @@ Desde esa pantalla puede **Imprimir o guardar PDF**, o pulsar **Enviar a mi corr
 ### Cómo se confirma
 
 Cada cobro conserva su propia referencia bancaria, así que Cord reconoce los fondos sin que nadie cruce comprobantes. Cuando el dinero llega, el cobro pasa a pagado y la cotización cambia de estado. La confirmación depende del aviso del banco y **no siempre es instantánea**: si tu cliente ya transfirió, que consulte el estado antes de intentar con tarjeta.
+
+### SPEI en el link de la factura
+
+<Callout type="info">
+Esta función es nueva y puede no estar habilitada todavía en tu cuenta. Si no la ves, escríbenos.
+</Callout>
+
+En facturas en **MXN** de negocios en México con SPEI activado, el link de la factura ofrece **Transferencia SPEI**. Si también tienes tarjeta, tu cliente elige el método; si solo tienes SPEI, ve directamente **Pagar [monto] por transferencia SPEI**.
+
+- **Una CLABE por factura.** Cada factura tiene su propia CLABE y la conserva en cada visita y en cada abono. Lo que llega a esa CLABE solo puede pagar esa factura: si tu cliente te debe varias, transfiere a la CLABE de cada una.
+- **Instrucciones.** Monto, CLABE y referencia (las dos con **Copiar**), banco, beneficiario y vigencia si la hay. Tu cliente puede **Imprimir o guardar PDF**. La factura no tiene el botón **Enviar a mi correo**: el correo de la factura ya lleva su link.
+- **Abono por SPEI.** Con **Pagar otra cantidad**, tu cliente transfiere solo una parte. El resto queda como saldo de la misma factura y la CLABE no cambia; la referencia sí puede cambiar, así que siempre debe usar la que ve en pantalla.
+- **Cómo se confirma.** Cuando llega la transferencia por el monto completo, Cord registra el pago en la factura sin que hagas nada, recalcula el saldo y, si queda en cero, la marca **Pagada**. Si la factura es un CFDI timbrado PPD, Cord emite su complemento de pago con forma de pago 03, transferencia electrónica de fondos.
+- **Si transfiere de menos.** Lo que llegó queda apartado para ese pago, pero todavía no se registra: el historial de la factura muestra **Transferencia SPEI** con lo que llegó y lo que falta, y tu cliente ve el monto pendiente al volver a abrir SPEI en la factura. El pago se registra cuando llega el resto. Si mientras tanto intenta pagar con tarjeta, Cord le pide terminar la transferencia.
+- **Si transfiere de más.** Se registra solo el pago que se pidió; la diferencia queda a favor de tu cliente y no se cobra. Si la factura todavía tiene saldo, se aplica cuando tu cliente vuelva a elegir SPEI en ella. Si ya está pagada, el historial lo indica y hay que devolverla: escríbenos para coordinarlo. Si nadie la usa, el procesador intenta devolvérsela a tu cliente a los 75 días.
+- **Comisión.** La de SPEI de tu [tabla de tarifas](/docs/pagos/condiciones), la misma que en la cotización.
+- **Dónde no aparece.** En el portal del cliente ni en el cobro automático: desde el portal, tu cliente abre cada factura y la paga por SPEI desde su link.
 
 ## Domiciliación bancaria (SEPA y ACH)
 
@@ -147,7 +164,7 @@ Tu cliente ve tus datos bancarios y transfiere desde su banco. Cuando verificas 
 | | Link de la cotización | Link de la factura | Portal del cliente |
 |---|---|---|---|
 | Tarjeta | Sí | Sí, si tienes **Tarjeta** activada | Sí |
-| SPEI automático | Sí, en MXN | No | No |
+| SPEI automático | Sí, en MXN | Sí, en MXN, con la CLABE de esa factura | No |
 | Domiciliación SEPA o ACH | No | Sí, en EUR o USD | Sí, en EUR o USD |
 | Mercado Pago | Sí | Sí | No |
 | Pago parcial | Por partes definidas: anticipo, saldo o cuotas | Abono libre: tu cliente elige cuánto pagar | No: cada factura se paga por su saldo |
@@ -156,7 +173,7 @@ Tu cliente ve tus datos bancarios y transfiere desde su banco. Cuando verificas 
 
 ### Pago parcial de una factura
 
-En el link de la factura, tu cliente puede pagar el saldo completo o pulsar **Pagar otra cantidad** y escribir cuánto quiere abonar, con tarjeta o con Mercado Pago:
+En el link de la factura, tu cliente puede pagar el saldo completo o pulsar **Pagar otra cantidad** y escribir cuánto quiere abonar, con tarjeta, SPEI o Mercado Pago:
 
 - Cord **acota el abono al saldo real**: si escribe más de lo que debe, se cobra solo el saldo.
 - Hay un **mínimo cobrable en línea**: 0.50 en la divisa de la factura (por ejemplo, 0.50 USD o 0.50 EUR), o 50 unidades en divisas sin decimales. Si el abono es menor, Cord pide pagar un poco más o liquidar el saldo.
@@ -167,7 +184,7 @@ Ver [Crear, emitir y cobrar facturas](/docs/pagos/facturas-emitidas).
 
 ## Cambiar entre SPEI y tarjeta
 
-Tu cliente puede elegir otro método en la misma página. Antes de ofrecerle el nuevo, Cord revisa el intento anterior:
+Tu cliente puede elegir otro método en la misma página, en la cotización y en la factura. Antes de ofrecerle el nuevo, Cord revisa el intento anterior:
 
 - Si el intento anterior **no recibió dinero**, se cancela y se abre el nuevo método.
 - Si **ya recibió dinero o tiene un pago en proceso** —una transferencia SPEI parcial o una tarjeta en autorización—, no se sustituye: tu cliente ve que hay un pago pendiente de confirmar.
@@ -178,22 +195,24 @@ Mientras un pago esté pendiente de aclarar, tu cliente no debe repetir la trans
 
 ## Límites
 
-- SPEI: solo México, solo MXN, solo cotizaciones.
+- SPEI: solo México y solo MXN, en el link de la cotización y en el de la factura. No en el portal ni en el cobro automático.
 - Domiciliación: SEPA solo en EUR para negocios en España, Alemania y Francia; ACH solo en USD para negocios en Estados Unidos. Solo en facturas, portal y cobro automático.
-- La factura no ofrece SPEI ni igualas.
+- La factura no ofrece igualas.
 - Mercado Pago no hace cobros recurrentes y Cord no lee hoy sus contracargos.
 - En Colombia, Argentina, Chile y Perú no hay Cord Payments: el cobro en línea es con Mercado Pago.
 - Un documento de prueba (sin emisión fiscal válida) no se puede pagar en línea.
 
 ## Problemas comunes
 
-**Mi cliente no ve la opción SPEI.** La cotización no está en MXN, SPEI está apagado en **Ajustes › Cobros** o tu cuenta no está activa.
+**Mi cliente no ve la opción SPEI.** La cotización o la factura no está en MXN, SPEI está apagado en **Ajustes › Cobros** o tu cuenta no está activa. En el portal del cliente SPEI no aparece: se paga desde el link de cada factura.
 
-**Mi cliente no ve botón de pago en la factura.** Tu cuenta de cobros no está activa, **Tarjeta** está apagada y no tienes Mercado Pago conectado, o la factura es un documento de prueba.
+**Mi cliente no ve botón de pago en la factura.** Tu cuenta de cobros no está activa, **Tarjeta** y **SPEI** están apagados (o la factura no está en MXN) y no tienes Mercado Pago conectado, o la factura es un documento de prueba.
 
 **Mi cliente no ve la domiciliación.** La factura no está en la divisa del método (EUR para SEPA, USD para ACH), el método no está **Activa** en **Ajustes › Cobros**, o es un cobro en MXN.
 
 **"Enviar a mi correo" falla.** La cotización no tiene correo del cliente registrado o se alcanzó el límite de envíos. Tu cliente puede **Imprimir o guardar PDF**.
+
+**Mi cliente transfirió menos de lo que debía a la CLABE de una factura.** El historial de la factura lo muestra como **Transferencia SPEI** con lo que falta. Pídele que transfiera el resto a la misma CLABE: el pago se registra cuando llega completo.
 
 **Mi cliente transfirió a una CLABE de otro cobro.** Cada cobro tiene su referencia. Contacta a tu cliente y revisa los cobros de la cotización antes de registrar nada a mano.
 

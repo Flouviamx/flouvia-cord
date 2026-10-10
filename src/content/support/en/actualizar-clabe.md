@@ -11,7 +11,7 @@ Cord doesn't hold your funds: money from your sales goes straight to whatever ba
 
 Under **Settings > Payments** (`/app/ajustes/cobros`) there are two independent sections:
 
-- **Cord Payments (online payments):** if your country supports it, you can connect an account and let clients pay by card directly on the public link; in Mexico, Cord also generates a unique CLABE per quote and reconciles the SPEI transfer automatically. The payout to your bank is handled by Cord Payments once your account is verified.
+- **Cord Payments (online payments):** if your country supports it, you can connect an account and let clients pay by card directly on the public link; in Mexico, Cord also generates a unique CLABE per quote payment and per invoice, and reconciles the SPEI transfer automatically. The payout to your bank is handled by Cord Payments once your account is verified.
 - **Manual bank transfer:** works in every country, whether or not online payments are available there. This is the section where you configure the bank, the account number (in your country's format), and the beneficiary shown on the public link and the PDF. Since the money goes straight to your account and never passes through Cord, you mark the quote as paid yourself once you receive it.
 
 ### Update the manual transfer bank details

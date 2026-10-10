@@ -7,6 +7,19 @@
 
 ---
 
+**SPEI con CLABE en facturas (10 oct 2026)** — se cerró el pendiente de agosto ("el
+pago de la hosted page es solo con tarjeta: SPEI exige CLABE por customer"). La
+decisión que importó fue el alcance de la CLABE: **una por factura**, no por cliente.
+La conciliación automática del proveedor aplica una transferencia sin referencia al
+grupo de pagos abiertos que sume el importe exacto y, si no lo encuentra, al más
+antiguo: con una CLABE por cliente, el dinero de una factura podía fondear otra. El
+Customer se guarda en `documentos_fiscales.stripe_spei_customer_id` antes del primer
+pago, porque la llave de idempotencia del proveedor vence a las 24 horas. De paso se
+encontró que todo pago del proveedor se asentaba como `'stripe'`, así que el
+complemento de pago de un SPEI (también el de la cotización trasladado a su factura)
+se timbraba con forma 04, tarjeta, en vez de 03. Estado vigente y alternativas
+descartadas en `docs/estado/cobros-facturacion.md` ("SPEI con CLABE en facturas").
+
 **Mercado Pago cobra facturas y lee sus reembolsos (22 sep 2026)** — el riel dejó de
 ser solo de cotizaciones. Tres cosas que costaron decisión:
 - **Dos ledgers, una notificación.** El webhook recibe un id de pago y nada más, así

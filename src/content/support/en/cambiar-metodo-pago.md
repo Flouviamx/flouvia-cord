@@ -8,10 +8,10 @@ category: "Payments & Deposits"
 ## Choose how to pay
 
 The quote link offers methods enabled by the business. Card and automatic bank
-transfer require an enabled payment account. The invoice link does not offer the
-same as the quote: it offers card and, if the business turned it on, bank direct
-debit (SEPA in EUR, ACH in USD), but **not SPEI**. See
-[SEPA Direct Debit and ACH bank debit](/en/support/domiciliacion-sepa-ach).
+transfer require an enabled payment account. The invoice link offers card; on MXN
+invoices of businesses in Mexico with SPEI turned on, also **SPEI to that invoice's own
+CLABE**; and, if the business turned it on, bank direct debit (SEPA in EUR, ACH in USD).
+See [SEPA Direct Debit and ACH bank debit](/en/support/domiciliacion-sepa-ach).
 
 ### Card
 
@@ -21,9 +21,16 @@ closing the payment screen or returning to the link is not proof of payment.
 
 ### SPEI
 
-Automatic SPEI is available for MXN payments for eligible businesses in Mexico.
-Instructions show the CLABE, bank, reference and remaining amount. Use the current
-instructions for that payment, not a saved screenshot from another document.
+Automatic SPEI is available for MXN payments for eligible businesses in Mexico, on
+the quote link and on the invoice link. Instructions show the CLABE, bank, reference and
+remaining amount. Use the current instructions for that payment, not a saved screenshot
+from another document.
+
+On the invoice, the CLABE belongs to that invoice and doesn't change between visits or
+partial payments. If you transfer less than shown, the payment is recorded when the
+rest arrives: open SPEI on the invoice again to see what's missing. If you transfer
+more, the difference stays in your favor and isn't charged. SPEI on the invoice is a
+new feature and may not be enabled on every account yet.
 
 Each payment keeps a bank-customer reference to identify its funds. Reconciliation
 depends on confirmation; it is not guaranteed to be instant. If you already sent

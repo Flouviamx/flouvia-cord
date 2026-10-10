@@ -50,7 +50,7 @@ Reglas que aplica Cord:
 
 - **Una divisa a la vez.** Las facturas en distintas divisas se pagan por separado.
 - **El reparto lo decide el servidor** con el saldo real de cada factura al crear el cobro; el navegador solo elige cuáles. Cada factura recibe su parte como un pago propio en su historial, y una factura de México emitida PPD recibe su complemento de pago.
-- **Métodos:** tarjeta y, si los activaste y la divisa coincide, domiciliación SEPA (EUR) o cargo a cuenta bancaria ACH (USD). En pesos mexicanos el portal cobra con tarjeta; SPEI se ofrece en el link de cada cotización.
+- **Métodos:** tarjeta y, si los activaste y la divisa coincide, domiciliación SEPA (EUR) o cargo a cuenta bancaria ACH (USD). En pesos mexicanos el portal cobra con tarjeta; SPEI se ofrece en el link de cada cotización y de cada factura, con la CLABE de esa factura.
 - **Un cargo bancario tarda días:** mientras un débito está en proceso, esa factura muestra **Pago en proceso**, no se puede volver a cobrar ni anular, y el portal le dice a tu cliente que no pague otra vez.
 
 ## Reembolsar un pago de varias facturas
