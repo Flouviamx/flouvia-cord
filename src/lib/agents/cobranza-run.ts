@@ -14,7 +14,7 @@ import { brandEmailShell, emailButtonStyle, emailBrandFromRow, type EmailBrand }
 
 import { sql, withOrgTx, withSystemTx } from '../db';
 import { runARAgent } from './ar-agent';
-import { sendEmail } from '../email';
+import { sendEmail, siteOrigin } from '../email';
 import { publicDocumentUrl } from '../public-links';
 import { moneyFull } from '../fmt';
 import { checkEntitlement } from '../org-entitlements';
@@ -119,12 +119,14 @@ const linkify = (escaped: string, url: string) => {
 export function renderCollectionEmail(opts: {
     brand?: EmailBrand;
     cuerpo: string; payUrl: string; cobraOnline: boolean; montoBoton: number; idioma: 'es' | 'en';
+    /** Divisa del documento que se cobra (regla 21). Sin ella el botón decía pesos a un cliente que debe euros. */
+    moneda?: string | null;
     creditorName: string; creditorTaxId?: string | null; contactEmail?: string | null;
 }): string {
     const { cuerpo, payUrl, cobraOnline, montoBoton, idioma, creditorName, creditorTaxId, contactEmail } = opts;
     const en = idioma === 'en';
     const cta = cobraOnline
-        ? (en ? `Pay ${moneyFull(montoBoton, 'en')} online` : `Pagar ${moneyFull(montoBoton, 'es')} en línea`)
+        ? (en ? `Pay ${moneyFull(montoBoton, 'en', opts.moneda || undefined)} online` : `Pagar ${moneyFull(montoBoton, 'es', opts.moneda || undefined)} en línea`)
         : (en ? 'View quote and payment options' : 'Ver cotización y opciones de pago');
     const seguro = en ? 'Secure payment processed by Stripe.' : 'Pago seguro procesado por Stripe.';
     const disclosure = en
@@ -206,7 +208,7 @@ export async function runCobranzaOrg(
           cxc.origen,
           cxc.ref_id as cotizacion_id,
           cxc.folio, cxc.total, cxc.token as public_token, cxc.cliente_id,
-          cxc.saldo, cxc.pagado, cxc.dias_vencido,
+          cxc.saldo, cxc.pagado, cxc.dias_vencido, cxc.moneda,
           cl.empresa as cliente_nombre, cl.email as cliente_email,
           -- Los DOS rieles: con solo Stripe aquí, una cuenta de Colombia que
           -- cobra con Mercado Pago mandaba su cobranza sin link de pago.
@@ -371,7 +373,7 @@ export async function runCobranzaOrg(
                 fromName: `${cfg.creditorName} vía Cord`,
                 replyTo: cfg.contactEmail,
                 html: renderCollectionEmail({
-                    cuerpo: res.mensaje, payUrl, cobraOnline, montoBoton, idioma: cfg.idioma,
+                    cuerpo: res.mensaje, payUrl, cobraOnline, montoBoton, moneda: q.moneda, idioma: cfg.idioma,
                     brand: cfg.brand, creditorName: cfg.creditorName, creditorTaxId: cfg.creditorTaxId, contactEmail: cfg.contactEmail,
                 }),
             })
@@ -403,7 +405,9 @@ export async function runCobranzaOrg(
                 subject: cfg.idioma === 'en'
                     ? `${out.borradores} collection email${out.borradores === 1 ? '' : 's'} awaiting approval`
                     : `${out.borradores} correo${out.borradores === 1 ? '' : 's'} de cobranza esperan tu aprobación`,
-                html: renderDigestEmail(out.borradores, cfg.idioma, origin),
+                // `origin` no existe en este módulo: el ReferenceError tumbaba el
+                // resumen DESPUÉS de guardar los borradores.
+                html: renderDigestEmail(out.borradores, cfg.idioma, siteOrigin()),
             });
         }
     }

@@ -18,9 +18,10 @@
 import { sql, withOrgTx } from './db';
 
 /** Lo que el cliente (o el pago) puede generar. */
-const TIPOS_CLIENTE = ['viewed', 'approved', 'rejected', 'counter', 'comment', 'payment', 'paid'];
+const TIPOS_CLIENTE = ['viewed', 'approved', 'rejected', 'counter', 'comment', 'payment', 'paid', 'transferencia'];
 /** Sin autor registrado, solo estos son inequívocamente del cliente o del pago. */
-const TIPOS_SIN_AUTOR = ['viewed', 'counter', 'payment', 'paid'];
+// `transferencia`: una transferencia SPEI incompleta o de más (cobros/spei.ts).
+const TIPOS_SIN_AUTOR = ['viewed', 'counter', 'payment', 'paid', 'transferencia'];
 
 export interface NotifRow {
     id: string;

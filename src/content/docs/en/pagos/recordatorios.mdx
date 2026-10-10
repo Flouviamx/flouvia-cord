@@ -1,7 +1,7 @@
 ---
 title: "Automatic payment reminders"
 seoTitle: "Automatic invoice and quote reminders in Cord"
-description: "Which payment reminders Cord sends on its own: the invoice ladder before and after the due date, the notice for quotes coming due, what your customer receives, when nothing is sent, and how duplicate emails are prevented."
+description: "Which payment reminders Cord sends on its own: the invoice ladder before and after the due date and how to choose its stages, turn them off, or pause a customer, the notice for quotes coming due, what your customer receives, and how duplicate emails are prevented."
 lastUpdated: "2026-10-10"
 reviewedBy: "Cord product and operations"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
@@ -11,12 +11,14 @@ prerequisites: ["Customer with an email on file", "Issued invoice with a due dat
 
 <header class="content-header">
   <h1 class="page-title">Automatic payment reminders</h1>
-  <p class="page-subtitle">Cord reminds your customer of what's coming due and what's overdue, once per stage, without you scheduling anything.</p>
+  <p class="page-subtitle">Cord reminds your customer of what's coming due and what's overdue, once per stage. You choose when, or turn them off.</p>
 </header>
 
 ## What they are
 
-Automatic reminders are emails Cord sends to your customer when a document is about to fall due or is already overdue. They work on every plan and don't need to be turned on: they run once a day for every open invoice and every approved quote that meets the conditions on this page.
+Automatic reminders are emails Cord sends to your customer when a document is about to fall due or is already overdue. They work on every plan and come turned on: they run once a day for every open invoice and every approved quote that meets the conditions on this page.
+
+You choose the invoice schedule in **Settings › Invoicing › Reminders**. If you never change it, Cord uses the usual ladder.
 
 They're different from two other collection tools:
 
@@ -28,7 +30,7 @@ They're different from two other collection tools:
 | Requirement | Detail |
 |---|---|
 | Plan | All plans. |
-| Permission | None: Cord sends them on its own. |
+| Permission | None for them to go out: Cord sends them on its own. To change the schedule or turn them off, the **Settings** permission; to pause a customer, the **Collections** permission. |
 | Customer | Must have an email on file. No email, no reminder. |
 | Invoice | Issued (not a draft), open, with a due date and an outstanding balance. |
 | Quote | Approved or invoiced, with a balance, not a recurring retainer, and whose balance isn't already carried by an open invoice (in that case the invoice is reminded). |
@@ -36,28 +38,84 @@ They're different from two other collection tools:
 
 ## Invoices: the reminder ladder
 
-Every open invoice goes through a ladder of **six stages**, counted in days from its due date:
+Every open invoice goes through a ladder of stages, counted in days from its due date. The **default** ladder has six:
 
 | Stage | When | What your customer receives |
 |---|---|---|
-| 7 days before | One week before the due date | Coming-due notice |
-| 1 day before | The day before the due date | Coming-due notice |
-| 3 days after | Three days overdue | Past-due notice |
-| 7 days after | One week overdue | Past-due notice |
-| 14 days after | Two weeks overdue | Past-due notice |
-| 30 days after | One month overdue | Past-due notice |
+| 7 days before | One week before the due date | **Invoice [number] is coming due** |
+| 1 day before | The day before the due date | **Invoice [number] is coming due** |
+| 3 days after | Three days overdue | **Past due: invoice [number]** |
+| 7 days after | One week overdue | **Past due: invoice [number]** |
+| 14 days after | Two weeks overdue | **Past due: invoice [number]** |
+| 30 days after | One month overdue | **Past due: invoice [number]** |
 
-After the 30-day stage, Cord stops sending automatic reminders for that invoice.
+After the last stage of your schedule, Cord stops sending automatic reminders for that invoice.
 
-### What your customer receives
+Days are counted on **your business's calendar day**, using the time zone in **Settings › General**: a stage doesn't go out a day early or a day late because your customer or the server is in another time zone.
+
+## Choose the schedule
+
+<Callout type="info">
+This feature is new and may not be enabled on your account yet. If you do not see it, write to us.
+</Callout>
+
+{/* MOCKUP: Settings › Invoicing › Reminders (copy of src/pages/app/ajustes/recordatorios.astro). "Send automatic reminders" block with the switch on; "Invoice schedule" block with the three groups of options — Before the due date: 14 days, 7 days, 3 days, 1 day; On the due date: Due today; After the due date: 1 day, 3 days, 7 days, 14 days, 30 days, 60 days, 90 days — with 7 days, 1 day, 3, 7, 14, and 30 days selected, the line "Your client receives: 7 and 1 day before; 3, 7, 14, and 30 days after." and the "Restore the default schedule" link; "Quotes" block; "Paused clients" block with Distribuidora El Zarco and the Resume button; save bar. */}
+
+<Steps>
+1. Open **Settings › Invoicing › Reminders**.
+2. In **Invoice schedule**, select the moments when you want your customer to get a reminder: before the due date, on the due date, or after.
+3. Check the **Your client receives** line: it spells out the full schedule as it will go out.
+4. Click **Save changes**.
+</Steps>
+
+You can choose from:
+
+| Moment | Options |
+|---|---|
+| Before the due date | 14, 7, 3, or 1 day before |
+| On the due date | **Due today** |
+| After the due date | 1, 3, 7, 14, 30, 60, or 90 days after |
+
+Up to **8 reminders** per invoice, and at least one. **Restore the default schedule** brings back the usual ladder.
+
+### What happens to invoices already in progress
+
+The change applies from the next daily run, including invoices that already received reminders:
+
+- **A stage that already went out is never repeated**, even if it stays in your schedule.
+- **A stage that falls before one already sent is skipped.** If the 7-days-before notice already went out and you add 14 days before, that invoice doesn't get a late notice; new invoices do.
+- **A new later stage does go out** when the invoice reaches it. For example, if you add 60 days after, an invoice that already went through the 30-day stage gets the 60-day one when it's 60 days overdue.
+
+### Turn reminders off
+
+The **Send automatic reminders** switch stops the emails to your customers: invoice reminders and quote notices. Everything that doesn't go to the customer keeps working: your **Overdue payment** alert for quotes (if it's on in [Notifications](/en/docs/gestion/notificaciones)) and the **An invoice becomes overdue** event. [AI collections](/en/docs/pagos/cobranza-ia) has its own switch.
+
+If you turn them back on, each invoice gets only the most recent stage it already reached, not the ones skipped while reminders were off.
+
+## Pause a customer
+
+If a customer asked you not to write to them, pause their reminders from their record:
+
+{/* MOCKUP: customer record in Clients (copy of the "Automatic reminders" block in the side column of src/pages/app/clientes/[id].astro): "On." state with the text "Cord reminds this client of invoices and quotes coming due and overdue." and the "Pause reminders" button; and the same block paused: "Paused." with "Cord sends this client no reminders and no AI collections emails." and the "Resume reminders" button. */}
+
+<Steps>
+1. Open **Clients** and go to the customer.
+2. In **Automatic reminders**, click **Pause reminders** and confirm.
+</Steps>
+
+The pause is the same **Never email** list used by [AI collections](/en/docs/pagos/cobranza-ia): a paused customer gets no automatic reminders and no emails from the agent. The other way around, a customer, quote, or invoice you add to **Never email** from the agent doesn't get reminders either. Paused customers appear in **Settings › Invoicing › Reminders › Paused clients**, with a **Resume** button.
+
+## What your customer receives
 
 <DmInvoiceReminderEmail lang="en" />
-- **Subject:** "Tu factura [number] está por vencer" (coming due) or "Factura vencida [number]" (past due), followed by your business name.
+- **Subject:** the matching notice followed by your business name: **Invoice [number] is coming due** before the due date, **Invoice [number] is due today** on the due date, and **Past due: invoice [number]** after.
+- **Language:** your account's language, the one you choose in **Settings › General**.
 - **Body:** the invoice number, the due date, and the **outstanding balance with its currency**. The balance already deducts partial payments and credit notes, so you never remind your customer about money they've already paid.
 - **Pay invoice button:** opens the invoice link, where they can pay the full balance or pay part of it. See [Create, issue, and collect invoices](/en/docs/pagos/facturas-emitidas).
+- **Your signature, sender, and reply-to:** from Starter, the reminder carries the signature, display name, and reply-to address from **Settings › Email**. The introduction from that screen doesn't: it's written for the email you send the document with, and the reminder keeps its due-date message.
 - **Branding:** the email uses your logo and color. If you connected your [business Gmail](/en/docs/automatizacion/integraciones/gmail), it goes out from your Gmail account; otherwise it goes out from Cord with your business name.
 
-Each reminder sent appears on the **invoice timeline** (for example, a due-date notice 7 days before, or a collection reminder 3 days overdue) and in the audit log.
+Each reminder sent appears on the **invoice timeline** (for example, a due-date notice 7 days before, a due-date notice on the due date, or a collection reminder 3 days overdue) and in the audit log.
 
 ### One stage, one email
 
@@ -70,57 +128,50 @@ Cord records the stage **before** sending the email, and each stage can be recor
 
 ### The "An invoice becomes overdue" event
 
-The day after an invoice with a balance falls due, Cord emits the **An invoice becomes overdue** event (`invoice.overdue`) once. It reaches your [webhooks](/en/docs/desarrolladores/herramientas/webhooks) and can trigger a [workflow](/en/docs/automatizacion/workflows/disparadores), for example to alert your team in Slack or create a follow-up task.
+The day after an invoice with a balance falls due, Cord emits the **An invoice becomes overdue** event (`invoice.overdue`) once. It reaches your [webhooks](/en/docs/desarrolladores/herramientas/webhooks) and can trigger a [workflow](/en/docs/automatizacion/workflows/disparadores), for example to alert your team in Slack or create a follow-up task. It goes out even if you turned reminders off or paused the customer: it's for you, not for them.
 
 ## Quotes: due-date notice
 
-Approved quotes with an outstanding balance get a simpler notice: **two emails, one three days before the due date and another on the day it's due**. The due date is the approval date plus the payment term's days:
+Approved quotes with an outstanding balance get a simpler notice: **two emails, one three days before the due date and another on the day it's due**. These two moments are fixed; they follow the reminders switch and the per-customer pause. The due date is the approval day plus the payment term's days:
 
 | Term | Due |
 |---|---|
 | Due on receipt | On the approval date |
 | Net 7, 15, 30, 45, 60, or 90 | That many calendar days after approval |
 
-The email, with your logo and color, shows the quote number, the quote's **balance** with its currency (the total minus what was already collected as a deposit or installments), and the due date, with a **View and pay [quote number]** button that opens the quote link. The subject is **Payment reminder — [quote number]**, and it goes out in your account's language. See [Credit terms](/en/docs/pagos/credito).
+The email, with your logo and color, shows the quote number, the quote's **balance** with its currency (the total minus what was already collected as a deposit or installments), and the due date, with a **View and pay [quote number]** button that opens the quote link. The subject is **Payment reminder — [quote number]**; it goes out in your account's language and, from Starter, with your signature. See [Credit terms](/en/docs/pagos/credito).
 
 <Callout type="info">
 With **Due on receipt** terms, the due date matches the approval, so only the due-day notice goes out, and it may arrive the same day your customer approves.
 </Callout>
 
-<Callout type="warning" title="Invoice reminders are sent in Spanish today">
-Automatic **invoice** reminders currently go out in Spanish even if your account is set to English; **quote** notices already go out in your account's language. If your customers need English invoice reminders, use a [workflow](/en/docs/automatizacion/workflows) with your own message, as described below.
-</Callout>
-
 ## When no reminder is sent
 
+- You turned automatic reminders off, or the customer is paused.
 - The customer has no email on file.
 - The invoice is already paid, voided, marked uncollectible, or still a draft.
 - The invoice has no due date or its balance is zero.
-- The invoice is more than 30 days overdue and has gone through every stage.
+- The invoice has gone through every stage of your schedule, or is more than 120 days overdue.
+- The stage that would apply falls before one that already went out (see **What happens to invoices already in progress**, above).
 - The quote is fully paid, isn't approved, or is a [recurring retainer](/en/docs/pagos/igualas): retainers charge themselves every month and are never treated as overdue receivables.
 - The account is a test account or the demo account.
 
-## Can I change the cadence?
-
-Not from the app today. Cord stores the ladder per organization, but there's no screen yet to edit it or to turn reminders off: every account uses the 7 days before, 1 day before, and 3, 7, 14, and 30 days after ladder.
-
-If you need a different pace or your own message, create a [workflow](/en/docs/automatizacion/workflows) with the **An invoice becomes overdue** trigger and a [wait](/en/docs/automatizacion/workflows/esperas) before sending the email. The custom content in **Settings › Email** is used when sending quotes and invoices, not in reminders: they keep their own message.
-
 ## Limits
 
-- One invoice reminder per stage, six stages at most.
-- The cadence and text can't be edited from the app.
-- Invoice reminders are sent in Spanish, regardless of the account language; quote notices follow your account's language.
+- One invoice reminder per stage, up to 8 stages, chosen from the menu on this page.
+- The reminder text can't be edited; from Starter it carries your signature. If you need a different message or channel, create a [workflow](/en/docs/automatizacion/workflows) with the **An invoice becomes overdue** trigger and a [wait](/en/docs/automatizacion/workflows/esperas).
+- Quote notices have two fixed moments and no ladder after the due date. To chase overdue quotes, use [receivables](/en/docs/pagos/cartera-cobranza) or [AI collections](/en/docs/pagos/cobranza-ia).
 - Reminders don't attach the PDF; the customer downloads it from the invoice link.
-- The quote notice has no ladder after the due date. To chase overdue quotes, use [receivables](/en/docs/pagos/cartera-cobranza) or [AI collections](/en/docs/pagos/cobranza-ia).
 
 ## Common problems
 
-**My customer says they didn't get the reminder.** Check that their record has an email and look for the event on the invoice timeline. If it isn't there, the send failed and is retried the next day.
+**My customer says they didn't get the reminder.** Check that their record has an email, that they aren't paused, and that reminders are on. Then look for the event on the invoice timeline. If it isn't there, the send failed and is retried the next day.
 
 **They got a reminder for an invoice they already paid by transfer.** The reminder goes out while the invoice has a balance. Record the payment on the invoice as soon as you verify it.
 
-**I don't want a customer to get reminders.** There's no exclusion for automatic reminders today. The **Never email** list in AI collections only applies to the agent.
+**I added a stage and an invoice didn't get it.** If that invoice had already received a later stage, the new one falls behind and isn't sent, so no late notice goes out. New invoices do get it.
+
+**I don't want a customer to get reminders.** Pause their reminders from their record in **Clients** (see [Pause a customer](#pause-a-customer)).
 
 ## Related
 

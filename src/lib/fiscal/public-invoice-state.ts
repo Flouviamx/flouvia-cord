@@ -36,11 +36,13 @@ export function publicInvoicePayability(f: {
     pagoDisponible: boolean; aceptaTarjeta: boolean; mercadoPago: boolean;
     /** Métodos de Cord Payments para la divisa de la factura (tarjeta, domiciliación). */
     metodosEnLinea?: string[];
+    /** Transferencia SPEI con la CLABE de la factura (México, MXN). */
+    speiEnLinea?: boolean;
     /** Un débito bancario en proceso: no se ofrece pagar otra vez mientras tanto. */
     pagoEnProceso?: boolean;
 }, stripeConfigured: boolean) {
     const cobrable = !f.esNotaCredito && !f.esPrueba && !f.simulado && !f.testMode && !f.pagoEnProceso;
-    const enLinea = f.metodosEnLinea ? f.metodosEnLinea.length > 0 : f.aceptaTarjeta;
+    const enLinea = (f.metodosEnLinea ? f.metodosEnLinea.length > 0 : f.aceptaTarjeta) || !!f.speiEnLinea;
     // Mercado Pago no depende de Cord Payments ni de la llave de Stripe.
     return {
         puedePagar: cobrable && stripeConfigured && f.pagoDisponible && enLinea,

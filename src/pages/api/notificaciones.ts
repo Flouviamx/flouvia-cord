@@ -26,6 +26,8 @@ const META_FAC: Record<string, { key: Key; icon: string }> = {
     viewed:   { key: 'notif.fac.viewed',  icon: 'eye'  },
     payment:  { key: 'notif.fac.payment', icon: 'card' },
     paid:     { key: 'notif.fac.paid',    icon: 'card' },
+    // SPEI: llegó dinero que todavía no es un pago (incompleto o de más).
+    transferencia: { key: 'notif.fac.transferencia', icon: 'card' },
 };
 
 /**

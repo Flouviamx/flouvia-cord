@@ -11,7 +11,7 @@ Cord no retiene tus fondos: el dinero de tus ventas cae directo a la cuenta banc
 
 En **Ajustes > Cobros** (`/app/ajustes/cobros`) hay dos secciones independientes:
 
-- **Cord Payments (cobro en línea):** si tu país lo soporta, puedes conectar una cuenta y que tus clientes paguen con tarjeta directo en el link público; en México, además, Cord genera una CLABE única por cotización y concilia la transferencia SPEI automáticamente. El depósito a tu banco lo hace Cord Payments una vez que tu cuenta está verificada.
+- **Cord Payments (cobro en línea):** si tu país lo soporta, puedes conectar una cuenta y que tus clientes paguen con tarjeta directo en el link público; en México, además, Cord genera una CLABE única por cobro de la cotización y por factura, y concilia la transferencia SPEI automáticamente. El depósito a tu banco lo hace Cord Payments una vez que tu cuenta está verificada.
 - **Transferencia bancaria manual:** funciona en cualquier país, esté o no disponible el cobro en línea. Es la sección donde configuras el banco, el número de cuenta (en el formato de tu país) y el beneficiario que se muestran en el link público y el PDF. Como el dinero llega directo a tu cuenta y no pasa por Cord, tú mismo marcas la cotización como pagada cuando lo recibes.
 
 ### Actualizar el banco de la transferencia manual

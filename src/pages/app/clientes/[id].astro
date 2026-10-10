@@ -11,6 +11,7 @@ import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
 import { getActiveOrgId } from '../../../lib/db';
 import { estadoPortalCliente } from '../../../lib/cobros/portal';
+import { estadoRecordatoriosCliente } from '../../../lib/recordatorios-db';
 import { etiquetaMetodo } from '../../../lib/cobros/metodos';
 import { fmtDateLong } from '../../../lib/fmt-server';
 import { checkLeitwegId, einvoiceAddressLeitwegProblem, leitwegProblem, splitEInvoiceAddress } from '../../../lib/fiscal/einvoice/codes';
@@ -29,6 +30,10 @@ const [c, ME, EC, ORG] = await Promise.all([
 ]);
 if (!c) return Astro.redirect('/app/clientes');
 const PORTAL = await estadoPortalCliente(await getActiveOrgId(), c.id);
+// Recordatorios automáticos: la pausa es la fila del cliente en la lista "No
+// escribir a" de la cobranza (src/lib/recordatorios-db.ts).
+const REC = await estadoRecordatoriosCliente(await getActiveOrgId(), c.id);
+const canPause = memberCan(ME, 'cobranza');
 const PORTAL_MOTIVO: Record<string, string> = {
     metodo_invalido: t(L, 'cdet.portal_motivo_metodo'), bloqueado: t(L, 'cdet.portal_motivo_bloqueado'),
     mandato_revocado: t(L, 'cdet.portal_motivo_mandato'), requiere_autenticacion: t(L, 'cdet.portal_motivo_autenticacion'),
@@ -297,6 +302,18 @@ import { iconInner } from '../../../lib/icons';
                 </section>
             )}
 
+            <section class="dc-side-block" id="dcRecordatorios" data-id={c.id}
+                data-i18n={JSON.stringify({ titulo: t(L, 'cdet.rec_pausar'), body: t(L, 'cdet.rec_pausar_body').replace('{cliente}', c.empresa), error: t(L, 'cdet.rec_error') })}>
+                <div class="sec-head"><h2 class="sec-title">{t(L, 'cdet.rec_titulo')}</h2></div>
+                <p class="dc-portal-hint"><strong>{REC.pausado ? t(L, 'cdet.rec_pausa') : t(L, 'cdet.rec_activos')}.</strong> {REC.pausado ? t(L, 'cdet.rec_desc_pausa') : t(L, 'cdet.rec_desc_activos')}</p>
+                {!REC.cuentaActiva && <p class="dc-portal-warn">{t(L, 'cdet.rec_apagados_cuenta')}</p>}
+                {canPause && (
+                    <button type="button" class:list={['dc-portal-act', { 'dc-portal-danger': !REC.pausado }]} data-rec-pausar={REC.pausado ? '0' : '1'}>
+                        {REC.pausado ? t(L, 'cdet.rec_reanudar') : t(L, 'cdet.rec_pausar')}
+                    </button>
+                )}
+            </section>
+
             <section class="dc-side-block">
                 <div class="sec-head"><h2 class="sec-title">{c.fiscalCompleto ? t(L, 'cdet.fiscal_completo') : t(L, 'cdet.fiscal_incompleto')}</h2></div>
                 <span class:list={['dc-fiscal-badge', { on: c.fiscalCompleto }]}>{c.fiscalCompleto ? t(L, 'cdet.fiscal_completo') : t(L, 'cdet.fiscal_incompleto')}</span>
@@ -391,6 +408,29 @@ import { iconInner } from '../../../lib/icons';
             }
         });
     }
+
+    // ── Recordatorios automáticos: pausar o reanudar a este cliente ────────
+    const rec = document.getElementById('dcRecordatorios');
+    rec?.addEventListener('click', async (e) => {
+        const b = (e.target as HTMLElement).closest<HTMLButtonElement>('button[data-rec-pausar]');
+        if (!b) return;
+        const R = JSON.parse(rec.dataset.i18n || '{}');
+        const pausado = b.dataset.recPausar === '1';
+        if (pausado && !(await (window as any).cordConfirm({ title: R.titulo, body: R.body, confirmText: R.titulo }))) return;
+        b.disabled = true;
+        try {
+            const res = await fetch('/api/org/recordatorios', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ cliente_id: rec.dataset.id, pausado }),
+            });
+            const d = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(d.error || R.error);
+            window.location.reload();
+        } catch (err: any) {
+            (window as any).cordToast?.(err.message || R.error, 'error');
+            b.disabled = false;
+        }
+    });
 
     const btnDel = document.getElementById('dcDelete');
     btnDel?.addEventListener('click', async () => {

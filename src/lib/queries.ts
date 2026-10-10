@@ -33,7 +33,7 @@ import { calculateDocumentTotals, retencionBase, type RetencionBase } from '../.
 import { dueDateFor, venceDia } from './cobros';
 import { taxBreakdownRows } from './tax-components';
 import { taskBadge } from './tasks-db';
-import { metodosPara } from './cobros/metodos';
+import { metodosPara, speiDisponible } from './cobros/metodos';
 import type { PublicViewer } from './public-viewer';
 import {
     STATUS_ABIERTA, STATUS_GANADA, STATUS_PERDIDA, STATUS_SALIO,
@@ -1840,6 +1840,7 @@ export async function getFacturaByToken(token: string) {
                    o.acepta_transferencia as org_acepta_transferencia,
                    o.acepta_domiciliacion as org_acepta_domiciliacion,
                    o.stripe_capacidades as org_stripe_capacidades,
+                   o.cobro_spei_auto as org_cobro_spei_auto,
                    o.mp_charges_enabled as org_mp_charges_enabled,
                    o.embed_domains as org_embed_domains,
                    d.pago_en_proceso_pi,
@@ -1937,6 +1938,12 @@ export async function getFacturaByToken(token: string) {
         // domiciliación si el negocio la encendió y su cuenta la tiene activa.
         metodosEnLinea: metodosPara({
             aceptaTarjeta: !!r.org_acepta_tarjeta, aceptaDomiciliacion: !!r.org_acepta_domiciliacion,
+            capacidades: r.org_stripe_capacidades,
+        }, currency),
+        // SPEI con CLABE de la factura: México, MXN y la capacidad activa. Es la
+        // misma regla con la que /api/i/[token]/payment-intent lo acepta.
+        speiEnLinea: speiDisponible({
+            pais: r.org_country_code as string, cobroSpeiAuto: !!r.org_cobro_spei_auto,
             capacidades: r.org_stripe_capacidades,
         }, currency),
         // Un débito bancario en proceso (días): no se ofrece pagar otra vez.

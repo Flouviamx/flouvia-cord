@@ -41,6 +41,18 @@ const esVistaPrevia = viewer.rol === 'seller';
 
 const color = /^#[0-9a-fA-F]{6}$/.test(f.org.color ?? '') ? f.org.color! : '#0a192f';
 const { puedePagar, puedePagarMp } = publicInvoicePayability(f, !!(import.meta.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY));
+// Cord Payments ofrece dos caminos: el Payment Element (tarjeta, domiciliación)
+// y la transferencia SPEI con la CLABE de esta factura (México, MXN). Con los
+// dos, el cliente elige; con uno, no hay selector.
+const conTarjeta = puedePagar && (f.metodosEnLinea?.length ?? 0) > 0;
+const conSpei = puedePagar && !!f.speiEnLinea;
+const speiI18n = JSON.stringify({
+    parcial: t(L, 'fact.p_spei_parcial'),
+    copiar: t(L, 'pay.copiar'),
+    copiado: t(L, 'pay.copiado'),
+    error: t(L, 'fact.p_error_pago'),
+    preparando: t(L, 'fact.p_preparando'),
+});
 // Canadá: GST y QST/PST/RST en renglones aparte — el cliente recupera cada uno
 // ante una autoridad distinta. `null` en el resto de países (un solo renglón).
 // EE. UU., con el sales tax por dirección: un renglón por jurisdicción, y la
@@ -248,8 +260,22 @@ import { iconInner } from '../../lib/icons';
 
             {f.notas && <p class="iv-notas">{f.notas}</p>}
 
-            <footer class="iv-foot">
-                {puedePagar && !regresoDePago && (
+            <footer class="iv-foot" id="ivFoot" data-metodo={conTarjeta ? 'card' : 'spei'}>
+                {conTarjeta && conSpei && !regresoDePago && (
+                    <fieldset class="iv-metodos">
+                        <legend>{t(L, 'pay.metodo_pago')}</legend>
+                        <div class="iv-metodos-grid">
+                            <button type="button" class="iv-metodo" data-metodo="card" aria-pressed="true">{t(L, 'pay.tarjeta')}</button>
+                            <button type="button" class="iv-metodo" data-metodo="spei" aria-pressed="false">{t(L, 'fact.p_spei')}</button>
+                        </div>
+                    </fieldset>
+                )}
+                {conSpei && !regresoDePago && (
+                    <button type="button" class="iv-pay" id="ivPaySpei" style={`background:${color}`} hidden={conTarjeta}>
+                        {t(L, 'fact.p_pagar_spei').replace('{monto}', moneyFull(f.saldo))}
+                    </button>
+                )}
+                {conTarjeta && !regresoDePago && (
                     <Fragment>
                         <button type="button" class="iv-pay" id="ivPay" style={`background:${color}`}>
                             {t(L, 'fact.p_pagar')} {moneyFull(f.saldo)}
@@ -307,6 +333,25 @@ import { iconInner } from '../../lib/icons';
             <p class="iv-aviso">
                 {t(L, 'fact.p_aviso')}
             </p>
+        )}
+
+        {conSpei && (
+            <section class="iv-spei" id="ivSpei" hidden aria-labelledby="ivSpeiTitulo"
+                data-i18n={speiI18n} data-locale={getCountryProfile(f.pais).locale} data-decimals={String(currencyDecimals(f.currency || 'MXN'))}>
+                <h2 id="ivSpeiTitulo">{t(L, 'pay.instrucciones_spei')}</h2>
+                <p class="iv-spei-desc">{t(L, 'fact.p_spei_desc')}</p>
+                <p class="iv-spei-parcial" id="ivSpeiParcial" role="status" hidden></p>
+                <dl class="iv-spei-datos">
+                    <div><dt>{t(L, 'pay.monto')}</dt><dd><strong id="ivSpeiMonto" class="editorial"></strong></dd></div>
+                    <div><dt>CLABE</dt><dd><strong id="ivSpeiClabe"></strong><button type="button" class="iv-spei-copy" data-copy="ivSpeiClabe">{t(L, 'pay.copiar')}</button></dd></div>
+                    <div><dt>{t(L, 'pay.banco')}</dt><dd><strong id="ivSpeiBanco"></strong></dd></div>
+                    <div id="ivSpeiBenefFila"><dt>{t(L, 'pay.beneficiario')}</dt><dd><strong id="ivSpeiBenef"></strong></dd></div>
+                    <div><dt>{t(L, 'pay.referencia')}</dt><dd><strong id="ivSpeiRef"></strong><button type="button" class="iv-spei-copy" data-copy="ivSpeiRef">{t(L, 'pay.copiar')}</button></dd></div>
+                    <div id="ivSpeiVigFila" hidden><dt>{t(L, 'pay.vigencia')}</dt><dd><strong id="ivSpeiVig"></strong></dd></div>
+                </dl>
+                <p class="iv-spei-nota">{t(L, 'fact.p_spei_nota')}</p>
+                <button type="button" class="iv-pay" id="ivSpeiImprimir" style={`background:${color}`}>{t(L, 'pay.imprimir_guardar')}</button>
+            </section>
         )}
 
         <div class="iv-paywrap" id="ivPayWrap" hidden>
@@ -393,6 +438,7 @@ import { iconInner } from '../../lib/icons';
 </script>
 
 <script>
+    import { WALLETS_PAYMENT_ELEMENT } from '../../lib/cobros/billeteras';
     const boton = document.getElementById('ivPay') as HTMLButtonElement | null;
     if (boton) {
         const T = JSON.parse((document.querySelector('.iv-main') as HTMLElement)?.dataset.i18n || '{}');
@@ -440,7 +486,7 @@ import { iconInner } from '../../lib/icons';
                 }
                 stripe = (window as any).Stripe(data.publishableKey, { stripeAccount: data.accountId });
                 elements = stripe.elements({ clientSecret: data.clientSecret });
-                elements.create('payment').mount('#ivPayEl');
+                elements.create('payment', { wallets: WALLETS_PAYMENT_ELEMENT }).mount('#ivPayEl');
                 if (wrap) wrap.hidden = false;
                 boton.hidden = true;
             } catch (e) {
@@ -470,6 +516,8 @@ import { iconInner } from '../../lib/icons';
             partialBtn?.removeAttribute('hidden');
         });
         document.getElementById('ivPartialOk')?.addEventListener('click', () => {
+            // Con SPEI elegido, el abono lo pide el bloque de SPEI.
+            if (document.getElementById('ivFoot')?.dataset.metodo === 'spei') return;
             const monto = Number(montoEl?.value);
             // El servidor vuelve a acotar contra el saldo real: esta validación
             // es cortesía para el cliente, no la defensa.
@@ -498,7 +546,195 @@ import { iconInner } from '../../lib/icons';
     }
 </script>
 
+<script>
+    // SPEI con la CLABE de ESTA factura. El servidor crea (o reutiliza) el
+    // pago, lo confirma y devuelve CLABE, banco, referencia e importe; aquí
+    // solo se pintan. El pago se registra cuando llega la transferencia, sin
+    // que el cliente tenga que avisar: "Actualizar saldo" lo muestra.
+    const speiBtn = document.getElementById('ivPaySpei') as HTMLButtonElement | null;
+    const panel = document.getElementById('ivSpei');
+    if (speiBtn && panel) {
+        const S = JSON.parse(panel.dataset.i18n || '{}');
+        const locale = panel.dataset.locale || 'es-MX';
+        const decimales = Number(panel.dataset.decimals || 2);
+        const foot = document.getElementById('ivFoot');
+        const errEl = document.getElementById('ivPayErr');
+        const cardBtn = document.getElementById('ivPay');
+        const cardWrap = document.getElementById('ivPayWrap');
+        const partialBtn = document.getElementById('ivPartial');
+        const partialBox = document.getElementById('ivPartialBox');
+        const montoEl = document.getElementById('ivMonto') as HTMLInputElement | null;
+        const token = location.pathname.split('/').filter(Boolean).pop();
+        const textoBoton = speiBtn.textContent;
+        const $ = (id: string) => document.getElementById(id);
+
+        const fallar = (msg: string) => {
+            if (!errEl) return;
+            errEl.textContent = msg;
+            errEl.hidden = false;
+        };
+        // Unidad mínima → importe, con los decimales de la divisa (regla 21:
+        // nunca un /100 fijo).
+        const importe = (minor: number, currency: string) =>
+            new Intl.NumberFormat(locale, { style: 'currency', currency }).format(minor / 10 ** decimales) + ' ' + currency;
+
+        const pintar = (ins: any) => {
+            ($('ivSpeiMonto') as HTMLElement).textContent = importe(Number(ins.amountRemaining), String(ins.currency));
+            ($('ivSpeiClabe') as HTMLElement).textContent = String(ins.clabe);
+            ($('ivSpeiBanco') as HTMLElement).textContent = String(ins.bankName);
+            ($('ivSpeiRef') as HTMLElement).textContent = String(ins.reference);
+            const benef = $('ivSpeiBenefFila');
+            if (benef) benef.hidden = !ins.beneficiary;
+            ($('ivSpeiBenef') as HTMLElement).textContent = String(ins.beneficiary || '');
+            const vig = $('ivSpeiVigFila');
+            if (vig) vig.hidden = !ins.expiresAt;
+            if (ins.expiresAt) {
+                ($('ivSpeiVig') as HTMLElement).textContent = new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' })
+                    .format(new Date(Number(ins.expiresAt) * 1000));
+            }
+            const parcial = $('ivSpeiParcial');
+            if (parcial) {
+                const recibido = Number(ins.received) || 0;
+                parcial.hidden = !(recibido > 0);
+                parcial.textContent = recibido > 0
+                    ? String(S.parcial || '').replace('{recibido}', importe(recibido, String(ins.currency)))
+                        .replace('{faltante}', importe(Number(ins.amountRemaining), String(ins.currency)))
+                    : '';
+            }
+            panel.hidden = false;
+            speiBtn.hidden = true;
+            panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        };
+
+        // Un solo camino para pedir las instrucciones, con o sin abono: el
+        // servidor reutiliza el pago abierto y la CLABE de la factura.
+        const pedir = async (monto?: number) => {
+            speiBtn.disabled = true;
+            speiBtn.textContent = S.preparando || textoBoton;
+            if (errEl) errEl.hidden = true;
+            try {
+                const res = await fetch(`/api/i/${token}/payment-intent`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(monto !== undefined ? { metodo: 'spei', monto } : { metodo: 'spei' }),
+                });
+                const data = await res.json();
+                if (data.alreadyPaid) { location.reload(); return; }
+                if (!res.ok || !data.instructions) throw new Error(data.error || S.error);
+                pintar(data.instructions);
+            } catch (e) {
+                speiBtn.hidden = false;
+                fallar(e instanceof Error && e.message ? e.message : S.error);
+            } finally {
+                speiBtn.disabled = false;
+                speiBtn.textContent = textoBoton;
+            }
+        };
+
+        speiBtn.addEventListener('click', () => { void pedir(); });
+
+        // Selector tarjeta / SPEI (solo cuando el negocio acepta los dos).
+        document.querySelectorAll<HTMLButtonElement>('.iv-metodo').forEach((boton) => {
+            boton.addEventListener('click', () => {
+                const metodo = boton.dataset.metodo === 'spei' ? 'spei' : 'card';
+                if (foot) foot.dataset.metodo = metodo;
+                document.querySelectorAll('.iv-metodo').forEach((otro) => otro.setAttribute('aria-pressed', String(otro === boton)));
+                if (errEl) errEl.hidden = true;
+                if (metodo === 'spei') {
+                    if (cardBtn) cardBtn.hidden = true;
+                    if (cardWrap) cardWrap.hidden = true;
+                    speiBtn.hidden = !panel.hidden;
+                } else {
+                    panel.hidden = true;
+                    speiBtn.hidden = true;
+                    const montado = (document.getElementById('ivPayEl')?.childElementCount ?? 0) > 0;
+                    if (cardWrap) cardWrap.hidden = !montado;
+                    if (cardBtn) cardBtn.hidden = montado;
+                }
+            });
+        });
+
+        // Abono parcial por SPEI. Sin tarjeta, este bloque también abre y
+        // cierra la caja (con tarjeta lo hace el suyo).
+        if (!cardBtn) {
+            partialBtn?.addEventListener('click', () => {
+                if (!partialBox) return;
+                partialBox.hidden = false;
+                partialBtn.setAttribute('hidden', '');
+                montoEl?.focus();
+                montoEl?.select();
+            });
+            document.getElementById('ivPartialCancel')?.addEventListener('click', () => {
+                if (partialBox) partialBox.hidden = true;
+                partialBtn?.removeAttribute('hidden');
+            });
+        }
+        document.getElementById('ivPartialOk')?.addEventListener('click', () => {
+            if (foot?.dataset.metodo !== 'spei') return;
+            const monto = Number(montoEl?.value);
+            const saldoMax = Number(montoEl?.max || 0);
+            // El servidor vuelve a acotar contra el saldo real.
+            if (!Number.isFinite(monto) || monto <= 0 || (saldoMax > 0 && monto > saldoMax + 1e-9)) {
+                const T = JSON.parse((document.querySelector('.iv-main') as HTMLElement)?.dataset.i18n || '{}');
+                fallar(T.montoInvalido || S.error);
+                return;
+            }
+            if (partialBox) partialBox.hidden = true;
+            partialBtn?.removeAttribute('hidden');
+            void pedir(monto);
+        });
+
+        panel.querySelectorAll<HTMLButtonElement>('.iv-spei-copy').forEach((boton) => {
+            boton.addEventListener('click', async () => {
+                const valor = document.getElementById(String(boton.dataset.copy))?.textContent || '';
+                try {
+                    await navigator.clipboard.writeText(valor);
+                    boton.textContent = S.copiado;
+                    window.setTimeout(() => { boton.textContent = S.copiar; }, 1600);
+                } catch { /* sin portapapeles: el dato sigue a la vista */ }
+            });
+        });
+        document.getElementById('ivSpeiImprimir')?.addEventListener('click', () => window.print());
+    }
+</script>
+
 <style>
+    /* `display: block` de .iv-pay le ganaba al atributo `hidden`: el botón que
+       el script oculta seguía a la vista. */
+    .iv-pay[hidden], .iv-pay-partial[hidden] { display: none; }
+    /* SPEI: selector de método y panel de instrucciones (calca la isla de pago de /q). */
+    .iv-metodos { border: 0; padding: 0; margin: 0 0 14px; }
+    .iv-metodos legend { font-size: 0.78rem; font-weight: 600; color: #4a5567; margin-bottom: 9px; }
+    .iv-metodos-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 4px; background: #f5f5f7; border-radius: 14px; }
+    .iv-metodo {
+        min-height: 44px; border: 1px solid transparent; background: transparent; color: #050505;
+        border-radius: 11px; padding: 11px 14px; font: inherit; font-size: 0.88rem; font-weight: 500; cursor: pointer;
+        transition: background-color 0.2s ease, border-color 0.2s ease;
+    }
+    .iv-metodo[aria-pressed="true"] { background: #fff; border-color: #0a192f; font-weight: 650; box-shadow: 0 2px 8px rgba(10, 25, 47, 0.08); }
+    .iv-metodo:focus-visible { outline: 2px solid #0a192f; outline-offset: 2px; }
+    .iv-spei { margin-top: 20px; background: #fff; border-radius: 24px; padding: 28px; box-shadow: 0 1px 2px rgba(10, 25, 47, 0.04); }
+    .iv-spei h2 { font-size: 1.02rem; letter-spacing: -0.02em; margin: 0 0 5px; color: #050505; }
+    .iv-spei-desc, .iv-spei-nota { font-size: 0.82rem; color: #667085; line-height: 1.55; margin: 0 0 9px; }
+    .iv-spei-nota { margin: 14px 0 0; }
+    .iv-spei-parcial { font-size: 0.82rem; color: #0a192f; background: #f5f5f7; border-radius: 12px; padding: 10px 12px; margin: 6px 0 4px; line-height: 1.5; }
+    .iv-spei-datos { margin: 0; }
+    .iv-spei-datos > div {
+        display: grid; grid-template-columns: minmax(92px, 0.7fr) minmax(0, 1.3fr); gap: 14px; align-items: center;
+        padding: 13px 0; border-bottom: 1px solid rgba(10, 25, 47, 0.08);
+    }
+    .iv-spei-datos > div[hidden] { display: none; }
+    .iv-spei-datos dt { color: #667085; font-size: 0.78rem; }
+    .iv-spei-datos dd { margin: 0; display: flex; align-items: center; justify-content: space-between; gap: 10px; min-width: 0; }
+    .iv-spei-datos strong { color: #050505; font-size: 0.86rem; font-weight: 600; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+    .iv-spei-copy { border: 0; background: transparent; color: #0a192f; font: inherit; font-size: 0.76rem; font-weight: 650; cursor: pointer; padding: 5px 0; min-height: 44px; flex-shrink: 0; }
+    .iv-spei-copy:focus-visible { outline: 2px solid #0a192f; outline-offset: 2px; border-radius: 3px; }
+    .iv-spei .iv-pay { margin-top: 18px; }
+    @media print {
+        .iv-metodos, .iv-spei-copy, #ivSpeiImprimir { display: none !important; }
+        .iv-spei { box-shadow: none; padding: 0; }
+    }
+
     .iv-next { margin: -0.6rem 0 2rem; color: #4a5567; font-size: 0.88rem; line-height: 1.6; }
     .iv-next p { margin: 0; }
     .iv-next-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 1.25rem; margin-top: 0.65rem; }
@@ -748,7 +984,7 @@ import { iconInner } from '../../lib/icons';
 
         // Sin Cord Payments en esta factura, el abono parcial también sale por
         // Mercado Pago: su botón "Continuar" no tiene otro destino.
-        if (!document.getElementById('ivPay')) {
+        if (!document.getElementById('ivPay') && !document.getElementById('ivPaySpei')) {
             const partialBtn = document.getElementById('ivPartial');
             partialBtn?.addEventListener('click', () => {
                 if (!partialBox) return;

@@ -380,7 +380,7 @@ No es una cartera donde Cord retiene tus fondos. La cuenta de cobro pertenece a 
 
 ### Capacidades disponibles:
 - **Tarjeta desde el link público:** el comprador paga el importe pendiente sin pedir otro enlace ni entrar a un portal separado.
-- **SPEI para México:** cuando la operación está denominada en MXN, Cord puede mostrar una CLABE asociada al cobro y conciliar la transferencia cuando llega.
+- **SPEI para México:** cuando la operación está denominada en MXN, Cord muestra una CLABE asociada al cobro de la cotización o a la factura y concilia la transferencia cuando llega. En la factura está en beta: ver SPEI con CLABE en facturas.
 - **Anticipo, saldo y parcialidades:** cada parte conserva su importe, estado y referencia, y la cotización solo queda pagada cuando ya no existe saldo pendiente.
 - **Facturas cobrables:** las facturas de Cord Invoicing también tienen un link público con el saldo vigente y el método disponible para esa cuenta.
 - **Portal del cliente:** un link por cliente con todas sus facturas y el pago de varias en un solo cobro.
@@ -392,7 +392,7 @@ No es una cartera donde Cord retiene tus fondos. La cuenta de cobro pertenece a 
 El alta de cobros en línea depende del país de la organización y de los requisitos que devuelve el proveedor. México, Estados Unidos, Canadá, Brasil, España, Reino Unido, Alemania y Francia tienen carril de cuenta conectada. En Colombia, Argentina, Chile y Perú, Cord Payments no está disponible y el cobro en línea es con Mercado Pago. Mercado Pago funciona en México, Brasil, Colombia, Argentina, Chile y Perú: la conexión se confirmó el 21 de septiembre de 2026 con cuentas de México y de Colombia.
 
 ### Qué sigue:
-El cobro automático de facturas con reintentos y la domiciliación SEPA y ACH están construidos y en beta hasta completar su activación.
+El cobro automático de facturas con reintentos, la domiciliación SEPA y ACH, y SPEI con CLABE en facturas están construidos y en beta hasta completar su activación.
 
 Igualas recurrentes con Mercado Pago: hoy una iguala necesita la suscripción de Cord Payments, porque Mercado Pago cobra cuando el cliente abre el link y no guarda su tarjeta para después.
 
@@ -404,7 +404,7 @@ This is not a wallet where Cord holds your funds. The payment account belongs to
 
 ### Available capabilities:
 - **Card payments from the public link:** the buyer pays the outstanding amount without requesting another link or entering a separate portal.
-- **SPEI for Mexico:** when the transaction is denominated in MXN, Cord can show a bank account number tied to the charge and reconcile the transfer when it arrives.
+- **SPEI for Mexico:** when the transaction is denominated in MXN, Cord shows a bank account number tied to the quote charge or to the invoice and reconciles the transfer when it arrives. On invoices it is in beta: see SPEI with CLABE on invoices.
 - **Deposit, balance, and installments:** every part keeps its amount, status, and reference, and the quote becomes paid only when no balance remains.
 - **Payable invoices:** Cord Invoicing documents also have a public link with the current balance and the method available to that account.
 - **Customer portal:** one link per customer with all their invoices and payment of several in a single charge.
@@ -416,7 +416,7 @@ This is not a wallet where Cord holds your funds. The payment account belongs to
 Online payment onboarding depends on the organization's country and on the requirements returned by the provider. Mexico, the United States, Canada, Brazil, Spain, the United Kingdom, Germany, and France have a connected-account rail. In Colombia, Argentina, Chile, and Peru, Cord Payments is not available and online collection runs on Mercado Pago. Mercado Pago works in Mexico, Brazil, Colombia, Argentina, Chile, and Peru: the connection was confirmed on September 21, 2026 with Mexican and Colombian accounts.
 
 ### What's next:
-Automatic invoice collection with retries and SEPA and ACH direct debit are built and in beta until their activation is complete.
+Automatic invoice collection with retries, SEPA and ACH direct debit, and SPEI with CLABE on invoices are built and in beta until their activation is complete.
 
 Recurring retainers with Mercado Pago: today a retainer needs the Cord Payments subscription, because Mercado Pago charges when the client opens the link and does not store their card for later.
 
@@ -546,6 +546,88 @@ In Europe and the United States many companies pay their suppliers by direct deb
 
 ### Why it is in beta
 SEPA and ACH still need to be enabled for payment accounts in the payments platform, the notifications for debits in progress and mandates need to be turned on, and the end-to-end test with Spanish and US test accounts needs to be completed.`
+        },
+        area: 'finanzas',
+        status: 'beta',
+        api: false
+    },
+    {
+        id: '46',
+        slug: 'apple-pay-google-pay',
+        title: {
+            es: 'Apple Pay y Google Pay',
+            en: 'Apple Pay and Google Pay'
+        },
+        shortDesc: {
+            es: 'Tu cliente paga con la billetera de su teléfono o su navegador, sin escribir la tarjeta, en la cotización, la factura y el portal. En habilitación.',
+            en: 'Your customer pays with the wallet on their phone or browser, without typing their card, on the quote, the invoice and the portal. Being enabled.'
+        },
+        content: {
+            es: `## Pagar sin escribir la tarjeta
+Desde el celular, escribir dieciséis dígitos es el paso donde más pagos se abandonan. Con Apple Pay y Google Pay, tu cliente confirma con su huella o su rostro y la tarjeta que ya tiene guardada.
+
+### Qué incluye
+- **En las tres pantallas de pago:** la página de pago de la cotización, el link de la factura y el portal del cliente.
+- **Sin configurar nada aparte:** van incluidas con la tarjeta en Ajustes › Cobros.
+- **Se cobran como tarjeta:** misma tarifa, misma confirmación y mismos reembolsos.
+- **También en tu dominio propio:** desde el plan Profesional, en la cotización y la factura que se sirven con tu dominio.
+
+### Por qué está en beta
+El código está construido y apagado. Falta revisar la configuración de métodos de pago de las cuentas de cobro, probarlo en un iPhone y en un Android reales en modo de prueba y registrar los dominios de pago de las cuentas existentes. Hasta entonces, tus clientes no lo ven.`,
+            en: `## Pay without typing the card
+On a phone, typing sixteen digits is where most payments get abandoned. With Apple Pay and Google Pay, your customer confirms with their fingerprint or face and the card they already have saved.
+
+### What's included
+- **On all three payment screens:** the quote's payment page, the invoice link and the customer portal.
+- **Nothing extra to set up:** they come with the card in Settings › Payments.
+- **Charged as a card:** same fee, same confirmation and same refunds.
+- **On your own domain too:** from the Professional plan, on the quote and invoice served from your domain.
+
+### Why it is in beta
+The code is built and turned off. The payment method settings of the payment accounts still need to be reviewed, it needs to be tested on a real iPhone and Android in test mode, and the payment domains of existing accounts need to be registered. Until then, your customers don't see it.`
+        },
+        area: 'finanzas',
+        status: 'beta',
+        api: false
+    },
+    {
+        id: '47',
+        slug: 'spei-facturas',
+        title: {
+            es: 'SPEI con CLABE en facturas',
+            en: 'SPEI with CLABE on invoices'
+        },
+        shortDesc: {
+            es: 'Tu cliente paga la factura por transferencia SPEI a una CLABE que es solo de esa factura, y Cord registra el pago en ella cuando llega, sin cruzar comprobantes. Solo México y MXN.',
+            en: 'Your customer pays the invoice by SPEI transfer to a CLABE that belongs only to that invoice, and Cord records the payment on it when it arrives, with no receipts to cross-check. Mexico and MXN only.'
+        },
+        content: {
+            es: `## Conciliación automática de transferencias en la factura
+En México muchas empresas pagan a sus proveedores por transferencia, no con tarjeta. Hasta ahora la transferencia de una factura se cruzaba a mano: el cliente mandaba el comprobante y alguien buscaba el depósito en el banco. Con SPEI en el link de la factura, Cord la concilia sola.
+
+### Qué incluye
+- **Una CLABE por factura:** cada factura tiene la suya y la conserva en cada visita y en cada abono. Lo que llega a esa CLABE solo puede pagar esa factura, así que la conciliación no tiene entre qué equivocarse.
+- **Instrucciones completas:** monto, CLABE, banco, beneficiario y referencia, con botones para copiar e imprimir.
+- **Pago registrado al llegar:** el pago entra al historial de la factura, el saldo se recalcula, la factura pasa a pagada cuando llega a cero y se avisa a tus integraciones. Un mismo pago nunca se registra dos veces.
+- **Complemento de pago en México:** una factura PPD pagada por SPEI recibe su complemento con forma de pago 03, transferencia.
+- **Transferencias incompletas o de más, a la vista:** lo que todavía no es un pago no toca el saldo. El historial de la factura dice cuánto llegó y cuánto falta, o cuánto quedó a favor del cliente.
+- **La misma comisión de SPEI** que en la cotización.
+
+### Por qué está en beta
+El código y sus pruebas están completos. Falta encender en la plataforma de pagos los avisos de transferencia incompleta y de saldo a favor, y completar la prueba de punta a punta en modo de prueba con una cuenta de México. Hasta entonces la documentación lo marca como función nueva.`,
+            en: `## Automatic transfer reconciliation on the invoice
+In Mexico many companies pay their suppliers by bank transfer, not by card. Until now an invoice transfer was matched by hand: the customer sent a receipt and someone looked for the deposit in the bank. With SPEI on the invoice link, Cord reconciles it on its own.
+
+### What's included
+- **One CLABE per invoice:** each invoice has its own and keeps it on every visit and every partial payment. Money sent to that CLABE can only pay that invoice, so reconciliation has nothing to mix up.
+- **Complete instructions:** amount, CLABE, bank, beneficiary and reference, with buttons to copy and print.
+- **Payment recorded on arrival:** the payment enters the invoice history, the balance is recalculated, the invoice becomes paid when it reaches zero and your integrations are notified. The same payment is never recorded twice.
+- **Payment complement in Mexico:** a PPD invoice paid by SPEI gets its complement with payment form 03, transfer.
+- **Incomplete or excess transfers, in plain sight:** what isn't a payment yet doesn't touch the balance. The invoice history says how much arrived and how much is missing, or how much stayed in the customer's favor.
+- **The same SPEI fee** as on the quote.
+
+### Why it is in beta
+The code and its tests are complete. What remains is turning on the notifications for incomplete transfers and customer balance in the payments platform, and completing the end-to-end test in test mode with a Mexican account. Until then the documentation marks it as a new feature.`
         },
         area: 'finanzas',
         status: 'beta',
@@ -1611,6 +1693,7 @@ Cord Invoicing reúne el documento comercial, la emisión fiscal que corresponda
 - **Creación y emisión directa:** arma conceptos, guarda borradores sin folio y emite sólo después de revisar cliente, total, vencimiento y destino.
 - **Entrega con contexto:** envía por correo, comparte el link del cliente, descarga PDF/XML y consulta si la factura fue enviada, vista, vencida o pagada.
 - **Cobranza completa:** registra pagos manuales o parciales, cobra en el link público cuando Cord Payments está habilitado y convierte una factura en recurrencia mensual.
+- **Recordatorios a tu ritmo:** eliges cuándo recibe tu cliente cada recordatorio (antes, el día y después del vencimiento, hasta 8 por factura), los apagas o pausas a un cliente; salen en el idioma de tu cuenta, con tu firma y una sola vez por etapa.
 - **Operación verificable:** actividad por documento, selección masiva sólo para facturas elegibles, exportación CSV y documentos de prueba marcados sin mezclarlos con estados comerciales.
 - **Automatizable:** lista y administra facturas mediante la API pública de Cord y sus herramientas MCP.`,
             en: `## From capture to collection, without leaving Cord
@@ -1620,6 +1703,7 @@ Cord Invoicing brings together the commercial document, the fiscal issuance requ
 - **Direct creation and issuance:** build line items, save drafts without a number, and issue only after reviewing the client, total, due date, and recipient.
 - **Delivery with context:** send by email, share the client link, download PDF/XML, and see whether an invoice was sent, viewed, overdue, or paid.
 - **Complete collection:** record manual or partial payments, collect through the public link when Cord Payments is enabled, and turn an invoice into a monthly recurrence.
+- **Reminders on your schedule:** choose when your client gets each reminder (before, on, and after the due date, up to 8 per invoice), turn them off, or pause a client; they go out in your account's language, with your signature, and once per stage.
 - **Verifiable operations:** per-document activity, bulk selection restricted to eligible invoices, CSV export, and test documents labeled separately from commercial status.
 - **Automatable:** list and manage invoices through Cord's public API and MCP tools.`
         },
@@ -2042,7 +2126,7 @@ const roadmapEnhancements = {
         },
         scope: { es: 'Tarjeta en MX, US, CA, BR, ES, GB, DE y FR. SPEI solo para operaciones en MXN de cuentas mexicanas. Mercado Pago como segundo riel para cotizaciones y facturas en MX, BR, CO, AR, CL y PE.', en: 'Cards in MX, US, CA, BR, ES, GB, DE, and FR. SPEI only for MXN transactions on Mexican accounts. Mercado Pago as a second rail for quotes and invoices in MX, BR, CO, AR, CL, and PE.' },
         boundaries: { es: 'En CO, AR, CL y PE el cobro en línea es con Mercado Pago; sin él, pagos manuales. Mercado Pago no cobra igualas recurrentes. Las tarifas de plataforma fuera de MXN no se inventan: mientras no exista una tabla verificada, Cord no aplica una comisión regional.', en: 'In CO, AR, CL, and PE online collection runs on Mercado Pago; without it, manual payments. Mercado Pago does not collect recurring retainers. Platform fees outside MXN are not invented: until a verified schedule exists, Cord does not apply a regional fee.' },
-        related: ['portal-del-cliente', 'cobro-automatico', 'anticipos-pagos-parciales']
+        related: ['portal-del-cliente', 'cobro-automatico', 'spei-facturas', 'anticipos-pagos-parciales']
     },
     'cfdi-automatico': {
         family: 'invoicing', market: { es: 'México', en: 'Mexico' },
@@ -2114,6 +2198,16 @@ const roadmapEnhancements = {
         boundaries: { es: 'El negocio no puede activarlo en nombre del cliente: solo apagarlo, por cliente o para toda la cuenta. Solo cobra facturas que vencen a partir de la autorización, y no cobra con Mercado Pago.', en: 'The business can\'t turn it on for the customer: it can only turn it off, per customer or for the whole account. It only collects invoices due on or after the authorization, and doesn\'t collect through Mercado Pago.' },
         related: ['portal-del-cliente', 'domiciliacion-sepa-ach', 'cobranza-ia']
     },
+    'spei-facturas': {
+        family: 'payments', market: { es: 'México', en: 'Mexico' },
+        workflow: {
+            es: ['El negocio enciende SPEI en Ajustes › Cobros.', 'El cliente elige Transferencia SPEI en el link de la factura y transfiere a la CLABE de esa factura.', 'Cuando llega el monto completo, Cord registra el pago, recalcula el saldo y, en un CFDI PPD, emite el complemento de pago.'],
+            en: ['The business turns on SPEI in Settings › Payments.', 'The customer chooses SPEI transfer on the invoice link and transfers to that invoice\'s CLABE.', 'When the full amount arrives, Cord records the payment, recalculates the balance and, on a PPD CFDI, issues the payment complement.']
+        },
+        scope: { es: 'Facturas en MXN de negocios en México con Cord Payments activo y SPEI encendido, en el link de la factura.', en: 'MXN invoices of businesses in Mexico with Cord Payments active and SPEI turned on, on the invoice link.' },
+        boundaries: { es: 'No se ofrece en el portal del cliente ni en el cobro automático: ahí cada factura se paga desde su propio link. Una transferencia incompleta no se registra hasta que llega el resto, y lo que sobra queda a favor del cliente sin cobrarse.', en: 'Not offered in the customer portal or automatic collection: there each invoice is paid from its own link. An incomplete transfer isn\'t recorded until the rest arrives, and any excess stays in the customer\'s favor without being charged.' },
+        related: ['cord-payments', 'portal-del-cliente', 'cfdi-automatico']
+    },
     'domiciliacion-sepa-ach': {
         family: 'payments', market: { es: 'España, Alemania, Francia y EE. UU.', en: 'Spain, Germany, France and the US' },
         workflow: {
@@ -2123,6 +2217,16 @@ const roadmapEnhancements = {
         scope: { es: 'SEPA en euros para negocios de España, Alemania y Francia; ACH en dólares para negocios de Estados Unidos. En el link de la factura y en el portal del cliente.', en: 'SEPA in euros for businesses in Spain, Germany and France; ACH in US dollars for businesses in the United States. On the invoice link and in the customer portal.' },
         boundaries: { es: 'SEPA solo en euros y ACH solo en dólares, sobre la cuenta de cobros del negocio. ACH no admite reembolsos parciales. Un débito rechazado por fondos se reintenta como máximo dos veces dentro del plazo del esquema.', en: 'SEPA only in euros and ACH only in US dollars, on the business\'s payment account. ACH doesn\'t support partial refunds. A debit declined for insufficient funds is retried at most twice within the scheme\'s window.' },
         related: ['portal-del-cliente', 'cobro-automatico', 'cord-payments']
+    },
+    'apple-pay-google-pay': {
+        family: 'payments', market: { es: 'MX, US, CA, BR, ES, GB, DE y FR', en: 'MX, US, CA, BR, ES, GB, DE and FR' },
+        workflow: {
+            es: ['El negocio cobra con tarjeta en Ajustes › Cobros.', 'Cord registra el dominio de pago en su cuenta de cobros.', 'El cliente ve Apple Pay o Google Pay junto a la tarjeta si su dispositivo los tiene, y paga con un toque.'],
+            en: ['The business accepts cards in Settings › Payments.', 'Cord registers the payment domain on its payment account.', 'The customer sees Apple Pay or Google Pay next to the card if their device has them, and pays with one tap.']
+        },
+        scope: { es: 'Página de pago de la cotización, link de la factura y portal del cliente, en cordhq.app y en el dominio propio del negocio.', en: 'Quote payment page, invoice link and customer portal, on cordhq.app and on the business\'s own domain.' },
+        boundaries: { es: 'Solo donde el negocio cobra con tarjeta por Cord Payments y en dispositivos compatibles. No aplica a Mercado Pago ni a la suscripción a Cord. Dentro de un embed, el pago se abre en una ventana propia de Cord.', en: 'Only where the business accepts cards through Cord Payments and on compatible devices. It doesn\'t apply to Mercado Pago or to the Cord subscription. Inside an embed, payment opens in a Cord window.' },
+        related: ['cord-payments', 'portal-del-cliente', 'domiciliacion-sepa-ach']
     },
     'identificador-fiscal': {
         family: 'platform', market: { es: '12 mercados soportados', en: '12 supported markets' },
@@ -2340,7 +2444,7 @@ const roadmapEnhancements = {
             es: ['Crea un borrador desde cero o desde una cotización aprobada.', 'Revisa y emite por el carril fiscal o comercial que corresponda.', 'Entrega el link, registra pagos y sigue saldo, actividad, recurrencia y documentos.'],
             en: ['Create a draft from scratch or from an approved quote.', 'Review and issue through the applicable fiscal or commercial rail.', 'Deliver the link and track payments, balance, activity, recurrence, and files.']
         },
-        scope: { es: 'Bandeja completa de facturas con borradores, folios, emisión, actividad, pago manual o en línea, exportación y automatización por API y MCP.', en: 'Complete invoice inbox with drafts, numbering, issuance, activity, manual or online payment, export, and automation through API and MCP.' },
+        scope: { es: 'Bandeja completa de facturas con borradores, folios, emisión, actividad, pago manual o en línea, recordatorios con calendario propio, exportación y automatización por API y MCP.', en: 'Complete invoice inbox with drafts, numbering, issuance, activity, manual or online payment, reminders on your own schedule, export, and automation through API and MCP.' },
         boundaries: { es: 'El documento fiscal depende del país y de la configuración real. Cord Invoicing no transforma una factura comercial en clearance local cuando ese proveedor regulatorio no existe.', en: 'The fiscal document depends on the country and actual configuration. Cord Invoicing does not turn a commercial invoice into local clearance where no regulatory provider exists.' },
         related: ['facturacion-internacional', 'portal-del-cliente', 'cord-payments']
     },

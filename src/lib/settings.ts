@@ -76,8 +76,8 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
         // la sección cuando aplica, igual que factura comercial en el resto —
         // regla 10 (posicionamiento horizontal).
         id: 'facturacion', label: 'Facturación', labelEn: 'Invoicing',
-        desc: 'Datos fiscales, certificado de sello y emisión de facturas.',
-        descEn: 'Tax details, digital seal certificate, and invoice issuing.',
+        desc: 'Datos fiscales, certificado de sello, emisión de facturas y recordatorios de cobro.',
+        descEn: 'Tax details, digital seal certificate, invoice issuing, and payment reminders.',
         icon: iconInner('bank'),
         // Sin pestaña "Facturas emitidas": /app/ajustes/facturas es un 301 a
         // /app/facturas, así que como pestaña sacaba al usuario de Ajustes.
@@ -86,6 +86,9 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
         // El archivo se conserva para links viejos en correos.
         tabs: [
             { id: 'fiscal', label: 'Datos fiscales', labelEn: 'Tax details', href: '/app/ajustes/fiscal', keywords: 'fiscal rfc nif cif nie ein tax id csd certificado certificate sello verifactu aeat sat cfdi regimen razon social domicilio facturacion invoicing qst tvq gst hst bn provincia province factur-x facturx xrechnung zugferd peppol leitweg e-rechnung einvoicing bic factura electronica spfe solucion publica crea y crece nf-e nfe sefaz danfe nota fiscal plataforma autorizada plateforme agreee pa e-reporting siren tva debits regime' },
+            // Recordatorios: el calendario de la escalera de cobro de las facturas
+            // (y el interruptor que también apaga los avisos de cotizaciones).
+            { id: 'recordatorios', label: 'Recordatorios', labelEn: 'Reminders', href: '/app/ajustes/recordatorios', keywords: 'recordatorio recordatorios reminder reminders cobranza collections vencimiento vencida vencidas due date overdue dunning escalera calendario schedule cadencia pausar pause correo email aviso' },
         ],
     },
     {
@@ -223,8 +226,8 @@ export function localizeCategories(locale: 'es' | 'en', countryCode = 'MX'): Set
         // El nombre de la categoría ya es neutro; fuera de México solo cambia la
         // descripción y el nombre de la pestaña fiscal (no hay CSD que subir).
         desc: locale === 'en'
-            ? 'Tax profile, numbering, and commercial invoices for your country.'
-            : 'Perfil fiscal, numeración y facturas comerciales para tu país.',
+            ? 'Tax profile, numbering, commercial invoices for your country, and payment reminders.'
+            : 'Perfil fiscal, numeración, facturas comerciales para tu país y recordatorios de cobro.',
         tabs: category.tabs.map((tab) => tab.id === 'fiscal'
             ? { ...tab, label: locale === 'en' ? 'Tax profile' : 'Perfil fiscal' }
             : tab),

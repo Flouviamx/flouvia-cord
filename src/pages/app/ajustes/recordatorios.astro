@@ -1,0 +1,232 @@
+---
+// Ajustes › Facturación › Recordatorios — el interruptor de los recordatorios
+// automáticos al cliente, el calendario de la escalera de facturas y los
+// clientes en pausa. Guarda en `orgs.recordatorios_activos` /
+// `orgs.recordatorio_etapas` vía /api/org/recordatorios; quien lo lee es el cron
+// src/pages/api/cron/recordatorios.ts (regla 15). La pausa por cliente es la
+// lista "No escribir a" de la cobranza (cobranza_exclusiones), no una segunda.
+// Tiene su propia barra de guardar (no usa el guardado genérico de /api/org):
+// el calendario se arma con casillas y se valida como lista cerrada.
+import SettingsShell from '../../../components/app/SettingsShell.astro';
+import SettingsSection from '../../../components/app/settings/SettingsSection.astro';
+import SettingsSaveFooter from '../../../components/app/SettingsSaveFooter.astro';
+import { getActiveOrgId } from '../../../lib/db';
+import { getMyMembership } from '../../../lib/queries';
+import { memberCan } from '../../../lib/permissions';
+import { currentLocale } from '../../../lib/context';
+import { fmtDate } from '../../../lib/fmt-server';
+import { t } from '../../../i18n/app';
+import { DIAS_ANTES, DIAS_DESPUES, ETAPAS_PERMITIDAS, MAX_ETAPAS, describirEtapas, type TextosCalendario } from '../../../lib/recordatorios';
+import { leerAjustesRecordatorios } from '../../../lib/recordatorios-db';
+
+const L = currentLocale();
+const orgId = await getActiveOrgId();
+const [AJ, ME] = await Promise.all([leerAjustesRecordatorios(orgId), getMyMembership()]);
+const puedePausar = memberCan(ME, 'cobranza');
+
+const TEXTOS: TextosCalendario = {
+    antes: t(L, 'set.rec.prev_antes'), antesUno: t(L, 'set.rec.prev_antes_uno'), hoy: t(L, 'set.rec.prev_hoy'),
+    despues: t(L, 'set.rec.prev_despues'), despuesUno: t(L, 'set.rec.prev_despues_uno'),
+};
+const seleccion = new Set(AJ.etapas);
+const etiqueta = (n: number) => n === 1 ? t(L, 'set.rec.un_dia') : t(L, 'set.rec.n_dias').replace('{n}', String(n));
+// Una etapa guardada que ya no está en el menú se muestra y se conserva mientras
+// siga marcada: el menú recortado no reescribe un dato vivo (regla 28).
+const extra = AJ.etapas.filter((e) => !ETAPAS_PERMITIDAS.includes(e));
+const ANTES = [...DIAS_ANTES.map((d) => -d), ...extra.filter((e) => e < 0)].sort((a, b) => a - b);
+const DESPUES = [...DIAS_DESPUES, ...extra.filter((e) => e > 0)].sort((a, b) => a - b);
+const GRUPOS = [
+    { id: 'antes', titulo: t(L, 'set.rec.antes'), etapas: ANTES, label: (e: number) => etiqueta(-e) },
+    { id: 'dia', titulo: t(L, 'set.rec.dia'), etapas: [0], label: () => t(L, 'set.rec.vence_hoy') },
+    { id: 'despues', titulo: t(L, 'set.rec.despues'), etapas: DESPUES, label: (e: number) => etiqueta(e) },
+];
+const previa = !AJ.activos
+    ? t(L, 'set.rec.prev_apagado')
+    : AJ.etapas.length
+        ? t(L, 'set.rec.prev').replace('{calendario}', describirEtapas(AJ.etapas, TEXTOS, L))
+        : t(L, 'set.rec.prev_vacio');
+const I18N = {
+    textos: TEXTOS, prev: t(L, 'set.rec.prev'), vacio: t(L, 'set.rec.prev_vacio'), apagado: t(L, 'set.rec.prev_apagado'),
+    error: t(L, 'set.rec.err_guardar'), reanudado: t(L, 'set.rec.reanudado'), errorPausa: t(L, 'cdet.rec_error'),
+};
+---
+
+<SettingsShell title={t(L, 'set.rec.titulo')} tab="recordatorios" perm="ajustes" intro={t(L, 'set.rec.intro')}>
+    <div class="rec" data-rec data-locale={L} data-max={MAX_ETAPAS} data-i18n={JSON.stringify(I18N)}>
+        <SettingsSection icon="bell" class="s-block">
+            <Fragment slot="heading">{t(L, 'set.rec.activos')}</Fragment>
+            <div class="rec-switch-row">
+                <p class="rec-switch-desc" id="recActivosDesc">{t(L, 'set.rec.activos_desc')}</p>
+                <label class="s-toggle">
+                    <input type="checkbox" id="recActivos" checked={AJ.activos} aria-describedby="recActivosDesc" aria-label={t(L, 'set.rec.activos')} />
+                    <span class="s-toggle-track"><span class="s-toggle-thumb"></span></span>
+                </label>
+            </div>
+        </SettingsSection>
+
+        <SettingsSection icon="calendar" class="s-block">
+            <Fragment slot="heading">{t(L, 'set.rec.calendario')}</Fragment>
+            <p>{t(L, 'set.rec.calendario_desc').replace('{max}', String(MAX_ETAPAS))}</p>
+            <div class="rec-grupos" data-rec-etapas>
+                {GRUPOS.map((g) => (
+                    <fieldset class="rec-grupo">
+                        <legend class="rec-grupo-titulo">{g.titulo}</legend>
+                        <div class="rec-chips">
+                            {g.etapas.map((e) => (
+                                <label class="rec-chip">
+                                    <input type="checkbox" value={String(e)} checked={seleccion.has(e)} />
+                                    <span>{g.label(e)}</span>
+                                </label>
+                            ))}
+                        </div>
+                    </fieldset>
+                ))}
+            </div>
+            <div class="rec-previa" id="recPrevia" role="status" aria-live="polite" data-off={AJ.activos ? undefined : ''}>{previa}</div>
+            <div class="rec-tope" id="recTope" hidden>{t(L, 'set.rec.tope').replace('{max}', String(MAX_ETAPAS))}</div>
+            <div class="rec-acciones">
+                <button type="button" class="rec-link" id="recDefault">{t(L, 'set.rec.restablecer')}</button>
+            </div>
+            <p class="s-hint">{t(L, 'set.rec.cambio_hint')}</p>
+        </SettingsSection>
+
+        <SettingsSection icon="quote" class="s-block">
+            <Fragment slot="heading">{t(L, 'set.rec.cotizaciones')}</Fragment>
+            <p>{t(L, 'set.rec.cotizaciones_desc')}</p>
+        </SettingsSection>
+
+        <SettingsSection icon="users" class="s-block">
+            <Fragment slot="heading">{t(L, 'set.rec.pausa')}</Fragment>
+            <p>{t(L, 'set.rec.pausa_desc')}</p>
+            <ul class="rec-pausados" data-rec-pausados>
+                {AJ.pausados.map((p) => (
+                    <li class="rec-pausado" data-cliente={p.clienteId}>
+                        <span class="rec-pausado-info">
+                            <a href={`/app/clientes/${p.clienteId}`}>{p.empresa}</a>
+                            {p.desde && <span>{fmtDate(p.desde)}</span>}
+                        </span>
+                        {puedePausar && <button type="button" class="rec-reanudar" data-reanudar>{t(L, 'set.rec.reanudar')}</button>}
+                    </li>
+                ))}
+            </ul>
+            <p class="rec-vacio" data-rec-vacio hidden={AJ.pausados.length > 0}>{t(L, 'set.rec.pausa_vacio')}</p>
+        </SettingsSection>
+
+        <SettingsSaveFooter buttonId="recBtn" messageId="recMsg" />
+    </div>
+</SettingsShell>
+
+<style>
+    .rec-switch-row { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+    .rec-switch-desc { margin: 0; font-size: .85rem; line-height: 1.6; color: var(--color-text-muted); max-width: 62ch; }
+    .rec-grupos { display: flex; flex-direction: column; gap: 18px; }
+    .rec-grupo { border: 0; margin: 0; padding: 0; min-width: 0; }
+    .rec-grupo-titulo { padding: 0; margin: 0 0 10px; font-size: .67rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--color-text-muted); }
+    .rec-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .rec-chip { position: relative; display: inline-flex; cursor: pointer; }
+    .rec-chip input { position: absolute; opacity: 0; pointer-events: none; }
+    .rec-chip span {
+        display: inline-flex; align-items: center; min-height: 36px; padding: 0 14px; border-radius: 999px;
+        font-size: .82rem; font-weight: 600; color: var(--color-text-muted); background: var(--color-bg-soft);
+        border: 1px solid var(--color-border); transition: background .2s, color .2s, border-color .2s, transform .15s var(--ease-spring);
+    }
+    .rec-chip:active span { transform: scale(.97); }
+    .rec-chip input:checked + span { color: #fff; background: var(--color-blue-deep); border-color: var(--color-blue-deep); }
+    .rec-chip input:focus-visible + span { outline: 2px solid var(--color-text-muted); outline-offset: 2px; }
+    .rec-chip input:disabled + span { opacity: .45; cursor: not-allowed; }
+    .rec-previa { margin: 0; padding: 14px 16px; border-radius: 14px; background: var(--color-bg-soft); font-size: .86rem; line-height: 1.55; color: var(--color-text); }
+    .rec-previa[data-off] { color: var(--color-text-muted); }
+    .rec-tope { margin: 0; font-size: .78rem; color: var(--color-text-muted); }
+    .rec-acciones { display: flex; }
+    .rec-link { font: inherit; font-size: .8rem; font-weight: 600; color: var(--color-text); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+    .rec-pausados { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+    .rec-pausado { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--color-border); }
+    .rec-pausado:last-child { border-bottom: 0; }
+    .rec-pausado-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .rec-pausado-info a { font-size: .86rem; font-weight: 600; color: var(--color-text); text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .rec-pausado-info span { font-size: .74rem; color: var(--color-text-muted); }
+    .rec-reanudar { font: inherit; font-size: .8rem; font-weight: 600; border: 1px solid var(--color-border); background: var(--color-bg-soft); color: var(--color-text); border-radius: 999px; padding: 8px 14px; cursor: pointer; flex-shrink: 0; }
+    .rec-vacio { margin: 0; font-size: .82rem; color: var(--color-text-muted); }
+    @media (max-width: 880px) {
+        .rec-chip span, .rec-reanudar { min-height: 44px; }
+        .rec-switch-row { align-items: flex-start; }
+    }
+</style>
+
+<script>
+    import { setSaveState } from '../../../lib/settings-save-feedback';
+    import { describirEtapas, ETAPAS_DEFAULT, type TextosCalendario } from '../../../lib/recordatorios';
+
+    function initRecordatorios() {
+        const root = document.querySelector<HTMLElement>('[data-rec]');
+        const btn = document.getElementById('recBtn') as HTMLButtonElement | null;
+        const activos = document.getElementById('recActivos') as HTMLInputElement | null;
+        const previa = document.getElementById('recPrevia');
+        const tope = document.getElementById('recTope');
+        if (!root || !btn || !activos || !previa || !tope) return;
+        const I = JSON.parse(root.dataset.i18n || '{}') as { textos: TextosCalendario; prev: string; vacio: string; apagado: string; error: string; reanudado: string; errorPausa: string };
+        const locale = root.dataset.locale === 'en' ? 'en' : 'es';
+        const max = Number(root.dataset.max) || 8;
+        const chips = () => Array.from(root.querySelectorAll<HTMLInputElement>('[data-rec-etapas] input[type="checkbox"]'));
+        const elegidas = () => chips().filter((c) => c.checked).map((c) => Number(c.value)).sort((a, b) => a - b);
+
+        const pintar = () => {
+            const etapas = elegidas();
+            const lleno = etapas.length >= max;
+            for (const c of chips()) c.disabled = lleno && !c.checked;
+            tope.hidden = !lleno;
+            if (!activos.checked) { previa.textContent = I.apagado; previa.setAttribute('data-off', ''); return; }
+            previa.removeAttribute('data-off');
+            previa.textContent = etapas.length ? I.prev.replace('{calendario}', describirEtapas(etapas, I.textos, locale)) : I.vacio;
+        };
+        root.addEventListener('change', pintar);
+        document.getElementById('recDefault')?.addEventListener('click', () => {
+            for (const c of chips()) c.checked = ETAPAS_DEFAULT.includes(Number(c.value));
+            pintar();
+        });
+        pintar();
+
+        btn.addEventListener('click', async () => {
+            const etapas = elegidas();
+            // Sin etapas no hay calendario que guardar; apagado, basta el interruptor.
+            if (!etapas.length && activos.checked) { setSaveState(btn, 'error', I.vacio); return; }
+            const body: Record<string, unknown> = { activos: activos.checked };
+            if (etapas.length) body.etapas = etapas;
+            setSaveState(btn, 'saving');
+            try {
+                const res = await fetch('/api/org/recordatorios', {
+                    method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+                });
+                const d = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(d.error || I.error);
+                setSaveState(btn, 'saved');
+            } catch (err: any) {
+                setSaveState(btn, 'error', err.message || I.error);
+            }
+        });
+
+        root.querySelector('[data-rec-pausados]')?.addEventListener('click', async (e) => {
+            const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-reanudar]');
+            const fila = b?.closest<HTMLElement>('[data-cliente]');
+            if (!b || !fila) return;
+            b.disabled = true;
+            try {
+                const res = await fetch('/api/org/recordatorios', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ cliente_id: fila.dataset.cliente, pausado: false }),
+                });
+                const d = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(d.error || I.errorPausa);
+                fila.remove();
+                const vacio = root.querySelector<HTMLElement>('[data-rec-vacio]');
+                if (vacio && !root.querySelector('[data-cliente]')) vacio.hidden = false;
+                (window as any).cordToast?.(I.reanudado);
+            } catch (err: any) {
+                (window as any).cordToast?.(err.message || I.errorPausa, 'error');
+                b.disabled = false;
+            }
+        });
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initRecordatorios);
+    else initRecordatorios();
+</script>

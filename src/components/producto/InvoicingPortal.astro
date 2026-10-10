@@ -1,0 +1,359 @@
+---
+// /producto/facturacion — "Portal del cliente y cobro automático" (A8).
+//
+// Calca 1:1 de src/pages/portal/[token].astro: mismo orden (marca, título,
+// saldos por divisa, cobro automático, Por pagar, Pagadas, pie y la barra de
+// pago de la selección), mismos textos de src/i18n/app.ts (portal.*, fact.p_*)
+// y las medidas de su <style> a escala de captura. Datos demo: Distribuidora El
+// Zarco con Materiales del Valle, "hoy" = 15 oct 2026.
+//
+// El estado que se muestra es real del código: el cargo automático del 12 oct
+// no pasó por fondos insuficientes y reintentos.ts lo reprograma para el 16
+// (proximoDiaDePago: el siguiente 1 o 16 dentro de una semana).
+//
+// La sección entera dice "Próximamente": está construida y falta encenderla
+// (docs/estado/pendientes-integraciones.md).
+import { t } from '../../i18n/app';
+import { iconInner, type IconName } from '../../lib/icons';
+import { etiquetaMetodo } from '../../lib/cobros/metodos';
+import { facturacionPortal } from '../../lib/producto-facturacion-finanzas';
+
+interface Props { isEn?: boolean }
+const { isEn = false } = Astro.props;
+const L = isEn ? 'en' : 'es';
+const C = facturacionPortal(L);
+const LOC = isEn ? 'en-US' : 'es-MX';
+const sub = (s: string, vars: Record<string, string>) => Object.entries(vars).reduce((acc, [k, v]) => acc.split(`{${k}}`).join(v), s);
+const fmt = (n: number, currency: string) => new Intl.NumberFormat(LOC, { style: 'currency', currency, minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+const utc = (iso: string) => new Date(`${iso}T00:00:00Z`);
+const calDate = (iso: string) => new Intl.DateTimeFormat(LOC, { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(utc(iso)).replace('.', '');
+const longDate = (iso: string) => new Intl.DateTimeFormat(LOC, { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(utc(iso));
+const ico = (name: IconName) => iconInner(name);
+
+const HOY = '2026-10-15';
+const ORG = isEn ? 'Valle Materials' : 'Materiales del Valle';
+const CLIENTE = isEn ? 'El Zarco Distribution' : 'Distribuidora El Zarco';
+const COLOR = '#0a192f';
+// Orden real: abiertas primero, por vencimiento ascendente (facturasDelCliente).
+const ABIERTAS = [
+    { numero: 'A-001048', currency: 'MXN', saldo: 96469.2, total: 196469.2, vence: '2026-10-12', sel: true },
+    { numero: 'A-001057', currency: 'MXN', saldo: 112340, total: 112340, vence: '2026-10-28', sel: true },
+    { numero: 'A-001044', currency: 'USD', saldo: 4850, total: 4850, vence: '2026-10-30', sel: false },
+    { numero: 'A-001061', currency: 'MXN', saldo: 82180, total: 82180, vence: '2026-11-11', sel: false },
+];
+// saldoPorDivisa(): suma por divisa, vencido = vence < hoy, orden por saldo.
+const SALDOS = ['MXN', 'USD'].map((currency) => {
+    const fs = ABIERTAS.filter((f) => f.currency === currency);
+    return {
+        currency,
+        saldo: fs.reduce((s, f) => s + f.saldo, 0),
+        facturas: fs.length,
+        vencido: fs.filter((f) => f.vence < HOY).reduce((s, f) => s + f.saldo, 0),
+    };
+}).sort((a, b) => b.saldo - a.saldo);
+const seleccion = ABIERTAS.filter((f) => f.sel);
+const SEL_CUR = seleccion[0].currency;
+const selTotal = seleccion.reduce((s, f) => s + f.saldo, 0);
+const metodo = etiquetaMetodo({ tipo: 'card', marca: 'visa', last4: '4242' }, L);
+const PAGADAS = 6;
+const POINT_ICONS: IconName[] = ['wallet', 'check-square', 'file-down', 'refresh'];
+---
+
+<section class="ipo" aria-labelledby="ipo-title">
+    <header class="ipo-intro">
+        <div>
+            <p class="ipo-eyebrow"><span>{C.eyebrow}</span><em>{C.badge}</em></p>
+            <h2 id="ipo-title" class="ipo-h2 masked-title">{C.titulo}</h2>
+        </div>
+        <p class="ipo-sub reveal">{C.sub}</p>
+    </header>
+
+    <div class="ipo-row">
+        <ul class="ipo-points">
+            {C.puntos.map((p, i) => (
+                <li class="reveal">
+                    <span class="ipo-pi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={ico(POINT_ICONS[i] ?? 'check')} /></span>
+                    <span><b>{p.titulo}</b><small>{p.texto}</small></span>
+                </li>
+            ))}
+        </ul>
+
+        <div class="ipo-stage reveal" aria-hidden="true">
+            <div class="ipo-pv">
+                <header class="ipo-pv-head">
+                    <div class="ipo-pv-brand"><span class="ipo-pv-mark" style={`background:${COLOR}`}>M</span><strong>{ORG}</strong></div>
+                    <b class="ipo-pv-h1">{t(L, 'portal.titulo')}</b>
+                    <p class="ipo-pv-sub">{CLIENTE}</p>
+                </header>
+
+                <div class="ipo-pv-saldos">
+                    {SALDOS.map((s) => (
+                        <div class="ipo-pv-saldo">
+                            <span class="ipo-pv-label">{t(L, 'portal.saldo')} · {s.currency}</span>
+                            <strong class="editorial">{fmt(s.saldo, s.currency)}</strong>
+                            <span class="ipo-pv-meta">
+                                {s.facturas === 1 ? t(L, 'portal.abierta_1') : sub(t(L, 'portal.abiertas_n'), { n: String(s.facturas) })}
+                                {s.vencido > 0 && <span class="ipo-pv-venc"> · {sub(t(L, 'portal.vencido'), { monto: fmt(s.vencido, s.currency) })}</span>}
+                            </span>
+                        </div>
+                    ))}
+                </div>
+
+                <div class="ipo-pv-card">
+                    <div class="ipo-pv-ap">
+                        <span class="ipo-pv-icon" style={`color:${COLOR}`}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ico('refresh')} /></span>
+                        <div>
+                            <b class="ipo-pv-h2">{t(L, 'portal.autopay_titulo')}</b>
+                            <p>{sub(t(L, 'portal.autopay_on'), { metodo, fecha: longDate('2026-10-01') })}</p>
+                        </div>
+                    </div>
+                    <p class="ipo-pv-aviso">{sub(t(L, 'portal.autopay_reintento'), { moneda: 'MXN', fecha: longDate('2026-10-16') })}</p>
+                    <div class="ipo-pv-acts">
+                        <span class="ipo-pv-btn pri" style={`background:${COLOR}`}>{t(L, 'portal.autopay_cambiar')}</span>
+                        <span class="ipo-pv-btn">{t(L, 'portal.autopay_desactivar')}</span>
+                    </div>
+                </div>
+
+                <div class="ipo-pv-card">
+                    <b class="ipo-pv-h2">{t(L, 'portal.abiertas')}</b>
+                    <ul class="ipo-pv-list">
+                        {ABIERTAS.map((f) => (
+                            <li class="ipo-pv-row">
+                                <i class:list={['ipo-pv-check', { on: f.sel, off: f.currency !== SEL_CUR }]} data-ipo-check={f.sel ? '' : undefined}>
+                                    {f.sel && <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" set:html={ico('check')} />}
+                                </i>
+                                <div class="ipo-pv-main">
+                                    <span class="ipo-pv-num">{f.numero}</span>
+                                    <span class="ipo-pv-rmeta">
+                                        {`${t(L, 'portal.col_vence')} ${calDate(f.vence)}`}
+                                        {f.vence < HOY && <span class="ipo-pv-badge">{t(L, 'portal.vencida')}</span>}
+                                    </span>
+                                </div>
+                                <div class="ipo-pv-amt">
+                                    <strong class="editorial">{fmt(f.saldo, f.currency)}</strong>
+                                    {f.saldo !== f.total && <span class="ipo-pv-rmeta">{t(L, 'portal.de_total')} {fmt(f.total, f.currency)}</span>}
+                                </div>
+                                <div class="ipo-pv-links"><span>{t(L, 'portal.ver')}</span><span>PDF</span></div>
+                            </li>
+                        ))}
+                    </ul>
+                    <p class="ipo-pv-hint">{t(L, 'portal.una_divisa')}</p>
+                </div>
+
+                <div class="ipo-pv-card ipo-pv-pagadas">
+                    <b class="ipo-pv-h2">{t(L, 'portal.pagadas')}</b><span class="ipo-pv-count">{PAGADAS}</span>
+                </div>
+            </div>
+
+            <div class="ipo-pv-paybar" data-ipo-paybar>
+                <span>{sub(t(L, 'portal.seleccion_n'), { n: String(seleccion.length), monto: fmt(selTotal, SEL_CUR) })}</span>
+                <span class="ipo-pv-btn pri" style={`background:${COLOR}`}>{t(L, 'portal.pagar_sel')}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="ipo-rules">
+        <div class="ipo-rules-head">
+            <h3 class="ipo-h3">{C.reintentos.titulo}</h3>
+            <p class="ipo-copy reveal">{C.reintentos.copy}</p>
+        </div>
+        <div class="ipo-rt" role="table" aria-label={C.reintentos.titulo}>
+            <div class="ipo-rt-h" role="row"><span role="columnheader">{C.reintentos.colCaso}</span><span role="columnheader">{C.reintentos.colRegla}</span></div>
+            {C.reintentos.filas.map((f) => (
+                <div class="ipo-rt-r reveal" role="row"><span role="cell" class="ipo-rt-caso">{f.caso}</span><span role="cell" class="ipo-rt-regla">{f.regla}</span></div>
+            ))}
+        </div>
+        <div class="ipo-debit reveal">
+            <span class="ipo-pi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={ico('bank')} /></span>
+            <span><b>{C.domiciliacion.titulo}</b><small>{C.domiciliacion.texto}</small></span>
+            <em>{C.badge}</em>
+        </div>
+    </div>
+</section>
+
+<script>
+    // Una sola micro-historia: el cliente marca dos facturas y sube la barra de
+    // pago, como en el portal real. El HTML ya es el estado final.
+    import { gsap } from 'gsap';
+    import { ScrollTrigger } from 'gsap/ScrollTrigger';
+    gsap.registerPlugin(ScrollTrigger);
+    const bar = document.querySelector<HTMLElement>('[data-ipo-paybar]');
+    const checks = document.querySelectorAll<HTMLElement>('[data-ipo-check]');
+    if (bar && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        gsap.set(checks, { scale: 0.4, opacity: 0 });
+        gsap.set(bar, { opacity: 0, y: 26 });
+        ScrollTrigger.create({
+            trigger: bar.parentElement, start: 'top 70%', once: true,
+            onEnter: () => gsap.timeline()
+                .to(checks, { scale: 1, opacity: 1, duration: 0.32, ease: 'back.out(2)', stagger: 0.35 }, 0.3)
+                .to(bar, { opacity: 1, y: 0, duration: 0.6, ease: 'power3.out', clearProps: 'transform' }, '+=0.15'),
+        });
+    }
+</script>
+
+<style>
+    .ipo {
+        max-width: 1360px;
+        margin: 0 auto;
+        padding: 6rem 5% 1rem;
+        overflow-x: clip;
+    }
+    .ipo-intro {
+        display: grid; grid-template-columns: 1.25fr 1fr;
+        gap: 3.5rem; align-items: end;
+        margin: 0 0 3.4rem;
+    }
+    .ipo-eyebrow {
+        display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+        font-size: 0.6rem; font-weight: 800; letter-spacing: 2.8px;
+        text-transform: uppercase; color: #8a929e; margin: 0 0 0.9rem;
+    }
+    .ipo-eyebrow em, .ipo-debit em {
+        font-style: normal; font-size: 0.56rem; font-weight: 800; letter-spacing: 0.9px;
+        color: #b45309; background: rgba(245,158,11,0.13); border-radius: 999px; padding: 4px 9px;
+        white-space: nowrap;
+    }
+    .ipo-h2 {
+        font-size: clamp(1.85rem, 2.9vw, 2.6rem);
+        font-weight: 800; letter-spacing: -0.035em; line-height: 1.1;
+        color: #050505; margin: 0; text-wrap: balance;
+    }
+    .ipo-sub { font-size: 1.05rem; line-height: 1.6; color: var(--color-text-muted); margin: 0; text-wrap: pretty; }
+    .ipo-h3 {
+        font-size: clamp(1.35rem, 2vw, 1.75rem);
+        font-weight: 800; line-height: 1.14; letter-spacing: -0.035em;
+        color: #050505; margin: 0; text-wrap: balance;
+    }
+    .ipo-copy { font-size: 0.92rem; line-height: 1.68; color: var(--color-text-muted); margin: 0; }
+
+    .ipo-row { display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.35fr); gap: 3.2rem; align-items: center; margin: 0 0 5.5rem; }
+    .ipo-points { list-style: none; margin: 0; padding: 0; }
+    .ipo-points li, .ipo-debit {
+        display: flex; align-items: flex-start; gap: 14px;
+        padding: 1.15rem 0; border-top: 1px solid rgba(10,25,47,0.07);
+    }
+    .ipo-points li:last-child { border-bottom: 1px solid rgba(10,25,47,0.07); }
+    .ipo-pi {
+        flex-shrink: 0; width: 36px; height: 36px; border-radius: 11px;
+        display: grid; place-items: center; color: #0a192f;
+        background: #f5f5f7; box-shadow: inset 0 0 0 1px rgba(10,25,47,0.06);
+    }
+    .ipo-pi svg { width: 18px; height: 18px; }
+    .ipo-points li > span:last-child, .ipo-debit > span:nth-child(2) { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+    .ipo-points b, .ipo-debit b { font-size: 0.98rem; font-weight: 700; letter-spacing: -0.015em; color: #050505; }
+    .ipo-points small, .ipo-debit small { font-size: 0.86rem; line-height: 1.55; color: var(--color-text-muted); }
+
+    /* ════ Calca de /portal/[token] (fondo #f5f5f7 de .pv-bg, Inter de Layout) ════ */
+    .ipo-stage {
+        position: relative; overflow: hidden; isolation: isolate;
+        height: 700px; border-radius: 28px; background: #f5f5f7;
+        box-shadow: inset 0 0 0 1px rgba(10,25,47,0.06), 0 2px 4px rgba(10,25,47,0.03), 0 40px 80px -40px rgba(10,25,47,0.25);
+        text-align: left;
+    }
+    .ipo-pv { width: min(540px, calc(100% - 64px)); margin: 0 auto; padding: 38px 0 0; }
+    .ipo-pv-head { margin: 0 0 18px; }
+    .ipo-pv-brand { display: flex; align-items: center; gap: 9px; margin-bottom: 18px; }
+    .ipo-pv-mark { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 9px; color: #fff; font-size: 12px; font-weight: 700; }
+    .ipo-pv-brand strong { font-size: 11px; color: #111827; }
+    .ipo-pv-h1 { display: block; font-size: 27px; font-weight: 700; letter-spacing: -0.04em; line-height: 1.1; color: #050505; }
+    .ipo-pv-sub { margin: 6px 0 0; color: #6b7280; font-size: 11px; }
+
+    .ipo-pv-saldos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; margin-bottom: 13px; }
+    .ipo-pv-saldo {
+        display: flex; flex-direction: column; gap: 4px; min-width: 0; background: #fff; border-radius: 17px; padding: 16px;
+        box-shadow: 0 1px 2px rgba(10,25,47,0.04), 0 12px 40px -18px rgba(10,25,47,0.12);
+    }
+    .ipo-pv-saldo strong { font-size: 22px; color: #050505; white-space: nowrap; }
+    .ipo-pv-label { font-size: 8.5px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.04em; }
+    .ipo-pv-meta { font-size: 9.5px; color: #6b7280; }
+    .ipo-pv-venc { color: #b45309; font-weight: 600; }
+
+    .ipo-pv-card {
+        background: #fff; border-radius: 20px; padding: 18px 19px 13px; margin-bottom: 11px;
+        border: 1px solid rgba(10,25,47,0.05);
+        box-shadow: 0 4px 6px rgba(10,25,47,0.02), 0 20px 60px -24px rgba(10,25,47,0.12);
+    }
+    .ipo-pv-h2 { display: block; font-size: 12.5px; font-weight: 700; letter-spacing: -0.02em; color: #050505; margin: 0 0 8px; }
+    .ipo-pv-ap { display: flex; gap: 10px; align-items: flex-start; }
+    .ipo-pv-ap .ipo-pv-h2 { margin-bottom: 3px; }
+    .ipo-pv-ap p { margin: 0; color: #4b5563; font-size: 10px; line-height: 1.55; }
+    .ipo-pv-icon { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 9px; background: #f5f5f7; flex-shrink: 0; }
+    .ipo-pv-icon svg { width: 14px; height: 14px; }
+    .ipo-pv-aviso { margin: 10px 0 0; padding: 9px 10px; border-radius: 10px; background: #fff7ed; color: #92400e; font-size: 9.5px; line-height: 1.5; }
+    .ipo-pv-acts { display: flex; flex-wrap: wrap; gap: 7px; margin: 12px 0 5px; }
+    .ipo-pv-btn {
+        display: inline-flex; align-items: center; justify-content: center; min-height: 30px; padding: 0 14px;
+        border-radius: 999px; border: 1px solid #e5e7eb; background: #fff; color: #111827;
+        font-size: 10px; font-weight: 600; white-space: nowrap;
+    }
+    .ipo-pv-btn.pri { color: #fff; border-color: transparent; }
+
+    .ipo-pv-list { list-style: none; margin: 0; padding: 0; }
+    .ipo-pv-row { display: grid; grid-template-columns: 18px 1fr auto auto; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid #f0f0f2; }
+    .ipo-pv-row:first-child { border-top: 0; }
+    .ipo-pv-check {
+        width: 14px; height: 14px; border-radius: 4px; display: flex; align-items: center; justify-content: center;
+        border: 1.5px solid #9ca3af; background: #fff; color: #fff;
+    }
+    .ipo-pv-check.on { background: #0a192f; border-color: #0a192f; }
+    .ipo-pv-check.off { opacity: 0.35; }
+    .ipo-pv-check svg { width: 10px; height: 10px; }
+    .ipo-pv-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .ipo-pv-num { font-weight: 600; color: #111827; font-size: 11px; }
+    .ipo-pv-rmeta { font-size: 9px; color: #6b7280; display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+    .ipo-pv-badge { display: inline-flex; padding: 1px 6px; border-radius: 999px; font-size: 8.5px; font-weight: 600; background: #fff7ed; color: #b45309; }
+    .ipo-pv-amt { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; }
+    .ipo-pv-amt strong { font-size: 11.5px; color: #050505; white-space: nowrap; }
+    .ipo-pv-links { display: flex; gap: 2px; }
+    .ipo-pv-links span { padding: 0 5px; color: #0a192f; font-size: 9.5px; font-weight: 600; }
+    .ipo-pv-hint { margin: 8px 0 3px; color: #6b7280; font-size: 9.5px; line-height: 1.5; }
+    .ipo-pv-pagadas { display: flex; align-items: center; gap: 8px; padding-top: 14px; padding-bottom: 14px; }
+    .ipo-pv-pagadas .ipo-pv-h2 { margin: 0; }
+    .ipo-pv-count { font-size: 9px; font-weight: 600; color: #6b7280; background: #f5f5f7; border-radius: 999px; padding: 2px 7px; }
+
+    .ipo-pv-paybar {
+        position: absolute; left: 0; right: 0; bottom: 18px; margin: 0 auto; z-index: 2;
+        display: flex; align-items: center; gap: 12px; width: min(520px, calc(100% - 40px));
+        padding: 8px 8px 8px 16px; border-radius: 999px; background: #fff;
+        box-shadow: 0 10px 40px -10px rgba(10,25,47,0.35), 0 0 0 1px rgba(10,25,47,0.05);
+    }
+    .ipo-pv-paybar > span:first-child { flex: 1; font-size: 10.5px; font-weight: 600; color: #111827; white-space: nowrap; }
+
+    /* ════ Reintentos ════ */
+    .ipo-rules-head { display: grid; grid-template-columns: 1.25fr 1fr; gap: 3.5rem; align-items: end; margin: 0 0 1.8rem; }
+    .ipo-rt { border-top: 1px solid rgba(10,25,47,0.1); }
+    .ipo-rt-h, .ipo-rt-r {
+        display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.6fr);
+        gap: 1.5rem; padding: 1.05rem 0.4rem; border-bottom: 1px solid rgba(10,25,47,0.07);
+    }
+    .ipo-rt-h { padding-top: 0.9rem; padding-bottom: 0.9rem; font-size: 0.6rem; font-weight: 800; letter-spacing: 1.6px; text-transform: uppercase; color: #8a929e; }
+    .ipo-rt-caso { font-size: 0.95rem; font-weight: 700; letter-spacing: -0.015em; color: #050505; }
+    .ipo-rt-regla { font-size: 0.9rem; line-height: 1.55; color: #334155; }
+    .ipo-debit { align-items: center; margin-top: 1.6rem; border-bottom: 1px solid rgba(10,25,47,0.07); }
+    .ipo-debit > span:nth-child(2) { flex: 1; }
+
+    @media (max-width: 1180px) {
+        .ipo-row { grid-template-columns: 1fr; gap: 2.2rem; }
+    }
+    @media (max-width: 880px) {
+        .ipo { padding-top: 4.5rem; }
+        .ipo-intro, .ipo-rules-head { grid-template-columns: 1fr; gap: 1.1rem; }
+        .ipo-row { margin-bottom: 4rem; }
+        .ipo-rt-h { display: none; }
+        .ipo-rt-r { grid-template-columns: 1fr; gap: 0.35rem; padding: 1rem 0; }
+        .ipo-debit { flex-wrap: wrap; }
+        .ipo-debit em { margin-left: 50px; }
+    }
+    /* Móvil: las reglas de .pv-row y .pv-paybar bajo 560 px de la página real. */
+    @media (max-width: 560px) {
+        .ipo-stage { height: 640px; border-radius: 24px; }
+        .ipo-pv { width: calc(100% - 28px); padding-top: 26px; }
+        .ipo-pv-saldos { grid-template-columns: 1fr; }
+        .ipo-pv-saldo:nth-child(2) { display: none; }
+        .ipo-pv-card { padding: 15px 14px 10px; }
+        .ipo-pv-row { grid-template-columns: 16px 1fr auto; }
+        .ipo-pv-links { grid-column: 2 / -1; margin-left: -5px; }
+        .ipo-pv-paybar { flex-direction: column; align-items: stretch; gap: 8px; padding: 10px; border-radius: 18px; }
+        .ipo-pv-paybar > span:first-child { text-align: center; }
+    }
+</style>

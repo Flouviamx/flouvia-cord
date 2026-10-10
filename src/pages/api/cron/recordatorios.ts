@@ -1,77 +1,78 @@
-import { brandEmailShell, emailBrandFromRow, emailButtonStyle } from '../../../lib/brand-email';
 // GET /api/cron/recordatorios — recordatorios de cobro automáticos.
-// Busca cuentas por cobrar cuyo vencimiento cae en los próximos 3 días y, si hay
-// RESEND_API_KEY, envía un correo con la marca de Cord vía Resend (mismo helper y
-// plantilla que notifyQuoteSent/cron de cobranza). Pensado para correr como cron
-// de Vercel (ver vercel.json). Protegido con CRON_SECRET: Vercel manda
-// Authorization: Bearer ${CRON_SECRET}.
+// Dos carteras: cotizaciones aprobadas con saldo (aviso 3 días antes y el día
+// que vencen) y facturas abiertas (la escalera de etapas que cada negocio elige
+// en Ajustes › Recordatorios, `orgs.recordatorio_etapas`). Protegido con
+// CRON_SECRET; lo disparan vercel.json y cord-crons.yml.
 //
 // ⚠️ Fix jul 2026: antes usaba getActiveOrgId() — que sin sesión (contexto cron)
 // SIEMPRE resolvía la org demo, así que ningún negocio real recibía recordatorios.
-// Ahora itera TODAS las orgs con cartera viva (excluyendo sandboxes de prueba),
-// igual que el cron de intereses.
+// Ahora itera TODAS las orgs con cartera viva (excluyendo sandboxes de prueba).
 //
 // ⚠️ Fix jul 2026 (bis): el link del correo se armaba con `new URL(request.url)
-// .origin` — en un request disparado por el cron de Vercel (no por un navegador)
-// eso resuelve a la URL interna del deployment (tipo https://flouvia-cord-xxxx
-// .vercel.app), no a cordhq.app. El correo salía con un link roto/feo. Ahora usa
-// `publicDocumentUrl()` con la organización de cada documento, y el
-// HTML se armó igual al resto de correos transaccionales (logo, color de marca,
-// botón pill) en vez de texto plano sin estilo.
+// .origin`, que en un request del cron es la URL interna del deployment. Ahora
+// usa `publicDocumentUrl()` con la organización de cada documento.
+//
+// Oct 2026 — por organización, no por corrida:
+//   · El trabajo de cada cuenta corre dentro de SU presentación (idioma,
+//     formato, divisa y zona horaria; src/lib/org-presentation.ts). Antes el
+//     cron no tenía idioma y una cuenta en inglés mandaba sus recordatorios de
+//     factura en español.
+//   · "Hoy" es el día civil del negocio, no el del servidor: una etapa no sale
+//     un día antes en Tokio ni un día tarde en Ciudad de México.
+//   · El calendario de etapas, el interruptor y la pausa por cliente (la lista
+//     "No escribir a" de la cobranza, `cobranza_exclusiones`) son del negocio.
+//   · El barrido cross-org es lo único que va en el carril de sistema; las
+//     pausas, la dedup y cada envío vuelven a withOrgTx (regla 30).
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { assertCronAuth } from '../../../lib/cron-auth';
 import { sql, logAudit, withOrgTx, withSystemTx } from '../../../lib/db';
 import { reqContext } from '../../../lib/context';
-import { sendEmail, notifyInvoiceReminder, siteOrigin } from '../../../lib/email';
-import { publicDocumentUrl } from '../../../lib/public-links';
+import { notifyInvoiceReminder, notifyQuoteReminder, siteOrigin } from '../../../lib/email';
 import { dispatchInvoiceEvent } from '../../../lib/webhooks';
 import { notify } from '../../../lib/notify';
-import { currencyDecimals, normalizeCurrency } from '../../../lib/currency';
-import { t } from '../../../i18n/app';
+import { normalizeCurrency } from '../../../lib/currency';
+import { getCountryProfile } from '../../../lib/countries';
 import { log } from '../../../lib/log';
 import { termDays } from '../../../lib/payment-terms';
-
-// Cada recordatorio se formatea con la divisa de SU cotización: este cron
-// barre la cartera de TODAS las orgs, así que un formateador fijo mezclaba
-// pesos, dólares y euros bajo el mismo "$".
-const money = (n: number, currency?: string, locale = 'es-MX') => {
-    const code = normalizeCurrency(currency);
-    const decimals = currencyDecimals(code);
-    return new Intl.NumberFormat(locale, {
-        style: 'currency', currency: code,
-        minimumFractionDigits: decimals, maximumFractionDigits: decimals,
-    }).format(n);
-};
+import { addDays, dayDiff } from '../../../lib/tasks';
+import { localClock } from '../../../lib/task-reminders';
+import { withPresentation, type OrgPresentation } from '../../../lib/org-presentation';
+import { detalleEventoEtapa, etapaQueToca, etapasGuardadas, momentoDelAviso, VENTANA } from '../../../lib/recordatorios';
 
 export const GET: APIRoute = async ({ request }) => {
-    // Auth del cron (si está configurado el secreto).
     const authError = assertCronAuth(request);
     if (authError) return authError;
+    return reqContext.run({ userId: null, cronScope: true }, () => run(new Date()));
+};
 
-    // Carril de SISTEMA para las dos consultas de cartera que cruzan
-    // organizaciones; el registro de etapa y el envío de cada documento vuelven
-    // a withOrgTx con el org_id de esa factura.
-    return reqContext.run({ userId: null, cronScope: true }, async () => {
+interface OrgWork {
+    pres: OrgPresentation;
+    activos: boolean;
+    cotizaciones: Record<string, any>[];
+    facturas: Record<string, any>[];
+}
 
-    // Cartera viva de TODAS las orgs reales (una sola query; el volumen es bajo:
-    // solo approved/invoiced con email y vencimiento próximo). Las orgs sandbox
-    // (entorno de prueba) y la demo quedan fuera.
-    // Solo cotizaciones que siguen siendo la deuda: sin `paid_at`, y sin una
-    // factura viva que ya lleve ese saldo (la escalera de facturas de abajo la
-    // recuerda). Antes una cotización facturada y luego pagada en /i seguía
-    // `invoiced` y aquí se le cobraba otra vez al cliente.
-    const [rows] = await withSystemTx(sql`
-        select c.id, c.folio, c.total, c.terminos, c.public_token, c.base_currency, o.moneda,
+interface Totales {
+    enviados: number; candidatos: number; vencidasHoy: number; fallidos: number;
+    apagados: number; pausados: number;
+    facturas: { enviados: number; candidatas: number; vencidasHoy: number };
+}
+
+async function run(now: Date): Promise<Response> {
+    // ── Barrido cross-org (carril de SISTEMA) ───────────────────────────────
+    // Solo cotizaciones que siguen siendo la deuda: sin `paid_at` y sin una
+    // factura viva que ya lleve ese saldo (la escalera de facturas la recuerda).
+    // Las orgs sandbox y la demo quedan fuera.
+    const [cotizaciones] = await withSystemTx(sql`
+        select c.id, c.folio, c.terminos, c.cliente_id, c.base_currency,
                c.total - coalesce((select sum(cc.monto) from cotizacion_cobros cc
                                     where cc.cotizacion_id = c.id and cc.org_id = c.org_id and cc.status = 'pagado'), 0) as saldo,
                coalesce(c.approved_at, c.created_at) as base,
-               cl.empresa, cl.email,
-               o.id as org_id, o.nombre as org_nombre, coalesce(o.color_marca, '#0a192f') as color,
-               o.idioma, o.zona_horaria,
-               o.logo_url, o.color_secundario, o.brand_profile,
-               (o.portal_powered = false and cord_effective_plan(o.id) <> 'free') as powered_off
+               cl.empresa,
+               o.id as org_id, o.idioma, o.moneda, o.zona_horaria, o.country_code,
+               o.recordatorios_activos
         from cotizaciones c
         join clientes cl on cl.id = c.cliente_id
         join orgs o on o.id = c.org_id
@@ -86,118 +87,13 @@ export const GET: APIRoute = async ({ request }) => {
           and o.sandbox_of is null
           and o.owner_id::text <> '00000000-0000-0000-0000-000000000000'`);
 
-    const today = new Date(); today.setHours(0, 0, 0, 0);
-    const MS = 86400000;
-    const todas = rows.map((r) => {
-        const due = new Date(r.base as string); due.setDate(due.getDate() + termDays(r.terminos));
-        // El vencimiento es un DÍA: sin truncar, una cotización aprobada por la
-        // tarde contaba "1 día" cuando vencía hoy.
-        due.setHours(0, 0, 0, 0);
-        const dias = Math.round((due.getTime() - today.getTime()) / MS);
-        return {
-            // Lo que se recuerda es el SALDO: con un anticipo pagado, pedir el
-            // total le cobra al cliente dinero que ya entregó.
-            id: r.id as string, folio: r.folio as string, total: num(r.saldo),
-            token: r.public_token as string, empresa: r.empresa as string, email: r.email as string,
-            orgId: r.org_id as string, orgNombre: (r.org_nombre as string) || 'Cord',
-            color: /^#[0-9a-fA-F]{6}$/.test(r.color as string) ? (r.color as string) : '#0a192f',
-            brand: emailBrandFromRow(r),
-            poweredOff: r.powered_off === true,
-            // La query trae base_currency y moneda, pero este map los TIRABA: río
-            // abajo `c.base_currency` era undefined, normalizeCurrency caía a MXN
-            // y TODO recordatorio se formateaba en pesos — a un cliente que cotizó
-            // en euros le llegaba su importe rotulado como MXN (regla 21).
-            moneda: normalizeCurrency(r.base_currency ?? r.moneda),
-            // El correo sale en el idioma de la organización, no en español fijo:
-            // un negocio en Austin le escribía "Hola, equipo de…" a su cliente.
-            lang: String(r.idioma || '').toLowerCase().startsWith('en') ? 'en' as const : 'es' as const,
-            vence: due, dias,
-        };
-    });
-    // Dos avisos por cotización: 3 días antes y el día del vencimiento. Antes
-    // salía uno CADA día de la ventana 0–3 (cuatro correos por la misma deuda)
-    // porque esta cartera no tiene tabla de dedup como la de facturas.
-    const candidatos = todas.filter((c) => c.total > 0 && (c.dias === 3 || c.dias === 0));
-    // Owner: aviso de "pago vencido" (evento payment_overdue) exactamente el
-    // primer día tras el vencimiento — coincidencia exacta de fecha, el cron
-    // corre una vez al día, así se dispara una sola vez por cotización sin
-    // necesitar una tabla de dedup.
-    const vencidasHoy = todas.filter((c) => c.dias === -1);
-
-    let enviados = 0;
-    // Cada fase de cotizaciones va aislada: un fallo aquí no puede dejar sin
-    // correr la escalera de facturas de abajo (ya pasó, con el `origin`).
-    try {
-    for (const c of candidatos) {
-        const link = await publicDocumentUrl(c.orgId, 'q', c.token);
-        const L = c.lang;
-        const tv = (key: string, vars: Record<string, string>) => {
-            let out = t(L, key as any);
-            for (const k in vars) out = out.split(`{${k}}`).join(vars[k]);
-            return out;
-        };
-        const venceTxt = new Intl.DateTimeFormat(L === 'en' ? 'en-US' : 'es-MX', { day: 'numeric', month: 'long' }).format(c.vence);
-        const poweredLine = c.poweredOff ? esc(c.orgNombre) : `${esc(c.orgNombre)}${t(L, 'email.enviado_con_cord')}`;
-        const html = brandEmailShell(c.brand, `<p style="font-size:16px;color:#111827;margin-top:0;font-weight:500;">${tv('rem.q.saludo', { empresa: esc(c.empresa) })}</p>
-                <p style="font-size:16px;line-height:1.6;color:#374151;margin-bottom:32px;font-weight:400;">${tv('rem.q.cuerpo', { folio: esc(c.folio), monto: money(c.total, c.moneda, L === 'en' ? 'en-US' : 'es-MX'), fecha: venceTxt })}</p>
-
-                <div style="margin:40px 0;">
-                    <a href="${link}" style="${emailButtonStyle(c.brand)}">${tv('rem.q.boton', { folio: esc(c.folio) })}</a>
-                </div>
-
-                <p style="font-size:14px;color:#6B7280;line-height:1.5;word-break:break-all;">${t(L, 'rem.q.copiar')}<br><a href="${link}" style="color:#2563EB;text-decoration:none;">${link}</a></p>
-
-        `, poweredLine);
-        const res = await sendEmail({
-            orgId: c.orgId,
-            operation: 'payment_reminder',
-            to: c.email,
-            subject: tv('rem.q.asunto', { folio: c.folio }),
-            html,
-            fromName: c.orgNombre,
-        });
-        if (res.sent) { enviados++; await logAudit(c.orgId, { accion: 'recordatorio.enviado', entidad: 'cotizacion', entidad_id: c.id, detalle: `${c.folio} → ${c.email}` }); }
-    }
-    } catch (err) {
-        log.error('recordatorios de cotización fallaron', { route: 'cron/recordatorios', err });
-    }
-
-    try {
-    for (const c of vencidasHoy) {
-        await notify(c.orgId, 'payment_overdue', {
-            folio: c.folio, cliente: c.empresa, total: c.total,
-            moneda: c.moneda,
-            // `origin` no existe en Node: era un ReferenceError que tumbaba el
-            // cron justo ANTES de la escalera de facturas, así que ningún
-            // recordatorio de factura ni `invoice.overdue` salía ese día.
-            link: `${siteOrigin()}/app/cobranza`,
-        });
-    }
-    } catch (err) {
-        log.error('avisos de vencimiento fallaron', { route: 'cron/recordatorios', err });
-    }
-
-    // ── Facturas ────────────────────────────────────────────────────────────
-    // La cartera de arriba es de COTIZACIONES y deriva el vencimiento de los
-    // términos. Una factura tiene `due_date` propio, y desde ago 2026 puede no
-    // tener cotización detrás (standalone) — así que necesita su propio barrido
-    // o esas facturas nunca recibirían recordatorio.
-    // Escalera completa, no una ventana de 5 días.
-    //
-    // Antes: un solo correo cuando `due_date - current_date` caía entre -1 y 3,
-    // y la no-duplicación dependía de que el cron corriera EXACTAMENTE una vez
-    // al día (su propio comentario lo admitía). Dos corridas el mismo día
-    // mandaban dos correos por el mismo dinero; una corrida perdida se saltaba
-    // el aviso para siempre, porque la ventana ya había pasado.
-    //
-    // Ahora la etapa alcanzada se calcula del vencimiento y se registra en
-    // `documento_recordatorios`. La dedup es un hecho de la base: cada etapa se
-    // manda una vez por documento, corra el cron las veces que corra. Y una
-    // corrida perdida se recupera sola — la etapa sigue pendiente mañana.
+    // Facturas: la ventana va un día más ancha que la que se evalúa porque el
+    // día civil de cada negocio puede ir un día adelante o atrás del servidor.
     const [facturas] = await withSystemTx(sql`
-        select d.id, d.org_id, d.due_date, d.cotizacion_id,
-               (current_date - d.due_date) as dias_vencida,
-               coalesce(o.recordatorio_etapas, '{-7,-1,3,7,14,30}'::int[]) as etapas,
+        select d.id, d.org_id, to_char(d.due_date, 'YYYY-MM-DD') as due, d.cotizacion_id,
+               coalesce(d.cliente_id, (select c.cliente_id from cotizaciones c where c.id = d.cotizacion_id)) as cliente_id,
+               o.recordatorio_etapas as etapas, o.recordatorios_activos,
+               o.idioma, o.moneda, o.zona_horaria, o.country_code,
                (select array_agg(r.etapa) from documento_recordatorios r where r.documento_id = d.id) as enviadas
           from documentos_fiscales d
           join orgs o on o.id = d.org_id
@@ -205,41 +101,165 @@ export const GET: APIRoute = async ({ request }) => {
            and d.due_date is not null
            and d.amount_remaining > 0
            and o.sandbox_of is null
-           and (current_date - d.due_date) between -30 and 120`);
+           and d.due_date between current_date - ${VENTANA.max + 1}::int and current_date + ${-VENTANA.min + 1}::int`);
 
-    // Dedup contra la cartera de cotizaciones: si la factura viene de una que ya
-    // recibió recordatorio arriba, no se manda dos veces por el mismo dinero.
-    const yaAvisadas = new Set(candidatos.map((c) => c.id));
-    let facturasEnviadas = 0;
-    let vencidasFactura = 0;
-    for (const f of facturas) {
-        const diasVencida = Number(f.dias_vencida);   // >0 = ya venció
-        const docId = f.id as string;
-        const orgId = f.org_id as string;
+    const porOrg = new Map<string, OrgWork>();
+    const de = (row: Record<string, any>): OrgWork => {
+        const orgId = String(row.org_id);
+        let w = porOrg.get(orgId);
+        if (!w) {
+            w = {
+                pres: { idioma: row.idioma, moneda: row.moneda, zona_horaria: row.zona_horaria, country_code: row.country_code },
+                // Columna nueva: una fila sin ella (null) se trata como encendida,
+                // que es como estuvo siempre.
+                activos: row.recordatorios_activos !== false,
+                cotizaciones: [], facturas: [],
+            };
+            porOrg.set(orgId, w);
+        }
+        return w;
+    };
+    for (const c of cotizaciones) de(c).cotizaciones.push(c);
+    for (const f of facturas) de(f).facturas.push(f);
 
-        if (diasVencida === 1) {
-            // Cruzó el vencimiento ayer: el webhook se dispara una sola vez.
-            vencidasFactura++;
-            await dispatchInvoiceEvent(orgId, docId, 'invoice.overdue');
+    const t: Totales = {
+        enviados: 0, candidatos: 0, vencidasHoy: 0, fallidos: 0, apagados: 0, pausados: 0,
+        facturas: { enviados: 0, candidatas: facturas.length, vencidasHoy: 0 },
+    };
+    // Una cuenta que truena no deja sin recordatorios a las demás.
+    for (const [orgId, w] of porOrg) {
+        try {
+            await withPresentation(w.pres, () => procesarOrg(orgId, w, now, t));
+        } catch (err) {
+            t.fallidos++;
+            log.error('recordatorios de una organización fallaron', { route: 'cron/recordatorios', orgId, err });
+        }
+    }
+    return json(t);
+}
+
+/** Día civil de hoy en la zona del negocio (la de su país si no eligió una). */
+function hoyDe(p: OrgPresentation, now: Date): string {
+    const zona = p.zona_horaria || getCountryProfile(String(p.country_code || 'MX')).timeZone;
+    return localClock(zona, now).day;
+}
+
+/**
+ * ¿Ya se hizo hoy? El endpoint lo disparan dos relojes y estos avisos no tienen
+ * tabla de dedup propia: la fila de auditoría que se escribe al hacerlo es la
+ * marca. 36 horas cubren el día sin tocar el aviso siguiente de la misma
+ * cotización, que llega tres días después.
+ */
+async function yaHecho(orgId: string, accion: string, entidadId: string): Promise<boolean> {
+    const [r] = await withOrgTx(orgId, sql`
+        select 1 from audit_log
+         where org_id = ${orgId} and accion = ${accion} and entidad_id = ${entidadId}
+           and created_at > now() - interval '36 hours'
+         limit 1`);
+    return r.length > 0;
+}
+
+/**
+ * Pausas del negocio: la lista "No escribir a" de la cobranza
+ * (`cobranza_exclusiones`) — un cliente que pidió que no le escriban no recibe
+ * ni al agente ni los recordatorios. Una sola lista, no dos que se contradigan.
+ * Su RLS es por organización: se lee aquí, no en el barrido de sistema.
+ */
+async function leerPausas(orgId: string) {
+    const [rows] = await withOrgTx(orgId, sql`
+        select cliente_id, cotizacion_id, documento_id from cobranza_exclusiones where org_id = ${orgId}`);
+    const set = (k: string) => new Set(rows.map((r) => r[k]).filter(Boolean).map(String));
+    return { clientes: set('cliente_id'), cotizaciones: set('cotizacion_id'), documentos: set('documento_id') };
+}
+
+async function procesarOrg(orgId: string, w: OrgWork, now: Date, t: Totales): Promise<void> {
+    const hoy = hoyDe(w.pres, now);
+    const pausas = w.activos ? await leerPausas(orgId) : null;
+
+    // ── Cotizaciones ────────────────────────────────────────────────────────
+    // Vencimiento = día civil de la aprobación + días del término de pago.
+    const avisadasHoy = new Set<string>();
+    for (const q of w.cotizaciones) {
+        const aprobada = localClock(w.pres.zona_horaria || getCountryProfile(String(w.pres.country_code || 'MX')).timeZone, new Date(q.base)).day;
+        const vence = addDays(aprobada, termDays(q.terminos));
+        const dias = dayDiff(hoy, vence);
+        const saldo = Number(q.saldo ?? 0);
+        const id = String(q.id);
+
+        // Al dueño: "pago vencido" el primer día tras el vencimiento. No es un
+        // recordatorio al cliente: no lo apaga el interruptor ni la pausa.
+        if (dias === -1 && saldo > 0) {
+            try {
+                if (!(await yaHecho(orgId, 'cobranza.vencida_avisada', id))) {
+                    t.vencidasHoy++;
+                    await notify(orgId, 'payment_overdue', {
+                        folio: q.folio, cliente: q.empresa, total: saldo,
+                        moneda: normalizeCurrency(q.base_currency ?? w.pres.moneda),
+                        link: `${siteOrigin()}/app/cobranza`,
+                    });
+                    await logAudit(orgId, { accion: 'cobranza.vencida_avisada', entidad: 'cotizacion', entidad_id: id, detalle: q.folio });
+                }
+            } catch (err) {
+                t.fallidos++;
+                log.error('no se pudo avisar de una cotización vencida', { route: 'cron/recordatorios', orgId, err });
+            }
+            continue;
         }
 
-        // La etapa que TOCA hoy: la mayor de la cadencia que ya se alcanzó y
-        // todavía no se ha mandado. Tomar la mayor (y no la primera pendiente)
-        // evita que una factura recuperada después de semanas dispare toda la
-        // escalera de golpe en un solo día.
-        const etapas: number[] = Array.isArray(f.etapas) ? f.etapas.map(Number) : [];
-        const enviadas = new Set<number>(Array.isArray(f.enviadas) ? f.enviadas.map(Number) : []);
-        const alcanzadas = etapas
-            .filter((e) => diasVencida >= e && !enviadas.has(e))
-            .sort((a, b) => b - a);
-        const etapa = alcanzadas[0];
-        if (etapa === undefined) continue;
+        // Al cliente: dos avisos, 3 días antes y el día del vencimiento.
+        if (!(saldo > 0 && (dias === 3 || dias === 0))) continue;
+        t.candidatos++;
+        if (!w.activos) { t.apagados++; continue; }
+        if (pausas && (pausas.clientes.has(String(q.cliente_id)) || pausas.cotizaciones.has(id))) { t.pausados++; continue; }
+        try {
+            if (await yaHecho(orgId, 'recordatorio.enviado', id)) { avisadasHoy.add(id); continue; }
+            const res = await notifyQuoteReminder(orgId, id, { saldo, vence });
+            if (res.sent) {
+                t.enviados++;
+                avisadasHoy.add(id);
+                await logAudit(orgId, { accion: 'recordatorio.enviado', entidad: 'cotizacion', entidad_id: id, detalle: `${q.folio} → ${res.to ?? ''}` });
+            }
+        } catch (err) {
+            t.fallidos++;
+            log.error('no se pudo mandar un recordatorio de cotización', { route: 'cron/recordatorios', orgId, err });
+        }
+    }
 
-        if (f.cotizacion_id && yaAvisadas.has(f.cotizacion_id as string)) continue;
+    // ── Facturas ────────────────────────────────────────────────────────────
+    // La etapa alcanzada se calcula del vencimiento y se registra en
+    // `documento_recordatorios`: la dedup es un hecho de la base, corra el cron
+    // las veces que corra, y una corrida perdida se recupera sola.
+    for (const f of w.facturas) {
+        const docId = String(f.id);
+        const diasVencida = dayDiff(String(f.due), hoy);   // >0 = ya venció
+
+        if (diasVencida === 1) {
+            // Cruzó el vencimiento ayer: el webhook sale una sola vez. Es un
+            // evento para las integraciones del negocio, no un correo al
+            // cliente: no lo apaga el interruptor.
+            try {
+                if (!(await yaHecho(orgId, 'factura.vencida_avisada', docId))) {
+                    t.facturas.vencidasHoy++;
+                    await dispatchInvoiceEvent(orgId, docId, 'invoice.overdue');
+                    await logAudit(orgId, { accion: 'factura.vencida_avisada', entidad: 'factura', entidad_id: docId, detalle: 'invoice.overdue' });
+                }
+            } catch (err) {
+                t.fallidos++;
+                log.error('no se pudo despachar invoice.overdue', { route: 'cron/recordatorios', orgId, err });
+            }
+        }
+
+        if (diasVencida < VENTANA.min || diasVencida > VENTANA.max) continue;
+        const etapa = etapaQueToca(etapasGuardadas(f.etapas), diasVencida, Array.isArray(f.enviadas) ? f.enviadas : []);
+        if (etapa === null) continue;
+        if (!w.activos) { t.apagados++; continue; }
+        if (pausas && (pausas.documentos.has(docId) || (f.cliente_id && pausas.clientes.has(String(f.cliente_id))))) { t.pausados++; continue; }
+        // Si la factura viene de una cotización que hoy ya recibió su aviso, no
+        // se escribe dos veces por el mismo dinero.
+        if (f.cotizacion_id && avisadasHoy.has(String(f.cotizacion_id))) continue;
 
         // Se REGISTRA antes de mandar. Al revés, un fallo entre el envío y la
-        // escritura repetiría el correo en la siguiente corrida — y repetir un
-        // cobro es la queja más cara que puede generar esta función.
+        // escritura repetiría el correo en la siguiente corrida (regla 25).
         const [marcaRows] = await withOrgTx(orgId, sql`
             insert into documento_recordatorios (org_id, documento_id, etapa)
             values (${orgId}, ${docId}, ${etapa})
@@ -247,33 +267,29 @@ export const GET: APIRoute = async ({ request }) => {
             returning id`);
         if (!marcaRows[0]) continue;   // otra corrida ganó la carrera
 
-        const sent = await notifyInvoiceReminder(orgId, docId, diasVencida > 0);
+        let sent = false;
+        try {
+            sent = await notifyInvoiceReminder(orgId, docId, momentoDelAviso(diasVencida));
+        } catch (err) {
+            // Lanzar se trata igual que "no salió": la etapa se libera abajo para
+            // reintentarse mañana en vez de quedar marcada sin que el correo saliera.
+            t.fallidos++;
+            log.error('no se pudo mandar el recordatorio de una factura', { route: 'cron/recordatorios', orgId, err });
+        }
         if (sent) {
-            facturasEnviadas++;
+            t.facturas.enviados++;
             await logAudit(orgId, {
                 accion: 'factura.recordatorio_enviado', entidad: 'factura',
-                entidad_id: docId, detalle: `etapa ${etapa > 0 ? `+${etapa}` : etapa} · vence ${f.due_date}`,
+                entidad_id: docId, detalle: `etapa ${etapa > 0 ? `+${etapa}` : etapa} · vence ${f.due}`,
             });
             await withOrgTx(orgId, sql`insert into eventos (org_id, documento_id, tipo, detalle)
-                      values (${orgId}, ${docId}, 'reminder', ${etapa > 0
-                          ? `Recordatorio de cobro (${etapa} ${etapa === 1 ? 'día' : 'días'} vencida)`
-                          : `Aviso de vencimiento (${Math.abs(etapa)} ${etapa === -1 ? 'día' : 'días'} antes)`})`);
+                      values (${orgId}, ${docId}, 'reminder', ${detalleEventoEtapa(etapa)})`);
         } else {
-            // No salió: se libera la etapa para reintentar mañana en vez de
-            // darla por consumida.
             await withOrgTx(orgId, sql`delete from documento_recordatorios where documento_id = ${docId} and etapa = ${etapa}`);
         }
     }
+}
 
-    return json({
-        enviados, candidatos: candidatos.length, vencidasHoy: vencidasHoy.length,
-        facturas: { enviados: facturasEnviadas, candidatas: facturas.length, vencidasHoy: vencidasFactura },
-    });
-    });
-};
-
-const num = (v: unknown) => Number(v ?? 0);
-const esc = (s: string) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 function json(data: unknown, status = 200) {
     return new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
 }

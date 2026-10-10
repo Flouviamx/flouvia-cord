@@ -21,6 +21,7 @@ import { createHmac, randomBytes, randomUUID } from 'node:crypto';
 import { sql, withOrgTx, withSystemTx, assertCronContext, logAudit } from './db';
 import { safeFetch, type SafeFetchResult } from './ssrf';
 import { sendEmail, siteOrigin } from './email';
+import { t } from '../i18n/app';
 import { publicDocumentUrl } from './public-links';
 import { rateLimit } from './ratelimit';
 import { after } from './after';
@@ -297,10 +298,12 @@ async function updateWebhookSummary(orgId: string, webhookId: string, result: Sa
 // Correo genérico al dueño de la org (branding igual al resto de correos
 // transaccionales del proyecto: logo + CTA color de marca). Best-effort: un
 // fallo de correo NUNCA debe romper el settle de una entrega.
-async function notifyOwner(orgId: string, opts: { subject: string; heading: string; bodyHtml: string }): Promise<void> {
+// El aviso sale en el idioma de la cuenta: lo dispara el barrido del outbox,
+// que no tiene request con idioma, y antes salía siempre en español.
+async function notifyOwner(orgId: string, build: (L: 'es' | 'en') => { subject: string; heading: string; bodyHtml: string }): Promise<void> {
     try {
         const [orgRows] = await withOrgTx(orgId, sql`
-            select o.nombre, coalesce(o.color_marca, '#0a192f') as color, o.email_contacto,
+            select o.nombre, coalesce(o.color_marca, '#0a192f') as color, o.email_contacto, o.idioma,
                    (select email from org_members where org_id = o.id and rol = 'owner' limit 1) as owner_email
             from orgs o where o.id = ${orgId}`);
         const org = orgRows[0];
@@ -308,6 +311,8 @@ async function notifyOwner(orgId: string, opts: { subject: string; heading: stri
         if (!to) return;
         const color = /^#[0-9a-fA-F]{6}$/.test(org?.color as string) ? (org.color as string) : '#0a192f';
         const link = `${siteOrigin()}/app?wb=webhooks`;
+        const L: 'es' | 'en' = String(org?.idioma || '').toLowerCase().startsWith('en') ? 'en' : 'es';
+        const opts = build(L);
         const html = `<div style="background-color:#ffffff;padding:40px 20px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
             <div style="max-width:540px;margin:0 auto;">
                 <div style="margin-bottom:32px;">
@@ -316,7 +321,7 @@ async function notifyOwner(orgId: string, opts: { subject: string; heading: stri
                 <p style="font-size:16px;color:#111827;margin-top:0;font-weight:500;">${esc(opts.heading)}</p>
                 <p style="font-size:16px;line-height:1.6;color:#374151;margin-bottom:32px;font-weight:400;">${opts.bodyHtml}</p>
                 <div style="margin:40px 0;">
-                    <a href="${link}" style="display:inline-block;background-color:${color};color:#ffffff;text-decoration:none;font-weight:500;font-size:15px;padding:12px 24px;border-radius:8px;">Ver webhooks en Ajustes</a>
+                    <a href="${link}" style="display:inline-block;background-color:${color};color:#ffffff;text-decoration:none;font-weight:500;font-size:15px;padding:12px 24px;border-radius:8px;">${t(L, 'wh.e_cta')}</a>
                 </div>
                 <div style="margin-top:48px;padding-top:24px;border-top:1px solid #E5E7EB;">
                     <p style="font-size:12px;color:#9CA3AF;margin:0;line-height:1.5;">${esc((org?.nombre as string) || 'Cord')}</p>
@@ -353,11 +358,11 @@ async function disableWebhook(orgId: string, webhookId: string, url: string, str
     } catch { /* best-effort */ }
 
     await logAudit(orgId, { accion: 'webhook.deshabilitado', entidad: 'webhook', entidad_id: webhookId, detalle: motivo });
-    await notifyOwner(orgId, {
-        subject: `Cord desactivó tu webhook — ${streak} fallos seguidos`,
-        heading: 'Desactivamos un endpoint de webhook',
-        bodyHtml: `El endpoint <b>${esc(url)}</b> falló ${streak} veces seguidas y lo desactivamos automáticamente para no seguir intentando contra un destino caído. No borramos nada — reactívalo desde Ajustes › Developers cuando esté listo.`,
-    });
+    await notifyOwner(orgId, (L) => ({
+        subject: t(L, 'wh.e_desactivado_asunto').replace('{n}', String(streak)),
+        heading: t(L, 'wh.e_desactivado_titulo'),
+        bodyHtml: t(L, 'wh.e_desactivado_cuerpo').replace('{url}', esc(url)).replace('{n}', String(streak)),
+    }));
 }
 
 // Aviso temprano (racha 3, antes de llegar al umbral de desactivar en 5).
@@ -368,11 +373,11 @@ async function maybeWarnWebhook(orgId: string, webhookId: string, url: string, s
     try {
         await withOrgTx(orgId, sql`update webhooks set aviso_fallos_at = now() where id = ${webhookId} and org_id = ${orgId}`);
     } catch { return; }
-    await notifyOwner(orgId, {
-        subject: `Tu webhook está fallando — ${streak} intentos seguidos`,
-        heading: 'Un endpoint de webhook está fallando',
-        bodyHtml: `El endpoint <b>${esc(url)}</b> lleva ${streak} eventos seguidos sin poder entregarse. Si llega a ${FAIL_DISABLE_THRESHOLD} lo desactivaremos automáticamente. Revísalo desde Ajustes › Developers.`,
-    });
+    await notifyOwner(orgId, (L) => ({
+        subject: t(L, 'wh.e_fallando_asunto').replace('{n}', String(streak)),
+        heading: t(L, 'wh.e_fallando_titulo'),
+        bodyHtml: t(L, 'wh.e_fallando_cuerpo').replace('{url}', esc(url)).replace('{n}', String(streak)).replace('{max}', String(FAIL_DISABLE_THRESHOLD)),
+    }));
 }
 
 /**

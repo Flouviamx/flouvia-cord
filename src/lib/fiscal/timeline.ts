@@ -21,6 +21,7 @@ export type InvoiceEventType =
     | 'viewed'       // el CLIENTE abrió el link (regla 19: nunca desde el SSR)
     | 'payment'      // abono aplicado
     | 'payment_failed' // un cobro en línea (portal o automático) no pasó
+    | 'transferencia' // SPEI: llegó dinero que todavía NO es un pago (incompleta o de más)
     | 'paid'         // saldo en cero
     | 'reminder'     // etapa de la escalera de cobranza
     | 'void'         // anulada

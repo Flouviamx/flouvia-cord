@@ -550,7 +550,7 @@ export const FEATURES: Feature[] = [
             {
                 eyebrow: 'DOS RIELES, UN MISMO LINK',
                 titulo: 'Tarjeta, SPEI o Mercado Pago, según dónde vendas.',
-                copy: 'Con Cord Payments tu cliente paga con tarjeta dentro de tu link, con tu marca y sin que lo mandes a otro sitio; en cotizaciones en pesos mexicanos también puede pagar por SPEI, a una CLABE exclusiva de ese cobro que se concilia sola. Donde Cord Payments no llega, cobras con tu cuenta de Mercado Pago: tu cliente paga en su checkout y vuelve a tu link.',
+                copy: 'Con Cord Payments tu cliente paga con tarjeta dentro de tu link, con tu marca y sin que lo mandes a otro sitio; en cotizaciones en pesos mexicanos también puede pagar por SPEI, a una CLABE exclusiva de ese cobro que se concilia sola (en facturas, se está habilitando). Donde Cord Payments no llega, cobras con tu cuenta de Mercado Pago: tu cliente paga en su checkout y vuelve a tu link.',
                 bullets: [
                     'La tarjeta se cobra dentro de tu link, con tu marca',
                     'SPEI a una CLABE exclusiva de cada cobro, que se concilia sola',
@@ -634,7 +634,7 @@ export const FEATURES: Feature[] = [
         plan: 'Documentos comerciales desde el plan Gratis (10 al mes; sin tope desde Starter). CFDI 4.0 en México desde Starter, con 30 facturas fiscales incluidas al mes. Facturas recurrentes desde Profesional.',
         stats: [
             { valor: '5', countup: 5, label: 'estados de una factura: borrador, abierta, pagada, anulada e incobrable' },
-            { valor: '6', countup: 6, label: 'recordatorios por factura abierta: 7 y 1 día antes de vencer, y a los 3, 7, 14 y 30 días de vencida' },
+            { valor: '6', countup: 6, label: 'recordatorios por factura abierta por defecto: 7 y 1 día antes de vencer, y a los 3, 7, 14 y 30 días de vencida' },
             { valor: '12', countup: 12, label: 'países donde emites: CFDI 4.0 en México y documento comercial en los otros 11' },
         ],
         blocks: [
@@ -717,7 +717,7 @@ export const FEATURES: Feature[] = [
             },
             {
                 q: '¿Con qué métodos me puede pagar mi cliente?',
-                a: 'Con los que tengas activos en tu país: tarjeta con Cord Payments en México, Estados Unidos, Canadá, Brasil, España, Reino Unido, Alemania y Francia; Mercado Pago en México, Brasil, Argentina, Chile, Colombia y Perú; y domiciliación SEPA en euros (España, Alemania y Francia) o cargo ACH en dólares (Estados Unidos), que se están habilitando. Las transferencias, el efectivo y los cheques los registras tú contra el mismo saldo.',
+                a: 'Con los que tengas activos en tu país: tarjeta con Cord Payments en México, Estados Unidos, Canadá, Brasil, España, Reino Unido, Alemania y Francia; Mercado Pago en México, Brasil, Argentina, Chile, Colombia y Perú; y, ya en habilitación, transferencia SPEI en pesos mexicanos a una CLABE propia de cada factura que se concilia sola, domiciliación SEPA en euros (España, Alemania y Francia) y cargo ACH en dólares (Estados Unidos). Las demás transferencias, el efectivo y los cheques los registras tú contra el mismo saldo.',
             },
             {
                 q: '¿Mi cliente puede pagar en parcialidades?',
@@ -725,7 +725,7 @@ export const FEATURES: Feature[] = [
             },
             {
                 q: '¿Cuándo le llegan recordatorios a mi cliente?',
-                a: 'Siete días y un día antes del vencimiento, y a los 3, 7, 14 y 30 días de vencida, en todos los planes. Cada aviso sale una sola vez y se detienen en cuanto la factura se paga, se anula o se marca incobrable. Si quieres otro mensaje u otro canal, lo armas con Cord Workflows; si quieres que alguien persiga la cartera vencida cuenta por cuenta, eso es la cobranza con IA.',
+                a: 'Por defecto, siete días y un día antes del vencimiento, y a los 3, 7, 14 y 30 días de vencida, en todos los planes; el calendario lo eliges tú en Ajustes › Recordatorios, y ahí también los apagas. Cada aviso sale una sola vez y se detienen en cuanto la factura se paga, se anula o se marca incobrable. Si quieres otro mensaje u otro canal, lo armas con Cord Workflows; si quieres que alguien persiga la cartera vencida cuenta por cuenta, eso es la cobranza con IA.',
             },
             {
                 q: '¿Cuántas facturas puedo emitir al mes?',

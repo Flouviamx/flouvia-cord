@@ -6,6 +6,7 @@ import { reqContext } from "./lib/context";
 import { LEGACY_ROUTES } from "./lib/informes";
 import { isAllowedMutationOrigin, isCsrfExemptWrite } from './lib/csrf-policy';
 import { canonicalPathForInvalidEnglishRoute, preferredPublicLang } from './i18n/utils';
+import { esSuperficieDeCobro, politicaDePago } from './lib/cobros/billeteras';
 
 // APIs que DEBEN seguir públicas (las llaman terceros sin sesión):
 //   /api/q/*         → vista pública del cliente (token secreto)
@@ -741,6 +742,13 @@ const securityHeaders = async (context: any, next: any) => {
     const extraFormAction = path === "/oauth/authorize" && /^(https:\/\/[a-z0-9.-]+|http:\/\/(localhost|127\.0\.0\.1))(:\d+)?$/i.test(oauthFormTarget)
         ? ` ${oauthFormTarget}` : "";
 
+    // Las tres páginas que montan el formulario de Cord Payments. Ahí Stripe.js
+    // puede abrir marcos en subdominios de js.stripe.com (guía de CSP del
+    // proveedor) y esos marcos necesitan el permiso `payment` para Apple Pay y
+    // Google Pay. Ver src/lib/cobros/billeteras.ts.
+    const isSuperficieCobro = esSuperficieDeCobro(path);
+    const marcosStripeExtra = isSuperficieCobro ? " https://*.js.stripe.com" : "";
+
     if (!isEmbed) {
         // 'unsafe-inline' se mantiene (decenas de <script is:inline> en el
         // repo dependen de él; migrar a CSP con nonce es un proyecto aparte,
@@ -755,12 +763,12 @@ const securityHeaders = async (context: any, next: any) => {
         secureRes.headers.set(
             "Content-Security-Policy",
             "default-src 'self'; " +
-            "script-src 'self' 'unsafe-inline' https://us.posthog.com https://us.i.posthog.com https://us-assets.i.posthog.com https://accounts.google.com https://appleid.apple.com https://js.stripe.com; " +
+            "script-src 'self' 'unsafe-inline' https://us.posthog.com https://us.i.posthog.com https://us-assets.i.posthog.com https://accounts.google.com https://appleid.apple.com https://js.stripe.com" + marcosStripeExtra + "; " +
             "connect-src 'self' https://us.posthog.com https://us.i.posthog.com https://us-assets.i.posthog.com https://vitals.vercel-insights.com https://api.stripe.com; " +
             "img-src 'self' data: https:; " +
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
             "font-src 'self' https://fonts.gstatic.com; " +
-            "frame-src 'self' https://accounts.google.com https://appleid.apple.com https://js.stripe.com https://hooks.stripe.com; " +
+            "frame-src 'self' https://accounts.google.com https://appleid.apple.com https://js.stripe.com https://hooks.stripe.com" + marcosStripeExtra + "; " +
             "frame-ancestors 'self'; " +
             "base-uri 'self'; " +
             `form-action 'self' https://accounts.google.com https://appleid.apple.com${extraFormAction}; ` +
@@ -815,9 +823,14 @@ const securityHeaders = async (context: any, next: any) => {
     //
     // `camera=(self)` habilita la cámara sólo en este mismo origen y sólo en esta
     // ruta; todo lo demás sigue con la allowlist vacía.
+    //
+    // `payment` es el mismo error con otra API: `payment=(self)` no deja que la
+    // página delegue el permiso a los marcos de js.stripe.com (que lo piden con
+    // `allow="payment *"`), y sin él Google Pay no se dibuja aunque el dominio
+    // esté registrado. Sólo las superficies de cobro lo delegan, y sólo a Stripe.
     secureRes.headers.set(
         "Permissions-Policy",
-        `camera=${isCapturaIdentidad ? "(self)" : "()"}, microphone=(), geolocation=(), payment=(self)`,
+        `camera=${isCapturaIdentidad ? "(self)" : "()"}, microphone=(), geolocation=(), ${politicaDePago(path)}`,
     );
     if (isCapturaIdentidad || isPublicInvoice) {
         // Una página que lleva una credencial portadora en la URL no se cachea ni

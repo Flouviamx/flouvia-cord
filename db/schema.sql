@@ -3672,8 +3672,16 @@ create policy "rls_documento_recordatorios" on documento_recordatorios
   with check (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
 alter table documento_recordatorios force row level security;
 
--- Cadencia configurable por organización. `null` = la escalera por defecto.
+-- Cadencia configurable por organización (Ajustes › Recordatorios, oct 2026).
+-- La pantalla y la API (src/pages/api/org/recordatorios.ts) solo aceptan el
+-- vocabulario cerrado de src/lib/recordatorios.ts (14/7/3/1 días antes, el día
+-- del vencimiento y 1/3/7/14/30/60/90 días después, máximo 8); el default es la
+-- escalera de siempre, así que una cuenta que nunca la tocó no cambia.
 alter table orgs add column if not exists recordatorio_etapas int[] not null default '{-7,-1,3,7,14,30}';
+-- Interruptor de los recordatorios automáticos AL CLIENTE (facturas y
+-- cotizaciones). Apagado no toca los avisos al dueño ni el webhook
+-- invoice.overdue. Encendido por defecto: es el comportamiento de siempre.
+alter table orgs add column if not exists recordatorios_activos boolean not null default true;
 
 -- ── Cobranza sobre los DOS rieles ───────────────────────────────────────────
 -- Toda la maquinaria de cuentas por cobrar —el agente de cobranza IA, los
@@ -6467,6 +6475,23 @@ do $$ begin
   end if;
 end $$;
 -- END cobros-portal
+
+-- ── SPEI con CLABE en facturas (oct 2026) ───────────────────────────────────
+-- Espejo de db/deploy/2026-10-10-spei-facturas.sql, que corre en cada build.
+--
+-- La CLABE de SPEI es del Customer del proveedor, no del pago. Cada factura
+-- tiene el SUYO en la cuenta conectada del negocio, así que todo lo que llegue
+-- a esa CLABE solo puede fondear un pago de ESA factura (src/lib/cobros/spei.ts).
+-- Se guarda en cuanto se crea, antes del primer pago: la CLABE es la misma en
+-- cada visita y en cada abono, y la clave de idempotencia del proveedor (que
+-- vence a las 24 horas) no basta para sostenerla. El índice único impide que
+-- dos facturas compartan CLABE y resuelve la factura desde el saldo del cliente
+-- (`cash_balance.funds_available`).
+alter table documentos_fiscales add column if not exists stripe_spei_customer_id text;
+
+create unique index if not exists uq_documentos_fiscales_spei_customer
+  on documentos_fiscales(org_id, stripe_spei_customer_id) where stripe_spei_customer_id is not null;
+-- END spei-facturas
 
 -- ── Descuentos de documento y cupones (oct 2026) ────────────────────────────
 -- Un descuento sobre la venta completa (porcentaje o monto), antes de

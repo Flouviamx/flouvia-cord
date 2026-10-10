@@ -23,6 +23,8 @@
 | **Gmail** | Envío desde el Gmail del negocio y complemento en producción (28 sep 2026); conexión e inserción probadas | Registrar el regreso en Google Cloud; verificación y ficha de Marketplace | André | Verificación de Google |
 | **Mercado Pago** | En producción en México, pago real confirmado; app `7210198958457914` | Renovar el Client Secret; igualas y contracargos | André, luego Claude | Nada para México |
 | **Cord Payments: portal, cobro automático, SEPA y ACH** | Construido (8 oct 2026); falta encenderlo en Stripe | Eventos del webhook, métodos en la plataforma, prueba de punta a punta | André | Nada |
+| **Cord Payments: SPEI con CLABE en facturas** | Construido (10 oct 2026); falta encenderlo en Stripe | Dos eventos del webhook de Connect, confirmar el costo de las CLABE, prueba de punta a punta en modo de prueba | André | Nada |
+| **Apple Pay y Google Pay** | Construido (10 oct 2026), apagado; ningún cliente lo ve todavía | Revisar el Dashboard, probar en iPhone y Android en modo test, registrar dominios en live | André | Nada |
 
 ---
 
@@ -421,6 +423,78 @@ factura y el portal. Detalle en `docs/estado/cobros-facturacion.md`.
 - [ ] Decidir la tarifa de Cord para débito bancario si algún día se cobra
   comisión fuera de MXN: hoy `FEE_SCHEDULES` no tiene método de débito y la
   domiciliación no se ofrece donde hay comisión.
+
+---
+
+## Cord Payments: SPEI con CLABE en facturas
+
+**Hecho (10 oct, código):** la factura hospedada `/i/[token]` ofrece Transferencia
+SPEI en facturas MXN de negocios mexicanos, con una CLABE por factura y
+conciliación automática. Diseño, alternativas y límites en
+`docs/estado/cobros-facturacion.md` ("SPEI con CLABE en facturas").
+
+**Falta, operativo (en el dashboard de Stripe de la plataforma):**
+- [ ] En el endpoint de webhooks de **cuentas conectadas** (el firmado con
+  `STRIPE_CONNECT_WEBHOOK_SECRET`), agregar `payment_intent.partially_funded` y
+  `cash_balance.funds_available`, y confirmar que sigue `payment_intent.succeeded`.
+  Sin los dos nuevos, el pago completo se registra igual, pero una transferencia
+  incompleta o un sobrante no aparecen en la historia de la factura ni en la
+  campana.
+- [ ] Dejar la conciliación de transferencias en **automática** (es el default de
+  Stripe en Settings › Bank transfers) para las cuentas conectadas. En modo
+  manual, el dinero que llega a la CLABE se queda en el saldo del cliente y
+  nunca completa el pago.
+- [ ] Confirmar con Stripe México si las CLABE virtuales de las cuentas conectadas
+  tienen tope o costo por número: Stripe advierte que "algunos países tienen
+  límites en la cantidad de cuentas bancarias virtuales que puedes crear sin
+  cargo", y SPEI en facturas crea un Customer (una CLABE) por factura pagada por
+  SPEI, como ya hacía la cotización por cobro.
+- [ ] Prueba de punta a punta en modo de prueba: cuenta conectada de México con
+  `mx_bank_transfer_payments` activa y SPEI encendido en Ajustes › Cobros,
+  factura MXN PPD (llave `sk_test_` de Facturapi). Abrir `/i`, elegir SPEI y
+  fondear con `POST /v1/test_helpers/customers/{cus}/fund_cash_balance`
+  (cabecera `Stripe-Account`, `currency=mxn`): primero de menos (debe aparecer
+  "Transferencia SPEI incompleta" y nada en Pagos), luego el resto (pago
+  registrado, `invoice.paid`, complemento con forma 03), y una tercera vez sin
+  pago abierto (debe aparecer el saldo a favor; con la factura pagada, aviso a
+  Operaciones). Reconfirmar el endpoint en docs.stripe.com antes de usarlo.
+- [ ] Decidir quién y cómo devuelve un sobrante SPEI de una factura ya pagada: una
+  cuenta Custom no tiene panel de Stripe, así que hoy lo resuelve Operaciones
+  (reembolso con `origin=customer_balance`) al recibir la alerta.
+
+---
+
+## Apple Pay y Google Pay
+
+**Hecho (10 oct, código):** las tres pantallas de pago (`/q/.../pay`, `/i/...` y
+el portal) admiten las billeteras; la cabecera `Permissions-Policy` ya deja que
+el formulario de pago las use; Cord registra el dominio de cobro en cada cuenta
+conectada (cargos directos) cuando `CORD_WALLETS_ENABLED=true`, y
+`npm run stripe:payment-domains` cubre las cuentas que ya existen. Se cobran
+como tarjeta: sin costo extra del procesador y con la misma comisión de Cord.
+Detalle y fuentes en `docs/estado/cobros-facturacion.md`, "Apple Pay y Google Pay".
+
+**Falta, operativo:**
+- [ ] **Dashboard de la plataforma (test y live):** Configuración › Connect ›
+  Métodos de pago › cuentas conectadas
+  (`dashboard.stripe.com/settings/payment_methods/connected_accounts`): Apple Pay
+  y Google Pay en "Activado de forma predeterminada". No hace falta pedir ninguna
+  capacidad: vienen con la de tarjeta.
+- [ ] **Prueba en modo test:** un despliegue con llaves de prueba en un alias
+  HTTPS estable; registrar ese host en la cuenta conectada de prueba con
+  `npm run stripe:payment-domains -- --account acct_… --domain <alias> --apply`;
+  pagar una factura `/i/...` desde un iPhone (Safari, tarjeta real en Wallet: en
+  modo test no se carga) y desde un Android (Chrome, con una tarjeta real en la
+  cuenta de Google). Repetir en `/q/.../pay` y en el portal.
+- [ ] **Encender en live:** `npm run stripe:payment-domains -- --live` (lectura),
+  luego `-- --apply --live` con `DATABASE_URL` de producción (incluye los
+  dominios propios), y `CORD_WALLETS_ENABLED=true` en Vercel Production.
+- [ ] **Un cobro real pequeño** en `cordhq.app` con cada billetera, y su reembolso.
+- [ ] **Después:** avisar en las docs públicas que ya está disponible (hoy dicen
+  "en habilitación"), mover la iniciativa del roadmap a `live` y pedir los
+  mockups de la pantalla de pago con la pestaña de Apple Pay / Google Pay.
+- Apagado de emergencia: Apple Pay y Google Pay en "Bloqueado" en esa misma
+  pantalla del Dashboard; no requiere despliegue.
 
 ---
 

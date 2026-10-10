@@ -39,4 +39,4 @@ them from **Invoices › View recurring**.
 
 For the ones that do go overdue, the reminder ladder already works on its own:
 Cord warns before the due date and follows up after, without you selecting
-anything.
+anything. You choose the schedule in **Settings › Invoicing › Reminders**.

@@ -506,7 +506,7 @@ export const FEATURES_EN: Feature[] = [
             {
                 eyebrow: 'TWO RAILS, ONE LINK',
                 titulo: 'Card, SPEI or Mercado Pago, depending on where you sell.',
-                copy: "With Cord Payments your client pays by card inside your link, under your brand, without being sent to another site; on quotes in Mexican pesos they can also pay by SPEI, to a CLABE reserved for that payment that reconciles itself. Where Cord Payments isn't available, you collect through your Mercado Pago account: your client pays in its checkout and comes back to your link.",
+                copy: "With Cord Payments your client pays by card inside your link, under your brand, without being sent to another site; on quotes in Mexican pesos they can also pay by SPEI, to a CLABE reserved for that payment that reconciles itself (on invoices, it is being rolled out). Where Cord Payments isn't available, you collect through your Mercado Pago account: your client pays in its checkout and comes back to your link.",
                 bullets: [
                     'The card is charged inside your link, under your brand',
                     'SPEI to a CLABE reserved for each payment, which reconciles itself',
@@ -590,7 +590,7 @@ export const FEATURES_EN: Feature[] = [
         plan: 'Commercial documents from the Free plan (10 a month; no cap from Starter). CFDI 4.0 in Mexico from Starter, with 30 tax invoices included each month. Recurring invoices from Professional.',
         stats: [
             { valor: '5', countup: 5, label: 'invoice statuses: draft, open, paid, void and uncollectible' },
-            { valor: '6', countup: 6, label: 'reminders per open invoice: 7 days and 1 day before the due date, and 3, 7, 14 and 30 days after' },
+            { valor: '6', countup: 6, label: 'reminders per open invoice by default: 7 days and 1 day before the due date, and 3, 7, 14 and 30 days after' },
             { valor: '12', countup: 12, label: 'countries where you invoice: CFDI 4.0 in Mexico and a commercial document in the other 11' },
         ],
         blocks: [
@@ -673,7 +673,7 @@ export const FEATURES_EN: Feature[] = [
             },
             {
                 q: 'Which payment methods can my client use?',
-                a: "The ones you have turned on in your country: card with Cord Payments in Mexico, the United States, Canada, Brazil, Spain, the United Kingdom, Germany and France; Mercado Pago in Mexico, Brazil, Argentina, Chile, Colombia and Peru; and SEPA Direct Debit in euros (Spain, Germany and France) or ACH debit in dollars (United States), which are being rolled out. Wires, cash and checks you record yourself against the same balance.",
+                a: "The ones you have turned on in your country: card with Cord Payments in Mexico, the United States, Canada, Brazil, Spain, the United Kingdom, Germany and France; Mercado Pago in Mexico, Brazil, Argentina, Chile, Colombia and Peru; and, being rolled out, SPEI transfer in Mexican pesos to a CLABE of each invoice that reconciles itself, SEPA Direct Debit in euros (Spain, Germany and France) and ACH debit in dollars (United States). Other wires, cash and checks you record yourself against the same balance.",
             },
             {
                 q: 'Can my client pay in installments?',
@@ -681,7 +681,7 @@ export const FEATURES_EN: Feature[] = [
             },
             {
                 q: 'When does my client get reminders?',
-                a: "Seven days and one day before the due date, and 3, 7, 14 and 30 days after it, on every plan. Each reminder goes out only once, and they stop as soon as the invoice is paid, voided or marked uncollectible. For a different message or channel, build it with Cord Workflows; for someone to chase overdue accounts one by one, that's AI collections.",
+                a: "By default, seven days and one day before the due date, and 3, 7, 14 and 30 days after it, on every plan; you choose the schedule in Settings › Reminders, and you can turn them off there too. Each reminder goes out only once, and they stop as soon as the invoice is paid, voided or marked uncollectible. For a different message or channel, build it with Cord Workflows; for someone to chase overdue accounts one by one, that's AI collections.",
             },
             {
                 q: 'How many invoices can I issue each month?',

@@ -1,6 +1,6 @@
 ---
 title: "How to activate online payments"
-description: "Step-by-step guide to set up your account and receive card or SPEI payments from your quotes."
+description: "Step-by-step guide to set up your account and receive card or SPEI payments from your quotes and invoices."
 category: "Payments & Deposits"
 order: 1
 ---
@@ -21,7 +21,7 @@ Cord Payments (card payments on the link) is available for businesses domiciled 
 Once your account is active, you can enable or disable these methods from the same Settings screen:
 
 - **Credit and debit card**: Processed instantly (Visa, Mastercard, Amex) in any country where Cord Payments is available.
-- **Automatic SPEI transfer** (Mexico only, Mexican pesos only): Cord Payments creates dedicated instructions for each payment and reconciles it automatically.
+- **Automatic SPEI transfer** (Mexico only, Mexican pesos only): Cord Payments creates dedicated instructions for each quote payment and for each invoice, and reconciles the transfer automatically on the quote or the invoice.
 - **Manual bank transfer**: Shows your regular payout account details, in your country's format. You confirm receipt manually; this method does not pass through Cord Payments.
 
 ### Fees and payout times

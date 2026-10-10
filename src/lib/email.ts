@@ -26,10 +26,17 @@ export function siteOrigin(): string {
     return (import.meta.env.PUBLIC_SITE_URL || process.env.PUBLIC_SITE_URL || 'https://cordhq.app').replace(/\/$/, '');
 }
 
-// Idioma del correo: se resuelve del request que dispara el envío (el
-// VENDEDOR enviando la cotización desde su sesión) — no existe hoy una señal
-// fiable del idioma del CLIENTE receptor (no hay locale por cliente en el
-// schema). Es el mismo criterio "sin toggle" del resto de la app.
+// Idioma del correo al CLIENTE: el de la cuenta del negocio (`orgs.idioma`),
+// leído de la misma fila que arma el correo. Antes salía de `currentLocale()`,
+// que solo vale dentro de una sesión: en un cron (recordatorios, recurrencias)
+// o en una llamada a la API pública no hay request con idioma y caía a español,
+// así que una cuenta en inglés mandaba sus recordatorios en español. No existe
+// una señal fiable del idioma del cliente receptor (no hay locale por cliente).
+function emailLocale(idioma: unknown): 'es' | 'en' {
+    const v = String(idioma ?? '').trim().toLowerCase();
+    if (!v) return currentLocale();
+    return v.startsWith('en') ? 'en' : 'es';
+}
 // El correo que recibe el CLIENTE lleva la divisa de la cotización. Antes decía
 // "$1,000.00" a secas: el cliente de un negocio en Londres leía dólares donde
 // había libras, y el importe del correo no cuadraba con el del link.
@@ -148,7 +155,7 @@ export async function notifyQuoteSent(orgId: string, cotizacionId: string, _orig
                o.logo_url, o.color_secundario, o.brand_profile,
                coalesce(o.pdf_mensaje, '') as mensaje,
                o.email_from_name, o.email_reply_to, o.email_intro, o.email_firma,
-               o.email_contacto, o.portal_powered, o.sandbox_of, o.moneda
+               o.email_contacto, o.portal_powered, o.sandbox_of, o.moneda, o.idioma
         from cotizaciones c
         join orgs o on o.id = c.org_id
         left join clientes cl on cl.id = c.cliente_id
@@ -160,7 +167,7 @@ export async function notifyQuoteSent(orgId: string, cotizacionId: string, _orig
     const canRemoveBranding = planIncludes(entitlement.effectivePlan, 'remove_branding');
     const canCustomizeEmail = planIncludes(entitlement.effectivePlan, 'custom_email');
 
-    const L = currentLocale();
+    const L = emailLocale(r.idioma);
     const tf = (key: string, vars: Record<string, string> = {}) => {
         let s = t(L, key as any);
         for (const k in vars) s = s.split(`{${k}}`).join(vars[k]);
@@ -218,6 +225,7 @@ interface InvoiceEmailRow {
     portal_powered: boolean | null;
     sandbox_of: string | null;
     moneda: string | null;
+    idioma: string | null;
     email_intro: string | null;
     email_firma: string | null;
     pdf_mensaje: string | null;
@@ -235,7 +243,7 @@ async function loadInvoiceEmail(orgId: string, documentoId: string): Promise<Inv
                o.nombre as org_nombre, coalesce(o.color_marca, '#0a192f') as color,
                o.logo_url, o.color_secundario, o.brand_profile,
                o.email_from_name, o.email_reply_to, o.email_contacto,
-               o.portal_powered, o.sandbox_of, o.moneda,
+               o.portal_powered, o.sandbox_of, o.moneda, o.idioma,
                o.email_intro, o.email_firma, o.pdf_mensaje,
                cl.autopay_activo, cl.autopay_metodo, o.cobro_automatico_permitido
           from documentos_fiscales d
@@ -305,7 +313,7 @@ export async function notifyInvoiceIssued(orgId: string, documentoId: string): P
     const entitlement = await getEntitlementContext(orgId);
     const canRemoveBranding = planIncludes(entitlement.effectivePlan, 'remove_branding');
     const canCustomizeEmail = planIncludes(entitlement.effectivePlan, 'custom_email');
-    const L = currentLocale();
+    const L = emailLocale(r.idioma);
     const currency = normalizeCurrency((r.currency as string) || (r.moneda as string));
     const saldo = Number(r.amount_remaining ?? r.total ?? 0);
     const link = await publicDocumentUrl(orgId, 'i', r.public_token);
@@ -374,8 +382,31 @@ export async function notifyInvoiceIssued(orgId: string, documentoId: string): P
     return result.sent;
 }
 
-/** Recordatorio de una factura por vencer o vencida. */
-export async function notifyInvoiceReminder(orgId: string, documentoId: string, vencida: boolean): Promise<boolean> {
+/**
+ * Texto propio del negocio (Ajustes › Correo), escapado y con sus variables.
+ * Lo usan los recordatorios para la FIRMA: la introducción no, porque está
+ * escrita para el correo con que se envía el documento ("te comparto la
+ * factura…") y sustituiría justo lo que el recordatorio tiene que decir — que
+ * vence o que ya venció.
+ */
+function textoPropio(txt: string, L: 'es' | 'en', v: { cliente: string | null; folio: string; total: string; negocio: string }): string {
+    return esc(txt)
+        .replace(/\{cliente\}/g, esc(v.cliente || t(L, 'email.cliente_generico')))
+        .replace(/\{folio\}/g, esc(v.folio))
+        .replace(/\{total\}/g, v.total)
+        .replace(/\{negocio\}/g, esc(v.negocio));
+}
+
+const bloqueFirma = (L: 'es' | 'en', firma: string) =>
+    `<div style="margin-top:32px;"><p style="font-size:15px;color:#374151;line-height:1.6;margin:0;">${t(L, 'email.atentamente')}<br>${firma}</p></div>`;
+
+/**
+ * Recordatorio de una factura antes de vencer, el día que vence o vencida.
+ * `momento` sale de dónde está HOY la factura (momentoDelAviso en
+ * src/lib/recordatorios.ts), no de la etapa: una etapa que se recupera tarde
+ * habla del estado real.
+ */
+export async function notifyInvoiceReminder(orgId: string, documentoId: string, momento: 'antes' | 'hoy' | 'vencida'): Promise<boolean> {
     const r = await loadInvoiceEmail(orgId, documentoId);
     if (!r || !r.email || !r.public_token) return false;
     // Solo se recuerda lo que sigue abierto: una factura pagada o anulada que
@@ -385,25 +416,42 @@ export async function notifyInvoiceReminder(orgId: string, documentoId: string, 
     const entitlement = await getEntitlementContext(orgId);
     const canRemoveBranding = planIncludes(entitlement.effectivePlan, 'remove_branding');
     const canCustomizeEmail = planIncludes(entitlement.effectivePlan, 'custom_email');
-    const L = currentLocale();
+    const L = emailLocale(r.idioma);
+    const currency = normalizeCurrency((r.currency as string) || (r.moneda as string));
     const saldo = Number(r.amount_remaining ?? r.total ?? 0);
     const link = await publicDocumentUrl(orgId, 'i', r.public_token);
     const poweredLine = canRemoveBranding && r.portal_powered === false
         ? esc(r.org_nombre)
         : `${esc(r.org_nombre)}${t(L, 'email.enviado_con_cord')}`;
 
-    const cuerpo = tv(L, vencida ? 'fact.e_vencida_cuerpo' : 'fact.e_porvencer_cuerpo', {
+    const COPY = {
+        antes: { cuerpo: 'fact.e_porvencer_cuerpo', asunto: 'fact.e_asunto_porvencer' },
+        hoy: { cuerpo: 'fact.e_hoy_cuerpo', asunto: 'fact.e_asunto_hoy' },
+        vencida: { cuerpo: 'fact.e_vencida_cuerpo', asunto: 'fact.e_asunto_vencida' },
+    } as const;
+    const copy = COPY[momento] ?? COPY.antes;
+    const cuerpo = tv(L, copy.cuerpo, {
         numero: esc(r.invoice_number || ''),
         org: esc(r.org_nombre),
     });
 
+    // La firma propia del negocio (Starter o superior, el mismo gate que el
+    // correo con que se envió la factura): sin ella el recordatorio llegaba
+    // con otra voz que la factura del mismo negocio.
+    const firma = canCustomizeEmail && r.email_firma?.trim()
+        ? textoPropio(r.email_firma, L, {
+            cliente: r.empresa, folio: r.invoice_number || '', negocio: r.org_nombre,
+            total: moneyFmt(Number(r.total || 0), L, currency),
+        })
+        : undefined;
+
     const html = invoiceEmailHtml(r, {
-        locale: L, link, saldo, poweredLine, titulo: '', cuerpo,
+        locale: L, link, saldo, poweredLine, titulo: '', cuerpo, firma,
         cta: t(L, 'fact.e_cta_pagar'),
     });
 
     const testPrefix = r.sandbox_of ? t(L, 'email.prueba_prefix') : '';
-    const asunto = tv(L, vencida ? 'fact.e_asunto_vencida' : 'fact.e_asunto_porvencer', {
+    const asunto = tv(L, copy.asunto, {
         numero: r.invoice_number || '',
     });
     const result = await sendEmail({
@@ -417,6 +465,73 @@ export async function notifyInvoiceReminder(orgId: string, documentoId: string, 
         replyToPropio: canCustomizeEmail ? (r.email_reply_to || null) : null,
     });
     return result.sent;
+}
+
+/**
+ * Aviso de una COTIZACIÓN aprobada que vence (3 días antes y el día que vence).
+ * Vivía armado a mano dentro del cron, sin la firma ni el remitente propios
+ * del negocio; ahora sigue las mismas reglas que el recordatorio de factura.
+ * `vence` es el día civil del vencimiento ('YYYY-MM-DD') en la zona del
+ * negocio y `saldo` lo que falta por cobrar (con anticipo pagado, el total le
+ * pediría al cliente dinero que ya entregó).
+ */
+export async function notifyQuoteReminder(orgId: string, cotizacionId: string, opts: { saldo: number; vence: string }): Promise<SendResult> {
+    const [rows] = await withOrgTx(orgId, sql`
+        select c.folio, c.public_token, c.base_currency, cl.empresa, cl.email,
+               o.nombre as org_nombre, coalesce(o.color_marca, '#0a192f') as color,
+               o.logo_url, o.color_secundario, o.brand_profile,
+               o.email_from_name, o.email_reply_to, o.email_firma, o.email_contacto,
+               o.portal_powered, o.sandbox_of, o.moneda, o.idioma
+          from cotizaciones c
+          join orgs o on o.id = c.org_id
+          left join clientes cl on cl.id = c.cliente_id
+         where c.id = ${cotizacionId} and c.org_id = ${orgId}`);
+    const r = rows[0] as any;
+    if (!r || !r.public_token) return { sent: false, skipped: 'cotización no encontrada' };
+    if (!r.email) return { sent: false, skipped: 'el cliente no tiene correo' };
+
+    const entitlement = await getEntitlementContext(orgId);
+    const canRemoveBranding = planIncludes(entitlement.effectivePlan, 'remove_branding');
+    const canCustomizeEmail = planIncludes(entitlement.effectivePlan, 'custom_email');
+    const L = emailLocale(r.idioma);
+    const currency = normalizeCurrency(r.base_currency || r.moneda);
+    const monto = moneyFmt(opts.saldo, L, currency);
+    const [y, m, d] = String(opts.vence).split('-').map(Number);
+    // Un día de calendario no tiene huso: se formatea en UTC para que ninguna
+    // zona lo corra un día.
+    const fecha = new Intl.DateTimeFormat(L === 'en' ? 'en-US' : 'es-MX', { day: 'numeric', month: 'long', timeZone: 'UTC' })
+        .format(new Date(Date.UTC(y, (m || 1) - 1, d || 1)));
+    const link = await publicDocumentUrl(orgId, 'q', r.public_token);
+    const poweredLine = canRemoveBranding && r.portal_powered === false
+        ? esc(r.org_nombre)
+        : `${esc(r.org_nombre)}${t(L, 'email.enviado_con_cord')}`;
+    const firma = canCustomizeEmail && r.email_firma?.trim()
+        ? textoPropio(r.email_firma, L, { cliente: r.empresa, folio: r.folio || '', negocio: r.org_nombre, total: monto })
+        : '';
+    const brand = emailBrandFromRow(r);
+
+    const html = brandEmailShell(brand, `<p style="font-size:16px;color:#111827;margin-top:0;font-weight:500;">${tv(L, 'rem.q.saludo', { empresa: esc(r.empresa || t(L, 'email.cliente_generico')) })}</p>
+            <p style="font-size:16px;line-height:1.6;color:#374151;margin-bottom:32px;font-weight:400;">${tv(L, 'rem.q.cuerpo', { folio: esc(r.folio), monto, fecha })}</p>
+
+            <div style="margin:40px 0;">
+                <a href="${link}" style="${emailButtonStyle(brand)}">${tv(L, 'rem.q.boton', { folio: esc(r.folio) })}</a>
+            </div>
+
+            <p style="font-size:14px;color:#6B7280;line-height:1.5;word-break:break-all;">${t(L, 'rem.q.copiar')}<br><a href="${link}" style="color:#2563EB;text-decoration:none;">${link}</a></p>
+            ${firma ? bloqueFirma(L, firma) : ''}
+        `, poweredLine);
+
+    const testPrefix = r.sandbox_of ? t(L, 'email.prueba_prefix') : '';
+    return sendEmail({
+        orgId,
+        operation: 'payment_reminder',
+        to: r.email,
+        subject: `${testPrefix}${tv(L, 'rem.q.asunto', { folio: r.folio })}`,
+        html,
+        fromName: canCustomizeEmail ? (r.email_from_name || r.org_nombre) : r.org_nombre,
+        replyTo: canCustomizeEmail ? (r.email_reply_to || r.email_contacto || null) : (r.email_contacto || null),
+        replyToPropio: canCustomizeEmail ? (r.email_reply_to || null) : null,
+    });
 }
 
 // ── Correo que un workflow le escribe al cliente ────────────────────────────
