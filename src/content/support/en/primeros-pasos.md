@@ -10,19 +10,22 @@ Welcome to Cord. This guide gets you operating —quoting, collecting, and invoi
 ## Step 1: Set up your company
 **Shortcut:** when you finish signing up, Cord offers to set up your account with AI. Give it your website, what your business does and your price list, and it proposes profile, branding, taxes, catalog and templates for you to review and approve. If you skipped it, it's in **Settings > General > Set up with AI**. See [Set up your account with AI](/en/support/configurar-con-ia).
 
-The core of Cord is your tax and brand profile.
+The core of Cord is your tax and brand profile. What you are asked for depends on your account's country: Cord operates end to end in Mexico, the United States, Canada, Brazil, Spain, the United Kingdom, Germany, France, Colombia, Argentina, Chile and Peru, and the tax vocabulary changes with each one.
 
-1. Go to **Settings > General** and enter your legal name, contact, and basic details.
-2. In **Settings > Invoicing**, enter your RFC and tax regime, and upload your **CSD (Digital Seal Certificate)**: the `.cer` and `.key` files the SAT gives you, with their password. *Without the CSD you can quote, but not stamp CFDI.*
+1. Go to **Settings > General** and enter your legal name, contact and basic details (currency, language and time zone are detected from your country, and you can adjust them there).
+2. Go to **Settings > Invoicing > Tax details** and enter your tax ID: RFC in Mexico, NIF/CIF in Spain, EIN/Tax ID in the United States, and the equivalent in each of the other countries.
+   - **If your account is in Mexico:** also upload your **CSD (Digital Seal Certificate)**: the `.cer` and `.key` files the SAT gives you, with their password. Without the CSD you can quote, but not stamp CFDI.
+   - **If your account is in Spain:** you can already upload your electronic certificate (`.p12`/`.pfx`) in the **Verifactu** section. Registering invoices with the AEAT is being turned on: meanwhile Cord issues pro formas, and the section says so ("Certificate saved, registration not active yet"). See [How to invoice in Spain](/en/support/facturar-en-espana).
+   - **In the other countries**, your tax ID and company details are enough to issue the commercial invoice. In Argentina, Brazil, Chile, Colombia, Peru and France, registration with the authority (ARCA, NFS-e and NF-e, SII, DIAN, SUNAT and the approved platform) is being turned on; write to us if you need it. Your country's guide is under [Invoicing by country](/en/support/category/facturacion-por-pais).
 
 ## Step 2: (Optional) Activate Cord Payments
-To collect card or automatic SPEI payments from the quote link, activate **Cord Payments** in Settings. You will see the method-specific fee, register the bank account that receives deposits, and complete verification. For manual transfers, show your usual bank details and mark the payment after it arrives.
+To collect by card (and, in Mexico, automatic SPEI transfer) from the link, activate **Cord Payments** under **Settings > Payments**. There you will see the fee per method, register your payout account in your country's format (CLABE, IBAN, routing + account number, sort code and others) and complete verification. In Colombia, Argentina, Chile and Peru online payment is through **Mercado Pago**, which you connect on the same screen. If you prefer manual transfers, you can still record the payment by hand.
 
 ## Step 3: Create your first client
 1. Go to **Clients > New client**.
-2. Enter their legal name and RFC.
+2. Enter their legal name and tax ID (the same vocabulary as in Step 1, depending on the client's country).
 3. Assign credit terms (e.g. Net-30) and, if applicable, their credit limit so Cord monitors their exposure.
-4. For named CFDI, add their tax regime, zip code, and CFDI use in the tax details section.
+4. If your account is in Mexico and you will invoice them by name, also add their tax regime, zip code and CFDI use in their tax details section; this data is specific to the Mexican CFDI.
 
 ## Step 4: Send your first quote
 1. Go to **Quotes > New**.

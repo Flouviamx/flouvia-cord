@@ -7,7 +7,7 @@ order: 1
 
 Para permitir que tus clientes paguen tus cotizaciones directamente desde el link público, necesitas activar Cord Payments. El dinero se liquida directamente en tu cuenta bancaria y la tarifa de procesamiento se muestra antes de que aceptes los términos.
 
-Cord Payments (cobro con tarjeta en el link) está disponible para negocios domiciliados en México, Estados Unidos, Canadá, Brasil, España, Reino Unido, Alemania y Francia. En Colombia, Argentina, Chile y Perú tu cuenta cotiza, factura y lleva la cobranza normalmente, pero el cobro con tarjeta en línea todavía no está disponible ahí; lo verás indicado antes de intentar activarlo.
+Cord Payments (cobro con tarjeta en el link) está disponible para negocios domiciliados en México, Estados Unidos, Canadá, Brasil, España, Reino Unido, Alemania y Francia. En Colombia, Argentina, Chile y Perú Cord Payments todavía no está disponible (lo verás indicado antes de intentar activarlo): ahí cobras en línea conectando tu cuenta de Mercado Pago en **Ajustes › Cobros**, o registras a mano los pagos que recibes por fuera. Ver [Cobrar con Mercado Pago](/soporte/cobrar-mercado-pago).
 
 ### Pasos para activar los cobros
 

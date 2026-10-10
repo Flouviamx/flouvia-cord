@@ -21,6 +21,6 @@ Cord splits the charge for you with the deposit feature (see [Collect a deposit]
 ### The tax side is up to you
 
 > [!NOTE]
-> Cord handles the split **collection**, but stamping each installment is not automatic. Cord does not by itself generate the Payment Receipt Complement (REP) for each payment.
+> Cord handles the split **collection** and the payment complement of every payment applied to a PPD invoice. It does not issue the SAT advance-payment procedure (advance CFDI and its application).
 
-For the CFDI, stamp the invoice for the total amount with the appropriate method (`PUE` if cash, `PPD` if credit or installments) from the quote detail, and coordinate with your accountant to issue the REP for each payment received based on your actual operation. Automatic REP generation is on our roadmap.
+For the CFDI, click **Stamp CFDI 4.0** from the quote detail. Cord decides the method: if the sale is already fully paid it is issued `PUE`; if a balance remains, it is issued `PPD` and every payment you receive afterwards (the balance, an installment or a partial payment) issues its automatic payment complement. What was collected **before** stamping (for example, the advance) moves to the invoice as one more payment. If your transaction is a true advance, the SAT requires its own procedure: resolve it with your accountant **before** stamping. See [PPD invoices and payment complements](/en/support/complementos-de-pago).

@@ -15,5 +15,7 @@ When you add a client, the tax ID field is saved exactly as you type it, in uppe
 If you're coming from another system, use the bulk import from your **Clients** directory. Each row accepts: company name, contact, email, phone, tax ID, payment terms (cash, Net 30, or Net 60), and credit limit. If a client already exists (same tax ID or same company name), the import updates that row instead of duplicating it.
 
 <Callout type="info">
+
 Since the import doesn't validate the tax ID or the postal code against any official catalog, data quality depends entirely on your source file: copy it directly from the CSF (or the equivalent tax document in your country) for each client to avoid rejections when invoicing.
+
 </Callout>

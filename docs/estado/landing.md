@@ -309,7 +309,9 @@ duplica.
 
 El Centro de Ayuda (`/soporte`) es un sistema de documentación *Stripe-level* impulsado por **Astro Content Collections**.
 
-- **Estructura de Datos:** Los artículos viven en `src/content/support/*.md`. Contamos con ~61 artículos enriquecidos y estructurados con Markdown alerts (`> [!NOTE]`).
+- **Estructura de Datos:** Los artículos viven en `src/content/support/{es,en}/*.md`, el mismo slug en los dos idiomas (115 por idioma en oct 2026). Las categorías salen de `SUPPORT_CATEGORIES` en `src/lib/support-categories.ts` y se casan por el nombre exacto del frontmatter `category`; el orden dentro de una categoría lo da `order` (opcional) vía `sortSupportArticles()`, que usan el índice, la página de categoría y la barra lateral del artículo.
+- **Facturación por país (oct 2026):** una categoría con un artículo por país ofrecido (`facturar-en-<pais>`, los 12 de `SUPPORTED_COUNTRIES`) más la nota de débito y certificación del SII y la contingencia de la SEFAZ. Cada artículo abre con un "En resumen": el asistente de ayuda solo adjunta los primeros 2,200 caracteres de cada artículo, así que lo esencial va arriba. Un riel fiscal que nace apagado se describe "en activación, escríbenos para habilitarlo", nunca como disponible para todos.
+- **Son la base de conocimiento de Cord AI:** `src/lib/help-assistant.ts` lee títulos y descripciones en su prompt y adjunta el texto de los artículos relevantes. Un dato inexacto aquí se repite en el chat de ayuda; verifica en código antes de escribir.
 - **Ruteo Dinámico (`prerender = true`):** 
   - `src/pages/soporte/[slug].astro`: Plantilla de lectura con Sidebar dinámico izquierdo (artículos relacionados), Breadcrumbs y Paginación Siguiente/Anterior.
   - `src/pages/soporte/categoria/[categoria].astro`: Índice de categoría en formato de lista minimalista (diseño cardless corporativo).

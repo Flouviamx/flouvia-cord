@@ -27,6 +27,14 @@ export const SUPPORT_CATEGORIES: SupportCategory[] = [
         icon: 'invoice',
     },
     {
+        // Una guía por mercado: qué documento emite Cord en cada país, qué
+        // pide la autoridad y en qué estado está su riel fiscal.
+        slug: 'facturacion-por-pais',
+        es: { name: 'Facturación por país', desc: 'Qué documento emite Cord en cada uno de sus 12 países, qué necesita tu negocio y cómo corregir una factura.' },
+        en: { name: 'Invoicing by country', desc: 'Which document Cord issues in each of its 12 countries, what your business needs and how to correct an invoice.' },
+        icon: 'globe',
+    },
+    {
         slug: 'cuenta',
         es: { name: 'Cuenta y Equipo', desc: 'Administra accesos, roles y configuraciones de tu organización.' },
         en: { name: 'Account & Team', desc: 'Manage access, roles, and settings for your organization.' },
@@ -48,3 +56,17 @@ export const SUPPORT_CATEGORIES: SupportCategory[] = [
 
 export const supportCategoryByName = (name: string) =>
     SUPPORT_CATEGORIES.find((c) => c.es.name === name || c.en.name === name) ?? null;
+
+/**
+ * Orden de lectura dentro de una categoría: primero los artículos con `order`
+ * (de menor a mayor), después el resto por título. Lo comparten el hub, la
+ * página de categoría y la barra lateral del artículo.
+ */
+export function sortSupportArticles<T extends { data: { title: string; order?: number } }>(list: T[]): T[] {
+    return [...list].sort((a, b) => {
+        const oa = a.data.order ?? Number.POSITIVE_INFINITY;
+        const ob = b.data.order ?? Number.POSITIVE_INFINITY;
+        if (oa !== ob) return oa - ob;
+        return a.data.title.localeCompare(b.data.title);
+    });
+}

@@ -32,5 +32,7 @@ If a line would be stamped with the generic `01010101`, the editor flags it on t
 Each item of `POST /v1/facturas` and `POST /v1/cotizaciones` accepts `clave_sat` and `clave_unidad_sat`. A key with an invalid format is rejected when saving, naming the item, instead of failing at stamping time.
 
 <Callout type="info">
+
 When you **duplicate** an invoice, the copy keeps the SAT keys each item was stamped with.
+
 </Callout>

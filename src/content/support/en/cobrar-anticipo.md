@@ -27,4 +27,4 @@ Each part is an independent charge with its own payment link. The quote is marke
 
 ### Tax note
 
-The deposit and balance are a **collection** tool, not automatic invoicing. Cord does not by itself generate the Payment Receipt Complement (REP) for each installment. Check with your accountant on the correct tax treatment depending on whether your operation is a true advance payment or a payment in installments. See also [Invoicing deposits](/en/support/facturacion-anticipos).
+The deposit and balance are a **collection** tool, not automatic invoicing: you stamp the CFDI yourself from the quote. In Mexico, what was collected on the quote moves to the invoice when you stamp it; if a balance remains, the CFDI is issued PPD and every payment applied to the invoice gets its automatic payment complement. If your transaction is an advance in the SAT's sense (the good, the service or its price were not determined), the SAT requires its advance-payment procedure, which Cord does not issue: review it with your accountant before stamping. See [Invoicing deposits](/en/support/facturacion-anticipos).

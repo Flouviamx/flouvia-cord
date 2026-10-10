@@ -24,12 +24,13 @@ The processing fee shown before confirmation is not returned by default. A refun
 Issuing a refund does not by itself cancel the original tax document.
 
 **In Mexico**, it does not cancel the invoice with the SAT:
-1. Go to Cord in **Accounting > Invoices** and locate the original invoice.
-2. In the options menu (three dots), select **Generate Credit Note** (Expense).
-3. Cord will automatically link the parent invoice's UUID using the `01` relationship type.
-4. Click on **Stamp Expense**. This will deduct the income for accounting purposes and provide your client with their XML proof.
+1. Go to **Invoices** and open the original invoice.
+2. Click **More actions › Credit note**. Cord creates the draft of an expense CFDI related to the invoice's UUID (relation 01).
+3. On the draft, click **Issue credit note**. Your client receives its XML when you send it from the detail.
 
-**In every other country**, the correction is issued as a commercial credit note linked to the original invoice. **In Spain**, if your account issues under Verifactu, the correction never edits the already-signed chained record: it generates a NEW cancellation record, which is added to the chain instead of rewriting the previous one. See [Issuing credit notes](/en/support/nota-de-credito).
+**In every other country**, the correction is a credit note linked to the original invoice: commercial while the country's registration with the tax authority is being turned on, or the document each authority requires once it is active. In **Spain with Verifactu active**, the credit note is a corrective invoice with its own chained record: the already-signed record is never edited. See [Issue a credit note](/en/support/nota-de-credito).
+
+A refund on an **ACH bank debit** can only be for the full amount.
 
 ## Effect on a linked invoice
 

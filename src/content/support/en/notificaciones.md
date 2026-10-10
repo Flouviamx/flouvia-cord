@@ -21,7 +21,9 @@ Under **Settings › Notifications** you choose which events notify you and how:
 Check the email and/or Slack box for each event; it saves instantly.
 
 <Callout type="info">
+
 If you've never touched this screen, Cord already emails you when a quote is approved, rejected, or paid — the three highest-value events, on by default. As soon as you save the screen once, your own selection takes over that default.
+
 </Callout>
 
 ### Slack
