@@ -3303,7 +3303,7 @@ Aceptación integrada y recuperación pendientes: [confiabilidad](confiabilidad.
 ## Tipos documentales y cuota por plan — implementación local
 
 El contrato vigente preparado está en [Negocio y Billing](negocio-billing.md#contrato-documental-implementado-localmente).
-Free permite cinco documentos comerciales al mes; Starter habilita la integración
+Free permite diez documentos comerciales al mes (`INCLUDED.free.docs`); Starter habilita la integración
 fiscal donde esté configurada. El tipo se guarda en `documentos_fiscales` y manda
 sobre el país o plan actual en emisión, descarga y anulación. Los documentos
 comerciales MX/ES son proformas; sus notas son `commercial_credit_note`, no CFDI E.

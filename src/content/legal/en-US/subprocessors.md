@@ -1,7 +1,7 @@
 ---
 docId: subprocessors
-version: "2026-09-01"
-effectiveDate: "2026-09-01"
+version: "2026-10-10"
+effectiveDate: "2026-10-10"
 supersedes: null
 locale: en-US
 jurisdiction: GLOBAL
@@ -15,17 +15,17 @@ editorialStage: technical-draft
 sourceOfTruth: src/content/legal/en-US/subprocessors.md
 artifactRoute: /en/legal/subprocessors
 artifactSha256: "0000000000000000000000000000000000000000000000000000000000000000"
-lastReviewed: "2026-09-01"
+lastReviewed: "2026-10-10"
 reviewedBy: Technical drafting; external legal review pending
 dependsOn: ["privacy"]
 sourceSections: ["privacy@2026-09-28#dpa", "privacy@2026-09-28#internacionales"]
-releaseBlockers: ["verified-identity", "provider-legal-entities", "account-contracts", "processing-locations", "transfer-mechanisms", "change-notice", "objection-procedure", "legal-review", "versioned-publication"]
+releaseBlockers: ["verified-identity", "provider-legal-entities", "account-contracts", "processing-locations", "transfer-mechanisms", "change-notice", "objection-procedure", "fr-platform-contract", "inbound-email-provider", "legal-review", "versioned-publication"]
 ---
 
 # Third parties and sub-processors
 
 **TECHNICAL DRAFT — not published or effective.** This list describes
-integrations found in code as of September 1, 2026. It does not prove that every
+integrations found in code as of October 10, 2026. It does not prove that every
 integration is configured, that public terms were accepted for Cord's account,
 or that one legal classification applies to every flow.
 
@@ -51,7 +51,8 @@ particular Customer's data.
 | PostHog | Browser analytics after consent and server-side organization telemetry if configured. | Pending |
 | Upstash | Rate limiting and ephemeral MCP sessions if variables exist; PostgreSQL fallback. | Pending |
 | Slack, Cord alerts | Minimized operational alerts if Cord's internal webhook is configured. | Pending |
-| Facturapi | CFDI/CSD preparation, stamping, and retrieval in Mexico if configured. | Pending |
+| Facturapi | CFDI/CSD preparation, stamping, cancellation, and retrieval in Mexico, including payment complements and global invoices, if configured. | Pending |
+| Inbound email (provider to be identified) | Receipt of email sent to Cord mailboxes: replies to collections and supplier documents in Chile's exchange mailbox, if inbound email is configured. | Pending; provider not identified |
 
 Legal entity, address, processing country, specific products, downstream
 sub-processors, and transfer mechanism must be completed for each row. A trade
@@ -61,10 +62,11 @@ name is not enough for a contractual appendix.
 
 | Provider | Observed purpose and condition |
 |---|---|
-| Stripe | Billing, payments, refunds, disputes, payouts, and financial/identity verification when used. |
+| Stripe | Billing, payments, refunds, disputes, payouts, and financial/identity verification; payment methods and SEPA/ACH mandates saved by Customer's customers for automatic payments; US sales tax calculation in Customer's connected account, with its customer's address. When each feature is used. |
 | Google | User-selected OAuth; Cord receives the authorized identifier, name, and email. |
 | Apple | User-selected authentication; Cord receives the authorized identifier and data. |
 | Mercado Pago | Collecting quotes and invoices with the Customer's account, and reading payments and refunds to reconcile them, when the Customer connects it. |
+| Iopole | Approved platform in France: business registration (SIREN, VAT regime, email, address and, optionally, the representative's name and title), business-to-business invoices with the business's customer data, e-reporting of other sales and payments, and statuses. Identity verification and the mandate happen on its own page. Only if the service is enabled and the business completes registration; Flouvia's production contract remains pending. |
 
 Their role may vary by product, jurisdiction, and data. Keeping them outside the
 sub-processor table does not declare they never act as processors; it avoids a
@@ -73,9 +75,16 @@ but that does not replace account or configuration evidence.
 
 ## 4. Authorities and Customer-directed integrations
 
-SAT, PAC, and AEAT are authorities or tax recipients. SAT/PAC participate in
-CFDI stamping; AEAT would receive data only when Verifactu and submission are
-actually configured, and submission is disabled by default today.
+These are authorities or tax recipients, each only in the issuer's country and
+when its rail is enabled and configured: SAT through the PAC when stamping CFDI;
+AEAT with Verifactu (submission disabled by default) and, once the AEAT publishes
+its service, the public business-to-business e-invoicing solution, with no
+submissions today; ARCA; Sefin Nacional and SEFAZ (or its contingency service);
+SUNAT; the SII; the DIAN; and the DGFiP through the approved platform. Cord
+transmits to them as Customer's invoicing system, with Customer's credentials,
+without acting as its attorney-in-fact or accredited technology provider. In
+Chile, Customer's suppliers also receive exchange responses signed with
+Customer's certificate.
 
 SAML IdPs, MCP servers, Slack workspaces, and webhooks/endpoints configured by
 Customer are Customer-directed recipients. Customer decides activation and
@@ -123,7 +132,10 @@ per call, not per provider name.
 
 Ten entries remain `account-evidence-pending`: Neon, Vercel, Anthropic, PostHog,
 Upstash, Ops Slack, Facturapi, Google, Apple, and Mercado Pago. Accepted terms, product, region,
-retention, and transfer evidence remain missing.
+retention, and transfer evidence remain missing. The next Privacy Notice version
+would add the French approved platform and the inbound email provider, both
+without account evidence: the platform's production contract and the choice of
+inbound email provider remain open.
 
 A public DPA or trust center describes general terms; it does not prove Cord's
 account location or an executed mechanism. Each transfer must map exporter,
@@ -154,4 +166,4 @@ history, and objections; legal review and versioned publication.
 `src/lib/legal-providers.ts` remains a technical inventory, not a self-updating
 contractual list.
 
-Provenance and evidence: [phase 5.4 data-governance review](../../../../docs/historial/revisiones-legales/2026-09-01-data-governance.md). Original clauses remain preserved through `sourceSections`.
+Provenance and evidence: [phase 5.4 data-governance review](../../../../docs/historial/revisiones-legales/2026-09-01-data-governance.md) and [per-country invoicing review](../../../../docs/historial/revisiones-legales/2026-10-10-facturacion-paises.md). Original clauses remain preserved through `sourceSections`.

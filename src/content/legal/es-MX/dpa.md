@@ -1,7 +1,7 @@
 ---
 docId: dpa
-version: "2026-09-01"
-effectiveDate: "2026-09-01"
+version: "2026-10-10"
+effectiveDate: "2026-10-10"
 supersedes: null
 locale: es-MX
 jurisdiction: GLOBAL
@@ -13,12 +13,12 @@ publicationStatus: draft
 editorialStage: technical-draft
 dependsOn: ["terms", "privacy", "subprocessors", "retention-policy"]
 sourceSections: ["privacy@2026-09-28#dpa", "privacy@2026-09-28#internacionales"]
-releaseBlockers: ["verified-parties", "processing-schedules", "security-schedule", "account-contracts", "transfer-map", "subprocessor-notice", "incident-procedure", "retention-schedule", "legal-review", "execution-evidence", "versioned-publication"]
+releaseBlockers: ["verified-parties", "processing-schedules", "security-schedule", "account-contracts", "transfer-map", "subprocessor-notice", "incident-procedure", "retention-schedule", "fiscal-retention-after-closure", "legal-review", "execution-evidence", "versioned-publication"]
 sourceKind: markdown
 sourceOfTruth: src/content/legal/es-MX/dpa.md
 artifactRoute: /dpa
 artifactSha256: "0000000000000000000000000000000000000000000000000000000000000000"
-lastReviewed: "2026-09-01"
+lastReviewed: "2026-10-10"
 reviewedBy: Redacción técnica; revisión jurídica externa pendiente
 ---
 
@@ -71,6 +71,10 @@ compradores, firmantes, deudores comerciales, representantes, directores y
 beneficiarios finales. Los datos pueden incluir identidad y contacto, datos
 comerciales, fiscales y técnicos, cotizaciones, facturas, pagos, comunicaciones,
 evidencia de entrega o disputa, archivos e información introducida por el Cliente.
+También pueden incluir a los proveedores del Cliente cuyos documentos recibe Cord
+en Chile, a los titulares de los certificados fiscales que el Cliente carga, y los
+métodos de pago, mandatos y autorizaciones de cobro automático que los clientes
+del Cliente guardan en su portal.
 
 El anexo ejecutable debe completar por función categorías, personas, finalidades,
 frecuencia, destinatarios, países, plazos y datos sensibles. La lista general no
@@ -119,8 +123,10 @@ otros clientes. Alcance, frecuencia, costos y procedimiento siguen abiertos.
 ## 6. Subencargados e integraciones dirigidas
 
 La autorización general propuesta abarca sólo proveedores clasificados realmente
-como subencargados. Stripe, Google y Apple pueden tener obligaciones propias;
-SAT/PAC/AEAT son destinatarios legales; SAML, MCP, Slack, HubSpot, las
+como subencargados. Stripe, Google, Apple y la plataforma autorizada de Francia
+pueden tener obligaciones propias; las autoridades fiscales (SAT por el PAC, AEAT,
+ARCA, Sefin Nacional, SEFAZ, SUNAT, SII, DIAN y la DGFiP por la plataforma
+autorizada) son destinatarios legales; SAML, MCP, Slack, HubSpot, las
 plataformas que usan la API con una llave del Cliente (como Zapier o Make) y los
 webhooks configurados por el Cliente son integraciones dirigidas. Una tabla no
 convierte todos esos roles en subencargados.
@@ -129,6 +135,14 @@ Para HubSpot, Cord guarda los tokens OAuth cifrados, ofrece desconectar en
 cualquier momento, intenta revocar el acceso al hacerlo y borra los tokens. Lo
 que ya se envió a la cuenta del Cliente queda bajo su control y el de ese
 proveedor.
+
+Las credenciales fiscales que el Cliente carga son una instrucción documentada:
+Cord las usa solo para firmar y transmitir los documentos de esa organización,
+consultar su estado y, en Chile, responder a sus proveedores; las guarda cifradas
+y no las devuelve al navegador. Al transmitir, Cord actúa como sistema de
+facturación del Cliente y no como su apoderado. El proveedor de correo entrante
+que reciba las casillas de Cord debe identificarse y contratarse antes de activar
+la recepción.
 
 Antes de que un nuevo subencargado trate Datos del Cliente, el contrato final
 debe exigir protección equivalente y establecer aviso previo, canal, plazo y
@@ -167,11 +181,15 @@ La evidencia KYC tiene un sweeper de cinco años, pero su FK `on delete cascade`
 la elimina al borrar la organización. La evidencia de aceptación legal sobrevive
 sin plazo aprobado. El `audit_log` de la organización, incluido el inicio del
 borrado, también cascadea. Esto impide prometer retorno, retención o certificado
-de eliminación uniforme.
+de eliminación uniforme. Los documentos fiscales y las respuestas de
+autoridades de México, Argentina, Brasil, Chile, Colombia, Perú y Francia se
+borran con la organización, y los registros Verifactu impiden borrarla; ninguno
+tiene un plazo de conservación posterior al cierre ni una exportación masiva,
+aunque la ley fiscal de cada país obliga al Cliente a conservarlos.
 
 **Bloqueos:** partes/contactos; anexos de tratamiento y seguridad; roles por
 flujo; contratos/regiones; mapa de transferencias; aviso y objeción a
 subencargados; procedimiento de incidentes/derechos; calendario y evidencia de
 eliminación; revisión jurídica, ejecución y publicación versionada.
 
-Procedencia y evidencia: [revisión de gobernanza de datos de fase 5.4](../../../../docs/historial/revisiones-legales/2026-09-01-data-governance.md). Las cláusulas originales permanecen preservadas según `sourceSections`.
+Procedencia y evidencia: [revisión de gobernanza de datos de fase 5.4](../../../../docs/historial/revisiones-legales/2026-09-01-data-governance.md) y [revisión de facturación por país](../../../../docs/historial/revisiones-legales/2026-10-10-facturacion-paises.md). Las cláusulas originales permanecen preservadas según `sourceSections`.
