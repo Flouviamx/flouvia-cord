@@ -1807,3 +1807,10 @@ webhook.
   en la transición a efectivo o fallido, también para los hechos fuera de Cord.
 - No se emite CFDI de egreso automático: no todo reembolso es una devolución de la
   venta. Cord lo dice y lo recuerda en el detalle.
+- **SPEI, el mismo día.** Al integrarse "SPEI con CLABE en facturas", el pago SPEI
+  de una factura también se reembolsa desde su detalle, a la cuenta bancaria del
+  cliente (`customer_balance`, 180 días). Se eligió ese destino y no el saldo del
+  cliente porque el saldo se queda en la cuenta del negocio: el cliente no recibe
+  nada. El reembolso espera (`requires_action`) a que el cliente dé su cuenta por
+  correo y no reabre el saldo hasta completarse; sin correo del cliente no se
+  ofrece. El SPEI de una cotización sigue siendo una transferencia manual.

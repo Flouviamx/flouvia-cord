@@ -36,7 +36,7 @@ const doc = async (id: string) => (await q('select * from documentos_fiscales wh
 const pagoDe = async (id: string) => String((await q('select id from documento_pagos where documento_id = $1 order by aplicado_at limit 1', [id])).rows[0].id);
 
 // ── Proveedor simulado (Stripe en la cuenta conectada) ──────────────────────
-interface Intento { amount: number; currency: string; status: string; type: string; created: number }
+interface Intento { amount: number; currency: string; status: string; type: string; created: number; email?: string | null }
 const proveedor = {
     intentos: new Map<string, Intento>(),
     reembolsos: [] as Array<{ id: string; payment_intent: string; amount: number; status: string; metadata: Record<string, string> }>,
@@ -53,7 +53,8 @@ async function stripeSimulado(path: string, params: Record<string, string> | und
         const i = proveedor.intentos.get(pi);
         if (!i) throw Object.assign(new Error('No such payment_intent'), { stripeStatus: 404 });
         return { id: pi, status: i.status, amount_received: i.amount, currency: i.currency.toLowerCase(), created: i.created,
-            payment_method_types: [i.type], latest_charge: { payment_method_details: { type: i.type } } };
+            payment_method_types: [i.type], latest_charge: { payment_method_details: { type: i.type } },
+            customer: { id: 'cus_1', email: i.email === undefined ? 'pagos@cliente.test' : i.email } };
     }
     if (method === 'GET' && path === '/v1/refunds') {
         return { data: proveedor.reembolsos.filter((r) => r.payment_intent === params!.payment_intent), has_more: false };
@@ -80,13 +81,13 @@ beforeAll(async () => {
     db = new PGlite();
     await db.exec(`
         create table users (id uuid primary key);
-        create table clientes (id uuid primary key, org_id uuid);
+        create table clientes (id uuid primary key, org_id uuid, email text);
         create table orgs (id uuid primary key, nombre text, stripe_account_id text, sandbox_of uuid);
         create table documentos_fiscales (
             id uuid primary key, org_id uuid not null references orgs(id), cliente_id uuid, invoice_number text,
             total numeric not null, currency text not null, amount_paid numeric default 0, amount_remaining numeric,
             lifecycle text, status text, document_type text default 'invoice', credit_note_of uuid, provider_data jsonb,
-            country_code text default 'MX', informacion_global jsonb, sustituida_por uuid, sustituye_a uuid,
+            country_code text default 'MX', informacion_global jsonb, recipient_snapshot jsonb, sustituida_por uuid, sustituye_a uuid,
             pago_en_proceso_pi text, due_date date, issued_at timestamptz default now(), created_at timestamptz default now(),
             updated_at timestamptz default now());
         create table cotizacion_cobros (id uuid primary key default gen_random_uuid(), org_id uuid, cotizacion_id uuid,
@@ -178,7 +179,9 @@ describe('reglas puras', () => {
         expect(evaluarReembolso({ ...base, tipo: 'sepa_debit', edadDias: 181 }).bloqueo).toBe('plazo');
         expect(evaluarReembolso({ ...base, tipo: 'sepa_debit', edadDias: 180 }).bloqueo).toBeNull();
         expect(evaluarReembolso({ ...base, confirmado: false }).bloqueo).toBe('no_confirmado');
-        expect(evaluarReembolso({ ...base, tipo: 'customer_balance' }).bloqueo).toBe('transferencia');
+        // SPEI: vuelve a la cuenta bancaria del cliente, total o parcial y dentro de 180 días.
+        expect(evaluarReembolso({ ...base, tipo: 'customer_balance' })).toMatchObject({ bloqueo: null, parcial: true, plazoDias: 180 });
+        expect(evaluarReembolso({ ...base, tipo: 'customer_balance', edadDias: 181 }).bloqueo).toBe('plazo');
         expect(evaluarReembolso({ ...base, tipo: 'klarna' }).bloqueo).toBe('metodo');
         // El proveedor devolvió algo que Cord aún no registra: se espera al aviso.
         expect(evaluarReembolso({ ...base, devueltoProveedor: 40, registrado: 0 }).bloqueo).toBe('pendiente_registro');
@@ -359,6 +362,60 @@ describe('idempotencia', () => {
         expect(JSON.stringify(r)).not.toContain('ch_123');
         expect((await q("select estado from documento_reembolso_solicitudes where estado <> 'autorizada'")).rows).toEqual([{ estado: 'fallida' }]);
         expect(await prepararReembolso(org, A, pago, user)).toMatchObject({ maxFactura: 100 });
+    });
+});
+
+describe('SPEI (transferencia)', () => {
+    /** Un pago SPEI de factura: `metodo = 'spei'` y su PaymentIntent, como lo asienta el webhook. */
+    async function pagarSpei(email: string | null = 'pagos@cliente.test', tipoEnCargo = true) {
+        proveedor.intentos.set('pi_spei', { amount: 10000, currency: 'MXN', status: 'succeeded', type: tipoEnCargo ? 'customer_balance' : '', created: ahora() - 86400, email });
+        const r = await applyPayment(org, A, { monto: 100, currency: 'MXN', metodo: 'spei', stripePaymentIntentId: 'pi_spei', referencia: 'pi_spei' });
+        expect(r.ok).toBe(true);
+    }
+    it('se devuelve a la cuenta del cliente: en espera no reabre el saldo, y si no se completa libera la reserva', async () => {
+        await pagarSpei();
+        proveedor.estadoNuevo = 'requires_action';
+        const pago = await pagoDe(A);
+        expect(await prepararReembolso(org, A, pago, user)).toMatchObject({ metodo: 'customer_balance', parcial: true, maxFactura: 100 });
+        expect(await reembolsar(A, pago, 40)).toMatchObject({ ok: true, estado: 'requires_action' });
+        // El Customer ya tiene correo: no se manda otro.
+        expect(llamadasPost()[0][1]).not.toHaveProperty('instructions_email');
+        expect(await doc(A)).toMatchObject({ lifecycle: 'paid', amount_refunded: '0' });
+        expect(m.event).toHaveBeenCalledWith(org, A, 'refund', 'Reembolso de 40.00 MXN solicitado');
+        // En espera reserva lo pedido.
+        expect(await prepararReembolso(org, A, pago, user)).toMatchObject({ maxFactura: 60 });
+        // 45 días sin datos del cliente: el proveedor lo da por fallido.
+        await recordInvoiceRefund(org, { id: 're_1', paymentIntentId: 'pi_spei', amount: 40, currency: 'MXN', status: 'failed', eventCreated: 99 });
+        proveedor.reembolsos[0].status = 'failed';
+        expect(m.event).toHaveBeenCalledWith(org, A, 'refund', 'El reembolso de 40.00 MXN no se completó');
+        expect(await doc(A)).toMatchObject({ lifecycle: 'paid', amount_refunded: '0' });
+        expect(await prepararReembolso(org, A, pago, user)).toMatchObject({ maxFactura: 100 });
+    });
+    it('el cliente da su cuenta y el reembolso se completa: entonces sí reabre el saldo', async () => {
+        await pagarSpei();
+        proveedor.estadoNuevo = 'requires_action';
+        await reembolsar(A, await pagoDe(A), 100);
+        await recordInvoiceRefund(org, { id: 're_1', paymentIntentId: 'pi_spei', amount: 100, currency: 'MXN', status: 'pending', eventCreated: 20 });
+        expect((await doc(A)).lifecycle).toBe('paid');
+        await recordInvoiceRefund(org, { id: 're_1', paymentIntentId: 'pi_spei', amount: 100, currency: 'MXN', status: 'succeeded', eventCreated: 30 });
+        expect(await doc(A)).toMatchObject({ lifecycle: 'open', amount_refunded: '100', amount_remaining: '100' });
+    });
+    it('si el cargo no dice el método, el ledger (metodo spei) lo identifica', async () => {
+        await pagarSpei('pagos@cliente.test', false);
+        expect(await prepararReembolso(org, A, await pagoDe(A), user)).toMatchObject({ metodo: 'customer_balance' });
+    });
+    it('sin correo en el Customer usa el del cliente de la factura', async () => {
+        await pagarSpei(null);
+        await q("update documentos_fiscales set recipient_snapshot = '{\"email\": \"cxp@cliente.test\"}'::jsonb where id = $1", [A]);
+        proveedor.estadoNuevo = 'requires_action';
+        expect((await reembolsar(A, await pagoDe(A), 100)).ok).toBe(true);
+        expect(llamadasPost()[0][1]).toMatchObject({ instructions_email: 'cxp@cliente.test' });
+    });
+    it('sin ningún correo no se ofrece: el proveedor no tendría a quién pedirle la cuenta', async () => {
+        await pagarSpei(null);
+        const op = await prepararReembolso(org, A, await pagoDe(A), user);
+        expect(op).toMatchObject({ bloqueo: 'sin_correo', maxFactura: 0 });
+        expect(op?.nonce).toBeUndefined();
     });
 });
 

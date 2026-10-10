@@ -15,14 +15,15 @@ Cord permite iniciar un reembolso total o parcial desde donde ves el pago, sin a
 1. Ve a **Cobros** y localiza el pago exitoso.
 2. Selecciona **Reembolsar**, indica el monto y confirma la operación.
 3. En pagos con tarjeta, Cord solicita la devolución al banco emisor y actualiza el importe neto cuando recibe el resultado.
-4. En transferencias SPEI (solo cobros en pesos mexicanos), Cord crea en **Tareas** una tarea con prioridad alta, el monto y la referencia, a cargo de quien solicitó el reembolso. La devolución debe completarse desde tu banco; Cord no simula una transferencia saliente.
+4. En transferencias SPEI de una cotización (solo cobros en pesos mexicanos), Cord crea en **Tareas** una tarea con prioridad alta, el monto y la referencia, a cargo de quien solicitó el reembolso. La devolución debe completarse desde tu banco; Cord no simula una transferencia saliente.
 
-**El pago de una factura** (desde su link, el portal del cliente o el cobro automático), con tarjeta, débito SEPA, débito ACH o Mercado Pago:
+**El pago de una factura** (desde su link, el portal del cliente o el cobro automático), con tarjeta, débito SEPA, débito ACH, transferencia SPEI o Mercado Pago:
 
 1. Ve a **Facturas**, abre la factura y, en **Pagos**, pulsa **Reembolsar** junto al pago.
 2. El diálogo te dice antes de confirmar cuánto puedes devolver y, si no se puede, por qué: un débito ACH solo se devuelve completo, un débito SEPA o ACH solo dentro de 180 días, y un débito todavía en proceso no se puede devolver hasta que se confirme.
 3. Si el pago cubrió varias facturas, elige **Solo esta factura** (hasta lo que el cobro le aplicó) o **Todo el cobro**.
 4. Indica el monto, marca la casilla de la tarifa y confirma. La factura vuelve a quedar con saldo por lo devuelto en cuanto el reembolso se confirma.
+5. En una transferencia SPEI de la factura, tu cliente recibe un correo para indicar la cuenta bancaria a la que se le devuelve (la factura necesita su correo). Mientras no la da, el reembolso queda en espera; si no responde en 45 días, no se completa y el dinero queda como saldo a su favor en tu cuenta de cobros: escríbenos para devolverlo.
 
 Esta función es nueva y puede no estar habilitada todavía en tu cuenta. Si no la ves, escríbenos. Un pago de factura registrado a mano no tiene botón: Cord no movió ese dinero. El cobro de una cotización hecho con Mercado Pago se reembolsa desde tu cuenta de Mercado Pago, y Cord lo registra solo.
 

@@ -11,11 +11,18 @@
 //    mismo dinero no tenga dos puertas con dos ledgers. Uno registrado a mano no
 //    lo movió Cord: no hay nada que devolver desde aquí.
 //  - **Los límites del proveedor se dicen ANTES** (`evaluarReembolso`, pura):
-//    ACH solo completo; SEPA y ACH dentro de 180 días; un pago que el proveedor
-//    no da por cobrado no se devuelve; SPEI (transferencia) todavía no.
-//    Fuente: docs.stripe.com/payments/ach-direct-debit ("Partial refunds ✗,
-//    Full refunds ✓", 180 días) y /payments/sepa-debit (parciales sí, 180 días),
-//    consultadas el 10 oct 2026.
+//    ACH solo completo; SEPA, ACH y SPEI dentro de 180 días; un pago que el
+//    proveedor no da por cobrado no se devuelve. Fuente:
+//    docs.stripe.com/payments/ach-direct-debit ("Partial refunds ✗, Full refunds
+//    ✓", 180 días), /payments/sepa-debit (parciales sí, 180 días) y
+//    /payments/customer-balance/refunding (180 días), consultadas el 10 oct 2026.
+//  - **SPEI se devuelve a la cuenta bancaria del cliente.** El proveedor le pide
+//    sus datos por correo (el del Customer o `instructions_email`): el reembolso
+//    nace `requires_action`, no reabre el saldo hasta `succeeded` y, si el
+//    cliente no responde en 45 días, pasa a `failed` y el dinero queda en su
+//    saldo dentro de la cuenta del negocio. Sin correo no se ofrece. La opción
+//    de devolverlo al saldo del cliente no se usa: ese dinero se quedaría en la
+//    cuenta del negocio, no le llega al cliente.
 //  - **El monto se RESERVA antes de llamar al proveedor**, bajo el lock del
 //    cobro, contra el ledger local Y contra lo que el proveedor ya devolvió. La
 //    clave de idempotencia es el id de esa solicitud reservada (regla 33): un
@@ -44,7 +51,7 @@ import { tipoMetodoDeIntent } from './agrupados';
 export type MotivoBloqueo =
     | 'manual'             // registrado a mano: Cord no movió ese dinero
     | 'cotizacion'         // entró por la cotización: se devuelve desde su cobro
-    | 'transferencia'      // SPEI / transferencia bancaria: todavía no desde aquí
+    | 'sin_correo'         // SPEI sin correo del cliente: el proveedor no tiene a quién pedirle su cuenta
     | 'metodo'             // un método sin reembolso en línea desde Cord
     | 'no_confirmado'      // el proveedor no lo da por cobrado (en proceso, en disputa)
     | 'plazo'              // venció la ventana del proveedor (SEPA y ACH: 180 días)
@@ -66,6 +73,8 @@ const REGLAS: Readonly<Record<string, ReglaMetodo>> = {
     link: { parcial: true, plazoDias: null },
     sepa_debit: { parcial: true, plazoDias: 180 },
     us_bank_account: { parcial: false, plazoDias: 180 },
+    // SPEI (transferencia al saldo del cliente): vuelve a su cuenta bancaria.
+    customer_balance: { parcial: true, plazoDias: 180 },
     mercadopago: { parcial: true, plazoDias: null },
 };
 
@@ -117,7 +126,7 @@ export function evaluarReembolso(d: DatosEvaluacion): Evaluacion {
     const cerrado = (bloqueo: MotivoBloqueo): Evaluacion => ({
         bloqueo, parcial: regla?.parcial ?? false, plazoDias: regla?.plazoDias ?? null, maxFactura: 0, maxCobro: 0,
     });
-    if (!regla) return cerrado(d.tipo === 'customer_balance' ? 'transferencia' : 'metodo');
+    if (!regla) return cerrado('metodo');
     if (!d.confirmado) return cerrado('no_confirmado');
     if (regla.plazoDias !== null && d.edadDias > regla.plazoDias) return cerrado('plazo');
     // Algo salió en el proveedor y no está en el ledger (un reembolso hecho fuera
@@ -170,6 +179,10 @@ interface PagoFactura {
     proveedorId: string | null;
     deCotizacion: boolean;
     metodoAgrupado: string | null;
+    /** `documento_pagos.metodo` ('spei', 'stripe', 'mercadopago'…): solo como pista del tipo. */
+    metodoLedger: string;
+    /** Correo del cliente de la factura: a dónde se le piden sus datos para devolver un SPEI. */
+    correoCliente: string | null;
     stripeAccountId: string | null;
     /** México con CFDI: el reembolso no lo cancela (ver la guía de la UI). */
     cfdi: boolean;
@@ -178,8 +191,9 @@ interface PagoFactura {
 async function leerPago(orgId: string, documentoId: string, pagoId: string): Promise<PagoFactura | null> {
     if (!/^[0-9a-f-]{36}$/i.test(pagoId) || !/^[0-9a-f-]{36}$/i.test(documentoId)) return null;
     const [[p]] = await withOrgTx(orgId, sql`
-        select p.id, p.documento_id, p.monto, p.currency, p.stripe_payment_intent_id, p.mp_payment_id, p.cobro_id,
+        select p.id, p.documento_id, p.monto, p.currency, p.stripe_payment_intent_id, p.mp_payment_id, p.cobro_id, p.metodo,
                d.country_code, d.document_type, d.provider_data, o.stripe_account_id,
+               coalesce(nullif(d.recipient_snapshot->>'email', ''), cl.email) as cliente_email,
                exists (select 1 from cotizacion_cobros cc where cc.org_id = p.org_id
                         and ((p.stripe_payment_intent_id is not null and cc.stripe_payment_intent_id = p.stripe_payment_intent_id)
                           or (p.mp_payment_id is not null and cc.mp_payment_id = p.mp_payment_id))) as de_cotizacion,
@@ -188,6 +202,7 @@ async function leerPago(orgId: string, documentoId: string, pagoId: string): Pro
           from documento_pagos p
           join documentos_fiscales d on d.id = p.documento_id and d.org_id = p.org_id
           join orgs o on o.id = p.org_id
+          left join clientes cl on cl.id = d.cliente_id and cl.org_id = d.org_id
          where p.id = ${pagoId} and p.documento_id = ${documentoId} and p.org_id = ${orgId}`);
     if (!p) return null;
     const pi = p.stripe_payment_intent_id ? String(p.stripe_payment_intent_id) : null;
@@ -202,10 +217,17 @@ async function leerPago(orgId: string, documentoId: string, pagoId: string): Pro
         proveedorId: pi ?? mp,
         deCotizacion: !!p.cobro_id || !!p.de_cotizacion,
         metodoAgrupado: p.metodo_agrupado ? String(p.metodo_agrupado) : null,
+        metodoLedger: String(p.metodo || ''),
+        correoCliente: correoValido(p.cliente_email),
         stripeAccountId: p.stripe_account_id ? String(p.stripe_account_id) : null,
         cfdi: String(p.country_code || '').toUpperCase() === 'MX' && String(p.document_type) === 'cfdi_40' && pd.simulado !== true,
     };
 }
+
+const correoValido = (v: unknown): string | null => {
+    const correo = String(v ?? '').trim();
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo) ? correo : null;
+};
 
 interface Capacidad {
     facturas: number;
@@ -267,6 +289,8 @@ async function leerCapacidad(orgId: string, pago: PagoFactura): Promise<Capacida
 
 interface EstadoProveedor {
     tipo: string;
+    /** Correo del Customer del pago (Stripe), a donde se piden los datos de un SPEI. */
+    correo: string | null;
     confirmado: boolean;
     cobrado: number;
     devuelto: number;
@@ -275,7 +299,8 @@ interface EstadoProveedor {
 
 /** El pago y sus reembolsos, leídos en la cuenta conectada: la verdad del proveedor. */
 async function estadoStripe(cuenta: string, pi: string, currency: string, tipoConocido: string | null): Promise<EstadoProveedor> {
-    const intent = await stripe(`/v1/payment_intents/${encodeURIComponent(pi)}`, { 'expand[]': 'latest_charge' }, 'GET', { stripeAccount: cuenta });
+    const intent = await stripe(`/v1/payment_intents/${encodeURIComponent(pi)}`,
+        { 'expand[0]': 'latest_charge', 'expand[1]': 'customer' }, 'GET', { stripeAccount: cuenta });
     if (!intent || intent.id !== pi) throw new Error('No se pudo leer el pago.');
     if (normalizeCurrency(String(intent.currency || '')) !== currency) throw new Error('La divisa del pago no coincide.');
     const lista = await stripe('/v1/refunds', { payment_intent: pi, limit: '100' }, 'GET', { stripeAccount: cuenta });
@@ -284,8 +309,10 @@ async function estadoStripe(cuenta: string, pi: string, currency: string, tipoCo
         .filter((r: any) => !['failed', 'canceled'].includes(String(r?.status)))
         .reduce((s: number, r: any) => s + fromMinorUnits(Number(r?.amount) || 0, currency), 0);
     const charge = typeof intent.latest_charge === 'object' ? intent.latest_charge : null;
+    const customer = intent.customer && typeof intent.customer === 'object' ? intent.customer : null;
     return {
         tipo: charge?.payment_method_details?.type ? String(charge.payment_method_details.type) : (tipoConocido || tipoMetodoDeIntent(intent)),
+        correo: correoValido(customer?.email),
         confirmado: intent.status === 'succeeded',
         cobrado: fromMinorUnits(Number(intent.amount_received) || 0, currency),
         devuelto,
@@ -299,6 +326,7 @@ async function estadoMercadoPago(orgId: string, paymentId: string, currency: str
     if (normalizeCurrency(pago.moneda) !== currency) throw new Error('La divisa del pago no coincide.');
     return {
         tipo: 'mercadopago',
+        correo: null,
         // Un pago devuelto por completo pasa a `refunded`: sigue siendo un cobro
         // confirmado, solo que ya no le queda nada.
         confirmado: ['approved', 'refunded'].includes(pago.status),
@@ -376,7 +404,9 @@ async function evaluarPago(orgId: string, pago: PagoFactura): Promise<Evaluado |
     try {
         if (pago.proveedor === 'stripe') {
             if (!pago.stripeAccountId) return { bloqueo: 'sin_cuenta' };
-            estado = await estadoStripe(pago.stripeAccountId, pago.proveedorId, pago.currency, pago.metodoAgrupado);
+            // El cargo dice el método; si no viene, la pista del ledger (cobro agrupado o SPEI).
+            const pista = pago.metodoAgrupado ?? (pago.metodoLedger === 'spei' ? 'customer_balance' : null);
+            estado = await estadoStripe(pago.stripeAccountId, pago.proveedorId, pago.currency, pista);
         } else {
             estado = await estadoMercadoPago(orgId, pago.proveedorId, pago.currency);
         }
@@ -392,6 +422,11 @@ async function evaluarPago(orgId: string, pago: PagoFactura): Promise<Evaluado |
         capacidadFactura: cap.capacidadFactura, capacidadCobro: cap.capacidadCobro,
         facturas: Math.max(cap.facturas, 1), decimales: currencyDecimals(pago.currency),
     });
+    // Un SPEI se devuelve pidiéndole al cliente su cuenta por correo: sin correo
+    // el proveedor rechaza el reembolso. Se dice antes, no como error.
+    if (!ev.bloqueo && estado.tipo === 'customer_balance' && !estado.correo && !pago.correoCliente) {
+        return { ev: { ...ev, bloqueo: 'sin_correo', maxFactura: 0, maxCobro: 0 }, cap, estado };
+    }
     return { ev, cap, estado };
 }
 
@@ -508,6 +543,9 @@ export async function ejecutarReembolso(orgId: string, documentoId: string, inpu
                 'metadata[org_id]': orgId,
                 'metadata[documento_id]': documentoId,
                 'metadata[alcance]': input.alcance,
+                // SPEI: si el Customer no tiene correo, el del cliente de la factura.
+                ...(estado.tipo === 'customer_balance' && !estado.correo && pago.correoCliente
+                    ? { instructions_email: pago.correoCliente } : {}),
             }, 'POST', { stripeAccount: pago.stripeAccountId as string, idempotencyKey: idempotencia(solicitudId) });
         } catch (err) {
             const safe = merchantError(err);

@@ -89,7 +89,7 @@ describe('contrato de la ruta', () => {
         expect(m.audit).not.toHaveBeenCalled();
     });
     it('cada motivo de bloqueo tiene un mensaje para el negocio', async () => {
-        for (const code of ['manual', 'cotizacion', 'transferencia', 'metodo', 'no_confirmado', 'plazo', 'reembolsado', 'pendiente_registro', 'sin_cuenta', 'proveedor', 'autorizacion', 'capacidad', 'completo', 'monto', 'alcance', 'incierto']) {
+        for (const code of ['manual', 'cotizacion', 'sin_correo', 'metodo', 'no_confirmado', 'plazo', 'reembolsado', 'pendiente_registro', 'sin_cuenta', 'proveedor', 'autorizacion', 'capacidad', 'completo', 'monto', 'alcance', 'incierto']) {
             m.ejecutar.mockResolvedValue({ ok: false, error: code, referencia: 'R1' });
             const data = await (await post()).json();
             expect(data.code).toBe(code);

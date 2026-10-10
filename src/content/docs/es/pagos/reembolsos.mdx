@@ -50,7 +50,7 @@ Puedes reembolsar el mismo cobro **más de una vez**, mientras el total acumulad
 Esta función es nueva y puede no estar habilitada todavía en tu cuenta. Si no la ves, escríbenos.
 </Callout>
 
-En el detalle de una factura, la sección **Pagos** lista cada abono. Un pago en línea —con tarjeta, débito SEPA, débito ACH o Mercado Pago— que entró por el link de la factura, el portal del cliente o el cobro automático tiene el botón **Reembolsar**. Debajo de cada pago ves lo que ya se le reembolsó y lo que está en curso.
+En el detalle de una factura, la sección **Pagos** lista cada abono. Un pago en línea —con tarjeta, débito SEPA, débito ACH, transferencia SPEI o Mercado Pago— que entró por el link de la factura, el portal del cliente o el cobro automático tiene el botón **Reembolsar**. Debajo de cada pago ves lo que ya se le reembolsó y lo que está en curso.
 
 1. Pulsa **Reembolsar** junto al pago.
 2. Cord consulta el pago y te dice qué se puede devolver **antes** de que confirmes: el monto disponible, si admite un monto parcial y, si no se puede reembolsar, por qué.
@@ -65,17 +65,18 @@ En el detalle de una factura, la sección **Pagos** lista cada abono. Un pago en
 | Tarjeta | Total o parcial | El dinero vuelve a la tarjeta del cliente en los tiempos de su banco. |
 | Débito SEPA (EUR) | Total o parcial | Hasta 180 días después del cobro. Tarda de 3 a 4 días hábiles en procesarse y hasta 5 en llegar a la cuenta del cliente. |
 | Débito ACH (USD) | **Solo completo** | Hasta 180 días después del cobro. Tarda hasta 3 días hábiles y le llega al cliente como un abono que no dice "reembolso": avísale. |
+| Transferencia SPEI (MXN) | Total o parcial | Hasta 180 días después del cobro. Vuelve a la cuenta bancaria de tu cliente: le llega un correo para indicarla y, mientras no la da, el reembolso queda **en espera** sin reabrir el saldo. Si no responde en 45 días, el reembolso no se completa y el dinero queda como saldo a su favor en tu cuenta de cobros: escríbenos para devolverlo. Para pedirlo, la factura necesita el correo del cliente. |
 | Mercado Pago | Total o parcial | Sale de tu cuenta de Mercado Pago conectada y vuelve al medio con que pagó el cliente. |
 
 - Un **débito bancario en proceso** todavía no aparece entre los pagos de la factura, y no se puede reembolsar hasta que se confirme. El detalle de la factura lo dice.
-- Un pago **por transferencia SPEI** no se reembolsa desde la factura: devuélvelo por transferencia desde tu banco.
+- Un pago **por transferencia SPEI** de la factura se devuelve por el procesador a la cuenta que indique tu cliente, no con una transferencia tuya. Es distinto del SPEI de una cotización (ver [Tarjeta vs. SPEI](#tarjeta-vs-spei-dos-flujos-distintos)).
 - Un pago que **entró por la cotización** (la cotización ya estaba pagada, total o parcialmente, cuando se facturó) se reembolsa desde su cobro en Ingresos › Cobros, o desde tu cuenta de Mercado Pago si lo cobró Mercado Pago. La factura lo refleja sola.
 - Un pago **registrado a mano** no tiene botón: Cord no movió ese dinero y no lo puede devolver.
 - Si en el proveedor hay un reembolso de ese pago que Cord todavía no registra (por ejemplo, uno hecho fuera de Cord hace unos minutos), Cord espera a registrarlo antes de dejarte pedir otro.
 
 ### Qué pasa en la factura
 
-- Un reembolso **confirmado** reabre ese importe: una factura pagada vuelve a quedar abierta con ese saldo, y una con saldo pendiente sube su saldo. Uno **en proceso** (débitos bancarios, Mercado Pago en revisión) no toca el saldo hasta que se confirma.
+- Un reembolso **confirmado** reabre ese importe: una factura pagada vuelve a quedar abierta con ese saldo, y una con saldo pendiente sube su saldo. Uno **en proceso** (débitos bancarios, SPEI esperando la cuenta del cliente, Mercado Pago en revisión) no toca el saldo hasta que se confirma.
 - En una factura **anulada** que recibió un pago tardío, reembolsarlo baja el "Importe por devolver al cliente".
 - La actividad de la factura anota cada reembolso una vez: "Reembolso de …" cuando se confirma, "Reembolso de … solicitado" mientras está en proceso y "El reembolso de … no se completó" si falla. El aviso del proveedor que llega después no lo cuenta dos veces.
 - Con Cord Payments, el reembolso también dispara los eventos `refund.succeeded` y `refund.failed` de tus [webhooks](/docs/desarrolladores/herramientas/webhooks), igual que cualquier otro reembolso.
@@ -95,7 +96,7 @@ El reembolso se procesa **automáticamente** en cuanto lo confirmas — no requi
 
 ### SPEI
 
-En Cord, el flujo de reembolso SPEI requiere una transferencia manual del negocio. Solicitarlo en el panel no devuelve el dinero por sí solo:
+En Ingresos › Cobros, el reembolso SPEI de una **cotización** requiere una transferencia manual del negocio. Solicitarlo en el panel no devuelve el dinero por sí solo (el SPEI de una **factura** se devuelve a la cuenta que indique tu cliente: ver [Qué permite cada método](#qué-permite-cada-método)):
 
 1. Se registra en Cord como "reembolso pendiente, manual".
 2. Cord crea automáticamente una tarea en tu lista de pendientes recordándote transferir el monto de vuelta al cliente.

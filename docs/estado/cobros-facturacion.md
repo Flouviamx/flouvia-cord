@@ -256,7 +256,8 @@ depende de la configuración de correos de Connect de la plataforma (no
 verificado). La factura no tiene "Enviar a mi correo" para las instrucciones:
 el correo de la factura ya lleva su link.
 
-**9. Reembolsar un pago SPEI de factura (no construido aquí).** Stripe lo admite
+**9. Reembolsar un pago SPEI de factura** (construido después, en "Reembolso del
+pago de una factura desde Cord": a la cuenta bancaria del cliente). Stripe lo admite
 hasta 180 días: a la cuenta bancaria del cliente (el reembolso nace en
 `requires_action` mientras Stripe le pide sus datos por correo; si no los da en
 45 días pasa a `failed` y el dinero vuelve a su saldo; se puede cancelar
@@ -310,8 +311,9 @@ leía por webhook. Código en `src/lib/cobros/reembolsos.ts` (dinero) y
 - **Los límites del proveedor se dicen ANTES** (`evaluarReembolso`, pura):
   tarjeta total o parcial; SEPA total o parcial y hasta 180 días; ACH **solo
   completo** y hasta 180 días (de un cobro agrupado ACH solo el cobro entero);
-  un intento que el proveedor no da por `succeeded` no se reembolsa;
-  `customer_balance` (SPEI) todavía no; otro método, no. Verificado el
+  SPEI (`customer_balance`) total o parcial y hasta 180 días, solo si hay correo
+  del cliente; un intento que el proveedor no da por `succeeded` no se
+  reembolsa; otro método, no. Verificado el
   2026-10-10 en docs.stripe.com/payments/ach-direct-debit ("Partial refunds ✗,
   Full refunds ✓", 180 días, hasta 3 días hábiles) y /payments/sepa-debit
   (parciales sí, 180 días, 3–4 días hábiles). Un débito todavía en proceso no
@@ -362,19 +364,26 @@ leía por webhook. Código en `src/lib/cobros/reembolsos.ts` (dinero) y
   reembolso es una devolución de la venta (un cobro duplicado no cambia lo
   facturado). El diálogo lo dice y el detalle lo recuerda mientras
   `amount_refunded > amount_credited` en un CFDI timbrado.
-- **SPEI (pendiente, otro frente).** Un pago `customer_balance` se bloquea con
-  `transferencia`. Para cablearlo: Stripe reembolsa un pago por transferencia
-  con `POST /v1/refunds` (`payment_intent`, `instructions_email` opcional); el
-  reembolso nace `requires_action` hasta que el cliente da su cuenta (Stripe le
-  escribe al correo del Customer, que es obligatorio), luego `pending` y
-  `succeeded`; a los 45 días sin cuenta pasa a `failed` y el dinero vuelve al
-  saldo del cliente en Stripe. Hasta 180 días después del cobro
-  (docs.stripe.com/payments/customer-balance/refunding, consultado el
-  2026-10-10). El ledger ya acepta `requires_action`; faltaría quitar el
-  bloqueo en `reglaMetodo` y decir en la UI que el cliente recibirá un correo.
+- **SPEI de una factura** (pago `metodo = 'spei'` de "SPEI con CLABE en
+  facturas"; se identifica por su PaymentIntent, el `metodo` solo es pista del
+  tipo si el cargo no lo trae). Se reembolsa con `POST /v1/refunds` a la cuenta
+  bancaria del cliente: el proveedor le pide sus datos por correo (el del
+  Customer; si no tiene, `instructions_email` con el correo del cliente de la
+  factura; sin ninguno se bloquea con `sin_correo` antes de enviar). Nace
+  `requires_action`: reserva el monto, NO reabre el saldo (solo `succeeded`
+  cuenta), el historial dice "solicitado" y el aviso al usuario dice que el
+  cliente recibirá un correo. A los 45 días sin datos pasa a `failed`: la
+  transición se anota ("no se completó"), la reserva se libera y el dinero
+  queda en el saldo del cliente dentro de la cuenta conectada; las docs dicen
+  "escríbenos para devolverlo". No se usa el reembolso al saldo del cliente
+  (inmediato): el dinero no le llegaría. No hay botón para cancelar un
+  reembolso en espera (el proveedor lo permite; no se construyó). Es distinto
+  del SPEI de una COTIZACIÓN, que sigue siendo la tarea de transferencia manual
+  de Ingresos › Cobros (docs.stripe.com/payments/customer-balance/refunding,
+  consultado el 2026-10-10).
 - **Verificación:** `test/factura-reembolso-db.test.ts` (PGlite + proveedor
   simulado: total, parcial, ACH, plazo, agrupado, idempotencia, webhook antes y
-  después, Mercado Pago, transiciones), `test/factura-reembolso-ruta.test.ts`
+  después, SPEI en espera, completado y fallido, Mercado Pago, transiciones), `test/factura-reembolso-ruta.test.ts`
   (permiso, reautenticación, rate limit, mensajes), `test/mercadopago-reembolso-cotizacion.test.ts`
   y `npm run security:payments`, que ahora reconoce los reembolsos de Mercado
   Pago (`/v1/payments/…/refunds`, `createMpRefund`).

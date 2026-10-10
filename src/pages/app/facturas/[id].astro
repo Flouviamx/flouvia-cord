@@ -221,8 +221,8 @@ const tasas = jurisdicciones ? jurisdicciones.filter((r) => r.impuesto !== 0).ma
 const tieneManuales = !!f?.pagos.some((p) => !p.enLinea);
 const cfdiVigente = muestraClavesSat && !f?.simulado;
 const avisoCfdi = cfdiVigente && !!f && f.reembolsado > 0 && f.acreditado < f.reembolsado;
-const BLOQUEOS = ['manual', 'cotizacion', 'transferencia', 'metodo', 'no_confirmado', 'plazo', 'reembolsado', 'pendiente_registro', 'sin_cuenta', 'proveedor'] as const;
-const METODOS_REEMBOLSO = ['card', 'link', 'sepa_debit', 'us_bank_account', 'mercadopago'] as const;
+const BLOQUEOS = ['manual', 'cotizacion', 'sin_correo', 'metodo', 'no_confirmado', 'plazo', 'reembolsado', 'pendiente_registro', 'sin_cuenta', 'proveedor'] as const;
+const METODOS_REEMBOLSO = ['card', 'link', 'sepa_debit', 'us_bank_account', 'customer_balance', 'mercadopago'] as const;
 const REFUND_T = {
     cargando: t(L, 'frefund.cargando'),
     disponible: t(L, 'frefund.disponible'),
@@ -231,6 +231,7 @@ const REFUND_T = {
     achCobro: t(L, 'frefund.ach_cobro'),
     ok: t(L, 'frefund.ok'),
     okEnCurso: t(L, 'frefund.ok_en_curso'),
+    okEsperaCuenta: t(L, 'frefund.ok_espera_cuenta'),
     error: t(L, 'frefund.error'),
     fiscal: cfdiVigente ? t(L, 'frefund.fiscal_cfdi') : t(L, 'frefund.fiscal_general'),
     bloqueos: Object.fromEntries(BLOQUEOS.map((code) => [code, t(L, `frefund.bloq.${code}` as any)])),
@@ -1210,7 +1211,9 @@ const EINV_FIX: Record<string, { href: string; es: string; en: string }> = {
                         return;
                     }
                     refundModal.close();
-                    (window as any).cordToast?.(data.status === 'succeeded' ? RT.ok : RT.okEnCurso, 'ok', 3200);
+                    // SPEI espera a que el cliente dé su cuenta: se dice tal cual, no "registrado".
+                    const aviso = data.status === 'succeeded' ? RT.ok : data.status === 'requires_action' ? RT.okEsperaCuenta : RT.okEnCurso;
+                    (window as any).cordToast?.(aviso, 'ok', 4200);
                     setTimeout(() => location.reload(), 900);
                 } catch {
                     fallarReembolso(RT.error);
