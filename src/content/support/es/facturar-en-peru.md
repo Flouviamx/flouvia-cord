@@ -23,6 +23,7 @@ En Perú la factura electrónica se envía a **SUNAT**, que responde con una con
 | Hoy, cualquier plan | Factura comercial (sin validez fiscal). |
 | Con SUNAT activo (Starter o superior), cliente con RUC | Factura electrónica (01) en tu serie `F###`. |
 | Cliente del exterior | Factura de exportación (operación 0200 bienes o 0201 servicios). |
+| Con SUNAT activo, en Gratis o eligiendo **Factura comercial** | Proforma con serie `PRO`: sirve para cobrar, pero no es un comprobante electrónico. |
 | Corrección | Nota de crédito (07) en la misma serie, con su propia numeración. |
 
 ## Qué vas a necesitar

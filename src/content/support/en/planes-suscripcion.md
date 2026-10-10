@@ -46,7 +46,7 @@ The annual price equals ten monthly payments and is billed yearly. Overage is ca
 | Developer | Unlimited | 1,000 | Unlimited | 50,000 | Unlimited | Unlimited | 150 |
 
 - **Tax-compliant invoices:** CFDI 4.0 in Mexico, and in the countries whose tax-authority registration Cord turns on for your account. Each CFDI counts once, including payment complements, credit notes and the global invoice. See [Invoicing by country](/en/support/category/facturacion-por-pais).
-- **Commercial invoices:** the invoice in the other markets and the pro forma in Mexico and Spain. Creating drafts, downloading and resending do not consume another unit; test documents do not consume.
+- **Commercial invoices:** the invoice in the other markets and the pro forma in Mexico, in Spain and in countries whose e-invoicing is already active on your account. Creating drafts, downloading and resending do not consume another unit; test documents do not consume.
 - **Invoices with automatic sales tax:** United States only, each issued invoice or paid quote recorded in a state where you collect. See [Automatic sales tax](/en/support/sales-tax-automatico).
 - **Quote sends:** Free's cap of 5 per month has no overage to bypass it; it renews on the first day of the month (UTC).
 
@@ -104,7 +104,7 @@ A charge receipt and a fiscal invoice are different documents. For an invoice fo
 
 ## Commercial and fiscal documents
 
-Each type has its own allowance. Mexico and Spain use clearly labeled **pro formas** for the commercial option; they do not replace tax invoices. Integrated fiscal issuance requires Starter or above, a configured issuer and the country's registration enabled: paying for a plan does not enable it by itself. In Spain, Argentina, Brazil, Chile, Colombia, Peru and France, registration with the tax authority is being turned on.
+Each type has its own allowance. Mexico, Spain and any country whose e-invoicing is already active use clearly labeled **pro formas** (`PRO` series) for the commercial option; they do not replace tax invoices. Integrated fiscal issuance requires Starter or above, a configured issuer and the country's registration enabled: paying for a plan does not enable it by itself. In Spain, Argentina, Brazil, Chile, Colombia, Peru and France, registration with the tax authority is being turned on.
 
 A successful commercial issuance consumes one unit, just like a fiscal issuance. An uncertain issuance keeps its reservation until its result is reviewed. Reaching the limit does not disable existing document downloads or payments. Changing plans does not convert issued documents. New fiscal issuance after a downgrade requires an eligible plan.
 

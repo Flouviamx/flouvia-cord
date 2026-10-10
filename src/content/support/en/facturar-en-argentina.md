@@ -22,6 +22,7 @@ In Argentina every invoice must be authorized by **ARCA**, which assigns its num
 |---|---|
 | Today, any plan | Commercial invoice (no tax validity). |
 | With ARCA active (Starter or above) | Invoice A, B or C with CAE, its expiry and the ARCA QR code. |
+| With ARCA active, on Free or choosing **Commercial invoice** | Pro forma with the `PRO` series: it is used to collect, but it is not a valid document before ARCA. |
 | Correction | Credit note of the same class, associated with the invoice. |
 
 On a **B** invoice the PDF prints the tax transparency legend; to a final consumer, "A CONSUMIDOR FINAL"; on an **A** to a monotributista, the legend about their tax credit.

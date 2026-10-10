@@ -23,6 +23,7 @@ In Brazil the tax-valid invoice is the **NFS-e** for services (issued by the nat
 | Today, any plan | Commercial invoice (no tax validity). |
 | With the NFS-e active (Starter or above) | National-standard NFS-e, one service per note. |
 | With the NF-e active (Starter or above) | NF-e model 55 with its DANFE. |
+| With the NFS-e or the NF-e active, on Free or choosing **Commercial invoice** | Pro forma with the `PRO` series: it is used to collect, but it is not a tax note. |
 | Invoice mixing products and services | Not issued: it must be split. |
 
 Cord decides which note applies from the items: if all are products with their NF-e data it goes to the NF-e; if none are, to the NFS-e.

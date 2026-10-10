@@ -21,6 +21,7 @@ In Colombia the electronic sales invoice needs **prior validation by the DIAN**.
 |---|---|
 | Today, any plan | Commercial invoice (no tax validity). |
 | With the DIAN active (Starter or above) | Electronic sales invoice with CUFE and QR code. |
+| With the DIAN active, on Free or choosing **Commercial invoice** | Pro forma with the `PRO` series: it is used to collect, but it is not an electronic sales invoice. |
 | Correction | Credit note with CUDE, linked to the invoice. |
 
 ## What you will need

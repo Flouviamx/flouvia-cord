@@ -23,6 +23,7 @@ En Chile la factura con validez tributaria es un **Documento Tributario Electró
 | Hoy, cualquier plan | Factura comercial (sin validez tributaria). |
 | Con el SII activo, conceptos afectos | Factura electrónica (33) con timbre electrónico y copia cedible. |
 | Con el SII activo, todos los conceptos exentos | Factura no afecta o exenta (34). |
+| Con el SII activo, en Gratis o eligiendo **Factura comercial** | Proforma con serie `PRO`: sirve para cobrar, pero no es un documento tributario. |
 | Corrección de montos o anulación | Nota de crédito (61). |
 | Cargo adicional o anulación de una nota de crédito | Nota de débito (56). |
 

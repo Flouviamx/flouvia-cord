@@ -21,6 +21,7 @@ En Colombia la factura electrónica de venta necesita la **validación previa de
 |---|---|
 | Hoy, cualquier plan | Factura comercial (sin validez fiscal). |
 | Con la DIAN activa (Starter o superior) | Factura electrónica de venta con CUFE y QR. |
+| Con la DIAN activa, en Gratis o eligiendo **Factura comercial** | Proforma con serie `PRO`: sirve para cobrar, pero no es una factura electrónica de venta. |
 | Corrección | Nota crédito con CUDE, ligada a la factura. |
 
 ## Qué vas a necesitar

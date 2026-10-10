@@ -22,6 +22,7 @@ En Argentina cada factura debe autorizarla **ARCA**, que le asigna su número y 
 |---|---|
 | Hoy, cualquier plan | Factura comercial (sin validez fiscal). |
 | Con ARCA activo (Starter o superior) | Factura A, B o C con CAE, su vencimiento y el QR de ARCA. |
+| Con ARCA activo, en Gratis o eligiendo **Factura comercial** | Proforma con serie `PRO`: sirve para cobrar, pero no es un comprobante válido ante ARCA. |
 | Corrección | Nota de crédito de la misma clase, asociada a la factura. |
 
 En una factura **B** el PDF imprime la leyenda de transparencia fiscal; a consumidor final, "A CONSUMIDOR FINAL"; en una **A** a un monotributista, la leyenda de su crédito fiscal.

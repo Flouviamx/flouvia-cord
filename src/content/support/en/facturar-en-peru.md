@@ -23,6 +23,7 @@ In Peru the electronic invoice is sent to **SUNAT**, which answers with a receip
 | Today, any plan | Commercial invoice (no tax validity). |
 | With SUNAT active (Starter or above), client with a RUC | Electronic invoice (01) in your `F###` series. |
 | Client abroad | Export invoice (operation 0200 goods or 0201 services). |
+| With SUNAT active, on Free or choosing **Commercial invoice** | Pro forma with the `PRO` series: it is used to collect, but it is not an electronic document. |
 | Correction | Credit note (07) in the same series, with its own numbering. |
 
 ## What you will need

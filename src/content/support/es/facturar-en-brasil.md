@@ -23,6 +23,7 @@ En Brasil la factura con validez fiscal es la **NFS-e** para servicios (la gener
 | Hoy, cualquier plan | Factura comercial (sin validez fiscal). |
 | Con la NFS-e activa (Starter o superior) | NFS-e de Padrão Nacional, un servicio por nota. |
 | Con la NF-e activa (Starter o superior) | NF-e modelo 55 con su DANFE. |
+| Con la NFS-e o la NF-e activa, en Gratis o eligiendo **Factura comercial** | Proforma con serie `PRO`: sirve para cobrar, pero no es una nota fiscal. |
 | Factura que mezcla productos y servicios | No se emite: hay que dividirla. |
 
 Cord decide qué nota corresponde por los conceptos: si todos son productos con sus datos de NF-e va a la NF-e; si ninguno lo es, a la NFS-e.

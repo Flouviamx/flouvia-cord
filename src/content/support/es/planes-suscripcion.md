@@ -46,7 +46,7 @@ El precio anual equivale a diez mensualidades y se cobra por año. Los excedente
 | Developer | Ilimitados | 1,000 | Ilimitadas | 50,000 | Ilimitados | Ilimitados | 150 |
 
 - **Facturas con validez fiscal:** CFDI 4.0 en México, y en los países cuyo registro ante la autoridad Cord active para tu cuenta. Cada CFDI cuenta una vez, también los complementos de pago, las notas de crédito y la factura global. Ver [Facturación por país](/soporte/categoria/facturacion-por-pais).
-- **Facturas comerciales:** la factura de los demás mercados y la proforma de México y España. Crear borradores, descargar y reenviar no consume otra unidad; los documentos de prueba no consumen.
+- **Facturas comerciales:** la factura de los demás mercados y la proforma de México, de España y de los países cuya factura electrónica ya está activa en tu cuenta. Crear borradores, descargar y reenviar no consume otra unidad; los documentos de prueba no consumen.
 - **Facturas con sales tax automático:** solo en Estados Unidos, cada factura emitida o cotización cobrada que se registra en un estado donde recaudas. Ver [Sales tax automático](/soporte/sales-tax-automatico).
 - **Envíos de cotizaciones:** el tope de 5 al mes de Gratis no tiene excedente que lo salte; se renueva el primer día del mes (UTC).
 
@@ -104,7 +104,7 @@ El recibo del cargo y la factura fiscal son distintos. Para facturar un pago en 
 
 ## Documentos comerciales y fiscales
 
-Cada tipo tiene su propia cuota. La opción comercial de México y España genera **proformas** identificadas; no sustituyen facturas fiscales. La emisión fiscal integrada requiere Starter o superior, el emisor configurado y el registro del país habilitado: pagar el plan no lo habilita por sí solo. En España, Argentina, Brasil, Chile, Colombia, Perú y Francia, el registro ante la autoridad está en activación.
+Cada tipo tiene su propia cuota. La opción comercial de México, de España y de un país cuya factura electrónica ya está activa genera **proformas** identificadas (serie `PRO`); no sustituyen facturas fiscales. La emisión fiscal integrada requiere Starter o superior, el emisor configurado y el registro del país habilitado: pagar el plan no lo habilita por sí solo. En España, Argentina, Brasil, Chile, Colombia, Perú y Francia, el registro ante la autoridad está en activación.
 
 Una emisión comercial exitosa consume una unidad, igual que la fiscal. Una emisión incierta conserva su reserva hasta revisar el resultado. Alcanzar el límite no desactiva las descargas ni los pagos de documentos existentes. Cambiar de plan no transforma documentos emitidos. Una nueva emisión fiscal después de bajar de plan requiere recuperar un plan elegible.
 

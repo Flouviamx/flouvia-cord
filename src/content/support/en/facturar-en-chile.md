@@ -23,6 +23,7 @@ In Chile the tax-valid invoice is an **electronic tax document (DTE)** sent to t
 | Today, any plan | Commercial invoice (no tax validity). |
 | With the SII active, taxable items | Electronic invoice (33) with electronic stamp and assignable copy. |
 | With the SII active, all items exempt | Non-taxable or exempt invoice (34). |
+| With the SII active, on Free or choosing **Commercial invoice** | Pro forma with the `PRO` series: it is used to collect, but it is not a tax document. |
 | Amount correction or cancellation | Credit note (61). |
 | Additional charge or cancellation of a credit note | Debit note (56). |
 
