@@ -118,8 +118,8 @@ export const COMPARATIVA_EN: CompareGroup[] = [
         rows: [
             { label: 'Sent quotes', free: '5 / mo', starter: 'Unlimited', pro: 'Unlimited', scale: 'Unlimited', developer: 'Unlimited' },
             { label: 'AI quote generation', free: '3 / mo', starter: '20 / mo', pro: '50 / mo', scale: '500 / mo', developer: 'Unlimited' },
-            { label: 'Commercial invoices', free: '10 / mo', starter: 'Unlimited', pro: 'Unlimited', scale: 'Unlimited', developer: 'Unlimited', hint: 'In Mexico and Spain the commercial document is a pro forma.' },
-            { label: 'Tax-compliant invoices', free: false, starter: '30 / mo', pro: '200 / mo', scale: '500 / mo', developer: '1,000 / mo', hint: 'CFDI 4.0 in Mexico; VERI*FACTU in Spain once activation is complete. In other markets Cord issues a commercial invoice and does not file with other tax authorities.' },
+            { label: 'Commercial invoices', free: '10 / mo', starter: 'Unlimited', pro: 'Unlimited', scale: 'Unlimited', developer: 'Unlimited', hint: 'In Mexico, in Spain and wherever the country\'s e-invoicing is active, the commercial document is a pro forma.' },
+            { label: 'Tax-compliant invoices', free: false, starter: '30 / mo', pro: '200 / mo', scale: '500 / mo', developer: '1,000 / mo', hint: 'CFDI 4.0 in Mexico; VERI*FACTU in Spain and e-invoicing in Argentina, Brazil, Chile, Colombia and Peru once activation is complete. Their credit notes and payment complements also count; test documents with the authority do not.' },
             { label: 'Public API calls', free: '100 / mo', starter: '1,000 / mo', pro: '5,000 / mo', scale: '10,000 / mo', developer: '50,000 / mo' },
             { label: 'Invoices with automatic sales tax', free: false, starter: '10 / mo', pro: '25 / mo', scale: '60 / mo', developer: '150 / mo', hint: US_TAX_HINT_EN },
         ],
@@ -164,7 +164,7 @@ export const COMPARATIVA_EN: CompareGroup[] = [
     {
         titulo: 'Tax and Multi-currency',
         rows: [
-            { label: 'Integrated fiscal issuance', free: false, starter: true, pro: true, scale: true, developer: true, hint: 'CFDI 4.0 in Mexico with a configured issuer. VERI*FACTU in Spain requires activation and validation. No universal tax compliance promise.' },
+            { label: 'Integrated fiscal issuance', free: false, starter: true, pro: true, scale: true, developer: true, hint: 'CFDI 4.0 in Mexico with a configured issuer. VERI*FACTU in Spain, e-invoicing in Argentina, Brazil, Chile, Colombia and Peru, and issuing through an approved platform in France are being activated: each one is switched on per country and requires the business to enroll with its authority or platform. No universal tax compliance promise.' },
             { label: 'Your own CSD (digital seal, Mexico)', free: false, starter: true, pro: true, scale: true, developer: true },
             { label: 'Exchange rate locked at quote time', free: true, starter: true, pro: true, scale: true, developer: true },
         ],
@@ -272,7 +272,7 @@ export const FAQ_PRECIOS_EN: { q: string; a: string }[] = [
     },
     {
         q: 'How does e-invoicing work?',
-        a: 'There are two kinds of invoice. Commercial invoices (pro formas in Mexico and Spain) are on every plan: 10 per month on Free and unlimited from Starter. Tax-compliant invoices start at Starter with 30 per month; Professional includes 200 and Scale 500. Today Cord issues CFDI 4.0 in Mexico, and VERI*FACTU in Spain requires completed activation. In other markets Cord issues the commercial invoice and does not file with other tax authorities. A pro forma does not replace a CFDI.',
+        a: 'There are two kinds of invoice. Commercial invoices (pro formas in Mexico, in Spain and wherever the country\'s e-invoicing is active) are on every plan: 10 per month on Free and unlimited from Starter. Tax-compliant invoices start at Starter with 30 per month; Professional includes 200 and Scale 500, and credit notes and payment complements also count toward that allowance. Today Cord issues CFDI 4.0 in Mexico. VERI*FACTU in Spain and e-invoicing in Argentina (ARCA), Brazil (NFS-e and NF-e), Chile (SII), Colombia (DIAN) and Peru (SUNAT) are built and are being activated country by country; until they are active for your account, Cord issues the commercial invoice and does not file it with the authority. Issuing through an approved platform in France is also being activated. A pro forma does not replace the tax document.',
     },
     {
         q: 'What happens after my 5 free sends?',
