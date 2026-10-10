@@ -1,39 +1,147 @@
 ---
 title: "Credit terms"
-seoTitle: "Net 30 and Net 60 credit terms in Cord"
-description: "Discover how Net 30 and Net 60 terms intelligently block early payments and trigger collections upon due dates."
-lastUpdated: "2026-10-07"
+seoTitle: "Credit terms in Cord: from Net 7 to Net 90"
+description: "How credit terms work in Cord: Due on receipt and Net 7, 15, 30, 45, 60, or 90; where they're set, how the due date is calculated, what your client sees on approval, and when online payment opens."
+lastUpdated: "2026-10-10"
 reviewedBy: "Cord product and operations"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
-prerequisites: ["Quote with Net 30 or Net 60 terms", "Active Cord Payments or Mercado Pago to collect online on the due date"]
+prerequisites: ["Quote with a credit term (Net 7 to Net 90)", "Active Cord Payments or Mercado Pago to collect online on the due date"]
 ---
 
 <header class="content-header">
-  <h1 class="page-title">Credit terms (Net 30/60)</h1>
-  <p class="page-subtitle">Discover how Net 30 and Net 60 terms intelligently block early payments and trigger collections upon due dates.</p>
+  <h1 class="page-title">Credit terms</h1>
+  <p class="page-subtitle">Your client approves today and pays on the agreed date. Cord separates approval from payment and opens payment when the due date arrives.</p>
 </header>
 
-## Trade credit and the public link
+## What they are
 
-In many sales it is common that the client does not pay on the same day they approve the quote, but rather negotiates a credit term of 30 or 60 days (Net 30/60).
+A **credit term** is the time you give your client to pay after approving. In Cord it's
+expressed as **Net N**: N calendar days counted from approval. With **Due on receipt**,
+payment is available as soon as the client approves.
 
-When you select a credit term in Cord, the system **intelligently blocks the ability to pay upfront** so as not to confuse the client or violate their corporate accounts payable policies.
+When a quote carries a credit term, the public link **doesn't offer to pay upfront**: the
+client approves, sees the date their payment is due, and the pay button only appears when
+that date arrives.
 
-### The credit approval flow
+## Available terms
 
-1. You send the quote with "Net 30" terms.
-2. The client opens the link. Instead of a button that says "Approve and Pay", they will see a button that simply says **"Approve document"**.
-3. Upon approval, no card or SPEI form is displayed. Instead, the system shows a success message: **"Order confirmed with Net 30 credit — due on [Calculated Date]"**.
-4. That's it! The quote switches to "Approved" status and you can deliver the service or product.
+| Term | Days | Where it appears when quoting |
+|---|---:|---|
+| **Due on receipt** | 0 | Quick option |
+| **Net 15** | 15 | Quick option |
+| **Net 30** | 30 | Quick option |
+| **Net 60** | 60 | Quick option |
+| **Net 7** | 7 | Under **Other term** |
+| **Net 45** | 45 | Under **Other term** |
+| **Net 90** | 90 | Under **Other term** |
 
-## Automatic payment enablement
+They're the same seven terms in the app, the [API](/en/docs/desarrolladores/funciones/cotizaciones)
+(`contado`, `net7`, `net15`, `net30`, `net45`, `net60`, `net90`), the MCP server, and the
+integrations. In a Spanish-language account, Due on receipt is called **Contado**.
 
-Cord calculates the due date by adding the credit days to the exact date the client approved the document.
+## Where the term is set
 
-Once the due date arrives:
-1. The public link of the quote **automatically mutates**.
-2. The "credit" message disappears and in its place, the payment component is revealed, with the methods available on your account.
-3. If you have the Artificial Intelligence Collection Agent activated (available on Pro, Scale, and Developer plans), the system will detect that the credit has expired and will send an automatic, polite email to the client, including the payment link which is now active for collection.
+Cord picks the term for a new quote in this order:
 
-This flow separates commercial approval from collection time and enables payment when the calculated date arrives. Method availability still depends on country, Cord Payments, and the connected account's status.
+1. **The one you choose when quoting**, in **Who are you quoting?**. It always wins.
+2. **The one on the client's profile** (the **Terms** field), which Cord preselects when you
+   pick them. See [Clients](/en/docs/gestion/clientes).
+3. **Your account's**, in **Settings › Quotes › Numbering & tax**, field **Default payment
+   terms**.
+
+If the client has no term of their own and you change nothing, the quote starts with your
+account's default term.
+
+## How the due date is calculated
+
+The due date is the **approval date plus the term's days**. If the quote isn't approved yet,
+Cord counts from its creation date. The same calculation is used by the public link,
+[receivables and collections](/en/docs/pagos/cartera-cobranza), the
+[reminders](/en/docs/pagos/recordatorios), so they all see the same day.
+
+Example: your client approves with **Net 30** on October 12, 2026; payment is due on
+November 11, 2026.
+
+## What your client sees
+
+1. You send the quote with, for example, **Net 30**.
+2. Your client opens the link and sees the **Approve quote** button, the same as with Due on
+   receipt.
+3. On approval, the link shows **Quote approved** and, instead of the payment form, the notice
+   **Order confirmed with Net 30 credit** with the line "The payment of [total] is due on
+   [date]".
+4. Below it, Cord tells them how they'll pay:
+   - if you collect online, "Once the date arrives you'll be able to pay online from this same link";
+   - if not, "Coordinate payment directly with the seller".
+
+The quote becomes **Approved** and you can deliver the product or service.
+
+### When the due date arrives
+
+On the due date, the same link stops showing the credit notice and shows the pay button
+with the methods you have active (see [Payment methods](/en/docs/pagos/metodos)). Before that
+date, the quote's payment page sends the client back to the link, which explains when it's due.
+
+### With a deposit
+
+If the quote asks for a [deposit](/en/docs/pagos/anticipos), your client pays it on approval
+and the **balance** is due on the term's date. The link shows the payment plan with the
+balance marked "Due on [date]" until the day comes.
+
+### Invoices
+
+An **invoice** can be paid as soon as you issue it: its due date marks when reminders and
+collections start, not when payment opens. The invoice for a quote on credit is born with
+the **same due date** (approval plus the term's days) and, from then on, that due date
+lives on the invoice. A new invoice without a quote proposes the due date from the term you
+choose when creating it. In Mexico, an invoice on credit that isn't paid yet is stamped as
+**PPD** (see [Invoicing and CFDI](/en/docs/pagos/facturacion)).
+
+## Follow-up at the due date
+
+- **Automatic reminders**, on every plan: your client gets a notice three days before the
+  due date and another on the day it's due. See [Reminders](/en/docs/pagos/recordatorios).
+- **Notice to your team**: the day after the due date, if it's still unpaid, Cord alerts you
+  with the payment overdue notification. See [Notifications](/en/docs/gestion/notificaciones).
+- **[AI collections](/en/docs/pagos/cobranza-ia)**, from the Professional plan: if you turn
+  it on, the agent includes the overdue account in its daily review and drafts the email with
+  the payment link.
+- **Late interest**: automatic application is suspended while the legal review by country
+  concludes and generates no charges today. See [Receivables and follow-up](/en/docs/pagos/cartera-cobranza).
+
+## Credit limit
+
+Each client can have a **credit limit**. It's a signal, not a block: Cord shows you how much
+open balance they carry against that limit on their profile and in Collections, but it doesn't
+stop you from quoting them more.
+
+## Limits
+
+- The term counts calendar days, not business days.
+- A [recurring retainer](/en/docs/pagos/igualas) only exists with Due on receipt: with a
+  credit term, the retainer switch disappears.
+- Online payment on the due date depends on your country and on your
+  [Cord Payments](/en/docs/pagos/onboarding) or [Mercado Pago](/en/docs/pagos/mercado-pago)
+  account being active.
+
+## Troubleshooting
+
+**My client approved and doesn't see the pay button.** That's expected with a credit term:
+the button appears on the due date. If you need to collect sooner, issue them an invoice or
+switch the quote to Due on receipt before sending it.
+
+**The due date landed on a different day than I expected.** It's counted from the approval
+date, not from when you sent it. Check the approval date in the quote's timeline.
+
+**I want a term that isn't on the list, like Net 120.** Today the terms are the seven on this
+page. For a different arrangement, use [installments](/en/docs/pagos/cuotas) or set the due
+date directly on the invoice.
+
+## Related
+
+- [Advanced quote options](/en/docs/cotizacion/opciones)
+- [Deposits](/en/docs/pagos/anticipos)
+- [How your client accepts and pays](/en/docs/pagos/aceptar)
+- [Automatic reminders](/en/docs/pagos/recordatorios)
+- [Receivables and follow-up](/en/docs/pagos/cartera-cobranza)

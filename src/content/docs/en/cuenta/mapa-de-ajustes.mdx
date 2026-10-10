@@ -1,7 +1,7 @@
 ---
 title: "Complete Settings map"
 description: "Reference for every Settings category and tab in Cord: your account, general, brand, team, notifications, plans, advanced, quotes, invoicing, payments, integrations, and developer options."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-10"
 reviewedBy: "Cord product and operations"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -102,10 +102,16 @@ and access to Billing for your card, receipts and invoices. Guide:
 | Tab | What it contains | Plan |
 |---|---|---|
 | **Numbering & tax** (outside Mexico, **Numbering & taxes**) | Number prefix and series, validity, payment terms, deposit and default legal text. | All |
-| **Taxes** | Rate catalog with name, type (consumption, withholding or exempt) and rate, and whether your prices include tax. Guide: [Products and discounts](/en/docs/cotizacion/productos). | All |
+| **Taxes** | Rate catalog with name, type (consumption, withholding or exempt) and rate, and whether your prices include tax. Guide: [Products and pricing](/en/docs/cotizacion/productos). | All |
 | **PDF document** | Minimal, Classic or Detailed template, footer message, terms and line-item listing. | All |
 | **Approvals** | Internal thresholds for maximum discount, maximum amount and minimum margin. Any late-interest rate shown here is suspended: it generates no new charges. Guide: [Credit terms](/en/docs/pagos/credito). | Scale or Developer |
 | **Templates** | Reference texts for email, WhatsApp or notes with variables such as `{cliente}`, `{folio}`, `{total}` and `{link}`. For now the send buttons use their own text. | All |
+
+### Discounts
+
+| Tab | What it contains | Plan |
+|---|---|---|
+| **Coupons** | Discount codes by percentage or fixed amount, with validity dates, currency, total and per-client usage caps, and a switch to pause them. Creating, editing, or deleting requires the Settings permission. Guide: [Discounts and coupons](/en/docs/cotizacion/descuentos). | All |
 
 ### Invoicing
 
@@ -118,11 +124,12 @@ the sidebar. Guides: [Add tax information (CSD)](/en/docs/cuenta/csd) and
 ### Payments
 
 **Payments:** connect Cord Payments and complete your account verification, choose
-methods (card; SPEI only in Mexico), review fees and manage the payout account (changing
+methods (card; SPEI only in Mexico; SEPA debit in Spain, Germany and France, and ACH in
+the United States), decide whether your clients can turn on **automatic payments**, review fees and manage the payout account (changing
 it requires recent authentication and the Payment configuration permission). In Mexico
 and Brazil you can also connect Mercado Pago; in Colombia, Argentina, Chile and Peru it is
 the way to collect online. Guides: [Connect account (KYC)](/en/docs/pagos/onboarding),
-[Payment methods](/en/docs/pagos/metodos) and [Mercado Pago](/en/docs/pagos/mercado-pago).
+[Payment methods](/en/docs/pagos/metodos), [Automatic payments](/en/docs/pagos/cobro-automatico) and [Mercado Pago](/en/docs/pagos/mercado-pago).
 
 ### Integrations
 
@@ -141,7 +148,7 @@ direct URL works even when the mode is off.
 | Category | What it contains | Plan |
 |---|---|---|
 | **MCP** | Configuration to connect an AI assistant to Cord through the MCP server. Guide: [MCP Server](/en/docs/desarrolladores/herramientas/mcp). | All |
-| **Artificial intelligence** | Status of **AI collections** (Off, On · with your approval or On · automatic) and connections to your other systems that the AI can look up when quoting. Guide: [Autonomous collections (AI)](/en/docs/pagos/cobranza-ia). | AI collections and agent governance on Scale or Developer |
+| **Artificial intelligence** | Status of **AI collections** (Off, On · with your approval or On · automatic) and connections to your other systems that the AI can look up when quoting. Guide: [Autonomous collections (AI)](/en/docs/pagos/cobranza-ia). | AI collections from Professional; agent governance on Scale or Developer |
 | **Embeddable quote builder** | Preview, allowed domains and code to embed the quote builder on your site. Guide: [Cord Elements](/en/docs/desarrolladores/herramientas/elements/resumen). | All |
 
 API keys, webhooks, logs and events are not in Settings: they live in

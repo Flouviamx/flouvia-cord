@@ -2,7 +2,7 @@
 title: "Datos del cliente"
 seoTitle: "Datos del cliente en una cotización"
 description: "Elige o crea al cliente de una cotización, aplica su nivel de precio y sus términos, y completa la información fiscal que necesitará la factura."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-10"
 reviewedBy: "Producto y operaciones de Cord"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -65,11 +65,11 @@ no cambia y puedes ajustar el negociado de cualquier línea a mano.
 - **Empresa** (obligatorio): el nombre del cliente. También es el nombre del receptor en su factura; escríbelo como aparece en sus documentos fiscales.
 - **Contacto:** la persona que decide.
 - **Correo:** a dónde se envía el link al mandar la cotización desde Cord.
-- **Teléfono**, **Límite de crédito** y **Términos de pago** (Contado, Net 30 o Net 60) que se proponen al cotizarle.
+- **Teléfono**, **Límite de crédito** y **Términos de pago** (Contado o Net 7, 15, 30, 45, 60 o 90) que se proponen al cotizarle. Ver [Términos de crédito](/docs/pagos/credito).
 
 ### Fiscal
 
-- **Identificador fiscal:** la etiqueta se adapta al país del cliente: **RFC** en México, NIF/CIF en España, EIN/Tax ID en Estados Unidos, etc. Cord lo guarda en mayúsculas y sin espacios al inicio o al final; no valida su estructura.
+- **Identificador fiscal:** la etiqueta se adapta al país del cliente: **RFC** en México, NIF/CIF en España, EIN/Tax ID en Estados Unidos, etc. Cord valida su dígito de control con las reglas del país del cliente (o del tuyo, si no le asignas país) y lo guarda normalizado; uno que no pasa no se guarda y el mensaje dice qué revisar. Al editar, solo se vuelve a validar si cambias el identificador o el país.
 - **Dirección:** país, código postal, dirección, ciudad y estado o provincia, en la sección **Dirección**.
 
 Si el cliente es mexicano (o no le asignas país y tu negocio está en México), aparece
@@ -102,5 +102,5 @@ Si el cliente es mexicano (o no le asignas país y tu negocio está en México),
 ## Relacionadas
 
 - [Clientes y estado de cuenta](/docs/gestion/clientes)
-- [Productos y descuentos](/docs/cotizacion/productos)
+- [Productos y precios](/docs/cotizacion/productos)
 - [Aprobación y facturación](/docs/cotizacion/timbrado)

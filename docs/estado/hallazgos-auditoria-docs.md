@@ -12,14 +12,11 @@
 
 ## P0 — producción rota, dinero o privacidad
 
-1. **[verificado] El cron de recordatorios truena.** `src/pages/api/cron/recordatorios.ts:132`
-   usa `${origin}`, que no está declarado. En cuanto una cotización cumple un día
-   vencida, `ReferenceError` aborta la corrida **antes** de la escalera de
-   recordatorios de factura y de `invoice.overdue`. Arreglo: `siteOrigin()` de
-   `src/lib/email.ts` (patrón de `cron/expirar-cotizaciones.ts`).
-2. **[verificado] Mismo bug en el agente de cobranza.** `src/lib/agents/cobranza-run.ts`
-   (~406) llama `renderDigestEmail(..., origin)` sin `origin` declarado: el correo
-   resumen del modo aprobación falla después de guardar los borradores.
+2. **[verificado 10 oct] `origin` sin declarar en el agente de cobranza.**
+   `src/lib/agents/cobranza-run.ts` (~406) llama `renderDigestEmail(..., origin)` sin
+   `origin` declarado en `runCobranzaOrg`: el correo resumen del modo aprobación falla
+   después de guardar los borradores. Arreglo: `siteOrigin()` de `src/lib/email.ts`,
+   como ya hace `cron/recordatorios.ts`.
 3. **[verificado] Fuga de eventos internos al cliente.** Los eventos internos se
    guardan con `tipo = 'comment'`: "Solicitud de aprobación: …" (puede incluir el
    % de margen, `src/lib/cotizaciones.ts:415`), "Versión N creada" y "Borrador
@@ -27,10 +24,10 @@
    lee (`src/lib/queries.ts:1952`) y los pinta como mensajes del cliente (`:2075`);
    la campana los rotula "Nuevo mensaje del cliente". Usar un `tipo` interno
    propio y excluirlo de la conversación.
-4. **Cursor de `/api/v1/facturas` roto.** `next_cursor` es `String(Date)` (no ISO),
-   compara `created_at <` sin desempate por `id` (salta facturas del mismo
-   instante) y un cursor inválido no se valida (probable 500). `getFacturas` en
-   `src/lib/queries.ts`.
+4. **[verificado parcial 10 oct] Cursor de `/api/v1/facturas`.** `next_cursor` ya
+   sale en ISO (`creadoISO`), pero `getFacturas` (`src/lib/queries.ts`) sigue
+   comparando `created_at <` sin desempate por `id` (salta facturas del mismo
+   instante) y un cursor inválido no se valida (probable 500).
 5. **Approval de borradores de factura del agente.** La aprobación sólo busca en
    cotizaciones (404 para borradores sobre facturas) y un plan sobre factura
    insertaría un id de documento en una columna de cotización.
@@ -48,13 +45,18 @@
    tablero, "Guardar y enviar") los salta, incluso tras un rechazo.
 9. **"Aprobar y enviar" no envía el correo** al cliente (`approve_request` no
    llama `notifyQuoteSent`).
-10. **[verificado parcial] Duplicar cotización.** `src/pages/api/cotizaciones/[id]/duplicate.ts`
-    ya conserva la divisa, pero no copia `tax_rate`/`costo_unitario` por línea,
-    `iva_incluido`, anticipo, iguala ni retenciones; copia totales que ya no
-    cuadran; no tiene `requirePerm('cotizar')`; folio por max+1 (carrera) y el
-    límite de cotizaciones activas sólo lo atrapa el trigger (500 en vez de 402).
-11. **Importar clientes sin permiso.** `src/pages/api/clientes/import.ts` no tiene
-    `requirePerm('clientes')` (productos sí) ni captura el error de límite de plan.
+10. **[verificado 10 oct] Duplicar cotización pierde el descuento de documento.**
+    `src/pages/api/cotizaciones/[id]/duplicate.ts` ya pasa por `createCotizacion`
+    con `requirePerm('cotizar')` y copia tasa, costo, claves SAT, impuestos
+    incluidos, anticipo e iguala, pero no copia `descuento_def` (ni el cupón): la
+    copia sale sin el descuento sobre el subtotal. Las docs
+    (`cotizacion/descuentos`) lo dicen.
+11. **[verificado parcial 10 oct] Importar clientes y el límite del plan.**
+    `src/pages/api/clientes/import.ts` ya exige `requirePerm('clientes')` y valida
+    el identificador fiscal fila por fila, pero inserta sin
+    `requireResourceCapacity('clients')` ni captura el error del trigger de límite:
+    al pasarse del tope de Gratis o Starter responde 500 a media importación en vez
+    de 402.
 12. **[verificado] Reintentos de webhooks diarios.** El barrido `/api/cron/webhooks`
     corre `0 5 * * *` (`vercel.json`), así que los intentos 2–11 no siguen el
     calendario de 10 s / 1 min / 5 min. Las docs ya lo dicen; decidir si se sube la
@@ -80,6 +82,38 @@
 20. **Tope de webhooks inconsistente**: `src/lib/precios.ts` publica 1/3/10/25/100
     endpoints y `WEBHOOK_LIMITS` en `entitlements.ts` aplica 16/16/16/32/100.
 
+30. **[verificado 10 oct] El portal de facturas ignora el plan al quitar la marca.**
+    `src/lib/cobros/portal.ts` (~145) pinta "Enviado con Cord" solo con
+    `portal_powered`, sin `planIncludes(..., 'remove_branding')` (Starter), a
+    diferencia de los correos y el link de la factura. Un negocio que bajó a Gratis
+    con la marca apagada la sigue ocultando en el portal.
+31. **[verificado 10 oct] Un link de portal desactivado revive solo.** Los avisos
+    del cobro automático (`src/lib/cobros/avisos.ts`, ~77 y ~104) llaman
+    `linkPortal()`, que genera un token nuevo si `portal_token` es `null`. Si el
+    negocio desactivó el link pero el cliente sigue con cobro automático, el primer
+    aviso de cargo fallido le manda un link nuevo y activo sin que nadie lo decida.
+    Decidir: apagar el link también apaga el cobro automático, o el aviso sale sin
+    botón.
+32. **[verificado 10 oct] Complemento de pago (REP) sin reintento ni entrega.**
+    `emitPaymentComplement()` deja en el historial "Complemento de pago pendiente:
+    … reintenta desde la factura", pero no hay botón ni cron que reintente: solo la
+    acción interna `retry_complements` de `PATCH /api/facturas/[id]`, sin UI. El
+    REP timbrado tampoco se envía al cliente ni se descarga desde el link de la
+    factura. Las docs (`pagos/facturacion`) dicen ambas cosas.
+33. **[verificado 10 oct] El pedido de Shopify ignora el descuento de documento.**
+    `mapLineItems()` en `src/lib/integraciones/shopify/orders.ts` aplica el
+    precio negociado y el `descuento_pct` de cada línea, pero no `descuento_def`
+    ni el cupón: con un descuento sobre el subtotal, el pedido queda por encima del
+    total que el cliente aprobó (y con "Cuando el cliente pague" entra marcado como
+    pagado por un importe mayor). Las docs (`shopify`, `cotizacion/descuentos`) lo
+    advierten.
+34. **`api-schema` no lista los tipos de factura de LatAm.** `Invoice.tipo` en
+    `src/lib/api-schema.ts` enumera los tipos de México, España y comerciales, pero
+    la API ya devuelve `arca_invoice`, `nfse_invoice`, `nfe_invoice`,
+    `sii_invoice`, `dian_invoice`, `sunat_invoice`, sus `*_credit_note` y
+    `sii_debit_note`. La página `desarrolladores/funciones/facturas` ya los nombra;
+    la spec OpenAPI no.
+
 ## P2 — reglas permanentes rotas (14, 15, 21, 36)
 
 21. **Regla 15 — preferencias sin consumidor**: Plantillas de mensaje
@@ -104,8 +138,11 @@
     servidor, eventos "Propuesta:"/"Firmado digitalmente por" en
     `src/pages/api/q/[token].ts`, títulos de tareas automáticas ("Responder
     contracargo", "Transferir reembolso SPEI"), "(iguala)" y la nota de nivel en
-    `nueva.astro`, `plan.astro` con `PLANES` en español, recordatorios de cobro
-    siempre en español, error de "100 suscripciones" en `src/lib/actions/webhooks.ts`,
+    `nueva.astro`, `plan.astro` con `PLANES` en español, recordatorios de
+    **factura** siempre en español (`notifyInvoiceReminder` corre en el cron sin
+    locale y `currentLocale()` cae a `es`; los de cotización ya usan `orgs.idioma`),
+    eventos del complemento de pago ("Complemento de pago emitido…", "…pendiente…")
+    escritos en español en `src/lib/fiscal/payment-complement.ts`, error de "100 suscripciones" en `src/lib/actions/webhooks.ts`,
     falta `set.api.rec.setup` en `src/i18n/app.ts` (la UI muestra la clave cruda).
 25. **Copy de la UI que no coincide con el comportamiento**: "Tasa de cierre ·
     últimos 90 días" se calcula sobre todo el historial; "De enviada a pagada · en

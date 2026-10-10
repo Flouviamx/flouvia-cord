@@ -2,7 +2,7 @@
 title: "Shopify"
 seoTitle: "Connect Cord with Shopify"
 description: "How to connect Shopify with Cord: catalog and customers into Cord, the order back to your store when the quote closes, currencies, inventory, taxes and common issues."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-10"
 reviewedBy: "Cord product and operations"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -60,7 +60,7 @@ On the Shopify card you choose when the order is created. **It starts off**:
 | **When the client pays** | Cord collects and the order enters your store marked as paid. |
 
 - Each line with one of your store's products travels as that variant and reduces inventory; a free-form line travels as an item with its price.
-- The price that travels is the **negotiated** one, with its discount applied.
+- The price that travels is the **negotiated** one, with its line discount applied. The [document discount or a coupon](/en/docs/cotizacion/descuentos) does **not** travel to the order: if the quote carries one, the Shopify order ends up above its total, so adjust it in Shopify before fulfilling or collecting from there.
 - The order carries the `cord` tag and the quote number in a note.
 - A quote produces **a single order**, even if the event repeats.
 
@@ -152,6 +152,6 @@ With **Disconnect** on the card. Products and customers already in Cord stay and
 
 ## Related
 
-- [Products and discounts](/en/docs/cotizacion/productos)
+- [Products and pricing](/en/docs/cotizacion/productos)
 - [Create, issue, and collect invoices](/en/docs/pagos/facturas-emitidas): issue the draft created from a store order.
 - [Integrations](/en/docs/automatizacion/integraciones)

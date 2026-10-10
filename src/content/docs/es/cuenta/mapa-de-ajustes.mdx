@@ -1,7 +1,7 @@
 ---
 title: "Mapa completo de Ajustes"
 description: "Referencia de cada categoría y pestaña de Ajustes en Cord: tu cuenta, general, marca, equipo, notificaciones, planes, avanzado, cotizaciones, facturación, cobros, integraciones y las opciones para desarrolladores."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-10"
 reviewedBy: "Producto y operaciones de Cord"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -103,10 +103,16 @@ acceso a Facturación para tarjeta, recibos y comprobantes. Guía:
 | Pestaña | Qué contiene | Plan |
 |---|---|---|
 | **Folio e IVA** (fuera de México, **Folio e impuestos**) | Prefijo y serie del folio, vigencia, términos de pago, anticipo y texto legal por defecto. | Todos |
-| **Impuestos** | Catálogo de tasas con nombre, tipo (consumo, retención o exento) y tasa, y si tus precios incluyen impuesto. Guía: [Productos y descuentos](/docs/cotizacion/productos). | Todos |
+| **Impuestos** | Catálogo de tasas con nombre, tipo (consumo, retención o exento) y tasa, y si tus precios incluyen impuesto. Guía: [Productos y precios](/docs/cotizacion/productos). | Todos |
 | **Documento PDF** | Plantilla Minimal, Clásico o Detallado, mensaje al pie, condiciones y listado de partidas. | Todos |
 | **Aprobaciones** | Umbrales internos de descuento máximo, monto máximo y margen mínimo. La tasa de interés moratorio que aparezca aquí está suspendida: no genera cargos nuevos. Guía: [Términos de crédito](/docs/pagos/credito). | Scale o Developer |
 | **Plantillas** | Textos de referencia para correo, WhatsApp o notas con variables como `{cliente}`, `{folio}`, `{total}` y `{link}`. Por ahora los botones de envío usan su propio texto. | Todos |
+
+### Descuentos
+
+| Pestaña | Qué contiene | Plan |
+|---|---|---|
+| **Cupones** | Códigos de descuento por porcentaje o monto fijo, con vigencia, divisa, tope de usos total y por cliente, y un interruptor para pausarlos. Crear, editar o eliminar requiere permiso Ajustes. Guía: [Descuentos y cupones](/docs/cotizacion/descuentos). | Todos |
 
 ### Facturación
 
@@ -119,11 +125,12 @@ y [Facturación por país](/docs/pagos/facturacion).
 ### Cobros
 
 **Cobros:** conecta Cord Payments y completa la verificación de tu cuenta, elige métodos
-(tarjeta; SPEI solo en México), consulta tarifas y administra la cuenta de depósito
+(tarjeta; SPEI solo en México; domiciliación SEPA en España, Alemania y Francia, y ACH en
+Estados Unidos), decide si tus clientes pueden activar el **cobro automático**, consulta tarifas y administra la cuenta de depósito
 (cambiarla exige autenticación reciente y permiso Configurar cobros). En México y Brasil
 también puedes conectar Mercado Pago; en Colombia, Argentina, Chile y Perú es la forma de
 cobrar en línea. Guías: [Conectar cuenta (KYC)](/docs/pagos/onboarding),
-[Métodos de cobro](/docs/pagos/metodos) y [Mercado Pago](/docs/pagos/mercado-pago).
+[Métodos de cobro](/docs/pagos/metodos), [Cobro automático](/docs/pagos/cobro-automatico) y [Mercado Pago](/docs/pagos/mercado-pago).
 
 ### Integraciones
 
@@ -142,7 +149,7 @@ directa de cada pestaña funciona aunque el modo esté apagado.
 | Categoría | Qué contiene | Plan |
 |---|---|---|
 | **MCP** | Configuración para conectar un asistente de IA a Cord con el servidor MCP. Guía: [Servidor MCP](/docs/desarrolladores/herramientas/mcp). | Todos |
-| **Inteligencia artificial** | Estado de la **Cobranza con IA** (Apagado, Activo · con tu aprobación o Activo · automático) y conexiones a tus otros sistemas que la IA puede consultar al cotizar. Guía: [Cobranza autónoma (IA)](/docs/pagos/cobranza-ia). | Cobranza con IA y gobernanza de agentes en Scale o Developer |
+| **Inteligencia artificial** | Estado de la **Cobranza con IA** (Apagado, Activo · con tu aprobación o Activo · automático) y conexiones a tus otros sistemas que la IA puede consultar al cotizar. Guía: [Cobranza autónoma (IA)](/docs/pagos/cobranza-ia). | Cobranza con IA desde Profesional; gobernanza de agentes en Scale o Developer |
 | **Cotizador embebible** | Vista previa, dominios permitidos y código para incrustar el cotizador en tu sitio. Guía: [Cord Elements](/docs/desarrolladores/herramientas/elements/resumen). | Todos |
 
 Las llaves de API, los webhooks, los registros y los eventos no están en Ajustes: viven en

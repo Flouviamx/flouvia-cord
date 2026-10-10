@@ -1,7 +1,7 @@
 ---
 title: "What's new in payments and invoicing"
 description: "Recent changes to how you collect, invoice, and receive your money in Cord, and where to find them."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-10"
 reviewedBy: "Cord product and operations"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -17,6 +17,13 @@ prerequisites: ["None: this is the section's changelog"]
 
 | What's new | What changes for your business | Guide |
 | --- | --- | --- |
+| Discounts and coupons | A discount on the subtotal by percentage or amount, and coupons with a code, validity dates, and a usage cap, on quotes, invoices, and the API | [Discounts and coupons](/en/docs/cotizacion/descuentos) |
+| Invoice portal | One link per client with all their invoices, their balance per currency, and paying several in a single charge | [Invoice portal](/en/docs/pagos/portal-facturas) |
+| Automatic payments | Your client saves a method and Cord charges each invoice on its due date, with retries and notices | [Automatic payments](/en/docs/pagos/cobro-automatico) |
+| SEPA and ACH bank debit | On invoices in euros (Spain, Germany, and France) or in dollars (United States), your client pays by debit from their bank account | [Payment methods](/en/docs/pagos/metodos) |
+| Refunding a grouped charge | When you refund a charge that paid several invoices, Cord splits the refund among them and reopens their balance | [Refunds](/en/docs/pagos/reembolsos) |
+| Mexico: PUE or PPD and payment complement | The CFDI picks its payment method from what's already collected and, if it's PPD, each payment generates its automatic complement; plus the global invoice and CFDI replacement | [Invoicing and CFDI](/en/docs/pagos/facturacion) |
+| US sales tax by address | The combined rate for each address, with a monthly quota per plan and overage | [Subscription](/en/docs/cuenta/suscripcion) |
 | Partial invoice payments | Your customer can pay part of the balance, and the next payment is calculated on what remains | [Invoices](/en/docs/pagos/facturas-emitidas) |
 | Credit notes | Reduce the amount of an issued invoice without voiding it; in Mexico it is stamped as a related expense CFDI | [Invoices](/en/docs/pagos/facturas-emitidas) |
 | Downloads on the invoice link | Your customer downloads the PDF and, in Mexico, the XML from the same page where they pay | [Invoices](/en/docs/pagos/facturas-emitidas) |
@@ -24,7 +31,7 @@ prerequisites: ["None: this is the section's changelog"]
 | Subscription prices in euros | In Spain, Germany, and France, self-service plans are purchased at fixed EUR prices | [Subscription](/en/docs/cuenta/suscripcion) |
 | Mercado Pago | A second online payment rail, with your own account, on quotes and invoices | [Mercado Pago](/en/docs/pagos/mercado-pago) |
 | Safe switching between SPEI and card | Switching methods can't create a duplicate charge when money has already been received or is in progress | [Payment methods](/en/docs/pagos/metodos) |
-| Payout frequency | You choose how often your money goes out to your bank | [Cord Payments fees](/en/docs/pagos/condiciones) |
+| Payout frequency | You choose how often your money goes out to your bank | [Payouts to your bank](/en/docs/pagos/depositos) |
 
 ## Partial invoice payments
 
@@ -85,7 +92,7 @@ screen tells you payouts are paused.
 
 ## Refunds with a fee notice
 
-When you refund a payment from **My Payments**, the dialog asks you to confirm that
+When you refund a payment from **Revenue › Payments**, the dialog asks you to confirm that
 you understand Cord's platform fee is not refunded automatically. See
 [Refunds](/en/docs/pagos/reembolsos).
 

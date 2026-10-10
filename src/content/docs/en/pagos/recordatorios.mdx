@@ -2,7 +2,7 @@
 title: "Automatic payment reminders"
 seoTitle: "Automatic invoice and quote reminders in Cord"
 description: "Which payment reminders Cord sends on its own: the invoice ladder before and after the due date, the notice for quotes coming due, what your customer receives, when nothing is sent, and how duplicate emails are prevented."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-10"
 reviewedBy: "Cord product and operations"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -31,7 +31,7 @@ They're different from two other collection tools:
 | Permission | None: Cord sends them on its own. |
 | Customer | Must have an email on file. No email, no reminder. |
 | Invoice | Issued (not a draft), open, with a due date and an outstanding balance. |
-| Quote | Approved or invoiced, not fully paid, and not a recurring retainer. |
+| Quote | Approved or invoiced, with a balance, not a recurring retainer, and whose balance isn't already carried by an open invoice (in that case the invoice is reminded). |
 | Account | Doesn't apply to test accounts or the demo account. |
 
 ## Invoices: the reminder ladder
@@ -74,22 +74,21 @@ The day after an invoice with a balance falls due, Cord emits the **An invoice b
 
 ## Quotes: due-date notice
 
-Approved quotes with an outstanding balance get a simpler notice: an email **once a day during the three days before the due date and on the due date itself**. The due date is the approval date plus the payment term's days:
+Approved quotes with an outstanding balance get a simpler notice: **two emails, one three days before the due date and another on the day it's due**. The due date is the approval date plus the payment term's days:
 
 | Term | Due |
 |---|---|
-| Upfront | On the approval date |
-| Net 30 | 30 days after approval |
-| Net 60 | 60 days after approval |
+| Due on receipt | On the approval date |
+| Net 7, 15, 30, 45, 60, or 90 | That many calendar days after approval |
 
-The email, with your logo and color, shows the quote number, the quote's total with its currency, and the due date, with a **View and pay** button that opens the quote link. The subject is **Recordatorio de pago — [quote number]**.
+The email, with your logo and color, shows the quote number, the quote's **balance** with its currency (the total minus what was already collected as a deposit or installments), and the due date, with a **View and pay [quote number]** button that opens the quote link. The subject is **Payment reminder — [quote number]**, and it goes out in your account's language. See [Credit terms](/en/docs/pagos/credito).
 
 <Callout type="info">
-With **Upfront** terms, the due date matches the approval, so the notice may arrive the same day your customer approves. On a quote whose deposit is already paid, the email mentions the quote total; the link does show the exact remaining balance.
+With **Due on receipt** terms, the due date matches the approval, so only the due-day notice goes out, and it may arrive the same day your customer approves.
 </Callout>
 
-<Callout type="warning" title="Reminders are sent in Spanish today">
-Automatic reminders, for both invoices and quotes, currently go out in Spanish even if your account is set to English. If your customers need English reminders, use a [workflow](/en/docs/automatizacion/workflows) with your own message, as described below.
+<Callout type="warning" title="Invoice reminders are sent in Spanish today">
+Automatic **invoice** reminders currently go out in Spanish even if your account is set to English; **quote** notices already go out in your account's language. If your customers need English invoice reminders, use a [workflow](/en/docs/automatizacion/workflows) with your own message, as described below.
 </Callout>
 
 ## When no reminder is sent
@@ -111,7 +110,7 @@ If you need a different pace or your own message, create a [workflow](/en/docs/a
 
 - One invoice reminder per stage, six stages at most.
 - The cadence and text can't be edited from the app.
-- Reminders are sent in Spanish, regardless of the account language.
+- Invoice reminders are sent in Spanish, regardless of the account language; quote notices follow your account's language.
 - Reminders don't attach the PDF; the customer downloads it from the invoice link.
 - The quote notice has no ladder after the due date. To chase overdue quotes, use [receivables](/en/docs/pagos/cartera-cobranza) or [AI collections](/en/docs/pagos/cobranza-ia).
 

@@ -1,7 +1,7 @@
 ---
 title: "Resumen de Cord Payments"
-description: "Cobra a tus clientes con tarjeta, SPEI, Mercado Pago o transferencia manual directamente desde la cotización. El dinero entra a tu propia cuenta y la tarifa se ve antes de cobrar."
-lastUpdated: "2026-10-07"
+description: "Cobra a tus clientes con tarjeta, SPEI, domiciliación SEPA o ACH, Mercado Pago o transferencia manual directamente desde la cotización, la factura o el portal de facturas. El dinero entra a tu propia cuenta y la tarifa se ve antes de cobrar."
+lastUpdated: "2026-10-10"
 reviewedBy: "Producto y operaciones de Cord"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -13,7 +13,7 @@ prerequisites: ["Activar Cord Payments o conectar Mercado Pago para cobrar en l�
   <p class="page-subtitle">El motor de cobros de tu negocio. Tarjeta, SPEI, Mercado Pago o transferencia manual, con el dinero en tu propia cuenta.</p>
 </header>
 
-**Cord Payments** es el sistema con el que aceptas cobros con tarjeta, transferencia SPEI (solo en México y en pesos) o transferencia manual directamente desde una cotización. El dinero entra a tu propia cuenta de cobros y de ahí se deposita en tu cuenta bancaria con la [frecuencia que elijas](/docs/pagos/depositos) en **Ajustes › Cobros**: diaria, semanal, mensual o manual.
+**Cord Payments** es el sistema con el que aceptas cobros con tarjeta, transferencia SPEI (solo en México y en pesos), domiciliación bancaria SEPA o ACH (en euros y dólares) o transferencia manual directamente desde una cotización, una factura o el portal de facturas de tu cliente. El dinero entra a tu propia cuenta de cobros y de ahí se deposita en tu cuenta bancaria con la [frecuencia que elijas](/docs/pagos/depositos) en **Ajustes › Cobros**: diaria, semanal, mensual o manual.
 
 En cobros en pesos mexicanos (MXN), Cord cobra una comisión por transacción que conoces y aceptas antes de empezar a cobrar. En cobros en cualquier otra divisa, Cord no aplica hoy comisión de plataforma. Ver la [tabla completa de tarifas](/docs/pagos/condiciones).
 
@@ -43,7 +43,7 @@ En muchos negocios, recibir un pago significa: pedirle al cliente que envíe el 
 1. **[Aceptar un pago](/docs/pagos/aceptar):** Qué ve tu cliente al pagar desde el link de la cotización o de la factura.
 2. **[Conectar tu cuenta](/docs/pagos/onboarding):** La verificación de tu negocio, los documentos por país, la captura desde el teléfono y los estados de la cuenta.
 3. **[Tarifas de Cord Payments](/docs/pagos/condiciones):** Cuánto cobra Cord por método y por divisa, y cómo se activa la tarifa.
-4. **[Métodos de cobro](/docs/pagos/metodos):** Tarjeta, SPEI, Mercado Pago y transferencia manual por país y divisa, y cómo se confirma cada uno.
+4. **[Métodos de cobro](/docs/pagos/metodos):** Tarjeta, SPEI, domiciliación SEPA y ACH, Mercado Pago y transferencia manual por país y divisa, y cómo se confirma cada uno.
 5. **[Mercado Pago](/docs/pagos/mercado-pago):** El segundo riel de cobro en línea, con tu propia cuenta.
 
 **Modelos de cobro**
@@ -51,7 +51,7 @@ En muchos negocios, recibir un pago significa: pedirle al cliente que envíe el 
 6. **[Anticipo y saldo](/docs/pagos/anticipos):** Cómo cobrar un porcentaje hoy y el resto después.
 7. **[Planes de pago en cuotas](/docs/pagos/cuotas):** Un saldo vencido repartido en cuotas mensuales desde el mismo link.
 8. **[Igualas recurrentes](/docs/pagos/igualas):** Un cobro mensual automático con tarjeta.
-9. **[Términos de crédito](/docs/pagos/credito):** Net 30 y Net 60, y cuándo se habilita el pago.
+9. **[Términos de crédito](/docs/pagos/credito):** Contado y Net 7 a Net 90, y cuándo se habilita el pago.
 
 **Seguimiento del dinero**
 
@@ -61,16 +61,18 @@ En muchos negocios, recibir un pago significa: pedirle al cliente que envíe el 
 
 **Facturación**
 
-13. **[Facturación fiscal por país](/docs/pagos/facturacion):** CFDI 4.0 en México, el estado de España, factura comercial en los demás mercados y cuotas por plan.
+13. **[Facturación fiscal por país](/docs/pagos/facturacion):** CFDI 4.0 en México (PUE o PPD, complemento de pago, factura global y sustitución), proforma en España mientras se habilita Verifactu, factura comercial en los demás mercados (autorizada por la autoridad en Argentina, Brasil, Chile, Colombia y Perú cuando su emisión está activa) y cuotas por plan.
 14. **[Crear, emitir y cobrar facturas](/docs/pagos/facturas-emitidas):** El ciclo completo de una factura y su saldo.
 15. **[Facturas recurrentes](/docs/pagos/facturas-recurrentes):** Repetir una factura cada mes sin volver a capturarla.
-16. **[Factura electrónica europea](/docs/pagos/factura-electronica):** Factur-X, XRechnung y Peppol BIS de cada factura de un negocio en la UE.
+16. **[Factura electrónica](/docs/pagos/factura-electronica):** Factur-X, XRechnung, Peppol BIS y Facturae de cada factura de un negocio en la UE, y la emisión por plataforma autorizada en Francia.
 
 **Cobranza y tesorería**
 
 17. **[Recordatorios automáticos de cobro](/docs/pagos/recordatorios):** La escalera de correos antes y después del vencimiento.
-18. **[Cartera y cobranza operativa](/docs/pagos/cartera-cobranza)** y **[cobranza con IA](/docs/pagos/cobranza-ia):** Cómo dar seguimiento a lo que te deben.
-19. **[Tesorería y FX Lock](/docs/pagos/tesoreria-fx):** Pronóstico de flujo y tipo de cambio congelado.
+18. **[Portal de facturas](/docs/pagos/portal-facturas):** Un link por cliente con todas sus facturas, su saldo por divisa y el pago de varias a la vez.
+19. **[Cobro automático](/docs/pagos/cobro-automatico):** Tu cliente guarda un método y Cord cobra cada factura en su vencimiento, con reintentos y avisos.
+20. **[Cartera y cobranza operativa](/docs/pagos/cartera-cobranza)** y **[cobranza con IA](/docs/pagos/cobranza-ia):** Cómo dar seguimiento a lo que te deben.
+21. **[Tesorería y FX Lock](/docs/pagos/tesoreria-fx):** Pronóstico de flujo y tipo de cambio congelado.
 
 ## Cargos directos a tu propia cuenta
 

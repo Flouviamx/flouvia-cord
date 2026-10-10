@@ -1,7 +1,7 @@
 ---
 title: "Refunds"
 seoTitle: "Payment refunds in Cord"
-description: "How to give money back to a customer from My Payments: full or partial refunds, the difference between card and SPEI, what happens to the fee, and how the refund of a charge that paid several invoices is allocated."
+description: "How to give money back to a customer from Revenue › Payments: full or partial refunds, the difference between card and SPEI, what happens to the fee, and how the refund of a charge that paid several invoices is allocated."
 lastUpdated: "2026-10-10"
 reviewedBy: "Cord product and operations"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR]
@@ -16,7 +16,7 @@ prerequisites: ["Refunds permission, granted by the owner", "Payment reconciled 
 
 ## Where to refund
 
-Refunds live in **My Payments** (`/app/cobros`), not in the quote's detail page. In the "Recent payments" widget, every row that corresponds to a payment **reconciled through Cord Payments** has a **Refund** button. A payment recorded manually (a transfer outside Cord Payments) doesn't have this button — for that case, you handle the refund directly with your customer outside Cord.
+Refunds live in **Revenue › Payments** (`/app/cobros`), not in the quote's detail page. In the "Recent payments" widget, every row that corresponds to a payment **reconciled through Cord Payments** has a **Refund** button. A payment recorded manually (a transfer outside Cord Payments) doesn't have this button — for that case, you handle the refund directly with your customer outside Cord.
 
 The button appears on **quote** payments, including the monthly charges of a [retainer](/en/docs/pagos/igualas). A payment made from an **invoice** link, from the [client portal](/en/docs/pagos/portal-facturas), or by [automatic payments](/en/docs/pagos/cobro-automatico) doesn't have a refund button in Cord today; if you need to return it, contact us. Once a refund of that payment is confirmed, Cord reflects it in the balance of each invoice it paid (see [Effect on a linked invoice](#effect-on-a-linked-invoice) and [Refunding a charge that paid several invoices](#refunding-a-charge-that-paid-several-invoices)). A payment collected through Mercado Pago is refunded from your Mercado Pago account (see [Mercado Pago](/en/docs/pagos/mercado-pago)).
 
@@ -51,7 +51,7 @@ In Cord, the SPEI refund flow requires a manual transfer by the business. Reques
 
 ## What happens to your money
 
-- The refunded amount is deducted from your net revenue across all of [My Payments](/en/docs/pagos/dashboard)' reports — it never stays "hidden" in the total collected figure.
+- The refunded amount is deducted from your net revenue across all of the [Payments](/en/docs/pagos/dashboard) reports — it never stays "hidden" in the total collected figure.
 - **The platform fee Cord charged on the original payment is not refunded automatically**, and the payment processor's fees are governed by its own terms. It's a processing cost that already occurred when the card was charged or the SPEI transfer was received — refunding the customer doesn't reverse that cost. See the details in [Fees and advantages](/en/docs/pagos/condiciones).
 - If the refunded payment was part of a quote with an [upfront deposit and balance](/en/docs/pagos/anticipos), the refund only affects the specific payment you chose — not the rest of that quote's slices.
 

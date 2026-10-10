@@ -1,7 +1,7 @@
 ---
 title: "Novedades de pagos y facturación"
 description: "Los cambios recientes en cómo cobras, facturas y recibes tu dinero en Cord, y dónde encontrarlos."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-10"
 reviewedBy: "Producto y operaciones de Cord"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -17,6 +17,13 @@ prerequisites: ["Ninguno: es el registro de cambios de la sección"]
 
 | Novedad | Qué cambia para tu negocio | Guía |
 | --- | --- | --- |
+| Descuentos y cupones | Un descuento sobre el subtotal por porcentaje o monto, y cupones con código, vigencia y tope de usos, en cotizaciones, facturas y la API | [Descuentos y cupones](/docs/cotizacion/descuentos) |
+| Portal de facturas | Un link por cliente con todas sus facturas, su saldo por divisa y el pago de varias en un solo cargo | [Portal de facturas](/docs/pagos/portal-facturas) |
+| Cobro automático | Tu cliente guarda un método y Cord cobra cada factura en su vencimiento, con reintentos y avisos | [Cobro automático](/docs/pagos/cobro-automatico) |
+| Domiciliación SEPA y ACH | En facturas en euros (España, Alemania y Francia) o en dólares (Estados Unidos), tu cliente paga con cargo a su cuenta bancaria | [Métodos de cobro](/docs/pagos/metodos) |
+| Reembolso de un cobro agrupado | Al reembolsar un cargo que pagó varias facturas, Cord reparte la devolución entre ellas y reabre su saldo | [Reembolsos](/docs/pagos/reembolsos) |
+| México: PUE o PPD y complemento de pago | El CFDI elige su método de pago con lo ya cobrado y, si es PPD, cada pago genera su complemento automático; además, factura global y sustitución de CFDI | [Facturación y CFDI](/docs/pagos/facturacion) |
+| Sales tax de EE. UU. por dirección | La tasa combinada de cada dirección, con cuota mensual por plan y excedente | [Suscripción](/docs/cuenta/suscripcion) |
 | Pagos parciales de una factura | Tu cliente puede abonar una parte del saldo, y el siguiente pago se calcula sobre lo que queda | [Facturas](/docs/pagos/facturas-emitidas) |
 | Notas de crédito | Reduces el importe de una factura emitida sin anularla; en México se timbra como CFDI de egreso relacionado | [Facturas](/docs/pagos/facturas-emitidas) |
 | Descargas en el link de la factura | Tu cliente descarga el PDF y, en México, el XML desde la misma página donde paga | [Facturas](/docs/pagos/facturas-emitidas) |
@@ -24,7 +31,7 @@ prerequisites: ["Ninguno: es el registro de cambios de la sección"]
 | Precios de la suscripción en euros | En España, Alemania y Francia, los planes de autoservicio se contratan con precios fijos en EUR | [Suscripción](/docs/cuenta/suscripcion) |
 | Mercado Pago | Un segundo riel de cobro en línea, con tu propia cuenta, en cotizaciones y facturas | [Mercado Pago](/docs/pagos/mercado-pago) |
 | Cambio seguro entre SPEI y tarjeta | Cambiar de método no puede generar un cobro duplicado si ya hay dinero recibido o en proceso | [Métodos de cobro](/docs/pagos/metodos) |
-| Frecuencia de depósito | Eliges cada cuánto sale tu dinero hacia tu banco | [Tarifas de Cord Payments](/docs/pagos/condiciones) |
+| Frecuencia de depósito | Eliges cada cuánto sale tu dinero hacia tu banco | [Depósitos a tu banco](/docs/pagos/depositos) |
 
 ## Pagos parciales de una factura
 
@@ -86,7 +93,7 @@ pantalla te avisa que los depósitos están pausados.
 
 ## Reembolsos con aviso de tarifa
 
-Al reembolsar un cobro desde **Mis cobros**, el diálogo te pide confirmar que
+Al reembolsar un cobro desde **Ingresos › Cobros**, el diálogo te pide confirmar que
 entiendes que la tarifa de plataforma de Cord no se reembolsa automáticamente.
 Ver [Reembolsos](/docs/pagos/reembolsos).
 

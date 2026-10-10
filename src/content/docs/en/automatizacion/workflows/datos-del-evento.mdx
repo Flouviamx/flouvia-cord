@@ -2,7 +2,7 @@
 title: "Event data"
 seoTitle: "Event data in Cord Workflows"
 description: "How to insert event data into workflow texts with double braces, how it looks when it runs, and the full list of data available per trigger."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-10"
 reviewedBy: "Cord product and operations"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -173,7 +173,7 @@ Plus, depending on the trigger:
 | Company | `{{empresa}}` | Text |
 | Email | `{{email}}` | Text |
 | Country | `{{country_code}}` | Text |
-| Payment terms | `{{terminos}}` | Option (Upfront, Net 30, Net 60) |
+| Payment terms | `{{terminos}}` | Option (Due on receipt, Net 7, Net 15, Net 30, Net 45, Net 60, or Net 90) |
 | Who caused it | `{{actor_tipo}}` | Option |
 
 **A client is updated** also carries the previous value of three items: Previous company `{{empresa_anterior}}`, Previous email `{{email_anterior}}` and Previous payment terms `{{terminos_anterior}}`.

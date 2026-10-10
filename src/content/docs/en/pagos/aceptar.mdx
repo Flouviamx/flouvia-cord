@@ -1,8 +1,8 @@
 ---
 title: "Accepting a payment"
 seoTitle: "Accept a payment from the quote or invoice link"
-description: "What your customer sees when paying from the link: when the pay button appears, how they choose a method, how they pay by card, SPEI, or Mercado Pago, what happens with deposits, installments, credit, and partial payments, and how payment is confirmed."
-lastUpdated: "2026-10-07"
+description: "What your customer sees when paying from the link: when the pay button appears, how they choose a method, how they pay by card, SPEI, bank debit, or Mercado Pago, what happens with deposits, installments, credit, and partial payments, and how payment is confirmed."
+lastUpdated: "2026-10-10"
 reviewedBy: "Cord product and operations"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -26,7 +26,7 @@ The public link of a quote or invoice includes the **payment checkout**: a scree
 | Payment rail | [Cord Payments](/en/docs/pagos/onboarding) active (MX, US, CA, BR, ES, GB, DE, FR) or [Mercado Pago](/en/docs/pagos/mercado-pago) connected (MX, BR, CO, AR, CL, PE). |
 | Methods | At least one turned on in **Settings › Payments**. See [Payment methods](/en/docs/pagos/metodos). |
 | Document | An approved quote (and signed, if you required it) or an issued invoice with a balance. A test document can't be paid online. |
-| Currency | The document's sale currency. SPEI only in MXN. |
+| Currency | The document's sale currency. SPEI only in MXN; SEPA debit only in EUR and ACH only in USD. |
 
 Without an online payment rail, the link shows your manual transfer details (if you set them up) and you record the payment once you verify it.
 
@@ -35,11 +35,13 @@ Without an online payment rail, the link shows your manual transfer details (if 
 | Situation | What your customer sees |
 |---|---|
 | Approved **upfront** quote | The pay button, from approval onward. |
-| Quote with a **credit term** (Net 30 or Net 60) | A confirmation that the order is on credit with its due date. Online payment opens on that date. See [Credit terms](/en/docs/pagos/credito). |
+| Quote with a **credit term** (Net 7 to Net 90) | On approval, **Order confirmed with Net 30 credit** and "The payment of [total] is due on [date]". Online payment opens on that date. See [Credit terms](/en/docs/pagos/credito). |
 | Quote with a **deposit** | From approval, the deposit amount. The balance opens according to the term. See [Upfront and balance](/en/docs/pagos/anticipos). |
 | Quote with an **installment plan** | The next installment that's already due. See [Installment payment plans](/en/docs/pagos/cuotas). |
 | **Recurring** quote | The card authorization for the monthly retainer. See [Monthly retainers](/en/docs/pagos/igualas). |
-| Issued **invoice** | The full balance, with the **Pay another amount** option to pay part of it. |
+| Issued **invoice** | The full balance, with the **Pay another amount** option to pay part of it. An invoice can be paid as soon as it's issued, even before it's due. |
+| **Several invoices** from the same customer | In their [invoice portal](/en/docs/pagos/portal-facturas), the ones they pick, in a single charge. |
+| Invoice with a **bank debit in progress** | A notice that a bank debit is processing and they don't need to pay again. The pay button doesn't appear until the bank confirms or rejects it. |
 | Paid document | The **Paid** status and the payment history. |
 
 ## How your customer pays
@@ -47,7 +49,7 @@ Without an online payment rail, the link shows your manual transfer details (if 
 <Steps>
 1. Opens the link and, if it's a quote, approves it.
 2. Clicks the pay button. If you have both card and SPEI active, they first **choose how to pay**; with only one, they see the form directly.
-3. Pays by card inside the document, follows the SPEI instructions, or clicks **Pay with Mercado Pago**.
+3. Pays by card inside the document, follows the SPEI instructions, authorizes the bank debit, or clicks **Pay with Mercado Pago**.
 4. Once confirmed, the link shows the payment and the document changes status.
 </Steps>
 
@@ -69,6 +71,15 @@ Only on **MXN** quotes from businesses in Mexico.
 - They transfer from their online banking. When the money arrives, Cord reconciles it on its own and changes the status: no receipts to cross-check.
 
 SPEI confirmation depends on the bank's notice and isn't always instant. See [SPEI](/en/docs/pagos/metodos#automatic-spei).
+
+### By bank debit (SEPA or ACH)
+
+Only on **invoice** links and in the portal, in EUR (SEPA, businesses in Spain, Germany, and France) or in USD (ACH, businesses in the United States), when the method is **Active** in **Settings › Payments**.
+
+- Your customer picks bank debit in the same payment form and authorizes the charge with their account details.
+- The bank takes days to confirm it. Meanwhile, the link tells them the debit is processing and they don't need to pay again (in the portal, the invoice shows **Payment processing**); if the bank rejects it, it goes back to unpaid.
+
+See [Bank debit](/en/docs/pagos/metodos#bank-debit-sepa-and-ach).
 
 ### With Mercado Pago
 
@@ -105,5 +116,6 @@ Fees depend on the method and the currency. On MXN payments, each collected part
 - [Payment methods](/en/docs/pagos/metodos)
 - [Upfront and balance](/en/docs/pagos/anticipos)
 - [Credit terms](/en/docs/pagos/credito)
+- [Invoice portal](/en/docs/pagos/portal-facturas)
 - [Installment payment plans](/en/docs/pagos/cuotas)
 - [Automatic payment reminders](/en/docs/pagos/recordatorios)

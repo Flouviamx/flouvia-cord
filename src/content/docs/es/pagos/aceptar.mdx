@@ -1,8 +1,8 @@
 ---
 title: "Aceptar un pago"
 seoTitle: "Aceptar un pago desde el link de la cotización o la factura"
-description: "Qué ve tu cliente al pagar desde el link: cuándo aparece el botón de pago, cómo elige método, cómo paga con tarjeta, SPEI o Mercado Pago, qué pasa con anticipos, cuotas, crédito y abonos parciales, y cómo se confirma el pago."
-lastUpdated: "2026-10-07"
+description: "Qué ve tu cliente al pagar desde el link: cuándo aparece el botón de pago, cómo elige método, cómo paga con tarjeta, SPEI, domiciliación o Mercado Pago, qué pasa con anticipos, cuotas, crédito y abonos parciales, y cómo se confirma el pago."
+lastUpdated: "2026-10-10"
 reviewedBy: "Producto y operaciones de Cord"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -26,7 +26,7 @@ El link público de una cotización o de una factura incluye el **checkout de pa
 | Riel de cobro | [Cord Payments](/docs/pagos/onboarding) activo (MX, US, CA, BR, ES, GB, DE, FR) o [Mercado Pago](/docs/pagos/mercado-pago) conectado (MX, BR, CO, AR, CL, PE). |
 | Métodos | Al menos uno activado en **Ajustes › Cobros**. Ver [Métodos de cobro](/docs/pagos/metodos). |
 | Documento | Cotización aprobada (y firmada, si la pediste) o factura emitida con saldo. Un documento de prueba no se puede pagar en línea. |
-| Divisa | La de venta del documento. SPEI solo en MXN. |
+| Divisa | La de venta del documento. SPEI solo en MXN; domiciliación SEPA solo en EUR y ACH solo en USD. |
 
 Sin riel de cobro en línea, el link muestra tus datos para transferencia manual (si los configuraste) y tú registras el pago al verificarlo.
 
@@ -35,11 +35,13 @@ Sin riel de cobro en línea, el link muestra tus datos para transferencia manual
 | Situación | Qué ve tu cliente |
 |---|---|
 | Cotización de **contado** aprobada | El botón de pago, desde la aprobación. |
-| Cotización con **término de crédito** (Net 30 o Net 60) | "Pedido confirmado con crédito Net 30 — vence el [fecha]". El pago en línea se habilita en esa fecha. Ver [Términos de crédito](/docs/pagos/credito). |
+| Cotización con **término de crédito** (Net 7 a Net 90) | Al aprobar, **Pedido confirmado con crédito Net 30** y "El pago de [total] vence el [fecha]". El pago en línea se habilita en esa fecha. Ver [Términos de crédito](/docs/pagos/credito). |
 | Cotización con **anticipo** | Desde la aprobación, el monto del anticipo. El saldo se habilita según el término. Ver [Anticipo y saldo](/docs/pagos/anticipos). |
 | Cotización con **plan de cuotas** | La siguiente cuota que ya venció. Ver [Planes de pago en cuotas](/docs/pagos/cuotas). |
 | Cotización **recurrente** | La autorización de la tarjeta para la iguala mensual. Ver [Igualas recurrentes](/docs/pagos/igualas). |
-| **Factura** emitida | El saldo completo, con la opción **Pagar otra cantidad** para abonar una parte. |
+| **Factura** emitida | El saldo completo, con la opción **Pagar otra cantidad** para abonar una parte. Una factura se puede pagar desde que se emite, aunque todavía no venza. |
+| **Varias facturas** de un mismo cliente | En su [portal de facturas](/docs/pagos/portal-facturas), las que elija, en un solo cargo. |
+| Factura con un **débito bancario en proceso** | Un aviso de que hay un cargo a cuenta bancaria en proceso y no necesita volver a pagar. El botón de pago no aparece hasta que el banco confirme o rechace. |
 | Documento pagado | El estado **Pagada** y el historial de pagos. |
 
 ## Cómo paga tu cliente
@@ -47,7 +49,7 @@ Sin riel de cobro en línea, el link muestra tus datos para transferencia manual
 <Steps>
 1. Abre el link y, si es una cotización, la aprueba.
 2. Pulsa el botón de pago. Si tienes activos tarjeta y SPEI, primero **elige cómo pagar**; si solo tienes uno, ve el formulario directo.
-3. Paga con tarjeta dentro del documento, sigue las instrucciones SPEI o pulsa **Pagar con Mercado Pago**.
+3. Paga con tarjeta dentro del documento, sigue las instrucciones SPEI, autoriza la domiciliación o pulsa **Pagar con Mercado Pago**.
 4. Al confirmarse, el link muestra el pago y el documento cambia de estado.
 </Steps>
 
@@ -69,6 +71,15 @@ Solo en cotizaciones en **MXN** de negocios en México.
 - Transfiere desde su banca en línea. Cuando el dinero llega, Cord lo concilia solo y cambia el estado: no hace falta cruzar comprobantes.
 
 La confirmación de un SPEI depende del aviso del banco y no siempre es instantánea. Ver [SPEI](/docs/pagos/metodos#spei-automático).
+
+### Con domiciliación (SEPA o ACH)
+
+Solo en el link de **facturas** y en el portal, en EUR (SEPA, negocios en España, Alemania y Francia) o en USD (ACH, negocios en Estados Unidos), cuando tienes el método **Activo** en **Ajustes › Cobros**.
+
+- Tu cliente elige el débito bancario en el mismo formulario de pago y autoriza el cargo con los datos de su cuenta.
+- El banco tarda días en confirmarlo. Mientras tanto, el link le dice que el cargo está en proceso y que no necesita volver a pagar (en el portal, la factura muestra **Pago en proceso**); si el banco lo rechaza, vuelve a quedar por pagar.
+
+Ver [Domiciliación bancaria](/docs/pagos/metodos#domiciliación-bancaria-sepa-y-ach).
 
 ### Con Mercado Pago
 
@@ -105,5 +116,6 @@ Las tarifas dependen del método y de la divisa. En cobros en MXN, cada parte co
 - [Métodos de cobro](/docs/pagos/metodos)
 - [Anticipo y saldo](/docs/pagos/anticipos)
 - [Términos de crédito](/docs/pagos/credito)
+- [Portal de facturas](/docs/pagos/portal-facturas)
 - [Planes de pago en cuotas](/docs/pagos/cuotas)
 - [Recordatorios automáticos de cobro](/docs/pagos/recordatorios)

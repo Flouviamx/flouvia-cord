@@ -1,7 +1,7 @@
 ---
 title: "Mapa completo de la aplicación"
 description: "Qué hace cada sección de Cord, cómo se conectan cotizaciones, clientes, facturas, cobros, cobranza, informes y ajustes, qué hay en el menú lateral y la barra superior, y cómo funcionan el entorno de prueba y Cord Workbench."
-lastUpdated: "2026-10-08"
+lastUpdated: "2026-10-10"
 reviewedBy: "Producto y operaciones de Cord"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -29,7 +29,9 @@ documentos y movimientos.
 5. El cliente conversa, aprueba o rechaza y, cuando corresponde, paga en línea.
 6. Cord registra el cobro en línea o el pago que marcas a mano.
 7. La operación pasa a **Facturas** y **Cobranza** según el documento emitido, el saldo y
-   la fecha de vencimiento.
+   la fecha de vencimiento. Tu cliente puede pagar varias facturas desde su
+   [portal de facturas](/docs/pagos/portal-facturas) o dejar activo el
+   [cobro automático](/docs/pagos/cobro-automatico).
 8. **Informes** y **Equipo** agregan los resultados sin crear una segunda copia de la
    operación.
 </Steps>
@@ -54,7 +56,7 @@ sesión.
 | Ingresos | **Cobros** | `/app/cobros` | Cobros, depósitos, saldos, reembolsos y disputas. Guía: [Dashboard de cobros](/docs/pagos/dashboard). |
 | Ingresos | **Cobranza** | `/app/cobranza` | Cartera por cobrar, antigüedad de saldos y exposición por cliente (Profesional o superior). El contador en rojo indica documentos vencidos. Guía: [Cartera y seguimiento](/docs/pagos/cartera-cobranza). |
 | Ingresos | **Agente IA** (dentro de Cobranza) | `/app/cobranza/agente` | Configurar y supervisar la cobranza con IA (Pro, Scale o Developer). Guía: [Cobranza autónoma (IA)](/docs/pagos/cobranza-ia). |
-| Análisis | **Informes** | `/app/informes` | Resumen, diagnóstico comercial, finanzas, flujo, cobranza, clientes y productos. Guía: [Informes y desempeño](/docs/gestion/informes). |
+| Análisis | **Informes** | `/app/informes` | 15 informes: resumen, diagnóstico comercial, ventas en el tiempo, por cliente, por producto y por vendedor, clientes, recompra, productos, pagos recibidos, impuestos facturados, finanzas, flujo, cobranza y un informe personalizado que se guarda y se recibe por correo. Guía: [Informes y desempeño](/docs/gestion/informes). |
 | Análisis | **Desempeño** | `/app/desempeno` | Desempeño del equipo: resultados atribuidos a quien creó o duplicó cada cotización. |
 | Automatización | **Workflows** | `/app/workflows` | Automatizaciones "cuando pase esto, haz esto", ideas listas e historial de ejecuciones. Guía: [Cord Workflows](/docs/automatizacion/workflows). |
 
@@ -68,6 +70,9 @@ Además:
 - **Ajustes** (`/app/ajustes`) se abre con el engrane de la barra superior. Consulta el
   [Mapa de Ajustes](/docs/cuenta/mapa-de-ajustes).
 - **Configurar con IA** (`/app/setup`) se abre desde **Ajustes › General**.
+- El **portal de facturas** de cada cliente no está en el menú: lo creas, envías o
+  desactivas desde la ficha del cliente, y tu cliente lo abre en su propio link
+  (`cordhq.app/portal/...`). Ver [Portal de facturas](/docs/pagos/portal-facturas).
 
 ## Barra superior
 
@@ -171,7 +176,7 @@ sección:
 - **Cotizaciones:** crear, editar, enviar y duplicar.
 - **Aprobaciones:** aprobar descuentos, montos o cambios controlados.
 - **Cobranza:** consultar y gestionar cuentas por cobrar.
-- **Clientes** y **Productos:** modificar sus directorios.
+- **Clientes** y **Productos:** modificar sus directorios; con **Clientes**, también crear, enviar, rotar o desactivar el portal de facturas de un cliente.
 - **Analítica:** abrir Informes y Equipo (desempeño).
 - **Ajustes:** cambiar la configuración del negocio.
 - **Configurar cobros:** modificar Cord Payments y la cuenta receptora.
@@ -188,10 +193,12 @@ configuración que pide esa función.
 - Cord Payments está disponible en los primeros ocho. En Colombia, Argentina, Chile y Perú
   el cobro en línea funciona con [Mercado Pago](/docs/pagos/mercado-pago), que también se
   ofrece en México y Brasil como alternativa.
-- SPEI es exclusivo de México.
+- SPEI es exclusivo de México. La domiciliación SEPA es de España, Alemania y Francia
+  (en EUR) y el cargo a cuenta bancaria ACH, de Estados Unidos (en USD).
 - México emite CFDI 4.0 con un CSD válido.
-- Fuera de México, Cord emite factura comercial. En España, el registro ante la AEAT
-  (Verifactu) todavía no está activo.
+- Fuera de México, Cord emite factura comercial. En Argentina, Brasil, Chile, Colombia y
+  Perú, la factura autorizada por la autoridad cuando su emisión está activa en tu cuenta.
+  En España, el registro ante la AEAT (Verifactu) todavía no está activo.
 
 ## Antes de buscar un error
 

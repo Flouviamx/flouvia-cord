@@ -2,7 +2,7 @@
 title: "Recordatorios automáticos de cobro"
 seoTitle: "Recordatorios automáticos de facturas y cotizaciones en Cord"
 description: "Qué recordatorios de pago manda Cord por su cuenta: la escalera de facturas antes y después del vencimiento, el aviso de cotizaciones por vencer, qué recibe tu cliente, cuándo no se manda y cómo se evita un correo duplicado."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-10"
 reviewedBy: "Producto y operaciones de Cord"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -31,7 +31,7 @@ Son distintos de dos herramientas que también ayudan a cobrar:
 | Permiso | Ninguno: Cord los envía solo. |
 | Cliente | Debe tener un correo registrado en su ficha. Sin correo no hay recordatorio. |
 | Factura | Emitida (no borrador), abierta, con fecha de vencimiento y saldo pendiente. |
-| Cotización | Aprobada o facturada, sin pagar por completo y que no sea una iguala recurrente. |
+| Cotización | Aprobada o facturada, con saldo, que no sea una iguala recurrente y cuyo saldo no lleve ya una factura abierta (en ese caso se recuerda la factura). |
 | Cuenta | No aplica a cuentas de prueba ni a la cuenta de demostración. |
 
 ## Facturas: la escalera de recordatorios
@@ -74,18 +74,17 @@ El día siguiente al vencimiento de una factura con saldo, Cord emite una sola v
 
 ## Cotizaciones: aviso de vencimiento
 
-Las cotizaciones aprobadas con saldo pendiente reciben un aviso más simple: un correo **una vez al día durante los tres días previos a su vencimiento y el día en que vencen**. El vencimiento se calcula desde la aprobación más los días del término de pago:
+Las cotizaciones aprobadas con saldo pendiente reciben un aviso más simple: **dos correos, uno tres días antes del vencimiento y otro el día en que vence**. El vencimiento se calcula desde la aprobación más los días del término de pago:
 
 | Término | Vence |
 |---|---|
 | Contado | El día de la aprobación |
-| Net 30 | 30 días después de la aprobación |
-| Net 60 | 60 días después de la aprobación |
+| Net 7, 15, 30, 45, 60 o 90 | Esos días naturales después de la aprobación |
 
-El correo, con tu logo y tu color, dice el folio, el importe total de la cotización con su divisa y la fecha de vencimiento, con el botón **Ver y pagar** que abre el link de la cotización. El asunto es **Recordatorio de pago — [folio]**.
+El correo, con tu logo y tu color, dice el folio, el **saldo** de la cotización con su divisa (el total menos lo ya cobrado de anticipo o cuotas) y la fecha de vencimiento, con el botón **Ver y pagar [folio]** que abre el link de la cotización. El asunto es **Recordatorio de pago — [folio]**, y sale en el idioma de tu cuenta. Ver [Términos de crédito](/docs/pagos/credito).
 
 <Callout type="info">
-Con **Contado**, el vencimiento coincide con la aprobación, así que el aviso puede llegar el mismo día en que tu cliente aprueba. En una cotización con anticipo ya pagado, el correo menciona el total de la cotización; el link sí muestra el saldo exacto que falta.
+Con **Contado**, el vencimiento coincide con la aprobación, así que solo sale el aviso del día y puede llegar el mismo día en que tu cliente aprueba.
 </Callout>
 
 ## Cuándo no se manda un recordatorio
@@ -107,7 +106,7 @@ Si necesitas otro ritmo o un mensaje propio, crea un [workflow](/docs/automatiza
 
 - Un recordatorio de factura por etapa, seis etapas como máximo.
 - La cadencia y el texto no se editan desde la app.
-- Los recordatorios salen en español aunque tu cuenta esté configurada en inglés. Si tus clientes necesitan otro idioma, usa un workflow con tu propio mensaje.
+- Los recordatorios de **factura** salen en español aunque tu cuenta esté configurada en inglés; los de **cotización** ya salen en el idioma de tu cuenta. Si tus clientes necesitan las facturas en otro idioma, usa un workflow con tu propio mensaje.
 - Los recordatorios no adjuntan el PDF; el cliente lo descarga desde el link de la factura.
 - El aviso de cotizaciones no tiene escalera posterior al vencimiento. Para perseguir cotizaciones vencidas usa la [cartera](/docs/pagos/cartera-cobranza) o la [cobranza con IA](/docs/pagos/cobranza-ia).
 

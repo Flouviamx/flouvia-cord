@@ -2,7 +2,7 @@
 title: "Client data"
 seoTitle: "Client data in a quote"
 description: "Pick or create the client for a quote, apply their price tier and terms, and complete the tax information the invoice will need."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-10"
 reviewedBy: "Cord product and operations"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -65,11 +65,11 @@ doesn't change and you can adjust any line's negotiated price by hand.
 - **Company** (required): the client's name. It's also the recipient name on their invoice; write it as it appears on their tax documents.
 - **Contact:** the person who decides.
 - **Email:** where the link is sent when you send the quote from Cord.
-- **Phone**, **Credit limit**, and **Payment terms** (Cash, Net 30, or Net 60) proposed when you quote them.
+- **Phone**, **Credit limit**, and **Payment terms** (Due on receipt or Net 7, 15, 30, 45, 60, or 90) proposed when you quote them. See [Credit terms](/en/docs/pagos/credito).
 
 ### Tax
 
-- **Tax ID:** the label adapts to the client's country: **RFC** in Mexico, NIF/CIF in Spain, EIN/Tax ID in the United States, and so on. Cord stores it uppercased and trimmed; it doesn't validate its structure.
+- **Tax ID:** the label adapts to the client's country: **RFC** in Mexico, NIF/CIF in Spain, EIN/Tax ID in the United States, and so on. Cord checks its check digits with the rules of the client's country (or yours, if you don't assign a country) and stores it normalized; one that fails isn't saved and the message says what to check. When editing, it's only validated again if you change the ID or the country.
 - **Address:** country, postal code, address, city, and state or province, in the **Address** section.
 
 If the client is Mexican (or you don't set a country and your business is in Mexico),
@@ -102,5 +102,5 @@ a **CFDI tax data (Mexico)** section appears with two CFDI 4.0 fields:
 ## Related
 
 - [Clients and statements](/en/docs/gestion/clientes)
-- [Products and discounts](/en/docs/cotizacion/productos)
+- [Products and pricing](/en/docs/cotizacion/productos)
 - [Approval and invoicing](/en/docs/cotizacion/timbrado)

@@ -1,7 +1,7 @@
 ---
 title: "Complete app map"
 description: "What each section of Cord does, how quotes, clients, invoices, payments, collections, reports and settings connect, what is in the sidebar and top bar, and how the test environment and Cord Workbench work."
-lastUpdated: "2026-10-08"
+lastUpdated: "2026-10-10"
 reviewedBy: "Cord product and operations"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -28,7 +28,9 @@ databases; they show different stages of the same clients, documents and transac
 5. The client discusses, approves or rejects and, when applicable, pays online.
 6. Cord records the online payment or the payment you mark manually.
 7. The deal moves to **Invoices** and **Collections** based on the document issued, the
-   balance and the due date.
+   balance and the due date. Your client can pay several invoices from their
+   [invoice portal](/en/docs/pagos/portal-facturas) or leave
+   [automatic payments](/en/docs/pagos/cobro-automatico) on.
 8. **Reports** and **Team** aggregate the results without creating a second copy of the
    transaction.
 </Steps>
@@ -52,7 +54,7 @@ workspaces, create a new one (**Create workspace**), open **Team settings**, tur
 | Revenue | **Payments** | `/app/cobros` | Charges, payouts, balances, refunds and disputes. Guide: [Payments dashboard](/en/docs/pagos/dashboard). |
 | Revenue | **Collections** | `/app/cobranza` | Receivables, aging and exposure by client (Professional or higher). The red counter shows overdue documents. Guide: [Receivables and follow-up](/en/docs/pagos/cartera-cobranza). |
 | Revenue | **AI agent** (under Collections) | `/app/cobranza/agente` | Configure and supervise AI collections (Pro, Scale, or Developer). Guide: [Autonomous collections (AI)](/en/docs/pagos/cobranza-ia). |
-| Insights | **Reports** | `/app/informes` | Overview, sales diagnosis, finance, cash flow, collections, clients and products. Guide: [Reports and performance](/en/docs/gestion/informes). |
+| Insights | **Reports** | `/app/informes` | 15 reports: overview, commercial diagnosis, sales over time, by client, by product, and by team member, clients, repeat purchase, products, payments received, invoiced taxes, finance, cash flow, collections, and a custom report you can save and get by email. Guide: [Reports and performance](/en/docs/gestion/informes). |
 | Insights | **Performance** | `/app/desempeno` | Team performance: results attributed to whoever created or duplicated each quote. |
 | Automation | **Workflows** | `/app/workflows` | "When this happens, do this" automations, ready-made ideas and run history. Guide: [Cord Workflows](/en/docs/automatizacion/workflows). |
 
@@ -66,6 +68,9 @@ Also:
 - **Settings** (`/app/ajustes`) opens with the gear in the top bar. See the
   [Settings map](/en/docs/cuenta/mapa-de-ajustes).
 - **Set up with AI** (`/app/setup`) opens from **Settings › General**.
+- Each client's **invoice portal** isn't in the sidebar: you create, send, or disable it
+  from the client's profile, and your client opens it on their own link
+  (`cordhq.app/portal/...`). See [Invoice portal](/en/docs/pagos/portal-facturas).
 
 ## Top bar
 
@@ -168,7 +173,7 @@ The owner always has full access. Other members get presets or per-section permi
 - **Quotes:** create, edit, send and duplicate.
 - **Approvals:** approve discounts, amounts or controlled changes.
 - **Collections:** review and manage receivables.
-- **Clients** and **Products:** change their directories.
+- **Clients** and **Products:** change their directories; with **Clients**, also create, send, rotate, or disable a client's invoice portal.
 - **Analytics:** open Reports and Team (performance).
 - **Settings:** change the business configuration.
 - **Payment configuration:** change Cord Payments and the payout account.
@@ -185,10 +190,12 @@ configuration that feature requires.
 - Cord Payments is available in the first eight. In Colombia, Argentina, Chile and Peru,
   online payments work with [Mercado Pago](/en/docs/pagos/mercado-pago), which is also
   offered in Mexico and Brazil as an alternative.
-- SPEI is exclusive to Mexico.
+- SPEI is exclusive to Mexico. SEPA debit is for Spain, Germany, and France (in EUR) and
+  ACH bank debit for the United States (in USD).
 - Mexico issues CFDI 4.0 with a valid CSD.
-- Outside Mexico, Cord issues commercial invoices. In Spain, registration with the AEAT
-  (Verifactu) is not active yet.
+- Outside Mexico, Cord issues commercial invoices. In Argentina, Brazil, Chile, Colombia,
+  and Peru, the invoice authorized by the tax authority when issuing is active on your
+  account. In Spain, registration with the AEAT (Verifactu) is not active yet.
 
 ## Before looking for an error
 

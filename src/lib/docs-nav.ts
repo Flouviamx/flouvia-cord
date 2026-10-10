@@ -90,7 +90,7 @@ export const DOCS_NAV: NavSection[] = [
           { slug: 'cotizacion/resumen', label: OVERVIEW },
           { slug: 'cotizacion/ia', label: { es: 'Generar con IA', en: 'Generate with AI' } },
           { slug: 'cotizacion/cliente', label: { es: 'Datos del cliente', en: 'Client data' } },
-          { slug: 'cotizacion/productos', label: { es: 'Productos y descuentos', en: 'Products and discounts' } },
+          { slug: 'cotizacion/productos', label: { es: 'Productos y precios', en: 'Products and pricing' } },
           { slug: 'cotizacion/descuentos', label: { es: 'Descuentos y cupones', en: 'Discounts and coupons' } },
           { slug: 'cotizacion/opciones', label: { es: 'Opciones avanzadas', en: 'Advanced options' } },
           { slug: 'cotizacion/envio', label: { es: 'Vista previa y envío', en: 'Preview and sending' } },

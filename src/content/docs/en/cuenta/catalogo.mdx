@@ -2,7 +2,7 @@
 title: "Import your catalog"
 seoTitle: "Cord catalog: products, kits, volume pricing and CSV import"
 description: "Create products and services, build kits, set volume pricing, and import products and clients from a CSV file with column mapping and preview."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-10"
 reviewedBy: "Cord product and operations"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -46,7 +46,7 @@ earlier quotes.
 **Tax does not live on the product.** Cord calculates taxes per **quote line**: the same
 product can be taxed in one sale and exempt in another. When you add the line you choose
 the rate from your account's tax catalog (**Settings › Quotes › Taxes**), named after
-your country's tax. See [Products and discounts](/en/docs/cotizacion/productos).
+your country's tax. See [Products and pricing](/en/docs/cotizacion/productos).
 </Callout>
 
 ## Volume pricing
@@ -140,8 +140,8 @@ columns and review. It also offers its own sample template.
 |---|---|---|
 | **Company** | Yes | Rows without a company are skipped. |
 | **Contact**, **Email**, **Phone** | No | Text as provided. |
-| **Tax ID** (RFC, NIF, EIN...) | No | Stored in uppercase. |
-| **Payment terms** | No | A value containing "60" becomes Net 60; containing "30", "net" or "credito", Net 30; anything else, Cash. |
+| **Tax ID** (RFC, NIF, EIN...) | No | Validated with the country's rules and stored normalized. A row whose ID fails is skipped and the screen tells you which one and why; the rest is imported. An ID the client already had unchanged isn't validated again. |
+| **Payment terms** | No | A code (`net45`) is taken as is. A number is read as the closest offered term **without going over**: "45 days" becomes Net 45, "40 days" Net 30, and "5" Due on receipt. Without a number, "credit", "net", or "plazo" become Net 30. Empty or any other text, Due on receipt. |
 | **Credit limit** | No | A number without a currency symbol; empty means no limit. |
 
 With **Update existing clients (same tax ID or name)** on, a row that matches by tax ID
@@ -195,7 +195,7 @@ your price list in Excel, PDF or a photo, use
 
 ## Related pages
 
-- [Products and discounts](/en/docs/cotizacion/productos)
+- [Products and pricing](/en/docs/cotizacion/productos)
 - [Clients and statements](/en/docs/gestion/clientes)
 - [Set up your account with AI](/en/docs/cuenta/configurar-con-ia)
 - [Your Cord subscription](/en/docs/cuenta/suscripcion)
