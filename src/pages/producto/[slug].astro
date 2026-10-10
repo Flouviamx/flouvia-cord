@@ -267,6 +267,8 @@ const MK_RAIL: { k: keyof typeof MKI; on?: boolean; sep?: boolean }[] = [
 const MK_RAIL_WF: typeof MK_RAIL = [...MK_RAIL.map((it) => ({ ...it, on: false })), { k: 'workflows', on: true }];
 const WFI = WORKFLOW_ICONS;
 import { iconInner } from '../../lib/icons';
+import InvoicingCountries from '../../components/producto/InvoicingCountries.astro';
+import InvoicingFiscalMatrix from '../../components/producto/InvoicingFiscalMatrix.astro';
 ---
 
 <Layout
@@ -1669,6 +1671,8 @@ import { iconInner } from '../../lib/icons';
                 </article>
             ))}
         </section>
+        {feature.slug === 'facturacion' && <InvoicingCountries isEn={isEn} />}
+        {feature.slug === 'facturacion' && <InvoicingFiscalMatrix isEn={isEn} />}
 
         <!-- ── FEATURE SHOWCASE (tabbed, ElevenLabs-style) ── -->
         <FeatureShowcase slug={feature.slug} tabs={feature.showcase} nav={feature.nav} isEn={isEn} />

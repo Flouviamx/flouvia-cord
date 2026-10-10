@@ -1,0 +1,618 @@
+---
+// "Cobra en los 12 países" — /producto/facturacion (ES y EN).
+//
+// Una pestaña por país con la calca de la página pública de la factura
+// (src/pages/i/[token].astro) tal como la ve un cliente en el teléfono: dos
+// recortes de la MISMA página, arriba (negocio, folio, saldo) y abajo (el
+// cobro, después de pulsar Pagar). Las clases `icp-iv-*` espejan una a una las
+// `.iv-*` de esa página, con sus valores en la variante ≤640 px; los textos
+// salen de las mismas claves de src/i18n/app.ts o, donde la página los escribe
+// en línea, de IV_LITERAL. Qué botones aparecen lo deciden las funciones reales
+// de la página (`publicInvoicePayability`, `publicInvoiceGuidance`).
+//
+// Todo dato se deriva en src/lib/producto-facturacion-paises.ts.
+import { t } from '../../i18n/app';
+import { flagSrc } from '../../lib/flags';
+import { iconInner } from '../../lib/icons';
+import { MP_MARK } from '../../lib/brand-marks';
+import { paisesCobro, resumenMetodos, COBRO_COPY, IV_LITERAL } from '../../lib/producto-facturacion-paises';
+
+interface Props { isEn?: boolean }
+const { isEn = false } = Astro.props;
+const L = isEn ? 'en' : 'es';
+const C = COBRO_COPY[L];
+const T = (k: Parameters<typeof t>[1]) => t(L, k);
+const paises = paisesCobro(L, T);
+const resumen = resumenMetodos(L);
+const lit = (k: keyof typeof IV_LITERAL) => IV_LITERAL[k][L];
+// Diferencia intencional con /i: ahí el saldo mide 2.65rem fijo a 390 px y un
+// importe largo con código de divisa (COP 33,343,800.00, unido por un espacio
+// no separable) desborda el recuadro. En la calca se reduce solo cuando no cabe.
+const ajuste = (s: string) => {
+    const n = [...s].length;
+    return n > 13 ? `font-size:${(2.65 * 13 / n).toFixed(2)}rem;` : '';
+};
+
+const FAV = (domain: string) => `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://${domain}&size=64`;
+const MP_LOGO = FAV('mercadopago.com');
+const CARD_BRANDS: [string, string][] = [['visa.com', 'Visa'], ['mastercard.com', 'Mastercard'], ['americanexpress.com', 'American Express']];
+// Ilustración del campo de código de seguridad (reverso de tarjeta), no un icono de la app.
+const CVC_ART = '<rect x="1" y="3" width="22" height="16" rx="2.5" fill="#e6e6e6"/><rect x="1" y="6.5" width="22" height="3" fill="#a3acb9"/><rect x="13" y="12" width="7" height="4" rx="1" fill="#fff"/>';
+---
+
+<section class="icp" aria-labelledby="icp-title" data-icp>
+    <div class="icp-intro">
+        <div class="icp-intro-copy">
+            <h2 id="icp-title" class="icp-h2 masked-title">{C.title}</h2>
+            <p class="icp-sub reveal">{C.sub}</p>
+        </div>
+        <ul class="icp-check reveal">
+            {resumen.map((r) => (
+                <li class={r.estado === 'live' ? 'is-live' : 'is-soon'}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner(r.estado === 'live' ? 'check-circle' : 'clock')} />
+                    <span>
+                        <b>{r.label}</b>
+                        <small>{r.estado === 'live' ? r.detalle : `${C.soon} · ${r.detalle}`}</small>
+                    </span>
+                </li>
+            ))}
+        </ul>
+    </div>
+
+    <div class="icp-body reveal">
+        <div class="icp-tabs" role="tablist" aria-label={C.tablist} aria-orientation="vertical">
+            {paises.map((p, i) => (
+                <button type="button" role="tab" class="icp-tab" id={`icp-tab-${p.code}`} aria-controls={`icp-panel-${p.code}`}
+                        aria-selected={i === 0 ? 'true' : 'false'} tabindex={i === 0 ? 0 : -1}>
+                    <img class="icp-flag" src={flagSrc(p.flagCode)} alt="" width="24" height="24" loading="lazy" decoding="async" />
+                    <span class="icp-tab-id">
+                        <b>{p.name}</b>
+                        <small>{[p.currency, ...p.metodos.filter((m) => m.estado === 'live').map((m) => m.label)].join(' · ')}</small>
+                    </span>
+                </button>
+            ))}
+        </div>
+
+        <div class="icp-panels">
+            {paises.map((p, i) => {
+                const iv = p.iv;
+                const fm = iv.formulario;
+                return (
+                    <div class="icp-panel" role="tabpanel" id={`icp-panel-${p.code}`} aria-labelledby={`icp-tab-${p.code}`} tabindex="0" hidden={i !== 0}>
+                        <div class="icp-stage" aria-hidden="true">
+                            <div class="icp-orb icp-orb-top"></div>
+                            <div class="icp-orb icp-orb-bottom" style={`background: radial-gradient(circle, ${iv.color}14 0%, transparent 70%)`}></div>
+
+                            {/* Recorte 1: el principio de la página. */}
+                            <div class="icp-shot icp-shot-top">
+                                <div class="icp-iv-main">
+                                    <article class="icp-iv-card">
+                                        {iv.proforma && <div class="icp-iv-note">{lit('proformaNota')}</div>}
+                                        <header class="icp-iv-head">
+                                            <div class="icp-iv-brand">
+                                                <span class="icp-iv-brand-mark" style={`background:${iv.color}`}>{iv.org.slice(0, 1).toUpperCase()}</span>
+                                                <span class="icp-iv-brand-copy"><strong>{iv.org}</strong><small>{iv.taxIdLabel} {iv.taxId}</small></span>
+                                            </div>
+                                            <div class="icp-iv-folio-tag"><span>{iv.titulo}</span><strong>{iv.numero}</strong></div>
+                                        </header>
+                                        <div class="icp-iv-rule"></div>
+                                        <section class="icp-iv-total-hero">
+                                            <span class="icp-iv-total-label">{lit('saldoPendiente')}</span>
+                                            <span class="icp-iv-amount editorial" style={`color:${iv.color};${ajuste(iv.saldo)}`}>{iv.saldo}</span>
+                                            <div class="icp-iv-headmeta"><span class="icp-iv-chip icp-iv-chip-wait">{T('fact.p_estado_open')}</span></div>
+                                            <p class="icp-iv-sub"><span>{T('fact.p_emitida')} {iv.emitida}</span><span>{T('fact.p_vence_el')} {iv.vence}</span></p>
+                                        </section>
+                                        <section class="icp-iv-next">
+                                            <p>{iv.guidance}</p>
+                                            <div class="icp-iv-next-actions">
+                                                <span>{lit('refrescar')}</span>
+                                                {iv.mailto && <span>{lit('escribir')}</span>}
+                                                {iv.tel && <span>{lit('llamar')}</span>}
+                                            </div>
+                                        </section>
+                                        <section class="icp-iv-parties">
+                                            <div>
+                                                <span class="icp-iv-label">{T('fact.p_de')}</span>
+                                                <p class="icp-iv-party">{iv.legal}</p>
+                                                <p class="icp-iv-party-sub">{iv.email}</p>
+                                            </div>
+                                            <div>
+                                                <span class="icp-iv-label">{T('fact.p_para')}</span>
+                                                <p class="icp-iv-party">{iv.cliente}</p>
+                                                <p class="icp-iv-party-sub">{iv.taxIdLabel} {iv.clienteTaxId}</p>
+                                            </div>
+                                        </section>
+                                        <p class="icp-iv-lines-hint">{lit('desliza')}</p>
+                                        <section class="icp-iv-lines">
+                                            <table>
+                                                <thead><tr><th>{T('fact.p_concepto')}</th><th class="icp-iv-num">{T('fact.p_cant')}</th><th class="icp-iv-num">{T('fact.p_precio')}</th><th class="icp-iv-num">{T('fact.p_importe')}</th></tr></thead>
+                                                <tbody>
+                                                    {iv.lineas.map((l) => (
+                                                        <tr><td>{l.d}</td><td class="icp-iv-num">{l.q}</td><td class="icp-iv-num editorial">{l.p}</td><td class="icp-iv-num editorial">{l.a}</td></tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </section>
+                                    </article>
+                                </div>
+                            </div>
+
+                            {/* Recorte 2: el final de la página, ya con el formulario de pago abierto. */}
+                            <div class="icp-shot icp-shot-bottom">
+                                <div class="icp-iv-main">
+                                    <article class="icp-iv-card icp-iv-card-cut">
+                                        <section class="icp-iv-parties">
+                                            <div>
+                                                <span class="icp-iv-label">{T('fact.p_de')}</span>
+                                                <p class="icp-iv-party">{iv.legal}</p>
+                                                <p class="icp-iv-party-sub">{iv.email}</p>
+                                            </div>
+                                            <div>
+                                                <span class="icp-iv-label">{T('fact.p_para')}</span>
+                                                <p class="icp-iv-party">{iv.cliente}</p>
+                                                <p class="icp-iv-party-sub">{iv.taxIdLabel} {iv.clienteTaxId}</p>
+                                            </div>
+                                        </section>
+                                        <p class="icp-iv-lines-hint">{lit('desliza')}</p>
+                                        <section class="icp-iv-lines">
+                                            <table>
+                                                <thead><tr><th>{T('fact.p_concepto')}</th><th class="icp-iv-num">{T('fact.p_cant')}</th><th class="icp-iv-num">{T('fact.p_precio')}</th><th class="icp-iv-num">{T('fact.p_importe')}</th></tr></thead>
+                                                <tbody>
+                                                    {iv.lineas.map((l) => (
+                                                        <tr><td>{l.d}</td><td class="icp-iv-num">{l.q}</td><td class="icp-iv-num editorial">{l.p}</td><td class="icp-iv-num editorial">{l.a}</td></tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </section>
+                                        <section class="icp-iv-totals">
+                                            {iv.totales.map((r) => (
+                                                <div class:list={['icp-iv-row', { 'icp-iv-row-total': r.cls === 'total', 'icp-iv-row-due': r.cls === 'due' }]}><span>{r.k}</span><span class="editorial">{r.v}</span></div>
+                                            ))}
+                                        </section>
+                                        {iv.pagos.length > 0 && (
+                                            <section class="icp-iv-pagos">
+                                                <span class="icp-iv-label">{T('fact.p_pagos')}</span>
+                                                <ul>{iv.pagos.map((pg) => <li><span>{pg.cuando}</span><span class="editorial">{pg.monto}</span></li>)}</ul>
+                                            </section>
+                                        )}
+                                        <footer class="icp-iv-foot">
+                                            {(iv.puedePagar || iv.puedePagarMp) && <span class="icp-iv-pay-partial">{T('fact.p_pagar_otro')}</span>}
+                                            {iv.puedePagarMp && (
+                                                <Fragment>
+                                                    {iv.puedePagar && <div class="icp-iv-or"><span>{T('pay.mp_o')}</span></div>}
+                                                    <span class="icp-iv-mp">
+                                                        <svg class="icp-iv-mp-logo" viewBox="0 0 24 24"><path fill="currentColor" d={MP_MARK} /></svg>
+                                                        <span>{T('pay.mp_pagar')}</span>
+                                                        <svg class="icp-iv-mp-go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('arrow-up-right')} />
+                                                    </span>
+                                                </Fragment>
+                                            )}
+                                            <div class="icp-iv-dl">{iv.descargas.map((d) => <span>{d}</span>)}</div>
+                                            {iv.fiscalId && <p class="icp-iv-uuid">{T('fact.p_folio_fiscal')} {iv.fiscalId}</p>}
+                                            <p class="icp-iv-powered">{iv.org} · {T('fact.p_enviado_con')}</p>
+                                        </footer>
+                                    </article>
+                                    <p class="icp-iv-aviso">{T('fact.p_aviso')}</p>
+                                    {fm && (
+                                        <div class="icp-iv-paywrap">
+                                            <div class="icp-iv-payinner">
+                                                <div class="icp-pe" lang={fm.text.locale}>
+                                                    {fm.tabs.length > 1 && (
+                                                        <div class="icp-pe-tabs">{fm.tabs.map((tab, ti) => <span class:list={['icp-pe-tab', { on: ti === 0 }]}>{tab}</span>)}</div>
+                                                    )}
+                                                    <div class="icp-pe-field">
+                                                        <span class="icp-pe-label">{fm.text.number}</span>
+                                                        <span class="icp-pe-input"><span class="icp-pe-ph">1234 1234 1234 1234</span><span class="icp-pe-brands">{CARD_BRANDS.map(([dom]) => <img src={FAV(dom)} alt="" width="16" height="16" loading="lazy" />)}</span></span>
+                                                    </div>
+                                                    <div class="icp-pe-row">
+                                                        <div class="icp-pe-field">
+                                                            <span class="icp-pe-label">{fm.text.expiry}</span>
+                                                            <span class="icp-pe-input"><span class="icp-pe-ph">{fm.text.expiryPh}</span></span>
+                                                        </div>
+                                                        <div class="icp-pe-field">
+                                                            <span class="icp-pe-label">{fm.text.cvc}</span>
+                                                            <span class="icp-pe-input"><span class="icp-pe-ph">CVC</span><svg class="icp-pe-cvc" viewBox="0 0 24 22" set:html={CVC_ART} /></span>
+                                                        </div>
+                                                    </div>
+                                                    <div class:list={['icp-pe-row', { 'icp-pe-row-1': !fm.text.postal }]}>
+                                                        <div class="icp-pe-field">
+                                                            <span class="icp-pe-label">{fm.text.country}</span>
+                                                            <span class="icp-pe-input"><span>{fm.countryLabel}</span><svg class="icp-pe-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-down')} /></span>
+                                                        </div>
+                                                        {fm.text.postal && (
+                                                            <div class="icp-pe-field">
+                                                                <span class="icp-pe-label">{fm.text.postal}</span>
+                                                                <span class="icp-pe-input"><span class="icp-pe-ph">{fm.text.postalPh}</span></span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <span class="icp-iv-pay" style={`background:${iv.color}`}>{T('fact.p_confirmar')}</span>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        <dl class="icp-facts">
+                            <div>
+                                <dt>{C.paga}</dt>
+                                <dd class="icp-chips">
+                                    {p.metodos.map((m) => (
+                                        <span class:list={['icp-chip', { 'is-soon': m.estado !== 'live' }]}>
+                                            {m.key === 'mercadopago'
+                                                ? <img src={MP_LOGO} alt="" width="14" height="14" loading="lazy" />
+                                                : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner(m.key === 'card' ? 'card' : 'bank')} />}
+                                            {m.label}
+                                            {m.estado !== 'live' && <em>{C.soon}</em>}
+                                        </span>
+                                    ))}
+                                </dd>
+                            </div>
+                            <div>
+                                <dt>{C.divisa}</dt>
+                                <dd><b>{p.currency}</b><small>{C.divisaNota}</small></dd>
+                            </div>
+                            <div>
+                                <dt>{C.recibes}</dt>
+                                <dd>{p.payout.map((x, xi) => <span class:list={[{ 'icp-alt': xi > 0 }]}>{x}</span>)}</dd>
+                            </div>
+                            <div>
+                                <dt>{C.idioma}</dt>
+                                <dd>
+                                    <span>{C.idiomaPagina}</span>
+                                    <span>{C.idiomaPdf}: {p.pdfLang}</span>
+                                    {iv.formulario && <span class="icp-alt">{C.idiomaTarjeta}</span>}
+                                </dd>
+                            </div>
+                        </dl>
+                        <a class="icp-guide" href={p.docsUrl}>
+                            <span>{C.guia}: {p.name}</span>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-right')} />
+                        </a>
+                    </div>
+                );
+            })}
+            <p class="icp-caption">{C.caption}</p>
+        </div>
+    </div>
+</section>
+
+<script>
+    // Pestañas accesibles (patrón WAI-ARIA tablist): selección automática con
+    // flechas, Inicio y Fin; tabindex móvil; aria-orientation sigue al layout.
+    document.querySelectorAll<HTMLElement>('[data-icp]').forEach((root) => {
+        const list = root.querySelector<HTMLElement>('[role="tablist"]');
+        const tabs = Array.from(root.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
+        if (!list || !tabs.length) return;
+        const vertical = window.matchMedia('(min-width: 1101px)');
+        const orient = () => list.setAttribute('aria-orientation', vertical.matches ? 'vertical' : 'horizontal');
+        orient();
+        vertical.addEventListener('change', orient);
+
+        const select = (i: number, focus: boolean) => {
+            tabs.forEach((tab, j) => {
+                const on = j === i;
+                tab.setAttribute('aria-selected', on ? 'true' : 'false');
+                tab.tabIndex = on ? 0 : -1;
+                const panel = document.getElementById(tab.getAttribute('aria-controls') || '');
+                if (panel) panel.hidden = !on;
+            });
+            const tab = tabs[i];
+            if (focus) tab.focus({ preventScroll: true });
+            // En móvil la lista es una fila con scroll: lleva la pestaña a la vista
+            // sin mover la página.
+            if (!vertical.matches) {
+                const left = tab.offsetLeft - (list.clientWidth - tab.offsetWidth) / 2;
+                list.scrollTo({ left, behavior: 'smooth' });
+            }
+        };
+
+        tabs.forEach((tab, i) => {
+            tab.addEventListener('click', () => select(i, false));
+            tab.addEventListener('keydown', (e) => {
+                const last = tabs.length - 1;
+                let next = -1;
+                if (e.key === 'ArrowDown' || e.key === 'ArrowRight') next = i === last ? 0 : i + 1;
+                else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') next = i === 0 ? last : i - 1;
+                else if (e.key === 'Home') next = 0;
+                else if (e.key === 'End') next = last;
+                if (next < 0) return;
+                e.preventDefault();
+                select(next, true);
+            });
+        });
+    });
+</script>
+
+<style>
+    .icp {
+        max-width: 1360px;
+        margin: 0 auto;
+        padding: 6.5rem 5% 0;
+    }
+    .icp-intro {
+        display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+        gap: 3.5rem; align-items: start;
+        margin: 0 0 3rem;
+    }
+    .icp-h2 {
+        font-size: clamp(1.85rem, 2.9vw, 2.6rem);
+        font-weight: 800; letter-spacing: -0.035em; line-height: 1.1;
+        color: #050505; margin: 0; text-wrap: balance;
+    }
+    .icp-sub {
+        font-size: 1.05rem; line-height: 1.6; color: var(--color-text-muted);
+        margin: 1.1rem 0 0; text-wrap: pretty; max-width: 560px;
+    }
+    .icp-check {
+        list-style: none; margin: 0; padding: 0.4rem 0 0;
+        display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 2rem;
+    }
+    .icp-check li {
+        display: flex; align-items: flex-start; gap: 0.7rem;
+        padding: 0.85rem 0; border-top: 1px solid rgba(10,25,47,0.08);
+    }
+    .icp-check svg { width: 20px; height: 20px; flex-shrink: 0; margin-top: 1px; }
+    .icp-check .is-live svg { color: #059669; }
+    .icp-check .is-soon svg { color: #b45309; }
+    .icp-check span { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .icp-check b { font-size: 0.9rem; font-weight: 650; color: #0a192f; letter-spacing: -0.01em; }
+    .icp-check small { font-size: 0.78rem; color: #8a94a3; }
+
+    /* ── Cuerpo: pestañas + escenario ── */
+    .icp-body {
+        display: grid; grid-template-columns: 236px minmax(0, 1fr);
+        gap: 2rem; align-items: start;
+    }
+    .icp-tabs { display: flex; flex-direction: column; gap: 2px; }
+    .icp-tab {
+        display: flex; align-items: center; gap: 0.75rem;
+        width: 100%; min-height: 52px; padding: 0.45rem 0.8rem 0.45rem 0.6rem;
+        border: 0; border-radius: 14px; background: transparent;
+        font: inherit; text-align: left; color: #0a192f; cursor: pointer;
+        transition: background 0.25s ease, box-shadow 0.25s ease;
+    }
+    .icp-tab:hover { background: rgba(10,25,47,0.035); }
+    .icp-tab[aria-selected="true"] {
+        background: #fff;
+        box-shadow: 0 0 0 1px rgba(10,25,47,0.06), 0 2px 4px rgba(10,25,47,0.04), 0 12px 26px -14px rgba(10,25,47,0.18);
+    }
+    .icp-tab:focus-visible { outline: 2px solid rgba(10,25,47,0.4); outline-offset: 2px; }
+    .icp-flag {
+        width: 24px; height: 24px; flex-shrink: 0; border-radius: 50%;
+        box-shadow: 0 0 0 1px rgba(10,25,47,0.08);
+    }
+    .icp-tab-id { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+    .icp-tab-id b { font-size: 0.88rem; font-weight: 650; letter-spacing: -0.01em; white-space: nowrap; }
+    .icp-tab-id small { font-size: 0.7rem; color: #8a94a3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .icp-tab[aria-selected="false"] .icp-tab-id b { color: #475569; font-weight: 600; }
+
+    .icp-panel[hidden] { display: none; }
+    .icp-panel:focus-visible { outline: 2px solid rgba(10,25,47,0.3); outline-offset: 6px; border-radius: 28px; }
+
+    /* El escenario es el fondo REAL de /i (.iv-bg, .iv-orb): #f3f2ef con dos orbes. */
+    .icp-stage {
+        --z: 0.88;
+        position: relative; overflow: hidden;
+        height: 720px; border-radius: 28px;
+        background: #f3f2ef;
+        display: flex; justify-content: center; gap: 30px;
+        isolation: isolate;
+    }
+    /* Los orbes de /i (`.iv-orb`), detrás de los recortes como su `.iv-bg`. */
+    .icp-orb { position: absolute; z-index: 0; border-radius: 50%; filter: blur(90px); pointer-events: none; }
+    .icp-orb-top { width: 70%; aspect-ratio: 1; top: -30%; left: -15%; background: radial-gradient(circle, rgba(10, 25, 47, 0.05) 0%, transparent 70%); }
+    .icp-orb-bottom { width: 55%; aspect-ratio: 1; bottom: -20%; right: -10%; opacity: 0.7; }
+    .icp-shot { position: relative; z-index: 1; flex: 0 0 calc(390px * var(--z)); height: 100%; }
+    .icp-shot > .icp-iv-main { position: absolute; left: 0; width: 390px; zoom: var(--z); }
+    .icp-shot-top > .icp-iv-main { top: 0; }
+    /* El final de la página, con casi todo su margen inferior fuera de cuadro. */
+    .icp-shot-bottom > .icp-iv-main { bottom: -36px; }
+
+    /* ════ Calca de src/pages/i/[token].astro — viewport de 390 px (≤640 px) ════ */
+    .icp-iv-main { padding: 24px 14px 60px; text-align: left; }
+    .icp-iv-card {
+        position: relative; overflow: hidden; background: #fff; border-radius: 26px; padding: 26px 20px;
+        border: 1px solid rgba(10, 25, 47, 0.06);
+        box-shadow: 0 4px 6px rgba(10, 25, 47, 0.03), 0 20px 60px -20px rgba(10, 25, 47, 0.12);
+        animation: icpCardIn 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+    @keyframes icpCardIn { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+    .icp-iv-note {
+        display: flex; align-items: center; gap: 10px;
+        background: #fff; border-radius: 14px; padding: 12px 16px; margin-bottom: 20px;
+        font-size: 14px; color: #4b5563; box-shadow: 0 1px 2px rgba(10, 25, 47, 0.04);
+    }
+    .icp-iv-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 18px; }
+    .icp-iv-brand { display: flex; align-items: center; gap: 13px; min-width: 0; }
+    .icp-iv-brand-mark {
+        display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        width: 44px; height: 44px; border-radius: 13px; color: #fff; font-size: 1rem; font-weight: 800;
+    }
+    .icp-iv-brand-copy { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .icp-iv-brand-copy strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 1rem; color: #111; max-width: 150px; }
+    .icp-iv-brand-copy small { display: none; }
+    .icp-iv-folio-tag { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex-shrink: 0; }
+    .icp-iv-folio-tag span { font-size: 0.52rem; font-weight: 800; letter-spacing: 1.7px; text-transform: uppercase; color: #c4c8cf; }
+    .icp-iv-folio-tag strong { font-size: 0.96rem; color: #111; letter-spacing: -0.02em; }
+    .icp-iv-rule { height: 1px; margin: 1.4rem 0; background: rgba(10, 25, 47, 0.07); }
+
+    .icp-iv-total-hero {
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        min-height: 165px; padding: 1.4rem 1rem; margin-bottom: 1.7rem;
+        border: 1px solid rgba(10, 25, 47, 0.055); border-radius: 20px; background: #fafafa; text-align: center;
+    }
+    .icp-iv-total-label { font-size: 0.54rem; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: #b7bcc5; }
+    /* h1 de la página: clamp(2.65rem, 8vw, 3.55rem) a 390 px = 2.65rem. */
+    .icp-iv-amount { display: block; margin: 0.35rem 0 0.7rem; font-size: 2.65rem; line-height: 1; letter-spacing: -0.05em; }
+    .icp-iv-headmeta { display: flex; justify-content: center; gap: 7px; flex-wrap: wrap; }
+    .icp-iv-chip { font-size: 12px; font-weight: 500; padding: 5px 11px; border-radius: 999px; white-space: nowrap; }
+    .icp-iv-chip-wait { background: rgba(10, 25, 47, 0.06); color: #0a192f; }
+    .icp-iv-sub { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.3rem 1rem; font-size: 0.76rem; color: #8a8f99; margin: 0.75rem 0 0; }
+
+    .icp-iv-next { margin: -0.6rem 0 2rem; color: #4a5567; font-size: 0.88rem; line-height: 1.6; }
+    .icp-iv-next p { margin: 0; }
+    .icp-iv-next-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 1.25rem; margin-top: 0.65rem; }
+    .icp-iv-next-actions span { display: inline-flex; align-items: center; min-height: 44px; color: #0a192f; font-weight: 600; text-decoration: underline; text-underline-offset: 4px; }
+
+    .icp-iv-label { font-size: 0.52rem; font-weight: 800; letter-spacing: 1.7px; text-transform: uppercase; color: #c4c8cf; }
+    .icp-iv-parties { display: grid; grid-template-columns: 1fr; gap: 18px; margin-bottom: 2.2rem; }
+    .icp-iv-party { font-size: 0.9rem; color: #111827; margin: 7px 0 0; font-weight: 650; }
+    .icp-iv-party-sub { font-size: 0.74rem; color: #8a8f99; margin: 3px 0 0; }
+
+    .icp-iv-lines-hint { display: block; font-size: 0.75rem; color: #6b7280; margin: 0.75rem 0; }
+    .icp-iv-lines { overflow: hidden; }
+    .icp-iv-lines table { width: 100%; border-collapse: collapse; min-width: 420px; }
+    .icp-iv-lines th {
+        text-align: left; font-size: 0.52rem; letter-spacing: 1.35px; text-transform: uppercase;
+        color: #c4c8cf; font-weight: 800; padding: 0 0 0.7rem; border-bottom: 1px solid rgba(10, 25, 47, 0.07);
+    }
+    .icp-iv-lines td { padding: 0.95rem 0; font-size: 0.84rem; color: #4b5563; border-bottom: 1px solid rgba(10, 25, 47, 0.045); }
+    .icp-iv-lines td:first-child { color: #111827; font-weight: 600; }
+    .icp-iv-lines .icp-iv-num { text-align: right; }
+
+    .icp-iv-totals { margin-top: 1.8rem; margin-left: auto; }
+    .icp-iv-row { display: flex; justify-content: space-between; padding: 0.42rem 0; font-size: 0.82rem; color: #6b7280; }
+    .icp-iv-row-total { border-top: 1px solid #eceff3; margin-top: 6px; padding-top: 13px; color: #111827; font-weight: 500; }
+    .icp-iv-row-due { border-top: 1px solid #0a192f; margin-top: 6px; padding-top: 13px; color: #050505; font-size: 18px; font-weight: 600; }
+
+    .icp-iv-pagos { margin-top: 32px; }
+    .icp-iv-pagos ul { list-style: none; margin: 10px 0 0; padding: 0; }
+    .icp-iv-pagos li { display: flex; justify-content: space-between; padding: 7px 0; font-size: 14px; color: #4b5563; }
+
+    .icp-iv-foot { margin-top: 2.5rem; padding-top: 1.8rem; border-top: 1px solid rgba(10, 25, 47, 0.07); }
+    .icp-iv-pay {
+        display: flex; align-items: center; justify-content: center; width: 100%; min-height: 50px; border-radius: 14px;
+        color: #fff; font-size: 0.94rem; font-weight: 650; padding: 0.9rem 1.5rem;
+        box-shadow: 0 12px 28px -14px rgba(10, 25, 47, 0.5);
+    }
+    .icp-iv-pay-partial {
+        display: block; width: 100%; margin-top: 0.6rem; text-align: center;
+        font-size: 0.84rem; font-weight: 600; line-height: normal;
+        color: #4a5567; border: 1px solid #e5e7eb; border-radius: 999px; padding: 12px 20px;
+    }
+    .icp-iv-or { display: flex; align-items: center; gap: 12px; margin: 14px 0 12px; color: #8a93a2; font-size: 0.75rem; }
+    .icp-iv-or::before, .icp-iv-or::after { content: ''; flex: 1; height: 1px; background: rgba(10, 25, 47, 0.1); }
+    .icp-iv-mp {
+        display: flex; align-items: center; justify-content: center; gap: 10px;
+        width: 100%; min-height: 50px; border-radius: 14px;
+        background: #009ee3; color: #fff; font-size: 0.94rem; font-weight: 650;
+        box-shadow: 0 12px 28px -14px rgba(0, 120, 180, 0.55);
+    }
+    .icp-iv-mp-logo { width: 30px; height: 30px; flex-shrink: 0; }
+    .icp-iv-mp-go { width: 14px; height: 14px; flex-shrink: 0; opacity: 0.7; }
+    .icp-iv-dl { display: flex; justify-content: center; gap: 1.2rem; margin-top: 1.25rem; flex-wrap: wrap; }
+    .icp-iv-dl span { font-size: 0.78rem; font-weight: 650; color: #0a192f; }
+    .icp-iv-uuid { font-size: 12px; color: #9ca3af; margin: 18px 0 0; word-break: break-all; }
+    .icp-iv-powered { font-size: 12px; color: #9ca3af; margin: 8px 0 0; }
+    .icp-iv-aviso { font-size: 12px; color: #9ca3af; text-align: center; margin: 22px auto 0; max-width: 460px; line-height: 1.5; }
+    .icp-iv-paywrap { margin-top: 20px; }
+    .icp-iv-payinner { background: #fff; border-radius: 24px; padding: 28px; box-shadow: 0 1px 2px rgba(10, 25, 47, 0.04); }
+    .icp-iv-payinner .icp-iv-pay { margin-top: 20px; }
+
+    /* ── Formulario de pago del proveedor: tema por defecto (/i no le pasa
+       `appearance`), con la fuente del sistema porque vive en un iframe. ── */
+    .icp-pe {
+        display: grid; gap: 12px;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Ubuntu, sans-serif;
+        color: #30313d;
+    }
+    .icp-pe-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .icp-pe-row-1 { grid-template-columns: 1fr; }
+    .icp-pe-field { display: flex; flex-direction: column; min-width: 0; }
+    .icp-pe-label { font-size: 14px; line-height: 1.3; margin-bottom: 4px; color: #30313d; }
+    .icp-pe-input {
+        display: flex; align-items: center; justify-content: space-between; gap: 8px;
+        height: 44px; padding: 0 12px;
+        border: 1px solid #e6e6e6; border-radius: 5px; background: #fff;
+        box-shadow: 0 1px 1px rgba(0, 0, 0, 0.03), 0 3px 6px rgba(0, 0, 0, 0.02);
+        font-size: 16px; color: #30313d; white-space: nowrap; overflow: hidden;
+    }
+    .icp-pe-ph { color: #757680; overflow: hidden; text-overflow: ellipsis; }
+    .icp-pe-brands { display: flex; gap: 4px; flex-shrink: 0; }
+    .icp-pe-brands img { width: 16px; height: 16px; border-radius: 3px; }
+    .icp-pe-cvc { width: 24px; height: 22px; flex-shrink: 0; }
+    .icp-pe-chev { width: 14px; height: 14px; flex-shrink: 0; color: #6d6e78; }
+    .icp-pe-tabs { display: flex; gap: 12px; }
+    .icp-pe-tab { flex: 1; padding: 10px 12px; border: 1px solid #e6e6e6; border-radius: 5px; font-size: 14px; }
+    .icp-pe-tab.on { border-color: #0570de; color: #0570de; box-shadow: 0 0 0 1px #0570de; }
+
+    /* ── Datos del país, bajo el escenario ── */
+    .icp-facts {
+        margin: 1.6rem 0 0; padding: 0;
+        display: grid; grid-template-columns: 1.35fr 1fr 1fr 1.25fr; gap: 0 1.8rem;
+    }
+    .icp-facts > div { padding-top: 0.9rem; border-top: 1px solid rgba(10,25,47,0.08); min-width: 0; }
+    .icp-facts dt {
+        font-size: 0.6rem; font-weight: 800; letter-spacing: 1.1px;
+        text-transform: uppercase; color: #99a2af; margin-bottom: 0.55rem;
+    }
+    .icp-facts dd { margin: 0; display: flex; flex-direction: column; gap: 3px; font-size: 0.84rem; color: #334155; line-height: 1.45; }
+    .icp-facts dd b { font-size: 0.95rem; font-weight: 700; color: #0a192f; }
+    .icp-facts dd small, .icp-facts .icp-alt { font-size: 0.76rem; color: #8a94a3; }
+    .icp-chips { flex-direction: row !important; flex-wrap: wrap; gap: 6px !important; }
+    .icp-chip {
+        display: inline-flex; align-items: center; gap: 6px;
+        font-size: 0.78rem; font-weight: 600; color: #0a192f;
+        background: rgba(10,25,47,0.06); padding: 5px 10px 5px 8px; border-radius: 999px; white-space: nowrap;
+    }
+    .icp-chip svg { width: 15px; height: 15px; }
+    .icp-chip img { width: 14px; height: 14px; border-radius: 3px; }
+    .icp-chip.is-soon { background: transparent; box-shadow: inset 0 0 0 1px rgba(10,25,47,0.1); color: #64748b; }
+    .icp-chip em {
+        font-style: normal; font-size: 0.56rem; font-weight: 800; letter-spacing: 0.6px;
+        text-transform: uppercase; color: #b45309; background: rgba(245,158,11,0.12);
+        border-radius: 999px; padding: 2px 6px;
+    }
+    .icp-guide {
+        display: inline-flex; align-items: center; gap: 6px; margin-top: 1.1rem; min-height: 44px;
+        font-size: 0.86rem; font-weight: 650; color: #0a192f; text-decoration: none;
+    }
+    .icp-guide svg { width: 16px; height: 16px; transition: transform 0.25s ease; }
+    .icp-guide:hover svg { transform: translateX(3px); }
+    .icp-guide:focus-visible { outline: 2px solid rgba(10,25,47,0.35); outline-offset: 2px; border-radius: 6px; }
+    .icp-caption { margin: 0.2rem 0 0; font-size: 0.78rem; color: #8a94a3; }
+
+    @media (prefers-reduced-motion: reduce) {
+        .icp-iv-card { animation: none; }
+        .icp-tab, .icp-guide svg { transition: none; }
+    }
+
+    @media (max-width: 1100px) {
+        .icp-body { grid-template-columns: minmax(0, 1fr); gap: 1.2rem; }
+        .icp-tabs {
+            flex-direction: row; gap: 4px; overflow-x: auto; scrollbar-width: none;
+            margin: 0 -5vw; padding: 4px 5vw 6px; scroll-padding-inline: 5vw;
+        }
+        .icp-tabs::-webkit-scrollbar { display: none; }
+        .icp-tab { width: auto; flex: 0 0 auto; }
+        .icp-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.1rem 1.8rem; }
+    }
+    @media (max-width: 880px) {
+        .icp { padding-top: 4.5rem; }
+        .icp-intro { grid-template-columns: 1fr; gap: 1.6rem; margin-bottom: 2rem; }
+        .icp-check { grid-template-columns: 1fr; }
+        /* En móvil los dos recortes se apilan: el principio, corto (negocio y
+           saldo), y el cobro. Cada uno recorta lo suyo y se desvanece en el corte. */
+        .icp-stage { flex-direction: column; align-items: center; height: auto; gap: 10px; padding: 0 0 6px; }
+        .icp-shot { flex: none; width: calc(390px * var(--z)); overflow: hidden; }
+        .icp-shot-top {
+            height: calc(330px * var(--z));
+            -webkit-mask-image: linear-gradient(to bottom, #000 78%, transparent);
+            mask-image: linear-gradient(to bottom, #000 78%, transparent);
+        }
+        .icp-shot-bottom {
+            height: calc(740px * var(--z));
+            -webkit-mask-image: linear-gradient(to top, #000 88%, transparent);
+            mask-image: linear-gradient(to top, #000 88%, transparent);
+        }
+    }
+    @media (max-width: 480px) {
+        .icp-stage { --z: 0.86; border-radius: 24px; }
+        .icp-tab-id small { display: none; }
+        .icp-tab { min-height: 44px; padding: 0.4rem 0.75rem 0.4rem 0.5rem; }
+        .icp-facts { grid-template-columns: 1fr; }
+    }
+</style>

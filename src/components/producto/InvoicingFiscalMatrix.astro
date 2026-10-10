@@ -1,0 +1,461 @@
+---
+// "La factura con validez fiscal en cada país" — /producto/facturacion (ES y EN).
+//
+// Arriba, la calca del detalle de una factura alemana en la app
+// (src/pages/app/facturas/[id].astro): la columna de Acciones y la sección
+// "Factura electrónica" con sus descargas EN 16931. Las clases `ifm-fd-*`
+// espejan las `.fd-*` de esa página con los tokens de AppLayout; los textos
+// salen de src/i18n/app.ts o, donde la página los escribe en línea, se copian
+// literal.
+//
+// Abajo, la matriz de los 12 países. El ESTADO de cada documento sale de
+// src/lib/roadmap-data.ts (vía `estadoDe`), nunca de una copia aquí.
+import { t } from '../../i18n/app';
+import { flagSrc } from '../../lib/flags';
+import { iconInner } from '../../lib/icons';
+import WhatsAppIcon from '../app/WhatsAppIcon.astro';
+import { filasFiscales, detalleEinvoice, FISCAL_COPY, ESTADO_LABEL, type Estado } from '../../lib/producto-facturacion-paises';
+
+interface Props { isEn?: boolean }
+const { isEn = false } = Astro.props;
+const L = isEn ? 'en' : 'es';
+const C = FISCAL_COPY[L];
+const T = (k: Parameters<typeof t>[1]) => t(L, k);
+const filas = filasFiscales(L);
+const fd = detalleEinvoice(L);
+const en = L === 'en';
+// Pasos del detalle (INVOICE_STEPS en src/pages/app/facturas/[id].astro): la
+// factura se envió y el cliente ya la vio, así que el paso actual es "Vista".
+const STEPS = en ? ['Draft', 'Issued', 'Sent', 'Viewed', 'Paid'] : ['Borrador', 'Emitida', 'Enviada', 'Vista', 'Pagada'];
+const STEP_IDX = 3;
+const ESTADOS: Estado[] = ['live', 'beta', 'next'];
+---
+
+<section class="ifm" aria-labelledby="ifm-title">
+    <div class="ifm-intro">
+        <h2 id="ifm-title" class="ifm-h2 masked-title">{C.title}</h2>
+        <p class="ifm-sub reveal">{C.sub}</p>
+    </div>
+
+    <div class="ifm-feature">
+        <div class="ifm-feature-copy reveal">
+            <p class="ifm-eyebrow">{C.eyebrow}</p>
+            <h3 class="ifm-h3">{C.h3}</h3>
+            <p class="ifm-p">{C.p}</p>
+            <p class="ifm-limit">
+                <span class={`ifm-st ifm-st-${fd.estado}`}>{ESTADO_LABEL[fd.estado][L]}</span>
+                {C.limite}
+            </p>
+            <a class="ifm-link" href={fd.docsUrl}>
+                <span>{C.docsLabel}</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-right')} />
+            </a>
+        </div>
+
+        <div class="ifm-stage reveal-mockup" aria-hidden="true">
+            <div class="ifm-shot">
+                <div class="ifm-fd">
+                    <span class="ifm-fd-back">{en ? '← Invoices' : '← Facturas'}</span>
+                    <div class="ifm-fd-stepper">
+                        {STEPS.map((label, i) => (
+                            <div class:list={['ifm-fd-step', { done: i < STEP_IDX, current: i === STEP_IDX }]}>
+                                <span class="ifm-fd-step-dot">{i < STEP_IDX ? '✓' : i + 1}</span>
+                                <span class="ifm-fd-step-label">{label}</span>
+                            </div>
+                        ))}
+                    </div>
+                    <div class="ifm-fd-grid">
+                        <div class="ifm-fd-main">
+                            <section class="ifm-fd-head">
+                                <div class="ifm-fd-client">
+                                    <div class="ifm-fd-avatar">{fd.cliente.slice(0, 1)}</div>
+                                    <div class="ifm-fd-client-copy">
+                                        <div class="ifm-fd-client-title"><span class="ifm-fd-h2">{fd.cliente}</span></div>
+                                        <p>{en ? 'Issued' : 'Emitida'} {fd.emitida}<span>·</span>{en ? 'Due' : 'Vence'} {fd.vence}<span>·</span>{en ? 'Sent' : 'Enviada'}</p>
+                                    </div>
+                                </div>
+                                <div class="ifm-fd-hero-total"><span>TOTAL</span><strong class="editorial">{fd.total}</strong></div>
+                            </section>
+                            <section class="ifm-fd-items">
+                                <div class="ifm-fd-section-head"><span class="ifm-fd-h">{en ? 'Details' : 'Detalle'}</span></div>
+                                <div class="ifm-fd-items-head">
+                                    <span>{T('fact.d_concepto')}</span><span>{T('fact.d_cant')}</span><span>{T('fact.d_precio')}</span><span>{T('fact.d_importe')}</span>
+                                </div>
+                                {fd.lineas.map((l) => (
+                                    <div class="ifm-fd-item-row">
+                                        <span class="ifm-fd-desc">{l.d}</span>
+                                        <span class="ifm-fd-qty">{l.q}</span>
+                                        <span class="editorial ifm-fd-price">{l.p}</span>
+                                        <span class="editorial ifm-fd-amount">{l.a}</span>
+                                    </div>
+                                ))}
+                                <div class="ifm-fd-totals">
+                                    <div class="ifm-fd-tline"><span>{T('fact.d_subtotal')}</span><span class="editorial">{fd.subtotal}</span></div>
+                                    <div class="ifm-fd-tline ifm-fd-tax"><span>{fd.impuesto.k}</span><span class="editorial">{fd.impuesto.v}</span></div>
+                                    <div class="ifm-fd-tline ifm-fd-total"><span>{T('fact.d_total')}</span><span class="editorial">{fd.total}</span></div>
+                                    <div class="ifm-fd-tline ifm-fd-due"><span>{T('fact.d_saldo')}</span><span class="editorial">{fd.total}</span></div>
+                                </div>
+                            </section>
+                        </div>
+
+                        <div class="ifm-fd-side">
+                            <section class="ifm-fd-actions">
+                                <div class="ifm-fd-section-head"><span class="ifm-fd-h">{en ? 'Actions' : 'Acciones'}</span></div>
+                                <span class="ifm-fd-btn ifm-fd-btn-ok">{T('fact.d_pago')}</span>
+                                <div class="ifm-fd-delivery">
+                                    <span class="ifm-fd-delivery-dot"></span>
+                                    <span class="ifm-fd-delivery-copy"><strong>{en ? 'Sent to client' : 'Enviada al cliente'}</strong><small>{fd.email}</small></span>
+                                    <span class="ifm-fd-resend">{en ? 'Resend' : 'Reenviar'}</span>
+                                </div>
+                                <div class="ifm-fd-util-grid">
+                                    <span class="ifm-fd-util"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('external')} /><span>{en ? 'Open link' : 'Abrir link'}</span></span>
+                                    <span class="ifm-fd-util"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('copy')} /><span>{T('fact.d_copiar')}</span></span>
+                                    <span class="ifm-fd-util"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('download')} /><span>{T('fact.d_pdf')}</span></span>
+                                    <span class="ifm-fd-util ifm-fd-util-wa"><WhatsAppIcon class="ifm-fd-wa" /><span>WhatsApp</span></span>
+                                </div>
+                                <span class="ifm-fd-btn ifm-fd-btn-secondary">{en ? 'Duplicate invoice' : 'Duplicar factura'}</span>
+                                <span class="ifm-fd-more">
+                                    <span>{en ? 'More actions' : 'Más acciones'}</span>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-right')} />
+                                </span>
+                            </section>
+
+                            <section class="ifm-fd-einv">
+                                <div class="ifm-fd-section-head"><span class="ifm-fd-h">{en ? 'E-invoice' : 'Factura electrónica'}</span></div>
+                                <div class="ifm-fd-einv-links">
+                                    {fd.formatos.map((f) => (
+                                        <span class="ifm-fd-einv-link">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('download')} />
+                                            <span>{f}</span>
+                                        </span>
+                                    ))}
+                                </div>
+                                <p class="ifm-fd-einv-note">{en
+                                    ? 'Cord generates these files and can attach them to the invoice email. It does not send them over the Peppol network.'
+                                    : 'Cord genera estos archivos y puede adjuntarlos al correo de la factura. No los envía por la red Peppol.'}</p>
+                            </section>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="ifm-matrix">
+        <div class="ifm-mhead" aria-hidden="true">
+            <span>{C.cols.pais}</span>
+            <span>{C.cols.impuestos}</span>
+            <span class="ifm-docs-cols"><span>{C.cols.doc}</span><span>{C.cols.ante}</span><span>{C.cols.estado}</span></span>
+        </div>
+        <ul class="ifm-rows">
+            {filas.map((f) => (
+                <li class="ifm-row reveal">
+                    <div class="ifm-country">
+                        <img class="ifm-flag" src={flagSrc(f.code)} alt="" width="28" height="28" loading="lazy" decoding="async" />
+                        <span class="ifm-country-id">
+                            <b>{f.name}</b>
+                            <a href={f.docsUrl}>{C.guia}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-up-right')} /><span class="ifm-sr"> {f.name}</span></a>
+                        </span>
+                    </div>
+                    <div class="ifm-taxes">
+                        <span class="ifm-mlabel">{C.cols.impuestos}</span>
+                        <span class="ifm-tax-chips">
+                            {f.impuestos.map((x) => <span class="ifm-tax">{x}</span>)}
+                            {f.impuestosMas > 0 && <span class="ifm-tax ifm-tax-more">{C.mas(f.impuestosMas)}</span>}
+                        </span>
+                        {f.retenciones > 0 && <small>{C.retenciones(f.retenciones)}</small>}
+                    </div>
+                    <ul class="ifm-docs">
+                        {f.docs.map((d) => (
+                            <li class="ifm-doc">
+                                <span class="ifm-doc-name"><b>{d.doc}</b>{d.nota && <small>{d.nota}</small>}</span>
+                                <span class="ifm-doc-ante"><span class="ifm-mlabel">{C.cols.ante}</span>{d.ante}</span>
+                                <span class="ifm-doc-st"><span class={`ifm-st ifm-st-${d.estado}`}>{ESTADO_LABEL[d.estado][L]}</span></span>
+                            </li>
+                        ))}
+                    </ul>
+                </li>
+            ))}
+        </ul>
+        <ul class="ifm-legend">
+            {ESTADOS.map((e) => (
+                <li class="reveal"><span class={`ifm-st ifm-st-${e}`}>{ESTADO_LABEL[e][L]}</span><span>{C.leyenda[e]}</span></li>
+            ))}
+        </ul>
+    </div>
+</section>
+
+<style>
+    .ifm {
+        max-width: 1360px;
+        margin: 0 auto;
+        padding: 7rem 5% 1rem;
+    }
+    .ifm-intro {
+        display: grid; grid-template-columns: 1.25fr 1fr;
+        gap: 3.5rem; align-items: start;
+        margin: 0 0 3rem;
+    }
+    .ifm-h2 {
+        font-size: clamp(1.85rem, 2.9vw, 2.6rem);
+        font-weight: 800; letter-spacing: -0.035em; line-height: 1.1;
+        color: #050505; margin: 0; text-wrap: balance;
+    }
+    .ifm-sub {
+        font-size: 1.05rem; line-height: 1.6; color: var(--color-text-muted);
+        margin: 0; padding-top: 0.4rem; text-wrap: pretty;
+    }
+
+    /* ── Calca destacada ── */
+    .ifm-feature {
+        display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+        gap: 3rem; align-items: center;
+        margin-bottom: 4.5rem;
+    }
+    .ifm-eyebrow { font-size: 0.66rem; font-weight: 800; letter-spacing: 1.6px; color: #99a2af; margin: 0 0 0.9rem; }
+    .ifm-h3 {
+        font-size: clamp(1.35rem, 1.9vw, 1.7rem); font-weight: 750; letter-spacing: -0.03em;
+        line-height: 1.18; color: #0a192f; margin: 0 0 1rem; text-wrap: balance;
+    }
+    .ifm-p { font-size: 0.98rem; line-height: 1.65; color: var(--color-text-muted); margin: 0 0 1.1rem; text-wrap: pretty; }
+    .ifm-limit {
+        display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.7rem;
+        font-size: 0.84rem; color: #475569; margin: 0; padding-top: 1rem;
+        border-top: 1px solid rgba(10,25,47,0.08);
+    }
+    .ifm-link {
+        display: inline-flex; align-items: center; gap: 6px; margin-top: 1rem; min-height: 44px;
+        font-size: 0.88rem; font-weight: 650; color: #0a192f; text-decoration: none;
+    }
+    .ifm-link svg { width: 16px; height: 16px; transition: transform 0.25s ease; }
+    .ifm-link:hover svg { transform: translateX(3px); }
+    .ifm-link:focus-visible { outline: 2px solid rgba(10,25,47,0.35); outline-offset: 2px; border-radius: 6px; }
+
+    /* Lienzo de la app (--app-canvas). La ventana se ancla a la DERECHA para que
+       la columna de Acciones quede entera y el detalle sangre por la izquierda. */
+    .ifm-stage {
+        --z: 0.8;
+        position: relative; overflow: hidden;
+        height: 700px; border-radius: 28px;
+        background: #f5f5f7;
+        box-shadow: inset 0 0 0 1px rgba(10,25,47,0.04);
+    }
+    /* El borde izquierdo se desvanece: el recorte se lee como recorte, no como
+       un nombre cortado a la mitad. */
+    .ifm-shot {
+        position: absolute; top: 0; right: 0; width: 900px; zoom: var(--z);
+        -webkit-mask-image: linear-gradient(to right, transparent 0, #000 120px);
+        mask-image: linear-gradient(to right, transparent 0, #000 120px);
+    }
+
+    /* ════ Calca de src/pages/app/facturas/[id].astro (tokens de AppLayout, modo claro) ════ */
+    .ifm-fd {
+        --t: #0f1729; --tm: #5b6472; --bd: rgba(10, 25, 47, 0.08); --ok: #10b981; --soft: #fafbfc; --navy: #0a192f;
+        padding: 1.4rem 2rem 4rem; color: var(--t); text-align: left;
+    }
+    .ifm-fd-back { display: inline-flex; margin: 0 0 1.5rem; color: var(--tm); font-size: 0.82rem; font-weight: 500; }
+    .ifm-fd-stepper { display: flex; align-items: center; margin: 0 0 2.2rem; }
+    .ifm-fd-step { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
+    .ifm-fd-step:not(:last-child)::after { content: ''; flex: 1; height: 2px; margin: 0 10px; border-radius: 2px; background: var(--bd); }
+    .ifm-fd-step.done:not(:last-child)::after { background: var(--ok); }
+    .ifm-fd-step-dot {
+        display: flex; align-items: center; justify-content: center; width: 24px; height: 24px;
+        flex: 0 0 auto; border: 1.5px solid var(--bd); border-radius: 50%;
+        background: var(--soft); color: var(--tm); font-size: 0.7rem; font-weight: 800;
+    }
+    .ifm-fd-step.done .ifm-fd-step-dot { border-color: var(--ok); background: var(--ok); color: #fff; }
+    .ifm-fd-step.current .ifm-fd-step-dot { border-color: var(--navy); background: var(--navy); color: #fff; box-shadow: 0 0 0 4px rgba(10, 25, 47, 0.08); }
+    .ifm-fd-step-label { color: var(--tm); font-size: 0.74rem; font-weight: 600; white-space: nowrap; }
+    .ifm-fd-step.done .ifm-fd-step-label, .ifm-fd-step.current .ifm-fd-step-label { color: var(--t); }
+
+    .ifm-fd-grid { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 3rem; align-items: start; }
+    .ifm-fd-main { display: flex; flex-direction: column; min-width: 0; }
+    .ifm-fd-side { display: flex; flex-direction: column; gap: 2.6rem; }
+    .ifm-fd-section-head {
+        display: flex; align-items: baseline; justify-content: space-between;
+        margin-bottom: 1.2rem; padding-bottom: 0.7rem; border-bottom: 1px solid var(--bd);
+    }
+    .ifm-fd-h { color: var(--t); font-size: 0.98rem; font-weight: 600; letter-spacing: -0.01em; }
+
+    .ifm-fd-head {
+        display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; flex-wrap: wrap;
+        margin-bottom: 2.6rem; padding-bottom: 1.8rem; border-bottom: 1px solid var(--bd);
+    }
+    .ifm-fd-client { display: flex; align-items: center; gap: 14px; min-width: 0; }
+    .ifm-fd-avatar {
+        display: flex; align-items: center; justify-content: center; width: 46px; height: 46px;
+        flex: 0 0 auto; border-radius: 12px; background: var(--navy); color: #fff; font-size: 0.9rem; font-weight: 800;
+    }
+    .ifm-fd-client-copy { min-width: 0; }
+    .ifm-fd-client-title { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .ifm-fd-h2 { color: var(--t); font-size: 1.15rem; font-weight: 700; letter-spacing: -0.3px; }
+    .ifm-fd-client-copy p { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; margin: 3px 0 0; color: var(--tm); font-size: 0.78rem; }
+    .ifm-fd-client-copy p span { color: #c3c8d0; }
+    .ifm-fd-hero-total { display: flex; flex-direction: column; align-items: flex-end; }
+    .ifm-fd-hero-total > span { color: #99a2af; font-size: 0.58rem; font-weight: 800; letter-spacing: 1.6px; }
+    .ifm-fd-hero-total strong { color: var(--navy); font-size: 2rem; line-height: 1.1; }
+
+    .ifm-fd-items { margin-bottom: 2.6rem; }
+    .ifm-fd-items-head, .ifm-fd-item-row {
+        display: grid; grid-template-columns: minmax(0, 1.8fr) 80px 150px minmax(110px, 1fr);
+        gap: 1rem; align-items: center; padding: 0.8rem 0.6rem;
+    }
+    .ifm-fd-items-head {
+        padding-top: 0; padding-bottom: 0.55rem; border-bottom: 1px solid var(--bd);
+        color: var(--tm); font-size: 0.65rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
+    }
+    .ifm-fd-items-head span:not(:first-child) { text-align: right; }
+    .ifm-fd-item-row { border-bottom: 1px solid var(--bd); }
+    .ifm-fd-desc { color: var(--t); font-size: 0.86rem; font-weight: 600; }
+    .ifm-fd-qty { color: var(--tm); font-size: 0.84rem; text-align: right; }
+    .ifm-fd-price, .ifm-fd-amount { color: var(--navy); font-size: 0.92rem; text-align: right; }
+    .ifm-fd-amount { font-size: 0.98rem; }
+    .ifm-fd-totals { display: flex; flex-direction: column; align-items: flex-end; padding: 1.1rem 0.6rem 0; }
+    .ifm-fd-tline { display: flex; justify-content: space-between; gap: 3rem; min-width: 250px; padding: 0.3rem 0; color: var(--tm); font-size: 0.82rem; }
+    .ifm-fd-tline .editorial { color: var(--navy); font-size: 0.95rem; }
+    .ifm-fd-tax { font-size: 0.8rem; }
+    .ifm-fd-total { margin-top: 0.2rem; padding-top: 0.6rem; border-top: 1px solid var(--bd); color: var(--t); font-weight: 650; }
+    .ifm-fd-due { margin-top: 0.25rem; padding-top: 0.65rem; border-top: 2px solid var(--navy); color: var(--t); font-size: 1rem; font-weight: 750; }
+
+    .ifm-fd-actions { display: flex; flex-direction: column; gap: 0.5rem; }
+    .ifm-fd-actions .ifm-fd-section-head { margin-bottom: 0.5rem; }
+    .ifm-fd-btn {
+        display: flex; align-items: center; justify-content: center; width: 100%; min-height: 42px;
+        padding: 10px; border: 1px solid var(--bd); border-radius: 10px;
+        background: var(--soft); color: var(--t); font-size: 0.82rem; font-weight: 650;
+    }
+    .ifm-fd-btn-ok { border-color: #07996c; background: #18b889; color: #fff; box-shadow: 0 8px 22px -10px rgba(16, 185, 129, 0.55); }
+    .ifm-fd-btn-secondary { background: #fff; }
+    .ifm-fd-delivery { display: grid; grid-template-columns: 8px minmax(0, 1fr) auto; gap: 0.65rem; align-items: center; padding: 0.65rem 0.2rem; }
+    .ifm-fd-delivery-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1); }
+    .ifm-fd-delivery-copy { display: flex; flex-direction: column; min-width: 0; }
+    .ifm-fd-delivery-copy strong { font-size: 0.74rem; font-weight: 700; }
+    .ifm-fd-delivery-copy small { overflow: hidden; color: var(--tm); font-size: 0.65rem; text-overflow: ellipsis; white-space: nowrap; }
+    .ifm-fd-resend { padding: 4px; color: var(--navy); font-size: 0.69rem; font-weight: 700; }
+    .ifm-fd-util-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.5rem; margin-top: 0.5rem; }
+    .ifm-fd-util {
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
+        min-width: 0; padding: 9px 4px 7px; border: 1px solid var(--bd); border-radius: 11px;
+        background: #fff; color: var(--tm); box-shadow: 0 1px 2px rgba(10, 25, 47, 0.04);
+    }
+    .ifm-fd-util svg { width: 18px; height: 18px; }
+    .ifm-fd-util > span { overflow: hidden; max-width: 100%; font-size: 0.59rem; font-weight: 650; line-height: 1.1; text-overflow: ellipsis; white-space: nowrap; }
+    .ifm-fd-util-wa { color: #0b7a4b; }
+    .ifm-fd-more {
+        display: flex; align-items: center; justify-content: space-between; min-height: 40px;
+        padding: 0 0.85rem; border: 1px solid var(--bd); border-radius: 10px;
+        color: var(--tm); font-size: 0.79rem; font-weight: 650;
+    }
+    .ifm-fd-more svg { width: 14px; height: 14px; }
+
+    /* `surface-card fd-einv`: la superficie blanca de AppLayout con su sombra. */
+    .ifm-fd-einv {
+        display: flex; flex-direction: column; gap: 0.6rem; padding: 16px; margin-bottom: 16px;
+        background: #fff; border-radius: 20px;
+        box-shadow: 0 1px 2px rgba(10,25,47,0.03), 0 22px 48px -26px rgba(10,25,47,0.16), inset 0 1px 0 rgba(255,255,255,0.6);
+    }
+    .ifm-fd-einv .ifm-fd-section-head { margin-bottom: 0; }
+    .ifm-fd-einv-links { display: flex; flex-direction: column; gap: 0.4rem; }
+    .ifm-fd-einv-link {
+        display: flex; align-items: center; gap: 0.55rem; min-height: 40px; padding: 0 0.8rem;
+        border: 1px solid var(--bd); border-radius: 10px; background: var(--soft);
+        color: var(--t); font-size: 0.8rem; font-weight: 600;
+    }
+    .ifm-fd-einv-link svg { width: 16px; height: 16px; flex-shrink: 0; }
+    .ifm-fd-einv-note { margin: 0; color: var(--tm); font-size: 0.72rem; line-height: 1.45; }
+
+    /* ── Matriz de países ── */
+    .ifm-mhead, .ifm-row {
+        display: grid; grid-template-columns: 196px minmax(0, 0.95fr) minmax(0, 2.6fr);
+        gap: 0 2rem;
+    }
+    .ifm-docs-cols, .ifm-doc { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr) 132px; gap: 0 1.4rem; }
+    .ifm-mhead {
+        padding: 0 0 0.8rem;
+        font-size: 0.6rem; font-weight: 800; letter-spacing: 1.1px; text-transform: uppercase; color: #99a2af;
+    }
+    .ifm-rows { list-style: none; margin: 0; padding: 0; border-top: 1px solid rgba(10,25,47,0.1); }
+    .ifm-row { padding: 1.35rem 0; border-bottom: 1px solid rgba(10,25,47,0.07); align-items: start; }
+    .ifm-country { display: flex; align-items: flex-start; gap: 0.75rem; min-width: 0; }
+    .ifm-flag { width: 28px; height: 28px; flex-shrink: 0; border-radius: 50%; box-shadow: 0 0 0 1px rgba(10,25,47,0.08), 0 2px 6px -2px rgba(10,25,47,0.2); }
+    .ifm-country-id { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .ifm-country-id b { font-size: 0.95rem; font-weight: 700; color: #0a192f; letter-spacing: -0.01em; }
+    .ifm-country-id a {
+        display: inline-flex; align-items: center; gap: 3px; width: fit-content;
+        font-size: 0.74rem; font-weight: 600; color: #64748b; text-decoration: none;
+        padding: 2px 0; transition: color 0.2s ease;
+    }
+    .ifm-country-id a svg { width: 12px; height: 12px; }
+    .ifm-country-id a:hover { color: #0a192f; }
+    .ifm-country-id a:focus-visible { outline: 2px solid rgba(10,25,47,0.35); outline-offset: 2px; border-radius: 4px; }
+    .ifm-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+    .ifm-taxes { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+    .ifm-tax-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+    .ifm-tax {
+        font-size: 0.74rem; font-weight: 550; color: #334155; white-space: nowrap;
+        border: 1px solid rgba(10,25,47,0.1); border-radius: 7px; padding: 2px 7px;
+    }
+    .ifm-tax-more { color: #94a3b8; border-style: dashed; }
+    .ifm-taxes small { font-size: 0.72rem; color: #94a3b8; }
+
+    .ifm-docs { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+    .ifm-doc { padding: 0.15rem 0 0.75rem; align-items: start; }
+    .ifm-doc + .ifm-doc { padding-top: 0.75rem; border-top: 1px dashed rgba(10,25,47,0.08); }
+    .ifm-doc:last-child { padding-bottom: 0.15rem; }
+    .ifm-doc-name { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+    .ifm-doc-name b { font-size: 0.88rem; font-weight: 650; color: #0a192f; letter-spacing: -0.01em; }
+    .ifm-doc-name small { font-size: 0.76rem; line-height: 1.5; color: #8a94a3; }
+    .ifm-doc-ante { font-size: 0.82rem; color: #475569; line-height: 1.45; }
+    .ifm-doc-st { display: flex; justify-content: flex-start; }
+    .ifm-mlabel { display: none; }
+
+    .ifm-st {
+        display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+        font-size: 0.7rem; font-weight: 700; padding: 3px 9px 3px 8px; border-radius: 999px;
+    }
+    .ifm-st::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    .ifm-st-live { background: rgba(16,185,129,0.12); color: #047857; }
+    .ifm-st-beta { background: rgba(245,158,11,0.13); color: #a15c00; }
+    .ifm-st-next { background: rgba(10,25,47,0.06); color: #475569; }
+
+    .ifm-legend {
+        list-style: none; padding: 0; margin: 2rem 0 0;
+        display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem 2.4rem;
+    }
+    .ifm-legend li { display: flex; flex-direction: column; align-items: flex-start; gap: 0.5rem; font-size: 0.82rem; line-height: 1.55; color: var(--color-text-muted); }
+
+    @media (prefers-reduced-motion: reduce) {
+        .ifm-link svg, .ifm-country-id a { transition: none; }
+    }
+
+    @media (max-width: 1100px) {
+        .ifm-feature { grid-template-columns: 1fr; gap: 2rem; }
+        .ifm-feature-copy { max-width: 640px; }
+        .ifm-mhead { display: none; }
+        .ifm-rows { border-top: 0; }
+        .ifm-row { grid-template-columns: 1fr; gap: 1rem; padding: 1.5rem 0; }
+        .ifm-row:first-child { border-top: 1px solid rgba(10,25,47,0.1); }
+        .ifm-mlabel {
+            display: block; font-size: 0.58rem; font-weight: 800; letter-spacing: 1px;
+            text-transform: uppercase; color: #99a2af; margin-bottom: 2px;
+        }
+        .ifm-doc { grid-template-columns: minmax(0, 1fr) auto; gap: 0.4rem 1rem; }
+        .ifm-doc-name { grid-column: 1; grid-row: 1; }
+        .ifm-doc-st { grid-column: 2; grid-row: 1; }
+        .ifm-doc-ante { grid-column: 1 / -1; grid-row: 2; }
+    }
+    @media (max-width: 880px) {
+        .ifm { padding-top: 5rem; }
+        .ifm-intro { grid-template-columns: 1fr; gap: 1.1rem; margin-bottom: 2.2rem; }
+        .ifm-sub { padding-top: 0; }
+        .ifm-stage { --z: 0.72; height: 600px; border-radius: 24px; }
+        .ifm-legend { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 480px) {
+        .ifm-stage { --z: 0.66; height: 560px; }
+        .ifm-doc { grid-template-columns: minmax(0, 1fr); }
+        .ifm-doc-st { grid-column: 1; grid-row: 2; }
+        .ifm-doc-ante { grid-row: 3; }
+    }
+</style>
