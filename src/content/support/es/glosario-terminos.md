@@ -12,22 +12,50 @@ Este glosario resuelve las ambigüedades más comunes para que ambos equipos pue
 ## Términos de Facturación (SAT)
 
 ### CFDI (Comprobante Fiscal Digital por Internet)
-Es el archivo XML oficial que representa una factura electrónica en México. Cord emite CFDI versión 4.0 automáticamente.
+Es el archivo XML oficial que representa una factura electrónica en México. Cord timbra CFDI versión 4.0 desde el plan Starter, con el CSD de tu negocio.
 
 ### PUE (Pago en Una sola Exhibición)
-Se utiliza cuando el cobro de una factura se realiza en el momento exacto de la emisión o antes de emitirla. Si un cliente paga vía Tarjeta de Crédito en un link de Cord, la factura generada será PUE.
+Se utiliza cuando la factura ya está pagada al emitirse. Cord lo decide solo: si al timbrar la venta ya está cobrada por completo, el CFDI sale PUE con la forma de pago real.
 
 ### PPD (Pago en Parcialidades o Diferido)
-Se utiliza cuando se emite la factura pero el pago se recibirá en una fecha futura (crédito). Las facturas PPD **siempre** requieren que se emita un REP posteriormente cuando el dinero llega a la cuenta.
+Se utiliza cuando se emite la factura y el pago se recibirá después (crédito o parcialidades). Cord timbra PPD con forma de pago 99 cuando la factura no está pagada al emitirse, y cada cobro posterior requiere un REP.
 
 ### REP (Recibo Electrónico de Pago)
-También conocido como "Complemento de Recepción de Pagos". Es un comprobante secundario que se emite para "saldar" una factura PPD original. Cord puede automatizar la emisión de REPs cuando detecta la conciliación del depósito bancario.
+También conocido como "complemento de pago" o CFDI tipo P. Documenta cada cobro de una factura PPD. Cord lo emite solo cada vez que un pago se aplica a una factura PPD: al registrarlo a mano, al cobrarse en línea o al pasar de la cotización a la factura. Un cobro en otra divisa queda para tu contador. Ver [Facturas PPD y complementos de pago](/soporte/complementos-de-pago).
 
 ### CSD (Certificado de Sello Digital)
 Son los archivos criptográficos (`.cer` y `.key`) emitidos por el SAT que permiten a un software firmar digitalmente las facturas a nombre de una empresa. Es distinto a la FIEL (Firma Electrónica Avanzada). En Cord solo debes subir tu CSD.
 
 ### Uso de CFDI
 Clave del catálogo del SAT que indica para qué usará el receptor (cliente) la factura (Ej. `G03 - Gastos en general`, `I04 - Equipo de cómputo`).
+
+### Factura global
+CFDI que documenta, a nombre de PUBLICO EN GENERAL (RFC XAXX010101000), las ventas cobradas de un periodo sin que el cliente pidiera factura. Ver [Facturación al Público en General y factura global](/soporte/facturar-publico-general).
+
+### Sustitución (motivo 01)
+Forma de corregir un CFDI con otro: el nuevo se relaciona con el original y Cord cancela el original con el motivo 01. Ver [Anular facturas](/soporte/cancelar-facturas).
+
+---
+
+## Términos de facturación en otros países
+
+### Proforma y factura comercial
+Una **proforma** (México y España) es un documento comercial que dice expresamente que no sustituye una factura fiscal. Una **factura comercial** (el resto de los países) lleva folio, impuestos y los datos de las dos partes, pero Cord no la presenta ante ninguna autoridad.
+
+### Verifactu
+Sistema de facturación verificable que exige la ley española: cada factura genera un registro encadenado que se envía a la AEAT. En Cord está en activación. Ver [Cómo facturar en España](/soporte/facturar-en-espana).
+
+### Factur-X, XRechnung, Peppol y Facturae
+Formatos de factura electrónica europea que el sistema del cliente lee sin capturar a mano. Ver [Factura electrónica europea](/soporte/factura-electronica-europea).
+
+### CAE, CUFE y DTE
+Lo que cada autoridad de LatAm le da a una factura autorizada: el **CAE** de ARCA (Argentina), el **CUFE** de la DIAN (Colombia) y el **DTE** con su folio del SII (Chile). En Cord, esos rieles están en activación. Ver [Facturación por país](/soporte/categoria/facturacion-por-pais).
+
+### NFS-e y NF-e
+En Brasil, la **NFS-e** documenta servicios (la genera el Sistema Nacional NFS-e) y la **NF-e** documenta la venta de mercancías (la autoriza la SEFAZ de cada estado). Ver [Cómo facturar en Brasil](/soporte/facturar-en-brasil).
+
+### Nota de débito
+Documento que aumenta lo que el cliente debe sobre una factura ya emitida (intereses, diferencia de precio). En Cord existe para Chile (DTE 56). Ver [Nota de débito y certificación ante el SII](/soporte/nota-de-debito-sii-chile).
 
 ---
 

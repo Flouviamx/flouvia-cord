@@ -24,12 +24,13 @@ La comisión de procesamiento mostrada antes de confirmar no se devuelve de form
 Emitir un reembolso no cancela por sí solo el documento fiscal original.
 
 **En México**, no cancela la factura ante el SAT:
-1. Ve a Cord en **Contabilidad > Facturas** y localiza la factura original.
-2. En el menú de opciones (tres puntos), selecciona **Generar Nota de Crédito** (Egreso).
-3. Cord vinculará automáticamente el UUID de la factura padre usando el tipo de relación `01`.
-4. Haz clic en **Timbrar Egreso**. Esto deducirá contablemente el ingreso y le entregará a tu cliente su XML de comprobación.
+1. Ve a **Facturas** y abre la factura original.
+2. Pulsa **Más acciones › Nota de crédito**. Cord crea el borrador de un CFDI de egreso relacionado con el UUID de la factura (relación 01).
+3. En el borrador, pulsa **Emitir nota de crédito**. Tu cliente recibe su XML cuando se la envías desde el detalle.
 
-**En el resto de los países**, la corrección se emite como una nota de crédito comercial vinculada a la factura original. En **España**, si tu cuenta emite bajo Verifactu, la corrección nunca edita el registro encadenado ya firmado: genera un registro NUEVO de anulación, que se suma a la cadena en vez de reescribir el anterior. Ver [Emitir notas de crédito](/soporte/nota-de-credito).
+**En el resto de los países**, la corrección es una nota de crédito ligada a la factura original: comercial mientras el registro del país ante la autoridad esté en activación, o el documento que pida cada autoridad cuando esté activo. En **España con Verifactu activo**, la nota de crédito es una factura rectificativa con su propio registro encadenado: nunca se edita el registro ya firmado. Ver [Emitir una nota de crédito](/soporte/nota-de-credito).
+
+Una devolución con **cargo a cuenta bancaria (ACH)** solo puede ser por el importe completo.
 
 ## Efecto en una factura vinculada
 

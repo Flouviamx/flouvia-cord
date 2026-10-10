@@ -21,7 +21,9 @@ En **Ajustes › Notificaciones** eliges qué eventos te avisan y por dónde: co
 Marca la casilla de correo y/o Slack para cada evento; se guarda al instante.
 
 <Callout type="info">
+
 Si nunca has tocado esta pantalla, Cord ya te avisa por correo cuando una cotización se aprueba, se rechaza o se paga — son los tres eventos de mayor valor y vienen encendidos por default. En cuanto guardas la pantalla una vez, tu propia selección manda sobre ese default.
+
 </Callout>
 
 ### Slack

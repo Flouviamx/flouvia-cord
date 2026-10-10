@@ -4,6 +4,7 @@ import { getCollection } from 'astro:content';
 import FaqAccordion from '../landing/FaqAccordion.astro';
 import { iconInner, type IconName } from '../../lib/icons';
 import { SUPPORT_FAQ_ES, SUPPORT_FAQ_EN } from '../../lib/support-faq';
+import { SUPPORT_CATEGORIES, sortSupportArticles } from '../../lib/support-categories';
 
 const { isEn = false } = Astro.props;
 const allSupport = await getCollection('support');
@@ -12,42 +13,17 @@ const allSupport = await getCollection('support');
 const langPrefix = isEn ? 'en/' : 'es/';
 const localSupport = allSupport.filter(a => a.id.startsWith(langPrefix));
 
-const categoryMap = [
-    {
-        name: isEn ? 'Payments & Deposits' : 'Pagos y Depósitos',
-        slug: 'pagos',
-        icon: 'card' as IconName
-    },
-    {
-        name: isEn ? 'Quotes' : 'Cotizaciones',
-        slug: 'cotizaciones',
-        icon: 'quote' as IconName
-    },
-
-    {
-        name: isEn ? 'Invoicing' : 'Facturación',
-        slug: 'facturacion',
-        icon: 'invoice' as IconName
-    },
-    {
-        name: isEn ? 'Account & Team' : 'Cuenta y Equipo',
-        slug: 'cuenta',
-        icon: 'clients' as IconName
-    },
-    {
-        name: isEn ? 'Developers' : 'Desarrolladores',
-        slug: 'desarrolladores',
-        icon: 'code' as IconName
-    },
-    {
-        name: isEn ? 'Security & Privacy' : 'Seguridad y Privacidad',
-        slug: 'seguridad',
-        icon: 'lock' as IconName
-    }
-];
+// Fuente única: las mismas categorías que sirven las páginas de categoría y el
+// sitemap. Antes este componente tenía su propia lista y una categoría nueva
+// quedaba fuera del hub.
+const categoryMap = SUPPORT_CATEGORIES.map((cat) => ({
+    name: isEn ? cat.en.name : cat.es.name,
+    slug: cat.slug,
+    icon: cat.icon as IconName,
+}));
 
 const categoriesWithArticles = categoryMap.map(cat => {
-    const articles = localSupport.filter(a => a.data.category === cat.name);
+    const articles = sortSupportArticles(localSupport.filter(a => a.data.category === cat.name));
     return {
         ...cat,
         articles: articles.slice(0, 4),

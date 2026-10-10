@@ -7,7 +7,7 @@ order: 1
 
 To let clients pay directly from a quote link, activate Cord Payments. Funds settle directly into your bank account and the processing fee is shown before you accept the terms.
 
-Cord Payments (card payments on the link) is available for businesses domiciled in Mexico, the United States, Canada, Brazil, Spain, the United Kingdom, Germany, and France. In Colombia, Argentina, Chile, and Peru your account can still quote, invoice, and track collections normally, but online card payment isn't available there yet; you'll see that noted before you try to activate it.
+Cord Payments (card payments on the link) is available for businesses domiciled in Mexico, the United States, Canada, Brazil, Spain, the United Kingdom, Germany, and France. In Colombia, Argentina, Chile, and Peru Cord Payments isn't available yet (you'll see that noted before you try to activate it): there you collect online by connecting your Mercado Pago account under **Settings › Payments**, or you record by hand the payments you receive elsewhere. See [Get paid with Mercado Pago](/en/support/cobrar-mercado-pago).
 
 ### Steps to activate payments
 

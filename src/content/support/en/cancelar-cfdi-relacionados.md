@@ -1,65 +1,56 @@
 ---
 title: "Cancel CFDI with related documents"
-description: "Review payments, credit notes and status before voiding."
+description: "What to check before cancelling or replacing a CFDI that has credit notes, payment complements, a replacement in progress or is part of a global invoice."
 category: "Invoicing"
 ---
 
+This applies to organizations in **Mexico**. The SAT **does not allow cancelling a CFDI that has valid related documents**: if you try, it marks it "Not cancellable". Before voiding or replacing an invoice, check which documents depend on it.
 
-## Voiding and crediting are different actions
+**In short:**
 
-**Voiding** changes an invoice's validity. A **credit note** is a separate document
-that reduces the creditable amount of the original. Neither action automatically
-returns money.
+| The invoice has… | What to do |
+|---|---|
+| Valid credit notes | Void the credit notes first; then the invoice. Cord does not void or replace the invoice while they exist. |
+| Issued payment complements | **Replace CFDI** is not available from the app: write to soporte@flouvia.com to replace it. |
+| Payments applied | It is not voided: use **More actions › Credit note**. The payments stay on the invoice. |
+| A replacement in progress | Continue it with **Continue the replacement**; another one is not created. |
+| Sales in a global invoice | Cancel the global invoice under reason 04 and issue it again without that sale. |
 
-In Cord, open **Invoices**, select the document and use **More actions > Void
-invoice**. The app blocks voiding when payments have been applied and suggests a
-credit note. It also requires resolving linked credit notes before voiding the
-original invoice. These are Cord workflow rules, not a replacement for reviewing
-the tax treatment of a specific case.
+## Credit notes
 
-## Mexico: request and confirmation
+An issued credit note is an expense CFDI related to the invoice's UUID. While it is valid:
 
-Submitting a request does not mean the CFDI has been canceled. Cord retains the
-request status and only presents the invoice as void once confirmed:
+- **Voiding** the invoice is rejected until the note is resolved.
+- **Replace CFDI** is not offered: the detail says "To replace it, first void its credit notes".
 
-- **Pending or verifying:** the invoice remains valid.
-- **Rejected, expired or unconfirmed:** the invoice is not marked void.
-- **Accepted:** its state changes to void.
+Void the credit note from its own detail (**More actions › Void**) and, once the SAT confirms its cancellation, go back to the invoice.
 
-Use **Check cancellation status** in the detail to review a request. This is a
-manual check, not continuous automatic monitoring.
+## Payment complements
 
-### The SAT reason
+Each payment on a PPD invoice carries a payment complement related to it. To cancel or replace that invoice, its complements would have to be cancelled first, and Cord does not do that from the app yet. The invoice detail says so: "It has payment complements issued… Write to soporte@flouvia.com to replace it". See [PPD invoices and payment complements](/en/support/complementos-de-pago).
 
-When you void a valid CFDI, Cord asks for the reason the SAT requires:
+## Payments applied
 
-- **02 · Issued with errors, without a replacement:** it has an error and you
-  will not issue another in its place (for example, it was issued twice or to
-  the wrong client).
-- **03 · The transaction did not take place:** the sale or service did not happen.
-- **04 · Named transaction included in a global invoice:** only for a global
-  invoice when a client asked for their own invoice.
-- **01 · Issued with errors, with a replacement:** not chosen here. Use
-  **Replace CFDI**.
+An invoice with payments is not voided, because the money already came in. If the amount must be corrected, issue a **credit note**; if money must also be returned, make the refund separately from **Payments**.
 
-### Replace a CFDI
+## Replacement in progress
 
-If the invoice has an error that has to be corrected with another one, use
-**Replace CFDI** in its detail. Cord creates a draft with the same data for you
-to correct. When you issue it, the new CFDI is related to the original
-(relationship 04), its payments move to the new invoice and Cord requests the
-cancellation of the original under reason 01 with the replacement's fiscal
-folio. If the recipient has to accept it, the detail shows the status; if they
-reject it, both CFDI remain valid and you can retry.
+When you click **Replace CFDI**, Cord creates a draft linked to the original. There can only be one live replacement per invoice: if it already exists, the detail offers **Continue the replacement**. While the original's cancellation waits for the recipient's acceptance, both CFDI stay valid; if the recipient rejects it, retry the cancellation or, if the replacement is not needed, cancel it under reason 02. Voiding a replacement without payments returns the balance to the original.
 
-Cord does not offer replacing an invoice with valid credit notes or issued
-payment complements: the SAT does not allow cancelling a CFDI with valid related
-documents. Do not use a credit note just to simulate cancellation.
+## Global invoice
 
-## Other markets
+A sale included in a valid global invoice cannot be invoiced separately. If a client asks for their invoice:
 
-Cord uses the available country rail and retains document history. Locally voiding
-a commercial invoice does not prove a tax authority has received or accepted a
-cancellation.
+1. Open the global invoice and use **More actions › Void** with reason **04 · Nominative transaction related to a global invoice**.
+2. Once the cancellation is confirmed, its sales are free again. Click **Issue the period's global invoice again** and untick the client's sale.
+3. Issue the client's invoice from their quote.
+
+The global invoice is not replaced: it is corrected by cancelling it. See [General public invoicing and the global invoice](/en/support/facturar-publico-general).
+
+## Related
+
+- [Void invoices and check cancellations](/en/support/cancelar-facturas)
+- [Issue a credit note](/en/support/nota-de-credito)
+- [How to invoice in Mexico with Cord](/en/support/facturar-en-mexico)
 
 > Availability of the September improvements is being verified. See [scope and release status](https://docs.cordhq.app/en/docs/pagos/mejoras-confiabilidad); contact support if a described action is not yet shown in your account.

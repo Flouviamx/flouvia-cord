@@ -50,7 +50,7 @@ individual invoice for it: the same sale would be invoiced twice.
 
 ## If a client asks for their invoice later
 
-1. Open the global invoice and use **More actions › Void invoice** with reason
+1. Open the global invoice and use **More actions › Void** with reason
    **04 · Named transaction included in a global invoice**.
 2. Once the cancellation is confirmed, its sales are free again. Click **Issue
    the period's global invoice again**, which opens the same frequency, month

@@ -1,23 +1,33 @@
 ---
 title: "Recibir pagos internacionales"
-description: "Acepta tarjetas emitidas en el extranjero con Cord."
+description: "Cobra a clientes en el extranjero en su divisa con tarjeta, domiciliación o Mercado Pago, y factura la venta según el país desde el que emites."
 category: "Pagos y Depósitos"
 ---
 
-Vender a clientes en el extranjero es nativo en Cord, sin importar en cuál de los países soportados esté domiciliado tu negocio.
+Vender a clientes en el extranjero es nativo en Cord, sin importar en cuál de los 12 países de Cord esté tu negocio.
 
-### Cobros y divisas
+## Cobros y divisas
 
-Cord te permite crear la cotización en cualquiera de las divisas que ofrece el selector (las de los 12 países soportados, más JPY, CNY, CHF y AUD para comercio internacional). Cuando el cliente internacional selecciona **Pagar**, Cord valida si su tarjeta, país y moneda son compatibles con tu cuenta de pagos conectada. La disponibilidad y moneda de depósito dependen de la configuración de esa cuenta.
+Crea la cotización o la factura en la divisa que convenga al cliente: las de los 12 países de Cord más JPY, CNY, CHF y AUD. Cuando el cliente pulsa **Pagar**, Cord ofrece los métodos que tu cuenta admite para esa divisa:
 
-### Tratamiento fiscal según tu país
+- **Tarjeta** con Cord Payments (México, Estados Unidos, Canadá, Brasil, España, Reino Unido, Alemania y Francia), en la divisa de venta si tu cuenta de cobros la admite.
+- **Domiciliación SEPA** (EUR) o **cargo ACH** (USD) en la factura y el portal, si los activaste.
+- **Mercado Pago** (México, Brasil, Colombia, Argentina, Chile y Perú), con los métodos que Mercado Pago tenga en tu cuenta.
 
-El tratamiento fiscal de una venta internacional depende de dónde esté domiciliado tu negocio, no del país del cliente:
+La disponibilidad y la moneda de depósito dependen de la configuración de tu cuenta de cobros. Si tu banco liquida en otra moneda, la red de pagos puede aplicar conversión y cargos transfronterizos.
 
-**Si tu negocio está en México**, la venta a un extranjero es una exportación de servicios y se factura como CFDI:
-1. Usa el RFC genérico internacional **XEXX010101000** para el receptor.
-2. Selecciona Uso de CFDI: **S01 (Sin efectos fiscales)**.
-3. Selecciona la tasa de **IVA 0%** — la exportación de servicios desde México está gravada a tasa cero.
-4. Timbra la factura. Cord genera un CFDI válido que comprueba tu ingreso internacional.
+## Cómo se factura la venta
 
-**Si tu negocio está en cualquier otro país soportado** (Estados Unidos, Canadá, Brasil, España, Reino Unido, Alemania, Francia, Colombia, Argentina, Chile o Perú), la factura es un documento comercial (o Verifactu en España) con el vocabulario fiscal de tu propio país — no el del SAT. Si tu negocio está en la Unión Europea y le vendes a un cliente con NIF-IVA en otro país miembro, la operación puede aplicar la inversión del sujeto pasivo intracomunitaria (tipo 0% con la mención legal correspondiente) en vez de tu IVA local. Consulta con tu asesor fiscal el tratamiento exacto de tu exportación.
+El tratamiento fiscal depende de dónde esté tu negocio, no del país del cliente. Elige el país del cliente en su ficha y Cord aplica el tratamiento que corresponde:
+
+- **México:** el CFDI sale a un residente en el extranjero (RFC XEXX010101000, su país, uso S01 y su identificador fiscal), sin que captures nada más. Un concepto al 0 % se declara exento: Cord todavía no emite IVA a tasa 0 % gravada, que es la que suele aplicar a la exportación de servicios; en ese caso, confírmalo con tu contador y emite ese CFDI fuera de Cord por ahora.
+- **España, Alemania y Francia:** a un cliente empresarial de otra parte de la UE con NIF-IVA, inversión del sujeto pasivo con su mención; fuera de la UE, exportación sin IVA. En España, mientras el registro Verifactu está en activación, Cord emite proformas.
+- **Resto de países:** la factura comercial lleva la tasa que elijas en cada línea, con el vocabulario fiscal de tu país.
+
+El detalle está en [Facturar a clientes en el extranjero](/soporte/facturas-extranjero). Consulta con tu asesor fiscal el tratamiento exacto de tu exportación.
+
+## Relacionados
+
+- [Cobro en múltiples divisas](/soporte/cobro-divisas)
+- [Cobrar con Mercado Pago](/soporte/cobrar-mercado-pago)
+- [Domiciliación SEPA y cargo ACH](/soporte/domiciliacion-sepa-ach)

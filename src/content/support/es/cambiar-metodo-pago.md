@@ -8,9 +8,10 @@ category: "Pagos y Depósitos"
 ## Elegir cómo pagar
 
 El enlace de cotización ofrece los métodos habilitados por el negocio. Tarjeta y
-transferencia automática requieren una cuenta de cobros habilitada. La factura
-pública tiene su propio flujo de tarjeta; no supongas que ofrece todos los métodos
-de la cotización.
+transferencia automática requieren una cuenta de cobros habilitada. El link de la
+factura no ofrece lo mismo que la cotización: ofrece tarjeta y, si el negocio la
+activó, domiciliación bancaria (SEPA en EUR, ACH en USD), pero **no SPEI**. Ver
+[Domiciliación SEPA y cargo a cuenta bancaria (ACH)](/soporte/domiciliacion-sepa-ach).
 
 ### Tarjeta
 

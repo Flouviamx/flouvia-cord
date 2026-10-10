@@ -11,7 +11,7 @@ import FeedbackWidget from '../../components/support/FeedbackWidget.astro';
 export const prerender = true;
 
 import { getLangFromUrl } from '../../i18n/utils';
-import { supportCategoryByName } from '../../lib/support-categories';
+import { supportCategoryByName, sortSupportArticles } from '../../lib/support-categories';
 
 export async function getStaticPaths() {
   const supportEntries = await getCollection('support');
@@ -36,13 +36,7 @@ const allSupport = await getCollection('support');
 const langPrefix = isEn ? 'en/' : 'es/';
 const localSupport = allSupport.filter(a => a.id.startsWith(langPrefix));
 
-const categoryEntries = localSupport
-    .filter(a => a.data.category === entry.data.category)
-    // Optional: Sort by an "order" field if present, otherwise by title
-    .sort((a, b) => {
-        if (a.data.order && b.data.order) return a.data.order - b.data.order;
-        return a.data.title.localeCompare(b.data.title);
-    });
+const categoryEntries = sortSupportArticles(localSupport.filter(a => a.data.category === entry.data.category));
 
 const currentIndex = categoryEntries.findIndex(a => a.id === entry.id);
 const prevEntry = currentIndex > 0 ? categoryEntries[currentIndex - 1] : null;
@@ -470,9 +464,52 @@ const breadcrumbSchema = {
         margin-bottom: 1rem;
         letter-spacing: -0.02em;
     }
+    .markdown-body :global(h3) {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: var(--color-text);
+        margin-top: 2.2rem;
+        margin-bottom: 0.75rem;
+        letter-spacing: -0.01em;
+    }
     .markdown-body :global(p) {
         margin-bottom: 1.5rem;
         font-size: 1.05rem;
+    }
+    /* Tablas de las guías (planes, requisitos por país, reintentos): hairlines
+       sin cajas, y desplazamiento horizontal propio en pantallas angostas para
+       que la página nunca se desborde. */
+    .markdown-body :global(table) {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 0 0 1.75rem;
+        font-size: 0.95rem;
+        line-height: 1.5;
+    }
+    .markdown-body :global(th),
+    .markdown-body :global(td) {
+        text-align: left;
+        vertical-align: top;
+        padding: 0.65rem 0.9rem 0.65rem 0;
+        border-bottom: 1px solid var(--color-border);
+    }
+    .markdown-body :global(th) {
+        font-weight: 600;
+        color: var(--color-text);
+        border-bottom-color: var(--color-text-muted);
+    }
+    .markdown-body :global(blockquote) {
+        margin: 0 0 1.5rem;
+        padding: 0.2rem 0 0.2rem 1.1rem;
+        border-left: 2px solid var(--color-border);
+        color: var(--color-text-muted);
+    }
+    .markdown-body :global(blockquote p) { margin-bottom: 0.5rem; }
+    @media (max-width: 880px) {
+        .markdown-body :global(table) {
+            display: block;
+            overflow-x: auto;
+        }
     }
     .markdown-body :global(ul), .markdown-body :global(ol) {
         margin-bottom: 1.5rem;

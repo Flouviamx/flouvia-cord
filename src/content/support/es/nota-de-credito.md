@@ -1,27 +1,50 @@
 ---
-title: "Emitir una Nota de Crédito"
-description: "Aplica devoluciones y bonificaciones sobre una factura ya emitida."
+title: "Emitir una nota de crédito"
+description: "Acredita una factura ya emitida: cómo se crea desde el detalle, por qué nace por el total, qué documento sale en cada país y su efecto en el saldo."
 category: "Facturación"
 ---
 
+Una **nota de crédito** acredita una factura ya emitida sin cancelarla: por ejemplo, un descuento posterior a la venta, una devolución o un error de importe. Reduce lo que tu cliente te debe; **no devuelve dinero** por sí sola.
 
-Una Nota de Crédito es el mecanismo para acreditar el saldo de una factura ya emitida sin cancelarla por completo — por ejemplo, cuando le haces un descuento post-venta a un cliente, o necesitas devolverle parte de lo cobrado. En México se emite como CFDI de tipo Egreso, vinculado por su UUID a la factura original.
+**En resumen:**
 
-### Emitir una Nota de Crédito en Cord
+- **Dónde:** en el detalle de una factura **emitida**, **Más acciones › Nota de crédito**.
+- **Por el total:** desde la app la nota nace por el **total** de la factura, con sus mismos conceptos, tasas y retenciones. Para acreditar solo una parte, hoy se hace por la API con el monto parcial.
+- **Se emite desde su detalle:** Cord te lleva al borrador de la nota y la emites con **Emitir nota de crédito**. No se envía sola al cliente.
+- **Efecto en el saldo:** solo una nota emitida y no anulada reduce el saldo. Si la factura ya estaba pagada, queda un importe por devolver, que se hace aparte.
+- **Cada país emite su documento:** CFDI de egreso en México, rectificativa en España con Verifactu, nota de crédito con su autorización en los rieles de LatAm y nota de crédito comercial en el resto.
 
-1. Localiza la factura original en tu bandeja de **Facturas**. Solo una factura **emitida** admite Nota de Crédito.
-2. Abre su menú de opciones y elige **Generar Nota de Crédito**.
-3. Cord crea una Nota de Crédito nueva como borrador, por el **monto total** de la factura original, y te lleva directo a su detalle.
-4. Desde ahí, edítala como cualquier borrador: ajusta el monto si necesitas acreditar solo una parte y añade un concepto que explique el motivo. Cuando esté lista, emítela desde el mismo editor de borradores que usas para cualquier factura nueva.
+## Emitir una nota de crédito
 
-<Callout type="info">
-Al usar el botón desde la app, la Nota de Crédito nace por el monto total de la factura original — hoy no hay un paso intermedio en la interfaz para indicar un monto parcial antes de crearla. Si facturas por la API, puedes enviar directamente el monto parcial que quieres acreditar.
-</Callout>
+1. Abre **Facturas** y entra a la factura original. Solo una factura **emitida** admite nota de crédito.
+2. Pulsa **Más acciones › Nota de crédito**.
+3. Cord crea la nota como **borrador** por el total de la factura y te lleva a su detalle.
+4. Revísala y pulsa **Emitir nota de crédito**.
+5. Envíala a tu cliente con **Enviar al cliente** desde su detalle.
 
-Cord **no envía automáticamente** un correo al cliente al crear la Nota de Crédito: se genera como borrador para que la revises, y la mandas tú mismo con el botón de enviar de su detalle una vez que la hayas emitido — igual que con cualquier otra factura.
+La nota conserva el desglose de la factura original: no se edita en el editor de facturas. Para un importe distinto, la API acepta el monto que quieres acreditar; un importe parcial que no cuadra al redondear se rechaza. La suma de las notas vigentes no puede superar el total de la factura.
+
+## Qué documento sale en cada país
+
+| País | Nota de crédito |
+|---|---|
+| México | CFDI de egreso (tipo E), uso G02 (S01 a un extranjero), relación 01 con el UUID original. |
+| España con Verifactu activo | Factura rectificativa por diferencias, con su propio registro encadenado. |
+| Argentina (ARCA) | Nota de crédito de la misma clase, receptor, condición y moneda, con la factura como comprobante asociado. |
+| Perú (SUNAT) | Nota de crédito tipo 01 (anulación) si acredita el total, o 09 (disminución) si acredita una parte. |
+| Chile (SII) | Nota de crédito (61) que anula el total o corrige montos. |
+| Colombia (DIAN) | Nota crédito con concepto de anulación (total) o de rebaja (parcial). |
+| Brasil (NFS-e o NF-e) | No existe: la NFS-e se anula y se emite otra; la devolución de mercancía es otra NF-e que Cord todavía no emite. |
+| Resto, y facturas comerciales | Nota de crédito comercial con prefijo `NCC`, ligada a la factura. |
+
+Los registros ante la autoridad de España y de LatAm están en activación; mientras tanto, la nota es comercial. Ver [Facturación por país](/soporte/categoria/facturacion-por-pais).
 
 ## Efecto en el saldo
 
-Solo una nota emitida y no anulada reduce el saldo; el borrador no lo cambia. En México se emite como CFDI de egreso relacionado con el UUID original. Si la factura ya estaba pagada, puede quedar un importe por devolver. Emitir la nota no ejecuta ese reembolso. Consulta [cómo se calcula el saldo](/soporte/saldo-pagos-creditos).
+Solo una nota emitida y no anulada reduce el saldo; el borrador no lo cambia. La nota nace con saldo cobrable cero: no es una deuda nueva y no se puede cobrar. Si la factura ya estaba pagada, el detalle muestra el importe por devolver; emitir la nota **no** ejecuta ese reembolso. Consulta [cómo se calcula el saldo](/soporte/saldo-pagos-creditos).
+
+## Anular una nota de crédito
+
+Una nota de crédito emitida se anula desde su propio detalle con **Más acciones › Anular**, igual que una factura. Antes de anular la factura original tienes que resolver sus notas vigentes.
 
 > La disponibilidad de las mejoras de septiembre está en verificación. Consulta [alcance y publicación](https://docs.cordhq.app/docs/pagos/mejoras-confiabilidad); contacta a soporte si una acción descrita todavía no aparece en tu cuenta.

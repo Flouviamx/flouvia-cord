@@ -12,22 +12,50 @@ This glossary resolves the most common ambiguities so that both teams can integr
 ## Invoicing Terms (SAT)
 
 ### CFDI (Comprobante Fiscal Digital por Internet)
-It is the official XML file that represents an electronic invoice in Mexico. Cord issues CFDI version 4.0 automatically.
+It is the official XML file that represents an electronic invoice in Mexico. Cord stamps CFDI version 4.0 from the Starter plan, with your business's CSD.
 
 ### PUE (Pago en Una sola Exhibición)
-Used when the collection of an invoice is made at the exact moment of issuance or before issuing it. If a customer pays via Credit Card on a Cord link, the generated invoice will be PUE.
+Used when the invoice is already paid when issued. Cord decides it on its own: if the sale is fully collected when stamping, the CFDI is issued PUE with the real payment method.
 
 ### PPD (Pago en Parcialidades o Diferido)
-Used when the invoice is issued but the payment will be received at a future date (credit). PPD invoices **always** require a REP to be issued later when the money arrives in the account.
+Used when the invoice is issued and payment will be received later (credit or installments). Cord stamps PPD with payment method 99 when the invoice is not paid when issued, and each later payment requires a REP.
 
 ### REP (Recibo Electrónico de Pago)
-Also known as "Payment Receipt Supplement". It is a secondary receipt issued to "settle" an original PPD invoice. Cord can automate the issuance of REPs when it detects the reconciliation of the bank deposit.
+Also known as "payment complement" or type P CFDI. It documents each payment on a PPD invoice. Cord issues it on its own every time a payment is applied to a PPD invoice: when recorded manually, paid online or moved from the quote to the invoice. A payment in another currency is left to your accountant. See [PPD invoices and payment complements](/en/support/complementos-de-pago).
 
 ### CSD (Certificado de Sello Digital)
 These are the cryptographic files (`.cer` and `.key`) issued by the SAT that allow software to digitally sign invoices on behalf of a company. It is different from the FIEL (Advanced Electronic Signature). In Cord, you only need to upload your CSD.
 
 ### CFDI Usage (Uso de CFDI)
 A key from the SAT catalog that indicates what the recipient (customer) will use the invoice for (e.g., `G03 - General expenses`, `I04 - Computer equipment`).
+
+### Global invoice (Factura global)
+A CFDI that documents, addressed to PUBLICO EN GENERAL (RFC XAXX010101000), the collected sales of a period where the client did not ask for an invoice. See [General public invoicing and the global invoice](/en/support/facturar-publico-general).
+
+### Replacement (reason 01)
+The way to correct a CFDI with another: the new one is related to the original and Cord cancels the original under reason 01. See [Void invoices](/en/support/cancelar-facturas).
+
+---
+
+## Invoicing terms in other countries
+
+### Pro forma and commercial invoice
+A **pro forma** (Mexico and Spain) is a commercial document that states it does not replace a tax invoice. A **commercial invoice** (the other countries) carries a number, taxes and both parties' details, but Cord does not submit it to any authority.
+
+### Verifactu
+The verifiable invoicing system required by Spanish law: each invoice creates a chained record sent to the AEAT. In Cord it is being turned on. See [How to invoice in Spain](/en/support/facturar-en-espana).
+
+### Factur-X, XRechnung, Peppol and Facturae
+European e-invoice formats that the client's system reads without manual entry. See [European e-invoicing](/en/support/factura-electronica-europea).
+
+### CAE, CUFE and DTE
+What each LatAm authority gives an authorized invoice: the **CAE** from ARCA (Argentina), the **CUFE** from the DIAN (Colombia) and the **DTE** with its SII folio (Chile). In Cord, those rails are being turned on. See [Invoicing by country](/en/support/category/facturacion-por-pais).
+
+### NFS-e and NF-e
+In Brazil, the **NFS-e** documents services (issued by the national NFS-e system) and the **NF-e** documents the sale of goods (authorized by each state's SEFAZ). See [How to invoice in Brazil](/en/support/facturar-en-brasil).
+
+### Debit note
+A document that increases what the client owes on an issued invoice (interest, price difference). In Cord it exists for Chile (DTE 56). See [Debit note and SII certification](/en/support/nota-de-debito-sii-chile).
 
 ---
 
