@@ -2,7 +2,7 @@ import { createHmac } from 'node:crypto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
-    sql: vi.fn(), tx: vi.fn(), audit: vi.fn(), stripe: vi.fn(), dispatch: vi.fn(),
+    sql: vi.fn(), tx: vi.fn(), audit: vi.fn(), stripe: vi.fn(), dispatch: vi.fn(), dominios: vi.fn(),
     state: { duplicate: false, before: null as Record<string, unknown> | null },
 }));
 vi.mock('../src/lib/db', () => ({ sql: mocks.sql, withOrgTx: mocks.tx, logAudit: mocks.audit }));
@@ -17,6 +17,7 @@ vi.mock('../src/lib/email', () => ({ sendEmail: vi.fn(), siteOrigin: () => 'http
 vi.mock('../src/lib/fiscal/payments', () => ({ applyPayment: vi.fn() }));
 vi.mock('../src/lib/fiscal/reconciliation', () => ({ recordInvoiceRefund: vi.fn() }));
 vi.mock('../src/lib/log', () => ({ log: { error: vi.fn(), warn: vi.fn() } }));
+vi.mock('../src/lib/cobros/billeteras-org', () => ({ sincronizarDominiosDeCobro: mocks.dominios }));
 
 const QUOTE = '3f1c9a52-7b8e-4d21-9c0a-5e6f7a8b9c0d';
 
@@ -120,6 +121,18 @@ describe('cuenta de cobros', () => {
         mocks.state.before = { ...base, stripe_charges_enabled: false, stripe_payouts_enabled: false, stripe_disabled_reason: 'requirements.past_due', stripe_requirements: { currently_due: ['individual.id_number'] } };
         await deliver('account.updated', { id: 'acct_seller', charges_enabled: true, payouts_enabled: true, details_submitted: true, requirements: { currently_due: [] } });
         expect(emitted()).toEqual([['account.updated', { object: 'account', puede_cobrar: true, puede_depositar: true, motivo_bloqueo: null, pendientes: 0 }]]);
+    });
+
+    it('registra los dominios de Apple Pay y Google Pay en la cuenta que ya puede cobrar', async () => {
+        mocks.state.before = { ...base, stripe_charges_enabled: true, stripe_payouts_enabled: true, stripe_disabled_reason: null, stripe_requirements: JSON.stringify({ currently_due: [] }) };
+        await deliver('account.updated', { id: 'acct_seller', charges_enabled: true, payouts_enabled: true, details_submitted: true, requirements: { currently_due: [] } });
+        expect(mocks.dominios).toHaveBeenCalledWith('org-seller', 'acct_seller');
+    });
+
+    it('no registra dominios en una cuenta que todavía no cobra', async () => {
+        mocks.state.before = { ...base, stripe_charges_enabled: false, stripe_payouts_enabled: false, stripe_disabled_reason: null, stripe_requirements: JSON.stringify({ currently_due: [] }) };
+        await deliver('account.updated', { id: 'acct_seller', charges_enabled: false, payouts_enabled: false, details_submitted: true, requirements: { currently_due: [] } });
+        expect(mocks.dominios).not.toHaveBeenCalled();
     });
 
     it('no emite si nada cambió', async () => {

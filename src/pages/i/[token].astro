@@ -393,6 +393,7 @@ import { iconInner } from '../../lib/icons';
 </script>
 
 <script>
+    import { WALLETS_PAYMENT_ELEMENT } from '../../lib/cobros/billeteras';
     const boton = document.getElementById('ivPay') as HTMLButtonElement | null;
     if (boton) {
         const T = JSON.parse((document.querySelector('.iv-main') as HTMLElement)?.dataset.i18n || '{}');
@@ -440,7 +441,7 @@ import { iconInner } from '../../lib/icons';
                 }
                 stripe = (window as any).Stripe(data.publishableKey, { stripeAccount: data.accountId });
                 elements = stripe.elements({ clientSecret: data.clientSecret });
-                elements.create('payment').mount('#ivPayEl');
+                elements.create('payment', { wallets: WALLETS_PAYMENT_ELEMENT }).mount('#ivPayEl');
                 if (wrap) wrap.hidden = false;
                 boton.hidden = true;
             } catch (e) {

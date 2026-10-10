@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { payerError } from '../../lib/pay-errors';
+import { WALLETS_PAYMENT_ELEMENT } from '../../lib/cobros/billeteras';
 import '../../styles/payment-island.css';
 
 const easing = 'cubic-bezier(0.16, 1, 0.3, 1)';
@@ -263,7 +264,7 @@ function CheckoutForm({ token, color, amountLabel, subscription, onSuccess, T }:
 
     return (
         <form className="payi-checkout-form" onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-            <PaymentElement onReady={() => setReady(true)} options={{ layout: 'tabs' }} />
+            <PaymentElement onReady={() => setReady(true)} options={{ layout: 'tabs', wallets: WALLETS_PAYMENT_ELEMENT }} />
             {error && (
                 <div role="alert" style={{ color: '#dc2626', fontSize: '0.82rem', lineHeight: 1.5, padding: '10px 14px', background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '12px' }}>
                     {error}
