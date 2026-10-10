@@ -550,7 +550,7 @@ export const FEATURES: Feature[] = [
             {
                 eyebrow: 'DOS RIELES, UN MISMO LINK',
                 titulo: 'Tarjeta, SPEI o Mercado Pago, según dónde vendas.',
-                copy: 'Con Cord Payments tu cliente paga con tarjeta dentro de tu link, con tu marca y sin que lo mandes a otro sitio; en cotizaciones en pesos mexicanos también puede pagar por SPEI, a una CLABE exclusiva de ese cobro que se concilia sola. Donde Cord Payments no llega, cobras con tu cuenta de Mercado Pago: tu cliente paga en su checkout y vuelve a tu link.',
+                copy: 'Con Cord Payments tu cliente paga con tarjeta dentro de tu link, con tu marca y sin que lo mandes a otro sitio; en cotizaciones en pesos mexicanos también puede pagar por SPEI, a una CLABE exclusiva de ese cobro que se concilia sola (en facturas, se está habilitando). Donde Cord Payments no llega, cobras con tu cuenta de Mercado Pago: tu cliente paga en su checkout y vuelve a tu link.',
                 bullets: [
                     'La tarjeta se cobra dentro de tu link, con tu marca',
                     'SPEI a una CLABE exclusiva de cada cobro, que se concilia sola',
@@ -717,7 +717,7 @@ export const FEATURES: Feature[] = [
             },
             {
                 q: '¿Con qué métodos me puede pagar mi cliente?',
-                a: 'Con los que tengas activos en tu país: tarjeta con Cord Payments en México, Estados Unidos, Canadá, Brasil, España, Reino Unido, Alemania y Francia; Mercado Pago en México, Brasil, Argentina, Chile, Colombia y Perú; y domiciliación SEPA en euros (España, Alemania y Francia) o cargo ACH en dólares (Estados Unidos), que se están habilitando. Las transferencias, el efectivo y los cheques los registras tú contra el mismo saldo.',
+                a: 'Con los que tengas activos en tu país: tarjeta con Cord Payments en México, Estados Unidos, Canadá, Brasil, España, Reino Unido, Alemania y Francia; Mercado Pago en México, Brasil, Argentina, Chile, Colombia y Perú; y, ya en habilitación, transferencia SPEI en pesos mexicanos a una CLABE propia de cada factura que se concilia sola, domiciliación SEPA en euros (España, Alemania y Francia) y cargo ACH en dólares (Estados Unidos). Las demás transferencias, el efectivo y los cheques los registras tú contra el mismo saldo.',
             },
             {
                 q: '¿Mi cliente puede pagar en parcialidades?',

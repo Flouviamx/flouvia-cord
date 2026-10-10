@@ -506,7 +506,7 @@ export const FEATURES_EN: Feature[] = [
             {
                 eyebrow: 'TWO RAILS, ONE LINK',
                 titulo: 'Card, SPEI or Mercado Pago, depending on where you sell.',
-                copy: "With Cord Payments your client pays by card inside your link, under your brand, without being sent to another site; on quotes in Mexican pesos they can also pay by SPEI, to a CLABE reserved for that payment that reconciles itself. Where Cord Payments isn't available, you collect through your Mercado Pago account: your client pays in its checkout and comes back to your link.",
+                copy: "With Cord Payments your client pays by card inside your link, under your brand, without being sent to another site; on quotes in Mexican pesos they can also pay by SPEI, to a CLABE reserved for that payment that reconciles itself (on invoices, it is being rolled out). Where Cord Payments isn't available, you collect through your Mercado Pago account: your client pays in its checkout and comes back to your link.",
                 bullets: [
                     'The card is charged inside your link, under your brand',
                     'SPEI to a CLABE reserved for each payment, which reconciles itself',
@@ -673,7 +673,7 @@ export const FEATURES_EN: Feature[] = [
             },
             {
                 q: 'Which payment methods can my client use?',
-                a: "The ones you have turned on in your country: card with Cord Payments in Mexico, the United States, Canada, Brazil, Spain, the United Kingdom, Germany and France; Mercado Pago in Mexico, Brazil, Argentina, Chile, Colombia and Peru; and SEPA Direct Debit in euros (Spain, Germany and France) or ACH debit in dollars (United States), which are being rolled out. Wires, cash and checks you record yourself against the same balance.",
+                a: "The ones you have turned on in your country: card with Cord Payments in Mexico, the United States, Canada, Brazil, Spain, the United Kingdom, Germany and France; Mercado Pago in Mexico, Brazil, Argentina, Chile, Colombia and Peru; and, being rolled out, SPEI transfer in Mexican pesos to a CLABE of each invoice that reconciles itself, SEPA Direct Debit in euros (Spain, Germany and France) and ACH debit in dollars (United States). Other wires, cash and checks you record yourself against the same balance.",
             },
             {
                 q: 'Can my client pay in installments?',
