@@ -141,8 +141,7 @@
     `nueva.astro`, `plan.astro` con `PLANES` en español, recordatorios de
     **factura** siempre en español (`notifyInvoiceReminder` corre en el cron sin
     locale y `currentLocale()` cae a `es`; los de cotización ya usan `orgs.idioma`),
-    eventos del complemento de pago ("Complemento de pago emitido…", "…pendiente…")
-    escritos en español en `src/lib/fiscal/payment-complement.ts`, error de "100 suscripciones" en `src/lib/actions/webhooks.ts`,
+    error de "100 suscripciones" en `src/lib/actions/webhooks.ts`,
     falta `set.api.rec.setup` en `src/i18n/app.ts` (la UI muestra la clave cruda).
 25. **Copy de la UI que no coincide con el comportamiento**: "Tasa de cierre ·
     últimos 90 días" se calcula sobre todo el historial; "De enviada a pagada · en
