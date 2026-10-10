@@ -31,6 +31,14 @@ const BASE = `
     create table cotizacion_items (id serial primary key, tax_rate numeric);
     create table clientes (id uuid primary key, org_id uuid not null references orgs(id) on delete cascade, empresa text);
     create table productos (id uuid primary key, org_id uuid not null references orgs(id) on delete cascade, nombre text);
+    create table uso_periodo (org_id uuid not null references orgs(id) on delete cascade, periodo text not null,
+        ia int not null default 0, cfdi int not null default 0, api int not null default 0, usuarios int not null default 0,
+        envios int not null default 0, docs int not null default 0, updated_at timestamptz not null default now(),
+        primary key (org_id, periodo));
+    create table usage_reservations (id uuid primary key, org_id uuid not null references orgs(id) on delete cascade,
+        dimension text not null, value integer not null);
+    alter table usage_reservations add constraint usage_reservations_dimension_check
+        check (dimension in ('api','usuario','ia','timbrado','envios'));
     create table cotizaciones (id uuid primary key, org_id uuid not null references orgs(id) on delete cascade, descuento numeric not null default 0);
     create table documento_recurrencias (id uuid primary key, org_id uuid not null references orgs(id) on delete cascade);
 `;
@@ -130,6 +138,14 @@ describe('migración de despliegue de facturación', () => {
                 'clientes.tax_exempt', 'clientes.tax_exempt_cert', 'cotizacion_items.tax_breakdown', 'cotizaciones.us_tax_calculo_id',
                 'documentos_fiscales.us_tax_calculo_id', 'orgs.us_tax_auto', 'orgs.us_tax_origen',
             ]);
+
+            // Cuota del sales tax automático (db/deploy/2026-10-09-us-tax2-cuota.sql):
+            // el contador, la reserva por registro y el CHECK con 'documento' y 'us_tax'.
+            const cuotaCols = (await db.query<{ c: string }>(`select table_name || '.' || column_name as c from information_schema.columns
+                where (table_name, column_name) in (('uso_periodo', 'us_tax'), ('us_tax_calculos', 'uso_id')) order by 1`)).rows.map((r) => r.c);
+            expect(cuotaCols).toEqual(['us_tax_calculos.uso_id', 'uso_periodo.us_tax']);
+            const [{ def: dimensiones }] = (await db.query<{ def: string }>(`select pg_get_constraintdef(oid) as def from pg_constraint where conname = 'usage_reservations_dimension_check'`)).rows;
+            for (const d of ['api', 'usuario', 'ia', 'timbrado', 'envios', 'documento', 'us_tax']) expect(dimensiones).toContain(`'${d}'`);
 
             // Factura electrónica entre empresarios (db/deploy/2026-10-09-spfe.sql):
             // la cola y lo recibido con RLS forzada, y el trigger que hace inmutable lo enviado.

@@ -17,7 +17,10 @@ export const STRIPE_KEY = import.meta.env.STRIPE_SECRET_KEY || process.env.STRIP
 
 export type Cycle = 'mensual' | 'anual';
 // Dimensiones que SÍ tienen meter de Stripe y pueden generar excedente cobrado.
-export type MeterDim = 'api' | 'usuario' | 'ia' | 'timbrado';
+// 'us_tax' = venta registrada con sales tax automático de EE. UU. (la Tax
+// Transaction que Stripe le cobra a Cord, USD 0.50 cada una): su propio
+// contador y su propio precio, no los del timbre de CFDI (ver INCLUDED).
+export type MeterDim = 'api' | 'usuario' | 'ia' | 'timbrado' | 'us_tax';
 // 'envios' es un tope duro de Gratis (cotizaciones enviadas/mes) sin meter: no
 // se le cobra a nadie, solo cierra el hueco de que "cotizaciones activas" es un
 // stock reciclable (cerrar un trato libera cupo, así que un vendedor disciplinado
@@ -43,15 +46,15 @@ export const PLAN_PRICES: Record<PaidPlan, Record<Cycle, string>> = isTest ? {
 // Se agregan como items de la suscripción; Stripe los cobra según los meter
 // events que reportemos. Starter no cobra usuario extra (tope duro → 1 usuario).
 export const METER_PRICES: Record<PaidPlan, Partial<Record<MeterDim, string>>> = isTest ? {
-    starter:   { api: 'price_1Tj98NQuD2ZBXFA9RrnYPDtC', ia: 'price_1Tj98NQuD2ZBXFA9TvslIK1h', timbrado: 'price_1Tj98OQuD2ZBXFA9APBme1NU' },
-    pro:       { api: 'price_1Tj98OQuD2ZBXFA9PQEZiRUy', usuario: 'price_1Tj98PQuD2ZBXFA9oiBhs22f', ia: 'price_1Tj98OQuD2ZBXFA9qhG8ms3S', timbrado: 'price_1Tj98PQuD2ZBXFA9odb3Zu4I' },
-    scale:     { api: 'price_1Tj98QQuD2ZBXFA9AnBCVMYl', usuario: 'price_1Tj98RQuD2ZBXFA9uZHkpmnT', ia: 'price_1Tj98QQuD2ZBXFA9D2eY3J8b', timbrado: 'price_1Tj98QQuD2ZBXFA9aWNVBwl3' },
-    developer: { api: 'price_1Tj98RQuD2ZBXFA9gGihI1gA', usuario: 'price_1Tj98SQuD2ZBXFA9f9iLWU2w', ia: 'price_1Tj98RQuD2ZBXFA9tspMUapV', timbrado: 'price_1Tj98SQuD2ZBXFA9VzREjYme' },
+    starter:   { api: 'price_1Tj98NQuD2ZBXFA9RrnYPDtC', ia: 'price_1Tj98NQuD2ZBXFA9TvslIK1h', timbrado: 'price_1Tj98OQuD2ZBXFA9APBme1NU', us_tax: '' },
+    pro:       { api: 'price_1Tj98OQuD2ZBXFA9PQEZiRUy', usuario: 'price_1Tj98PQuD2ZBXFA9oiBhs22f', ia: 'price_1Tj98OQuD2ZBXFA9qhG8ms3S', timbrado: 'price_1Tj98PQuD2ZBXFA9odb3Zu4I', us_tax: '' },
+    scale:     { api: 'price_1Tj98QQuD2ZBXFA9AnBCVMYl', usuario: 'price_1Tj98RQuD2ZBXFA9uZHkpmnT', ia: 'price_1Tj98QQuD2ZBXFA9D2eY3J8b', timbrado: 'price_1Tj98QQuD2ZBXFA9aWNVBwl3', us_tax: '' },
+    developer: { api: 'price_1Tj98RQuD2ZBXFA9gGihI1gA', usuario: 'price_1Tj98SQuD2ZBXFA9f9iLWU2w', ia: 'price_1Tj98RQuD2ZBXFA9tspMUapV', timbrado: 'price_1Tj98SQuD2ZBXFA9VzREjYme', us_tax: '' },
 } : {
-    starter:   { api: 'price_1Tie8yQuD2ZBXFA95QlmfbIj',                                       ia: 'price_1TidsnQuD2ZBXFA9uGEPbBhF', timbrado: 'price_1TiduZQuD2ZBXFA91xtzCz0B' },
-    pro:       { api: 'price_1Tie1sQuD2ZBXFA98nejH9l4', usuario: 'price_1TidxsQuD2ZBXFA9t1S7Uang', ia: 'price_1TidyJQuD2ZBXFA9CXUvMZIs', timbrado: 'price_1TidylQuD2ZBXFA9WIRLTZ0L' },
-    scale:     { api: 'price_1Tie7OQuD2ZBXFA9RtEcbu8s', usuario: 'price_1U45ebQuD2ZBXFA97TI8pA55', ia: 'price_1Tie5VQuD2ZBXFA9JUizxrkk', timbrado: 'price_1Tie5wQuD2ZBXFA9hLTY2QKi' },
-    developer: { api: 'price_1TieClQuD2ZBXFA9dNGVeRox', usuario: 'price_1TieA8QuD2ZBXFA9ZmaQ58oj', ia: 'price_1TieAmQuD2ZBXFA9NZ9980yq', timbrado: 'price_1TieBOQuD2ZBXFA9WJhCjCkG' },
+    starter:   { api: 'price_1Tie8yQuD2ZBXFA95QlmfbIj',                                       ia: 'price_1TidsnQuD2ZBXFA9uGEPbBhF', timbrado: 'price_1TiduZQuD2ZBXFA91xtzCz0B', us_tax: '' },
+    pro:       { api: 'price_1Tie1sQuD2ZBXFA98nejH9l4', usuario: 'price_1TidxsQuD2ZBXFA9t1S7Uang', ia: 'price_1TidyJQuD2ZBXFA9CXUvMZIs', timbrado: 'price_1TidylQuD2ZBXFA9WIRLTZ0L', us_tax: '' },
+    scale:     { api: 'price_1Tie7OQuD2ZBXFA9RtEcbu8s', usuario: 'price_1U45ebQuD2ZBXFA97TI8pA55', ia: 'price_1Tie5VQuD2ZBXFA9JUizxrkk', timbrado: 'price_1Tie5wQuD2ZBXFA9hLTY2QKi', us_tax: '' },
+    developer: { api: 'price_1TieClQuD2ZBXFA9dNGVeRox', usuario: 'price_1TieA8QuD2ZBXFA9ZmaQ58oj', ia: 'price_1TieAmQuD2ZBXFA9NZ9980yq', timbrado: 'price_1TieBOQuD2ZBXFA9WJhCjCkG', us_tax: '' },
 };
 
 // ── IDs de los billing meters (para reportar consumo) ─────────────────────────
@@ -62,12 +65,40 @@ export const METERS: Record<MeterDim, string> = isTest ? {
     usuario:  'mtr_test_61UsX5jtsxrXVSAA141QuD2ZBXFA90r2',
     ia:       'mtr_test_61UsX5iy1a3BEKWl741QuD2ZBXFA90pk',
     timbrado: 'mtr_test_61UsX5iL0exFIs7P241QuD2ZBXFA9KgS',
+    us_tax:   '',
 } : {
     api:      'mtr_61Us1tKSHBU1Zhk4r41QuD2ZBXFA9QTo',
     usuario:  'mtr_61Us1t8pXL5GiRTZ741QuD2ZBXFA93Ee',
     ia:       'mtr_61Us1pzxJnZQjNBQO41QuD2ZBXFA9Mnw',
     timbrado: 'mtr_61Us1rkh7y3xexhFN41QuD2ZBXFA9DAW',
+    us_tax:   '',
 };
+
+/**
+ * Medidores que se agregaron DESPUÉS de que existieran suscripciones vivas.
+ * Su item no es condición para conceder el plan (`requiredMeterPrices`): si lo
+ * fuera, llenar su id antes de agregarlo a cada suscripción —o un cambio de
+ * plan hecho con el código anterior, que borra los items que no conoce—
+ * bajaría a Gratis a todo cliente que paga. La suscripción nueva y el cambio de
+ * plan sí lo llevan (`meterPricesFor`, `subscriptionChangeParams`), y
+ * `scripts/stripe-us-tax-items.mjs` lo agrega a las vivas.
+ */
+export const OPTIONAL_METER_DIMS: readonly MeterDim[] = ['us_tax'];
+
+/** Prices medidos cuya ausencia en la suscripción impide conceder el plan. */
+export function requiredMeterPrices(plan: PaidPlan): string[] {
+    return (Object.entries(METER_PRICES[plan]) as Array<[MeterDim, string | undefined]>)
+        .filter(([dim, id]) => !!id && !OPTIONAL_METER_DIMS.includes(dim))
+        .map(([, id]) => id as string);
+}
+
+/** ¿Existen en Stripe el meter y el Price de esta dimensión para este plan? */
+export function meterConfigured(plan: PlanId, dim: UsageDim): boolean {
+    if (plan === 'free') return false;
+    const meter = (METERS as Record<string, string>)[dim];
+    const price = (METER_PRICES[plan as PaidPlan] as Record<string, string | undefined> | undefined)?.[dim];
+    return !!meter && !!price;
+}
 
 // ── Divisa de plataforma y resolución de precios ──────────────────────────────
 // Cord cobra MXN en México, EUR en ES/DE/FR y USD en los demás mercados
@@ -121,12 +152,18 @@ export async function platformCurrencyForOrg(orgId: string): Promise<PlatformCur
 // ── Cuotas mensuales INCLUIDAS por plan (consumo sin costo extra) ─────────────
 // null = ilimitado. Alimenta el medidor de uso y la lógica de "tope duro".
 // `cfdi` = documentos fiscales; `docs` = comerciales (solo Gratis tiene tope).
-export const INCLUDED: Record<PlanId, { ia: number | null; cfdi: number; api: number; usuarios: number | null; envios: number | null; docs: number | null }> = {
-    free:      { ia: 3,    cfdi: 0,    api: 100,   usuarios: 1,    envios: 5,    docs: 10 },
-    starter:   { ia: 20,   cfdi: 30,   api: 1000,  usuarios: 1,    envios: null, docs: null },
-    pro:       { ia: 50,   cfdi: 200,  api: 5000,  usuarios: 5,    envios: null, docs: null },
-    scale:     { ia: 500,  cfdi: 500,  api: 10000, usuarios: 15,   envios: null, docs: null },
-    developer: { ia: null, cfdi: 1000, api: 50000, usuarios: null, envios: null, docs: null },
+// `us_tax` = ventas registradas con sales tax automático de EE. UU. (decisión de
+// André, oct 2026): Stripe le cobra a Cord USD 0.50 por cada una, así que lleva
+// su propia cuota y su propio excedente (USD 0.75 / MXN 15.00 / EUR 0.70), en
+// vez de compartir la de los timbres (30 en Starter a USD 0.15 el extra, que
+// perdería dinero en cada venta). Gratis no tiene la capacidad (feature gate
+// `us_sales_tax` desde Starter): su 0 es tope duro de respaldo.
+export const INCLUDED: Record<PlanId, { ia: number | null; cfdi: number; api: number; usuarios: number | null; envios: number | null; docs: number | null; us_tax: number }> = {
+    free:      { ia: 3,    cfdi: 0,    api: 100,   usuarios: 1,    envios: 5,    docs: 10,   us_tax: 0 },
+    starter:   { ia: 20,   cfdi: 30,   api: 1000,  usuarios: 1,    envios: null, docs: null, us_tax: 10 },
+    pro:       { ia: 50,   cfdi: 200,  api: 5000,  usuarios: 5,    envios: null, docs: null, us_tax: 25 },
+    scale:     { ia: 500,  cfdi: 500,  api: 10000, usuarios: 15,   envios: null, docs: null, us_tax: 60 },
+    developer: { ia: null, cfdi: 1000, api: 50000, usuarios: null, envios: null, docs: null, us_tax: 150 },
 };
 
 // Matriz de excedentes del contrato comercial. Starter permite excedente de
@@ -140,9 +177,20 @@ export function allowsOverage(plan: PlanId, dim: UsageDim): boolean {
     return true;
 }
 
+/**
+ * ¿Se puede cobrar HOY el excedente de esta dimensión? El contrato lo permite
+ * (`allowsOverage`) y además existen su meter y su Price en Stripe. Sin las dos
+ * cosas, lo incluido es tope duro: cobrar un excedente sin meter es regalarlo
+ * (Cord paga el proveedor y nadie se lo cobra al negocio).
+ */
+export function overageBillable(plan: PlanId, dim: UsageDim): boolean {
+    return allowsOverage(plan, dim) && meterConfigured(plan, dim);
+}
+
 // dim de uso → columna en uso_periodo
-export const DIM_COL: Record<UsageDim, 'ia' | 'cfdi' | 'api' | 'usuarios' | 'envios' | 'docs'> = {
-    ia: 'ia', timbrado: 'cfdi', api: 'api', usuario: 'usuarios', envios: 'envios', documento: 'docs',
+export type UsageCol = 'ia' | 'cfdi' | 'api' | 'usuarios' | 'envios' | 'docs' | 'us_tax';
+export const DIM_COL: Record<UsageDim, UsageCol> = {
+    ia: 'ia', timbrado: 'cfdi', api: 'api', usuario: 'usuarios', envios: 'envios', documento: 'docs', us_tax: 'us_tax',
 };
 
 // Techo de seguridad para planes con excedente: aunque el overage se cobra, un
@@ -153,8 +201,14 @@ const OVERAGE_SAFETY_MULTIPLIER = 10;
 // Los asientos no llevan techo de seguridad: no tienen costo de proveedor.
 function usageHardCap(plan: PlanId, dim: UsageDim, included: number | null): number {
     if (included === null) return 2_147_483_647;
-    if (!allowsOverage(plan, dim)) return included;
+    if (!overageBillable(plan, dim)) return included;
     return dim === 'usuario' ? 2_147_483_647 : included * OVERAGE_SAFETY_MULTIPLIER;
+}
+
+/** Cuota, techo y si hay excedente cobrable, para mostrar o pre-verificar sin reservar. */
+export function usageLimitFor(plan: PlanId, dim: UsageDim): { included: number | null; ceiling: number; overage: boolean } {
+    const included = INCLUDED[plan][DIM_COL[dim]];
+    return { included, ceiling: usageHardCap(plan, dim, included), overage: included !== null && overageBillable(plan, dim) };
 }
 
 /**
@@ -170,13 +224,13 @@ export async function checkQuota(orgId: string, dim: MeterDim): Promise<{ ok: bo
     try {
         const context = await getEntitlementContext(orgId);
         const [[row]] = await withOrgTx(orgId, sql`
-            select ia, cfdi, api, usuarios from uso_periodo
+            select ia, cfdi, api, usuarios, us_tax from uso_periodo
              where org_id = ${orgId} and periodo = ${periodo}`);
         const plan = context.effectivePlan;
         const limit = INCLUDED[plan]?.[col];
         if (limit === null || limit === undefined) return { ok: true }; // ilimitado
         const used = Number(row?.[col] ?? 0);
-        const isOverage = allowsOverage(plan, dim);
+        const isOverage = overageBillable(plan, dim);
         if (!isOverage) {
             if (used >= limit) return { ok: false, reason: `Alcanzaste el límite de tu plan (${limit} este mes). Sube de plan para seguir usando esta función.` };
             return { ok: true };
@@ -291,6 +345,8 @@ export interface UsageReservation {
     ok: boolean;
     id?: string;
     reason?: string;
+    /** Por qué no se reservó: `limit` = cuota o techo agotados; `unavailable` = no se pudo verificar. */
+    code?: 'limit' | 'unavailable' | 'invalid';
 }
 
 /**
@@ -301,7 +357,7 @@ export interface UsageReservation {
 export async function reserveUsage(orgId: string, dim: UsageDim, rawValue = 1, options: { deferMeter?: boolean } = {}): Promise<UsageReservation> {
     const value = Math.trunc(Number(rawValue));
     if (!Number.isFinite(value) || value <= 0 || value > 10_000) {
-        return { ok: false, reason: 'Cantidad de consumo inválida.' };
+        return { ok: false, reason: 'Cantidad de consumo inválida.', code: 'invalid' };
     }
 
     try {
@@ -313,10 +369,10 @@ export async function reserveUsage(orgId: string, dim: UsageDim, rawValue = 1, o
         const periodo = new Date().toISOString().slice(0, 7);
         const id = randomUUID();
         const meterEligible = !context.isSandbox && plan !== 'free' && !!context.stripeCustomerId
-            && included !== null && allowsOverage(plan, dim);
+            && included !== null && overageBillable(plan, dim);
         const includedForMeter = included ?? 2_147_483_647;
 
-        const queryFor = (column: 'ia' | 'cfdi' | 'api' | 'usuarios' | 'envios' | 'docs') => {
+        const queryFor = (column: UsageCol) => {
             if (column === 'docs') return sql`
                 with locked as (select pg_advisory_xact_lock(hashtextextended(${orgId + ':' + dim}, 0))),
                 consumed as (
@@ -399,6 +455,32 @@ export async function reserveUsage(orgId: string, dim: UsageDim, rawValue = 1, o
                   from consumed returning id
                 )
                 select exists(select 1 from consumed) as ok`;
+            // Ventas con sales tax de EE. UU.: mismo contrato que el timbre
+            // (`deferMeter`): la unidad se reserva ANTES de registrar la venta
+            // con el proveedor y el excedente solo se calcula al confirmarla
+            // (`commitUsTaxUsage`), para que un registro fallido no se cobre.
+            if (column === 'us_tax') return sql`
+                with locked as (select pg_advisory_xact_lock(hashtextextended(${orgId + ':' + dim}, 0))),
+                consumed as (
+                  insert into uso_periodo (org_id, periodo, us_tax)
+                  select ${orgId}, ${periodo}, ${value} from locked
+                  where ${value} <= ${hardCap}
+                  on conflict (org_id, periodo) do update
+                    set us_tax = uso_periodo.us_tax + ${value}, updated_at = now()
+                    where uso_periodo.us_tax + ${value} <= ${hardCap}
+                  returning us_tax
+                ), reserved as (
+                  insert into usage_reservations
+                    (id, org_id, billing_org_id, dimension, value, meter_value, periodo, status,
+                     meter_status, stripe_customer_id, committed_at)
+                  select ${id}, ${orgId}, ${context.billingOrgId}, ${dim}, ${value},
+                         case when ${meterEligible} then greatest(0, least(${value}, consumed.us_tax - ${includedForMeter})) else 0 end,
+                         ${periodo}, ${options.deferMeter ? 'reserved' : 'committed'},
+                         case when ${meterEligible} and ${!options.deferMeter} and consumed.us_tax > ${includedForMeter} then 'pending' else 'skipped' end,
+                         ${context.stripeCustomerId}, now()
+                  from consumed returning id
+                )
+                select exists(select 1 from consumed) as ok`;
             if (column === 'api') return sql`
                 with locked as (select pg_advisory_xact_lock(hashtextextended(${orgId + ':' + dim}, 0))),
                 consumed as (
@@ -452,13 +534,14 @@ export async function reserveUsage(orgId: string, dim: UsageDim, rawValue = 1, o
 
         const [[result]] = await withOrgTx(orgId, queryFor(col));
         if (!result?.ok) {
-            const what = dim === 'timbrado' ? 'facturas fiscales' : dim === 'documento' ? 'documentos comerciales' : dim;
-            return { ok: false, reason: `Alcanzaste el límite de tu plan para ${what}. Sube de plan para continuar.` };
+            const what = dim === 'timbrado' ? 'facturas fiscales' : dim === 'documento' ? 'documentos comerciales'
+                : dim === 'us_tax' ? 'facturas con sales tax automático' : dim;
+            return { ok: false, reason: `Alcanzaste el límite de tu plan para ${what}. Sube de plan para continuar.`, code: 'limit' };
         }
         return { ok: true, id };
     } catch (error) {
         log.error('no se pudo reservar consumo', { route: 'billing', dim, orgId, err: error });
-        return { ok: false, reason: 'No pudimos verificar ni registrar tu consumo. Intenta de nuevo.' };
+        return { ok: false, reason: 'No pudimos verificar ni registrar tu consumo. Intenta de nuevo.', code: 'unavailable' };
     }
 }
 
@@ -480,6 +563,7 @@ export async function cancelUsage(orgId: string, reservationId: string): Promise
                 usuarios = greatest(0, u.usuarios - coalesce((select value from canceled where dimension = 'usuario'), 0)),
                 envios = greatest(0, u.envios - coalesce((select value from canceled where dimension = 'envios'), 0)),
                 docs = greatest(0, u.docs - coalesce((select value from canceled where dimension = 'documento'), 0)),
+                us_tax = greatest(0, u.us_tax - coalesce((select value from canceled where dimension = 'us_tax'), 0)),
                 updated_at = now()
               where u.org_id = ${orgId} and u.periodo = (select periodo from canceled)
               returning u.org_id
@@ -509,6 +593,32 @@ export async function commitInvoiceUsage(orgId: string, reservationId: string): 
                       and h.status = 'reserved'), 0) + r.value - ${included})) else 0 end as billable
             from usage_reservations r join uso_periodo p on p.org_id = r.org_id and p.periodo = r.periodo
             where r.id = ${reservationId} and r.org_id = ${orgId} and r.dimension = 'timbrado' and r.status = 'reserved'
+        ) update usage_reservations r set status = 'committed', meter_value = amount.billable,
+            meter_status = case when amount.billable > 0 then 'pending' else 'skipped' end, updated_at = now()
+          from amount where r.id = amount.id and r.org_id = ${orgId}`);
+}
+
+/**
+ * Confirma la venta con sales tax de EE. UU. que el proveedor YA registró, bajo
+ * el mismo lock de su cuota. Mismo cálculo que `commitInvoiceUsage`: las otras
+ * reservas aún sin confirmar no empujan esta hacia un excedente falso, y el
+ * meter recibe solo lo que rebasa lo incluido. Sin meter configurado el
+ * excedente es 0 por construcción (y la reserva ya no pudo pasar del incluido).
+ */
+export async function commitUsTaxUsage(orgId: string, reservationId: string): Promise<void> {
+    const context = await getEntitlementContext(orgId);
+    const plan = context.effectivePlan;
+    const included = INCLUDED[plan].us_tax;
+    const eligible = !context.isSandbox && plan !== 'free' && !!context.stripeCustomerId && overageBillable(plan, 'us_tax');
+    await withOrgTx(orgId,
+        sql`select pg_advisory_xact_lock(hashtextextended(${orgId + ':us_tax'}, 0))`,
+        sql`with amount as (
+            select r.id, case when ${eligible} then greatest(0, least(r.value,
+                p.us_tax - coalesce((select sum(h.value) from usage_reservations h
+                    where h.org_id = r.org_id and h.periodo = r.periodo and h.dimension = 'us_tax'
+                      and h.status = 'reserved'), 0) + r.value - ${included})) else 0 end as billable
+            from usage_reservations r join uso_periodo p on p.org_id = r.org_id and p.periodo = r.periodo
+            where r.id = ${reservationId} and r.org_id = ${orgId} and r.dimension = 'us_tax' and r.status = 'reserved'
         ) update usage_reservations r set status = 'committed', meter_value = amount.billable,
             meter_status = case when amount.billable > 0 then 'pending' else 'skipped' end, updated_at = now()
           from amount where r.id = amount.id and r.org_id = ${orgId}`);
@@ -566,6 +676,25 @@ export async function flushPendingUsage(limit = 100): Promise<{ sent: number; fa
         if (!doc) continue;
         if (doc.provider_data?.simulado === true || doc.provider_data?.livemode === false) await cancelUsage(heldOrg, String(held.id));
         else await commitInvoiceUsage(heldOrg, String(held.id));
+    }
+    // Ventas con sales tax de EE. UU. que el proveedor registró pero cuya
+    // reserva no alcanzó a confirmarse (el proceso murió entre las dos
+    // escrituras). El carril de sistema solo DESCUBRE las organizaciones; la
+    // unión con su cálculo corre en el carril de cada una (regla 30). Una
+    // reserva cuyo registro no ocurrió se queda: el barrido de us-tax la reusa.
+    const [usTaxOrgs] = await withSystemTx(sql`
+        select distinct org_id from usage_reservations
+         where dimension = 'us_tax' and status = 'reserved' and created_at < now() - interval '10 minutes'
+         limit ${safeLimit}`);
+    for (const held of usTaxOrgs) {
+        const heldOrg = String(held.org_id);
+        const [rows] = await withOrgTx(heldOrg, sql`
+            select u.id from usage_reservations u
+              join us_tax_calculos c on c.org_id = u.org_id and c.uso_id = u.id
+             where u.org_id = ${heldOrg} and u.dimension = 'us_tax' and u.status = 'reserved'
+               and c.transaccion_id is not null
+             limit ${safeLimit}`);
+        for (const r of rows) await commitUsTaxUsage(heldOrg, String(r.id));
     }
     const [rows] = await withSystemTx(sql`
         with candidates as (

@@ -82,8 +82,10 @@ export const FEATURE_MIN_PLAN: Record<FeatureKey, PlanId> = {
     sso: 'scale',
     agent_governance: 'scale',
     // Sales tax de EE. UU. calculado por dirección: cada cálculo y cada venta
-    // registrada tienen un costo por uso que paga Cord (la plataforma), no el
-    // negocio. Por eso vive con la emisión fiscal integrada, desde Starter.
+    // registrada tienen un costo por uso que paga Cord (la plataforma). Por eso
+    // vive con la emisión fiscal integrada, desde Starter; las ventas
+    // registradas además tienen su propia cuota mensual y excedente
+    // (`INCLUDED.us_tax` en billing.ts, soft limit de la regla 18).
     us_sales_tax: 'starter',
 };
 
