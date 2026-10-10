@@ -10,11 +10,11 @@ En España la factura tiene que salir de un **sistema de facturación verificabl
 **En resumen:**
 
 - **Hoy:** proforma con serie `PRO`, en todos los planes (10 al mes en Gratis, ilimitadas desde Starter). No tiene huella, QR ni registro ante la AEAT, y su PDF lo dice.
-- **En activación:** Verifactu (registro de cada factura ante la AEAT) y la factura electrónica entre empresas por la solución pública de la AEAT. En **Ajustes › Facturación › Datos fiscales** la sección **Verifactu** dice **Certificado guardado, registro aún no activo** aunque subas tu certificado.
+- **En activación:** Verifactu (registro de cada factura ante la AEAT) y la factura electrónica entre empresas por la solución pública de la AEAT. En **Ajustes › Facturación › Perfil fiscal** la sección **Verifactu** dice **Certificado guardado, registro aún no activo** aunque subas tu certificado.
 - **Qué vas a necesitar:** plan Starter o superior, tu NIF y un **certificado electrónico** (`.p12` o `.pfx`). La FNMT emite gratis el certificado de persona física; el de representante de una sociedad tiene un costo que fija el prestador.
 - **Plazos de la ley:** Verifactu es obligatorio desde el 1 de enero de 2027 para quien tributa en el Impuesto sobre Sociedades y desde el 1 de julio de 2027 para el resto. La factura electrónica entre empresas, desde el 6 de octubre de 2027 si facturas más de 8 millones de euros al año y desde el 6 de octubre de 2028 para el resto.
 - **Corregir:** un registro encadenado no se edita. Se corrige con un registro nuevo (subsanación o anulación) o con una factura rectificativa.
-- **Cobrar:** tarjeta con Cord Payments en EUR, domiciliación SEPA y cobro automático.
+- **Cobrar:** tarjeta con Cord Payments en EUR, domiciliación SEPA y cobro automático (funciones nuevas, en habilitación: pueden no estar disponibles todavía en tu cuenta).
 
 ## Qué documento emite Cord
 
@@ -36,7 +36,7 @@ Una proforma no tiene versión electrónica: Facturae, Factur-X, XRechnung y Pep
 
 ## Configura tu cuenta
 
-1. En **Ajustes › Facturación › Datos fiscales › Identidad de facturación**, captura **Razón social o nombre legal**, **NIF / CIF**, **Domicilio fiscal**, **Ciudad**, **Estado, provincia o región**, **Código postal** y tu **Prefijo de factura**. España numera por serie **y** ejercicio: el año va pegado al prefijo.
+1. En **Ajustes › Facturación › Perfil fiscal › Identidad de facturación**, captura **Razón social o nombre legal**, **NIF / CIF**, **Domicilio fiscal**, **Ciudad**, **Estado, provincia o región**, **Código postal** y tu **Prefijo de factura**. España numera por serie **y** ejercicio: el año va pegado al prefijo.
 2. En la sección **Verifactu**, elige tu certificado electrónico, escribe la **Contraseña del certificado** y pulsa **Subir certificado**. Cord valida la contraseña y lee la fecha de caducidad. Ahí mismo está la **Declaración responsable del sistema de facturación**.
 3. En **Ajustes › Cotizaciones › Impuestos** revisa tu catálogo. Tu cuenta nace con IVA 21 %, 10 % y 4 %, Exento, las causas de exención **Exportación (art. 21)**, **Entrega intracomunitaria (art. 25)**, **Exenta art. 20** e **Inversión del sujeto pasivo**, y las retenciones **Retención IRPF 15%** y **Retención IRPF 7% (nuevo autónomo)**. Si tu negocio está en Canarias, el catálogo siembra IGIC; en Ceuta y Melilla, solo opciones exentas.
 4. Si facturas a empresas que procesan facturas de forma automática, completa la sección **Factura electrónica europea** (contacto, dirección electrónica y qué adjuntar al correo).
@@ -53,7 +53,7 @@ El detalle de la factura tiene un panel **Verifactu**:
 - **Registrada ante la AEAT.**
 - **Registrada con errores**, **Rechazada por la AEAT** o **No se pudo enviar a la AEAT:** con el código y el motivo de la AEAT, y el botón **Corregir y reenviar**.
 
-**Ajustes › Facturación › Datos fiscales** lista las **Facturas por corregir**. El PDF lleva al principio de la primera página el QR tributario de cotejo con la AEAT.
+**Ajustes › Facturación › Perfil fiscal** lista las **Facturas por corregir**. El PDF lleva al principio de la primera página el QR tributario de cotejo con la AEAT.
 
 ## Anular o corregir
 
@@ -64,7 +64,7 @@ El detalle de la factura tiene un panel **Verifactu**:
 
 ## La factura electrónica entre empresas
 
-La ley obligará a emitir y recibir factura electrónica entre empresas y profesionales, enviada por la **solución pública de la AEAT**. Cord la tiene construida, pero dice **Próximamente** en **Ajustes › Facturación › Datos fiscales › Factura electrónica entre empresas (AEAT)**: la AEAT todavía no publicó la especificación técnica de su servicio. Cuando lo haga, Cord la activará con el mismo certificado de Verifactu y comunicará los cobros de cada factura. Las facturas con IRPF se enviarán cuando la AEAT publique cómo se declaran; mientras tanto, se descargan como Facturae.
+La ley obligará a emitir y recibir factura electrónica entre empresas y profesionales, enviada por la **solución pública de la AEAT**. Cord la tiene construida, pero dice **Próximamente** en **Ajustes › Facturación › Perfil fiscal › Factura electrónica entre empresas (AEAT)**: la AEAT todavía no publicó la especificación técnica de su servicio. Cuando lo haga, Cord la activará con el mismo certificado de Verifactu y comunicará los cobros de cada factura. Las facturas con IRPF se enviarán cuando la AEAT publique cómo se declaran; mientras tanto, se descargan como Facturae.
 
 ## Problemas comunes
 

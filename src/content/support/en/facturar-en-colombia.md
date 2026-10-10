@@ -10,7 +10,7 @@ In Colombia the electronic sales invoice needs **prior validation by the DIAN**.
 **In short:**
 
 - **Today:** commercial invoice and commercial credit note, on every plan (10 per month on Free, unlimited from Starter). They are not submitted to the DIAN.
-- **Being turned on:** electronic sales invoice and credit note with prior validation (Technical Annex 1.9). Under **Settings › Invoicing › Tax details › Electronic invoicing with the DIAN** it reads **Coming soon**.
+- **Being turned on:** electronic sales invoice and credit note with prior validation (Technical Annex 1.9). Under **Settings › Invoicing › Tax profile › Electronic invoicing with the DIAN** it reads **Coming soon**.
 - **What you will need:** Starter or above, your NIT with its check digit, enabling yourself on the DIAN portal as **own software** with a PIN, passing the **test set**, a **numbering resolution** associated with the software and a **digital signature certificate** from an ONAC-accredited entity.
 - **Void:** a validated invoice is not voided: it is adjusted with a **credit note** (cancellation if it credits the total, reduction if it credits part).
 - **Collect:** in Colombia online payment is through **Mercado Pago**; Cord Payments is not available.

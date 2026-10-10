@@ -11,7 +11,7 @@ En Chile la factura con validez tributaria es un **Documento Tributario Electró
 
 - **Hoy:** factura comercial y nota de crédito comercial, en todos los planes (10 al mes en Gratis, ilimitadas desde Starter). No se envían al SII.
 - **IVA por documento, ya hoy:** en Chile Cord calcula el IVA una sola vez sobre el neto total (neto × 19 %, redondeado), como lo pide el formato del SII, y no sumando el IVA redondeado de cada línea.
-- **En activación:** factura electrónica (33), factura exenta (34), nota de débito (56) y nota de crédito (61). En **Ajustes › Facturación › Datos fiscales › Factura electrónica con el SII** dice **Próximamente**.
+- **En activación:** factura electrónica (33), factura exenta (34), nota de débito (56) y nota de crédito (61). En **Ajustes › Facturación › Perfil fiscal › Factura electrónica con el SII** dice **Próximamente**.
 - **Qué vas a necesitar:** plan Starter o superior, tu RUT, un **certificado digital** de una persona autorizada ante el SII, aprobar la **certificación** como emisor electrónico con sistema de mercado, la **resolución** del SII y los **folios (CAF)** de cada tipo de documento.
 - **Anular:** un DTE aceptado no se anula: se corrige con **nota de crédito** y, para cobrar de más o revertir una nota de crédito, con **nota de débito**.
 - **Cobrar:** en Chile el cobro en línea es con **Mercado Pago**; Cord Payments no está disponible.

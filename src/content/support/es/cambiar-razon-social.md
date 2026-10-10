@@ -4,7 +4,7 @@ description: "Cuándo editar tus datos fiscales directamente y cuándo crear un 
 category: "Cuenta y Equipo"
 ---
 
-El nombre legal de tu negocio y su identificador fiscal —RFC en México, NIF/CIF en España, EIN/Tax ID en Estados Unidos, y así según el país— se editan en **Ajustes > Datos fiscales**. No hace falta contactar a soporte para corregir un typo o actualizar un dato: el campo es editable en cualquier momento.
+El nombre legal de tu negocio y su identificador fiscal —RFC en México, NIF/CIF en España, EIN/Tax ID en Estados Unidos, y así según el país— se editan en **Ajustes > Datos fiscales** (**Perfil fiscal** fuera de México). No hace falta contactar a soporte para corregir un typo o actualizar un dato: el campo es editable en cualquier momento.
 
 ### Cuándo basta con editar el campo
 

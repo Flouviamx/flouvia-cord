@@ -10,7 +10,7 @@ En Colombia la factura electrónica de venta necesita la **validación previa de
 **En resumen:**
 
 - **Hoy:** factura comercial y nota de crédito comercial, en todos los planes (10 al mes en Gratis, ilimitadas desde Starter). No se presentan ante la DIAN.
-- **En activación:** factura electrónica de venta y nota crédito con validación previa (Anexo Técnico 1.9). En **Ajustes › Facturación › Datos fiscales › Factura electrónica con la DIAN** dice **Próximamente**.
+- **En activación:** factura electrónica de venta y nota crédito con validación previa (Anexo Técnico 1.9). En **Ajustes › Facturación › Perfil fiscal › Factura electrónica con la DIAN** dice **Próximamente**.
 - **Qué vas a necesitar:** plan Starter o superior, tu NIT con dígito de verificación, habilitarte en el portal de la DIAN como **software propio** con un PIN, superar el **set de pruebas**, una **resolución de numeración** asociada al software y un **certificado de firma digital** de una entidad avalada por la ONAC.
 - **Anular:** una factura validada no se anula: se ajusta con **nota crédito** (anulación si acredita el total, rebaja si acredita una parte).
 - **Cobrar:** en Colombia el cobro en línea es con **Mercado Pago**; Cord Payments no está disponible.

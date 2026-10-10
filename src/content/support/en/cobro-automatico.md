@@ -5,6 +5,8 @@ category: "Payments & Deposits"
 order: 7
 ---
 
+> **New feature, being rolled out.** It may not be available on your account yet. If you don't see it, write to us and we'll tell you when it turns on.
+
 With **automatic payments**, your client saves a card or bank account in their [portal](/en/support/portal-del-cliente) and each invoice is charged on its due date. **Your client turns it on**, with their authorization; your business decides whether to offer it and can turn it off at any time.
 
 **In short:**

@@ -5,6 +5,8 @@ category: "Pagos y Depósitos"
 order: 7
 ---
 
+> **Función nueva, en habilitación.** Puede no estar disponible todavía en tu cuenta. Si no la ves, escríbenos y te decimos cuándo se activa.
+
 Con el **cobro automático**, tu cliente guarda una tarjeta o una cuenta bancaria en su [portal](/soporte/portal-del-cliente) y cada factura se le cobra sola en su fecha de vencimiento. Lo **activa tu cliente**, con su autorización; tu negocio decide si lo ofrece y puede apagarlo en cualquier momento.
 
 **En resumen:**

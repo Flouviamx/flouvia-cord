@@ -11,14 +11,14 @@ prerequisites: ["Account with Spain as its country", "Valid NIF in Settings › 
 
 <header class="content-header">
   <h1 class="page-title">Spain</h1>
-  <p class="page-subtitle">Invoices with IVA, IRPF, IGIC, or IPSI per line item, chained and registered with the AEAT through Verifactu, and downloadable as Facturae.</p>
+  <p class="page-subtitle">Invoices with IVA, IRPF, IGIC, or IPSI per line item. Once Verifactu is active, they are chained, registered with the AEAT and downloadable as Facturae.</p>
 </header>
 
 ## What it is
 
 In Spain Cord is built for the invoicing system the law requires (**Verifactu**, RD 1007/2023): each invoice generates a record chained to your business's previous one, which is sent to the Tax Agency, and its PDF carries the verification QR code. While Verifactu is being activated, Cord issues **pro formas** with the `PRO` series and registers nothing with the AEAT.
 
-In addition, each invoice can be downloaded as **Facturae 3.2.2** (with IRPF, IGIC, or IPSI) and as Factur-X, XRechnung, and Peppol, and Cord has built **e-invoicing between businesses** through the AEAT public solution, which will be activated when the AEAT publishes its service.
+Once Verifactu is active, each invoice will also be downloadable as **Facturae 3.2.2** (with IRPF, IGIC, or IPSI) and as Factur-X, XRechnung, and Peppol; today, since your account issues pro formas, there is no electronic version yet. Cord has also built **e-invoicing between businesses** through the AEAT public solution, which will be activated when the AEAT publishes its service.
 
 | | In Spain |
 |---|---|
@@ -108,7 +108,7 @@ Upload your certificate: while registration is not active, the section says **Ce
 
 ## Facturae, IRPF, IGIC, and IPSI
 
-Each invoice in euros can be downloaded as **Facturae 3.2.2** from its detail and from its public link, with the same amounts as the PDF:
+Today Spanish accounts issue pro formas, which have no electronic version. Once Verifactu is active, each invoice in euros will be downloadable as **Facturae 3.2.2** from its detail and from its public link, with the same amounts as the PDF:
 
 - **IRPF** as a withholding (the base and total do not change);
 - **IVA**, **IGIC**, or **IPSI** with its rate, and exempt or non-subject transactions with their reason;

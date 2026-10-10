@@ -149,7 +149,7 @@ export const COMPARATIVA_EN: CompareGroup[] = [
             { label: 'Approval with technical evidence (SHA-256)', free: true, starter: true, pro: true, scale: true, developer: true },
             { label: 'Counteroffer and chat with the customer', free: true, starter: true, pro: true, scale: true, developer: true },
             { label: 'Line-item negotiation (threads)', free: true, starter: true, pro: true, scale: true, developer: true },
-            { label: 'Online card payment (Stripe)', free: true, starter: true, pro: true, scale: true, developer: true },
+            { label: 'Online card payment', free: true, starter: true, pro: true, scale: true, developer: true },
             { label: 'Customizable portal (banner and welcome)', free: true, starter: true, pro: true, scale: true, developer: true },
         ],
     },

@@ -11,14 +11,14 @@ prerequisites: ["Cuenta con país España", "NIF válido en Ajustes › Perfil f
 
 <header class="content-header">
   <h1 class="page-title">España</h1>
-  <p class="page-subtitle">Facturas con IVA, IRPF, IGIC o IPSI por concepto, encadenadas y registradas ante la AEAT con Verifactu, y descargables como Facturae.</p>
+  <p class="page-subtitle">Facturas con IVA, IRPF, IGIC o IPSI por concepto. Con Verifactu activo, se encadenan y registran ante la AEAT y se descargan como Facturae.</p>
 </header>
 
 ## Qué es
 
 En España Cord está construido para el sistema de facturación que exige la ley (**Verifactu**, RD 1007/2023): cada factura genera un registro encadenado al anterior de tu negocio que se envía a la Agencia Tributaria, y su PDF lleva el código QR de cotejo. Mientras Verifactu está en activación, Cord emite **proformas** con serie `PRO` y no registra nada ante la AEAT.
 
-Además, cada factura se descarga como **Facturae 3.2.2** (con IRPF, IGIC o IPSI) y como Factur-X, XRechnung y Peppol, y Cord tiene construida la **factura electrónica entre empresarios** por la solución pública de la AEAT, que se activará cuando la AEAT publique su servicio.
+Cuando Verifactu esté activo, cada factura también se descargará como **Facturae 3.2.2** (con IRPF, IGIC o IPSI) y como Factur-X, XRechnung y Peppol; hoy, como tu cuenta emite proformas, todavía no hay versión electrónica. Cord tiene construida además la **factura electrónica entre empresarios** por la solución pública de la AEAT, que se activará cuando la AEAT publique su servicio.
 
 | | En España |
 |---|---|
@@ -108,7 +108,7 @@ Sube tu certificado: mientras el registro no esté activo, la sección dice **Ce
 
 ## Facturae, IRPF, IGIC e IPSI
 
-Cada factura en euros se descarga como **Facturae 3.2.2** desde su detalle y desde su link público, con los mismos importes del PDF:
+Hoy las cuentas de España emiten proformas, que no tienen versión electrónica. Cuando Verifactu esté activo, cada factura en euros se descargará como **Facturae 3.2.2** desde su detalle y desde su link público, con los mismos importes del PDF:
 
 - el **IRPF** como retención (la base y el total no cambian);
 - **IVA**, **IGIC** o **IPSI** con su tipo, y las operaciones exentas o no sujetas con su causa;

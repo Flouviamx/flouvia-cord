@@ -3277,7 +3277,10 @@ la cuota y los topes de cálculos. Esquema: secciones de `db/schema.sql`
   Price de `us_tax` no existen en Stripe y sus ids están vacíos en
   `src/lib/billing.ts`, así que lo incluido opera como tope duro. Los scripts
   (`npm run stripe:us-tax-meter`, `npm run stripe:us-tax-items`) y el orden están
-  en [`negocio-billing.md`](negocio-billing.md).
+  en [`negocio-billing.md`](negocio-billing.md). Al encenderlo, cambia en el
+  mismo commit el "Hoy ese excedente todavía no se cobra" de
+  `src/content/docs/{es,en}/pagos/paises/estados-unidos.mdx` y
+  `src/content/support/{es,en}/sales-tax-automatico.md`.
 - Notas de crédito de una factura con sales tax por dirección: copian el
   desglose para imprimirlo, pero no crean el reverso PARCIAL de la
   transacción.

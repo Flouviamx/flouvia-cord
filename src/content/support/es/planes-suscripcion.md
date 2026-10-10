@@ -96,7 +96,7 @@ En **Ajustes › Planes y suscripción** ves tu plan, consumo y opciones de camb
 - **Bajar de plan o cancelar:** se programa según el periodo pagado; revisa la fecha efectiva que muestra el portal.
 - **Pago pendiente:** no garantiza acceso de pago. Cord comprueba que exista una suscripción activa con el periodo cubierto. Si falta esa evidencia, aplica los permisos de Gratis y mantiene el acceso a la recuperación del pago.
 
-Los datos se conservan después de bajar de plan; las funciones y recursos que excedan el nuevo contrato dejan de operar. Quitar la marca de Cord requiere Starter o superior: si deja de corresponder, vuelve a mostrarse en las superficies públicas. Desde Profesional, los enlaces pueden servirse desde un subdominio propio configurado en **Ajustes › Dominio propio**.
+Los datos se conservan después de bajar de plan; las funciones y recursos que excedan el nuevo contrato dejan de operar. Quitar la marca de Cord requiere Starter o superior: si deja de corresponder, vuelve a mostrarse en las superficies públicas. Desde Profesional, los enlaces pueden servirse desde un subdominio propio configurado en **Ajustes › Dominio propio**, cuando esa opción esté habilitada en tu cuenta (si no la ves, escríbenos).
 
 ## Comprobantes de la suscripción
 

@@ -5,6 +5,8 @@ category: "Pagos y Depósitos"
 order: 8
 ---
 
+> **Función nueva, en habilitación.** Puede no estar disponible todavía en tu cuenta. Si no la ves, escríbenos y te decimos cuándo se activa.
+
 Además de tarjeta, tus clientes pueden pagar con **cargo directo a su cuenta bancaria**: **domiciliación SEPA** en euros si tu negocio está en España, Alemania o Francia, y **cargo ACH** en dólares si tu negocio está en Estados Unidos. Sirve a los clientes que prefieren pagar desde su banco y al cobro automático, pero **tarda días en confirmarse**.
 
 **En resumen:**

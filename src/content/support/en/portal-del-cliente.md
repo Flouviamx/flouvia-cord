@@ -5,6 +5,8 @@ category: "Payments & Deposits"
 order: 6
 ---
 
+> **New feature, being rolled out.** It may not be available on your account yet. If you don't see it, write to us and we'll tell you when it turns on.
+
 The **client portal** is a personal link per client where they see **all their issued invoices**, their **balance due per currency**, download each invoice and **pay several at once** in a single charge. They also turn on [automatic payments](/en/support/cobro-automatico) there.
 
 **In short:**

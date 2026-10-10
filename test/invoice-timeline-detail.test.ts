@@ -51,7 +51,8 @@ describe('detalle de la actividad de una factura', () => {
     it('traduce el complemento de pago de México', () => {
         expect(invoiceEventDetail('payment', 'Complemento de pago emitido (9F1C-UUID)', 'en')).toBe('Payment complement issued (9F1C-UUID)');
         expect(invoiceEventDetail('payment', 'Complemento de pago emitido', 'en')).toBe('Payment complement issued');
-        expect(invoiceEventDetail('payment', 'Complemento de pago pendiente: reintenta desde la factura', 'en')).toBe('Payment complement pending: retry from the invoice');
+        expect(invoiceEventDetail('payment', 'Complemento de pago pendiente: escríbenos para reintentarlo', 'en')).toBe('Payment complement pending: write to us to retry it');
+        expect(invoiceEventDetail('payment', 'Complemento de pago pendiente: reintenta desde la factura', 'en')).toBe('Payment complement pending: write to us to retry it');
         expect(invoiceEventDetail('payment', 'Complemento de pago no automático: pago en efectivo', 'en')).toBe('Payment complement not issued automatically: pago en efectivo');
         expect(invoiceEventDetail('payment', 'Complemento de pago emitido (9F1C-UUID)', 'es')).toBe('Complemento de pago emitido (9F1C-UUID)');
     });

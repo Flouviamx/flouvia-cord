@@ -11,7 +11,7 @@ El catálogo de un negocio en Estados Unidos solo trae la tasa **estatal**, que 
 
 - **Plan:** desde **Starter**. En Gratis no está disponible.
 - **Incluido al mes:** 10 facturas con sales tax automático en Starter, 25 en Profesional, 60 en Scale y 150 en Developer.
-- **Excedente publicado:** USD 0.75, MXN 15.00 o EUR 0.70 por factura adicional, según la divisa de tu suscripción (Developer no tiene tarifa EUR de autoservicio). Mientras el cobro de ese excedente no esté activo en tu cuenta, lo incluido funciona como **tope**: al llegar, mejora tu plan o captura la tasa a mano hasta el mes siguiente.
+- **Excedente publicado:** USD 0.75, MXN 15.00 o EUR 0.70 por factura adicional, según la divisa de tu suscripción (Developer no tiene tarifa EUR de autoservicio). Hoy ese excedente todavía no se cobra, así que lo incluido funciona como **tope**: al llegar, mejora tu plan o captura la tasa a mano hasta el mes siguiente.
 - **Qué cuenta:** cada factura emitida y cada cotización cobrada que se registra en un estado **donde recaudas**, una sola vez. Las vistas previas no cuentan, una venta a un estado donde no recaudas tampoco, y una cotización y su factura cuentan como una sola venta.
 - **Qué necesitas:** tu cuenta de Cord Payments activa, tu domicilio completo y los estados donde tienes permiso de recaudar.
 - **Nunca estima:** si falta un dato o el cálculo no está disponible, el documento no se guarda y te dice qué falta.

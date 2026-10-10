@@ -11,7 +11,7 @@ En Reino Unido Cord emite una **factura comercial** (VAT invoice) con folio cons
 
 - **Documento:** factura comercial y nota de crédito comercial, en todos los planes (10 al mes en Gratis, ilimitadas desde Starter).
 - **Impuestos:** tu cuenta nace con VAT 20 %, VAT 5 %, **Zero-rated** y **Exempt**. Son regímenes distintos (el primero permite recuperar el VAT soportado, el segundo no), por eso van los dos.
-- **Qué necesitas:** tu número de registro de VAT si estás registrado, y tus datos en **Ajustes › Facturación › Datos fiscales**.
+- **Qué necesitas:** tu número de registro de VAT si estás registrado, y tus datos en **Ajustes › Facturación › Perfil fiscal**.
 - **Cobrar:** tarjeta con Cord Payments en GBP. Cord no cobra comisión propia por transacción fuera de pesos mexicanos.
 - **No cubre todavía:** declaraciones de VAT ante HMRC, cargo a cuenta bancaria (Direct Debit) y los formatos de factura electrónica europea, que son para emisores de la Unión Europea.
 
@@ -31,7 +31,7 @@ La factura imprime tu número de VAT, el VAT por tasa con su base y, si cobras e
 
 ## Configura tu cuenta
 
-1. Abre **Ajustes › Facturación › Datos fiscales** y completa **Identidad de facturación**: **Razón social o nombre legal**, **VAT reg. no.**, **Domicilio fiscal**, **Ciudad**, **Estado, provincia o región**, **Código postal** y, si quieres, tu **Prefijo de factura**. Guarda.
+1. Abre **Ajustes › Facturación › Perfil fiscal** y completa **Identidad de facturación**: **Razón social o nombre legal**, **VAT reg. no.**, **Domicilio fiscal**, **Ciudad**, **Estado, provincia o región**, **Código postal** y, si quieres, tu **Prefijo de factura**. Guarda.
 2. En **Ajustes › Cotizaciones › Impuestos** revisa el catálogo y marca como predeterminada la tasa que más usas.
 3. Si cobras en línea, activa Cord Payments en **Ajustes › Cobros** y registra tu cuenta de depósito con sort code y número de cuenta.
 
@@ -52,7 +52,7 @@ No hay un registro ante la autoridad. El detalle de la factura muestra el estado
 ## Problemas comunes
 
 - **Elegí Exempt y debía ser Zero-rated (o al revés).** La factura emitida conserva su tasa. Emite una nota de crédito y una factura nueva con la tasa correcta.
-- **No aparece mi número de VAT.** Captúralo en **Datos fiscales**; aplica a las facturas que emitas después.
+- **No aparece mi número de VAT.** Captúralo en **Perfil fiscal**; aplica a las facturas que emitas después.
 
 ## Qué no cubre todavía
 

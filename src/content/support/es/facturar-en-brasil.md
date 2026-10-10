@@ -10,7 +10,7 @@ En Brasil la factura con validez fiscal es la **NFS-e** para servicios (la gener
 **En resumen:**
 
 - **Hoy:** factura comercial y nota de crédito comercial, en todos los planes (10 al mes en Gratis, ilimitadas desde Starter). No se presentan ante ninguna autoridad.
-- **En activación:** NFS-e (servicios) y NF-e (mercancías). En **Ajustes › Facturación › Datos fiscales** las secciones **NFS-e** y **NF-e** dicen **Próximamente** mientras no estén activas.
+- **En activación:** NFS-e (servicios) y NF-e (mercancías). En **Ajustes › Facturación › Perfil fiscal** las secciones **NFS-e** y **NF-e** dicen **Próximamente** mientras no estén activas.
 - **Qué vas a necesitar:** plan Starter o superior, tu CNPJ, un certificado digital **ICP-Brasil A1** (e-CNPJ), estar en un municipio adherido al emisor nacional de NFS-e y, para la NF-e, estar habilitado como emisor en la SEFAZ de tu estado con tu Inscrição Estadual.
 - **Una factura no puede mezclar productos y servicios:** son dos documentos distintos (NFS-e municipal y NF-e estatal). Divídela en dos.
 - **Anular:** la NFS-e se cancela dentro del plazo que fija tu municipio; la NF-e, dentro de las 24 horas de su autorización. Ninguna de las dos tiene nota de crédito en Cord.
@@ -36,7 +36,7 @@ Cord decide qué nota corresponde por los conceptos: si todos son productos con 
 
 ## Configura tu cuenta (cuando se active)
 
-1. En **Ajustes › Facturación › Datos fiscales › Identidad de facturación**, captura tu razón social y tu **CNPJ / CPF**.
+1. En **Ajustes › Facturación › Perfil fiscal › Identidad de facturación**, captura tu razón social y tu **CNPJ / CPF**.
 2. En la sección **NFS-e**: **Municipio de tu establecimiento (código IBGE)**, **Inscripción municipal** si aplica, **Situación ante el Simples Nacional** (y, si eres ME/EPP, la **Apuración** y los **Tributos aproximados del Simples Nacional (%)**), **Servicio (lista nacional, LC 116/2003)**, **Serie de la DPS** exclusiva de Cord y, si continúas una numeración, el **Primer número de DPS**. Pulsa **Guardar ajustes de la NFS-e**.
 3. En **Certificado digital ICP-Brasil (A1)**, sube tu archivo y su contraseña con **Subir certificado**. Cord prueba la conexión con el Sistema Nacional NFS-e sin emitir nada.
 4. En la sección **NF-e** (si vendes mercancías): **Régimen tributario (CRT)**, **Inscrição Estadual**, la dirección del establecimiento con su **Municipio (código IBGE)**, la **Serie de la NF-e** exclusiva de Cord, la **Naturaleza de la operación**, **Cómo vendes**, **Flete** y el PIS/COFINS por defecto. Pulsa **Guardar ajustes de la NF-e**. Si el certificado de la NFS-e es del mismo CNPJ, la NF-e lo usa; si no, sube uno propio en esta sección.

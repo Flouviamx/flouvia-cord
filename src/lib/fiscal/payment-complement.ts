@@ -145,7 +145,7 @@ export async function emitPaymentComplement(orgId: string, documentoId: string, 
       status: 'error', error: response.error || 'No se pudo emitir el complemento de pago.',
       retry_safe: true, at: new Date().toISOString(), ...(response.rawProviderData || {}),
     });
-    await logInvoiceEvent(orgId, documentoId, 'payment', `Complemento de pago pendiente: ${response.error || 'reintenta desde la factura'}`);
+    await logInvoiceEvent(orgId, documentoId, 'payment', `Complemento de pago pendiente: ${response.error || 'escríbenos para reintentarlo'}`);
     return 'error';
   } catch (err) {
     log.error('el complemento de pago falló', { route: 'fiscal/payment-complement', orgId, err });

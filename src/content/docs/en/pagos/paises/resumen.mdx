@@ -34,14 +34,14 @@ The rails that register invoices with a tax authority (Verifactu in Spain, the a
 
 | Country | Taxes your account starts with | Document Cord issues | Authority or rail | Online payments | Status |
 |---|---|---|---|---|---|
-| [Mexico](/en/docs/pagos/paises/mexico) | IVA 16%, IVA 8% border region, exempt, IVA and ISR withholdings | CFDI 4.0 from Starter; pro forma on Free | SAT, stamped with your CSD | Card, SPEI (MXN), Mercado Pago | Available |
-| [United States](/en/docs/pagos/paises/estados-unidos) | Your state's sales tax and exempt | Commercial invoice | No invoice authority; sales tax is recorded for your filing | Card, ACH (USD) | Available; sales tax by address new |
+| [Mexico](/en/docs/pagos/paises/mexico) | IVA 16%, IVA 8% border region, exempt, IVA and ISR withholdings | CFDI 4.0 from Starter; pro forma on Free | SAT, stamped with your CSD | Card, Mercado Pago; SPEI on quotes in MXN | Available |
+| [United States](/en/docs/pagos/paises/estados-unidos) | Your state's sales tax and exempt | Commercial invoice | No invoice authority; sales tax is recorded for your filing | Card; ACH (USD) new | Available; sales tax by address new |
 | [Canada](/en/docs/pagos/paises/canada) | GST, HST, and your province's combined rate (GST + QST, PST, or RST) | Commercial invoice | Not applicable | Card | Available |
 | [Brazil](/en/docs/pagos/paises/brasil) | No national rate: Isento only | Commercial invoice; NFS-e for services and NF-e for goods | National NFS-e system and your state's SEFAZ | Card, Mercado Pago | NFS-e and NF-e being activated |
-| [Spain](/en/docs/pagos/paises/espana) | IVA 21, 10, and 4%, exemptions with a reason, IRPF; IGIC in the Canary Islands | Pro forma; invoice registered with Verifactu | AEAT | Card, SEPA (EUR) | Verifactu being activated; e-invoicing between businesses coming soon |
+| [Spain](/en/docs/pagos/paises/espana) | IVA 21, 10, and 4%, exemptions with a reason, IRPF; IGIC in the Canary Islands | Pro forma; invoice registered with Verifactu | AEAT | Card; SEPA (EUR) new | Verifactu being activated; e-invoicing between businesses coming soon |
 | [United Kingdom](/en/docs/pagos/paises/reino-unido) | VAT 20 and 5%, zero-rated, exempt | Commercial invoice | Not applicable | Card | Available |
-| [Germany](/en/docs/pagos/paises/alemania) | USt. 19 and 7%, steuerfrei | Commercial invoice with downloadable XRechnung, ZUGFeRD, and Peppol | Not applicable: Cord generates the files, it does not transmit them | Card, SEPA (EUR) | Available |
-| [France](/en/docs/pagos/paises/francia) | TVA 20, 10, 5.5, and 2.1%, exonéré | Commercial invoice with Factur-X and the reform's mentions | Approved platform (PA) | Card, SEPA (EUR) | Issuing through the platform coming soon |
+| [Germany](/en/docs/pagos/paises/alemania) | USt. 19 and 7%, steuerfrei | Commercial invoice with downloadable XRechnung, ZUGFeRD, and Peppol | Not applicable: Cord generates the files, it does not transmit them | Card; SEPA (EUR) new | Available |
+| [France](/en/docs/pagos/paises/francia) | TVA 20, 10, 5.5, and 2.1%, exonéré | Commercial invoice with Factur-X and the reform's mentions | Approved platform (PA) | Card; SEPA (EUR) new | Issuing through the platform being activated |
 | [Colombia](/en/docs/pagos/paises/colombia) | IVA 19 and 5%, exempt, ReteIVA, ReteFuente | Commercial invoice; validated e-invoice | DIAN | Mercado Pago | Being activated |
 | [Argentina](/en/docs/pagos/paises/argentina) | IVA 21, 10.5, and 27%, exempt | Commercial invoice; type A, B, or C invoice with CAE | ARCA | Mercado Pago | Being activated |
 | [Chile](/en/docs/pagos/paises/chile) | IVA 19% calculated per document, exempt | Commercial invoice; DTE 33, 34, 56, and 61 | SII | Mercado Pago | Being activated |
@@ -50,7 +50,7 @@ The rails that register invoices with a tax authority (Verifactu in Spain, the a
 **How to read the status:**
 
 - **Available:** works today for every account in the country, on the plan shown.
-- **New:** built and verified, but just released; it may not be enabled on your account yet.
+- **New:** built and tested against simulated services, but just released; it may not be enabled on your account yet.
 - **Being activated:** the rail is built and tested against the authority's specifications, and Cord turns it on country by country. Meanwhile, the Settings section says **Coming soon**, shows no fields, and your invoices are issued as commercial invoices.
 - **Coming soon:** Cord already built it, but it depends on something external (the authority publishing its service, or Cord completing a filing).
 

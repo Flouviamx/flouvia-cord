@@ -10,11 +10,11 @@ En Francia Cord emite una **factura comercial** en francés con las **menciones 
 **En resumen:**
 
 - **Documento:** factura y nota de crédito comercial, en todos los planes (10 al mes en Gratis, ilimitadas desde Starter). Por defecto el correo de cada factura lleva el **PDF Factur-X** (el PDF con el XML dentro).
-- **En activación:** la emisión por plataforma autorizada, el e-reporting y la comunicación de cobros. En **Ajustes › Facturación › Datos fiscales › Factura electrónica en Francia** dice **Próximamente**.
+- **En activación:** la emisión por plataforma autorizada, el e-reporting y la comunicación de cobros. En **Ajustes › Facturación › Perfil fiscal › Factura electrónica en Francia** dice **Próximamente**.
 - **Calendario de la reforma:** desde el 1 de septiembre de 2026 toda empresa establecida en Francia debe poder **recibir** facturas electrónicas, y las grandes empresas y ETI además emiten y declaran. Las PYME y microempresas emiten y declaran desde el **1 de septiembre de 2027**.
 - **Cord solo emite:** no recibe facturas de tus proveedores. Necesitas tu propia plataforma de recepción.
 - **Qué necesitas:** tu SIREN (o tu número de TVA, que lo contiene), tu **Régimen de TVA**, si optaste por pagar la TVA sobre los débitos y el tipo de cada producto (bien o servicio).
-- **Cobrar:** tarjeta y **domiciliación SEPA** en EUR, y cobro automático desde el portal del cliente.
+- **Cobrar:** tarjeta y **domiciliación SEPA** en EUR, y cobro automático desde el portal del cliente (la domiciliación y el cobro automático son nuevos y se están habilitando: pueden no estar disponibles todavía en tu cuenta).
 
 ## Qué documento emite Cord
 
@@ -44,7 +44,7 @@ Todas tus facturas francesas ya las llevan, con o sin plataforma:
 
 ## Configura tu cuenta
 
-1. En **Ajustes › Facturación › Datos fiscales › Identidad de facturación**, captura **Razón social o nombre legal**, **SIREN / N° TVA**, domicilio y tu **Prefijo de factura**. Si aplicas la franquicia, enciende **Franquicia en base de TVA (art. 293 B du CGI)**.
+1. En **Ajustes › Facturación › Perfil fiscal › Identidad de facturación**, captura **Razón social o nombre legal**, **SIREN / N° TVA**, domicilio y tu **Prefijo de factura**. Si aplicas la franquicia, enciende **Franquicia en base de TVA (art. 293 B du CGI)**.
 2. En **Factura electrónica en Francia**, elige tu **Régimen de TVA**, define **Conceptos sin producto del catálogo** (bienes o servicios) y, si corresponde, enciende **Opté por pagar la TVA sobre los débitos**. Estos datos alimentan las menciones aunque la plataforma esté apagada.
 3. En **Productos**, revisa el **Tipo de venta** de cada uno: un producto es una entrega de bienes; un servicio, una suscripción o una licencia, una prestación de servicios.
 4. En **Factura electrónica europea**, completa contacto, dirección electrónica y qué adjuntar al correo.

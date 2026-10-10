@@ -41,7 +41,7 @@ Cord does not handle these registrations or decide whether you must register; co
 
 ## Set up your account
 
-1. Open **Settings › Invoicing › Tax details** and complete **Invoice identity**: **Legal name**, **BN / GST/HST no.**, **Address**, **City**, **Province or territory** (from the list), **Postal code** and, optionally, your **Invoice prefix**.
+1. Open **Settings › Invoicing › Tax profile** and complete **Invoice identity**: **Legal name**, **BN / GST/HST no.**, **Address**, **City**, **Province or territory** (from the list), **Postal code** and, optionally, your **Invoice prefix**.
 2. If you are registered in Quebec, enter the **QST registration number**.
 3. Save. When you pick your province, Cord seeds under **Settings › Quotes › Taxes** your province's rate as the default, GST 5% alone, the HST rates for selling into the harmonized provinces and the **Zero-rated** option. If you had chosen a province before, a catalog you did not touch is seeded again.
 4. Review the catalog and set the rate you use most as the default.
@@ -63,7 +63,7 @@ There is no registration with the authority. The invoice detail shows the busine
 ## Common issues
 
 - **A Quebec sale only charged QST, or only GST.** Choose the combined rate **GST 5% + QST 9.975%**. A standalone provincial rate saved earlier (QST 9.975%, PST or RST 7%, PST 6%) is read by Cord as the combined rate, so an old draft does not silently drop to GST alone.
-- **My QST number is not on the invoice.** Enter it under **Tax details**; it applies to invoices issued afterwards.
+- **My QST number is not on the invoice.** Enter it under **Tax profile**; it applies to invoices issued afterwards.
 - **My catalog did not change when I picked the province.** Only a catalog you did not modify is seeded again. Adjust the rates manually.
 
 ## Not covered yet

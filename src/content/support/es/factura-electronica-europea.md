@@ -27,7 +27,7 @@ Si tu negocio está establecido en la **Unión Europea** (de los países de Cord
 
 ## Prepara tus datos una vez
 
-En **Ajustes › Facturación › Datos fiscales › Factura electrónica europea**:
+En **Ajustes › Facturación › Perfil fiscal › Factura electrónica europea**:
 
 - **Contacto de facturación** y **Teléfono de contacto**: XRechnung exige un contacto con nombre, teléfono y correo (el de tu negocio). Sin teléfono aquí, se usa el de General.
 - **Dirección electrónica** con su esquema e **Identificador**: tu identificador de participante Peppol (por ejemplo un GLN o tu NIF-IVA). Peppol lo exige; XRechnung usa tu correo si no hay otro.

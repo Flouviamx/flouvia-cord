@@ -207,7 +207,7 @@ export const COMPARATIVA: CompareGroup[] = [
             { label: 'Aprobación con evidencia técnica (SHA-256)', free: true, starter: true, pro: true, scale: true, developer: true },
             { label: 'Contraoferta y chat con el cliente', free: true, starter: true, pro: true, scale: true, developer: true },
             { label: 'Negociación por línea (hilos)', free: true, starter: true, pro: true, scale: true, developer: true },
-            { label: 'Pago en línea con tarjeta (Stripe)', free: true, starter: true, pro: true, scale: true, developer: true },
+            { label: 'Pago en línea con tarjeta', free: true, starter: true, pro: true, scale: true, developer: true },
             { label: 'Portal personalizable (banner y bienvenida)', free: true, starter: true, pro: true, scale: true, developer: true },
         ],
     },

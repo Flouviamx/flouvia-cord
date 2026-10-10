@@ -10,9 +10,9 @@ In the United States Cord issues a **commercial invoice** with a sequential numb
 **In short:**
 
 - **Document:** commercial invoice and commercial credit note. On every plan; Free includes 10 per month and from Starter they are unlimited.
-- **What you need:** your EIN (or Tax ID) and address under **Settings › Invoicing › Tax details**, and a sales tax permit in each state where you collect.
+- **What you need:** your EIN (or Tax ID) and address under **Settings › Invoicing › Tax profile**, and a sales tax permit in each state where you collect.
 - **Sales tax:** when you pick your state, Cord seeds the state rate and an exempt option. From Starter you can calculate it **from the client's address** (state, county, city and districts), with a monthly allowance per plan.
-- **Collect:** card through Cord Payments and bank debit (ACH) in USD; automatic payments from the client portal. Cord charges no transaction fee of its own outside Mexican pesos.
+- **Collect:** card through Cord Payments and bank debit (ACH) in USD; automatic payments from the client portal (ACH debit and automatic payments are new and being rolled out: they may not be available on your account yet). Cord charges no transaction fee of its own outside Mexican pesos.
 - **Void or correct:** **More actions › Void** if it has no payments; if it does, **Credit note**.
 - **Not covered yet:** filing sales tax returns with the states, reports of recorded sales inside Cord, and a tax classification per product.
 
@@ -33,7 +33,7 @@ The invoice prints the sales tax of each item. With address-based calculation, i
 
 ## Set up your account
 
-1. Open **Settings › Invoicing › Tax details** and complete **Invoice identity**: **Legal name**, **EIN / Tax ID**, **Address**, **City**, **State or region** (you pick your state from the list), **Postal code** and, optionally, your **Invoice prefix**. Save.
+1. Open **Settings › Invoicing › Tax profile** and complete **Invoice identity**: **Legal name**, **EIN / Tax ID**, **Address**, **City**, **State or region** (you pick your state from the list), **Postal code** and, optionally, your **Invoice prefix**. Save.
 2. When you pick your state, Cord seeds under **Settings › Quotes › Taxes** the state rate ("Sales tax CA 7.25%", for example) and the **Exempt / Resale** option. A state with no state sales tax, such as Oregon, only gets the exempt option.
 3. The state rate is the state minimum. If you sell in a city with local tax, create your own rate with **+ New tax** or turn on address-based calculation.
 4. For address-based calculation, under **Settings › Quotes › Taxes › Sales tax by address**, turn on **Calculate sales tax from the client’s address**, enter **Your business address**, choose **What you sell**, tick the **States where you collect sales tax** and click **Save**. See [Automatic US sales tax](/en/support/sales-tax-automatico).

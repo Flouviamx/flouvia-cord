@@ -10,7 +10,7 @@ En Perú la factura electrónica se envía a **SUNAT**, que responde con una con
 **En resumen:**
 
 - **Hoy:** factura comercial y nota de crédito comercial, en todos los planes (10 al mes en Gratis, ilimitadas desde Starter). No se envían a SUNAT.
-- **En activación:** factura electrónica (01) y nota de crédito (07). En **Ajustes › Facturación › Datos fiscales › Factura electrónica con SUNAT** dice **Próximamente**.
+- **En activación:** factura electrónica (01) y nota de crédito (07). En **Ajustes › Facturación › Perfil fiscal › Factura electrónica con SUNAT** dice **Próximamente**.
 - **Qué vas a necesitar:** plan Starter o superior, tu RUC, afiliarte como emisor electrónico desde tus sistemas (SEE - Del Contribuyente), un **certificado digital** a nombre de tu RUC registrado en SUNAT, un **usuario SOL secundario** con perfil de envío de comprobantes y una **serie `F###`** reservada para Cord.
 - **Solo facturas:** un cliente sin RUC necesitaría una **boleta de venta**, que Cord todavía no emite.
 - **Anular:** Cord no hace comunicaciones de baja: una factura se corrige con **nota de crédito**, de anulación si acredita el total o de disminución si acredita una parte.

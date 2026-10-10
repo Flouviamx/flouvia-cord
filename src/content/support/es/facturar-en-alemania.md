@@ -14,7 +14,7 @@ En Alemania Cord emite una **factura comercial** (Rechnung) en alemán, con foli
 - **Impuestos:** USt. 19 %, USt. 7 % y **Steuerfrei**. Si eres **Kleinunternehmer (§ 19 UStG)**, enciéndelo y tus facturas sin impuesto llevan la mención legal.
 - **Fecha de prestación (Leistungsdatum):** captúrala en el editor; si queda vacía, el PDF dice que corresponde a la fecha de la factura.
 - **Qué necesitas:** Steuernummer o USt-IdNr. y, para XRechnung, un contacto con nombre, teléfono y correo.
-- **Cobrar:** tarjeta y **domiciliación SEPA** en EUR, y cobro automático desde el portal del cliente.
+- **Cobrar:** tarjeta y **domiciliación SEPA** en EUR, y cobro automático desde el portal del cliente (la domiciliación y el cobro automático son nuevos y se están habilitando: pueden no estar disponibles todavía en tu cuenta).
 
 ## Qué documento emite Cord
 
@@ -33,7 +33,7 @@ En Alemania Cord emite una **factura comercial** (Rechnung) en alemán, con foli
 
 ## Configura tu cuenta
 
-1. En **Ajustes › Facturación › Datos fiscales › Identidad de facturación**, captura **Razón social o nombre legal**, **Steuernummer / USt-IdNr.**, domicilio, **Código postal** y tu **Prefijo de factura**.
+1. En **Ajustes › Facturación › Perfil fiscal › Identidad de facturación**, captura **Razón social o nombre legal**, **Steuernummer / USt-IdNr.**, domicilio, **Código postal** y tu **Prefijo de factura**.
 2. Si aplicas la franquicia, enciende **Kleinunternehmer (§ 19 UStG)**. La mención solo se imprime en las facturas que no cobran impuesto.
 3. En **Factura electrónica europea**, completa **Contacto de facturación**, **Teléfono de contacto**, la **Dirección electrónica** con su esquema e **Identificador**, el **Número de registro mercantil** y el **BIC / SWIFT**. El IBAN es el de **Ajustes › Cobros**.
 4. En **Adjuntar al correo de cada factura**, deja el automático (PDF + XRechnung) o elige **Solo el PDF**, **PDF Factur-X (en lugar del PDF)** o **PDF + XML de XRechnung**.

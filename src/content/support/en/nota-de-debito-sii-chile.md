@@ -12,7 +12,7 @@ This applies to businesses in **Chile** using the SII electronic invoice, which 
 - **Debit note (56):** on an accepted **invoice**, it charges an additional amount (interest, price difference, a fee) and corrects amounts; on an accepted **credit note**, it cancels it in full, once.
 - **Where:** in the **SII** panel of an accepted document's detail: **Issue a debit note** or, on a credit note, **Cancel with a debit note**. It is created as a draft and you issue it like any invoice.
 - **Folios:** it needs debit note folios (CAF type 56), which expire after six months, like invoice folios.
-- **Certification:** under **Settings › Invoicing › Tax details**, the **SII certification** section builds and sends the test set, the sales and purchase ledgers, the exchange and the printed samples. It only exists in the certification environment.
+- **Certification:** under **Settings › Invoicing › Tax profile**, the **SII certification** section builds and sends the test set, the sales and purchase ledgers, the exchange and the printed samples. It only exists in the certification environment.
 - **What Cord does not build from the set:** dispatch guide (52) and its ledger, export documents (110 to 112) and an issued purchase invoice (46).
 
 ## Issue a debit note
@@ -32,7 +32,7 @@ The debit note is **a receivable of its own**: it has its own balance and link, 
 
 ## SII certification
 
-To issue DTEs with market software, the SII requires a certification. Cord supports it from **Settings › Invoicing › Tax details › Electronic invoicing with the SII › SII certification**, while your account is in the **certification environment**. Beforehand you need your digital certificate registered with the SII, your application as an electronic issuer and the certification folios uploaded.
+To issue DTEs with market software, the SII requires a certification. Cord supports it from **Settings › Invoicing › Tax profile › Electronic invoicing with the SII › SII certification**, while your account is in the **certification environment**. Beforehand you need your digital certificate registered with the SII, your application as an electronic issuer and the certification folios uploaded.
 
 ### 1. Test set
 

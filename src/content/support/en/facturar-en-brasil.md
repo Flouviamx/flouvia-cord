@@ -10,7 +10,7 @@ In Brazil the tax-valid invoice is the **NFS-e** for services (issued by the nat
 **In short:**
 
 - **Today:** commercial invoice and commercial credit note, on every plan (10 per month on Free, unlimited from Starter). They are not submitted to any authority.
-- **Being turned on:** NFS-e (services) and NF-e (goods). Under **Settings › Invoicing › Tax details**, the **NFS-e** and **NF-e** sections read **Coming soon** while they are not active.
+- **Being turned on:** NFS-e (services) and NF-e (goods). Under **Settings › Invoicing › Tax profile**, the **NFS-e** and **NF-e** sections read **Coming soon** while they are not active.
 - **What you will need:** Starter or above, your CNPJ, an **ICP-Brasil A1** digital certificate (e-CNPJ), a municipality that has joined the national NFS-e issuer and, for the NF-e, being enabled as an issuer with your state SEFAZ with your Inscrição Estadual.
 - **An invoice cannot mix products and services:** they are two different documents (municipal NFS-e and state NF-e). Split it in two.
 - **Void:** the NFS-e is cancelled within the deadline your municipality sets; the NF-e within 24 hours of its authorization. Neither has a credit note in Cord.
@@ -36,7 +36,7 @@ Cord decides which note applies from the items: if all are products with their N
 
 ## Set up your account (once it is turned on)
 
-1. Under **Settings › Invoicing › Tax details › Invoice identity**, enter your legal name and your **CNPJ / CPF**.
+1. Under **Settings › Invoicing › Tax profile › Invoice identity**, enter your legal name and your **CNPJ / CPF**.
 2. In the **NFS-e** section: **Municipality of your establishment (IBGE code)**, **Municipal registration** if it applies, **Simples Nacional status** (and, if you are ME/EPP, the **Simples Nacional assessment** and the **Approximate Simples Nacional taxes (%)**), **Service (national list, LC 116/2003)**, a **DPS series** exclusive to Cord and, if you continue a numbering, the **First DPS number**. Click **Save NFS-e settings**.
 3. Under **ICP-Brasil digital certificate (A1)**, upload your file and its password with **Upload certificate**. Cord tests the connection with the national NFS-e system without issuing anything.
 4. In the **NF-e** section (if you sell goods): **Tax regime (CRT)**, **State registration (Inscrição Estadual)**, the establishment address with its **Municipality (IBGE code)**, an **NF-e series** exclusive to Cord, the **Nature of the operation**, **How you sell**, **Freight** and the default PIS/COFINS. Click **Save NF-e settings**. If the NFS-e certificate belongs to the same CNPJ, the NF-e uses it; if not, upload one in this section.

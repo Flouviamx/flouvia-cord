@@ -41,7 +41,7 @@ Cord no tramita estos registros ni decide si estás obligado; confírmalo con tu
 
 ## Configura tu cuenta
 
-1. Abre **Ajustes › Facturación › Datos fiscales** y completa **Identidad de facturación**: **Razón social o nombre legal**, **BN / GST/HST no.**, **Domicilio fiscal**, **Ciudad**, **Provincia o territorio** (de la lista), **Código postal** y, si quieres, tu **Prefijo de factura**.
+1. Abre **Ajustes › Facturación › Perfil fiscal** y completa **Identidad de facturación**: **Razón social o nombre legal**, **BN / GST/HST no.**, **Domicilio fiscal**, **Ciudad**, **Provincia o territorio** (de la lista), **Código postal** y, si quieres, tu **Prefijo de factura**.
 2. Si estás registrado en Quebec, captura el **Número de registro de QST**.
 3. Guarda. Al elegir tu provincia, Cord siembra en **Ajustes › Cotizaciones › Impuestos** la tasa de tu provincia como predeterminada, el GST 5 % solo, las HST para vender hacia las provincias armonizadas y la opción **Zero-rated**. Si ya habías elegido una provincia antes, un catálogo que no tocaste se vuelve a sembrar.
 4. Revisa el catálogo y marca como predeterminada la tasa que más usas.
@@ -63,7 +63,7 @@ No hay un registro ante la autoridad. El detalle de la factura muestra el estado
 ## Problemas comunes
 
 - **Una venta en Quebec solo cobró la QST, o solo el GST.** Elige la tasa combinada **GST 5% + QST 9.975%**. Una tasa provincial suelta que guardaste antes (QST 9.975 %, PST o RST 7 %, PST 6 %) Cord la lee como la combinada, para que un borrador viejo no caiga al GST solo.
-- **No veo mi número de QST en la factura.** Captúralo en **Datos fiscales**; aplica a las facturas que emitas después.
+- **No veo mi número de QST en la factura.** Captúralo en **Perfil fiscal**; aplica a las facturas que emitas después.
 - **Mi catálogo no cambió al elegir la provincia.** Solo se vuelve a sembrar un catálogo que no modificaste. Ajusta las tasas a mano.
 
 ## Qué no cubre todavía

@@ -11,7 +11,7 @@ In Chile the tax-valid invoice is an **electronic tax document (DTE)** sent to t
 
 - **Today:** commercial invoice and commercial credit note, on every plan (10 per month on Free, unlimited from Starter). They are not sent to the SII.
 - **VAT per document, already today:** in Chile Cord calculates VAT once on the total net amount (net × 19%, rounded), as the SII format requires, rather than adding up each line's rounded VAT.
-- **Being turned on:** electronic invoice (33), exempt invoice (34), debit note (56) and credit note (61). Under **Settings › Invoicing › Tax details › Electronic invoicing with the SII** it reads **Coming soon**.
+- **Being turned on:** electronic invoice (33), exempt invoice (34), debit note (56) and credit note (61). Under **Settings › Invoicing › Tax profile › Electronic invoicing with the SII** it reads **Coming soon**.
 - **What you will need:** Starter or above, your RUT, a **digital certificate** of a person authorized with the SII, passing the **certification** as an electronic issuer with market software, the SII **resolution** and the **folios (CAF)** for each document type.
 - **Void:** an accepted DTE is not voided: it is corrected with a **credit note** and, to charge more or reverse a credit note, with a **debit note**.
 - **Collect:** in Chile online payment is through **Mercado Pago**; Cord Payments is not available.

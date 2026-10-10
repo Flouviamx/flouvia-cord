@@ -14,7 +14,7 @@ In Germany Cord issues a **commercial invoice** (Rechnung) in German, with a seq
 - **Taxes:** USt. 19%, USt. 7% and **Steuerfrei**. If you are a **Kleinunternehmer (§ 19 UStG)**, turn it on and your tax-free invoices carry the legal notice.
 - **Date of supply (Leistungsdatum):** enter it in the editor; if left empty, the PDF says it matches the invoice date.
 - **What you need:** Steuernummer or USt-IdNr. and, for XRechnung, a contact with name, phone and email.
-- **Collect:** card and **SEPA Direct Debit** in EUR, and automatic payments from the client portal.
+- **Collect:** card and **SEPA Direct Debit** in EUR, and automatic payments from the client portal (direct debit and automatic payments are new and being rolled out: they may not be available on your account yet).
 
 ## Which document Cord issues
 
@@ -33,7 +33,7 @@ In Germany Cord issues a **commercial invoice** (Rechnung) in German, with a seq
 
 ## Set up your account
 
-1. Under **Settings › Invoicing › Tax details › Invoice identity**, enter **Legal name**, **Steuernummer / USt-IdNr.**, address, **Postal code** and your **Invoice prefix**.
+1. Under **Settings › Invoicing › Tax profile › Invoice identity**, enter **Legal name**, **Steuernummer / USt-IdNr.**, address, **Postal code** and your **Invoice prefix**.
 2. If you apply the small-business scheme, turn on **Small business (§ 19 UStG)**. The notice is only printed on invoices that charge no tax.
 3. Under **European e-invoicing**, complete **Billing contact**, **Contact phone**, the **Electronic address** with its scheme and **Identifier**, the **Company registration number** and the **BIC / SWIFT**. The IBAN is the one under **Settings › Payments**.
 4. Under **Attach to invoice emails**, keep the automatic option (PDF + XRechnung) or choose **PDF only**, **Factur-X PDF (replaces the PDF)** or **PDF + XRechnung XML**.

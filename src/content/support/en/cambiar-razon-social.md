@@ -4,7 +4,7 @@ description: "When to edit your tax details directly and when to create a new wo
 category: "Account & Team"
 ---
 
-Your business's legal name and its tax identifier — RFC in Mexico, NIF/CIF in Spain, EIN/Tax ID in the United States, and so on depending on the country — are edited under **Settings > Tax details**. You don't need to contact support to fix a typo or update a value: the field is editable at any time.
+Your business's legal name and its tax identifier — RFC in Mexico, NIF/CIF in Spain, EIN/Tax ID in the United States, and so on depending on the country — are edited under **Settings > Tax details** (**Tax profile** outside Mexico). You don't need to contact support to fix a typo or update a value: the field is editable at any time.
 
 ### When editing the field is enough
 

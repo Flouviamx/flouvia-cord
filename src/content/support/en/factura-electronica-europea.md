@@ -27,7 +27,7 @@ If your business is established in the **European Union** (among Cord's countrie
 
 ## Prepare your data once
 
-Under **Settings › Invoicing › Tax details › European e-invoicing**:
+Under **Settings › Invoicing › Tax profile › European e-invoicing**:
 
 - **Billing contact** and **Contact phone**: XRechnung requires a contact with name, phone and email (your business email). Without a phone here, the one in General is used.
 - **Electronic address** with its scheme and **Identifier**: your Peppol participant identifier (for example a GLN or your VAT number). Peppol requires it; XRechnung uses your email if there is none.

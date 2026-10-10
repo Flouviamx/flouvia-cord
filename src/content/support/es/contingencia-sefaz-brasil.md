@@ -13,7 +13,7 @@ Cada estado tiene una **SEFAZ Virtual de contingencia (SVC)**, la SVC-AN o la SV
 
 - **Cuándo entra:** si la SEFAZ de tu estado **no recibió** el pedido (no hubo conexión o respondió que está fuera de servicio) y la SVC de tu estado está en operación.
 - **Qué hace:** emite la NF-e en la SVC, como nota en contingencia, con la fecha y la justificación de la contingencia.
-- **Cómo lo ves:** **Ajustes › Facturación › Datos fiscales › NF-e** muestra el aviso mientras dura, y cada NF-e emitida así dice "Emitida en contingencia".
+- **Cómo lo ves:** **Ajustes › Facturación › Perfil fiscal › NF-e** muestra el aviso mientras dura, y cada NF-e emitida así dice "Emitida en contingencia".
 - **Cuándo sale:** sola, en cuanto la SEFAZ normal vuelve a responder. Cord lo comprueba cada 5 minutos al emitir.
 - **Lo que no hace:** una NF-e que se envió a la SEFAZ normal y quedó **sin respuesta** no pasa a la SVC: Cord la **consulta**, para no autorizar la misma venta dos veces.
 

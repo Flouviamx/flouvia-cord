@@ -11,7 +11,7 @@ In the United Kingdom Cord issues a **commercial invoice** (VAT invoice) with a 
 
 - **Document:** commercial invoice and commercial credit note, on every plan (10 per month on Free, unlimited from Starter).
 - **Taxes:** your account starts with VAT 20%, VAT 5%, **Zero-rated** and **Exempt**. They are different regimes (the first lets you recover input VAT, the second does not), which is why both are there.
-- **What you need:** your VAT registration number if you are registered, and your details under **Settings › Invoicing › Tax details**.
+- **What you need:** your VAT registration number if you are registered, and your details under **Settings › Invoicing › Tax profile**.
 - **Collect:** card through Cord Payments in GBP. Cord charges no transaction fee of its own outside Mexican pesos.
 - **Not covered yet:** VAT returns with HMRC, bank debit (Direct Debit) and the European e-invoice formats, which are for issuers in the European Union.
 
@@ -31,7 +31,7 @@ The invoice prints your VAT number, VAT by rate with its base and, if you charge
 
 ## Set up your account
 
-1. Open **Settings › Invoicing › Tax details** and complete **Invoice identity**: **Legal name**, **VAT reg. no.**, **Address**, **City**, **State or region**, **Postal code** and, optionally, your **Invoice prefix**. Save.
+1. Open **Settings › Invoicing › Tax profile** and complete **Invoice identity**: **Legal name**, **VAT reg. no.**, **Address**, **City**, **State or region**, **Postal code** and, optionally, your **Invoice prefix**. Save.
 2. Under **Settings › Quotes › Taxes**, review the catalog and set the rate you use most as the default.
 3. If you collect online, activate Cord Payments under **Settings › Payments** and register your payout account with sort code and account number.
 
@@ -52,7 +52,7 @@ There is no registration with the authority. The invoice detail shows the busine
 ## Common issues
 
 - **I chose Exempt and it should have been Zero-rated (or the other way round).** The issued invoice keeps its rate. Issue a credit note and a new invoice with the right rate.
-- **My VAT number does not appear.** Enter it under **Tax details**; it applies to invoices issued afterwards.
+- **My VAT number does not appear.** Enter it under **Tax profile**; it applies to invoices issued afterwards.
 
 ## Not covered yet
 

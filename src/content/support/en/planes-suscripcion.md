@@ -96,7 +96,7 @@ Review your usage and limits under **Settings › Plans & subscription › Subsc
 - **Downgrade or cancellation:** follows the paid period; check the effective date displayed in the portal.
 - **Pending payment:** does not guarantee paid access. Cord verifies an active subscription with a covered period. Without that evidence, Free permissions apply while payment recovery remains accessible.
 
-Data is preserved after a downgrade; features and resources beyond the new contract stop operating. Removing Cord branding requires Starter or above; public surfaces restore the branding when the entitlement no longer applies. From Professional, links can be served from your own subdomain set up under **Settings › Custom domain**.
+Data is preserved after a downgrade; features and resources beyond the new contract stop operating. Removing Cord branding requires Starter or above; public surfaces restore the branding when the entitlement no longer applies. From Professional, links can be served from your own subdomain set up under **Settings › Custom domain**, once that option is enabled on your account (if you don't see it, write to us).
 
 ## Subscription documents
 

@@ -10,9 +10,9 @@ En Estados Unidos Cord emite una **factura comercial** (invoice) con folio conse
 **En resumen:**
 
 - **Documento:** factura comercial y nota de crédito comercial. En todos los planes; Gratis incluye 10 al mes y desde Starter son ilimitadas.
-- **Qué necesitas:** tu EIN (o Tax ID) y tu domicilio en **Ajustes › Facturación › Datos fiscales**, y un permiso de sales tax en cada estado donde recaudas.
+- **Qué necesitas:** tu EIN (o Tax ID) y tu domicilio en **Ajustes › Facturación › Perfil fiscal**, y un permiso de sales tax en cada estado donde recaudas.
 - **Sales tax:** al elegir tu estado, Cord siembra la tasa estatal y una opción exenta. Desde Starter puedes calcularlo **por la dirección del cliente** (estado, condado, ciudad y distritos), con una cuota mensual por plan.
-- **Cobrar:** tarjeta con Cord Payments y cargo a cuenta bancaria (ACH) en USD; cobro automático desde el portal del cliente. Cord no cobra comisión propia por transacción fuera de pesos mexicanos.
+- **Cobrar:** tarjeta con Cord Payments y cargo a cuenta bancaria (ACH) en USD; cobro automático desde el portal del cliente (el cargo ACH y el cobro automático son nuevos y se están habilitando: pueden no estar disponibles todavía en tu cuenta). Cord no cobra comisión propia por transacción fuera de pesos mexicanos.
 - **Anular o corregir:** **Más acciones › Anular** si no tiene pagos; si ya los tiene, **Nota de crédito**.
 - **No cubre todavía:** declaración de sales tax ante los estados, reportes de ventas registradas dentro de Cord y clasificación de impuesto por producto.
 
@@ -33,7 +33,7 @@ La factura imprime el sales tax de cada concepto. Si usas el cálculo por direcc
 
 ## Configura tu cuenta
 
-1. Abre **Ajustes › Facturación › Datos fiscales** y completa **Identidad de facturación**: **Razón social o nombre legal**, **EIN / Tax ID**, **Domicilio fiscal**, **Ciudad**, **Estado, provincia o región** (eliges tu estado de la lista), **Código postal** y, si quieres, tu **Prefijo de factura**. Guarda.
+1. Abre **Ajustes › Facturación › Perfil fiscal** y completa **Identidad de facturación**: **Razón social o nombre legal**, **EIN / Tax ID**, **Domicilio fiscal**, **Ciudad**, **Estado, provincia o región** (eliges tu estado de la lista), **Código postal** y, si quieres, tu **Prefijo de factura**. Guarda.
 2. Al elegir tu estado, Cord siembra en **Ajustes › Cotizaciones › Impuestos** la tasa estatal ("Sales tax CA 7.25%", por ejemplo) y la opción **Exempt / Resale**. Un estado sin sales tax estatal, como Oregon, solo recibe la opción exenta.
 3. La tasa estatal es la mínima del estado. Si vendes en una ciudad con impuesto local, crea tu propia tasa con **+ Nuevo impuesto** o enciende el cálculo por dirección.
 4. Para el cálculo por dirección, en **Ajustes › Cotizaciones › Impuestos › Sales tax por dirección** activa **Calcular el sales tax por la dirección del cliente**, captura **Domicilio de tu negocio**, elige **Qué vendes**, marca los **Estados donde recaudas sales tax** y pulsa **Guardar**. Ver [Sales tax automático de EE. UU.](/soporte/sales-tax-automatico).

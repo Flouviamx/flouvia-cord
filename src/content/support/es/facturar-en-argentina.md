@@ -10,7 +10,7 @@ En Argentina cada factura debe autorizarla **ARCA**, que le asigna su número y 
 **En resumen:**
 
 - **Hoy:** factura comercial y nota de crédito comercial, en todos los planes (10 al mes en Gratis, ilimitadas desde Starter). No se presentan ante ARCA.
-- **En activación:** Factura A, B o C con CAE, nota de crédito y el QR de ARCA en el PDF. En **Ajustes › Facturación › Datos fiscales › Factura electrónica con ARCA** dice **Próximamente**.
+- **En activación:** Factura A, B o C con CAE, nota de crédito y el QR de ARCA en el PDF. En **Ajustes › Facturación › Perfil fiscal › Factura electrónica con ARCA** dice **Próximamente**.
 - **Qué vas a necesitar:** plan Starter o superior, tu CUIT, un **certificado digital de ARCA** asociado al servicio de factura electrónica y un **punto de venta** "Factura electrónica - Web services".
 - **La clase la decide Cord** según tu condición frente al IVA y la de tu cliente: monotributo y exento emiten C, sin IVA discriminado.
 - **Anular:** un comprobante con CAE no se anula: se ajusta con **nota de crédito** de la misma clase.

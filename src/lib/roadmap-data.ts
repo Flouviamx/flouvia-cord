@@ -571,7 +571,7 @@ Timbrar una factura es la parte fácil. El trabajo está en lo que viene despué
 
 ### Qué incluye
 - **PUE o PPD según el cobro real:** si la factura nace pagada se timbra PUE con la forma de pago real; si no, PPD con forma 99.
-- **Complemento de pago:** cada pago que se registra sobre un CFDI PPD emite su CFDI tipo P, una sola vez por pago, con su estado a la vista y reintento desde la factura.
+- **Complemento de pago:** cada pago que se registra sobre un CFDI PPD emite su CFDI tipo P, una sola vez por pago, con su estado a la vista; si no se pudo timbrar, nos escribes y lo reintentamos.
 - **Claves SAT por concepto:** la clave de producto o servicio y la de unidad viven en el producto y también en cada línea, y la de la línea gana. El editor avisa qué conceptos caerían en la clave genérica, busca en el catálogo del SAT, y el CSV de productos las importa y exporta.
 - **Factura global:** para las ventas cobradas a público en general que no tienen factura propia, con la periodicidad, los meses y el año que pide el SAT. Una venta nunca queda a la vez en una global y en una factura individual; si después el cliente pide la suya, la global se cancela con motivo 04 y se vuelve a emitir.
 - **Sustitución:** corrige un CFDI con uno nuevo relacionado (relación 04); los pagos pasan al sustituto en la misma operación y el original se cancela con motivo 01.
@@ -588,7 +588,7 @@ Stamping an invoice is the easy part. The work is in what comes after: the credi
 
 ### What's included
 - **PUE or PPD based on actual payment:** an invoice that is born paid is stamped PUE with the real payment form; otherwise, PPD with form 99.
-- **Payment complement:** every payment recorded on a PPD CFDI issues its type P CFDI, once per payment, with its status in view and a retry from the invoice.
+- **Payment complement:** every payment recorded on a PPD CFDI issues its type P CFDI, once per payment, with its status in view; if stamping fails, you write to us and we retry it.
 - **SAT codes per line item:** the product or service code and the unit code live on the product and also on each line, and the line's code wins. The editor flags which lines would fall back to the generic code, searches the SAT catalog, and the product CSV imports and exports them.
 - **Global invoice:** for paid sales to the general public that have no invoice of their own, with the periodicity, months and year the SAT requires. A sale is never in a global invoice and an individual invoice at the same time; if the customer later asks for theirs, the global invoice is canceled with reason 04 and issued again.
 - **Substitution:** fix a CFDI with a new related one (relation 04); payments move to the replacement in the same operation and the original is canceled with reason 01.

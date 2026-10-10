@@ -13,7 +13,7 @@ Each state has a **contingency Virtual SEFAZ (SVC)**, SVC-AN or SVC-RS, that aut
 
 - **When it starts:** if your state SEFAZ **did not receive** the request (no connection, or it answered that it is out of service) and your state's SVC is operating.
 - **What it does:** issues the NF-e at the SVC, as a contingency note, with the contingency date and justification.
-- **How you see it:** **Settings › Invoicing › Tax details › NF-e** shows the notice while it lasts, and each NF-e issued that way says "Issued in contingency".
+- **How you see it:** **Settings › Invoicing › Tax profile › NF-e** shows the notice while it lasts, and each NF-e issued that way says "Issued in contingency".
 - **When it ends:** by itself, as soon as the normal SEFAZ responds again. Cord checks it every 5 minutes when issuing.
 - **What it does not do:** an NF-e sent to the normal SEFAZ that was left **without an answer** does not move to the SVC: Cord **queries** it, so the same sale is never authorized twice.
 

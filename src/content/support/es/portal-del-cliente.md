@@ -5,6 +5,8 @@ category: "Pagos y Depósitos"
 order: 6
 ---
 
+> **Función nueva, en habilitación.** Puede no estar disponible todavía en tu cuenta. Si no la ves, escríbenos y te decimos cuándo se activa.
+
 El **portal del cliente** es un link personal por cliente donde ve **todas sus facturas emitidas**, su **saldo pendiente por divisa**, descarga cada factura y **paga varias a la vez** en un solo cobro. Desde ahí también activa el [cobro automático](/soporte/cobro-automatico).
 
 **En resumen:**

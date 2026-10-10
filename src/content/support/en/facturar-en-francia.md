@@ -10,11 +10,11 @@ In France Cord issues a **commercial invoice** in French with the **mentions the
 **In short:**
 
 - **Document:** invoice and commercial credit note, on every plan (10 per month on Free, unlimited from Starter). By default each invoice email carries the **Factur-X PDF** (the PDF with the XML inside).
-- **Being turned on:** issuing through an approved platform, e-reporting and payment reporting. Under **Settings › Invoicing › Tax details › E-invoicing in France** it reads **Coming soon**.
+- **Being turned on:** issuing through an approved platform, e-reporting and payment reporting. Under **Settings › Invoicing › Tax profile › E-invoicing in France** it reads **Coming soon**.
 - **Reform calendar:** since 1 September 2026 every business established in France must be able to **receive** e-invoices, and large companies and mid-caps (ETI) also issue and report. SMEs and micro-businesses issue and report from **1 September 2027**.
 - **Cord only issues:** it does not receive your suppliers' invoices. You need your own reception platform.
 - **What you need:** your SIREN (or your VAT number, which contains it), your **VAT regime**, whether you opted to pay VAT on debits and the type of each product (goods or service).
-- **Collect:** card and **SEPA Direct Debit** in EUR, and automatic payments from the client portal.
+- **Collect:** card and **SEPA Direct Debit** in EUR, and automatic payments from the client portal (direct debit and automatic payments are new and being rolled out: they may not be available on your account yet).
 
 ## Which document Cord issues
 
@@ -44,7 +44,7 @@ All your French invoices already carry them, with or without the platform:
 
 ## Set up your account
 
-1. Under **Settings › Invoicing › Tax details › Invoice identity**, enter **Legal name**, **SIREN / N° TVA**, address and your **Invoice prefix**. If you apply the franchise, turn on **VAT small-business exemption (art. 293 B du CGI)**.
+1. Under **Settings › Invoicing › Tax profile › Invoice identity**, enter **Legal name**, **SIREN / N° TVA**, address and your **Invoice prefix**. If you apply the franchise, turn on **VAT small-business exemption (art. 293 B du CGI)**.
 2. Under **E-invoicing in France**, choose your **VAT regime**, set **Lines without a catalog product** (goods or services) and, if it applies, turn on **I opted to pay VAT on debits**. These details feed the mentions even while the platform is off.
 3. In **Products**, check each one's **Type of sale**: a product is a supply of goods; a service, subscription or license is a supply of services.
 4. Under **European e-invoicing**, complete contact, electronic address and what to attach to the email.

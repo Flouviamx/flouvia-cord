@@ -11,7 +11,7 @@ A US business catalog only carries the **state** rate, which is the minimum: a s
 
 - **Plan:** from **Starter**. Not available on Free.
 - **Included per month:** 10 invoices with automatic sales tax on Starter, 25 on Professional, 60 on Scale and 150 on Developer.
-- **Published overage:** USD 0.75, MXN 15.00 or EUR 0.70 per additional invoice, depending on your subscription currency (Developer has no self-serve EUR rate). While billing that overage is not active on your account, the included amount works as a **cap**: once you reach it, upgrade your plan or enter the rate manually until next month.
+- **Published overage:** USD 0.75, MXN 15.00 or EUR 0.70 per additional invoice, depending on your subscription currency (Developer has no self-serve EUR rate). Today that overage is not billed yet, so the included amount works as a **cap**: once you reach it, upgrade your plan or enter the rate manually until next month.
 - **What counts:** each issued invoice and each paid quote recorded in a state **where you collect**, once. Previews do not count, a sale to a state where you do not collect does not either, and a quote and its invoice count as a single sale.
 - **What you need:** an active Cord Payments account, your full address and the states where you are permitted to collect.
 - **It never estimates:** if data is missing or the calculation is unavailable, the document is not saved and you are told what is missing.

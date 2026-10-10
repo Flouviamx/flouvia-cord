@@ -10,7 +10,7 @@ In Argentina every invoice must be authorized by **ARCA**, which assigns its num
 **In short:**
 
 - **Today:** commercial invoice and commercial credit note, on every plan (10 per month on Free, unlimited from Starter). They are not submitted to ARCA.
-- **Being turned on:** invoice A, B or C with CAE, credit note and the ARCA QR code on the PDF. Under **Settings › Invoicing › Tax details › Electronic invoicing with ARCA** it reads **Coming soon**.
+- **Being turned on:** invoice A, B or C with CAE, credit note and the ARCA QR code on the PDF. Under **Settings › Invoicing › Tax profile › Electronic invoicing with ARCA** it reads **Coming soon**.
 - **What you will need:** Starter or above, your CUIT, an **ARCA digital certificate** associated with the electronic invoicing service and a **"Factura electrónica - Web services" point of sale**.
 - **Cord decides the class** from your VAT status and your client's: monotributo and exempt businesses issue C, without itemized VAT.
 - **Void:** a document with a CAE is not voided: it is adjusted with a **credit note** of the same class.

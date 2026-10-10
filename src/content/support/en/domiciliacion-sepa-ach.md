@@ -5,6 +5,8 @@ category: "Payments & Deposits"
 order: 8
 ---
 
+> **New feature, being rolled out.** It may not be available on your account yet. If you don't see it, write to us and we'll tell you when it turns on.
+
 Besides card, your clients can pay with a **direct debit from their bank account**: **SEPA Direct Debit** in euros if your business is in Spain, Germany or France, and **ACH bank debit** in dollars if your business is in the United States. It serves clients who prefer paying from their bank and automatic payments, but **it takes days to confirm**.
 
 **In short:**

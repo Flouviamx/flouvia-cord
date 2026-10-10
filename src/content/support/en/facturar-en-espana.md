@@ -10,11 +10,11 @@ In Spain an invoice has to come from a **verifiable invoicing system (Verifactu)
 **In short:**
 
 - **Today:** pro forma with series `PRO`, on every plan (10 per month on Free, unlimited from Starter). It has no hash, QR code or AEAT record, and its PDF says so.
-- **Being turned on:** Verifactu (registering each invoice with the AEAT) and business-to-business e-invoicing through the AEAT public solution. Under **Settings › Invoicing › Tax details**, the **Verifactu** section reads **Certificate saved, registration not active yet** even after you upload your certificate.
+- **Being turned on:** Verifactu (registering each invoice with the AEAT) and business-to-business e-invoicing through the AEAT public solution. Under **Settings › Invoicing › Tax profile**, the **Verifactu** section reads **Certificate saved, registration not active yet** even after you upload your certificate.
 - **What you will need:** Starter or above, your NIF and an **electronic certificate** (`.p12` or `.pfx`). The FNMT issues the individual certificate for free; a company representative certificate has a cost set by the provider.
 - **Legal deadlines:** Verifactu is mandatory from 1 January 2027 for corporate income tax payers and from 1 July 2027 for everyone else. Business-to-business e-invoicing, from 6 October 2027 if you invoice more than 8 million euros a year and from 6 October 2028 for everyone else.
 - **Correct:** a chained record is not edited. It is corrected with a new record (correction or cancellation) or with a corrective invoice.
-- **Collect:** card through Cord Payments in EUR, SEPA Direct Debit and automatic payments.
+- **Collect:** card through Cord Payments in EUR, SEPA Direct Debit and automatic payments (new features being rolled out: they may not be available on your account yet).
 
 ## Which document Cord issues
 
@@ -36,7 +36,7 @@ A pro forma has no e-invoice version: Facturae, Factur-X, XRechnung and Peppol a
 
 ## Set up your account
 
-1. Under **Settings › Invoicing › Tax details › Invoice identity**, enter **Legal name**, **NIF / CIF**, **Address**, **City**, **State or region**, **Postal code** and your **Invoice prefix**. Spain numbers by series **and** fiscal year: the year is attached to the prefix.
+1. Under **Settings › Invoicing › Tax profile › Invoice identity**, enter **Legal name**, **NIF / CIF**, **Address**, **City**, **State or region**, **Postal code** and your **Invoice prefix**. Spain numbers by series **and** fiscal year: the year is attached to the prefix.
 2. In the **Verifactu** section, choose your electronic certificate, enter the **Certificate password** and click **Upload certificate**. Cord checks the password and reads the expiry date. The **Responsible declaration of the invoicing system** is linked right there.
 3. Under **Settings › Quotes › Taxes**, review your catalog. Your account starts with IVA 21%, 10% and 4%, Exempt, the exemption causes **Exportación (art. 21)**, **Entrega intracomunitaria (art. 25)**, **Exenta art. 20** and **Inversión del sujeto pasivo**, and the withholdings **Retención IRPF 15%** and **Retención IRPF 7% (nuevo autónomo)**. If your business is in the Canary Islands, the catalog seeds IGIC; in Ceuta and Melilla, only exempt options.
 4. If you invoice companies that process invoices automatically, complete the **European e-invoicing** section (contact, electronic address and what to attach to the email).
@@ -53,7 +53,7 @@ The invoice detail has a **Verifactu** panel:
 - **Registered with the AEAT.**
 - **Registered with errors**, **Rejected by the AEAT** or **Could not be sent to the AEAT:** with the AEAT code and reason, and the **Correct and resend** button.
 
-**Settings › Invoicing › Tax details** lists the **Invoices to correct**. The PDF carries the tax verification QR code at the top of the first page.
+**Settings › Invoicing › Tax profile** lists the **Invoices to correct**. The PDF carries the tax verification QR code at the top of the first page.
 
 ## Void or correct
 
@@ -64,7 +64,7 @@ The invoice detail has a **Verifactu** panel:
 
 ## Business-to-business e-invoicing
 
-The law will require businesses and professionals to issue and receive e-invoices between them, sent through the **AEAT public solution**. Cord has it built, but it reads **Coming soon** under **Settings › Invoicing › Tax details › E-invoicing between businesses (AEAT)**: the AEAT has not yet published the technical specification of its service. When it does, Cord will turn it on with the same Verifactu certificate and will report each invoice's payments. Invoices with IRPF will be sent once the AEAT publishes how they are declared; until then, download them as Facturae.
+The law will require businesses and professionals to issue and receive e-invoices between them, sent through the **AEAT public solution**. Cord has it built, but it reads **Coming soon** under **Settings › Invoicing › Tax profile › E-invoicing between businesses (AEAT)**: the AEAT has not yet published the technical specification of its service. When it does, Cord will turn it on with the same Verifactu certificate and will report each invoice's payments. Invoices with IRPF will be sent once the AEAT publishes how they are declared; until then, download them as Facturae.
 
 ## Common issues
 

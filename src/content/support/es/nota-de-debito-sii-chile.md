@@ -12,7 +12,7 @@ Esto aplica a negocios en **Chile** con la factura electrónica del SII, que **e
 - **Nota de débito (56):** sobre una **factura** aceptada, cobra un monto adicional (intereses, diferencia de precio, un cargo) y corrige montos; sobre una **nota de crédito** aceptada, la anula completa, una sola vez.
 - **Dónde:** en el panel **SII** del detalle de un documento aceptado: **Emitir nota de débito** o, en una nota de crédito, **Anular con nota de débito**. Se crea como borrador y la emites como cualquier factura.
 - **Folios:** necesita folios de nota de débito (CAF tipo 56), que vencen a los seis meses, igual que los de factura.
-- **Certificación:** en **Ajustes › Facturación › Datos fiscales**, la sección **Certificación ante el SII** arma y envía el set de pruebas, los libros de ventas y de compras, el intercambio y las muestras impresas. Solo existe en el ambiente de certificación.
+- **Certificación:** en **Ajustes › Facturación › Perfil fiscal**, la sección **Certificación ante el SII** arma y envía el set de pruebas, los libros de ventas y de compras, el intercambio y las muestras impresas. Solo existe en el ambiente de certificación.
 - **Lo que Cord no arma del set:** guía de despacho (52) y su libro, documentos de exportación (110 a 112) y factura de compra (46) emitida.
 
 ## Emitir una nota de débito
@@ -32,7 +32,7 @@ La nota de débito es **una cuenta por cobrar propia**: tiene su saldo y su link
 
 ## Certificación ante el SII
 
-Para emitir DTE con un sistema de mercado, el SII pide una certificación. Cord la acompaña desde **Ajustes › Facturación › Datos fiscales › Factura electrónica con el SII › Certificación ante el SII**, mientras tu cuenta está en el **ambiente de certificación**. Antes necesitas tu certificado digital registrado en el SII, tu postulación como emisor electrónico y los folios de certificación cargados.
+Para emitir DTE con un sistema de mercado, el SII pide una certificación. Cord la acompaña desde **Ajustes › Facturación › Perfil fiscal › Factura electrónica con el SII › Certificación ante el SII**, mientras tu cuenta está en el **ambiente de certificación**. Antes necesitas tu certificado digital registrado en el SII, tu postulación como emisor electrónico y los folios de certificación cargados.
 
 ### 1. Set de pruebas
 

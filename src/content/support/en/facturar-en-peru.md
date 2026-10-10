@@ -10,7 +10,7 @@ In Peru the electronic invoice is sent to **SUNAT**, which answers with a receip
 **In short:**
 
 - **Today:** commercial invoice and commercial credit note, on every plan (10 per month on Free, unlimited from Starter). They are not sent to SUNAT.
-- **Being turned on:** electronic invoice (01) and credit note (07). Under **Settings › Invoicing › Tax details › Electronic invoicing with SUNAT** it reads **Coming soon**.
+- **Being turned on:** electronic invoice (01) and credit note (07). Under **Settings › Invoicing › Tax profile › Electronic invoicing with SUNAT** it reads **Coming soon**.
 - **What you will need:** Starter or above, your RUC, enrolling as an electronic issuer from your own systems (SEE - Del Contribuyente), a **digital certificate** issued to your RUC and registered with SUNAT, a **secondary SOL user** with the document-sending profile and an **`F###` series** reserved for Cord.
 - **Invoices only:** a client without a RUC would need a **sales receipt (boleta de venta)**, which Cord does not issue yet.
 - **Void:** Cord does not file cancellation notices (comunicación de baja): an invoice is corrected with a **credit note**, cancellation if it credits the total or reduction if it credits part.

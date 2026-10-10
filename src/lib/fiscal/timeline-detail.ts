@@ -102,7 +102,9 @@ export function invoiceEventDetail(tipo: string, detalle: string, locale: Timeli
     if ((m = d.match(/^Complemento de pago emitido(?: \((.+)\))?$/))) return `Payment complement issued${m[1] ? ` (${m[1]})` : ''}`;
     if ((m = d.match(/^Complemento de pago no automático: (.+)$/))) return `Payment complement not issued automatically: ${m[1]}`;
     if ((m = d.match(/^Complemento de pago pendiente: (.+)$/))) {
-        return `Payment complement pending: ${m[1] === 'reintenta desde la factura' ? 'retry from the invoice' : m[1]}`;
+        // "reintenta desde la factura" es de filas anteriores: ese botón no existe.
+        const fijo: Record<string, string> = { 'escríbenos para reintentarlo': 'write to us to retry it', 'reintenta desde la factura': 'write to us to retry it' };
+        return `Payment complement pending: ${fijo[m[1]] ?? m[1]}`;
     }
     return d;
 }
