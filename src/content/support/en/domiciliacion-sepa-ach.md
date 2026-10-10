@@ -49,7 +49,7 @@ A debit does not confirm instantly:
 
 - **SEPA:** the account holder can ask their bank to return a debit for **8 weeks** without giving a reason. If they do, the amount is deducted from you: contact your client to sort it out.
 - **ACH:** only supports **full refunds**. To return part of it, agree another method with your client.
-- A refund you start is made from **Payments**, like any other.
+- A refund you start is made from the **detail page of the invoice** the charge paid, with the **Refund** button next to the payment. A debit still in progress can't be refunded until it's confirmed, and both allow a refund up to 180 days after the charge. See [Issue refunds](/en/support/emitir-reembolsos).
 
 ## If a debit fails
 

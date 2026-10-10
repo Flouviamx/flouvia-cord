@@ -43,6 +43,9 @@ export const prerender = false;
 const L = currentLocale();
 const ME = await getMyMembership();
 const hasPerm = memberCan(ME, 'cobranza');
+// Reembolsar es un permiso aparte, ni el administrador lo tiene por omisión
+// (mismo contrato que el reembolso de un cobro de cotización).
+const canRefund = memberCan(ME, 'reembolsar');
 const f = hasPerm ? await getFacturaDetalle(Astro.params.id ?? '') : null;
 if (hasPerm && !f) return Astro.redirect('/app/facturas');
 // Un borrador se edita, no se contempla: su sitio es el editor.
@@ -148,6 +151,7 @@ const EV_LABEL: Record<string, string> = {
     sent: t(L, 'fact.ev.sent'), viewed: t(L, 'fact.ev.viewed'),
     payment: t(L, 'fact.ev.payment'), payment_failed: t(L, 'fact.ev.payment_failed'), paid: t(L, 'fact.ev.paid'),
     transferencia: t(L, 'fact.ev.transferencia'),
+    refund: t(L, 'fact.ev.refund'),
     reminder: t(L, 'fact.ev.reminder'), void: t(L, 'fact.ev.void'),
     credit_note: t(L, 'fact.ev.credit_note'), uncollectible: t(L, 'fact.ev.uncollectible'),
     verifactu: t(L, 'fact.ev.verifactu'),
@@ -209,6 +213,30 @@ const tasas = jurisdicciones ? jurisdicciones.filter((r) => r.impuesto !== 0).ma
         else acc.push({ ...row });
         return acc;
     }, []);
+
+// Reembolso de un pago en línea (src/lib/cobros/reembolsos.ts). El diálogo pide
+// al servidor qué se puede devolver de ESE pago y lo dice antes de enviar: los
+// límites del proveedor (ACH solo completo, 180 días en débitos) no se
+// descubren como un error.
+const tieneManuales = !!f?.pagos.some((p) => !p.enLinea);
+const cfdiVigente = muestraClavesSat && !f?.simulado;
+const avisoCfdi = cfdiVigente && !!f && f.reembolsado > 0 && f.acreditado < f.reembolsado;
+const BLOQUEOS = ['manual', 'cotizacion', 'sin_correo', 'metodo', 'no_confirmado', 'plazo', 'reembolsado', 'pendiente_registro', 'sin_cuenta', 'proveedor'] as const;
+const METODOS_REEMBOLSO = ['card', 'link', 'sepa_debit', 'us_bank_account', 'customer_balance', 'mercadopago'] as const;
+const REFUND_T = {
+    cargando: t(L, 'frefund.cargando'),
+    disponible: t(L, 'frefund.disponible'),
+    alcanceCobro: t(L, 'frefund.alcance_cobro'),
+    alcanceAyuda: t(L, 'frefund.alcance_ayuda'),
+    achCobro: t(L, 'frefund.ach_cobro'),
+    ok: t(L, 'frefund.ok'),
+    okEnCurso: t(L, 'frefund.ok_en_curso'),
+    okEsperaCuenta: t(L, 'frefund.ok_espera_cuenta'),
+    error: t(L, 'frefund.error'),
+    fiscal: cfdiVigente ? t(L, 'frefund.fiscal_cfdi') : t(L, 'frefund.fiscal_general'),
+    bloqueos: Object.fromEntries(BLOQUEOS.map((code) => [code, t(L, `frefund.bloq.${code}` as any)])),
+    metodos: Object.fromEntries(METODOS_REEMBOLSO.map((m) => [m, t(L, `frefund.metodo.${m}` as any)])),
+};
 
 const METODOS = [
     { v: 'transferencia', l: t(L, 'fact.d_m_transferencia') },
@@ -440,10 +468,25 @@ const EINV_FIX: Record<string, { href: string; es: string; en: string }> = {
                                 <div class="fd-section-head"><h2>{t(L, 'fact.d_pagos')}</h2></div>
                                 {f.pagos.map((pago) => (
                                     <div class="fd-pago">
-                                        <span>{pago.cuando} · {pago.metodo}{pago.referencia ? ` · ${pago.referencia}` : ''}</span>
-                                        <strong class="editorial">{money(pago.monto)}</strong>
+                                        <span class="fd-pago-info">
+                                            <span>{pago.cuando} · {pago.metodo}{pago.referencia ? ` · ${pago.referencia}` : ''}</span>
+                                            {pago.reembolsado > 0 && <small class="fd-pago-sub">{t(L, 'frefund.reembolsado')} {money(pago.reembolsado)}</small>}
+                                            {pago.reembolsoEnCurso > 0 && <small class="fd-pago-sub">{t(L, 'frefund.en_curso')} {money(pago.reembolsoEnCurso)}</small>}
+                                            {canRefund && pago.enLinea && pago.deCotizacion && (pago.metodo === 'mercadopago'
+                                                ? <small class="fd-pago-sub">{t(L, 'frefund.ir_mp')}</small>
+                                                : <a class="fd-pago-sub fd-pago-link" href="/app/cobros">{t(L, 'frefund.ir_cobros')}</a>)}
+                                        </span>
+                                        <span class="fd-pago-side">
+                                            <strong class="editorial">{money(pago.monto)}</strong>
+                                            {canRefund && pago.enLinea && !pago.deCotizacion && pago.reembolsado + pago.reembolsoEnCurso < pago.monto && (
+                                                <button type="button" class="fd-pago-refund" data-reembolso-pago={pago.id}>{t(L, 'frefund.boton')}</button>
+                                            )}
+                                        </span>
                                     </div>
                                 ))}
+                                {canRefund && tieneManuales && <p class="fd-pago-nota">{t(L, 'frefund.manual_nota')}</p>}
+                                {canRefund && f.pagoEnProceso && <p class="fd-pago-nota">{t(L, 'frefund.debito_en_proceso')}</p>}
+                                {avisoCfdi && <p class="fd-pago-nota fd-pago-nota-fiscal">{t(L, 'frefund.cfdi_aviso')}</p>}
                             </section>
                         )}
 
@@ -766,6 +809,54 @@ const EINV_FIX: Record<string, { href: string; es: string; en: string }> = {
                     </form>
                 </dialog>
 
+                {canRefund && f.pagos.some((p) => p.enLinea && !p.deCotizacion) && (
+                    <dialog class="modal" id="fdReembolsoModal" data-refund-i18n={JSON.stringify(REFUND_T)} data-locale={L}>
+                        <form method="dialog" id="fdReembolsoForm">
+                            <div class="m-head">
+                                <h2>{t(L, 'frefund.titulo')}</h2>
+                                <button type="button" class="m-close" data-close aria-label="×">&times;</button>
+                            </div>
+                            <div class="m-body">
+                                <p class="fd-refund-estado" id="fdReembolsoEstado" role="status">{t(L, 'frefund.cargando')}</p>
+                                <div class="fd-refund-campos" id="fdReembolsoCampos" hidden>
+                                    <p class="fd-vf-note">{t(L, 'frefund.intro')}</p>
+                                    <p class="fd-refund-metodo" id="fdReembolsoMetodo"></p>
+                                    <fieldset class="fd-refund-alcance" id="fdReembolsoAlcance" hidden>
+                                        <p class="fd-refund-ayuda" id="fdReembolsoAyuda"></p>
+                                        <label class="fd-motivo">
+                                            <input type="radio" name="fdReembolsoAlcance" value="factura" checked />
+                                            <span><strong>{t(L, 'frefund.alcance_factura')}</strong><small id="fdReembolsoMaxFactura"></small></span>
+                                        </label>
+                                        <label class="fd-motivo">
+                                            <input type="radio" name="fdReembolsoAlcance" value="cobro" />
+                                            <span><strong id="fdReembolsoCobroLabel"></strong><small id="fdReembolsoMaxCobro"></small></span>
+                                        </label>
+                                    </fieldset>
+                                    <label class="fd-field">
+                                        <span>{t(L, 'frefund.monto')} (<span id="fdReembolsoDivisa"></span>)</span>
+                                        <input type="number" id="fdReembolsoMonto" min="0" step="any" inputmode="decimal" />
+                                        <small class="fd-refund-max" id="fdReembolsoDisponible"></small>
+                                    </label>
+                                    <label class="fd-field">
+                                        <span>{t(L, 'frefund.motivo')}</span>
+                                        <textarea id="fdReembolsoMotivo" maxlength="240" rows="2"></textarea>
+                                    </label>
+                                    <p class="fd-vf-note" id="fdReembolsoFiscal"></p>
+                                    <label class="fd-refund-ack">
+                                        <input type="checkbox" id="fdReembolsoAck" required />
+                                        <span>{t(L, 'frefund.ack')}</span>
+                                    </label>
+                                </div>
+                                <p class="fd-refund-error" id="fdReembolsoError" role="alert" hidden></p>
+                            </div>
+                            <div class="m-foot">
+                                <button type="button" class="fd-btn" data-close>{t(L, 'fact.d_cancelar')}</button>
+                                <button type="submit" class="fd-btn fd-btn-danger" id="fdReembolsoOk" disabled>{t(L, 'frefund.confirmar')}</button>
+                            </div>
+                        </form>
+                    </dialog>
+                )}
+
                 {pideMotivo && (
                     <dialog class="modal" id="fdMotivoModal">
                         <form method="dialog">
@@ -835,6 +926,8 @@ const EINV_FIX: Record<string, { href: string; es: string; en: string }> = {
 </AppLayout>
 
 <script>
+    import { createMoney } from '../../../lib/money-client';
+    import { toMinorUnits } from '../../../lib/currency';
     const raiz = document.querySelector('.fd') as HTMLElement | null;
     if (raiz) {
         const id = raiz.dataset.id;
@@ -991,6 +1084,143 @@ const EINV_FIX: Record<string, { href: string; es: string; en: string }> = {
                 referencia: (document.getElementById('fdRef') as HTMLInputElement | null)?.value,
             }, ev.currentTarget as HTMLButtonElement);
         });
+
+        // ── Reembolso de un pago en línea ──────────────────────────────────
+        // El servidor dice qué se puede devolver de ESE pago (alcance, tope,
+        // parcial o solo completo, y por qué no) antes de enviar; aquí solo se
+        // pinta y se manda. El monto viaja en unidad mínima de su divisa.
+        const refundModal = document.getElementById('fdReembolsoModal') as HTMLDialogElement | null;
+        const refundForm = document.getElementById('fdReembolsoForm') as HTMLFormElement | null;
+        if (refundModal && refundForm) {
+            const RT = JSON.parse(refundModal.dataset.refundI18n || '{}');
+            const locale = refundModal.dataset.locale === 'en' ? 'en-US' : 'es-MX';
+            const el = <E extends HTMLElement>(elId: string) => document.getElementById(elId) as E;
+            const estadoEl = el('fdReembolsoEstado');
+            const campos = el('fdReembolsoCampos');
+            const metodoEl = el('fdReembolsoMetodo');
+            const alcanceSet = el<HTMLFieldSetElement>('fdReembolsoAlcance');
+            const ayudaEl = el('fdReembolsoAyuda');
+            const maxFacturaEl = el('fdReembolsoMaxFactura');
+            const maxCobroEl = el('fdReembolsoMaxCobro');
+            const cobroLabel = el('fdReembolsoCobroLabel');
+            const divisaEl = el('fdReembolsoDivisa');
+            const montoEl = el<HTMLInputElement>('fdReembolsoMonto');
+            const dispEl = el('fdReembolsoDisponible');
+            const motivoEl = el<HTMLTextAreaElement>('fdReembolsoMotivo');
+            const fiscalEl = el('fdReembolsoFiscal');
+            const ackEl = el<HTMLInputElement>('fdReembolsoAck');
+            const errorEl = el('fdReembolsoError');
+            const okBtn = el<HTMLButtonElement>('fdReembolsoOk');
+            const radio = (v: string) => refundForm.querySelector<HTMLInputElement>(`input[name="fdReembolsoAlcance"][value="${v}"]`);
+            const tpl = (s: string, vars: Record<string, string | number>) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => String(vars[k] ?? ''));
+            let estado: { nonce: string; currency: string; decimales: number; parcial: boolean; maxFactura: number; maxCobro: number } | null = null;
+
+            const alcance = () => (radio('cobro')?.checked ? 'cobro' : 'factura');
+            const aplicarAlcance = () => {
+                if (!estado) return;
+                const fmt = createMoney({ currency: estado.currency, locale });
+                const max = alcance() === 'cobro' ? estado.maxCobro : estado.maxFactura;
+                montoEl.value = max.toFixed(estado.decimales);
+                montoEl.max = String(max);
+                // El cobro completo y un débito ACH no admiten otro monto.
+                montoEl.readOnly = alcance() === 'cobro' || !estado.parcial;
+                dispEl.textContent = tpl(RT.disponible, { monto: fmt(max) });
+            };
+            const fallarReembolso = (msg: string) => { errorEl.textContent = msg; errorEl.hidden = false; };
+
+            const abrirReembolso = async (pagoId: string) => {
+                estado = null;
+                refundForm.reset();
+                errorEl.hidden = true; campos.hidden = true; okBtn.disabled = true;
+                estadoEl.hidden = false; estadoEl.textContent = RT.cargando;
+                refundModal.showModal();
+                try {
+                    const res = await fetch(`/api/facturas/${id}/reembolso?pago=${encodeURIComponent(pagoId)}`);
+                    const data = await res.json().catch(() => ({}));
+                    if (!res.ok) throw new Error(data.error || RT.error);
+                    if (data.bloqueo) { estadoEl.textContent = RT.bloqueos?.[data.bloqueo] || RT.error; return; }
+                    estado = {
+                        nonce: String(data.nonce), currency: String(data.currency), decimales: Number(data.decimales) || 0,
+                        parcial: !!data.parcial, maxFactura: Number(data.maxFactura) || 0, maxCobro: Number(data.maxCobro) || 0,
+                    };
+                    const fmt = createMoney({ currency: estado.currency, locale });
+                    estadoEl.hidden = true; campos.hidden = false;
+                    metodoEl.textContent = RT.metodos?.[data.metodo] || '';
+                    metodoEl.hidden = !metodoEl.textContent;
+                    divisaEl.textContent = estado.currency;
+                    fiscalEl.textContent = RT.fiscal || '';
+                    const facturas = Number(data.facturas) || 1;
+                    alcanceSet.hidden = facturas < 2;
+                    if (facturas > 1) {
+                        ayudaEl.textContent = tpl(estado.parcial ? RT.alcanceAyuda : RT.achCobro, { n: facturas });
+                        cobroLabel.textContent = tpl(RT.alcanceCobro, { n: facturas });
+                        maxFacturaEl.textContent = estado.maxFactura > 0 ? fmt(estado.maxFactura) : '';
+                        maxCobroEl.textContent = estado.maxCobro > 0 ? fmt(estado.maxCobro) : '';
+                        for (const [v, max] of [['factura', estado.maxFactura], ['cobro', estado.maxCobro]] as const) {
+                            const r = radio(v);
+                            if (!r) continue;
+                            r.disabled = !(max > 0);
+                            r.closest('label')?.classList.toggle('is-disabled', r.disabled);
+                        }
+                        const primero = radio(estado.maxFactura > 0 ? 'factura' : 'cobro');
+                        if (primero) primero.checked = true;
+                    }
+                    aplicarAlcance();
+                    okBtn.disabled = false;
+                    if (!montoEl.readOnly) montoEl.focus();
+                } catch (e) {
+                    estadoEl.textContent = e instanceof Error && e.message ? e.message : RT.error;
+                }
+            };
+
+            raiz.querySelectorAll<HTMLButtonElement>('[data-reembolso-pago]').forEach((b) => {
+                b.addEventListener('click', () => abrirReembolso(b.dataset.reembolsoPago || ''));
+            });
+            refundForm.querySelectorAll('input[name="fdReembolsoAlcance"]').forEach((r) => r.addEventListener('change', aplicarAlcance));
+            refundModal.querySelectorAll('[data-close]').forEach((b) => b.addEventListener('click', () => refundModal.close()));
+
+            refundForm.addEventListener('submit', async (ev) => {
+                ev.preventDefault();
+                if (!estado) return;
+                errorEl.hidden = true;
+                if (!ackEl.checked) { ackEl.focus(); return; }
+                const max = alcance() === 'cobro' ? estado.maxCobro : estado.maxFactura;
+                const amountMinor = toMinorUnits(Number(montoEl.value), estado.currency);
+                if (!(amountMinor > 0) || amountMinor > toMinorUnits(max, estado.currency)) { fallarReembolso(T.montoInvalido); return; }
+                okBtn.disabled = true;
+                const body = JSON.stringify({
+                    nonce: estado.nonce, alcance: alcance(), amountMinor, feeDisclosureAccepted: true,
+                    ...(motivoEl.value.trim() ? { reason: motivoEl.value.trim() } : {}),
+                });
+                const send = () => fetch(`/api/facturas/${id}/reembolso`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
+                try {
+                    let res = await send();
+                    // Mover dinero hacia afuera exige identidad reciente: se pide y se reintenta.
+                    if (res.status === 428 && typeof (window as any).cordStepUp === 'function') {
+                        refundModal.close();
+                        const verificado = await (window as any).cordStepUp();
+                        refundModal.showModal();
+                        if (!verificado) { okBtn.disabled = false; return; }
+                        res = await send();
+                    }
+                    const data = await res.json().catch(() => ({}));
+                    if (!res.ok) {
+                        fallarReembolso(data.error || RT.error);
+                        // Una autorización usada o una respuesta incierta no se reintenta desde aquí.
+                        okBtn.disabled = ['rechazo', 'incierto', 'autorizacion'].includes(String(data.code));
+                        return;
+                    }
+                    refundModal.close();
+                    // SPEI espera a que el cliente dé su cuenta: se dice tal cual, no "registrado".
+                    const aviso = data.status === 'succeeded' ? RT.ok : data.status === 'requires_action' ? RT.okEsperaCuenta : RT.okEnCurso;
+                    (window as any).cordToast?.(aviso, 'ok', 4200);
+                    setTimeout(() => location.reload(), 900);
+                } catch {
+                    fallarReembolso(RT.error);
+                    okBtn.disabled = false;
+                }
+            });
+        }
 
         document.getElementById('fdCopy')?.addEventListener('click', async (ev) => {
             const boton = ev.currentTarget as HTMLButtonElement;
@@ -1280,6 +1510,36 @@ const EINV_FIX: Record<string, { href: string; es: string; en: string }> = {
     .fd-field span { color: #99a2af; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; }
     .fd-field input, .fd-field select { padding: 0.6rem 0.8rem; border: 0; border-radius: 10px; background: var(--color-bg-soft); color: var(--color-text); font: inherit; font-size: 0.86rem; }
     .fd-field input:focus, .fd-field select:focus { outline: none; box-shadow: 0 0 0 2px rgba(10, 25, 47, 0.15); }
+    .fd-field textarea { padding: 0.6rem 0.8rem; border: 0; border-radius: 10px; background: var(--color-bg-soft); color: var(--color-text); font: inherit; font-size: 0.86rem; resize: vertical; }
+    .fd-field textarea:focus { outline: none; box-shadow: 0 0 0 2px rgba(10, 25, 47, 0.15); }
+    .fd-field input[readonly] { color: var(--color-text-muted); }
+
+    /* Reembolso de un pago (diálogo y renglones de pagos). */
+    .fd-pago-info { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+    .fd-pago-sub { color: var(--color-text-muted); font-size: 0.74rem; }
+    .fd-pago-link { color: var(--color-blue-deep); font-weight: 600; text-decoration: none; }
+    .fd-pago-link:hover { text-decoration: underline; }
+    .fd-pago-side { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+    .fd-pago-refund {
+        min-height: 32px; padding: 0 12px; border: 1px solid var(--color-border); border-radius: 100px;
+        background: var(--surface, #fff); color: var(--color-text); font: inherit; font-size: 0.74rem; font-weight: 600; cursor: pointer;
+    }
+    .fd-pago-refund:hover { border-color: rgba(10, 25, 47, 0.3); }
+    .fd-pago-refund:focus-visible { outline: 2px solid var(--color-blue-deep); outline-offset: 2px; }
+    .fd-pago-nota { margin: 0.8rem 0.6rem 0; color: var(--color-text-muted); font-size: 0.76rem; line-height: 1.5; }
+    .fd-pago-nota-fiscal { color: #92400e; }
+    .fd-refund-estado { margin: 0 0 0.9rem; color: var(--color-text); font-size: 0.86rem; line-height: 1.5; }
+    .fd-refund-metodo { margin: 0 0 1rem; padding: 10px 12px; border-radius: 10px; background: var(--color-bg-soft); color: var(--color-text); font-size: 0.8rem; line-height: 1.5; }
+    .fd-refund-alcance { display: flex; flex-direction: column; gap: 0.5rem; margin: 0 0 1rem; padding: 0; border: 0; }
+    .fd-refund-ayuda { margin: 0; color: var(--color-text-muted); font-size: 0.78rem; line-height: 1.5; }
+    .fd-refund-max { color: var(--color-text-muted); font-size: 0.74rem; }
+    .fd-refund-ack { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 0.6rem; align-items: start; color: var(--color-text-muted); font-size: 0.78rem; line-height: 1.5; cursor: pointer; }
+    .fd-refund-ack input { margin-top: 3px; accent-color: var(--color-blue-deep); }
+    .fd-refund-error { margin: 0.8rem 0 0; color: var(--color-danger); font-size: 0.82rem; }
+    @media (max-width: 880px) {
+        .fd-pago-refund { min-height: 44px; padding: 0 16px; }
+        .fd-field input, .fd-field textarea { min-height: 46px; font-size: 16px; }
+    }
 
     @media (max-width: 980px) {
         .fd-grid { grid-template-columns: 1fr; gap: 2rem; }

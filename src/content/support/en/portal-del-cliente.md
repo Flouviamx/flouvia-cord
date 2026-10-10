@@ -55,7 +55,12 @@ Rules Cord applies:
 
 ## Refund a payment that covered several invoices
 
-If you refund part of a charge that paid several invoices, Cord allocates the refund from the last invoice applied to the first, each one in full before moving to the next.
+From Cord, you request the refund on the detail page of any of the invoices the charge paid, and choose:
+
+- **This invoice only:** up to what the charge applied to that invoice. The refund goes to that invoice.
+- **The whole payment:** returns what is left of the charge and reopens each invoice for what it paid. An ACH charge only allows this option.
+
+If the refund is issued outside Cord, Cord allocates it from the last invoice applied to the first, each one in full before moving to the next.
 
 ## Common issues
 

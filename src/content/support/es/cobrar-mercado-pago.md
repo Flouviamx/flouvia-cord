@@ -39,7 +39,7 @@ El desglose es el mismo de Cord: si la cotización tiene anticipo y saldo, o cuo
 
 ### Reembolsos
 
-El reembolso lo haces desde tu cuenta de Mercado Pago, y Cord lo lee solo. Cuando Mercado Pago confirma que el dinero salió, Cord baja el importe pagado, vuelve a dejar el saldo abierto y lo anota en el historial. Un reembolso que todavía está en proceso no cambia el saldo.
+El pago de una **factura** lo reembolsas desde Cord: en el detalle de la factura, botón **Reembolsar** junto al pago, total o parcial. El dinero sale de tu cuenta de Mercado Pago, igual que entró (ver [Emitir reembolsos](/soporte/emitir-reembolsos)). El cobro de una **cotización** lo reembolsas desde tu cuenta de Mercado Pago. En los dos casos Cord lee el reembolso: cuando Mercado Pago confirma que el dinero salió, baja el importe pagado, vuelve a dejar el saldo abierto y lo anota en el historial. Un reembolso que todavía está en proceso no cambia el saldo.
 
 ### Cuándo se marca pagada
 

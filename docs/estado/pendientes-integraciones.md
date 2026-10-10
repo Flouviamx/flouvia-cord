@@ -381,6 +381,10 @@ variables. Meta le cobra cada mensaje de plantilla a la cuenta del negocio.
 **Falta, código:**
 - [x] Mercado Pago en la factura hospedada, con abono parcial (22 sep).
 - [x] Reembolsos leídos del proveedor, en cotización y en factura (22 sep).
+- [x] Reembolsar desde Cord el pago de una factura (`POST /v1/payments/{id}/refunds`
+  con la llave del negocio, `createMpRefund`) y llevar a la factura el reembolso del
+  cobro de una cotización ya facturada (10 oct). Falta: probarlo contra Mercado Pago
+  real (sandbox con un vendedor de prueba) antes de depender de él.
 - [x] Link de pago en la cobranza con IA con cualquiera de los dos rieles (22 sep).
 - [ ] Igualas recurrentes con Mercado Pago: exige guardar el medio de pago, que
   Checkout Pro no hace. Requiere el producto de suscripciones del proveedor.

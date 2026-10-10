@@ -49,7 +49,7 @@ Un débito no confirma al instante:
 
 - **SEPA:** el titular puede pedir a su banco la devolución de un cargo durante **8 semanas** sin dar motivo. Si lo hace, el importe se te descuenta: contacta a tu cliente para aclararlo.
 - **ACH:** solo admite **reembolsos completos**. Para devolver una parte, acuerda con tu cliente otro medio.
-- Un reembolso que inicias tú se hace desde **Cobros**, como cualquier otro.
+- Un reembolso que inicias tú se hace desde el **detalle de la factura** que pagó el cargo, con el botón **Reembolsar** junto al pago. Un débito todavía en proceso no se puede reembolsar hasta que se confirme, y ambos admiten el reembolso hasta 180 días después del cobro. Ver [Emitir reembolsos](/soporte/emitir-reembolsos).
 
 ## Si un cargo falla
 

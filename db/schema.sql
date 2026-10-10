@@ -8343,3 +8343,75 @@ alter table usage_reservations add constraint usage_reservations_dimension_check
 alter table us_tax_calculos add column if not exists uso_id uuid;
 create index if not exists idx_us_tax_calculos_uso on us_tax_calculos (uso_id) where uso_id is not null;
 -- END sales-tax-cuota
+
+-- BEGIN reembolsos-facturas
+-- ── Reembolso del pago de una factura desde Cord (oct 2026) ─────────────────
+-- Una fila por solicitud, con tres momentos y nunca un `if` en medio:
+--   'autorizada' — el diálogo pidió reembolsar ESE pago: nonce de un solo uso
+--                  (solo su sha256), 10 minutos, con los topes que vio la persona;
+--   'enviada'    — el monto quedó RESERVADO bajo el lock del cobro, antes de
+--                  llamar al proveedor: dos solicitudes a la vez no reembolsan
+--                  dos veces la misma capacidad. Su id es la clave de idempotencia;
+--   'registrada' — el reembolso del proveedor ya está en documento_reembolsos.
+--                  Lo liga la ruta o el webhook (la metadata del reembolso lleva
+--                  el id), lo que llegue primero.
+--   'fallida'    — el proveedor lo rechazó: la reserva se libera.
+-- Una solicitud de alcance 'factura' manda en el reparto de su reembolso
+-- (allocateInvoiceRefund): de un cobro que pagó varias facturas, lo devuelto va
+-- a la factura desde la que se pidió, acotado a lo que ese cobro le aplicó. El
+-- alcance 'cobro' devuelve el cargo completo y lo reparte la regla general.
+create table if not exists documento_reembolso_solicitudes (
+  id uuid primary key default gen_random_uuid(),
+  org_id uuid not null references orgs(id) on delete cascade,
+  documento_id uuid not null references documentos_fiscales(id) on delete cascade,
+  pago_id uuid not null,
+  proveedor text not null check (proveedor in ('stripe', 'mercadopago')),
+  stripe_payment_intent_id text,
+  mp_payment_id text,
+  currency text not null check (currency ~ '^[A-Z]{3}$'),
+  nonce_hash text not null unique,
+  max_factura numeric not null check (max_factura >= 0),
+  max_cobro numeric not null check (max_cobro >= 0),
+  expires_at timestamptz not null,
+  estado text not null default 'autorizada' check (estado in ('autorizada', 'enviada', 'registrada', 'fallida')),
+  alcance text check (alcance is null or alcance in ('factura', 'cobro')),
+  monto numeric check (monto is null or monto > 0),
+  motivo text,
+  stripe_refund_id text,
+  mp_refund_id text,
+  error_ref text,
+  creado_por uuid references users(id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  check ((proveedor = 'stripe' and stripe_payment_intent_id is not null)
+      or (proveedor = 'mercadopago' and mp_payment_id is not null))
+);
+
+create unique index if not exists uq_documento_reembolso_solicitudes_stripe
+  on documento_reembolso_solicitudes(org_id, stripe_refund_id) where stripe_refund_id is not null;
+
+create unique index if not exists uq_documento_reembolso_solicitudes_mp
+  on documento_reembolso_solicitudes(org_id, mp_refund_id) where mp_refund_id is not null;
+
+create index if not exists idx_documento_reembolso_solicitudes_pi
+  on documento_reembolso_solicitudes(org_id, stripe_payment_intent_id) where stripe_payment_intent_id is not null;
+
+create index if not exists idx_documento_reembolso_solicitudes_mp
+  on documento_reembolso_solicitudes(org_id, mp_payment_id) where mp_payment_id is not null;
+
+alter table documento_reembolso_solicitudes enable row level security;
+
+alter table documento_reembolso_solicitudes force row level security;
+
+drop policy if exists rls_documento_reembolso_solicitudes on documento_reembolso_solicitudes;
+
+create policy rls_documento_reembolso_solicitudes on documento_reembolso_solicitudes
+  using (org_id = nullif(current_setting('app.org_id', true), '')::uuid)
+  with check (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
+
+do $$ begin
+  if exists (select 1 from pg_roles where rolname = 'cord_app') then
+    grant select, insert, update on documento_reembolso_solicitudes to cord_app;
+  end if;
+end $$;
+-- END reembolsos-facturas

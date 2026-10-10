@@ -62,6 +62,11 @@ Connect y el negocio elige.
   `documento_reembolsos` con su par `mp_refund_id`/`mp_payment_id`, que
   `invoiceBalanceQuery` liga al pago por el id del riel que cobró. Solo un
   reembolso `approved` baja el saldo: uno en proceso todavía puede caerse.
+  Desde oct 2026 el reembolso del cobro de una COTIZACIÓN también pasa por
+  `recordMpInvoiceRefund`: si la cotización ya se facturó, su cobro está en el
+  ledger de la factura (`carryQuotePayments`) y la factura se reabre igual que
+  con Stripe. El pago de una factura se reembolsa además DESDE Cord (ver
+  "Reembolso del pago de una factura desde Cord").
 
 La forma de la autorización, `/oauth/token`, `/checkout/preferences` y la firma
 `x-signature` se verificó el 2026-09-21 contra el SDK oficial (`mercadopago`
@@ -103,7 +108,9 @@ Código en `src/lib/cobros/`; esquema en la sección "PORTAL DEL CLIENTE…" de
 - **Reembolsos repartidos** (`allocateInvoiceRefund` en `reconciliation.ts`):
   devolver parte de un cobro que pagó varias facturas se asigna de la última
   aplicada a la primera, completo o nada; sin reparto, un reembolso solo cuenta
-  si su cobro pagó una sola factura (todo lo anterior a oct 2026).
+  si su cobro pagó una sola factura (todo lo anterior a oct 2026). Un reembolso
+  pedido desde una factura en Cord (solicitud de alcance `factura`) va SOLO a
+  esa factura: ver la sección siguiente.
 - **Domiciliación** (`metodos.ts`): SEPA Direct Debit en EUR para ES/DE/FR y ACH
   en USD para EE. UU. La enciende el negocio en Ajustes › Cobros
   (`/api/billing/connect/domiciliacion`), que pide la capacidad
@@ -249,7 +256,8 @@ depende de la configuración de correos de Connect de la plataforma (no
 verificado). La factura no tiene "Enviar a mi correo" para las instrucciones:
 el correo de la factura ya lleva su link.
 
-**9. Reembolsar un pago SPEI de factura (no construido aquí).** Stripe lo admite
+**9. Reembolsar un pago SPEI de factura** (construido después, en "Reembolso del
+pago de una factura desde Cord": a la cuenta bancaria del cliente). Stripe lo admite
 hasta 180 días: a la cuenta bancaria del cliente (el reembolso nace en
 `requires_action` mientras Stripe le pide sus datos por correo; si no los da en
 45 días pasa a `failed` y el dinero vuelve a su saldo; se puede cancelar
@@ -275,6 +283,110 @@ avisos no tocan el ledger) y `test/spei-facturas-db.test.ts` (PGlite: índice de
 una CLABE por factura, asiento idempotente, complemento, traslado desde la
 cotización, avisos en la factura correcta). Falta la aceptación integrada en
 Stripe TEST.
+
+## Reembolso del pago de una factura desde Cord — oct 2026
+
+Hasta oct 2026 solo se reembolsaba desde Cord el cobro de una COTIZACIÓN
+(`/api/cobros/[cobroId]/reembolso`, Ingresos › Cobros). El pago de una factura
+—link `/i`, portal, cobro automático— solo se devolvía fuera de Cord y Cord lo
+leía por webhook. Código en `src/lib/cobros/reembolsos.ts` (dinero) y
+`src/pages/api/facturas/[id]/reembolso.ts` (puerta); esquema en la sección
+`reembolsos-facturas` de `db/schema.sql`, espejo de
+`db/deploy/2026-10-10-reembolsos-facturas.sql`.
+
+- **Dónde y quién.** Detalle de la factura (`/app/facturas/[id]`), botón
+  **Reembolsar** junto a cada pago en línea. Mismo contrato que la cotización:
+  permiso `reembolsar` (aparte; ni Administrador lo trae), autorización de un
+  solo uso que pide el diálogo (GET, nonce de 10 min guardado como sha256) y
+  `requireFreshAuth` para ejecutar (POST). Ingresos › Cobros no lista pagos de
+  factura (`getCobros` lee cotizaciones), así que la factura es la única
+  superficie.
+- **Qué se reembolsa.** Un pago de `documento_pagos` con PaymentIntent o pago
+  de Mercado Pago que entró por el carril de la FACTURA. Fuera: un pago
+  registrado a mano (Cord no movió ese dinero: no hay botón, decisión
+  explícita; el ledger tampoco tiene cómo asentar una devolución manual), y uno
+  que entró por la COTIZACIÓN (`cobro_id`, o su PI / pago de Mercado Pago está
+  en `cotizacion_cobros`): se devuelve desde su cobro para que el mismo dinero
+  no tenga dos puertas con dos ledgers, y la factura lo refleja sola.
+- **Los límites del proveedor se dicen ANTES** (`evaluarReembolso`, pura):
+  tarjeta total o parcial; SEPA total o parcial y hasta 180 días; ACH **solo
+  completo** y hasta 180 días (de un cobro agrupado ACH solo el cobro entero);
+  SPEI (`customer_balance`) total o parcial y hasta 180 días, solo si hay correo
+  del cliente; un intento que el proveedor no da por `succeeded` no se
+  reembolsa; otro método, no. Verificado el
+  2026-10-10 en docs.stripe.com/payments/ach-direct-debit ("Partial refunds ✗,
+  Full refunds ✓", 180 días, hasta 3 días hábiles) y /payments/sepa-debit
+  (parciales sí, 180 días, 3–4 días hábiles). Un débito todavía en proceso no
+  tiene fila en `documento_pagos`, y el detalle lo dice.
+- **Verdad del proveedor y del ledger, juntas.** El diálogo y el envío leen el
+  PaymentIntent (con `latest_charge` para el método) y la lista de reembolsos
+  en la cuenta conectada, o el pago en Mercado Pago. Si el proveedor ya
+  devolvió más de lo que Cord tiene registrado (un reembolso hecho fuera cuyo
+  aviso no ha llegado) se bloquea con `pendiente_registro` en vez de reservar
+  encima.
+- **Reserva antes del proveedor.** `documento_reembolso_solicitudes` pasa de
+  `autorizada` a `enviada` en UN `update` bajo `invoicePaymentLock` que vuelve a
+  calcular la capacidad: lo que el cobro aplicó a la factura menos sus
+  reembolsos vivos (asignados, sin repartir) y las solicitudes en vuelo de las
+  últimas 24 h; y nunca más de lo que el proveedor aún tiene. Dos envíos a la
+  vez reservan una vez. La clave de idempotencia es
+  `cord-reembolso-factura-<id de la solicitud>` (Stripe y Mercado Pago). Un
+  4xx del proveedor marca `fallida` y libera; sin respuesta (red, 5xx) la
+  reserva se queda hasta que el aviso la ligue o venza a las 24 h, y la UI pide
+  no repetir.
+- **Un solo camino del ledger.** La ruta registra con `recordInvoiceRefund` /
+  `recordMpInvoiceRefund`, los mismos que los webhooks; el índice único
+  `(org_id, stripe_refund_id | mp_refund_id)` hace que el aviso posterior solo
+  actualice el estado (la ruta pasa `eventCreated = 0` para no pisar un estado
+  más nuevo). La metadata `cord_reembolso` del reembolso de Stripe liga la
+  solicitud aunque el webhook llegue antes que la respuesta.
+- **Cobro agrupado.** Alcance `factura`: hasta lo que ese cobro le aplicó a la
+  factura, y `allocateInvoiceRefund` (CTE `objetivo`) lo asigna SOLO a ella; si
+  la factura ya no tiene el pago (sustitución) rige la regla general. Alcance
+  `cobro`: siempre el cargo completo que queda, repartido por la regla general
+  (con el monto total, cada factura recibe su capacidad completa).
+- **Efectos.** El saldo se recalcula (`reconcileInvoice`): `paid` → `open`, una
+  `open` sube su saldo, una anulada baja `refund_due`. El historial de la
+  factura anota cada reembolso UNA vez, en la transición a efectivo o fallido
+  (el CTE `prev` del upsert ve el estado anterior bajo el mismo lock), también
+  para reembolsos hechos fuera de Cord; uno en proceso lo anota la ruta como
+  "solicitado". Auditoría `facturas.reembolso_solicitado`. Los eventos
+  `refund.succeeded` / `refund.failed` y la analítica `refund_issued` siguen
+  saliendo del webhook de Stripe (no se emiten dos veces desde la ruta). Mercado
+  Pago no emite eventos de reembolso hoy, igual que en la cotización. Sin
+  correo al cliente: la cotización tampoco lo manda.
+- **Tarifa de Cord.** `refund_application_fee=false`, como en la cotización, y
+  la casilla de aceptación es obligatoria (`feeDisclosureAccepted`).
+- **México.** El reembolso no cancela ni modifica el CFDI, ni su complemento de
+  pago. La devolución se documenta con una nota de crédito (CFDI de egreso tipo
+  E, uso G02 "Devoluciones, descuentos o bonificaciones", relación 01 con el
+  UUID: lo que ya emite `createCreditNote`). Cord NO la emite sola: no todo
+  reembolso es una devolución de la venta (un cobro duplicado no cambia lo
+  facturado). El diálogo lo dice y el detalle lo recuerda mientras
+  `amount_refunded > amount_credited` en un CFDI timbrado.
+- **SPEI de una factura** (pago `metodo = 'spei'` de "SPEI con CLABE en
+  facturas"; se identifica por su PaymentIntent, el `metodo` solo es pista del
+  tipo si el cargo no lo trae). Se reembolsa con `POST /v1/refunds` a la cuenta
+  bancaria del cliente: el proveedor le pide sus datos por correo (el del
+  Customer; si no tiene, `instructions_email` con el correo del cliente de la
+  factura; sin ninguno se bloquea con `sin_correo` antes de enviar). Nace
+  `requires_action`: reserva el monto, NO reabre el saldo (solo `succeeded`
+  cuenta), el historial dice "solicitado" y el aviso al usuario dice que el
+  cliente recibirá un correo. A los 45 días sin datos pasa a `failed`: la
+  transición se anota ("no se completó"), la reserva se libera y el dinero
+  queda en el saldo del cliente dentro de la cuenta conectada; las docs dicen
+  "escríbenos para devolverlo". No se usa el reembolso al saldo del cliente
+  (inmediato): el dinero no le llegaría. No hay botón para cancelar un
+  reembolso en espera (el proveedor lo permite; no se construyó). Es distinto
+  del SPEI de una COTIZACIÓN, que sigue siendo la tarea de transferencia manual
+  de Ingresos › Cobros (docs.stripe.com/payments/customer-balance/refunding,
+  consultado el 2026-10-10).
+- **Verificación:** `test/factura-reembolso-db.test.ts` (PGlite + proveedor
+  simulado: total, parcial, ACH, plazo, agrupado, idempotencia, webhook antes y
+  después, SPEI en espera, completado y fallido, Mercado Pago, transiciones), `test/factura-reembolso-ruta.test.ts`
+  (permiso, reautenticación, rate limit, mensajes), `test/mercadopago-reembolso-cotizacion.test.ts`
+  y `npm run security:payments`, que ahora reconoce los reembolsos de Mercado
+  Pago (`/v1/payments/…/refunds`, `createMpRefund`).
 
 ## Términos de pago, claves SAT y CFDI a extranjeros — oct 2026
 
@@ -2559,6 +2671,8 @@ Estos campos y la tabla nueva requieren aplicar el bloque de conciliación de
 recalculado documentos históricos; primero hay que revisar sus notas, monedas,
 folios fiscales y cualquier exceso reservado. La conciliación consume estados
 de reembolsos existentes: no agrega una acción automática para enviar dinero.
+El reembolso que una persona pide desde la factura vive en su propia sección
+("Reembolso del pago de una factura desde Cord").
 
 **Impuestos del CFDI.** `mexico-items.ts` envía impuestos explícitos por concepto:
 IVA 16%, 8% y exento (la semántica actual de tasa 0 en el catálogo). Traduce
