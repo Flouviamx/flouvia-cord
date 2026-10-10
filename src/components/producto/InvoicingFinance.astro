@@ -1,0 +1,761 @@
+---
+// /producto/facturacion — "Para equipos de finanzas" (A7).
+//
+// Dos calcas 1:1 de superficies reales:
+//   - /app/cobranza (src/pages/app/cobranza/index.astro): mismo shell de
+//     AppLayout (sidebar colapsada desde SIDEBAR_NAV, topbar, page-head con
+//     tabs), mismos widgets, mismas claves de src/i18n/app.ts y la misma
+//     aritmética de getCobranza() (src/lib/queries.ts) aplicada a datos demo.
+//   - El correo de recordatorio de factura (notifyInvoiceReminder +
+//     invoiceEmailHtml en src/lib/email.ts, brandEmailShell con el perfil de
+//     marca por defecto).
+// Los textos de UI salen del diccionario de la app con t(); los datos demo
+// (clientes, folios, montos) viven aquí. Sin base de datos local: la calca se
+// arma desde el markup y el CSS de la página, no desde una captura.
+import { t } from '../../i18n/app';
+import { iconInner, type IconName } from '../../lib/icons';
+import { SIDEBAR_NAV } from '../../lib/sidebar-nav';
+import { termLabel } from '../../lib/payment-terms';
+import { facturacionFinanzas } from '../../lib/producto-facturacion-finanzas';
+import { BRAND_LOGOS } from '../../lib/integraciones/catalogo';
+
+interface Props { isEn?: boolean }
+const { isEn = false } = Astro.props;
+const L = isEn ? 'en' : 'es';
+const C = facturacionFinanzas(L);
+const LOC = isEn ? 'en-US' : 'es-MX';
+const tpl = (s: string, vars: Record<string, string>) => s.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? '');
+
+// ── Formato: el mismo que money(n, 0) y fmtCalendarDate() de fmt-server ──
+const money0 = (n: number) => new Intl.NumberFormat(LOC, { style: 'currency', currency: 'MXN', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n);
+const money2 = (n: number) => new Intl.NumberFormat(LOC, { style: 'currency', currency: 'MXN', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+const utc = (iso: string) => new Date(`${iso}T00:00:00Z`);
+const calDate = (iso: string) => new Intl.DateTimeFormat(LOC, { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(utc(iso)).replace('.', '');
+const longDate = (iso: string) => new Intl.DateTimeFormat(LOC, { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(utc(iso));
+// Fecha del correo (invoiceEmailHtml): toLocaleDateString con mes corto.
+const mailDate = (iso: string) => utc(iso).toLocaleDateString(LOC, { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+const initials = (nombre: string) => nombre.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase() || '—';
+
+// ── Cartera demo de Materiales del Valle, "hoy" = 15 oct 2026 ──
+const HOY = '2026-10-15';
+const RAW: { es: string; en: string; folio: string; origen: 'factura' | 'cotizacion'; terminos?: string; vence: string; total: number; promesa?: string }[] = [
+    { es: 'Grupo Ferrex', en: 'Grupo Ferrex', folio: 'COT-0127', origen: 'cotizacion', terminos: 'net30', vence: '2026-08-08', total: 412300 },
+    { es: 'Constructora GAMA', en: 'GAMA Construction', folio: 'A-001031', origen: 'factura', vence: '2026-09-01', total: 58904 },
+    { es: 'Aceros del Norte', en: 'Norte Steel', folio: 'COT-0141', origen: 'cotizacion', terminos: 'net30', vence: '2026-10-06', total: 134850, promesa: '2026-10-15' },
+    { es: 'Distribuidora El Zarco', en: 'El Zarco Distribution', folio: 'A-001048', origen: 'factura', vence: '2026-10-12', total: 96469.2 },
+    { es: 'Constructora Apex', en: 'Apex Construction', folio: 'A-001052', origen: 'factura', vence: '2026-10-17', total: 73080 },
+    { es: 'Distribuidora del Bajío', en: 'Bajío Distribution', folio: 'A-001055', origen: 'factura', vence: '2026-11-13', total: 218500 },
+    { es: 'Inmobiliaria Cumbres', en: 'Cumbres Real Estate', folio: 'COT-0150', origen: 'cotizacion', terminos: 'net60', vence: '2026-12-02', total: 96120 },
+];
+const MS = 86400000;
+// Misma derivación que getCobranzaUncached(): diff, overdue, bucket.
+const items = RAW.map((r) => {
+    const diff = Math.floor((utc(HOY).getTime() - utc(r.vence).getTime()) / MS);
+    const overdue = diff > 0;
+    const empresa = isEn ? r.en : r.es;
+    return {
+        ...r, empresa, inicial: initials(empresa),
+        terminosLabel: r.origen === 'factura' ? '' : termLabel(r.terminos, L),
+        overdue, diasVencido: overdue ? diff : 0, diasParaVencer: overdue ? 0 : -diff,
+        bucket: !overdue ? 'vigente' : diff <= 30 ? 'd30' : diff <= 60 ? 'd60' : 'd60p',
+    };
+}).sort((a, b) => b.diasVencido - a.diasVencido || a.diasParaVencer - b.diasParaVencer);
+
+const sum = (arr: typeof items) => arr.reduce((s, i) => s + i.total, 0);
+const vencidas = items.filter((i) => i.overdue);
+const venceSemana = items.filter((i) => !i.overdue && i.diasParaVencer <= 7);
+const promesasHoy = items.filter((i) => i.promesa && i.promesa <= HOY);
+const sinGestion = items.filter((i) => i.overdue && !i.promesa);
+const prioridad = vencidas.slice().sort((a, b) => (b.total * Math.max(1, b.diasVencido)) - (a.total * Math.max(1, a.diasVencido))).slice(0, 4);
+const AGING = [
+    { key: 'vigente', label: t(L, 'cob.aging_vigente'), color: '#3b82f6' },
+    { key: 'd30', label: t(L, 'cob.aging_d30'), color: '#f59e0b' },
+    { key: 'd60', label: t(L, 'cob.aging_d60'), color: '#f97316' },
+    { key: 'd60p', label: t(L, 'cob.aging_d60p'), color: '#ef4444' },
+].map((a) => ({ ...a, monto: sum(items.filter((i) => i.bucket === a.key)) })).filter((a) => a.monto > 0);
+const totalPorCobrar = sum(items);
+// Cumplimiento histórico de promesas (demo): 8 cumplidas, 2 incumplidas.
+const CUMPLIMIENTO = 80;
+
+// ── Shell: la sidebar colapsada sale de la MISMA fuente que la real ──
+const RAIL = SIDEBAR_NAV.map((g) => g.items);
+const ico = (name: IconName) => iconInner(name);
+
+// ── Correo de recordatorio (A-001048 de Distribuidora El Zarco) ──
+const ORG = isEn ? 'Valle Materials' : 'Materiales del Valle';
+const CLIENTE = isEn ? 'El Zarco Distribution' : 'Distribuidora El Zarco';
+const MAIL = {
+    vencida: {
+        asunto: `${tpl(t(L, 'fact.e_asunto_vencida'), { numero: 'A-001048' })} — ${ORG}`,
+        cuerpo: tpl(t(L, 'fact.e_vencida_cuerpo'), { numero: 'A-001048', org: ORG }),
+        cuando: isEn ? 'Oct 15, 9:00 AM' : '15 oct, 9:00',
+    },
+    porvencer: {
+        asunto: `${tpl(t(L, 'fact.e_asunto_porvencer'), { numero: 'A-001048' })} — ${ORG}`,
+        cuerpo: tpl(t(L, 'fact.e_porvencer_cuerpo'), { numero: 'A-001048', org: ORG }),
+        cuando: isEn ? 'Oct 5, 9:00 AM' : '5 oct, 9:00',
+    },
+};
+const MAIL_LINK = 'https://cordhq.app/i/f7Qk2mZr9vXa';
+const STATE_ICON: Record<string, IconName> = { auto: 'check-circle', click: 'bolt', soon: 'clock' };
+// Logos: la misma fuente que /integraciones y la app (catalogo.ts). Favicon V2
+// del dominio real donde la marca lo resuelve bien; el ícono de producto
+// oficial donde el dominio solo devuelve la "G" genérica de Google (Gmail, Sheets).
+---
+
+<section class="ifn" aria-labelledby="ifn-title">
+    <header class="ifn-intro">
+        <div>
+            <p class="ifn-eyebrow">{C.eyebrow}</p>
+            <h2 id="ifn-title" class="ifn-h2 masked-title">{C.titulo}</h2>
+        </div>
+        <p class="ifn-sub reveal">{C.sub}</p>
+    </header>
+
+    <!-- 1 · Cartera por cobrar: calca de /app/cobranza -->
+    <article class="ifn-ar">
+        <div class="ifn-ar-head">
+            <div class="ifn-text">
+                <p class="ifn-k">{C.cartera.eyebrow}</p>
+                <h3 class="ifn-h3">{C.cartera.titulo}</h3>
+                <p class="ifn-copy reveal">{C.cartera.copy}</p>
+                <p class="ifn-plan reveal">{C.cartera.plan}</p>
+            </div>
+            <ul class="ifn-list">
+                {C.cartera.puntos.map((p) => (
+                    <li class="reveal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={ico('check-circle')} /><span>{p}</span></li>
+                ))}
+            </ul>
+        </div>
+
+        <div class="ifn-stage ifn-stage-ar reveal" aria-hidden="true">
+            <div class="ifn-app" data-ifn-app>
+                <aside class="ifn-rail">
+                    <span class="ifn-rail-org">M</span>
+                    {RAIL.map((group, gi) => (
+                        <Fragment>
+                            {gi > 0 && <span class="ifn-rail-sep"></span>}
+                            {group.map((it) => (
+                                <span class:list={['ifn-rail-i', { on: it.id === 'cobranza' }]}>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ico(it.icon)} />
+                                    {it.badge === 'vencidas' && <i class="ifn-rail-dot"></i>}
+                                </span>
+                            ))}
+                        </Fragment>
+                    ))}
+                    <span class="ifn-rail-i ifn-rail-foot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ico('sidebar')} /></span>
+                </aside>
+
+                <div class="ifn-main">
+                    <header class="ifn-top">
+                        <span class="ifn-burger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" set:html={ico('menu')} /></span>
+                        <span class="ifn-search">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ico('search')} />
+                            <span>{t(L, 'topbar.buscar')}</span><kbd>⌘K</kbd>
+                        </span>
+                        <span class="ifn-top-r">
+                            <span class="ifn-create">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" set:html={ico('plus')} />
+                                {t(L, 'layout.crear')}
+                                <svg class="ifn-create-c" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" set:html={ico('chevron-down')} />
+                            </span>
+                            <span class="ifn-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ico('bell')} /><b class="ifn-ti-count">3</b></span>
+                            <span class="ifn-ti ifn-ti-x"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ico('chat-help')} /></span>
+                            <span class="ifn-ti ifn-ti-x"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ico('sun')} /></span>
+                            <span class="ifn-ti ifn-ti-x"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ico('gear')} /></span>
+                        </span>
+                    </header>
+
+                    <div class="ifn-ph">
+                        <div class="ifn-ph-t">
+                            <b>{t(L, 'cob.heading')}</b>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ico('pin')} />
+                        </div>
+                        <div class="ifn-ph-a">
+                            <span class="ifn-chip-snap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ico('calendar')} />{tpl(t(L, 'cob.hoy'), { fecha: longDate(HOY) })}</span>
+                            <span class="ifn-custom"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" set:html={ico('sliders')} />{t(L, 'widgets.personalizar')}</span>
+                        </div>
+                    </div>
+                    <div class="ifn-tabs"><span class="on">{t(L, 'cob.tab_cobranza')}</span><span>{t(L, 'cob.tab_ia')}</span></div>
+
+                    <div class="ifn-grid">
+                        <div class="ifn-card ifn-kpi">
+                            <span class="ifn-kl">{t(L, 'cob.k_vencido')}</span>
+                            <b class="editorial is-danger">{money0(sum(vencidas))}</b>
+                            <small>{tpl(t(L, 'cob.k_vencido_sub'), { n: String(vencidas.length) })}</small>
+                        </div>
+                        <div class="ifn-card ifn-kpi ifn-m-hide">
+                            <span class="ifn-kl">{t(L, 'cob.k_semana')}</span>
+                            <b class="editorial">{money0(sum(venceSemana))}</b>
+                            <small>{tpl(t(L, 'cob.k_semana_sub'), { n: String(venceSemana.length) })}</small>
+                        </div>
+                        <div class="ifn-card ifn-kpi ifn-m-hide">
+                            <span class="ifn-kl">{t(L, 'cob.k_promesas')}</span>
+                            <b class="editorial is-warn">{promesasHoy.length}</b>
+                            <small>{tpl(t(L, 'cob.k_promesas_sub'), { n: String(promesasHoy.length) })}</small>
+                            <small>{tpl(t(L, 'cob.k_promesas_ok'), { pct: String(CUMPLIMIENTO) })}</small>
+                        </div>
+                        <div class="ifn-card ifn-kpi ifn-m-hide">
+                            <span class="ifn-kl">{t(L, 'cob.k_singestion')}</span>
+                            <b class="editorial is-danger">{money0(sum(sinGestion))}</b>
+                            <small>{tpl(t(L, 'cob.k_singestion_sub'), { n: String(sinGestion.length) })}</small>
+                        </div>
+
+                        <div class="ifn-card ifn-span2 ifn-m-hide">
+                            <div class="ifn-sh">
+                                <div><b>{t(L, 'cob.aging_titulo')}</b><span>{t(L, 'cob.aging_sub')}</span></div>
+                                <strong class="editorial">{money0(totalPorCobrar)}</strong>
+                            </div>
+                            <div class="ifn-seg">
+                                {AGING.map((a) => <i style={`flex:0 0 ${Math.max((a.monto / totalPorCobrar) * 100, 1.5).toFixed(2)}%;background:${a.color}`}></i>)}
+                            </div>
+                            <div class="ifn-seg-l">
+                                {AGING.map((a) => (
+                                    <div><i style={`background:${a.color}`}></i><span>{a.label}</span><b class="editorial">{money0(a.monto)}</b></div>
+                                ))}
+                            </div>
+                        </div>
+                        <div class="ifn-card ifn-span2 ifn-m-hide">
+                            <div class="ifn-sh"><div><b>{t(L, 'cob.prioridad')}</b><span>{t(L, 'cob.prioridad_sub')}</span></div></div>
+                            <div class="ifn-mini">
+                                {prioridad.map((it) => (
+                                    <div>
+                                        <span><strong>{it.empresa}</strong><small>{it.folio} · {tpl(t(L, 'cob.vencida_dias'), { n: String(it.diasVencido) })}</small></span>
+                                        <span class="ifn-mini-r">
+                                            <b class="editorial">{money0(it.total)}</b>
+                                            <i class="ifn-wa"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ico('chat')} /></i>
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div class="ifn-card ifn-span4 ifn-tcard">
+                            <div class="ifn-sh ifn-sh-tbl">
+                                <div><b>{t(L, 'cob.cuentas_por_cobrar')}</b></div>
+                                <div class="ifn-chips">
+                                    <span class="on">{t(L, 'cob.f_todas')}</span><span>{t(L, 'cob.f_vencidas')}</span><span>{t(L, 'cob.f_promesa')}</span><span>{t(L, 'cob.f_singestion')}</span>
+                                </div>
+                            </div>
+                            <div class="ifn-th">
+                                <span>{t(L, 'cob.th_cliente')}</span><span>{t(L, 'cob.th_folio')}</span><span>{t(L, 'cob.th_terminos')}</span><span>{t(L, 'cob.th_vence')}</span><span>{t(L, 'cob.th_estado')}</span><span class="r">{t(L, 'cob.th_saldo')}</span><span class="r">{t(L, 'cob.th_accion')}</span>
+                            </div>
+                            {items.map((it) => (
+                                <div class="ifn-tr" data-ifn-row>
+                                    <span class="ifn-cl"><i>{it.inicial}</i><span>{it.empresa}</span></span>
+                                    <span class="ifn-fo">{it.folio}</span>
+                                    <span class="ifn-mu ifn-terms">{it.terminosLabel}</span>
+                                    <span class="ifn-mu ifn-due">{calDate(it.vence)}</span>
+                                    <span class="ifn-est">
+                                        {it.overdue
+                                            ? <em class="over">{tpl(t(L, 'cob.vencida_dias'), { n: String(it.diasVencido) })}</em>
+                                            : <em class="due">{it.diasParaVencer === 0 ? t(L, 'cob.vence_hoy') : tpl(t(L, 'cob.vence_en'), { n: String(it.diasParaVencer) })}</em>}
+                                        {it.promesa && <em class="prom"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" set:html={ico('check')} />{tpl(t(L, 'cob.promete'), { fecha: calDate(it.promesa) })}</em>}
+                                    </span>
+                                    <span class="ifn-amt r editorial">{money0(it.total)}</span>
+                                    <span class="ifn-acts r">
+                                        {it.origen === 'cotizacion' && <i class:list={['ifn-prom', { has: !!it.promesa }]}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ico('calendar')} /></i>}
+                                        <i class="ifn-wa"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ico('chat')} /></i>
+                                        {it.origen === 'cotizacion'
+                                            ? <span class="ifn-paid">{t(L, 'cob.cobrada')}</span>
+                                            : <span class="ifn-paid inv">{t(L, 'cob.ver_factura')}</span>}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </article>
+
+    <!-- 2 · Recupera más: el correo de recordatorio real -->
+    <article class="ifn-row ifn-row-rec">
+        <div class="ifn-stage ifn-stage-mail reveal" aria-hidden="true">
+            {(['porvencer', 'vencida'] as const).map((k) => (
+                <div class:list={['ifn-mail', `ifn-mail-${k}`]}>
+                    <div class="ifn-mail-h">
+                        <span class="ifn-mail-av">M</span>
+                        <span class="ifn-mail-from"><b>{ORG}</b><small>{isEn ? 'to' : 'para'} raul@elzarco.mx</small></span>
+                        <time>{MAIL[k].cuando}</time>
+                    </div>
+                    <p class="ifn-mail-subj">{MAIL[k].asunto}</p>
+                    <div class="ifn-mail-bg">
+                        <div class="ifn-mail-card">
+                            <div class="ifn-mail-brand"><strong>{ORG}</strong></div>
+                            <p class="ifn-mail-hi">{CLIENTE}</p>
+                            <p class="ifn-mail-body" set:html={MAIL[k].cuerpo} />
+                            <div class="ifn-mail-tbl">
+                                <div><span>{t(L, 'fact.e_factura')}</span><span>A-001048</span></div>
+                                <div><span>{t(L, 'fact.e_vence')}</span><span>{mailDate('2026-10-12')}</span></div>
+                                <div class="s"><span>{t(L, 'fact.e_saldo')}</span><span>{money2(96469.2)}</span></div>
+                            </div>
+                            <span class="ifn-mail-btn">{t(L, 'fact.e_cta_pagar')}</span>
+                            <p class="ifn-mail-copy">{t(L, 'email.copie_enlace')} <u>{MAIL_LINK}</u></p>
+                            <p class="ifn-mail-foot">{ORG}{t(L, 'email.enviado_con_cord')}</p>
+                        </div>
+                    </div>
+                </div>
+            ))}
+        </div>
+        <div class="ifn-text">
+            <p class="ifn-k">{C.recupera.eyebrow}</p>
+            <h3 class="ifn-h3">{C.recupera.titulo}</h3>
+            <p class="ifn-copy reveal">{C.recupera.copy}</p>
+            <ul class="ifn-list">
+                {C.recupera.puntos.map((p) => (
+                    <li class="reveal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={ico('check-circle')} /><span>{p}</span></li>
+                ))}
+            </ul>
+            <p class="ifn-plan reveal">{C.recupera.plan}</p>
+        </div>
+    </article>
+
+    <!-- 3 · Conciliación: manual frente a Cord, fila por fila -->
+    <article class="ifn-conc">
+        <div class="ifn-conc-head">
+            <div>
+                <p class="ifn-k">{C.conciliacion.eyebrow}</p>
+                <h3 class="ifn-h3">{C.conciliacion.titulo}</h3>
+            </div>
+            <p class="ifn-copy reveal">{C.conciliacion.copy}</p>
+        </div>
+        <div class="ifn-ct" role="table" aria-label={C.conciliacion.titulo}>
+            <div class="ifn-ct-h" role="row">
+                <span role="columnheader">{C.conciliacion.colTarea}</span>
+                <span role="columnheader">{C.conciliacion.colSin}</span>
+                <span role="columnheader">{C.conciliacion.colCon}</span>
+            </div>
+            {C.conciliacion.filas.map((f) => (
+                <div class="ifn-ct-r reveal" role="row">
+                    <span role="cell" class="ifn-ct-task"><b>{f.tarea}</b><small>{f.detalle}</small></span>
+                    <span role="cell" class="ifn-ct-sin"><em class="ifn-st ifn-st-manual">{C.conciliacion.manual}</em></span>
+                    <span role="cell" class="ifn-ct-con">
+                        <em class={`ifn-st ifn-st-${f.estado}`}>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={ico(STATE_ICON[f.estado])} />
+                            {C.conciliacion.estados[f.estado]}
+                        </em>
+                    </span>
+                </div>
+            ))}
+        </div>
+    </article>
+
+    <!-- 4 · Integraciones -->
+    <article class="ifn-int">
+        <div class="ifn-int-text">
+            <p class="ifn-k">{C.integraciones.eyebrow}</p>
+            <h3 class="ifn-h3">{C.integraciones.titulo}</h3>
+            <p class="ifn-copy reveal">{C.integraciones.copy}</p>
+            <a class="ifn-link reveal" href={isEn ? '/en/integraciones' : '/integraciones'}>
+                {C.integraciones.cta}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={ico('arrow-right')} />
+            </a>
+        </div>
+        <ul class="ifn-logos">
+            {C.integraciones.logos.map((l) => (
+                <li class:list={['reveal', { soon: l.proximamente }]}>
+                    <img src={BRAND_LOGOS[l.slug]} alt="" width="28" height="28" loading="lazy" decoding="async" />
+                    <span>
+                        <b>{l.nombre}</b>
+                        <small>{l.tipo}{l.proximamente && <em>{C.integraciones.proximamente}</em>}</small>
+                    </span>
+                </li>
+            ))}
+        </ul>
+    </article>
+</section>
+
+<script>
+    // Entrada en cascada de la cartera (una vez). El HTML ya es el estado final:
+    // sin JS o con movimiento reducido, la pantalla se ve completa y quieta.
+    import { gsap } from 'gsap';
+    import { ScrollTrigger } from 'gsap/ScrollTrigger';
+    gsap.registerPlugin(ScrollTrigger);
+    const app = document.querySelector<HTMLElement>('[data-ifn-app]');
+    if (app && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        const parts = app.querySelectorAll<HTMLElement>('.ifn-card, [data-ifn-row]');
+        gsap.set(parts, { opacity: 0, y: 10 });
+        ScrollTrigger.create({
+            trigger: app, start: 'top 82%', once: true,
+            onEnter: () => gsap.to(parts, { opacity: 1, y: 0, duration: 0.55, ease: 'power2.out', stagger: 0.045, clearProps: 'transform' }),
+        });
+    }
+</script>
+
+<style>
+    .ifn {
+        max-width: 1360px;
+        margin: 0 auto;
+        padding: 7rem 5% 1rem;
+        overflow-x: clip;
+    }
+    .ifn-intro {
+        display: grid; grid-template-columns: 1.25fr 1fr;
+        gap: 3.5rem; align-items: end;
+        margin: 0 0 3.6rem;
+    }
+    .ifn-eyebrow, .ifn-k {
+        font-size: 0.6rem; font-weight: 800; letter-spacing: 2.8px;
+        text-transform: uppercase; color: #8a929e; margin: 0 0 0.9rem;
+    }
+    .ifn-h2 {
+        font-size: clamp(1.85rem, 2.9vw, 2.6rem);
+        font-weight: 800; letter-spacing: -0.035em; line-height: 1.1;
+        color: #050505; margin: 0; text-wrap: balance;
+    }
+    .ifn-sub {
+        font-size: 1.05rem; line-height: 1.6; color: var(--color-text-muted);
+        margin: 0; text-wrap: pretty;
+    }
+    .ifn-h3 {
+        font-size: clamp(1.35rem, 2vw, 1.75rem);
+        font-weight: 800; line-height: 1.14; letter-spacing: -0.035em;
+        color: #050505; margin: 0 0 0.9rem; text-wrap: balance;
+    }
+    .ifn-copy { font-size: 0.92rem; line-height: 1.68; color: var(--color-text-muted); margin: 0 0 1.4rem; text-wrap: pretty; }
+    .ifn-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+    .ifn-list li {
+        display: flex; align-items: flex-start; gap: 10px;
+        padding: 0.72rem 0; border-top: 1px solid rgba(10,25,47,0.07);
+        font-size: 0.86rem; line-height: 1.5; color: var(--color-text); font-weight: 500;
+    }
+    .ifn-list li:last-child { border-bottom: 1px solid rgba(10,25,47,0.07); }
+    .ifn-list svg { width: 17px; height: 17px; flex-shrink: 0; margin-top: 1px; color: #059669; }
+    .ifn-plan { font-size: 0.78rem; font-weight: 600; color: #8a929e; margin: 1.1rem 0 0; }
+
+    /* ── Cartera: texto arriba, la pantalla a todo el ancho ── */
+    .ifn-ar { margin: 0 0 6.5rem; }
+    .ifn-ar-head {
+        display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 3.5rem; align-items: end; margin: 0 0 2.4rem;
+    }
+    .ifn-ar-head .ifn-copy { margin-bottom: 0; }
+    .ifn-ar-head .ifn-plan { margin-top: 0.9rem; }
+
+    /* ── Filas texto + escenario ── */
+    .ifn-row {
+        display: grid; gap: 3.2rem; align-items: center;
+        margin: 0 0 6.5rem;
+    }
+    .ifn-row-rec { grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.9fr); }
+    .ifn-stage {
+        position: relative; overflow: hidden; isolation: isolate;
+        border-radius: 28px;
+        background:
+            radial-gradient(ellipse 70% 60% at 30% 0%, rgba(255,255,255,0.9), transparent 70%),
+            linear-gradient(180deg, #eef1f5 0%, #e7ebf1 100%);
+        box-shadow: inset 0 0 0 1px rgba(10,25,47,0.05);
+    }
+    .ifn-stage-ar { height: 790px; }
+    .ifn-stage-mail { height: 600px; }
+
+    /* ════ Calca de /app/cobranza (AppLayout + widgets) a escala de captura ════ */
+    .ifn-app {
+        --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        --tx: #0f1729; --mu: #5b6472; --bd: rgba(10,25,47,0.08); --soft: #fafbfc; --navy: #0a192f;
+        position: absolute; top: 44px; left: 56px;
+        width: 1060px;
+        display: flex; gap: 10px; padding: 10px;
+        font-family: var(--font-sans); -webkit-font-smoothing: antialiased; color: var(--tx); text-align: left;
+        background: #f5f5f7; border-radius: 20px;
+        box-shadow:
+            0 0 0 1px rgba(10,25,47,0.07),
+            0 2px 4px rgba(10,25,47,0.05),
+            0 24px 48px -20px rgba(10,25,47,0.28),
+            0 60px 110px -40px rgba(8,20,50,0.4);
+    }
+    .ifn-app svg { display: block; flex-shrink: 0; }
+    .ifn-rail {
+        flex: 0 0 48px; display: flex; flex-direction: column; align-items: center; gap: 3px;
+        padding: 10px 0 8px; background: #fff; border-radius: 15px;
+        box-shadow: 0 8px 24px -8px rgba(0,0,0,0.06), inset 0 0 0 1px rgba(10,25,47,0.04);
+    }
+    .ifn-rail-org {
+        width: 28px; height: 28px; border-radius: 9px; margin-bottom: 8px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 12px; font-weight: 700; color: #fff;
+        background: linear-gradient(135deg, #1b3a64, #0a192f);
+    }
+    .ifn-rail-i { position: relative; width: 32px; height: 30px; border-radius: 9px; display: flex; align-items: center; justify-content: center; color: var(--mu); }
+    .ifn-rail-i svg { width: 16px; height: 16px; opacity: 0.62; }
+    .ifn-rail-i.on { color: var(--navy); background: rgba(10,25,47,0.075); }
+    .ifn-rail-i.on svg { opacity: 1; }
+    .ifn-rail-dot { position: absolute; top: 5px; right: 6px; width: 6px; height: 6px; border-radius: 50%; background: #c2410c; box-shadow: 0 0 0 1.5px #fff; }
+    .ifn-rail-sep { width: 18px; height: 1px; margin: 4px 0; background: var(--bd); }
+    .ifn-rail-foot { margin-top: auto; }
+
+    .ifn-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+    .ifn-top {
+        display: flex; align-items: center; gap: 8px;
+        padding: 5px 6px 5px 8px; background: #fff; border-radius: 15px;
+        box-shadow: 0 8px 24px -8px rgba(0,0,0,0.06), inset 0 0 0 1px rgba(10,25,47,0.04);
+    }
+    .ifn-burger { display: none; }
+    .ifn-search {
+        flex: 0 1 250px; min-width: 0; display: flex; align-items: center; gap: 7px;
+        padding: 5px 6px 5px 10px; font-size: 11.5px; color: var(--mu);
+        background: var(--soft); border: 1px solid var(--bd); border-radius: 8px;
+    }
+    .ifn-search svg { width: 12px; height: 12px; color: #99a2af; }
+    .ifn-search span { flex: 1; white-space: nowrap; }
+    .ifn-search kbd { font: 700 9px/1 var(--font-sans); color: var(--mu); background: #fff; border: 1px solid var(--bd); border-radius: 5px; padding: 3px 5px; box-shadow: 0 1px 0 rgba(10,25,47,0.06); }
+    .ifn-top-r { margin-left: auto; display: flex; align-items: center; gap: 2px; }
+    .ifn-create {
+        display: inline-flex; align-items: center; gap: 5px; margin-right: 6px;
+        padding: 6px 8px 6px 8px; border-radius: 7px; background: var(--navy); color: #fff;
+        font-size: 11px; font-weight: 600; white-space: nowrap;
+        box-shadow: 0 6px 18px -8px rgba(10,25,47,0.5), inset 0 1px 0 rgba(255,255,255,0.12);
+    }
+    .ifn-create svg { width: 11px; height: 11px; }
+    .ifn-create .ifn-create-c { width: 9px; height: 9px; opacity: 0.7; }
+    .ifn-ti { position: relative; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; color: var(--mu); }
+    .ifn-ti svg { width: 13px; height: 13px; }
+    .ifn-ti-count {
+        position: absolute; top: 1px; right: 0; min-width: 12px; height: 12px; padding: 0 3px; border-radius: 6px;
+        display: inline-flex; align-items: center; justify-content: center;
+        font-size: 7.5px; font-weight: 700; line-height: 1; color: var(--navy);
+        background: #dde1e6; box-shadow: 0 0 0 1.5px #fff;
+    }
+
+    .ifn-ph { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; padding: 18px 16px 0; }
+    .ifn-ph-t { display: flex; align-items: center; gap: 6px; }
+    .ifn-ph-t b { font-size: 19px; font-weight: 700; letter-spacing: -0.45px; line-height: 1.1; }
+    .ifn-ph-t svg { width: 12px; height: 12px; color: #aab2bd; }
+    .ifn-ph-a { display: flex; align-items: center; gap: 6px; }
+    .ifn-chip-snap {
+        display: inline-flex; align-items: center; gap: 6px; min-height: 26px; padding: 0 10px;
+        border-radius: 999px; background: var(--soft); color: var(--mu); font-size: 9.5px; font-weight: 650; white-space: nowrap;
+    }
+    .ifn-chip-snap svg { width: 11px; height: 11px; }
+    .ifn-custom {
+        display: inline-flex; align-items: center; gap: 5px; height: 26px; padding: 0 10px 0 8px;
+        border-radius: 999px; background: #fff; border: 1px solid var(--bd); color: var(--tx);
+        font-size: 9.5px; font-weight: 600; white-space: nowrap; box-shadow: 0 1px 2px rgba(10,25,47,0.06);
+    }
+    .ifn-custom svg { width: 11px; height: 11px; color: var(--mu); }
+    .ifn-tabs {
+        display: inline-flex; align-self: flex-start; gap: 2px; margin: 12px 16px 14px; padding: 2px;
+        border-radius: 9px; background: rgba(10,25,47,0.065);
+        box-shadow: inset 0 1px 1px rgba(10,25,47,0.06);
+    }
+    .ifn-tabs span { display: inline-flex; align-items: center; height: 22px; padding: 0 9px; border-radius: 7px; font-size: 9.5px; font-weight: 600; color: var(--mu); white-space: nowrap; }
+    .ifn-tabs span.on { color: var(--tx); font-weight: 650; background: #fff; box-shadow: 0 1px 2px rgba(10,25,47,0.13), 0 1px 5px rgba(10,25,47,0.05); }
+
+    .ifn-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 11px; padding: 0 16px 16px; }
+    .ifn-card {
+        min-width: 0; background: #fff; border-radius: 14px; padding: 12px 14px;
+        box-shadow: 0 1px 2px rgba(10,25,47,0.03), 0 22px 48px -26px rgba(10,25,47,0.16), inset 0 1px 0 rgba(255,255,255,0.6);
+    }
+    .ifn-span2 { grid-column: span 2; }
+    .ifn-span4 { grid-column: span 4; }
+    .ifn-kpi { display: flex; flex-direction: column; gap: 4px; }
+    .ifn-kl { font-size: 7.5px; font-weight: 800; letter-spacing: 0.9px; text-transform: uppercase; color: var(--mu); opacity: 0.75; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ifn-kpi b { font-size: 21px; line-height: 1; letter-spacing: -0.02em; color: var(--navy); font-weight: 600; }
+    .ifn-kpi b.is-danger { color: #ef4444; }
+    .ifn-kpi b.is-warn { color: #f59e0b; }
+    .ifn-kpi small { font-size: 8.5px; line-height: 1.45; color: var(--mu); }
+
+    .ifn-sh {
+        display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+        margin-bottom: 9px; padding-bottom: 8px; border-bottom: 1px solid var(--bd);
+    }
+    .ifn-sh > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .ifn-sh b { font-size: 11px; font-weight: 600; letter-spacing: -0.01em; }
+    .ifn-sh span { font-size: 8.5px; line-height: 1.45; color: var(--mu); }
+    .ifn-sh strong { font-size: 18px; line-height: 1; color: var(--navy); font-weight: 600; letter-spacing: -0.02em; white-space: nowrap; }
+    .ifn-seg { display: flex; gap: 2px; height: 9px; border-radius: 100px; overflow: hidden; background: rgba(10,25,47,0.05); }
+    .ifn-seg i { display: block; min-width: 0; }
+    .ifn-seg-l { display: flex; flex-direction: column; gap: 1px; margin-top: 8px; }
+    .ifn-seg-l div { display: flex; align-items: center; gap: 7px; min-height: 19px; font-size: 9.5px; }
+    .ifn-seg-l i { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+    .ifn-seg-l span { flex: 1; color: var(--tx); }
+    .ifn-seg-l b { color: var(--navy); font-weight: 600; }
+
+    .ifn-mini > div { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 6px 0; border-top: 1px solid var(--bd); }
+    .ifn-mini > div:first-child { border-top: 0; padding-top: 0; }
+    .ifn-mini span { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+    .ifn-mini strong { font-size: 9.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ifn-mini small { font-size: 8px; color: var(--mu); white-space: nowrap; }
+    .ifn-mini .ifn-mini-r { flex-direction: row; align-items: center; gap: 7px; flex-shrink: 0; }
+    .ifn-mini-r b { font-size: 9.5px; font-weight: 600; white-space: nowrap; }
+
+    .ifn-wa, .ifn-prom {
+        display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+        width: 20px; height: 20px; border-radius: 6px;
+    }
+    .ifn-wa { color: #0b7a4b; background: rgba(37,211,102,0.1); box-shadow: inset 0 0 0 1px rgba(37,211,102,0.28); }
+    .ifn-prom { color: var(--mu); background: var(--soft); box-shadow: inset 0 0 0 1px var(--bd); }
+    .ifn-prom.has { color: #7c5cff; background: rgba(124,92,255,0.1); box-shadow: inset 0 0 0 1px rgba(124,92,255,0.3); }
+    .ifn-wa svg, .ifn-prom svg { width: 11px; height: 11px; }
+
+    .ifn-tcard { padding-bottom: 6px; }
+    .ifn-sh-tbl { align-items: center; }
+    .ifn-chips { flex-direction: row !important; gap: 4px !important; flex-wrap: nowrap; }
+    .ifn-chips span { font-size: 8.5px; font-weight: 650; color: var(--mu); background: var(--soft); border-radius: 999px; padding: 4px 8px; white-space: nowrap; }
+    .ifn-chips span.on { background: var(--navy); color: #fff; }
+    .ifn-th, .ifn-tr {
+        display: grid; grid-template-columns: 1.6fr 0.8fr 0.7fr 0.9fr 1fr 0.9fr 1fr;
+        gap: 10px; align-items: center; padding: 7px 6px;
+    }
+    .ifn-th { font-size: 7.5px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--mu); border-bottom: 1px solid var(--bd); padding-top: 0; }
+    .ifn-tr { border-bottom: 1px solid var(--bd); }
+    .ifn-tr:last-child { border-bottom: 0; }
+    .r { text-align: right; justify-self: end; }
+    .ifn-cl { display: flex; align-items: center; gap: 7px; min-width: 0; font-size: 10px; font-weight: 600; white-space: nowrap; }
+    .ifn-cl i { width: 21px; height: 21px; border-radius: 6px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-style: normal; font-size: 7px; font-weight: 800; color: #fff; background: var(--navy); }
+    .ifn-cl span { overflow: hidden; text-overflow: ellipsis; }
+    .ifn-fo { font-size: 9.5px; font-weight: 700; color: var(--navy); white-space: nowrap; }
+    .ifn-mu { font-size: 9.5px; color: var(--mu); white-space: nowrap; }
+    .ifn-est { display: inline-flex; flex-wrap: wrap; gap: 3px; align-items: center; }
+    .ifn-est em { display: inline-flex; align-items: center; gap: 3px; font-style: normal; font-size: 8px; font-weight: 700; padding: 3px 7px; border-radius: 100px; white-space: nowrap; }
+    .ifn-est em.over { color: #ef4444; background: rgba(239,68,68,0.1); }
+    .ifn-est em.due { color: #2563eb; background: rgba(59,130,246,0.1); }
+    .ifn-est em.prom { color: #7c5cff; background: rgba(124,92,255,0.1); }
+    .ifn-est em.prom svg { width: 8px; height: 8px; }
+    .ifn-amt { font-size: 11px; color: var(--navy); white-space: nowrap; }
+    .ifn-acts { display: flex; gap: 4px; align-items: center; justify-content: flex-end; }
+    .ifn-paid { font-size: 8.5px; font-weight: 600; color: #fff; background: #10b981; border-radius: 6px; padding: 5px 8px; white-space: nowrap; }
+    .ifn-paid.inv { background: var(--navy); }
+
+    /* ════ Correo de recordatorio (invoiceEmailHtml + brandEmailShell, perfil por defecto) ════ */
+    .ifn-mail {
+        position: absolute; width: 410px;
+        background: #fff; border-radius: 18px; overflow: hidden; text-align: left;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #111827;
+        box-shadow: 0 0 0 1px rgba(10,25,47,0.06), 0 2px 4px rgba(10,25,47,0.04), 0 30px 60px -24px rgba(10,25,47,0.28);
+    }
+    .ifn-mail-porvencer { top: 34px; left: 34px; transform: scale(0.94); transform-origin: top left; opacity: 0.75; }
+    .ifn-mail-vencida { top: 118px; left: 130px; }
+    .ifn-mail-h { display: flex; align-items: center; gap: 9px; padding: 12px 16px 6px; }
+    .ifn-mail-av { width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #fff; background: #0a192f; }
+    .ifn-mail-from { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+    .ifn-mail-from b { font-size: 11.5px; font-weight: 650; }
+    .ifn-mail-from small { font-size: 9.5px; color: #6b7280; }
+    .ifn-mail-h time { font-size: 9.5px; color: #9ca3af; white-space: nowrap; }
+    .ifn-mail-subj { margin: 0; padding: 2px 16px 11px; font-size: 12.5px; font-weight: 650; letter-spacing: -0.01em; border-bottom: 1px solid #f0f0f2; }
+    .ifn-mail-bg { background: #f5f5f7; padding: 12px 10px 14px; }
+    .ifn-mail-card { background: #fff; border-radius: 20px; padding: 22px 22px 18px; }
+    .ifn-mail-brand { padding: 0 0 12px; margin-bottom: 16px; border-bottom: 2px solid #0a192f; }
+    .ifn-mail-brand strong { font-size: 13.5px; line-height: 1.3; }
+    .ifn-mail-hi { font-size: 11px; font-weight: 500; margin: 0 0 6px; }
+    .ifn-mail-body { font-size: 11px; line-height: 1.6; color: #374151; margin: 0 0 14px; }
+    .ifn-mail-body :global(strong) { color: #111827; }
+    .ifn-mail-tbl { border-top: 1px solid #f3f4f6; border-bottom: 1px solid #f3f4f6; padding: 5px 0; margin: 0 0 16px; }
+    .ifn-mail-tbl div { display: flex; justify-content: space-between; gap: 10px; padding: 4px 0; font-size: 10px; }
+    .ifn-mail-tbl div span:first-child { color: #6b7280; }
+    .ifn-mail-tbl div.s span { font-size: 10.5px; font-weight: 600; color: #111827; }
+    .ifn-mail-btn { display: inline-block; background: #0a192f; color: #fff; font-size: 10.5px; font-weight: 600; padding: 9px 16px; border-radius: 16px; }
+    .ifn-mail-copy { margin: 14px 0 0; font-size: 9.5px; line-height: 1.5; color: #6b7280; word-break: break-all; }
+    .ifn-mail-copy u { color: #2563eb; text-decoration: none; }
+    .ifn-mail-foot { margin: 16px 0 0; padding-top: 12px; border-top: 1px solid #e5e7eb; font-size: 8.5px; color: #6b7280; }
+
+    /* ════ Conciliación ════ */
+    .ifn-conc { margin: 0 0 6.5rem; }
+    .ifn-conc-head { display: grid; grid-template-columns: 1.25fr 1fr; gap: 3.5rem; align-items: end; margin: 0 0 2rem; }
+    .ifn-conc-head .ifn-copy { margin: 0; }
+    .ifn-ct { border-top: 1px solid rgba(10,25,47,0.1); }
+    .ifn-ct-h, .ifn-ct-r {
+        display: grid; grid-template-columns: minmax(0, 2.2fr) minmax(0, 0.8fr) minmax(0, 0.9fr);
+        gap: 1.5rem; align-items: center; padding: 1.15rem 0.4rem;
+        border-bottom: 1px solid rgba(10,25,47,0.07);
+    }
+    .ifn-ct-h { padding-top: 0.9rem; padding-bottom: 0.9rem; font-size: 0.6rem; font-weight: 800; letter-spacing: 1.6px; text-transform: uppercase; color: #8a929e; }
+    .ifn-ct-task { display: flex; flex-direction: column; gap: 4px; }
+    .ifn-ct-task b { font-size: 0.98rem; font-weight: 700; letter-spacing: -0.015em; color: #050505; }
+    .ifn-ct-task small { font-size: 0.84rem; line-height: 1.5; color: var(--color-text-muted); }
+    .ifn-st {
+        display: inline-flex; align-items: center; gap: 6px; font-style: normal;
+        font-size: 0.78rem; font-weight: 650; padding: 5px 11px 5px 9px; border-radius: 999px; white-space: nowrap;
+    }
+    .ifn-st svg { width: 15px; height: 15px; }
+    .ifn-st-manual { color: #64748b; background: rgba(100,116,139,0.09); padding-left: 11px; }
+    .ifn-st-auto { color: #047857; background: rgba(16,185,129,0.12); }
+    .ifn-st-click { color: #0a192f; background: rgba(10,25,47,0.07); }
+    .ifn-st-soon { color: #b45309; background: rgba(245,158,11,0.12); }
+
+    /* ════ Integraciones ════ */
+    .ifn-int { display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.55fr); gap: 3.2rem; align-items: start; padding-bottom: 2rem; }
+    .ifn-link {
+        display: inline-flex; align-items: center; gap: 8px; margin-top: 0.4rem;
+        font-size: 0.9rem; font-weight: 650; color: var(--color-blue-deep); text-decoration: none;
+    }
+    .ifn-link svg { width: 15px; height: 15px; transition: transform 0.4s var(--ease-spring); }
+    .ifn-link:hover svg { transform: translateX(4px); }
+    .ifn-logos { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 2rem; }
+    .ifn-logos li {
+        display: flex; align-items: center; gap: 12px; min-width: 0;
+        padding: 1rem 0.2rem; border-bottom: 1px solid rgba(10,25,47,0.07);
+    }
+    .ifn-logos img { width: 28px; height: 28px; border-radius: 7px; flex-shrink: 0; box-shadow: 0 0 0 1px rgba(10,25,47,0.06); background: #fff; }
+    .ifn-logos span { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; }
+    .ifn-logos b { font-size: 0.9rem; font-weight: 650; color: #0a192f; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ifn-logos small { display: flex; align-items: center; gap: 6px; font-size: 0.76rem; color: #8a929e; }
+    .ifn-logos li.soon img { filter: grayscale(1); opacity: 0.7; }
+    .ifn-logos em {
+        flex-shrink: 0; font-style: normal; font-size: 0.52rem; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase;
+        color: #b45309; background: rgba(245,158,11,0.12); border-radius: 999px; padding: 2px 7px;
+    }
+
+    /* A partir de 1360 px la pantalla gana escala para no verse diminuta en el ancho completo. */
+    @media (min-width: 1360px) {
+        .ifn-app { zoom: 1.12; }
+    }
+    @media (max-width: 1180px) {
+        .ifn-row-rec, .ifn-int { grid-template-columns: 1fr; gap: 2.2rem; }
+        .ifn-row-rec .ifn-stage { order: 2; }
+        .ifn-logos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 880px) {
+        .ifn { padding-top: 4.5rem; }
+        .ifn-intro, .ifn-conc-head, .ifn-ar-head { grid-template-columns: 1fr; gap: 1.1rem; }
+        .ifn-ar-head { gap: 1.6rem; margin-bottom: 1.8rem; }
+        .ifn-row, .ifn-conc, .ifn-ar { margin-bottom: 4.5rem; }
+        .ifn-ct-h { display: none; }
+        .ifn-ct-r { grid-template-columns: auto auto 1fr; gap: 0.7rem 0.6rem; padding: 1.1rem 0; }
+        .ifn-ct-task { grid-column: 1 / -1; }
+        .ifn-ct-sin::after { content: '→'; margin-left: 0.6rem; color: #b0b6bf; }
+    }
+    /* Móvil: la calca adopta la forma que la página real toma bajo 880 px
+       (sin sidebar, topbar compacta, una columna y filas en tarjeta). */
+    @media (max-width: 760px) {
+        .ifn-stage-ar { height: 600px; }
+        .ifn-app { top: 20px; left: 16px; width: calc(100% + 8px); padding: 8px; border-radius: 16px; }
+        .ifn-rail, .ifn-search span, .ifn-search kbd, .ifn-ti-x { display: none; }
+        .ifn-burger { display: flex; width: 26px; height: 26px; align-items: center; justify-content: center; color: var(--mu); }
+        .ifn-burger svg { width: 15px; height: 15px; }
+        .ifn-search { flex: 0 0 auto; padding: 6px; }
+        .ifn-search svg { width: 13px; height: 13px; }
+        .ifn-ph { flex-direction: column; align-items: flex-start; gap: 10px; padding: 16px 10px 0; }
+        .ifn-custom { display: none; }
+        .ifn-tabs { margin: 12px 10px; }
+        .ifn-grid { grid-template-columns: 1fr; padding: 0 10px 10px; gap: 10px; }
+        .ifn-span2, .ifn-span4 { grid-column: 1 / -1; }
+        .ifn-m-hide { display: none; }
+        .ifn-kpi b { font-size: 24px; }
+        .ifn-kl { font-size: 8.5px; }
+        .ifn-kpi small { font-size: 10px; }
+        .ifn-sh-tbl { flex-direction: column; align-items: flex-start; }
+        .ifn-th { display: none; }
+        .ifn-tr {
+            grid-template-columns: minmax(0, 1fr) auto;
+            grid-template-areas: "client balance" "folio status" "terms due" "actions actions";
+            gap: 6px 8px; padding: 10px 0;
+        }
+        .ifn-cl { grid-area: client; font-size: 11.5px; }
+        .ifn-fo { grid-area: folio; font-size: 11px; }
+        .ifn-terms { grid-area: terms; font-size: 10.5px; }
+        .ifn-due { grid-area: due; justify-self: end; font-size: 10.5px; }
+        .ifn-est { grid-area: status; justify-self: end; }
+        .ifn-est em { font-size: 9.5px; }
+        .ifn-amt { grid-area: balance; font-size: 13px; }
+        .ifn-acts { grid-area: actions; justify-content: stretch; }
+        .ifn-paid { flex: 1; text-align: center; font-size: 10.5px; padding: 8px; }
+        .ifn-wa, .ifn-prom { width: 30px; height: 30px; }
+        .ifn-stage-mail { height: 560px; }
+        .ifn-mail { width: calc(100% - 40px); }
+        .ifn-mail-porvencer { top: 20px; left: 20px; }
+        .ifn-mail-vencida { top: 96px; left: 32px; }
+        .ifn-logos { grid-template-columns: 1fr; }
+    }
+</style>

@@ -1,0 +1,253 @@
+---
+// /producto/facturacion — "Para desarrolladores" (A9).
+//
+// El ejemplo de código usa el SDK real (@flouviahq/node, packages/node/src/
+// resources.ts: invoices.create / finalize / send y clients.list con `email`)
+// y se verificó con tsc contra esos tipos antes de publicarlo. La llave sale de
+// una variable de entorno, nunca de un placeholder con forma de llave (regla 15).
+// Los nueve eventos son los de factura de src/lib/webhooks.ts. El resaltado se
+// hace aquí en el build con <span>, con la paleta de los bloques oscuros de
+// src/components/desarrolladores/DevMock.astro; no hay librería de resaltado.
+import { iconInner } from '../../lib/icons';
+import { facturacionDev } from '../../lib/producto-facturacion-finanzas';
+
+interface Props { isEn?: boolean }
+const { isEn = false } = Astro.props;
+const L = isEn ? 'en' : 'es';
+const C = facturacionDev(L);
+
+const CODE = isEn ? `import { Cord } from '@flouviahq/node';
+
+const cord = new Cord(process.env.CORD_SECRET_KEY!);
+
+// The client, by email
+const { data: [cliente] } = await cord.clients.list({ email: 'raul@elzarco.mx' });
+
+// 1. Draft: uses no number and no stamp
+const { id } = await cord.invoices.create({
+  cliente_id: String(cliente.id),
+  currency: 'MXN',
+  due_date: '2026-11-14',
+  items: [
+    { descripcion: 'Grey cement 50kg', cantidad: 120,
+      precio_unitario: 182, tax_rate: 0.16 },
+    { descripcion: 'Rebar 3/8"', cantidad: 340,
+      precio_unitario: 168.5, tax_rate: 0.16 },
+  ],
+});
+
+// 2. Issue: the next number in your series
+const { numero } = await cord.invoices.finalize(id);
+
+// 3. Send: PDF attached and payment link
+await cord.invoices.send(id);` : `import { Cord } from '@flouviahq/node';
+
+const cord = new Cord(process.env.CORD_SECRET_KEY!);
+
+// El cliente, por su correo
+const { data: [cliente] } = await cord.clients.list({ email: 'raul@elzarco.mx' });
+
+// 1. Borrador: no gasta folio ni timbre
+const { id } = await cord.invoices.create({
+  cliente_id: String(cliente.id),
+  currency: 'MXN',
+  due_date: '2026-11-14',
+  items: [
+    { descripcion: 'Cemento gris 50kg', cantidad: 120,
+      precio_unitario: 182, tax_rate: 0.16 },
+    { descripcion: 'Varilla corrugada 3/8"', cantidad: 340,
+      precio_unitario: 168.5, tax_rate: 0.16 },
+  ],
+});
+
+// 2. Emitir: el siguiente folio de tu serie
+const { numero } = await cord.invoices.finalize(id);
+
+// 3. Enviar: PDF adjunto y link de pago
+await cord.invoices.send(id);`;
+
+const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const TOKEN = /('(?:[^'\\]|\\.)*')|\b(import|from|const|await|new)\b|\b(\d+(?:\.\d+)?)\b|([A-Za-z_]\w*)(?=\s*:(?!:))|(?<=\.)(\w+)(?=\()|\b(Cord|String)\b/g;
+const CLASS = ['', 'idv-tks', 'idv-tkk', 'idv-tkn', 'idv-tkp', 'idv-tkf', 'idv-tkt'];
+function hlLine(line: string): string {
+    const ci = line.indexOf('//');
+    const code = ci >= 0 ? line.slice(0, ci) : line;
+    let out = '';
+    let last = 0;
+    for (const m of code.matchAll(TOKEN)) {
+        const idx = m.index ?? 0;
+        out += esc(code.slice(last, idx));
+        const group = m.findIndex((g, i) => i > 0 && g !== undefined);
+        out += `<span class="${CLASS[group]}">${esc(m[0])}</span>`;
+        last = idx + m[0].length;
+    }
+    out += esc(code.slice(last));
+    if (ci >= 0) out += `<span class="idv-tkc">${esc(line.slice(ci))}</span>`;
+    return out;
+}
+const LINES = CODE.split('\n').map(hlLine);
+---
+
+<section class="idv" aria-labelledby="idv-title">
+    <header class="idv-intro">
+        <div>
+            <p class="idv-eyebrow">{C.eyebrow}</p>
+            <h2 id="idv-title" class="idv-h2 masked-title">{C.titulo}</h2>
+        </div>
+        <p class="idv-sub reveal">{C.sub}</p>
+    </header>
+
+    <div class="idv-row">
+        <div class="idv-code reveal">
+            <div class="idv-code-bar">
+                <code>{C.codigoTitulo}</code>
+                <span class="idv-pill">@flouviahq/node</span>
+            </div>
+            <div class="idv-code-body" tabindex="0" aria-label={C.codigoTitulo}>
+                <pre><code>{LINES.map((l, i) => <span class="idv-ln" data-n={i + 1} set:html={l || ' '} />)}</code></pre>
+            </div>
+            <div class="idv-code-foot"><code>{C.codigoPie}</code></div>
+        </div>
+
+        <div class="idv-side">
+            <p class="idv-k">{C.sdksTitulo}</p>
+            <ul class="idv-sdks">
+                {C.sdks.map((s) => (
+                    <li class:list={['reveal', { soon: s.proximamente }]}>
+                        <span class="idv-sdk-n"><b>{s.nombre}</b>{s.proximamente && <em>{C.proximamente}</em>}</span>
+                        <code>{s.paquete}</code>
+                        <small>{s.texto}</small>
+                    </li>
+                ))}
+            </ul>
+        </div>
+    </div>
+
+    <div class="idv-hooks">
+        <div class="idv-hooks-text">
+            <p class="idv-k">{C.eventosTitulo}</p>
+            <p class="idv-copy reveal">{C.eventosCopy}</p>
+            <div class="idv-links reveal">
+                {C.links.map((l) => (
+                    <a href={l.href}>
+                        {l.label}
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-right')} />
+                    </a>
+                ))}
+            </div>
+        </div>
+        <ul class="idv-events">
+            {C.eventos.map((e) => (
+                <li class="reveal"><code>{e.nombre}</code><span>{e.texto}</span></li>
+            ))}
+        </ul>
+    </div>
+</section>
+
+<style>
+    .idv {
+        max-width: 1360px;
+        margin: 0 auto;
+        padding: 6rem 5% 3rem;
+        overflow-x: clip;
+    }
+    .idv-intro { display: grid; grid-template-columns: 1.25fr 1fr; gap: 3.5rem; align-items: end; margin: 0 0 3rem; }
+    .idv-eyebrow, .idv-k {
+        font-size: 0.6rem; font-weight: 800; letter-spacing: 2.8px;
+        text-transform: uppercase; color: #8a929e; margin: 0 0 0.9rem;
+    }
+    .idv-h2 {
+        font-size: clamp(1.85rem, 2.9vw, 2.6rem);
+        font-weight: 800; letter-spacing: -0.035em; line-height: 1.1;
+        color: #050505; margin: 0; text-wrap: balance;
+    }
+    .idv-sub { font-size: 1.05rem; line-height: 1.6; color: var(--color-text-muted); margin: 0; text-wrap: pretty; }
+    .idv-copy { font-size: 0.92rem; line-height: 1.68; color: var(--color-text-muted); margin: 0 0 1.2rem; }
+    code, pre { font-family: ui-monospace, 'SF Mono', Menlo, monospace; }
+
+    .idv-row { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 3rem; align-items: start; margin: 0 0 5rem; }
+
+    /* Ventana de código: misma piel que .dm-code.dm-dark de DevMock */
+    .idv-code {
+        min-width: 0; border-radius: 18px; overflow: hidden; text-align: left;
+        background: #0a1524; color: #e8eef8;
+        box-shadow: 0 0 0 1px rgba(255,255,255,0.08), 0 2px 6px rgba(10,25,47,0.12), 0 40px 80px -30px rgba(10,25,47,0.55);
+    }
+    .idv-code-bar {
+        display: flex; justify-content: space-between; align-items: center; gap: 12px;
+        padding: 13px 18px; background: #0d1c30; border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .idv-code-bar code { font-size: 0.74rem; font-weight: 600; color: #e8eef8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .idv-pill {
+        flex-shrink: 0; font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.62rem; font-weight: 700;
+        padding: 3px 9px; border-radius: 99px;
+        color: #a5b4fc; background: rgba(129,140,248,0.14); border: 1px solid rgba(129,140,248,0.28);
+    }
+    .idv-code-body {
+        padding: 1.1rem 0 1.2rem; overflow-x: auto; overscroll-behavior-inline: contain;
+        scrollbar-width: none;
+    }
+    .idv-code-body::-webkit-scrollbar { display: none; }
+    .idv-code-body:focus-visible { outline: 2px solid rgba(165,180,252,0.6); outline-offset: -2px; }
+    .idv-code-body pre { margin: 0; }
+    .idv-code-body pre code { display: block; width: max-content; min-width: 100%; font-size: 0.76rem; line-height: 1.75; color: #c9d4e4; }
+    .idv-ln { display: block; padding: 0 1.4rem 0 0; white-space: pre; }
+    .idv-ln::before {
+        content: attr(data-n); display: inline-block; width: 2.6rem; padding-right: 1rem; text-align: right;
+        color: #3b4a60; user-select: none;
+    }
+    .idv-code-body :global(.idv-tkk) { color: #c4b5fd; }
+    .idv-code-body :global(.idv-tks) { color: #7dd3c0; }
+    .idv-code-body :global(.idv-tkn) { color: #f5b041; }
+    .idv-code-body :global(.idv-tkp) { color: #8fb3f5; }
+    .idv-code-body :global(.idv-tkf) { color: #ffffff; font-weight: 600; }
+    .idv-code-body :global(.idv-tkt) { color: #fde68a; }
+    .idv-code-body :global(.idv-tkc) { color: #7c8aa0; }
+    .idv-code-foot { padding: 0.8rem 1.4rem; border-top: 1px solid rgba(255,255,255,0.08); }
+    .idv-code-foot code { font-size: 0.66rem; color: #64748b; }
+
+    .idv-side { min-width: 0; }
+    .idv-sdks { list-style: none; margin: 0; padding: 0; }
+    .idv-sdks li {
+        display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: 0.25rem 1.2rem;
+        padding: 0.95rem 0; border-top: 1px solid rgba(10,25,47,0.07);
+    }
+    .idv-sdks li:last-child { border-bottom: 1px solid rgba(10,25,47,0.07); }
+    .idv-sdk-n { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .idv-sdk-n b { font-size: 0.95rem; font-weight: 700; color: #050505; letter-spacing: -0.015em; }
+    .idv-sdk-n em {
+        font-style: normal; font-size: 0.54rem; font-weight: 800; letter-spacing: 0.7px; text-transform: uppercase;
+        color: #b45309; background: rgba(245,158,11,0.12); border-radius: 999px; padding: 3px 7px;
+    }
+    .idv-sdks code { font-size: 0.74rem; color: #0a192f; align-self: center; overflow-wrap: anywhere; }
+    .idv-sdks small { grid-column: 1 / -1; font-size: 0.84rem; line-height: 1.5; color: var(--color-text-muted); }
+    .idv-sdks li.soon code { color: #8a929e; }
+
+    .idv-hooks { display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.5fr); gap: 3rem; align-items: start; }
+    .idv-links { display: flex; flex-direction: column; align-items: flex-start; gap: 0.7rem; }
+    .idv-links a {
+        display: inline-flex; align-items: center; gap: 8px;
+        font-size: 0.9rem; font-weight: 650; color: var(--color-blue-deep); text-decoration: none;
+    }
+    .idv-links svg { width: 15px; height: 15px; transition: transform 0.4s var(--ease-spring); }
+    .idv-links a:hover svg { transform: translateX(4px); }
+    .idv-events { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 1.6rem; }
+    .idv-events li { display: flex; flex-direction: column; gap: 4px; padding: 0.95rem 0; border-top: 1px solid rgba(10,25,47,0.07); min-width: 0; }
+    .idv-events code { font-size: 0.78rem; font-weight: 600; color: #0a192f; overflow-wrap: anywhere; }
+    .idv-events span { font-size: 0.82rem; color: var(--color-text-muted); }
+
+    @media (max-width: 1100px) {
+        .idv-row, .idv-hooks { grid-template-columns: 1fr; gap: 2.4rem; }
+    }
+    @media (max-width: 880px) {
+        .idv { padding-top: 4.5rem; }
+        .idv-intro { grid-template-columns: 1fr; gap: 1.1rem; }
+        .idv-row { margin-bottom: 3.5rem; }
+        .idv-events { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 520px) {
+        .idv-events { grid-template-columns: 1fr; }
+        .idv-sdks li { grid-template-columns: 1fr; }
+        .idv-code-body pre code { font-size: 0.7rem; }
+    }
+</style>
