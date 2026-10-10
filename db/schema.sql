@@ -6468,6 +6468,23 @@ do $$ begin
 end $$;
 -- END cobros-portal
 
+-- ── SPEI con CLABE en facturas (oct 2026) ───────────────────────────────────
+-- Espejo de db/deploy/2026-10-10-spei-facturas.sql, que corre en cada build.
+--
+-- La CLABE de SPEI es del Customer del proveedor, no del pago. Cada factura
+-- tiene el SUYO en la cuenta conectada del negocio, así que todo lo que llegue
+-- a esa CLABE solo puede fondear un pago de ESA factura (src/lib/cobros/spei.ts).
+-- Se guarda en cuanto se crea, antes del primer pago: la CLABE es la misma en
+-- cada visita y en cada abono, y la clave de idempotencia del proveedor (que
+-- vence a las 24 horas) no basta para sostenerla. El índice único impide que
+-- dos facturas compartan CLABE y resuelve la factura desde el saldo del cliente
+-- (`cash_balance.funds_available`).
+alter table documentos_fiscales add column if not exists stripe_spei_customer_id text;
+
+create unique index if not exists uq_documentos_fiscales_spei_customer
+  on documentos_fiscales(org_id, stripe_spei_customer_id) where stripe_spei_customer_id is not null;
+-- END spei-facturas
+
 -- ── Descuentos de documento y cupones (oct 2026) ────────────────────────────
 -- Un descuento sobre la venta completa (porcentaje o monto), antes de
 -- impuestos y repartido entre las líneas en proporción a su importe bruto
