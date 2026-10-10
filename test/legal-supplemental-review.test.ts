@@ -76,9 +76,9 @@ describe('phase 5 supplemental proposals', () => {
       const { body } = read(locale, 'invoicing-terms');
       expect(body).toContain('authority_submission');
       expect(body).toContain('REP');
-      expect(body).toContain(locale === 'es-MX' ? 'procesamiento programado diario' : 'daily scheduled processing');
-      expect(body).toContain(locale === 'es-MX' ? 'todas las tasas y retenciones' : 'all configured line-item tax rates and withholdings');
-      expect(body).toContain(locale === 'es-MX' ? 'folio sustituto' : 'replacement UUID');
+      expect(body).toContain(locale === 'es-MX' ? 'por tandas cada hora' : 'in batches every hour');
+      expect(body).toContain(locale === 'es-MX' ? 'las retenciones de IVA e ISR' : 'VAT and income-tax withholdings');
+      expect(body).toContain(locale === 'es-MX' ? 'folio fiscal del sustituto' : "the replacement's tax folio");
     }
   });
 
