@@ -48,6 +48,14 @@ describe('detalle de la actividad de una factura', () => {
             .toBe('Payment of $100.00 MXN received on an invoice that was already replaced: apply it to the replacement or refund it');
     });
 
+    it('traduce el complemento de pago de México', () => {
+        expect(invoiceEventDetail('payment', 'Complemento de pago emitido (9F1C-UUID)', 'en')).toBe('Payment complement issued (9F1C-UUID)');
+        expect(invoiceEventDetail('payment', 'Complemento de pago emitido', 'en')).toBe('Payment complement issued');
+        expect(invoiceEventDetail('payment', 'Complemento de pago pendiente: reintenta desde la factura', 'en')).toBe('Payment complement pending: retry from the invoice');
+        expect(invoiceEventDetail('payment', 'Complemento de pago no automático: pago en efectivo', 'en')).toBe('Payment complement not issued automatically: pago en efectivo');
+        expect(invoiceEventDetail('payment', 'Complemento de pago emitido (9F1C-UUID)', 'es')).toBe('Complemento de pago emitido (9F1C-UUID)');
+    });
+
     it('deja pasar tal cual un detalle que no reconoce', () => {
         expect(invoiceEventDetail('uncollectible', 'Cliente en quiebra', 'en')).toBe('Cliente en quiebra');
         expect(invoiceEventDetail('sent', '', 'en')).toBe('');
