@@ -1,7 +1,7 @@
 ---
 docId: retention-policy
-version: "2026-09-01"
-effectiveDate: "2026-09-01"
+version: "2026-10-10"
+effectiveDate: "2026-10-10"
 supersedes: null
 locale: en-US
 jurisdiction: GLOBAL
@@ -15,11 +15,11 @@ editorialStage: technical-draft
 sourceOfTruth: src/content/legal/en-US/retention-policy.md
 artifactRoute: /en/legal/retention-policy
 artifactSha256: "0000000000000000000000000000000000000000000000000000000000000000"
-lastReviewed: "2026-09-01"
+lastReviewed: "2026-10-10"
 reviewedBy: Technical drafting; external legal review pending
 dependsOn: ["privacy"]
 sourceSections: ["privacy@2026-09-28#seguridad", "privacy@2026-09-28#portabilidad"]
-releaseBlockers: ["record-level-schedule", "kyc-deletion-conflict", "durable-deletion-evidence", "provider-retention", "backup-rotation", "legal-acceptance-period", "complete-export", "legal-review", "versioned-publication"]
+releaseBlockers: ["record-level-schedule", "kyc-deletion-conflict", "durable-deletion-evidence", "provider-retention", "backup-rotation", "legal-acceptance-period", "complete-export", "fiscal-retention-after-closure", "legal-review", "versioned-publication"]
 ---
 
 # Retention, export, and deletion
@@ -56,6 +56,11 @@ organization deletion does not produce the same outcome in every layer.
 | API idempotency keys | Expire after 24 hours, but are deleted only when the same key is reused |
 | Cookie preference | 6 months; language, organization, sandbox, and public visitor, up to 1 year |
 | Health samples | Public view queries at most 90 days; no equivalent purge exists in code |
+| Customer portal link | Valid until the business rotates or turns it off |
+| Tax authority access ticket | Encrypted; renewed on expiry (ARCA: 12 hours) and deleted when the credential is removed |
+| Tax credentials | Until the business replaces or deletes them; an expired certificate is not deleted automatically; a CAF with used folios cannot be removed |
+| US sales tax calculation | The provider expires it after 90 days; the Cord row, with the customer's address, has no purge |
+| Registration with the French approved platform | An uncertain one with no trace is discarded after 2 hours; others have no purge |
 
 A query window is not retention. These are observed technical behaviors; legal
 basis and sufficiency must be validated by data type and market.
@@ -67,6 +72,13 @@ billing, provider files, and most operational records live while the organizatio
 exists or until a specific action. There is no general age-based sweeper. The same
 applies to the domain event log (`domain_events`), Cord Workflows runs, and links
 between Cord and HubSpot records: they do not yet have their own period.
+
+Nor do these have a period: automatic-payment authorization evidence (a new
+authorization replaces the previous one, which is not kept), the record of who
+turned it off, coupon redemptions (they survive document deletion), documents
+received from suppliers in Chile and the responses sent, transmissions and
+statuses of the French approved platform, messages for the AEAT's public
+solution, and attempts before Latin American authorities.
 
 `legal_acceptances` stores a pseudonymous person identifier, organization,
 document, version, hash, full IP, user-agent, and time without a user foreign key
@@ -93,6 +105,27 @@ promised.
 CFDI and Verifactu records, payments, refunds, and disputes need rules by role
 and law. A Mexican tax period must not automatically apply to every commercial
 record or another country.
+
+Tax documents: Cord keeps them while the organization exists and, except for
+Verifactu, deletes them with it. Each country's law requires the issuer to keep
+them for its own period. The table summarizes references for legal review,
+**not verified in every case against the current text**:
+
+| Country | Retention reference (to confirm) | What Cord keeps | On organization deletion |
+|---|---|---|---|
+| Mexico | CFF, art. 30: five years from the related return | Document and PAC response | Deleted in Cord; the PAC keeps under its rules |
+| Spain | LGT, arts. 66 and 70; Commercial Code, art. 30 | Verifactu records and responses; SPFE messages | Verifactu prevents deletion, with no exit period |
+| Argentina | Law 11,683 and its regulation (tied to the statute of limitations); Civil and Commercial Code, art. 328 | Request, response and CAE | Deleted |
+| Brazil | CTN, arts. 173, 174 and 195; Ajuste SINIEF 07/05 | NFS-e and NF-e XML, events | Deleted |
+| Peru | Tax Code, art. 87(7) | Signed XML and CDR | Deleted |
+| Chile | Tax Code, arts. 17 and 200 | DTE, CAF, ledgers, received documents and responses | Deleted |
+| Colombia | Tax Statute, art. 632; Law 962 of 2005, art. 46 | Signed XML, ApplicationResponse and container | Deleted |
+| France | LPF, art. L102 B; Commercial Code, art. L123-22 | Sent Factur-X, e-reporting and statuses | Deleted; the platform keeps under its rules |
+| United States | Varies by state | Calculations and transactions | Deleted; the provider keeps the transaction |
+
+Until an approach is decided —blocking closure as with Verifactu, offering a
+complete tax archive before closure, or retaining after closure with a basis and
+period— no post-closure tax retention is promised.
 
 ## 5. Export and portability
 
@@ -150,4 +183,4 @@ evidence; contracts and regions; legal-acceptance period/redaction; complete
 export or transparent limits; holds and DSAR; identity/contact, legal review, and
 versioned publication.
 
-Provenance and evidence: [phase 5.4 data-governance review](../../../../docs/historial/revisiones-legales/2026-09-01-data-governance.md). Original clauses remain preserved through `sourceSections`.
+Provenance and evidence: [phase 5.4 data-governance review](../../../../docs/historial/revisiones-legales/2026-09-01-data-governance.md) and [per-country invoicing review](../../../../docs/historial/revisiones-legales/2026-10-10-facturacion-paises.md). Original clauses remain preserved through `sourceSections`.
