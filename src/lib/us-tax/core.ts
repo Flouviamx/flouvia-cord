@@ -108,6 +108,47 @@ export const US_TAX_MAX_LINEAS = 100;
  */
 export const US_TAX_REUSO_MS = 24 * 60 * 60 * 1000;
 
+/**
+ * Tope de cálculos NUEVOS por documento y por día, en la vista previa del
+ * editor. El proveedor cobra USD 0.05 por cálculo pasados los 10 que incluye
+ * cada venta registrada (se reembolsan a fin de mes, sin acumularse), y un
+ * editor abierto pide uno nuevo cada vez que cambia un importe. 20 cubre armar
+ * a mano un documento de 15–20 conceptos; pasado eso el editor dice que
+ * guardes (el guardado reusa el último cálculo, o hace el suyo) y el peor caso
+ * de un documento que nunca se vende queda en USD 1.00 al día. El documento lo
+ * nombra el editor (`cotizacion:<id>`, `documento:<id>` o `borrador:<id>` por
+ * sesión de un documento nuevo): no es una credencial, solo un contador, y lo
+ * que no se le puede creer lo acota el tope por organización.
+ */
+export const US_TAX_CALCULOS_DOCUMENTO_DIA = 20;
+
+/**
+ * Tope de cálculos nuevos por organización y por día, en cualquier camino
+ * (editor, guardado, API, conciliación). Se suma a los 30 por minuto y 300 por
+ * hora que ya existían: con solo esos, una organización podía pedir 7,200 al
+ * día (USD 360). 500 al día es ~25 documentos editados a mano o ~150 creados
+ * por API con su conciliación, y acota el peor caso a USD 25 al día.
+ */
+export const US_TAX_CALCULOS_ORG_DIA = 500;
+
+/**
+ * ¿Le cuesta a Cord registrar esta venta? El proveedor cobra la transacción
+ * solo en estados donde el negocio está registrado para recaudar: una venta
+ * cuyas líneas son todas 0 % "sin obligación de recaudar" (`sin_registro`) se
+ * registra igual para la declaración, pero no consume cuota. Una línea
+ * gravada, exenta por certificado o no gravable en un estado registrado sí.
+ */
+export function usTaxVentaCobrable(lineas: Pick<UsTaxLinea, 'desglose'>[]): boolean {
+    return lineas.some((l) => !!l.desglose && l.desglose.motivo !== 'sin_registro');
+}
+
+const DOC_CLAVE_RE =/^(cotizacion|documento|borrador):[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+/** La clave de documento que manda el editor, o null si no es una de las tres formas. */
+export function usTaxDocumentoClave(raw: unknown): string | null {
+    const s = typeof raw === 'string' ? raw.trim().toLowerCase() : '';
+    return DOC_CLAVE_RE.test(s) ? s : null;
+}
+
 const ZIP_RE = /^\d{5}(-\d{4})?$/;
 
 const texto = (v: unknown, max = 200): string | null => {
@@ -293,7 +334,8 @@ export function huellaTexto(input: {
 export type UsTaxErrorCode =
     | 'cuenta_cobros' | 'origen_incompleto' | 'sin_registros' | 'configuracion_pendiente'
     | 'direccion_cliente' | 'direccion_invalida' | 'certificado' | 'demasiadas_lineas'
-    | 'registro_desincronizado' | 'calculo_vencido' | 'limite' | 'no_disponible' | 'plan';
+    | 'registro_desincronizado' | 'calculo_vencido' | 'limite' | 'no_disponible' | 'plan'
+    | 'limite_documento' | 'limite_dia' | 'cuota' | 'cuota_techo';
 
 const MENSAJES: Record<UsTaxErrorCode, { es: string; en: string; status: number }> = {
     cuenta_cobros: {
@@ -361,14 +403,41 @@ const MENSAJES: Record<UsTaxErrorCode, { es: string; en: string; status: number 
         en: 'Automatic sales tax by address is available from the Starter plan.',
         status: 402,
     },
+    limite_documento: {
+        es: 'Este documento llegó a los {n} cálculos de sales tax de hoy. Guárdalo para fijar su impuesto; mañana puedes volver a recalcularlo.',
+        en: 'This document reached today’s {n} sales tax calculations. Save it to lock in its tax; you can recalculate it again tomorrow.',
+        status: 429,
+    },
+    limite_dia: {
+        es: 'Tu negocio llegó a los {n} cálculos de sales tax de hoy. Se renuevan en 24 horas; mientras tanto, captura la tasa a mano.',
+        en: 'Your business reached today’s {n} sales tax calculations. They renew in 24 hours; until then, enter the rate manually.',
+        status: 429,
+    },
+    // La cuota incluida del plan, sin cobro de excedente disponible: se dice
+    // ANTES de guardar el documento, para que el negocio decida.
+    cuota: {
+        es: 'Llegaste a las {n} facturas con sales tax automático de tu plan este mes. Mejora tu plan o captura la tasa a mano (apaga el cálculo automático en Ajustes › Impuestos).',
+        en: 'You reached the {n} invoices with automatic sales tax included in your plan this month. Upgrade your plan or enter the rate manually (turn off automatic calculation in Settings › Taxes).',
+        status: 402,
+    },
+    // Con excedente cobrable: el techo de seguridad (10× lo incluido).
+    cuota_techo: {
+        es: 'Tu negocio tuvo un uso excepcionalmente alto de sales tax automático este mes. Escríbenos para desbloquearlo; mientras tanto, captura la tasa a mano.',
+        en: 'Your business had unusually high automatic sales tax usage this month. Contact us to unlock it; until then, enter the rate manually.',
+        status: 429,
+    },
 };
+
+type MensajeVars = Record<string, string | number>;
+const conVars = (texto: string, vars?: MensajeVars) =>
+    vars ? texto.replace(/\{(\w+)\}/g, (m, k: string) => (k in vars ? String(vars[k]) : m)) : texto;
 
 export class UsTaxError extends Error {
     code: UsTaxErrorCode;
     status: number;
-    constructor(code: UsTaxErrorCode, locale: string = 'es', cause?: unknown) {
+    constructor(code: UsTaxErrorCode, locale: string = 'es', cause?: unknown, vars?: MensajeVars) {
         const m = MENSAJES[code];
-        super(String(locale).startsWith('en') ? m.en : m.es);
+        super(conVars(String(locale).startsWith('en') ? m.en : m.es, vars));
         this.name = 'UsTaxError';
         this.code = code;
         this.status = m.status;
@@ -376,9 +445,9 @@ export class UsTaxError extends Error {
     }
 }
 
-export function usTaxMessage(code: UsTaxErrorCode, locale: string = 'es'): string {
+export function usTaxMessage(code: UsTaxErrorCode, locale: string = 'es', vars?: MensajeVars): string {
     const m = MENSAJES[code];
-    return String(locale).startsWith('en') ? m.en : m.es;
+    return conVars(String(locale).startsWith('en') ? m.en : m.es, vars);
 }
 
 /**

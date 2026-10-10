@@ -3027,7 +3027,7 @@ create table if not exists usage_reservations (
   id               uuid        primary key,
   org_id           uuid        not null references orgs(id) on delete cascade,
   billing_org_id   uuid        not null references orgs(id) on delete cascade,
-  dimension        text        not null check (dimension in ('api','usuario','ia','timbrado','envios')),
+  dimension        text        not null check (dimension in ('api','usuario','ia','timbrado','envios','documento','us_tax')),
   value            integer     not null check (value > 0),
   meter_value      integer     not null default 0 check (meter_value >= 0),
   periodo          text        not null,
@@ -3048,9 +3048,12 @@ create table if not exists usage_reservations (
 alter table usage_reservations add column if not exists meter_value integer not null default 0;
 -- 'envios' (tope duro de Gratis, sin meter) se agregó ago 2026 — re-declarar el
 -- check permite que db:migrate siga siendo re-ejecutable sobre una tabla ya creada.
+-- 'documento' (comerciales) y 'us_tax' (sales tax de EE. UU.) se agregaron oct
+-- 2026; la misma definición se repite en la sección "Cuota del sales tax
+-- automático de EE. UU." al final, que es la que aplica el despliegue.
 alter table usage_reservations drop constraint if exists usage_reservations_dimension_check;
 alter table usage_reservations add constraint usage_reservations_dimension_check
-  check (dimension in ('api','usuario','ia','timbrado','envios'));
+  check (dimension in ('api','usuario','ia','timbrado','envios','documento','us_tax'));
 create index if not exists idx_usage_reservations_outbox
   on usage_reservations(meter_status, next_attempt_at, created_at)
   where status = 'committed' and meter_status in ('pending','failed');
@@ -8290,3 +8293,28 @@ begin
 end
 $$;
 -- END sii-libros
+
+-- ── Cuota del sales tax automático de EE. UU. (oct 2026) ────────────────────
+-- Cada venta con sales tax por dirección que se registra para la declaración
+-- del negocio (la Tax Transaction de us_tax_calculos) le cuesta a Cord USD 0.50
+-- en el proveedor. Decisión de André: se cobra como los timbres de CFDI, con su
+-- PROPIO contador y su propio precio — cuota incluida por plan (INCLUDED.us_tax
+-- en src/lib/billing.ts: 10/25/60/150) y excedente medido. Reusar `cfdi` haría
+-- perder dinero: su excedente es menor que el costo de la venta.
+--
+-- `uso_periodo.us_tax` cuenta las ventas registradas del mes (reservadas antes
+-- de llamar al proveedor y liberadas si el registro falla). `us_tax_calculos.uso_id`
+-- es la reserva de ESE registro: un reintento (o dos procesos a la vez) la
+-- reusan en vez de contar dos veces la misma venta, y la reconciliación de
+-- Billing confirma una reserva cuyo registro sí ocurrió.
+--
+-- El CHECK de usage_reservations se re-declara con las siete dimensiones que
+-- usa el código: 'documento' (documentos comerciales) tampoco estaba, así que
+-- en una base con este CHECK la reserva de un documento comercial fallaba.
+alter table uso_periodo add column if not exists us_tax int not null default 0;
+alter table usage_reservations drop constraint if exists usage_reservations_dimension_check;
+alter table usage_reservations add constraint usage_reservations_dimension_check
+  check (dimension in ('api','usuario','ia','timbrado','envios','documento','us_tax'));
+alter table us_tax_calculos add column if not exists uso_id uuid;
+create index if not exists idx_us_tax_calculos_uso on us_tax_calculos (uso_id) where uso_id is not null;
+-- END sales-tax-cuota

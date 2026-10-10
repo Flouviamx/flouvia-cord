@@ -220,7 +220,8 @@ Flujo:
   `checkout.session.completed` liga la suscripción (subscription) o marca la
   cotización `paid` (payment, flujo del link público — sin cambios).
 - **Excedente (overage):** `reserveUsage()` toma un advisory lock, incrementa
-  `uso_periodo` y crea `usage_reservations` antes de IA/CFDI/API/alta de usuario.
+  `uso_periodo` y crea `usage_reservations` antes de IA/CFDI/API/alta de usuario
+  y antes de registrar una venta con sales tax de EE. UU.
   La reserva se cancela si el proveedor no produjo resultado; si sí, el outbox se
   entrega a Stripe con reintentos. `meter_value` contiene solo la porción que rebasa
   lo incluido: nunca se factura nuevamente la cuota incluida.
@@ -233,7 +234,8 @@ Flujo:
   y se crea mediante Subscriptions/Payment Element. Stripe Checkout no soporta esa mezcla;
   el fallback alojado rechaza anual explícitamente en vez de crear una suscripción parcial.
 - **UI:** `/app/ajustes/plan` usa `getBillingUsage()` (medidores IA/CFDI/API del
-  periodo) + botones reales de subir de plan / portal.
+  periodo y, para negocios de EE. UU., las facturas con sales tax automático y las
+  ventas que esperan cupo) + botones reales de subir de plan / portal.
 - Persistencia: `uso_periodo`, `stripe_events`, `billing_checkout_attempts` y
   `usage_reservations` (las dos últimas con `FORCE RLS`), más evidencia de invoice en
 `orgs`. Triggers serializados protegen cotizaciones, productos, clientes y asientos.
@@ -242,6 +244,90 @@ Flujo:
 - Verificación: `npm run test:payments`, `npm run security:billing-live`,
   `npm run security:billing-db` y `npm run build`.
 
+
+### Sales tax automático (EE. UU.): cuota y excedente — oct 2026
+
+El sales tax por dirección (`src/lib/us-tax/`, feature gate `us_sales_tax` desde
+Starter) le cuesta a **Cord** —no al negocio— USD 0.50 por cada venta registrada
+(Tax Transaction) en un estado donde el negocio recauda, más USD 0.05 por cálculo
+pasados los 10 que incluye cada venta (fuente y quién paga: sección de sales tax de
+[`cobros-facturacion.md`](cobros-facturacion.md)). Decisión de André: se cobra
+**como los timbres de CFDI, con su propio contador y su propio precio**. Reusar
+`timbrado` perdía dinero: su excedente es USD 0.15 y su cuota de Starter, 30.
+
+| | Gratis | Starter | Profesional | Scale | Developer |
+|---|---:|---:|---:|---:|---:|
+| Ventas incluidas al mes (`INCLUDED.us_tax`) | sin la capacidad | 10 | 25 | 60 | 150 |
+| Excedente MXN / USD / EUR por venta | — | 15.00 / 0.75 / 0.70 | igual | igual | 15.00 / 0.75 / a medida |
+
+- **Qué cuenta:** una factura emitida o una cotización cobrada cuya venta se
+  registra para la declaración del negocio, una vez. Una venta cuyas líneas son
+  todas 0 % "sin obligación de recaudar" (estado sin registro) se registra igual
+  pero no cuenta: al proveedor no le cuesta (`usTaxVentaCobrable`). Vistas previas
+  y cálculos no cuentan; el reverso de una factura anulada no devuelve la unidad
+  (el proveedor ya cobró) ni consume otra.
+- **Dónde se controla** (`src/lib/us-tax/cuota.ts`): `assertUsTaxCuota()` al
+  preparar el documento —el negocio lee "Llegaste a las N facturas con sales tax
+  automático de tu plan este mes. Mejora tu plan o captura la tasa a mano" antes de
+  guardar o enviar— y `reservarUsoTransaccion()` antes de `create_from_calculation`
+  (`reserveUsage(orgId, 'us_tax', 1, { deferMeter: true })`). Si el registro falla
+  se libera; si sale bien, `commitUsTaxUsage()` calcula el excedente bajo el lock
+  y el outbox lo manda al meter. La reserva queda en `us_tax_calculos.uso_id`: un
+  reintento o dos procesos sobre la misma venta reusan una sola unidad, y la
+  reconciliación diaria confirma la que quedó reservada con la venta ya
+  registrada. Una venta que llega sin cupo (documento hecho antes de agotarse)
+  queda `transaccion_error = 'cuota'`, Ajustes › Plan dice cuántas esperan y el
+  barrido de `/api/cron/us-tax` las registra en cuanto hay cupo.
+- **Fallo cerrado mientras no exista el medidor.** `METERS.us_tax` y
+  `METER_PRICES.<plan>.us_tax` nacen vacíos. Con ids vacíos `overageBillable()` es
+  false: lo incluido es tope duro, no se manda ningún meter event y el checkout no
+  agrega el item (`meterPricesFor` filtra los vacíos). Con ids, aplica el excedente
+  con el mismo techo de seguridad de los demás medidores (10× lo incluido; pasado
+  eso, "uso excepcionalmente alto", 429).
+- **Medidor opcional para el plan.** `us_tax` está en `OPTIONAL_METER_DIMS`: el
+  webhook y la reconciliación conceden el plan con `requiredMeterPrices()`, que no
+  lo incluye. Si fuera requerido, llenar su id antes de agregarlo a cada
+  suscripción —o un cambio de plan hecho con el código anterior, que borra los
+  items que no conoce— bajaría a Gratis a todo cliente que paga. Una suscripción
+  activa sin el item dispara "Suscripción sin un medidor opcional" a Ops (su
+  excedente no se cobraría).
+- **Tope de cálculos** (`src/lib/us-tax/core.ts`): 20 cálculos nuevos por
+  documento y por día en la vista previa del editor (`US_TAX_CALCULOS_DOCUMENTO_DIA`)
+  y 500 por organización y por día por cualquier camino (`US_TAX_CALCULOS_ORG_DIA`),
+  además de los 30/min y 300/h que ya existían. Peor caso: USD 1.00 por documento
+  que nunca se vende y USD 25 por organización al día (antes, 7,200 cálculos al
+  día: USD 360). La vista previa ya reusaba el cálculo 24 h por huella.
+- Persistencia: `uso_periodo.us_tax`, `us_tax_calculos.uso_id` y el CHECK de
+  `usage_reservations` con las siete dimensiones (`db/deploy/2026-10-09-us-tax2-cuota.sql`).
+  El CHECK anterior no aceptaba `'documento'`: en una base con esa definición la
+  reserva de un documento comercial fallaba; la re-declaración lo corrige.
+- Verificación: `test/us-tax-cuota.test.ts` (Billing real + PGlite: límite,
+  reserva y liberación, fallo cerrado sin meter, excedente al meter, techo,
+  reconciliación, topes de cálculos), `test/stripe-us-tax-scripts.test.ts`,
+  `npm run security:billing` y `npm run security:us-tax`.
+
+**Activación en Stripe — orden obligatorio** (nada de esto se ha corrido; los ids
+siguen vacíos y la app opera en tope duro):
+
+1. Modo test: `npm run stripe:us-tax-meter` (solo lee) y luego
+   `npm run stripe:us-tax-meter -- --apply`. Crea el meter
+   `cord_us_tax_transaction`, el producto `cord_us_tax_overage` y un Price medido
+   por plan (`lookup_key = cord_us_tax_<plan>`, MXN 15.00 base + USD 0.75 + EUR
+   0.70; Developer sin EUR). Imprime el bloque a pegar.
+2. Pegar los ids en la rama test de `METERS`/`METER_PRICES` de `src/lib/billing.ts`
+   y correr `npm run stripe:us-tax-items` (lee) y `-- --apply` contra suscripciones
+   de prueba. Comprobar un excedente de punta a punta en modo test.
+3. Live, con aprobación de André: los mismos dos comandos con `--live`
+   (`stripe:us-tax-meter -- --apply --live`), pegar los ids en la rama live,
+   `stripe:us-tax-items -- --live` (lee) y `-- --apply --live`.
+4. Desplegar. Después del despliegue, `stripe:us-tax-items -- --apply --live` otra
+   vez: recoge suscripciones creadas o cambiadas por el código anterior mientras
+   tanto. Las que tengan un cambio programado se omiten y se reportan: correrlo de
+   nuevo cuando se aplique.
+5. `npm run security:billing-live` con la llave live: verifica los 23 Price
+   originales, las 17 opciones EUR y, aparte, el meter y los 4 Price de `us_tax`
+   (todo o nada). Al llenar los ids también cambia el conteo de
+   `meterPricesFor('pro', 'EUR')` en `test/plan-billing-currency.test.ts` (4 → 5).
 
 ### Cortesías internas: `set-plan.mjs --comp` — ago 2026
 

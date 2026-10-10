@@ -146,10 +146,15 @@ export interface CompareRow {
     scale: boolean | string;
     developer: boolean | string;
     hint?: string;
-    overageDim?: 'usuario' | 'ia' | 'timbrado' | 'api';
+    overageDim?: 'usuario' | 'ia' | 'timbrado' | 'api' | 'us_tax';
 }
-export const overageRow = (overageDim: NonNullable<CompareRow['overageDim']>, label: string): CompareRow =>
-    ({ overageDim, label, free: false, starter: false, pro: false, scale: false, developer: false });
+export const overageRow = (overageDim: NonNullable<CompareRow['overageDim']>, label: string, hint?: string): CompareRow =>
+    ({ overageDim, label, free: false, starter: false, pro: false, scale: false, developer: false, ...(hint ? { hint } : {}) });
+
+// Sales tax automático de EE. UU. (oct 2026): su propia cuota (INCLUDED.us_tax
+// en src/lib/billing.ts) y su propio excedente (plan-overage-pricing.ts). La
+// prueba test/us-tax-cuota.test.ts compara estas cifras con INCLUDED.
+const US_TAX_HINT = 'Solo en EE. UU.: facturas con sales tax calculado por dirección en estados donde recaudas.';
 
 export interface CompareGroup {
     titulo: string;
@@ -174,6 +179,7 @@ export const COMPARATIVA: CompareGroup[] = [
             { label: 'Facturas comerciales', free: '10 / mes', starter: 'Ilimitadas', pro: 'Ilimitadas', scale: 'Ilimitadas', developer: 'Ilimitadas', hint: 'En México y España el documento comercial es una proforma.' },
             { label: 'Facturas con validez fiscal', free: false, starter: '30 / mes', pro: '200 / mes', scale: '500 / mes', developer: '1,000 / mes', hint: 'CFDI 4.0 en México; VERI*FACTU en España tras completar su activación. En los demás mercados Cord emite factura comercial y no timbra ante otras autoridades fiscales.' },
             { label: 'Llamadas a la API pública', free: '100 / mes', starter: '1,000 / mes', pro: '5,000 / mes', scale: '10,000 / mes', developer: '50,000 / mes' },
+            { label: 'Facturas con sales tax automático', free: false, starter: '10 / mes', pro: '25 / mes', scale: '60 / mes', developer: '150 / mes', hint: US_TAX_HINT },
         ],
     },
     {
@@ -297,6 +303,7 @@ export const COMPARATIVA: CompareGroup[] = [
             overageRow('ia', 'Armado con IA extra'),
             overageRow('timbrado', 'Factura fiscal adicional'),
             overageRow('api', 'API extra (por 100 req)'),
+            overageRow('us_tax', 'Factura con sales tax automático adicional', US_TAX_HINT),
         ],
     },
 ];
@@ -312,7 +319,7 @@ export const FAQ_PRECIOS: { q: string; a: string }[] = [
     },
     {
         q: '¿Qué pasa si me paso del consumo incluido?',
-        a: 'Gratis tiene topes duros. Desde Starter se cobran los excedentes de IA, facturas fiscales y API a las tarifas publicadas; las facturas comerciales no tienen tope en planes de pago. Starter conserva un usuario. En Profesional y Scale cada usuario adicional se cobra cada mes mientras siga activo. Puedes consultar tu consumo en la app.',
+        a: 'Gratis tiene topes duros. Desde Starter se cobran los excedentes de IA, facturas fiscales y API a las tarifas publicadas; las facturas comerciales no tienen tope en planes de pago. Starter conserva un usuario. En Profesional y Scale cada usuario adicional se cobra cada mes mientras siga activo. Las facturas con sales tax automático (solo EE. UU.) tienen su propia cuota mensual y su propia tarifa de excedente. Puedes consultar tu consumo en la app.',
     },
     {
         q: '¿Puedo cambiar de plan cuando quiera?',

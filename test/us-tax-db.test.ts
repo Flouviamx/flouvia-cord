@@ -16,6 +16,15 @@ vi.mock('../src/lib/billing', () => ({ stripe: m.stripe }));
 vi.mock('../src/lib/org-entitlements', () => ({ checkEntitlement: async () => m.entitled }));
 vi.mock('../src/lib/ratelimit', () => ({ strictRateLimit: async () => ({ ok: true, remaining: 10, retryAfter: 0 }) }));
 vi.mock('../src/lib/log', () => ({ log: { error: vi.fn(), warn: vi.fn(), info: vi.fn() } }));
+// La cuota mensual de ventas (src/lib/us-tax/cuota.ts) tiene su propia prueba
+// contra Billing real (test/us-tax-cuota.test.ts). Aquí siempre hay cupo.
+vi.mock('../src/lib/us-tax/cuota', () => ({
+    assertUsTaxCuota: async () => {},
+    usTaxCuota: async () => ({ incluido: 10, usado: 0, techo: 10, excedente: false, agotada: false }),
+    reservarUsoTransaccion: async () => ({ ok: true, id: '00000000-0000-4000-8000-0000000000f0' }),
+    confirmarUsoTransaccion: async () => {},
+    liberarUsoTransaccion: async () => {},
+}));
 
 import { calculateDocumentTotals } from '../packages/elements/src/engine';
 import { taxCatalogFor } from '../src/lib/impuestos-db';
@@ -119,6 +128,9 @@ beforeAll(async () => {
     const schema = readFileSync(new URL('../db/schema.sql', import.meta.url), 'utf8');
     const inicio = schema.indexOf('-- ── Sales tax de EE. UU. calculado por la dirección del cliente');
     await db.exec(schema.slice(inicio, schema.indexOf('-- END us-tax', inicio)));
+    // La reserva de cuota de cada registro (sección "Cuota del sales tax
+    // automático de EE. UU." de db/schema.sql; su prueba es us-tax-cuota.test.ts).
+    await db.exec('alter table us_tax_calculos add column if not exists uso_id uuid');
     const run = (scope: { org?: string }) => (...queries: Array<{ text: string; values: unknown[] }>) => db.transaction(async (tx) => {
         if (scope.org) await tx.query("select set_config('app.org_id', $1, true)", [scope.org]);
         const out = [];

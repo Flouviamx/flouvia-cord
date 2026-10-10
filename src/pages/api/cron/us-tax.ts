@@ -27,7 +27,7 @@ export const GET: APIRoute = async ({ request }) => {
     return reqContext.run({ userId: null, cronScope: true }, async () => {
         try {
             const orgs = await orgsConUsTax();
-            const totales = { registradas: 0, pendientes: 0, errores: 0 };
+            const totales = { registradas: 0, pendientes: 0, errores: 0, sinCuota: 0 };
             for (const orgId of orgs) {
                 if (Date.now() >= deadline) break;
                 try {
@@ -35,6 +35,8 @@ export const GET: APIRoute = async ({ request }) => {
                     totales.registradas += r.registradas;
                     totales.pendientes += r.pendientes;
                     totales.errores += r.errores;
+                    // Ventas que esperan cupo de la cuota mensual del plan.
+                    totales.sinCuota += r.sinCuota;
                 } catch (error) {
                     // Una organización que falla no detiene a las demás.
                     log.error('us-tax: fallo no controlado para una org', { route: 'cron/us-tax', orgId, err: error });

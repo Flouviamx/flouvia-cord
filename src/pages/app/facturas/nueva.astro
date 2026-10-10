@@ -779,6 +779,9 @@ import { iconInner } from '../../../lib/icons';
         const usTax = createUsTaxPreview({
             boot: BOOT.usTax,
             getClienteId: () => ($('clientSelect') as HTMLSelectElement | null)?.value || null,
+            // Tope de cálculos por documento y día: el borrador guardado, o
+            // una clave de esta sesión mientras la factura es nueva.
+            getDocumento: () => (activeDraftId ? `documento:${activeDraftId}` : null),
             buildRequest: () => ({
                 currency,
                 iva_incluido: ivaIncluidoEl.checked,

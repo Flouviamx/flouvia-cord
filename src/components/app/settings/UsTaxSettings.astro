@@ -10,16 +10,26 @@
 import { US_STATES } from '../../../lib/countries';
 import { US_TAX_CODES, usTaxMessage, type UsTaxErrorCode } from '../../../lib/us-tax/core';
 import type { UsTaxConfig } from '../../../lib/us-tax/calculo';
+import type { UsTaxCuota } from '../../../lib/us-tax/cuota';
 
 interface Props {
     config: UsTaxConfig;
     entitled: boolean;
     activo: boolean;
     problema: string | null;
+    /** Cuota mensual de ventas registradas del plan; null sin plan o sin dato. */
+    cuota?: UsTaxCuota | null;
     locale: 'es' | 'en';
 }
-const { config, entitled, activo, problema, locale } = Astro.props;
+const { config, entitled, activo, problema, cuota = null, locale } = Astro.props;
 const en = locale === 'en';
+// Lo que se cuenta y cuánto incluye el plan. Las vistas previas y los cálculos
+// no cuentan; una venta a un estado donde no recaudas tampoco.
+const cuotaTexto = cuota
+    ? (en
+        ? `Your plan includes ${cuota.incluido} invoices with automatic sales tax per month (${cuota.usado} used this month). Each issued invoice and each paid quote recorded for a state where you collect counts once; previews do not. ${cuota.excedente ? 'Additional ones are billed at your plan’s overage rate.' : 'When you reach that number, upgrade your plan or enter the rate manually.'}`
+        : `Tu plan incluye ${cuota.incluido} facturas con sales tax automático al mes (llevas ${cuota.usado} este mes). Cuenta una vez cada factura emitida y cada cotización cobrada que se registra en un estado donde recaudas; las vistas previas no cuentan. ${cuota.excedente ? 'Las adicionales se cobran a la tarifa de excedente de tu plan.' : 'Al llegar a ese número, mejora tu plan o captura la tasa a mano.'}`)
+    : null;
 const o = config.origen;
 const registrados = new Set(config.registros.map((r) => r.estado));
 const titulo = activo
@@ -104,9 +114,10 @@ const sub = activo
     <p class="ust-hint">{en
         ? 'Mark only the states where you have a sales tax permit. Sales to clients in other states carry 0 % and the document says there is no obligation to collect there. Removing a state stops collecting from today; documents already calculated keep their tax.'
         : 'Marca solo los estados donde tienes permiso para recaudar sales tax. Las ventas a clientes en otros estados llevan 0 % y el documento dice que ahí no hay obligación de recaudar. Quitar un estado deja de recaudar desde hoy; los documentos ya calculados conservan su impuesto.'}</p>
+    {cuotaTexto && <p class="ust-hint" data-ust-cuota>{cuotaTexto}</p>}
     <p class="ust-hint">{en
-        ? 'Included in your plan: you are not charged per calculation. Mark a client as exempt from its profile, with its exemption certificate.'
-        : 'Incluido en tu plan: no se te cobra por cálculo. Un cliente exento se marca desde su ficha, con su certificado de exención.'}</p>
+        ? 'Mark a client as exempt from its profile, with its exemption certificate.'
+        : 'Un cliente exento se marca desde su ficha, con su certificado de exención.'}</p>
 
     <div class="ust-actions">
         <button type="button" class="ust-btn" data-ust-save disabled={!entitled && !config.auto}>{en ? 'Save' : 'Guardar'}</button>

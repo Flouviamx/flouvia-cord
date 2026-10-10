@@ -16,7 +16,7 @@ import { cerrarVeredictoKyc } from '../../../lib/kyc-evidencia';
 import { dispatchQuoteEvent, dispatchPaymentPartial, dispatchInvoiceEvent, dispatchEvent, type WebhookEvent } from '../../../lib/webhooks';
 import { syncQuoteInvoices } from '../../../lib/cobros-settle';
 import { notifyQuoteEvent } from '../../../lib/notify';
-import { METER_PRICES, PRICE_TO_PLAN, retrieveAccount, stripe } from '../../../lib/billing';
+import { METER_PRICES, PRICE_TO_PLAN, requiredMeterPrices, retrieveAccount, stripe } from '../../../lib/billing';
 import { trackPaymentReceived, trackServer } from '../../../lib/posthog-server';
 import { after } from '../../../lib/after';
 import { verifyStripeSignature } from '../../../lib/stripe-signature';
@@ -1202,8 +1202,10 @@ function hasRequiredMeterItems(sub: any, plan: string): boolean {
     const itemPrices = new Set((sub?.items?.data ?? []).map((item: any) =>
         typeof item?.price === 'string' ? item.price : item?.price?.id
     ));
-    return Object.values(METER_PRICES[plan as keyof typeof METER_PRICES])
-        .filter(Boolean)
+    // Solo los medidores requeridos: uno opcional que falte (p. ej. el del
+    // sales tax de EE. UU. antes de agregarlo a las suscripciones vivas) no
+    // puede bajar a Gratis a un cliente que pagó (ver OPTIONAL_METER_DIMS).
+    return requiredMeterPrices(plan as keyof typeof METER_PRICES)
         .every((price) => itemPrices.has(price));
 }
 

@@ -26,7 +26,8 @@ const expectedFeatures = {
   audit_log: 'pro', webhook_replay: 'pro', collections: 'pro', cashflow_90: 'pro',
   approvals: 'scale', collections_ai: 'pro', late_interest: 'scale',
   smtp: 'scale', sso: 'scale', agent_governance: 'scale',
-  // Sales tax de EE. UU. por dirección: el costo por cálculo lo paga Cord.
+  // Sales tax de EE. UU. por dirección: Cord paga el proveedor; la venta
+  // registrada además consume su propia cuota (INCLUDED.us_tax).
   us_sales_tax: 'starter',
 };
 check(JSON.stringify(FEATURE_MIN_PLAN) === JSON.stringify(expectedFeatures), 'La matriz de features cambió sin actualizar la prueba contractual.');
@@ -113,7 +114,34 @@ check(read('src/lib/billing-reconcile.ts').includes('paidBaseInvoice'), 'El reco
 check(schema.includes('create unique index if not exists uq_billing_checkout_open_org'), 'Falta la exclusión concurrente de checkout.');
 check(schema.includes('create trigger trg_limit_productos') && schema.includes('create trigger trg_limit_clientes') && schema.includes('create trigger trg_limit_cotizaciones'), 'Faltan límites concurrentes en PostgreSQL.');
 check(schema.includes('alter table usage_reservations force row level security'), 'El outbox debe tener FORCE RLS.');
-check(schema.includes("dimension in ('api','usuario','ia','timbrado','envios')"), 'El CHECK de usage_reservations debe aceptar la dimensión envios.');
+check(schema.includes("dimension in ('api','usuario','ia','timbrado','envios','documento','us_tax')"), 'El CHECK de usage_reservations debe aceptar las siete dimensiones que reserva el código (envios, documento y us_tax incluidas).');
+check(!schema.includes("dimension in ('api','usuario','ia','timbrado','envios'))"), 'Ninguna declaración del CHECK de usage_reservations puede quedarse con la lista vieja: db:migrate fallaría al re-declararla sobre filas nuevas.');
+
+// Sales tax automático de EE. UU. (oct 2026): su propia cuota y su propio
+// excedente, nunca los del timbre (decisión de André: el timbre cobra USD 0.15
+// y la venta registrada le cuesta USD 0.50 a Cord).
+check(/free:\s*\{[^}]*us_tax:\s*0\s*\}/.test(billing) && /starter:\s*\{[^}]*us_tax:\s*10\s*\}/.test(billing)
+      && /pro:\s*\{[^}]*us_tax:\s*25\s*\}/.test(billing) && /scale:\s*\{[^}]*us_tax:\s*60\s*\}/.test(billing)
+      && /developer:\s*\{[^}]*us_tax:\s*150\s*\}/.test(billing), 'INCLUDED.us_tax debe ser 0/10/25/60/150 (Gratis/Starter/Profesional/Scale/Developer).');
+check(billing.includes("timbrado: 'cfdi'") && billing.includes("us_tax: 'us_tax'"), 'us_tax cuenta en su propia columna de uso_periodo, no en cfdi.');
+check(/export function overageBillable[\s\S]{0,200}allowsOverage\(plan, dim\) && meterConfigured\(plan, dim\)/.test(billing), 'Sin meter y Price configurados no hay excedente: lo incluido es tope duro (fallo cerrado).');
+check(/function usageHardCap[\s\S]{0,200}overageBillable\(plan, dim\)/.test(billing) && /meterEligible[\s\S]{0,160}overageBillable\(plan, dim\)/.test(billing),
+      'El techo y la elegibilidad del meter deben depender de que el meter exista, no solo del contrato.');
+check(/export const OPTIONAL_METER_DIMS[^\n]*\['us_tax'\]/.test(billing), 'El medidor us_tax es opcional para conceder el plan (se agregó con suscripciones vivas).');
+check(webhook.includes('requiredMeterPrices(') && !/Object\.values\(METER_PRICES\[plan[^\n]*\n\s*\.filter\(Boolean\)\s*\n\s*\.every/.test(webhook),
+      'El webhook concede el plan con los medidores REQUERIDOS: llenar el id de us_tax no puede bajar a Gratis a quien ya paga.');
+check(read('src/lib/billing-reconcile.ts').includes('requiredMeterPrices(plan)') && read('src/lib/billing-reconcile.ts').includes('Suscripción sin un medidor opcional'),
+      'El reconciliador concede con los medidores requeridos y avisa a Ops del opcional que falte.');
+check(/export function meterPricesFor[\s\S]{0,300}filter\(\(id\): id is string => Boolean\(id\)\)/.test(billing), 'El checkout nunca manda un Price vacío (us_tax sin configurar).');
+check(/if \(column === 'us_tax'\)[\s\S]{0,1600}options\.deferMeter \? 'reserved' : 'committed'/.test(billing), 'La venta con sales tax se reserva diferida: el excedente se calcula al confirmar el registro.');
+check(/us_tax = greatest\(0, u\.us_tax - /.test(billing), 'cancelUsage debe devolver la unidad de us_tax.');
+check(/export async function commitUsTaxUsage[\s\S]{0,600}overageBillable\(plan, 'us_tax'\)/.test(billing), 'La confirmación de us_tax solo manda excedente con meter configurado.');
+const usTaxCalc = read('src/lib/us-tax/calculo.ts');
+const iReserva = usTaxCalc.indexOf('reservarUsoTransaccion(orgId, objetivo.id)');
+const iRegistro = usTaxCalc.indexOf('createUsTaxTransaction(String(calc.stripe_account_id)');
+check(iReserva > 0 && iRegistro > iReserva, 'La unidad de us_tax se reserva ANTES de registrar la venta con el proveedor (regla 17).');
+check(/catch \(error\) \{[\s\S]{0,300}liberarUsoTransaccion\(/.test(usTaxCalc.slice(iRegistro)), 'Un registro fallido libera su unidad de us_tax.');
+check(/assertUsTaxCuota\(orgId, locale\)/.test(usTaxCalc), 'El documento con sales tax automático verifica la cuota antes de guardarse.');
 check(queries.includes('canRemoveBranding') && queries.includes('portalPowered: canRemoveBranding'), 'El link público debe restituir la marca tras downgrade.');
 check(queries.includes('can_manage_billing') && read('src/pages/app/ajustes/plan.astro').includes('BILL.canManage'), 'Un impago debe revocar funciones sin ocultar la recuperación del Portal.');
 check(email.includes('canCustomizeEmail') && email.includes('canRemoveBranding'), 'El correo debe aplicar entitlements efectivos.');

@@ -1719,3 +1719,43 @@ dejar un método guardado para que cada factura se cobre en su vencimiento.
   https://docs.stripe.com/declines/codes
 - La migración de despliegue ahora también salta un índice que ya existe:
   `create index if not exists` toma su candado antes de comprobarlo.
+
+## 2026-10-10 — Sales tax de EE. UU.: cuota propia de ventas registradas
+
+Decisión de André. El sales tax por dirección le cuesta a Cord USD 0.50 por venta
+registrada en un estado donde el negocio recauda (y USD 0.05 por cálculo pasados
+los 10 que incluye cada venta); hasta hoy era un feature gate desde Starter sin
+tope, así que un negocio de alto volumen costaba más de lo que pagaba. Se cobra
+como los timbres de CFDI pero con su propio contador (`uso_periodo.us_tax`) y su
+propio precio: 10/25/60/150 incluidas al mes en Starter/Profesional/Scale/Developer
+y USD 0.75 / MXN 15.00 / EUR 0.70 por venta adicional (Developer sin EUR, por
+ventas). Reusar `timbrado` perdía dinero: su excedente es USD 0.15 y su cuota de
+Starter, 30.
+
+- **Reserva antes del proveedor, como la regla 17.** La unidad se reserva
+  diferida antes de `create_from_calculation`, se libera si el registro falla y se
+  confirma si sale bien; el excedente va al meter por el outbox. La reserva queda
+  ligada al cálculo (`us_tax_calculos.uso_id`) para que un reintento o dos
+  procesos no cuenten dos veces la misma venta.
+- **Antes de guardar, no después.** La cuota se verifica al preparar el documento:
+  ahí el negocio todavía puede mejorar el plan o capturar la tasa a mano. Una
+  venta que llega sin cupo (documento hecho antes) espera y se registra al haber
+  cupo; Ajustes › Plan dice cuántas.
+- **Solo cuenta lo que cuesta.** Una venta con todas sus líneas en estados sin
+  registro se registra sin consumir cuota: el proveedor no la cobra. El reverso no
+  devuelve la unidad porque el registro original ya se cobró.
+- **Fallo cerrado sin medidor.** Los ids de Stripe nacen vacíos; mientras lo estén,
+  lo incluido es tope duro. El medidor es opcional para conceder el plan
+  (`OPTIONAL_METER_DIMS`): exigirlo habría bajado a Gratis a toda suscripción viva
+  en cuanto se llenara el id.
+- **Cálculos acotados.** 20 nuevos por documento y día en la vista previa y 500
+  por organización y día (antes cabían 7,200 al día por los topes por minuto y por
+  hora).
+- **Hallazgo:** el CHECK de `usage_reservations` no aceptaba `'documento'`; en una
+  base con esa definición la reserva de un documento comercial fallaba. Se
+  re-declara con las siete dimensiones en `db/deploy/2026-10-09-us-tax2-cuota.sql`.
+- La tabla pública de precios no dibujaba el `hint` de ninguna fila (copy sin
+  consumidor); ahora se imprime bajo la etiqueta.
+
+Sin cambios en Stripe: no se corrió ningún script ni `security:billing-live`. El
+orden de activación vive en `docs/estado/negocio-billing.md`.

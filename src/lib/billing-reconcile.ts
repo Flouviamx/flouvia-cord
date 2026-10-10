@@ -4,7 +4,7 @@
 // solos: pueden retrasarse, llegar fuera de orden o agotarse sus reintentos. Este
 // barrido consulta el objeto actual de Stripe y reconstruye la proyección local.
 
-import { METER_PRICES, PRICE_TO_PLAN, flushPendingUsage, stripe, syncSeatUsageAll } from './billing';
+import { METER_PRICES, OPTIONAL_METER_DIMS, PRICE_TO_PLAN, flushPendingUsage, requiredMeterPrices, stripe, syncSeatUsageAll } from './billing';
 import { sql, withOrgTx, withSystemTx } from './db';
 import { sendOpsAlert } from './ops-alert';
 import { PLAN_RANK, type PaidPlan } from './entitlements';
@@ -142,7 +142,12 @@ async function reconcileOne(org: any, result: BillingReconcileResult): Promise<v
         const periodEnd = Number(baseItem?.current_period_end || subscription?.current_period_end || 0);
         const plan: PaidPlan | 'free' = basePriceId ? (PRICE_TO_PLAN[basePriceId] || 'free') : 'free';
         const itemPrices = new Set((subscription?.items?.data ?? []).map((item: any) => idOf(item?.price)));
-        const metersComplete = plan !== 'free' && Object.values(METER_PRICES[plan]).filter(Boolean).every((price) => itemPrices.has(price));
+        // Solo los medidores REQUERIDOS conceden el plan; uno opcional (agregado
+        // después de que existieran suscripciones vivas, como el del sales tax
+        // de EE. UU.) que falte se avisa a Ops abajo, sin bajar a nadie a Gratis.
+        const metersComplete = plan !== 'free' && requiredMeterPrices(plan).every((price) => itemPrices.has(price));
+        const optionalMissing = plan === 'free' ? [] : OPTIONAL_METER_DIMS
+            .filter((dim) => { const price = METER_PRICES[plan][dim]; return !!price && !itemPrices.has(price); });
         const evidence = plan !== 'free' && periodEnd
             ? await paidBaseInvoice(subscription, plan, periodEnd)
             : null;
@@ -188,6 +193,9 @@ async function reconcileOne(org: any, result: BillingReconcileResult): Promise<v
             await sendOpsAlert('Precio de plan desconocido en Stripe', `Organización ${orgId}; suscripción ${subscriptionId}`);
         } else if (!metersComplete) {
             await sendOpsAlert('Suscripción sin todos los medidores requeridos', `Organización ${orgId}; suscripción ${subscriptionId}; plan ${plan}`);
+        } else if (grants && optionalMissing.length) {
+            // Su excedente no se cobraría: correr scripts/stripe-us-tax-items.mjs --apply.
+            await sendOpsAlert('Suscripción sin un medidor opcional', `Organización ${orgId}; suscripción ${subscriptionId}; plan ${plan}; faltan ${optionalMissing.join(', ')}`);
         }
 
         if (customerId) {

@@ -3,26 +3,25 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { euroPriceCatalog } from './lib/euro-price-catalog.mjs';
+import { billingIds, meterIdOf, meterPricesOf } from './lib/billing-ids.mjs';
+import { US_TAX_OVERAGE_MINOR } from '../src/lib/plan-overage-pricing.ts';
 
 const key = process.env.STRIPE_SECRET_KEY || '';
 assert.ok(key, 'Falta STRIPE_SECRET_KEY.');
 const source = readFileSync(new URL('../src/lib/billing.ts', import.meta.url), 'utf8');
 const testMode = key.startsWith('sk_test_') || key.startsWith('rk_test_');
 
-function variantIds(symbol, prefix) {
-  const start = source.indexOf(`export const ${symbol}`);
-  assert.ok(start >= 0, `No se encontró ${symbol}.`);
-  const end = source.indexOf('\n};', start);
-  const block = source.slice(start, end + 3);
-  const marker = block.indexOf('} : {');
-  assert.ok(marker >= 0, `${symbol} no conserva la separación test/live.`);
-  const variant = testMode ? block.slice(0, marker) : block.slice(marker + 5);
-  return [...variant.matchAll(new RegExp(`'(${prefix}_[^']+)'`, 'g'))].map((match) => match[1]);
-}
-
-const basePriceIds = variantIds('PLAN_PRICES', 'price');
-const meterPriceIds = variantIds('METER_PRICES', 'price');
-const meterIds = variantIds('METERS', testMode ? 'mtr_test' : 'mtr');
+// Los medidores del catálogo original (api, usuario, ia, timbrado), en el
+// orden del archivo. `us_tax` (sales tax de EE. UU., oct 2026) tiene su propio
+// Price por plan y se verifica aparte, abajo: mientras sus ids estén vacíos en
+// billing.ts no hay nada que verificar y la app lo trata como tope duro.
+const ids = billingIds(source, testMode);
+const SEPARADOS = new Set(['us_tax']);
+const basePriceIds = ['starter', 'pro', 'scale', 'developer'].flatMap((plan) => [ids.planPrices[plan].mensual, ids.planPrices[plan].anual]);
+const meterPriceIds = ['starter', 'pro', 'scale', 'developer']
+  .flatMap((plan) => ids.meterPrices[plan].filter(([dim, id]) => !SEPARADOS.has(dim) && id).map(([, id]) => id));
+const meterIds = ids.meters.filter(([dim, id]) => !SEPARADOS.has(dim) && id).map(([, id]) => id);
+assert.ok(meterIds.every((id) => id.startsWith(testMode ? 'mtr_test_' : 'mtr_')), 'Los meters no corresponden al modo de la llave.');
 assert.equal(basePriceIds.length, 8, 'Deben existir 8 prices base (4 planes por 2 ciclos).');
 assert.equal(meterPriceIds.length, 15, 'Deben existir 15 prices medidos.');
 assert.equal(meterIds.length, 4, 'Deben existir 4 meters.');
@@ -111,6 +110,36 @@ for (const expected of euroPriceCatalog(source, testMode)) {
   assert.equal(Number(value.unit_amount_decimal ?? value.unit_amount), Number(expected.amount), `Importe EUR incorrecto: ${price.id}`);
 }
 
+// ── Sales tax automático de EE. UU. (us_tax) ────────────────────────────────
+// Todo o nada: meter + un Price por plan. Un id a medias es la configuración
+// que cobraría el excedente a unos planes y lo regalaría en otros.
+const usTaxMeter = meterIdOf(ids, 'us_tax');
+const usTaxPrices = meterPricesOf(ids, 'us_tax');
+const usTaxConfigured = [usTaxMeter, ...Object.values(usTaxPrices)].filter(Boolean);
+let usTaxResumen = 'sales tax de EE. UU. sin configurar (tope duro)';
+if (usTaxConfigured.length) {
+  assert.equal(usTaxConfigured.length, 5, 'us_tax a medias en billing.ts: deben estar el meter y los 4 Price, o ninguno.');
+  const meter = await stripe(`/v1/billing/meters/${usTaxMeter}`);
+  assert.equal(meter.status, 'active', `Meter us_tax ${meter.id} inactivo.`);
+  assert.equal(meter.default_aggregation?.formula, 'sum', 'El meter us_tax debe agregar por sum.');
+  for (const [plan, id] of Object.entries(usTaxPrices)) {
+    const price = await stripe(`/v1/prices/${id}`, { 'expand[]': 'currency_options' });
+    assert.equal(price.active, true, `Price us_tax ${plan} inactivo.`);
+    assert.equal(price.currency, 'mxn', `Price us_tax ${plan} no está en MXN.`);
+    assert.equal(price.recurring?.usage_type, 'metered', `Price us_tax ${plan} no está metered.`);
+    assert.equal(price.recurring?.interval, 'month', `Price us_tax ${plan} debe ser mensual.`);
+    assert.equal(price.recurring?.meter, usTaxMeter, `Price us_tax ${plan} apunta a otro meter.`);
+    assert.equal(Number(price.unit_amount_decimal ?? price.unit_amount), US_TAX_OVERAGE_MINOR.MXN, `Tarifa MXN us_tax incorrecta en ${plan}.`);
+    const usd = price.currency_options?.usd;
+    assert.equal(Number(usd?.unit_amount_decimal ?? usd?.unit_amount), US_TAX_OVERAGE_MINOR.USD, `Tarifa USD us_tax incorrecta en ${plan}.`);
+    if (plan !== 'developer') {
+      const eur = price.currency_options?.eur;
+      assert.equal(Number(eur?.unit_amount_decimal ?? eur?.unit_amount), US_TAX_OVERAGE_MINOR.EUR, `Tarifa EUR us_tax incorrecta en ${plan}.`);
+    }
+  }
+  usTaxResumen = 'sales tax de EE. UU. con meter y 4 prices MXN/USD (+EUR en autoservicio)';
+}
+
 const endpointPage = await stripe('/v1/webhook_endpoints', { limit: 100 });
 const endpoint = endpointPage.data.find((item) => item.status === 'enabled' && item.url === 'https://cordhq.app/api/stripe/webhook' && item.application == null);
 assert.ok(endpoint, 'No existe un webhook de plataforma activo para cordhq.app.');
@@ -134,4 +163,4 @@ assert.equal(portal.features?.subscription_cancel?.enabled, true, 'Portal no per
 // billing. Cord lo hace con pending updates/schedules en /api/billing/subscribe.
 assert.equal(portal.features?.subscription_update?.enabled, false, 'Los cambios de plan medidos deben pasar por el flujo autoritativo de Cord.');
 
-console.log(`Stripe Billing real: ${prices.length} prices MXN/USD, 17 opciones EUR, ${meters.length} meters, webhook y portal verificados en modo ${testMode ? 'test' : 'live'}.`);
+console.log(`Stripe Billing real: ${prices.length} prices MXN/USD, 17 opciones EUR, ${meters.length} meters, ${usTaxResumen}, webhook y portal verificados en modo ${testMode ? 'test' : 'live'}.`);

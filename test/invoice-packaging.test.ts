@@ -28,7 +28,7 @@ beforeAll(async () => {
   await db.exec(`
     create table documentos_fiscales(id uuid primary key default gen_random_uuid(),org_id uuid,status text,lifecycle text,provider_data jsonb,document_type text,country_code text,provider text default 'cord',updated_at timestamptz);
     create table org_members(org_id uuid,estado text);
-    create table uso_periodo(org_id uuid,periodo text,cfdi int default 0,ia int default 0,api int default 0,usuarios int default 0,envios int default 0,docs int default 0,updated_at timestamptz,primary key(org_id,periodo));
+    create table uso_periodo(org_id uuid,periodo text,cfdi int default 0,ia int default 0,api int default 0,usuarios int default 0,envios int default 0,docs int default 0,us_tax int default 0,updated_at timestamptz,primary key(org_id,periodo));
     create table usage_reservations(id uuid primary key,org_id uuid,billing_org_id uuid,dimension text,value int,meter_value int,periodo text,status text,meter_status text,stripe_customer_id text,committed_at timestamptz,canceled_at timestamptz,updated_at timestamptz);
   `);
   m.tx.mockImplementation((_org: string, ...queries: Array<{ text: string; values: unknown[] }>) => db.transaction(async tx => {

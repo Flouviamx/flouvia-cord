@@ -337,7 +337,12 @@ import { iconInner } from '../lib/icons';
                                 </tr>
                                 {g.rows.map((r) => (
                                     <tr>
-                                        <td class="pr-cell-feat">{r.label}</td>
+                                        <td class="pr-cell-feat">
+                                            {r.label}
+                                            {/* La aclaración de alcance (solo México y España, solo EE. UU.…) es
+                                                parte del contrato: sin ella una fila se lee como universal. */}
+                                            {r.hint && <span class="pr-feat-hint">{r.hint}</span>}
+                                        </td>
                                         {([r.free, r.starter, r.pro, r.scale, r.developer] as const).map((v, idx) => (
                                             <td class:list={['pr-cell-val', { 'is-featured': idx === 2 }]}>
                                                 {r.overageDim ? (
@@ -920,6 +925,7 @@ import { iconInner } from '../lib/icons';
         color: #99a2af;
     }
     .pr-cell-feat { padding: 0.85rem 1rem; font-size: 0.88rem; color: var(--color-text); border-bottom: 1px solid var(--color-border); }
+    .pr-feat-hint { display: block; margin-top: 0.25rem; max-width: 46ch; font-size: 0.74rem; line-height: 1.45; color: var(--color-text-muted); }
     .pr-cell-val {
         padding: 0.85rem 0.7rem; text-align: center; border-bottom: 1px solid var(--color-border);
         font-size: 0.82rem; color: var(--color-text); font-weight: 600;
