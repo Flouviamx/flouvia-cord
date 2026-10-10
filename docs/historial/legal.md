@@ -1,5 +1,33 @@
 # Historial — Programa de blindaje legal e i18n
 
+## 2026-10-10 — Primer incremento de cinco idiomas y export comercial
+
+André amplió el alcance a portugués, francés y alemán también dentro del
+dashboard y los correos, manteniendo inglés fijo en el futuro selector público.
+Se implementó negociación compartida con preferencias manuales, variantes BCP-47
+y pesos estrictos; cada superficie declara su disponibilidad para no presentar
+traducciones incompletas. Se separaron 26 claves de correo de autenticación en
+un catálogo ES/EN/PT/FR/DE y se conectaron al contexto personal del request.
+La invitación conserva el idioma de la organización salvo preferencia explícita
+del destinatario. No se habilitaron rutas ni ajustes PT/FR/DE del dashboard.
+
+En fase 6, el export dejó de ocultar errores SQL y de seleccionar la organización
+completa con credenciales potenciales. Suma facturas, pagos, cobros, versiones,
+comentarios y firmas; declara alcance, exclusiones y truncamiento de auditoría,
+excluye tokens públicos y evita caché. La interfaz y las docs ES/EN sustituyen
+"Descargar todo" por "Exportar datos comerciales". No se declara portabilidad
+integral ni se modifican reglas de retención, evidencia KYC o documentos legales
+publicados.
+
+Verificación: 47 pruebas dirigidas y suite completa de 1,737 pruebas (167
+archivos), typecheck, build y contratos tenancy/i18n/docs/CSRF/CSS/legales
+correctos. El control legal conserva cuatro variantes publicadas y reporta
+cinco datos de identidad y diez evidencias contractuales pendientes. Las
+pruebas de correo/SQL usan dobles locales; no se ejecutaron
+migraciones, bajas de organizaciones ni envíos reales. El build conserva avisos
+de prerender, plugins y tamaño de chunks. Fases 6 y 8 siguen abiertas; cobertura
+y siguiente entrega en [internacionalizacion](../estado/internacionalizacion.md).
+
 > Bitácora cronológica del programa legal (fases 0–5). Extraída el 2026-09-06
 > desde `docs/estado/legal.md`, que crecía como changelog fechado en vez de
 > describir estado vigente. El contenido de abajo se conservó **sin editar**;

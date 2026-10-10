@@ -8,6 +8,7 @@
 // requests concurrentes.
 
 import { AsyncLocalStorage } from 'node:async_hooks';
+import type { Locale } from '../i18n/locales';
 
 interface ReqCtx {
     userId: string | null;
@@ -36,6 +37,9 @@ interface ReqCtx {
     // usar), no el formato regional. NO se pasa a Intl.NumberFormat/DateTimeFormat
     // directamente — para eso existe `formatLocale`.
     locale?: "es" | "en";
+    // Idioma personal del navegador para correos de seguridad. Independiente
+    // del idioma de la organización y habilitado sólo con catálogo completo.
+    authEmailLocale?: Locale;
     // Locale de FORMATO (BCP-47 completo: 'pt-BR', 'de-DE', 'en-GB'…), del
     // perfil del país de la org (`getCountryProfile().locale`). `locale` de
     // arriba solo distingue es/en para la interfaz; sin este campo, Intl
@@ -134,6 +138,10 @@ export function isTestModeRequest(): boolean {
 /** Idioma resuelto para este request ("es"|"en"), default "es" fuera del middleware (crons/scripts). */
 export function currentLocale(): "es" | "en" {
     return reqContext.getStore()?.locale ?? "es";
+}
+
+export function currentAuthEmailLocale(): Locale {
+    return reqContext.getStore()?.authEmailLocale ?? currentLocale();
 }
 
 /**

@@ -938,15 +938,16 @@ limpiaba.
 
 ### 36. Un texto traducido sin consumidor es copy muerto que se sigue manteniendo
 
-Los diccionarios `src/i18n/app.ts` (app, `/q`, correos) y `src/i18n/ui.ts`
-(landing) no son un depósito: cada clave existe en **los dos idiomas** y tiene
+Los diccionarios `src/i18n/app.ts` (app, `/q`, correos comerciales),
+`src/i18n/ui.ts` (landing) y `src/i18n/auth-email.ts` (correo de autenticación)
+no son un depósito: cada clave existe en **todos los idiomas habilitados de su superficie** y tiene
 **al menos un consumidor**. Una clave solo en español hace que `t()` caiga al
 español en silencio y una cuenta en inglés lea texto en español sin que nada
 avise; una clave que nadie lee se sigue traduciendo y corrigiendo como si
 alguien la viera (regla 15 aplicada al copy).
 
-- **Rediseñar una pantalla incluye borrar su vocabulario anterior**, en `es` y
-  `en` en el mismo cambio.
+- **Rediseñar una pantalla incluye borrar su vocabulario anterior**, en todos
+  los idiomas de su catálogo en el mismo cambio.
 - **Una clave armada con variables usa una plantilla con prefijo fijo**
   (`` t(L, `set.eq.perm.${k}.label` as any) ``) o una concatenación
   (`'cfo.' + id`). Así el contrato la reconoce como viva; armarla con `join()`

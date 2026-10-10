@@ -65,6 +65,7 @@ estado vigente.
 | [`estado/cord-ops.md`](estado/cord-ops.md) | Contrato de seguridad, rutas, acciones, consumo y escala de la consola privada. | Tocas `ops.cordhq.app`, auditoría privilegiada o telemetría de costos. |
 | [`estado/analytics.md`](estado/analytics.md) | Contrato vigente de eventos, consentimiento, exclusión interna y dashboards. | Tocas PostHog, atribución o métricas de negocio. |
 | [`estado/legal.md`](estado/legal.md) | Estado vigente legal, privacidad, aceptación contractual e internacionalización, y pendientes de trámite. | Tocas términos, privacidad, consentimiento, países, idiomas o copy regulado. |
+| [`estado/internacionalizacion.md`](estado/internacionalizacion.md) | Cobertura real por superficie, negociación de idioma y ampliación a ES/EN/PT/FR/DE. | Tocas selector, traducciones, idioma de cuenta o correos. |
 | [`estado/legal-corpus.md`](estado/legal-corpus.md) | Fuentes contractuales por idioma, preservación de artefactos, borradores y bloqueos editoriales. | Editas, traduces o publicas un documento legal. |
 | [`../MOCKUP_STANDARDS.md`](../MOCKUP_STANDARDS.md) | SOP obligatorio para mockups de marketing. | Creas o modificas un mockup. |
 

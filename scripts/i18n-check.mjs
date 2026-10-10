@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Contrato de los diccionarios de i18n (`src/i18n/app.ts` y `src/i18n/ui.ts`).
+// Contrato de los diccionarios de i18n, con idiomas declarados por superficie.
 // Regla 36 de docs/estandares-ingenieria.md.
 //
 // Falla si:
@@ -24,29 +24,35 @@ import { fileURLToPath } from 'node:url';
 const root = join(fileURLToPath(new URL('.', import.meta.url)), '..');
 
 const DICTIONARIES = [
-    { file: 'src/i18n/app.ts', open: 'export const appStrings = {' },
-    { file: 'src/i18n/ui.ts', open: 'export const ui = {' },
+    { file: 'src/i18n/app.ts', open: 'export const appStrings = {', locales: ['es', 'en'] },
+    { file: 'src/i18n/ui.ts', open: 'export const ui = {', locales: ['es', 'en'] },
+    { file: 'src/i18n/auth-email.ts', open: 'export const authEmailStrings = {', locales: ['es', 'en', 'pt', 'fr', 'de'] },
 ];
 const SCAN_DIRS = ['src', 'scripts', 'test', 'packages/elements/src', 'public'];
 const SCAN_EXTS = new Set(['.ts', '.tsx', '.js', '.jsx', '.mjs', '.astro', '.mdx', '.md', '.json', '.html']);
 
-function parseDictionary({ file, open }) {
+function parseDictionary({ file, open, locales }) {
     const text = readFileSync(join(root, file), 'utf8');
     const start = text.indexOf(open);
     const end = text.indexOf('} as const;', start);
     if (start < 0 || end < 0) throw new Error(`${file}: no se encontró el diccionario (${open} … } as const;)`);
     const lines = text.slice(start, end).split('\n');
-    const keys = { es: [], en: [] };
+    const keys = Object.fromEntries(locales.map((locale) => [locale, []]));
     let lang = null;
     for (const line of lines) {
-        const section = line.match(/^\s+(es|en): ?\{\s*$/);
-        if (section) { lang = section[1]; continue; }
+        const section = line.match(/^\s+([a-z]{2,3}): ?\{\s*$/);
+        if (section) {
+            if (!Object.hasOwn(keys, section[1])) throw new Error(`${file}: idioma sin declarar: ${section[1]}`);
+            lang = section[1]; continue;
+        }
         const entry = line.match(/^\s+(["'])([^"']+)\1:\s/);
         if (entry && lang) keys[lang].push(entry[2]);
     }
-    if (!keys.es.length || !keys.en.length) throw new Error(`${file}: no se leyeron claves de es/en`);
+    for (const locale of locales) {
+        if (!keys[locale].length) throw new Error(`${file}: no se leyeron claves de ${locale}`);
+    }
     // Lo que va después del diccionario (helpers de runtime) sí es consumidor.
-    return { file, keys, tail: text.slice(end) };
+    return { file, keys, locales, tail: text.slice(end) };
 }
 
 function sourceFiles(dir, out = []) {
@@ -88,24 +94,24 @@ for (const m of corpus.matchAll(/(["'])([a-z][A-Za-z0-9_\-]*\.[A-Za-z0-9_.\-]*)\
 const isConsumed = (key) => literals.has(key) || [...patterns.values()].some((re) => re.test(key));
 
 const problems = [];
-for (const { file, keys } of dictionaries) {
+for (const { file, keys, locales } of dictionaries) {
     const es = new Set(keys.es);
-    const en = new Set(keys.en);
-    const onlyEs = keys.es.filter((k) => !en.has(k));
-    const onlyEn = keys.en.filter((k) => !es.has(k));
-    if (onlyEs.length) problems.push(`${file}: sin traducción al inglés (${onlyEs.length}): ${onlyEs.join(', ')}`);
-    if (onlyEn.length) problems.push(`${file}: solo existen en inglés (${onlyEn.length}): ${onlyEn.join(', ')}`);
-    for (const lang of ['es', 'en']) {
+    for (const lang of locales) {
+        const translated = new Set(keys[lang]);
+        const missing = keys.es.filter((k) => !translated.has(k));
+        const extra = keys[lang].filter((k) => !es.has(k));
+        if (missing.length) problems.push(`${file} (${lang}): sin traducción (${missing.length}): ${missing.join(', ')}`);
+        if (extra.length) problems.push(`${file} (${lang}): sin equivalente en español: ${extra.join(', ')}`);
         const dupes = keys[lang].filter((k, i) => keys[lang].indexOf(k) !== i);
         if (dupes.length) problems.push(`${file} (${lang}): claves duplicadas: ${[...new Set(dupes)].join(', ')}`);
     }
     const orphans = [...es].filter((k) => !isConsumed(k));
-    if (orphans.length) problems.push(`${file}: claves sin consumidor (${orphans.length}) — bórralas en es y en: ${orphans.join(', ')}`);
+    if (orphans.length) problems.push(`${file}: claves sin consumidor (${orphans.length}) — bórralas en todos los idiomas: ${orphans.join(', ')}`);
 }
 
 if (problems.length) {
     console.error('security:i18n FALLÓ\n  - ' + problems.join('\n  - '));
     process.exit(1);
 }
-const total = dictionaries.map((d) => `${d.file} ${d.keys.es.length}`).join(', ');
-console.log(`security:i18n (paridad es/en y claves con consumidor) OK — ${total}`);
+const total = dictionaries.map((d) => `${d.file} ${d.keys.es.length} × ${d.locales.join('/')}`).join(', ');
+console.log(`security:i18n (paridad por superficie y claves con consumidor) OK — ${total}`);

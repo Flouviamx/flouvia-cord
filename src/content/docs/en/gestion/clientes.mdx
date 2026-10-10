@@ -1,7 +1,7 @@
 ---
 title: "Clients, terms, and statements"
 description: "How to create and import clients, configure discounts, credit, terms, and tax data, and read commercial history and balances."
-lastUpdated: "2026-10-08"
+lastUpdated: "2026-10-10"
 reviewedBy: "Cord product and operations"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -107,8 +107,11 @@ Review these clients and complete their information before invoicing them.
 </Steps>
 
 To open that screen you need the Settings permission, and to download the file, the
-Clients permission. On the same screen, **Download everything (JSON)** exports products,
-clients, quotes with their lines and events, tasks, and the audit log.
+Clients permission. On the same screen, **Export business data (JSON)** exports products,
+clients, quotes with lines, events, versions, comments and signatures, invoices, payments,
+tasks, and up to 1,000 audit events. The file lists its record counts, any audit truncation,
+and exclusions; it does not include PDF/XML files or credentials and is not a full backup.
+If any included query fails, no partial download is generated: retry the export.
 
 ## Start a quote from the client
 

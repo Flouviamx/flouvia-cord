@@ -18,8 +18,8 @@ Este dominio cubre cuatro contratos relacionados, pero distintos:
 2. que los documentos legales tengan versión, variante y evidencia durable;
 3. que consentimiento contractual, aviso de privacidad y consentimientos
    opcionales no se confundan;
-4. que las superficies publicadas estén completas en español, inglés y
-   portugués de Brasil.
+4. completar las superficies en español, inglés, portugués de Brasil, francés
+   y alemán, sin habilitar idiomas con traducción parcial.
 
 La jerarquía de evidencia es la del repositorio: código, `db/schema.sql`,
 `package.json` y `.env.example` ganan sobre este documento. Una conclusión
@@ -76,10 +76,10 @@ ni con una exención supuesta. No se inventa una dirección.
 
 ## Terceros y DPA
 
-`src/lib/legal-providers.ts` clasifica 13 entradas desde consumidores reales del
+`src/lib/legal-providers.ts` clasifica 19 entradas desde consumidores reales del
 código: (1) subencargados, (2) proveedores con obligaciones/relaciones propias,
 (3) autoridades/destinatarios legales, (4) integraciones dirigidas por el
-Cliente. Nueve entradas conservan `account-evidence-pending`: un DPA público de
+Cliente. Diez entradas conservan `account-evidence-pending`: un DPA público de
 un proveedor prueba sus términos, no la región/configuración/aceptación de la
 cuenta de Cord.
 
@@ -136,9 +136,11 @@ preservación de evidencia: [`legal-corpus.md`](legal-corpus.md).
 
 ## Internacionalización
 
-- Vocabulario de escritura: `es-MX` y `en-US`. **No existe `pt-BR`**; Brasil nace
-  hoy en inglés. Los componentes de auth no importan la infraestructura de i18n y
-  la API arrastra deuda amplia de mensajes en español. Este frente está asignado
+- Interfaz habilitada: ES/EN; Brasil nace hoy en inglés. PT/FR/DE ya tienen
+  catálogo completo para los cinco correos de autenticación/invitación, no para
+  toda la app. Los componentes de auth y la API conservan deuda de traducción.
+  Cobertura, consumidores y ampliación aprobada a cinco idiomas en
+  [internacionalizacion.md](internacionalizacion.md). Este frente está asignado
   a la ola de i18n pendiente ("fase 10" en la bitácora) y se aborda por olas
   medidas, no de una vez.
 - `orgs.idioma` sí sirve ES/EN en la app interna, `/q`, `/i` y los correos
@@ -146,6 +148,23 @@ preservación de evidencia: [`legal-corpus.md`](legal-corpus.md).
   `src/lib/fmt-server.ts`. Detalle en [`negocio-billing.md`](negocio-billing.md),
   [`cobros-facturacion.md`](cobros-facturacion.md) y reglas 23–25 de
   [`../estandares-ingenieria.md`](../estandares-ingenieria.md).
+
+### Fase 6: exportación comercial reforzada, no exportación universal
+
+`GET /api/org/export` exige Ajustes y ejecuta sus 15 lecturas en `withOrgTx`.
+Un error aborta el archivo completo (503 sin attachment); ya no se transforma
+en una lista vacía. El JSON v2 suma documentos fiscales, pagos, cobros, versiones,
+comentarios y firmas; conserva divisas y añade manifiesto de conteos, exclusiones
+y recorte de auditoría (máximo 1,000 eventos). Excluye tokens públicos de
+cotización y usa allowlist para la organización y el inventario de API keys.
+La respuesta es `private, no-store`. UI y docs ya no lo llaman "Descargar todo".
+
+Siguen fuera PDF/XML, credenciales, KYC, aceptación contractual de Cord,
+configuración avanzada, equipo, workflows, integraciones, telemetría, planes y
+conversaciones de cobranza, disputas, suscripciones y respaldos de proveedores.
+No es un respaldo restaurable ni garantiza una instantánea de todas las tablas
+frente a escrituras concurrentes. No cierra el pendiente de portabilidad integral,
+retención, borrado verificable ni activación de `cord_app`.
 
 ## Países y rieles
 
@@ -198,8 +217,8 @@ archivos publicados con `artifactSha256` = sha256(`restoreLegacyLegalHtml`) y
   pasaporte, sin SSN/ITIN) para retomar el wizard de 1099-K de Stripe Connect.
 - **Legal, datos de André**: domicilio verificable, RFC, correo de contacto de
   privacidad, ley aplicable y foro (`src/lib/legal-identity.ts`); evidencia de
-  cuenta de 9 proveedores (contrato/DPA aceptado, región, retención): Neon,
-  Vercel, Anthropic, PostHog, Upstash, Slack, Facturapi, Google y Apple.
+  cuenta de 10 proveedores (contrato/DPA aceptado, región, retención): Neon,
+  Vercel, Anthropic, PostHog, Upstash, Slack, Facturapi, Google, Apple y Mercado Pago.
 - **Legal, 12 documentos en borrador** que NO están listos para publicar, cada
   uno con bloqueos propios además de la revisión jurídica: términos de pagos,
   de facturación, KYC, aviso de cobranza, divulgación de IA, evidencia de

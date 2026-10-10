@@ -6,6 +6,7 @@ import { reqContext } from "./lib/context";
 import { LEGACY_ROUTES } from "./lib/informes";
 import { isAllowedMutationOrigin, isCsrfExemptWrite } from './lib/csrf-policy';
 import { canonicalPathForInvalidEnglishRoute, preferredPublicLang } from './i18n/utils';
+import { AUTH_EMAIL_LOCALES, resolveLocale } from './i18n/locales';
 
 // APIs que DEBEN seguir públicas (las llaman terceros sin sesión):
 //   /api/q/*         → vista pública del cliente (token secreto)
@@ -605,7 +606,12 @@ const mainHandler = async (context: any, next: any) => {
     // Exponer el userId Y la org activa a las queries (db.ts →
     // getActiveOrgId) durante todo el render/handler de este request, vía
     // AsyncLocalStorage.
-    const response = await reqContext.run({ userId: userId ?? null, sessionId: validatedSessionId, activeOrgId: opsView ? null : (orgId ?? null), testMode, locale, opsScope: opsOperatorValidado,
+    const authEmailLocale = resolveLocale({
+        available: AUTH_EMAIL_LOCALES,
+        browser: acceptLang,
+        saved: cookieBlind ? null : context.cookies.get(PUBLIC_LANG_COOKIE)?.value,
+    });
+    const response = await reqContext.run({ userId: userId ?? null, sessionId: validatedSessionId, activeOrgId: opsView ? null : (orgId ?? null), testMode, locale, authEmailLocale, opsScope: opsOperatorValidado,
         opsView: opsView ? { id: opsView.id, orgId: opsView.orgId, operatorEmail: opsView.operatorEmail, expiresAt: opsView.expiresAt } : null }, async () => {
         // PRIMERO de todo: idioma, divisa y zona horaria de la ORGANIZACIÓN, que
         // pisan la adivinanza por Accept-Language de arriba. Va antes que

@@ -16,7 +16,7 @@
 // para el registro de qué páginas ya están cubiertas. Una key ausente cae al
 // español (fail-safe) vía el fallback de t().
 
-export type AppLocale = "es" | "en";
+export type AppLocale = (typeof import('./locales').APP_LOCALES)[number];
 
 export const appStrings = {
     es: {
@@ -600,34 +600,6 @@ export const appStrings = {
         "email.prueba_prefix": "[Prueba] ",
         "email.cliente_generico": "cliente",
 
-        // Correos de autenticación (src/lib/auth-email.ts) — idioma resuelto
-        // del navegador del USUARIO que dispara la acción (registro/reset/etc),
-        // vía currentLocale() en cada endpoint de /api/auth.
-        "authEmail.verify.asunto": "Confirma tu correo — Cord",
-        "authEmail.verify.titulo": "Confirma tu correo",
-        "authEmail.verify.cuerpo": "Falta un paso para activar tu cuenta de Cord. Confirma que este es tu correo:",
-        "authEmail.verify.boton": "Confirmar mi correo",
-        "authEmail.verify.expira": "Este enlace expira en 24 horas.",
-        "authEmail.reset.asunto": "Restablecer tu contraseña — Cord",
-        "authEmail.reset.titulo": "Restablecer contraseña",
-        "authEmail.reset.cuerpo": "Solicitaste restablecer tu contraseña en Cord. Si no fuiste tú, ignora este correo — tu contraseña actual sigue siendo válida.",
-        "authEmail.reset.boton": "Elegir nueva contraseña",
-        "authEmail.reset.expira": "Este enlace expira en 15 minutos.",
-        "authEmail.alert.asunto": "Nuevo inicio de sesión — Cord",
-        "authEmail.alert.titulo": "Nuevo inicio de sesión detectado",
-        "authEmail.alert.cuerpo": "Se inició sesión en tu cuenta de Cord desde un dispositivo o ubicación nuevos.",
-        "authEmail.alert.detalle": "Si fuiste tú, no necesitas hacer nada. Si no reconoces esta actividad, cambia tu contraseña de inmediato.",
-        "authEmail.alert.boton": "Revisar mi cuenta",
-        "authEmail.passkey.asunto": "Nueva clave de acceso en tu cuenta — Cord",
-        "authEmail.passkey.titulo": "Se agregó una clave de acceso",
-        "authEmail.passkey.cuerpo": "Se registró una clave de acceso (passkey) nueva para entrar a tu cuenta de Cord.",
-        "authEmail.passkey.detalle": "Si fuiste tú, no necesitas hacer nada. Si no la reconoces, elimínala desde tu cuenta, cambia tu contraseña y cierra tus otras sesiones.",
-        "authEmail.passkey.boton": "Revisar mis claves",
-        "authEmail.invite.asunto": "{org} te invitó a Cord",
-        "authEmail.invite.titulo": "Te invitaron a un equipo",
-        "authEmail.invite.cuerpo": "{org} te invitó a colaborar en su espacio de trabajo de Cord.",
-        "authEmail.invite.boton": "Unirme al equipo",
-        "authEmail.invite.expira": "Esta invitación expira en 7 días.",
 
         // SettingsShell (chasis compartido de las ~20 subpáginas de Ajustes)
         "settings.configuracion": "Configuración",
@@ -1645,8 +1617,8 @@ export const appStrings = {
 
         "set.datos.intro": "Exporta tus datos cuando quieras o cierra tu cuenta. Cord no vende tu información; solo la comunica para prestar el servicio, cumplir obligaciones o seguir tus instrucciones.",
         "set.datos.exportar_titulo": "Exportar tus datos",
-        "set.datos.json_titulo": "Descargar todo (JSON)",
-        "set.datos.json_desc": "Productos, clientes, cotizaciones (con líneas y eventos), tareas y registro de auditoría en un solo archivo portable.",
+        "set.datos.json_titulo": "Exportar datos comerciales (JSON)",
+        "set.datos.json_desc": "Productos, clientes, cotizaciones con líneas, versiones, comentarios y firmas, facturas, pagos, tareas y hasta 1,000 eventos de auditoría. El archivo declara sus exclusiones; no incluye PDF/XML ni credenciales.",
         "set.datos.exportar": "Exportar",
         "set.datos.csv_titulo": "Catálogo y clientes (CSV)",
         "set.datos.csv_desc": "Para abrir en Excel o migrar a otra herramienta. Mismo formato que la importación.",
@@ -4385,32 +4357,6 @@ export const appStrings = {
         "email.prueba_prefix": "[Test] ",
         "email.cliente_generico": "client",
 
-        // Auth emails (src/lib/auth-email.ts)
-        "authEmail.verify.asunto": "Confirm your email — Cord",
-        "authEmail.verify.titulo": "Confirm your email",
-        "authEmail.verify.cuerpo": "One step left to activate your Cord account. Confirm this is your email:",
-        "authEmail.verify.boton": "Confirm my email",
-        "authEmail.verify.expira": "This link expires in 24 hours.",
-        "authEmail.reset.asunto": "Reset your password — Cord",
-        "authEmail.reset.titulo": "Reset password",
-        "authEmail.reset.cuerpo": "You requested a password reset for your Cord account. If this wasn't you, ignore this email — your current password is still valid.",
-        "authEmail.reset.boton": "Choose a new password",
-        "authEmail.reset.expira": "This link expires in 15 minutes.",
-        "authEmail.alert.asunto": "New sign-in — Cord",
-        "authEmail.alert.titulo": "New sign-in detected",
-        "authEmail.alert.cuerpo": "Your Cord account was just signed into from a new device or location.",
-        "authEmail.alert.detalle": "If this was you, no action is needed. If you don't recognize this activity, change your password right away.",
-        "authEmail.alert.boton": "Review my account",
-        "authEmail.passkey.asunto": "New passkey on your account — Cord",
-        "authEmail.passkey.titulo": "A passkey was added",
-        "authEmail.passkey.cuerpo": "A new passkey was registered to sign in to your Cord account.",
-        "authEmail.passkey.detalle": "If this was you, no action is needed. If you don't recognize it, remove it from your account, change your password and sign out your other sessions.",
-        "authEmail.passkey.boton": "Review my passkeys",
-        "authEmail.invite.asunto": "{org} invited you to Cord",
-        "authEmail.invite.titulo": "You've been invited to a team",
-        "authEmail.invite.cuerpo": "{org} invited you to collaborate on their Cord workspace.",
-        "authEmail.invite.boton": "Join the team",
-        "authEmail.invite.expira": "This invite expires in 7 days.",
 
         // SettingsShell (shared chassis of the ~20 Settings subpages)
         "settings.configuracion": "Settings",
@@ -5432,8 +5378,8 @@ export const appStrings = {
 
         "set.datos.intro": "Export your data whenever you want, or close your account. Cord does not sell your information; it discloses it only to provide the service, meet duties, or follow your instructions.",
         "set.datos.exportar_titulo": "Export your data",
-        "set.datos.json_titulo": "Download everything (JSON)",
-        "set.datos.json_desc": "Products, clients, quotes (with line items and events), tasks, and audit log in a single portable file.",
+        "set.datos.json_titulo": "Export business data (JSON)",
+        "set.datos.json_desc": "Products, clients, quotes with lines, versions, comments and signatures, invoices, payments, tasks, and up to 1,000 audit events. The file lists its exclusions; it does not include PDF/XML files or credentials.",
         "set.datos.exportar": "Export",
         "set.datos.csv_titulo": "Catalog and clients (CSV)",
         "set.datos.csv_desc": "To open in Excel or migrate to another tool. Same format as the import.",

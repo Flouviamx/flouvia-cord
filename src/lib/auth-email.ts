@@ -4,14 +4,15 @@
 // src/lib/email.ts, separado en su propio archivo porque estos correos no
 // dependen de ninguna cotización/org de negocio — solo de `users`.
 import { sendEmail, siteOrigin, type SendResult } from './email';
-import { currentLocale } from './context';
-import { t } from '../i18n/app';
+import { currentLocale, currentAuthEmailLocale } from './context';
+import { t } from '../i18n/auth-email';
+import { LOCALES, type Locale } from '../i18n/locales';
 import { escapeHtml } from './escape';
 
 const FROM_NAME = 'Cord Seguridad';
 
-function shell(opts: { titulo: string; cuerpo: string; ctaLabel: string; ctaHref: string; footer?: string }): string {
-    return `<div style="background-color:#ffffff;padding:40px 20px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+function shell(opts: { locale?: Locale; titulo: string; cuerpo: string; ctaLabel: string; ctaHref: string; footer?: string }): string {
+    return `<div lang="${LOCALES[opts.locale ?? 'es'].tag}" style="background-color:#ffffff;padding:40px 20px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
         <div style="max-width:540px;margin:0 auto;">
             <div style="margin-bottom:32px;">
                 <img src="https://cordhq.app/imgs/logo-cord-navy.png" width="90" height="auto" alt="Cord" style="display:block;">
@@ -27,14 +28,14 @@ function shell(opts: { titulo: string; cuerpo: string; ctaLabel: string; ctaHref
     </div>`;
 }
 
-export async function sendVerificationEmail(to: string, token: string): Promise<SendResult> {
-    const L = currentLocale();
+export async function sendVerificationEmail(to: string, token: string, L: Locale = currentAuthEmailLocale()): Promise<SendResult> {
     const link = `${siteOrigin()}/verify-email?token=${encodeURIComponent(token)}`;
     return sendEmail({
         to,
         subject: t(L, 'authEmail.verify.asunto'),
-        fromName: FROM_NAME,
+        fromName: t(L, 'authEmail.sender'),
         html: shell({
+            locale: L,
             titulo: t(L, 'authEmail.verify.titulo'),
             cuerpo: t(L, 'authEmail.verify.cuerpo'),
             ctaLabel: t(L, 'authEmail.verify.boton'),
@@ -44,14 +45,14 @@ export async function sendVerificationEmail(to: string, token: string): Promise<
     });
 }
 
-export async function sendPasswordResetEmail(to: string, token: string): Promise<SendResult> {
-    const L = currentLocale();
+export async function sendPasswordResetEmail(to: string, token: string, L: Locale = currentAuthEmailLocale()): Promise<SendResult> {
     const link = `${siteOrigin()}/reset-password?token=${encodeURIComponent(token)}`;
     return sendEmail({
         to,
         subject: t(L, 'authEmail.reset.asunto'),
-        fromName: FROM_NAME,
+        fromName: t(L, 'authEmail.sender'),
         html: shell({
+            locale: L,
             titulo: t(L, 'authEmail.reset.titulo'),
             cuerpo: t(L, 'authEmail.reset.cuerpo'),
             ctaLabel: t(L, 'authEmail.reset.boton'),
@@ -62,14 +63,14 @@ export async function sendPasswordResetEmail(to: string, token: string): Promise
 }
 
 /** Alerta best-effort de "nuevo dispositivo" — nunca bloquea el login si falla. */
-export async function sendNewDeviceAlertEmail(to: string): Promise<SendResult> {
-    const L = currentLocale();
+export async function sendNewDeviceAlertEmail(to: string, L: Locale = currentAuthEmailLocale()): Promise<SendResult> {
     const link = `${siteOrigin()}/app/ajustes/cuenta`;
     return sendEmail({
         to,
         subject: t(L, 'authEmail.alert.asunto'),
-        fromName: FROM_NAME,
+        fromName: t(L, 'authEmail.sender'),
         html: shell({
+            locale: L,
             titulo: t(L, 'authEmail.alert.titulo'),
             cuerpo: `${t(L, 'authEmail.alert.cuerpo')} ${t(L, 'authEmail.alert.detalle')}`,
             ctaLabel: t(L, 'authEmail.alert.boton'),
@@ -79,14 +80,14 @@ export async function sendNewDeviceAlertEmail(to: string): Promise<SendResult> {
 }
 
 /** Aviso de una passkey nueva: registrarla es la forma más silenciosa de quedarse con una cuenta. */
-export async function sendPasskeyAddedEmail(to: string): Promise<SendResult> {
-    const L = currentLocale();
+export async function sendPasskeyAddedEmail(to: string, L: Locale = currentAuthEmailLocale()): Promise<SendResult> {
     const link = `${siteOrigin()}/app/ajustes/cuenta`;
     return sendEmail({
         to,
         subject: t(L, 'authEmail.passkey.asunto'),
-        fromName: FROM_NAME,
+        fromName: t(L, 'authEmail.sender'),
         html: shell({
+            locale: L,
             titulo: t(L, 'authEmail.passkey.titulo'),
             cuerpo: `${t(L, 'authEmail.passkey.cuerpo')} ${t(L, 'authEmail.passkey.detalle')}`,
             ctaLabel: t(L, 'authEmail.passkey.boton'),
@@ -143,17 +144,19 @@ export async function sendOpsPasskeyAddedEmail(to: string, ip: string, userAgent
     });
 }
 
-export async function sendTeamInviteEmail(to: string, orgName: string, token: string): Promise<SendResult> {
-    const L = currentLocale();
+// No inferir el idioma del invitado a partir del navegador de quien lo invita.
+// Sin preferencia del destinatario se conserva el idioma de la organización.
+export async function sendTeamInviteEmail(to: string, orgName: string, token: string, L: Locale = currentLocale()): Promise<SendResult> {
     const link = `${siteOrigin()}/unirse/${encodeURIComponent(token)}`;
     const orgEsc = escapeHtml(orgName);
     return sendEmail({
         to,
-        subject: t(L, 'authEmail.invite.asunto').replace('{org}', orgEsc),
-        fromName: FROM_NAME,
+        subject: t(L, 'authEmail.invite.asunto').replace('{org}', () => orgName.replace(/[\r\n]/g, ' ')),
+        fromName: t(L, 'authEmail.sender'),
         html: shell({
+            locale: L,
             titulo: t(L, 'authEmail.invite.titulo'),
-            cuerpo: t(L, 'authEmail.invite.cuerpo').replace('{org}', orgEsc),
+            cuerpo: t(L, 'authEmail.invite.cuerpo').replace('{org}', () => orgEsc),
             ctaLabel: t(L, 'authEmail.invite.boton'),
             ctaHref: link,
             footer: t(L, 'authEmail.invite.expira'),

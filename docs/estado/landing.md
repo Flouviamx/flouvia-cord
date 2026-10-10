@@ -107,6 +107,10 @@ Es el mismo patrón que `../flouvia/src/components/Navbar.astro`, adaptado:
 
 ### Idioma público y frontera con la app
 
+La ampliación solicitada a PT/FR/DE incluye también dashboard y correos; su
+cobertura y selector adaptable están en [internacionalizacion.md](internacionalizacion.md).
+La landing continúa sirviendo sólo ES/EN hasta tener traducciones completas.
+
 - La primera visita a `/` negocia ES/EN con `Accept-Language`, incluyendo sus
   pesos `q=`. Español permanece en `/`; inglés redirige temporalmente a `/en`.
   Si el navegador no declara ninguno de los dos idiomas, inglés es el fallback

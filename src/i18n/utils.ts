@@ -1,5 +1,6 @@
 // src/i18n/utils.ts
 import { ui, defaultLang } from './ui';
+import { PUBLIC_LOCALES, resolveLocale } from './locales';
 
 export type PublicLang = keyof typeof ui;
 
@@ -82,7 +83,7 @@ export function languageSwitchTargets(url: URL, alternates: PublicAlternates | n
 
 export function getLangFromUrl(url: URL): PublicLang {
   const [, lang] = url.pathname.split('/');
-  if (lang in ui) return lang as keyof typeof ui;
+  if (Object.hasOwn(ui, lang)) return lang as keyof typeof ui;
   return defaultLang;
 }
 
@@ -93,27 +94,7 @@ export function getLangFromUrl(url: URL): PublicLang {
  * crawlers y clientes que no expresan preferencia.
  */
 export function preferredPublicLang(header: string | null | undefined): PublicLang {
-  if (!header?.trim()) return defaultLang;
-
-  const candidates = header
-    .split(',')
-    .map((entry, index) => {
-      const [rawTag, ...params] = entry.trim().toLowerCase().split(';');
-      const qParam = params.find((param) => param.trim().startsWith('q='));
-      const parsedQ = qParam ? Number.parseFloat(qParam.trim().slice(2)) : 1;
-      return {
-        primary: rawTag.split('-')[0],
-        q: Number.isFinite(parsedQ) ? parsedQ : 0,
-        index,
-      };
-    })
-    .filter((entry) => entry.q > 0)
-    .sort((a, b) => b.q - a.q || a.index - b.index);
-
-  const supported = candidates.find((entry) => entry.primary === 'es' || entry.primary === 'en');
-  if (supported) return supported.primary as PublicLang;
-
-  return candidates.some((entry) => entry.primary !== '*') ? 'en' : defaultLang;
+  return resolveLocale({ available: PUBLIC_LOCALES, browser: header });
 }
 
 /**

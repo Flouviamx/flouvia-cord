@@ -1,7 +1,7 @@
 ---
 title: "Clientes, condiciones y estado de cuenta"
 description: "Cómo crear e importar clientes, configurar descuentos, crédito, términos y datos fiscales, y leer su historial comercial y saldo."
-lastUpdated: "2026-10-08"
+lastUpdated: "2026-10-10"
 reviewedBy: "Producto y operaciones de Cord"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -129,8 +129,11 @@ clientes y completa su información antes de facturarles.
 </Steps>
 
 Para entrar a esa pantalla necesitas el permiso Ajustes, y para descargar el archivo,
-el permiso Clientes. En la misma pantalla, **Descargar todo (JSON)** exporta productos,
-clientes, cotizaciones con sus líneas y eventos, tareas y la bitácora de auditoría.
+el permiso Clientes. En la misma pantalla, **Exportar datos comerciales (JSON)** exporta productos,
+clientes, cotizaciones con líneas, eventos, versiones, comentarios y firmas, facturas, pagos,
+tareas y hasta 1,000 eventos de auditoría. El archivo declara sus conteos, cualquier recorte
+de auditoría y sus exclusiones; no incluye PDF/XML ni credenciales y no es un respaldo completo.
+Si falla alguna consulta incluida, no se genera una descarga parcial: reintenta la exportación.
 
 ## Crear una cotización desde el cliente
 
