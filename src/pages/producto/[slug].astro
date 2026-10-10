@@ -267,6 +267,10 @@ const MK_RAIL: { k: keyof typeof MKI; on?: boolean; sep?: boolean }[] = [
 const MK_RAIL_WF: typeof MK_RAIL = [...MK_RAIL.map((it) => ({ ...it, on: false })), { k: 'workflows', on: true }];
 const WFI = WORKFLOW_ICONS;
 import { iconInner } from '../../lib/icons';
+// Secciones propias de Cord Invoicing (finanzas, portal del cliente y desarrolladores).
+import InvoicingFinance from '../../components/producto/InvoicingFinance.astro';
+import InvoicingPortal from '../../components/producto/InvoicingPortal.astro';
+import InvoicingDevelopers from '../../components/producto/InvoicingDevelopers.astro';
 ---
 
 <Layout
@@ -1669,6 +1673,14 @@ import { iconInner } from '../../lib/icons';
                 </article>
             ))}
         </section>
+
+        {feature.slug === 'facturacion' && (
+            <Fragment>
+                <InvoicingFinance isEn={isEn} />
+                <InvoicingPortal isEn={isEn} />
+                <InvoicingDevelopers isEn={isEn} />
+            </Fragment>
+        )}
 
         <!-- ── FEATURE SHOWCASE (tabbed, ElevenLabs-style) ── -->
         <FeatureShowcase slug={feature.slug} tabs={feature.showcase} nav={feature.nav} isEn={isEn} />
