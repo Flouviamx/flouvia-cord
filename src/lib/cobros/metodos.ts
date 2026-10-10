@@ -16,6 +16,9 @@
 // capacidad activa en su cuenta conectada (`orgs.stripe_capacidades`).
 // https://docs.stripe.com/payments/sepa-debit
 // https://docs.stripe.com/payments/ach-direct-debit
+//
+// SPEI se decide aparte (`speiDisponible`, abajo): solo la factura hospedada y
+// la cotización lo ofrecen.
 
 export type MetodoCobro = 'card' | 'sepa_debit' | 'us_bank_account';
 export type MetodoDomiciliacion = Exclude<MetodoCobro, 'card'>;
@@ -71,6 +74,49 @@ export function metodosPara(org: OrgCobro, currency: string): MetodoCobro[] {
         }
     }
     return out;
+}
+
+// ── SPEI: transferencia con CLABE (México) ──────────────────────────────────
+//
+// Stripe lo cobra como `customer_balance` con `mx_bank_transfer`: la CLABE es
+// del Customer y el dinero que llega a ella cae en su saldo, desde donde Stripe
+// lo aplica a sus pagos abiertos. Solo MXN, solo cuentas mexicanas con la
+// capacidad `mx_bank_transfer_payments`, y solo si el negocio lo encendió
+// (`orgs.cobro_spei_auto`, el mismo interruptor de la cotización).
+//
+// Vive FUERA de `metodosPara` a propósito: ese conjunto lo comparten el portal
+// y el cobro automático, y ninguno puede cobrar por SPEI. Una transferencia no
+// se guarda para cobrarse después, y una CLABE por cliente (el Customer del
+// portal) recibiría el dinero de varias facturas sin decir de cuál es. Lo
+// ofrecen la cotización y la factura hospedada, cada una con su CLABE propia.
+// https://docs.stripe.com/payments/bank-transfers/accept-a-payment?country=mx
+
+export const CAPACIDAD_SPEI = 'mx_bank_transfer_payments';
+
+export interface OrgSpei {
+    /** País de la cuenta del negocio (`orgs.country_code`). */
+    pais: string | null | undefined;
+    /** El negocio encendió la transferencia SPEI automática. */
+    cobroSpeiAuto: boolean;
+    capacidades: unknown;
+}
+
+/**
+ * ¿Se ofrece SPEI para cobrar en `currency`? Una capacidad `pending` o
+ * `inactive` no cobra. Las cuentas cuyo último `account.updated` es anterior al
+ * registro de capacidades (oct 2026) no tienen ninguna guardada: ahí manda la
+ * decisión del negocio, igual que en la cotización, hasta el siguiente aviso
+ * del proveedor.
+ */
+export function speiDisponible(org: OrgSpei, currency: string): boolean {
+    if (String(currency || '').toUpperCase() !== 'MXN') return false;
+    if (String(org.pais || '').toUpperCase() !== 'MX') return false;
+    if (!org.cobroSpeiAuto) return false;
+    const estado = estadoCapacidad(org.capacidades, CAPACIDAD_SPEI);
+    if (estado === 'active') return true;
+    const registradas = org.capacidades && typeof org.capacidades === 'object'
+        ? Object.keys(org.capacidades as Record<string, unknown>).length : 0;
+    return registradas === 0;
 }
 
 /** Un débito bancario: confirma en días, no al instante. */

@@ -98,6 +98,16 @@ export function invoiceEventDetail(tipo: string, detalle: string, locale: Timeli
     if ((m = d.match(/^Pago de (.+) recibido DESPUÉS de anular la factura: debe devolverse al cliente$/))) {
         return `Payment of ${m[1]} received AFTER the invoice was voided: it must be refunded to the client`;
     }
+    // SPEI (cobros/spei.ts): dinero que llegó y todavía no es un pago.
+    if ((m = d.match(/^Transferencia SPEI incompleta: llegaron (.+) de (.+); faltan (.+) a la misma CLABE\. El pago se registra al completarse$/))) {
+        return `Incomplete SPEI transfer: ${m[1]} of ${m[2]} arrived; ${m[3]} still due to the same CLABE. The payment is recorded once it is complete`;
+    }
+    if ((m = d.match(/^Transferencia SPEI sin pago abierto: (.+) a favor del cliente\. Se aplica cuando vuelva a elegir SPEI en la factura$/))) {
+        return `SPEI transfer with no open payment: ${m[1]} in the client's favor. It is applied when they choose SPEI on the invoice again`;
+    }
+    if ((m = d.match(/^Transferencia SPEI de más: (.+) a favor del cliente, sin aplicar a la factura\. Hay que devolvérselo$/))) {
+        return `SPEI overpayment: ${m[1]} in the client's favor, not applied to the invoice. It must be returned to them`;
+    }
     if ((m = d.match(/^Error al emitir: (.+)$/))) return `Issuing failed: ${m[1] === 'desconocido' ? 'unknown' : m[1]}`;
     // México: complemento de pago (payment-complement.ts). El motivo o el error
     // vienen del SAT o del proveedor y se dejan tal cual.

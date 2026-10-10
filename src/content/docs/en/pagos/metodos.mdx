@@ -27,7 +27,7 @@ Cord has **two online payment rails** and one manual option:
 | Method | Countries | Payment currency | Quote | Invoice | Client portal | Retainer | Automatic payments |
 |---|---|---|---|---|---|---|---|
 | **Card** (Cord Payments) | MX, US, CA, BR, ES, GB, DE, FR | The document's sale currency, if the processor supports it | Yes | Yes | Yes | Yes | Yes |
-| **Automatic SPEI** (Cord Payments) | MX only | MXN only | Yes | No | No | No | No |
+| **Automatic SPEI** (Cord Payments) | MX only | MXN only | Yes | Yes | No | No | No |
 | **SEPA Direct Debit** (Cord Payments) | ES, DE, FR | EUR only | No | Yes | Yes | No | Yes |
 | **ACH bank debit** (Cord Payments) | US only | USD only | No | Yes | Yes | No | Yes |
 | **Mercado Pago** | MX, BR, CO, AR, CL, PE | Whatever Mercado Pago supports on your account | Yes | Yes | No | No | No |
@@ -68,7 +68,7 @@ Once it's active, your customer will be able to pay with **Apple Pay** or **Goog
 
 ## Automatic SPEI
 
-SPEI is Mexico's interbank transfer system and only settles in pesos. It appears only on **MXN** payments of businesses in Mexico with SPEI turned on; if the quote is in another currency, your customer pays by card even if SPEI is on.
+SPEI is Mexico's interbank transfer system and only settles in pesos. It appears only on **MXN** payments of businesses in Mexico with SPEI turned on, on the quote link and on the invoice link; if the document is in another currency, your customer pays by card even if SPEI is on.
 
 When choosing **SPEI transfer**, your customer sees the **SPEI instructions**:
 
@@ -90,6 +90,23 @@ From that screen they can **Print or save PDF**, or click **Email these to me**.
 ### How it's confirmed
 
 Each charge keeps its own bank reference, so Cord recognizes the funds without anyone cross-checking receipts. When the money arrives, the charge is marked paid and the quote changes status. Confirmation depends on the bank's notice and **isn't always instant**: if your customer already transferred, they should check the status before trying a card.
+
+### SPEI on the invoice link
+
+<Callout type="info">
+This feature is new and may not be enabled on your account yet. If you do not see it, write to us.
+</Callout>
+
+On **MXN** invoices of businesses in Mexico with SPEI turned on, the invoice link offers **SPEI transfer**. If you also accept cards, your customer chooses the method; if you only have SPEI, they go straight to **Pay [amount] by SPEI transfer**.
+
+- **One CLABE per invoice.** Each invoice has its own CLABE and keeps it on every visit and every partial payment. Money sent to that CLABE can only pay that invoice: if your customer owes you several, they transfer to each invoice's CLABE.
+- **Instructions.** Amount, CLABE and reference (both with **Copy**), bank, beneficiary, and expiry if there is one. Your customer can **Print or save PDF**. The invoice doesn't have the **Email these to me** button: the invoice email already carries its link.
+- **Partial payment by SPEI.** With **Pay another amount**, your customer transfers only part of it. The rest stays as the balance of the same invoice and the CLABE doesn't change; the reference can change, so they should always use the one on screen.
+- **How it's confirmed.** When the transfer for the full amount arrives, Cord records the payment on the invoice without you doing anything, recalculates the balance and, if it reaches zero, marks it **Paid**. If the invoice is a CFDI stamped as PPD, Cord issues its payment complement with payment form 03, electronic funds transfer.
+- **If they transfer less.** What arrived is held for that payment but isn't recorded yet: the invoice history shows **SPEI transfer** with what arrived and what's missing, and your customer sees the pending amount when they open SPEI on the invoice again. The payment is recorded when the rest arrives. If they try to pay by card in the meantime, Cord asks them to finish the transfer.
+- **If they transfer more.** Only the requested payment is recorded; the difference stays in your customer's favor and isn't charged. If the invoice still has a balance, it's applied when your customer chooses SPEI on it again. If it's already paid, the history says so and the difference must be returned: write to us to arrange it. If nobody uses it, the processor tries to return it to your customer after 75 days.
+- **Fee.** The SPEI fee from your [fee schedule](/en/docs/pagos/condiciones), the same as on the quote.
+- **Where it doesn't appear.** In the customer portal or in automatic payments: from the portal, your customer opens each invoice and pays it by SPEI from its own link.
 
 ## Bank debit (SEPA and ACH)
 
@@ -160,7 +177,7 @@ Your customer sees your bank details and transfers from their bank. When you ver
 | | Quote link | Invoice link | Client portal |
 |---|---|---|---|
 | Card | Yes | Yes, if **Card** is turned on | Yes |
-| Automatic SPEI | Yes, in MXN | No | No |
+| Automatic SPEI | Yes, in MXN | Yes, in MXN, with that invoice's CLABE | No |
 | SEPA or ACH debit | No | Yes, in EUR or USD | Yes, in EUR or USD |
 | Mercado Pago | Yes | Yes | No |
 | Partial payment | In defined parts: deposit, balance, or installments | Free amount: your customer chooses how much to pay | No: each invoice is paid at its balance |
@@ -169,7 +186,7 @@ Your customer sees your bank details and transfers from their bank. When you ver
 
 ### Partial payment of an invoice
 
-On the invoice link, your customer can pay the full balance or click **Pay another amount** and enter how much they want to pay, by card or with Mercado Pago:
+On the invoice link, your customer can pay the full balance or click **Pay another amount** and enter how much they want to pay, by card, SPEI, or Mercado Pago:
 
 - Cord **caps the payment at the real balance**: if they enter more than they owe, only the balance is charged.
 - There's a **minimum that can be charged online**: 0.50 in the invoice currency (for example, 0.50 USD or 0.50 EUR), or 50 units in currencies without decimals. If the amount is lower, Cord asks them to pay a bit more or settle the balance.
@@ -180,7 +197,7 @@ See [Create, issue, and collect invoices](/en/docs/pagos/facturas-emitidas).
 
 ## Switch between SPEI and card
 
-Your customer can choose another method on the same page. Before offering the new one, Cord checks the previous attempt:
+Your customer can choose another method on the same page, on the quote and on the invoice. Before offering the new one, Cord checks the previous attempt:
 
 - If the previous attempt **received no money**, it's canceled and the new method opens.
 - If it **already received money or has a payment in progress** (a partial SPEI transfer or a card being authorized), it isn't replaced: your customer sees there's a payment pending confirmation.
@@ -191,22 +208,24 @@ While a payment is pending clarification, your customer shouldn't repeat the tra
 
 ## Limits
 
-- SPEI: Mexico only, MXN only, quotes only.
+- SPEI: Mexico only and MXN only, on the quote link and on the invoice link. Not in the portal or in automatic payments.
 - Bank debit: SEPA only in EUR for businesses in Spain, Germany, and France; ACH only in USD for businesses in the United States. Only on invoices, the portal, and automatic payments.
-- The invoice doesn't offer SPEI or retainers.
+- The invoice doesn't offer retainers.
 - Mercado Pago doesn't run recurring charges and Cord doesn't read its chargebacks today.
 - In Colombia, Argentina, Chile, and Peru there's no Cord Payments: online collection is through Mercado Pago.
 - A test document (without a valid fiscal issue) can't be paid online.
 
 ## Common problems
 
-**My customer doesn't see the SPEI option.** The quote isn't in MXN, SPEI is off in **Settings › Payments**, or your account isn't active.
+**My customer doesn't see the SPEI option.** The quote or the invoice isn't in MXN, SPEI is off in **Settings › Payments**, or your account isn't active. SPEI doesn't appear in the customer portal: it's paid from each invoice's link.
 
-**My customer doesn't see a pay button on the invoice.** Your payments account isn't active, **Card** is off and Mercado Pago isn't connected, or the invoice is a test document.
+**My customer doesn't see a pay button on the invoice.** Your payments account isn't active, **Card** and **SPEI** are off (or the invoice isn't in MXN) and Mercado Pago isn't connected, or the invoice is a test document.
 
 **My customer doesn't see bank debit.** The invoice isn't in the method's currency (EUR for SEPA, USD for ACH), the method isn't **Active** in **Settings › Payments**, or it's a charge in MXN.
 
 **"Email these to me" fails.** The quote has no customer email or the sending limit was reached. Your customer can **Print or save PDF**.
+
+**My customer transferred less than they owed to an invoice's CLABE.** The invoice history shows it as **SPEI transfer** with what's missing. Ask them to transfer the rest to the same CLABE: the payment is recorded when it arrives in full.
 
 **My customer transferred to another charge's CLABE.** Each charge has its own reference. Contact your customer and review the quote's charges before recording anything by hand.
 

@@ -109,8 +109,9 @@ Código en `src/lib/cobros/`; esquema en la sección "PORTAL DEL CLIENTE…" de
   (`/api/billing/connect/domiciliacion`), que pide la capacidad
   (`sepa_debit_payments` / `us_bank_account_ach_payments`) a la cuenta conectada;
   `orgs.stripe_capacidades` guarda su estado desde `account.updated`, y solo una
-  capacidad `active` se ofrece. Donde Cord cobra comisión (hoy MXN) solo se
-  ofrece tarjeta: la comisión es de tarjeta y no hay tarifa aprobada para débito.
+  capacidad `active` se ofrece. Donde Cord cobra comisión (hoy MXN) el Payment
+  Element solo ofrece tarjeta: la comisión es de tarjeta y no hay tarifa aprobada
+  para débito. SPEI va por su propio camino (ver "SPEI con CLABE en facturas").
   Un débito queda días en `processing`: `documentos_fiscales.pago_en_proceso_pi`
   bloquea cobrar otra vez y anular, y `/i` y el portal lo dicen. Stripe manda al
   titular el aviso de cada cargo SEPA y la confirmación del mandato ACH (por eso
@@ -143,6 +144,137 @@ Código en `src/lib/cobros/`; esquema en la sección "PORTAL DEL CLIENTE…" de
   conectadas: `payment_intent.processing`, `payment_intent.canceled`,
   `setup_intent.succeeded` y `mandate.updated` (ver
   `pendientes-integraciones.md`).
+
+## SPEI con CLABE en facturas — oct 2026
+
+La factura hospedada (`/i/[token]`) de un negocio mexicano con Cord Payments
+ofrece **Transferencia SPEI** en facturas MXN, con conciliación automática.
+Antes solo la cotización la tenía; la factura la negaba explícitamente.
+
+Código: `src/lib/cobros/spei.ts` (instrucciones, fondeo y los dos avisos que no
+son pago), `speiDisponible()` en `src/lib/cobros/metodos.ts` (la misma regla
+pinta la opción en `/i` y la acepta el endpoint: MX, MXN, `orgs.cobro_spei_auto`
+y la capacidad `mx_bank_transfer_payments` activa; una cuenta sin capacidades
+registradas sigue el interruptor, como la cotización),
+`/api/i/[token]/payment-intent` con `{ metodo: 'spei' }`, y el webhook. Esquema:
+sección "SPEI con CLABE en facturas" de `db/schema.sql`, espejo de
+`db/deploy/2026-10-10-spei-facturas.sql`. Comportamiento del proveedor
+verificado el 10-10-2026 en docs.stripe.com (accept-a-payment `country=mx`,
+`customer-balance/reconciliation`, `customer-balance/refunding`, tipos de evento).
+
+**1. Alcance de la CLABE: por factura.** La CLABE es del Customer del proveedor,
+no del pago. Cada factura tiene su propio Customer en la cuenta conectada
+(`documentos_fiscales.stripe_spei_customer_id`, único por organización), creado
+con `Idempotency-Key cord-inv-spei-cus-<documento>` y guardado ANTES del primer
+pago: la llave de idempotencia vence a las 24 horas y no sostiene una CLABE
+estable. Además nunca hay más de un intento SPEI abierto por factura: el
+endpoint cancela (y verifica la cancelación) uno sin fondos antes de abrir otro.
+- *Por qué.* La conciliación automática de Stripe en MX aplica una transferencia
+  a: la referencia de una factura de Stripe; si no, la referencia de UN intento
+  incompleto; si no, el grupo de 1 a 5 pagos abiertos que sume el importe exacto
+  (el más chico, los más antiguos); y si no, al más antiguo. Con una CLABE por
+  CLIENTE, una transferencia sin referencia o con otro importe fondearía el pago
+  abierto de otra factura de ese cliente. Con una por factura, el único
+  candidato es el pago de esa factura: no hay a cuál equivocarse.
+- *Costo del diseño.* Quien debe N facturas hace N transferencias, y se crean
+  más CLABE virtuales (Stripe advierte que en algunos países tienen tope o costo;
+  pendiente de confirmar para MX, ver `pendientes-integraciones.md`). La
+  cotización ya creaba un Customer por cobro, así que el volumen es del mismo
+  orden.
+- *Descartado:* Customer por cliente con conciliación manual (Cord aplicando el
+  saldo con `apply_customer_balance`): reproduce la heurística del proveedor con
+  más piezas y sin poder probarla aquí contra Stripe.
+
+**2. El ledger solo se mueve con el pago completo.** `payment_intent.succeeded`
+→ `settleInvoiceFromIntent` → `applyPayment`, idempotente por el índice único
+`(documento_id, stripe_payment_intent_id)` de `documento_pagos`, con línea de
+historia, recálculo del saldo, `invoice.paid` una sola vez y la comisión
+conciliada como la de tarjeta. El importe del intento lo fija el servidor contra
+el saldo real (regla 25), así que el pago aplicado nunca excede lo que se debía
+al crearlo. Si la factura se saldó por otra vía mientras la transferencia
+viajaba, el pago entra como cualquier pago del proveedor y aparece como importe
+por devolver (`refund_due`), el contrato existente.
+
+**3. Método real en el ledger.** El pago SPEI se asienta con `metodo = 'spei'`
+(antes todo pago del proveedor era `'stripe'`), así el complemento de pago de un
+CFDI PPD declara la forma 03 y no 04. Lo mismo para un SPEI cobrado en la
+cotización y trasladado a su factura (`carryQuotePayments`, que antes también
+lo timbraba como tarjeta). Un reembolso se liga al pago por su
+`stripe_payment_intent_id`, nunca por `metodo`.
+
+**4. Transferencia incompleta.** Stripe deja el intento en `requires_action` con
+un `amount_remaining` menor, y documenta que un intento parcialmente fondeado no
+entra al saldo del negocio hasta completarse. Cord no registra nada:
+`payment_intent.partially_funded` deja en la historia de la factura un evento
+`transferencia` ("Transferencia SPEI incompleta: llegaron X de Y; faltan Z…"),
+que también enciende la campana. El cliente ve lo que falta a la misma CLABE al
+volver a abrir SPEI. El endpoint nunca cancela ni cambia el importe de un
+intento con fondos (Stripe devolvería el dinero al saldo del cliente sin un pago
+que lo reciba) y responde 409 `spei_parcial` si se intenta pagar con tarjeta
+encima. El negocio le pide al cliente el resto. Aceptar lo recibido como abono
+(cambiar el importe y reconfirmar, que Stripe documenta) no está construido:
+exige probarlo contra Stripe; hoy lo resuelve Operaciones.
+
+**5. Lo que sobra.** Una transferencia de más completa el pago y deja el
+excedente en el saldo del Customer; una transferencia a la CLABE sin pago
+abierto también cae ahí. No es dinero del negocio y no entra al ledger.
+`cash_balance.funds_available` deja en la historia de la factura de ESE Customer
+cuánto quedó a favor del cliente. Si la factura todavía tiene saldo, Stripe lo
+aplica solo cuando el cliente vuelve a elegir SPEI (al confirmar, el intento usa
+primero el saldo; si lo cubre, el endpoint responde "ya recibimos una
+transferencia que cubre este pago"). Si la factura ya está pagada, además avisa
+a Operaciones: una cuenta Custom no tiene panel del proveedor y el negocio no
+puede devolverlo él mismo (es un reembolso con `origin=customer_balance`). Si
+nadie lo aplica, Stripe intenta devolverlo al cliente a los 75 días y a los 90
+lo pasa al saldo del negocio si no tiene sus datos bancarios.
+
+**6. Comisión.** `computeFee({ metodo: 'spei' })`, la misma tabla que la
+cotización (1 % + MXN 7 + IVA con tope de margen). Con la tarifa activa en MXN
+el Payment Element de `/i` solo ofrece tarjeta (la domiciliación no tiene
+tarifa), pero SPEI sí se ofrece: tiene la suya.
+
+**7. Portal y cobro automático: no.** El cobro agrupado fija el reparto al
+crearse y su PaymentIntent no se puede fondear a medias ni repartir parcialmente
+(`asentarPagoAgrupado` exige el importe completo). El Customer del portal es
+por cliente (métodos guardados): una CLABE ahí sería una CLABE por cliente, lo
+que el punto 1 descarta. El cobro automático no puede usar transferencias
+(Stripe no admite `setup_future_usage` en `customer_balance`). El portal enlaza
+cada factura a su `/i`, donde SPEI sí se ofrece.
+
+**8. Correo al cliente.** Como con la tarjeta, Cord no envía un recibo propio del
+pago de una factura. El Customer de la CLABE lleva el correo del cliente porque
+Stripe lo usa para devolver una transferencia (le pide sus datos bancarios por
+correo y, sin correo, el reembolso falla). Si Stripe además manda su recibo
+depende de la configuración de correos de Connect de la plataforma (no
+verificado). La factura no tiene "Enviar a mi correo" para las instrucciones:
+el correo de la factura ya lleva su link.
+
+**9. Reembolsar un pago SPEI de factura (no construido aquí).** Stripe lo admite
+hasta 180 días: a la cuenta bancaria del cliente (el reembolso nace en
+`requires_action` mientras Stripe le pide sus datos por correo; si no los da en
+45 días pasa a `failed` y el dinero vuelve a su saldo; se puede cancelar
+mientras está en `requires_action`) o al saldo del cliente (inmediato y sin
+costo). Cada reembolso, incluso parcial, puede tener costo. `documento_reembolsos`
+solo cuenta `succeeded`, así que un reembolso en espera de datos no reabre el
+saldo, y `refund.failed` debe atenderse.
+
+**Eventos que este carril necesita** en el endpoint de cuentas conectadas:
+`payment_intent.partially_funded` y `cash_balance.funds_available`, además de
+`payment_intent.succeeded` (ver `pendientes-integraciones.md`).
+
+**Límites conocidos.** Anular o sustituir una factura no cancela su intento SPEI
+abierto: una transferencia tardía se asienta como pago tardío (por devolver, o
+"aplícalo a la que la sustituye"). La cotización no registra todavía sus
+fondeos parciales. No hay aceptación de lo recibido como abono (punto 4).
+
+**Verificación.** `test/invoice-spei-payment-intent.test.ts` (disponibilidad,
+CLABE guardada antes del pago, intento ligado antes de confirmarse, comisión de
+SPEI, reutilización, cancelación verificada, fondeo parcial),
+`test/spei-facturas-webhook.test.ts` (método `spei`, `invoice.paid` una vez, los
+avisos no tocan el ledger) y `test/spei-facturas-db.test.ts` (PGlite: índice de
+una CLABE por factura, asiento idempotente, complemento, traslado desde la
+cotización, avisos en la factura correcta). Falta la aceptación integrada en
+Stripe TEST.
 
 ## Términos de pago, claves SAT y CFDI a extranjeros — oct 2026
 

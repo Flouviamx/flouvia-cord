@@ -50,7 +50,7 @@ Rules Cord applies:
 
 - **One currency at a time.** Invoices in different currencies are paid separately.
 - **The server decides the split** with each invoice's real balance when the charge is created; the browser only chooses which ones. Each invoice receives its share as its own payment in its history, and a Mexican invoice issued PPD gets its payment complement.
-- **Methods:** card and, if you turned them on and the currency matches, SEPA Direct Debit (EUR) or ACH bank debit (USD). In Mexican pesos the portal charges by card; SPEI is offered on each quote's link.
+- **Methods:** card and, if you turned them on and the currency matches, SEPA Direct Debit (EUR) or ACH bank debit (USD). In Mexican pesos the portal charges by card; SPEI is offered on each quote's and each invoice's link, with that invoice's CLABE.
 - **A bank debit takes days:** while a debit is processing, that invoice shows **Payment processing**, it cannot be charged again or voided, and the portal tells your client not to pay again.
 
 ## Refund a payment that covered several invoices

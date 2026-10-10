@@ -9,8 +9,9 @@ category: "Pagos y Depósitos"
 
 El enlace de cotización ofrece los métodos habilitados por el negocio. Tarjeta y
 transferencia automática requieren una cuenta de cobros habilitada. El link de la
-factura no ofrece lo mismo que la cotización: ofrece tarjeta y, si el negocio la
-activó, domiciliación bancaria (SEPA en EUR, ACH en USD), pero **no SPEI**. Ver
+factura ofrece tarjeta; en facturas en MXN de negocios en México con SPEI activado,
+también **SPEI con la CLABE de esa factura**; y, si el negocio la activó, domiciliación
+bancaria (SEPA en EUR, ACH en USD). Ver
 [Domiciliación SEPA y cargo a cuenta bancaria (ACH)](/soporte/domiciliacion-sepa-ach).
 
 ### Tarjeta
@@ -21,9 +22,16 @@ la pantalla o regresar al enlace no prueba que se haya pagado.
 
 ### SPEI
 
-SPEI automático está disponible para cobros en MXN de negocios elegibles en México.
-Las instrucciones muestran CLABE, banco, referencia e importe pendiente. Usa las
-instrucciones vigentes del cobro y no una captura guardada de otro documento.
+SPEI automático está disponible para cobros en MXN de negocios elegibles en México,
+en el link de la cotización y en el de la factura. Las instrucciones muestran CLABE,
+banco, referencia e importe pendiente. Usa las instrucciones vigentes del cobro y no
+una captura guardada de otro documento.
+
+En la factura, la CLABE es de esa factura y no cambia entre visitas ni abonos. Si
+transfieres menos de lo indicado, el pago se registra cuando llega el resto: al volver
+a abrir SPEI en la factura ves cuánto falta. Si transfieres de más, la diferencia queda
+a tu favor y no se cobra. SPEI en la factura es una función nueva y puede no estar
+habilitada todavía en todas las cuentas.
 
 Cada cobro conserva una referencia de cliente bancario para reconocer sus fondos.
 La conciliación depende de la confirmación recibida; no se garantiza que sea

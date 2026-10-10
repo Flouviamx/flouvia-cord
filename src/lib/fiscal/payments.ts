@@ -303,7 +303,11 @@ export async function carryQuotePayments(orgId: string, cotizacionId: string): P
             stripe_payment_intent_id, mp_payment_id, nota
           )
           select d.org_id, d.id, cc.id, cc.monto, d.currency,
-                 case when cc.stripe_payment_intent_id is not null then 'stripe'
+                 -- El método real: el complemento de pago declara con él la
+                 -- forma (SPEI = 03, tarjeta = 04). Un SPEI de la cotización
+                 -- trasladado como 'stripe' se timbraba como tarjeta.
+                 case when cc.stripe_payment_intent_id is not null and cc.payment_method = 'spei' then 'spei'
+                      when cc.stripe_payment_intent_id is not null then 'stripe'
                       when cc.mp_payment_id is not null then 'mercadopago'
                       else coalesce(nullif(cc.payment_method, ''), 'otro') end,
                  c.folio, cc.stripe_payment_intent_id, cc.mp_payment_id,

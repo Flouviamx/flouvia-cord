@@ -7,6 +7,8 @@
 //   • invoice.paid / invoice.payment_failed / invoice.payment_action_required
 //   • invoice.marked_uncollectible / invoice.voided
 //   • payment_intent.succeeded / .payment_failed
+// Y, en el scope de cuentas CONECTADAS, para SPEI en facturas (cobros/spei.ts):
+//   • payment_intent.partially_funded / cash_balance.funds_available
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
@@ -29,7 +31,8 @@ import { applyPayment } from '../../../lib/fiscal/payments';
 import { recordInvoiceRefund } from '../../../lib/fiscal/reconciliation';
 import { reconcileInvoiceCommission } from '../../../lib/invoice-payment-fees';
 import { cobroCancelado, cobroConfirmado, cobroEnProceso, cobroFallido, mandatoActualizado, metodoGuardado } from '../../../lib/cobros/webhook';
-import { resolverTipoMetodo } from '../../../lib/cobros/agrupados';
+import { resolverTipoMetodo, tipoMetodoDeIntent } from '../../../lib/cobros/agrupados';
+import { saldoSinAplicar, transferenciaParcial } from '../../../lib/cobros/spei';
 import { metodoAnalitica } from '../../../lib/cobros/metodos';
 import { sincronizarDominiosDeCobro } from '../../../lib/cobros/billeteras-org';
 import { invalidateMoneyCaches } from '../../../lib/queries';
@@ -212,6 +215,16 @@ async function handleStripeEvent(event: any): Promise<void> {
         }
         case 'payment_intent.canceled': {
             await cobroCancelado(obj, event.account);
+            break;
+        }
+        // SPEI en facturas: llegó dinero que todavía NO es un pago. Ninguno de
+        // los dos mueve el ledger; solo lo dicen en la historia de la factura.
+        case 'payment_intent.partially_funded': {
+            await transferenciaParcial(obj, event.account);
+            break;
+        }
+        case 'cash_balance.funds_available': {
+            await saldoSinAplicar(obj, event.account);
             break;
         }
         // El cliente guardó un método para el cobro automático desde su portal.
@@ -421,10 +434,17 @@ async function settleInvoiceFromIntent(intent: any, account?: string): Promise<v
         targetId = String(rows[0].id);
     }
 
+    // El método real va al ledger: el complemento de pago de México declara la
+    // forma de pago con él (SPEI = 03 transferencia, tarjeta = 04), y un SPEI
+    // asentado como 'stripe' se timbraba como tarjeta. Desde la factura se lee
+    // el método del intento (con una consulta si ofrecía varios); desde la
+    // cotización basta lo que trae el evento, porque ese pago ya lo trasladó
+    // `syncQuoteInvoices` con el método de su cobro.
+    const tipo = docId ? await resolverTipoMetodo(intent, account) : tipoMetodoDeIntent(intent);
     const result = await applyPayment(orgId, targetId, {
         monto,
         currency,
-        metodo: 'stripe',
+        metodo: tipo === 'customer_balance' ? 'spei' : 'stripe',
         stripePaymentIntentId: String(intent?.id || ''),
         referencia: String(intent?.id || ''),
     });
@@ -446,7 +466,7 @@ async function settleInvoiceFromIntent(intent: any, account?: string): Promise<v
             after(sendOpsAlert('Comisión de factura pendiente de revisión',
                 `Organización ${orgId}; documento ${targetId}; pago ${intent.id}. Revisar desglose o divisa antes de facturar la comisión.`));
         }
-        const pm = metodoAnalitica(await resolverTipoMetodo(intent, account));
+        const pm = metodoAnalitica(tipo);
         // Neither analytics DB lookups nor PostHog delivery may delay Stripe's
         // acknowledgement or interrupt the already-recorded paid transition.
         after((async () => {

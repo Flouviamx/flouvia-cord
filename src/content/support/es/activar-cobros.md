@@ -1,6 +1,6 @@
 ---
 title: "Cómo activar los cobros en línea"
-description: "Guía paso a paso para configurar tu cuenta y recibir pagos con tarjeta o SPEI desde tus cotizaciones."
+description: "Guía paso a paso para configurar tu cuenta y recibir pagos con tarjeta o SPEI desde tus cotizaciones y facturas."
 category: "Pagos y Depósitos"
 order: 1
 ---
@@ -21,7 +21,7 @@ Cord Payments (cobro con tarjeta en el link) está disponible para negocios domi
 Una vez activa tu cuenta, puedes habilitar o deshabilitar estos métodos desde la misma pantalla de Ajustes:
 
 - **Tarjeta de crédito y débito**: Se procesa al instante (Visa, Mastercard, Amex) en cualquiera de los países donde Cord Payments está disponible.
-- **Transferencia SPEI automática** (solo México, solo pesos mexicanos): Cord Payments genera instrucciones propias para cada cobro. Cuando el cliente transfiere, la cotización se marca como pagada automáticamente.
+- **Transferencia SPEI automática** (solo México, solo pesos mexicanos): Cord Payments genera instrucciones propias para cada cobro de la cotización y para cada factura. Cuando el cliente transfiere, el pago se registra automáticamente en la cotización o en la factura.
 - **Transferencia bancaria manual**: Muestra los datos de tu cuenta de depósito habitual, en el formato de tu país. Tú debes confirmar manualmente cuándo recibes el pago. Este método no pasa por Cord Payments.
 
 ### Comisiones y tiempos de depósito

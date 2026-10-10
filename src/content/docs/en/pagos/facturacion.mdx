@@ -121,15 +121,16 @@ For each payment a **PPD** invoice receives, the SAT requires a **payment receip
 complement** (type P CFDI, also called REP) no later than the 5th of the following month.
 Cord stamps it **by itself**, as soon as the payment is recorded:
 
-- **However the payment is recorded:** a card or Mercado Pago payment on the invoice
-  link, a payment from the [client portal](/en/docs/pagos/portal-facturas) or
+- **However the payment is recorded:** a card, SPEI, or Mercado Pago payment on the
+  invoice link (SPEI is recorded only when the full transfer arrives), a payment from the
+  [client portal](/en/docs/pagos/portal-facturas) or
   [automatic payments](/en/docs/pagos/cobro-automatico), a payment you record by hand, or
   the source quote's payments applied to the invoice.
 - **One complement per payment.** Each payment gets its own, related to the invoice's UUID
   and with its installment number and previous balance. A retry never stamps the same
   payment twice.
-- **Complement payment form:** the payment's (04 card, 03 transfer, 01 cash, 02 check);
-  if it can't be known, 03.
+- **Complement payment form:** the payment's (04 card, 03 transfer, including SPEI on
+  the invoice or the quote, 01 cash, 02 check); if it can't be known, 03.
 - **It uses your tax quota:** each complement counts as one tax document for the month.
 - **It's recorded in the invoice history** (in Spanish): "Complemento de pago emitido"
   with its tax folio (UUID). If it couldn't be stamped, the history says "Complemento de
