@@ -1,0 +1,192 @@
+---
+title: "Client portal: invoices and payments"
+seoTitle: "Client invoice portal: balance per currency and multi-invoice pay"
+description: "One link per client with all their invoices, the balance per currency, paying several invoices in a single charge, and automatic payments. How to create, share, regenerate, or disable it, and what your client sees."
+lastUpdated: "2026-10-10"
+reviewedBy: "Cord product and operations"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Clients permission to create, send, regenerate, or disable the link", "Invoices issued to that client", "An active Cord Payments account for your client to pay online"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Client portal: invoices and payments</h1>
+  <p class="page-subtitle">A single link per client with all their invoices, their balance in each currency, and paying several at once.</p>
+</header>
+
+<Callout type="info">
+This feature is new and may not be enabled on your account yet. If you don't see it, write to us.
+</Callout>
+
+## What it is
+
+The **client portal** is a private page, one per client, where that client sees **every
+invoice you've issued them**, what they owe in each currency, and what they've already
+paid. From there they download each invoice, **pay several in a single charge**, and can
+turn on [automatic payments](/en/docs/pagos/cobro-automatico) so the next ones are
+charged on their due date by themselves.
+
+They don't need an account or a password: the link is their access. You create and
+manage it from the client's profile.
+
+<Callout type="info">
+It's not the same as **Settings › Brand appearance › Client portal**. That tab customizes
+the link of each **quote** (banner, welcome, comments). See [Client portal (quote
+link)](/en/docs/cuenta/portal-cliente).
+</Callout>
+
+<DmInvoicePortal lang="en" />
+
+## Requirements
+
+| | Details |
+|---|---|
+| **Plan** | All plans. |
+| **Permission** | **Clients** to create, send, regenerate, or disable the link, and to turn off a client's automatic payments. |
+| **Invoices** | Invoices **issued** to that client. Quotes don't appear in the portal. |
+| **Online payment** | Your [Cord Payments](/en/docs/pagos/onboarding) account active, with **Card** (or bank debit) turned on in **Settings › Payments**. Available in Mexico, the United States, Canada, Brazil, Spain, the United Kingdom, Germany, and France. In Colombia, Argentina, Chile, and Peru the portal shows the invoices and the balance, and tells your client to contact you to pay. |
+
+## Create and share the link
+
+<Steps>
+1. Open **Clients** and go to the client's profile.
+2. In the right-hand column, under **Client portal**, click **Create portal link**.
+3. Share the link:
+   - **Copy** copies it so you can paste it into an email, WhatsApp, or your system.
+   - **Send by email** sends your client the "Your invoices with [your business]" email
+     with the **Open my portal** button, with your branding and your reply-to address.
+     It only appears if the client has an email on their profile.
+   - **Open** shows you the portal in another tab, just as your client sees it.
+</Steps>
+
+<DmClientPortalCard lang="en" />
+
+The link stays the same until you generate another one: you can copy it or send it
+again whenever you want.
+
+## What your client sees
+
+| Element | Details |
+|---|---|
+| **Header** | Your logo (or your initial in your brand color), **Your invoices**, and the client's name. |
+| **Balance due per currency** | One card per currency with the balance, how many invoices are to pay, and how much is **overdue**. Currencies are **never added together**: a balance in MXN and another in USD are two cards. With no balance, it says "You have no balance due." |
+| **Automatic payments** | If you allow it in **Settings › Payments**, the card to turn it on, the method it's on with, or the reason it stopped. See [Automatic payments](/en/docs/pagos/cobro-automatico). |
+| **To pay** | Each open invoice with its number, its due date (or the issue date if it has none), the balance and, if there were partial payments, "of [total]". Overdue ones carry **Overdue**; one with a pending bank debit, **Payment processing**. Each with **View** (its link) and **PDF**. |
+| **Paid** | The last 24 paid invoices, collapsed, with their total and their links. |
+| **Footer** | Your contact email, the notice "This link is personal: it gives access to your invoices and payments with [your business]. Don't share it.", and the Cord brand mark, unless you've hidden it. |
+
+The portal speaks your account's language and uses your country's date and amount
+format, just like an invoice link.
+
+### Which invoices appear
+
+- Invoices **issued** to that client, open or paid, in all their currencies.
+- Drafts, voided invoices, and credit notes don't appear.
+- In Mexico, a replaced CFDI doesn't appear (its replacement does), and neither does the
+  global invoice, because it doesn't belong to any client.
+- A test document appears, but can't be paid online.
+
+## Pay several invoices at once
+
+<Steps>
+1. Your client checks the invoices they want to pay. They can only choose **one
+   currency at a time**: once they check an invoice in MXN, the ones in other currencies
+   are disabled.
+2. A bar appears at the bottom with the summary, for example "2 invoices · $101,256.40",
+   and the **Pay selected** button.
+3. In the payment sheet they see the total. If you allow automatic payments, they can
+   check **Save this method for automatic payments**, together with the authorization.
+4. They click **Continue**, enter their card or bank account details, and click
+   **Pay [amount]**.
+5. Back on the portal they see "We're confirming your payment". A card takes a few
+   seconds; a bank debit, a few days.
+</Steps>
+
+How it's charged and allocated:
+
+- **Each invoice is paid at its real balance.** The browser only chooses which
+  invoices; Cord reads each one's amount from your account at the moment the charge is
+  created. If a balance changed (for example, because you recorded another payment),
+  your client reads that the balance of an invoice changed or already has a payment in
+  progress, and to refresh the page.
+- **One charge, several invoices.** The client sees a single charge on their statement.
+  When the payment is confirmed, each invoice records its share in its payment history
+  and its balance goes down; the one that reaches zero becomes **Paid**.
+- **Methods:** card and, if you turned on [bank
+  debit](/en/docs/pagos/metodos#bank-debit-sepa-and-ach), SEPA debit on invoices in EUR
+  (businesses in Spain, Germany, and France) or ACH on invoices in USD (businesses in
+  the United States). In MXN only card is offered.
+- **Fee:** where Cord charges a fee (today, charges in MXN), **one** fee is charged for
+  the whole charge, not one per invoice. See [Fees](/en/docs/pagos/condiciones).
+- **Payment processing.** While a bank debit is being confirmed, those invoices show
+  **Payment processing**: they can't be paid again or voided.
+
+If you later refund part of a charge that paid several invoices, Cord allocates the
+refund among them: see [Refunds](/en/docs/pagos/reembolsos#refunding-a-charge-that-paid-several-invoices).
+
+## Generate a new link or disable it
+
+From the **Client portal** block on the profile:
+
+| Action | What happens |
+|---|---|
+| **Generate new link** | The previous link stops working right away and Cord creates another. Use it if the link was shared too widely; then share the new one with your client. |
+| **Disable link** | Your client can't open their portal until you generate another link. Automatic payments don't change. |
+
+Both actions ask for confirmation and are recorded in your account's audit log. If
+automatic payments stay on and a charge fails, the email Cord sends the client includes
+the button to their portal, and to do so it generates a new link if you had disabled
+it. To make sure there's no link at all, turn off automatic payments too.
+
+## Privacy and security
+
+- **The link is a credential.** It's generated at random (32 bytes) and can't be
+  guessed. Whoever has it sees the invoices and can pay them: share it only with your
+  client.
+- **It isn't indexed or tracked.** The page doesn't show up in search engines, doesn't
+  pass its address to other sites, and carries no analytics. Cord doesn't record when
+  your client opens it either.
+- **It lives on cordhq.app.** Even if you have a [custom
+  domain](/en/docs/cuenta/dominio-propio), the portal isn't served from your domain: your
+  domain only serves quote and invoice links, never a page with saved payment methods.
+- **Payment details don't go through Cord.** The card or bank account is entered in the
+  payment processor's form; Cord only keeps the type, the brand, and the last four
+  digits.
+
+## Limits
+
+- Up to 50 invoices in a single payment, all in the same currency.
+- The minimum per charge is the processor's: 0.50 in the currency (for example, 0.50
+  USD or 0.50 EUR), or 50 units in zero-decimal currencies.
+- The portal doesn't offer Mercado Pago, SPEI, or bank transfer: online payment is with
+  Cord Payments.
+- Part of an invoice can't be paid from the portal; for a partial payment, your client
+  uses **View** and pays from that invoice's link.
+- Quotes don't appear in the portal.
+
+## Troubleshooting
+
+**My client doesn't see payment buttons.** Your Cord Payments account isn't active,
+**Card** is off in **Settings › Payments**, your country doesn't have Cord Payments, or
+the account is a test one ("Test portal: online payment is disabled.").
+
+**An invoice doesn't appear.** Check that it was issued to that client. A draft, a
+voided invoice, or a credit note isn't listed.
+
+**An invoice can't be checked.** Your client already checked invoices in another
+currency, the invoice has a payment in progress, or there's no method available in that
+currency.
+
+**The link says the page doesn't exist.** You generated a new link or disabled the
+portal. Share the current link from the client's profile.
+
+**Send by email doesn't appear.** The client has no email on their profile.
+
+## Related
+
+- [Automatic payments](/en/docs/pagos/cobro-automatico)
+- [Payment methods](/en/docs/pagos/metodos)
+- [Create, issue, and collect invoices](/en/docs/pagos/facturas-emitidas)
+- [Clients and statements](/en/docs/gestion/clientes)
+- [Refunds](/en/docs/pagos/reembolsos)
+- [Client portal (quote link)](/en/docs/cuenta/portal-cliente)

@@ -2,7 +2,7 @@
 title: "Internal approvals"
 seoTitle: "Internal quote approvals by discount, amount, or margin"
 description: "How to set discount, amount, and margin caps that hold a quote until a manager approves it, and how the decision is made from Cord, Slack, or Teams."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-10"
 reviewedBy: "Cord product and operations"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Scale, Developer]
@@ -46,6 +46,12 @@ link](/en/docs/interaccion/firma); this is an internal control for your team.
 | **Max discount without approval (%)** | The largest discount on any line: the difference between its list price and its negotiated price. | If any line has a discount above the cap. |
 | **Max amount without approval** | The quote total. | If the total is above the cap. |
 | **Minimum gross margin without approval (%)** | The margin of each line with a captured cost: (negotiated price − cost) ÷ negotiated price. | If any line with a cost falls below the minimum. Lines without a cost don't count. |
+
+If the quote carries a **manual** [document discount](/en/docs/cotizacion/descuentos),
+Cord counts it as a discount on each line for the discount and margin caps: moving the
+reduction to the footer doesn't get around the rule. A **coupon** doesn't count toward
+those caps, because it was created by whoever manages Settings and is already an
+authorized reduction.
 
 <Callout type="warning">
 **The amount is compared without converting currencies.** Cord compares the cap number

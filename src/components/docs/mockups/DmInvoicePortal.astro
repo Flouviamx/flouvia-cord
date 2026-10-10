@@ -1,0 +1,187 @@
+---
+// Mockup: el portal de facturas del cliente (/portal/[token]) con dos facturas
+// en MXN seleccionadas y la barra de pago múltiple.
+//
+// Calca de src/pages/portal/[token].astro en su orden real: marca del negocio
+// (inicial con el color de marca), "Tus facturas" y el nombre del cliente; una
+// tarjeta de saldo POR DIVISA (MXN y USD nunca se suman, saldoPorDivisa) con
+// sus facturas por pagar y lo vencido; la tarjeta "Cobro automático" apagada
+// con "Activar cobro automático"; la lista "Por pagar" con casilla, número,
+// vencimiento, insignia Vencida, saldo y "de <total>" cuando hubo abonos, y
+// los enlaces Ver y PDF. Con dos facturas en MXN marcadas, la de USD queda
+// deshabilitada (una divisa a la vez) y aparece la nota portal.una_divisa.
+// La barra flotante dice "2 facturas · <monto>" con "Pagar seleccionadas".
+// En la app la barra es fija al pie de la ventana; aquí se dibuja bajo la
+// lista, donde cae en una captura.
+//
+// Hoy es 10 oct 2026: F-0231 venció el 28 sep. Saldo MXN = 48,940.00 +
+// 52,316.40 + 147,354.00 = 248,610.40; seleccionado = 101,256.40.
+import DocsMockup from './DocsMockup.astro';
+import DmIcon from './DmIcon.astro';
+import { dmT, dmMoney, pick, tpl, DEMO, type DmLang } from './format';
+
+interface Props {
+    lang: DmLang;
+    caption?: string;
+}
+const { lang } = Astro.props;
+const m = (n: number, cur: string) => dmMoney(n, cur, lang).replace(` ${cur}`, '');
+
+type Row = { num: string; cur: string; saldo: number; total: number; vence: string; vencida?: boolean; checked?: boolean; disabled?: boolean };
+const DATA: { es: { caption: string; pagadas: number; email: string; rows: Row[] }; en: { caption: string; pagadas: number; email: string; rows: Row[] } } = {
+    es: {
+        caption: `Portal de facturas de ${DEMO.cliente} con ${DEMO.org}: saldo pendiente de ${dmMoney(248610.4, 'MXN', 'es')} en 3 facturas, con ${dmMoney(48940, 'MXN', 'es')} vencido, y aparte ${dmMoney(4850, 'USD', 'es')} en 1 factura; el cobro automático apagado con su botón para activarlo; la lista Por pagar con F-0231 vencida y F-0236 marcadas, F-0240 sin marcar y F-0238 en dólares deshabilitada mientras haya facturas en pesos seleccionadas; abajo, la barra "2 facturas · ${m(101256.4, 'MXN')}" con Pagar seleccionadas.`,
+        pagadas: 12, email: 'cobranza@materialesdelvalle.mx',
+        rows: [
+            { num: 'F-0231', cur: 'MXN', saldo: 48940, total: 61480, vence: '28 sep 2026', vencida: true, checked: true },
+            { num: 'F-0236', cur: 'MXN', saldo: 52316.4, total: 52316.4, vence: '15 oct 2026', checked: true },
+            { num: 'F-0238', cur: 'USD', saldo: 4850, total: 4850, vence: '20 oct 2026', disabled: true },
+            { num: 'F-0240', cur: 'MXN', saldo: 147354, total: 147354, vence: '30 oct 2026' },
+        ],
+    },
+    en: {
+        caption: `${DEMO.cliente}'s invoice portal with ${DEMO.org}: a balance due of ${dmMoney(248610.4, 'MXN', 'en')} across 3 invoices, ${dmMoney(48940, 'MXN', 'en')} of it overdue, and separately ${dmMoney(4850, 'USD', 'en')} in 1 invoice; automatic payments off with the button to turn them on; the To pay list with F-0231 (overdue) and F-0236 checked, F-0240 unchecked and F-0238 in dollars disabled while peso invoices are selected; at the bottom, the bar "2 invoices · ${m(101256.4, 'MXN')}" with Pay selected.`,
+        pagadas: 12, email: 'cobranza@materialesdelvalle.mx',
+        rows: [
+            { num: 'F-0231', cur: 'MXN', saldo: 48940, total: 61480, vence: 'Sep 28, 2026', vencida: true, checked: true },
+            { num: 'F-0236', cur: 'MXN', saldo: 52316.4, total: 52316.4, vence: 'Oct 15, 2026', checked: true },
+            { num: 'F-0238', cur: 'USD', saldo: 4850, total: 4850, vence: 'Oct 20, 2026', disabled: true },
+            { num: 'F-0240', cur: 'MXN', saldo: 147354, total: 147354, vence: 'Oct 30, 2026' },
+        ],
+    },
+};
+const d = pick(DATA, lang);
+const caption = Astro.props.caption ?? d.caption;
+const SALDOS = [
+    { cur: 'MXN', saldo: 248610.4, n: 3, vencido: 48940 },
+    { cur: 'USD', saldo: 4850, n: 1, vencido: 0 },
+];
+const SEL = d.rows.filter((r) => r.checked);
+const SEL_TOTAL = SEL.reduce((s, r) => s + r.saldo, 0);
+const seleccion = tpl(dmT(lang, 'portal.seleccion_n'), { n: SEL.length, monto: m(SEL_TOTAL, 'MXN') });
+---
+<DocsMockup lang={lang} variant="browser" url="cordhq.app/portal/Qm7xV2kLp9" brand={DEMO.brand} height={1180} caption={caption} class="dm-ipt-figure">
+    <div class="dm-ipt">
+        <div class="dm-ipt-head">
+            <div class="dm-ipt-brand"><span class="dm-ipt-mark">{DEMO.orgInitial}</span><span class="dm-strong">{DEMO.org}</span></div>
+            <span class="dm-ipt-h1">{dmT(lang, 'portal.titulo')}</span>
+            <span class="dm-ipt-sub">{DEMO.cliente}</span>
+        </div>
+
+        <div class="dm-ipt-saldos">
+            {SALDOS.map((s) => (
+                <div class="dm-ipt-saldo">
+                    <span class="dm-ipt-label">{dmT(lang, 'portal.saldo')} · {s.cur}</span>
+                    <span class="dm-ipt-amt">{m(s.saldo, s.cur)}</span>
+                    <span class="dm-ipt-meta">
+                        {s.n === 1 ? dmT(lang, 'portal.abierta_1') : tpl(dmT(lang, 'portal.abiertas_n'), { n: s.n })}
+                        {s.vencido > 0 && <span class="dm-ipt-late"> · {tpl(dmT(lang, 'portal.vencido'), { monto: m(s.vencido, s.cur) })}</span>}
+                    </span>
+                </div>
+            ))}
+        </div>
+
+        <div class="dm-ipt-card">
+            <div class="dm-ipt-ap-head">
+                <span class="dm-ipt-icon"><DmIcon name="refresh" /></span>
+                <span class="dm-ipt-ap-text">
+                    <span class="dm-ipt-h2">{dmT(lang, 'portal.autopay_titulo')}</span>
+                    <span class="dm-ipt-p">{dmT(lang, 'portal.autopay_off')}</span>
+                </span>
+            </div>
+            <div class="dm-ipt-acts"><span class="dm-ipt-btn is-primary">{dmT(lang, 'portal.autopay_activar')}</span></div>
+        </div>
+
+        <div class="dm-ipt-card">
+            <span class="dm-ipt-h2">{dmT(lang, 'portal.abiertas')}</span>
+            <div class="dm-ipt-list">
+                {d.rows.map((r) => (
+                    <div class="dm-ipt-row">
+                        <span class:list={['dm-ipt-check', { 'is-on': r.checked, 'is-off': r.disabled }]}>{r.checked && <DmIcon name="check" stroke={2.4} />}</span>
+                        <span class="dm-ipt-main">
+                            <span class="dm-ipt-num">{r.num}</span>
+                            <span class="dm-ipt-rmeta">{dmT(lang, 'portal.col_vence')} {r.vence}{r.vencida && <span class="dm-ipt-badge">{dmT(lang, 'portal.vencida')}</span>}</span>
+                        </span>
+                        <span class="dm-ipt-ramt">
+                            <span class="dm-ipt-rsaldo">{m(r.saldo, r.cur)} <span class="dm-cur">{r.cur}</span></span>
+                            {r.saldo !== r.total && <span class="dm-ipt-rmeta">{dmT(lang, 'portal.de_total')} {m(r.total, r.cur)} {r.cur}</span>}
+                        </span>
+                        <span class="dm-ipt-links dm-hide-narrow"><span>{dmT(lang, 'portal.ver')}</span><span>PDF</span></span>
+                    </div>
+                ))}
+            </div>
+            <span class="dm-ipt-hint">{dmT(lang, 'portal.una_divisa')}</span>
+        </div>
+
+        <div class="dm-ipt-paybar">
+            <span class="dm-ipt-paysum">{seleccion}</span>
+            <span class="dm-ipt-btn is-primary">{dmT(lang, 'portal.pagar_sel')}</span>
+        </div>
+
+        <div class="dm-ipt-card dm-ipt-paid">
+            <span class="dm-ipt-h2">{dmT(lang, 'portal.pagadas')}</span><span class="dm-ipt-count">{d.pagadas}</span>
+        </div>
+
+        <div class="dm-ipt-foot">
+            <span>{dmT(lang, 'portal.dudas')} <span class="dm-ipt-link">{d.email}</span></span>
+            <span class="dm-ipt-aviso">{tpl(dmT(lang, 'portal.aviso'), { org: DEMO.org })}</span>
+        </div>
+    </div>
+</DocsMockup>
+
+<style is:global>
+    .dm-ipt { max-width: 640px; margin: 0 auto; padding: 30px 18px 36px; }
+    .dm-ipt-head { display: flex; flex-direction: column; margin-bottom: 20px; }
+    .dm-ipt-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; font-size: 12.5px; }
+    .dm-ipt-mark { width: 32px; height: 32px; border-radius: 10px; display: grid; place-items: center; background: var(--dm-brand); color: #fff; font-size: 14px; font-weight: 700; }
+    .dm-ipt-h1 { font-size: 30px; font-weight: 700; letter-spacing: -0.04em; line-height: 1.1; color: #050505; }
+    .dm-ipt-sub { margin-top: 6px; font-size: 12.5px; color: var(--dm-muted); }
+    .dm-ipt-saldos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
+    .dm-ipt-saldo { display: flex; flex-direction: column; gap: 5px; padding: 18px; border-radius: 20px; background: #fff; box-shadow: 0 1px 2px rgba(10, 25, 47, 0.04), 0 12px 40px -18px rgba(10, 25, 47, 0.12); min-width: 0; }
+    .dm-ipt-label { font-size: 9.5px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--dm-muted); }
+    .dm-ipt-amt { font-size: 24px; font-weight: 600; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; color: #050505; white-space: nowrap; }
+    .dm-ipt-meta { font-size: 10.5px; color: var(--dm-muted); }
+    .dm-ipt-late { color: #b45309; font-weight: 600; }
+    .dm-ipt-card { display: block; padding: 20px 20px 14px; margin-bottom: 12px; border-radius: 22px; background: #fff; border: 1px solid rgba(10, 25, 47, 0.05); box-shadow: 0 4px 6px rgba(10, 25, 47, 0.02), 0 20px 60px -24px rgba(10, 25, 47, 0.12); }
+    .dm-ipt-h2 { display: block; font-size: 14px; font-weight: 700; letter-spacing: -0.02em; color: #050505; margin-bottom: 8px; }
+    .dm-ipt-ap-head { display: flex; gap: 12px; align-items: flex-start; }
+    .dm-ipt-ap-text { display: flex; flex-direction: column; min-width: 0; }
+    .dm-ipt-ap-text .dm-ipt-h2 { margin-bottom: 3px; }
+    .dm-ipt-p { font-size: 11.5px; line-height: 1.55; color: #4b5563; }
+    .dm-ipt-icon { width: 34px; height: 34px; flex-shrink: 0; border-radius: 10px; display: grid; place-items: center; background: var(--dm-canvas); color: var(--dm-brand); }
+    .dm-ipt-icon .dm-ico { width: 17px; height: 17px; }
+    .dm-ipt-acts { display: flex; gap: 8px; margin: 14px 0 6px; }
+    .dm-ipt-btn { display: inline-flex; align-items: center; justify-content: center; height: 36px; padding: 0 16px; border-radius: 999px; border: 1px solid #e5e7eb; font-size: 11.5px; font-weight: 600; color: #111827; white-space: nowrap; }
+    .dm-ipt-btn.is-primary { background: var(--dm-brand); border-color: transparent; color: #fff; }
+    .dm-ipt-list { display: flex; flex-direction: column; }
+    .dm-ipt-row { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto auto; align-items: center; gap: 12px; padding: 11px 0; border-top: 1px solid #f0f0f2; }
+    .dm-ipt-row:first-child { border-top: 0; }
+    .dm-ipt-check { width: 16px; height: 16px; border-radius: 4px; border: 1.5px solid #c4cad3; display: grid; place-items: center; color: #fff; background: #fff; }
+    .dm-ipt-check.is-on { background: var(--dm-brand); border-color: var(--dm-brand); }
+    .dm-ipt-check.is-off { opacity: 0.35; }
+    .dm-ipt-check .dm-ico { width: 10px; height: 10px; }
+    .dm-ipt-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .dm-ipt-num { font-size: 12.5px; font-weight: 600; color: #111827; }
+    .dm-ipt-rmeta { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 5px; font-size: 10.5px; color: var(--dm-muted); }
+    .dm-ipt-badge { display: inline-flex; padding: 1px 7px; border-radius: 999px; font-size: 9.5px; font-weight: 600; background: #fff7ed; color: #b45309; }
+    .dm-ipt-ramt { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; }
+    .dm-ipt-rsaldo { font-size: 13px; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; color: #050505; white-space: nowrap; }
+    .dm-ipt-links { display: flex; gap: 10px; font-size: 11px; font-weight: 600; color: var(--dm-navy); }
+    .dm-ipt-hint { display: block; margin: 8px 0 4px; font-size: 10.5px; color: var(--dm-muted); }
+    /* = .pv-paybar: píldora blanca flotante con el resumen y el botón. */
+    .dm-ipt-paybar { display: flex; align-items: center; gap: 12px; margin: 4px 0 14px; padding: 8px 8px 8px 18px; border-radius: 999px; background: #fff; box-shadow: 0 10px 40px -10px rgba(10, 25, 47, 0.35), 0 0 0 1px rgba(10, 25, 47, 0.05); }
+    .dm-ipt-paysum { flex: 1; min-width: 0; font-size: 12px; font-weight: 600; color: #111827; }
+    .dm-ipt-paid { display: flex; align-items: center; gap: 8px; padding-bottom: 20px; }
+    .dm-ipt-paid .dm-ipt-h2 { margin: 0; }
+    .dm-ipt-count { font-size: 10px; font-weight: 600; color: var(--dm-muted); background: var(--dm-canvas); border-radius: 999px; padding: 2px 8px; }
+    .dm-ipt-foot { display: flex; flex-direction: column; align-items: center; gap: 6px; margin-top: 18px; text-align: center; font-size: 10.5px; color: var(--dm-muted); }
+    .dm-ipt-link { color: var(--dm-navy); }
+    .dm-ipt-aviso { max-width: 420px; line-height: 1.5; }
+    @container dm (max-width: 560px) {
+        .dm-ipt { padding: 22px 12px 28px; }
+        .dm-ipt-saldos { grid-template-columns: minmax(0, 1fr); }
+        .dm-ipt-row { grid-template-columns: 20px minmax(0, 1fr) auto; }
+        .dm-ipt-paybar { flex-direction: column; align-items: stretch; border-radius: 18px; padding: 12px; }
+        .dm-ipt-paysum { text-align: center; }
+    }
+</style>

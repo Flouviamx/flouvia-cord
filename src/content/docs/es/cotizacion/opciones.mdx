@@ -2,7 +2,7 @@
 title: "Opciones avanzadas"
 seoTitle: "Opciones de cotización: vigencia, divisa, anticipo e impuestos"
 description: "Términos de pago, anticipo, iguala mensual, impuestos incluidos, retenciones, divisa de venta frente a contable, tasa congelada, vigencia, notas y los valores por default de Ajustes › Cotizaciones."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-10"
 reviewedBy: "Producto y operaciones de Cord"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -32,11 +32,12 @@ valores con los que arranca una cotización nueva se configuran una sola vez en
 
 ## Términos de pago
 
-En **¿A quién le cotizas?** eliges **Contado**, **Net 30** o **Net 60**. Al elegir un
-cliente, Cord preselecciona sus términos de su ficha.
+En **¿A quién le cotizas?** eliges **Contado**, **Net 15**, **Net 30** o **Net 60**, o
+en **Otro plazo**, **Net 7**, **Net 45** o **Net 90**. Net N significa N días naturales
+de crédito. Al elegir un cliente, Cord preselecciona sus términos de su ficha.
 
 - **Contado:** el cobro está disponible en cuanto el cliente aprueba.
-- **Net 30 / Net 60:** el botón de pago no aparece al aprobar. El cliente ve "Pedido confirmado con crédito Net 30" y la fecha en que vence; el pago en línea se habilita al llegar esa fecha, contada desde la aprobación.
+- **Net 7 a Net 90:** el botón de pago no aparece al aprobar. El cliente ve "Pedido confirmado con crédito Net 30" y la fecha en que vence; el pago en línea se habilita al llegar esa fecha, contada desde la aprobación.
 
 ## Anticipo
 
@@ -50,7 +51,7 @@ saldo](/docs/pagos/anticipos).
 
 Activa **Cobro recurrente mensual (iguala)** para cobrar el total cada mes con tarjeta.
 
-- Solo existe con términos de **Contado**: si eliges Net 30 o Net 60, el interruptor desaparece.
+- Solo existe con términos de **Contado**: si eliges un plazo de crédito (Net N), el interruptor desaparece.
 - Es excluyente con el anticipo: al activarla, el campo de anticipo se oculta.
 - El cliente autoriza su tarjeta una sola vez desde el link al aprobar; paga el primer mes en ese momento y después se le cobra el mismo monto cada mes hasta que se cancele.
 
@@ -115,7 +116,7 @@ En **Ajustes › Cotizaciones › Folio e IVA** defines con qué arranca cada co
 | **Tasa predeterminada (%)** | La que traen las líneas nuevas cuando tu catálogo no tiene un perfil marcado como predeterminado. |
 | **Retenciones aplicadas** | Solo lectura: lista las retenciones predeterminadas de tu catálogo, con el enlace **Administrar impuestos**. |
 | **Vigencia por default (días)** | Entre 1 y 365. El editor arranca con este valor. |
-| **Términos de pago por default** | Contado, Net 30 o Net 60. Se preseleccionan al crear; la ficha del cliente manda cuando eliges a uno. |
+| **Términos de pago por default** | Contado o Net 7, 15, 30, 45, 60 o 90. Se preseleccionan al crear; la ficha del cliente manda cuando eliges a uno. |
 | **Anticipo por default (%)** | Entre 1 y 99, o vacío para no pedir anticipo. Prellena el campo del editor. |
 | **Texto legal por default** | Se guarda en tu organización, pero hoy no se imprime en el link ni en el PDF. Para textos que sí se imprimen, usa **Documento PDF**. |
 
@@ -129,7 +130,7 @@ cobro](/docs/pagos/metodos)).
 
 ## Problemas comunes
 
-**No veo el interruptor de iguala.** Elegiste Net 30 o Net 60; la iguala solo existe con Contado.
+**No veo el interruptor de iguala.** Elegiste un plazo de crédito (Net N); la iguala solo existe con Contado.
 
 **No veo el campo de anticipo.** Tienes la iguala activada.
 

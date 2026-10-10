@@ -1,0 +1,139 @@
+---
+// Mockup: descuento de documento con cupón en el panel "Revisa y envía" del
+// editor de cotizaciones, en sus dos momentos.
+//
+// Calca de src/components/app/DiscountControl.astro dentro de la columna
+// derecha de nueva.astro: a la izquierda, el panel abierto con el segmentado
+// Porcentaje / Monto / Cupón en Cupón, el código escrito, Aplicar y la bajada
+// "Se aplica antes de impuestos…"; a la derecha, el mismo resumen ya aplicado:
+// el renglón "Descuento (BIENVENIDA10)" con Quitar y el importe en verde entre
+// el subtotal y los impuestos (el control va ANTES del interruptor de precios
+// con impuesto y del desglose, igual que en la app). Con el descuento aplicado,
+// "+ Agregar descuento o cupón" se oculta (discount-client.ts).
+//
+// Aritmética del motor (calculateDocumentTotals): subtotal bruto 169,370.00,
+// 10 % = 16,937.00 antes de impuestos, IVA 16 % sobre la base descontada
+// 152,433.00 = 24,389.28, total 176,822.28 MXN. Sin descuento sería el
+// DEMO.total de 196,469.20 MXN.
+//
+// Los textos del control están escritos en línea en el componente real (no
+// viven en el diccionario de la app), así que se copian aquí tal cual.
+import DocsMockup from './DocsMockup.astro';
+import DmMoney from './DmMoney.astro';
+import DmIcon from './DmIcon.astro';
+import './dm-cot-editor.css';
+import { getEditorRuntimeI18n } from '../../../i18n/app';
+import { dmT, dmMoney, pick, tpl, DEMO, type DmLang } from './format';
+
+interface Props {
+    lang: DmLang;
+    /** Pie de figura; por defecto describe los dos estados. */
+    caption?: string;
+}
+const { lang } = Astro.props;
+const RT = getEditorRuntimeI18n(lang);
+const CUR = DEMO.currency;
+const SUBTOTAL = 169370;
+const PCT = 10;
+const DESC = Math.round(SUBTOTAL * PCT) / 100;
+const BASE = SUBTOTAL - DESC;
+const IVA = Math.round(BASE * 0.16 * 100) / 100;
+const TOTAL = Math.round((BASE + IVA) * 100) / 100;
+const IVA_SIN = Math.round(SUBTOTAL * 0.16 * 100) / 100;
+const TOTAL_SIN = SUBTOTAL + IVA_SIN;
+const LINEAS = 3;
+const PIEZAS = 412;
+
+const DATA = {
+    es: {
+        code: 'BIENVENIDA10',
+        caption: `Panel Revisa y envía de una cotización por ${dmMoney(SUBTOTAL, CUR, 'es')} antes de impuestos, en dos momentos. A la izquierda, el panel de descuento abierto en Cupón con el código BIENVENIDA10 escrito y el botón Aplicar. A la derecha, ya aplicado: el renglón Descuento (BIENVENIDA10) resta ${dmMoney(DESC, CUR, 'es')} antes del IVA 16 %, que se calcula sobre ${dmMoney(BASE, CUR, 'es')}, y el total baja a ${dmMoney(TOTAL, CUR, 'es')}.`,
+        add: '+ Agregar descuento o cupón',
+        modes: ['Porcentaje', 'Monto', 'Cupón'],
+        apply: 'Aplicar',
+        remove: 'Quitar',
+        label: 'Descuento',
+        hint: 'Se aplica antes de impuestos y se reparte entre las líneas según su importe.',
+    },
+    en: {
+        code: 'WELCOME10',
+        caption: `Review and send panel of a quote for ${dmMoney(SUBTOTAL, CUR, 'en')} before tax, at two moments. On the left, the discount panel open on Coupon with the code WELCOME10 typed in and the Apply button. On the right, already applied: the Discount (WELCOME10) row takes off ${dmMoney(DESC, CUR, 'en')} before the 16% tax, which is calculated on ${dmMoney(BASE, CUR, 'en')}, and the total drops to ${dmMoney(TOTAL, CUR, 'en')}.`,
+        add: '+ Add discount or coupon',
+        modes: ['Percent', 'Amount', 'Coupon'],
+        apply: 'Apply',
+        remove: 'Remove',
+        label: 'Discount',
+        hint: 'Applied before tax and spread across the lines in proportion to their amount.',
+    },
+};
+const d = pick(DATA, lang);
+const caption = Astro.props.caption ?? d.caption;
+const count = `${LINEAS} ${RT.lineas} · ${PIEZAS.toLocaleString(lang === 'en' ? 'en-US' : 'es-MX')} ${RT.piezas}`;
+---
+<DocsMockup lang={lang} variant="panel" panelWidth={760} caption={caption} class="dm-dsc-figure">
+    <div class="dm-ced dm-dsc">
+        <div class="dm-dsc-card">
+            <span class="dm-ced-sum-title">{dmT(lang, 'ed.revisa_envia')}</span>
+            <span class="dm-ced-sum-count">{count}</span>
+            <div class="dm-ced-sl"><span>{dmT(lang, 'ed.subtotal')}</span><DmMoney amount={SUBTOTAL} currency={CUR} lang={lang} /></div>
+            <div class="dm-dsc-panel">
+                <div class="dm-dsc-modes">
+                    {d.modes.map((m, i) => <span class:list={['dm-dsc-mode', { 'is-on': i === 2 }]}>{m}</span>)}
+                </div>
+                <div class="dm-dsc-inrow">
+                    <span class="dm-dsc-code is-focus">{d.code}</span>
+                    <span class="dm-dsc-apply">{d.apply}</span>
+                </div>
+                <span class="dm-dsc-hint">{d.hint}</span>
+            </div>
+            <div class="dm-ced-frow"><span>{tpl(dmT(lang, 'ed.iva_incluido'), { tax: 'IVA' })}</span><span class="dm-ced-toggle"></span></div>
+            <div class="dm-ced-sl is-tax"><span>IVA 16%</span><DmMoney amount={IVA_SIN} currency={CUR} lang={lang} /></div>
+            <div class="dm-ced-div"></div>
+            <div class="dm-ced-sl is-total"><span>{dmT(lang, 'ed.total')}</span><DmMoney amount={TOTAL_SIN} currency={CUR} lang={lang} /></div>
+        </div>
+
+        <div class="dm-dsc-arrow dm-hide-narrow"><DmIcon name="arrow-right" /></div>
+
+        <div class="dm-dsc-card">
+            <span class="dm-ced-sum-title">{dmT(lang, 'ed.revisa_envia')}</span>
+            <span class="dm-ced-sum-count">{count}</span>
+            <div class="dm-ced-sl"><span>{dmT(lang, 'ed.subtotal')}</span><DmMoney amount={SUBTOTAL} currency={CUR} lang={lang} /></div>
+            <div class="dm-ced-sl dm-dsc-row">
+                <span class="dm-dsc-lbl">{d.label} ({d.code}) <span class="dm-dsc-remove">{d.remove}</span></span>
+                <span class="dm-dsc-amt">−<DmMoney amount={DESC} currency={CUR} lang={lang} /></span>
+            </div>
+            <div class="dm-ced-frow"><span>{tpl(dmT(lang, 'ed.iva_incluido'), { tax: 'IVA' })}</span><span class="dm-ced-toggle"></span></div>
+            <div class="dm-ced-sl is-tax"><span>IVA 16%</span><DmMoney amount={IVA} currency={CUR} lang={lang} /></div>
+            <div class="dm-ced-div"></div>
+            <div class="dm-ced-sl is-total"><span>{dmT(lang, 'ed.total')}</span><DmMoney amount={TOTAL} currency={CUR} lang={lang} /></div>
+            <span class="dm-ced-send">{dmT(lang, 'ed.btn_enviar_nueva')}<DmIcon name="arrow-right" /></span>
+        </div>
+    </div>
+</DocsMockup>
+
+<style is:global>
+    .dm-dsc-figure .dm-v-panel { padding: 30px 24px; }
+    .dm-dsc-figure .dm-panel { background: var(--dm-canvas); box-shadow: none; border-radius: 22px; }
+    .dm-dsc { display: grid; grid-template-columns: minmax(0, 1fr) 28px minmax(0, 1fr); align-items: start; gap: 10px; padding: 18px; }
+    .dm-dsc-card { display: flex; flex-direction: column; gap: 11px; padding: 20px; background: #fff; border-radius: 18px; border: 1px solid var(--dm-border); box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.06), 0 16px 40px -8px rgba(10, 25, 47, 0.1); min-width: 0; }
+    .dm-dsc-arrow { align-self: center; justify-self: center; color: var(--dm-faint); }
+    .dm-dsc-arrow .dm-ico { width: 16px; height: 16px; }
+    /* = .dsc-panel: fondo gris suave, segmentado de tres y fila de captura. */
+    .dm-dsc-panel { display: flex; flex-direction: column; gap: 8px; padding: 10px; border-radius: 14px; background: var(--dm-canvas); }
+    .dm-dsc-modes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 3px; border-radius: 10px; background: rgba(10, 25, 47, 0.05); }
+    .dm-dsc-mode { text-align: center; padding: 6px 4px; border-radius: 8px; font-size: 10.5px; font-weight: 600; color: var(--dm-muted); }
+    .dm-dsc-mode.is-on { background: #fff; color: var(--dm-text); box-shadow: 0 1px 2px rgba(10, 25, 47, 0.12); }
+    .dm-dsc-inrow { display: flex; align-items: center; gap: 6px; }
+    .dm-dsc-code { flex: 1; min-width: 0; display: flex; align-items: center; height: 32px; padding: 0 10px; border-radius: 9px; background: #fff; border: 1.5px solid var(--dm-navy); box-shadow: 0 0 0 3px rgba(10, 25, 47, 0.08); font-family: var(--dm-mono); font-size: 11px; letter-spacing: 0.3px; color: var(--dm-text); overflow: hidden; white-space: nowrap; }
+    .dm-dsc-apply { display: inline-flex; align-items: center; height: 30px; padding: 0 13px; border-radius: 999px; background: var(--dm-navy); color: #fff; font-size: 11px; font-weight: 600; flex-shrink: 0; }
+    .dm-dsc-hint { font-size: 10px; line-height: 1.4; color: var(--dm-muted); }
+    .dm-dsc-row { align-items: baseline; }
+    .dm-dsc-lbl { display: inline-flex; align-items: baseline; gap: 7px; flex-wrap: wrap; min-width: 0; }
+    .dm-dsc-remove { font-size: 10.5px; font-weight: 600; color: var(--dm-muted); text-decoration: underline; text-underline-offset: 2px; }
+    .dm-dsc-amt { display: inline-flex; align-items: baseline; color: #059669; font-weight: 600; }
+    .dm-dsc-amt .dm-money { color: #059669; }
+    @container dm (max-width: 560px) {
+        .dm-dsc { grid-template-columns: minmax(0, 1fr); padding: 12px; }
+        .dm-dsc-figure .dm-v-panel { padding: 18px 12px; }
+    }
+</style>

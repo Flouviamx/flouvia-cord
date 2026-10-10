@@ -2,7 +2,7 @@
 title: "Factura electrónica: Factur-X, XRechnung, Peppol y Facturae"
 seoTitle: "Factura electrónica: Factur-X, XRechnung, Peppol y Facturae"
 description: "Descarga cada factura como Factur-X, XRechnung o Peppol BIS (EN 16931), o como Facturae en España, adjúntala al correo, emítela por plataforma autorizada en Francia y prepárate para la factura electrónica entre empresas de la AEAT."
-lastUpdated: "2026-10-09"
+lastUpdated: "2026-10-10"
 reviewedBy: "Producto y operaciones de Cord"
 appliesToMarkets: [ES, DE, FR]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -120,9 +120,10 @@ El **IGIC al 0 %** se puede descargar como XRechnung (UBL), Peppol y Facturae, p
 como Factur-X ni XRechnung (CII): el validador oficial de esa sintaxis exige un tipo mayor
 que cero.
 
-Un **descuento de documento** aparece como en el PDF: cada concepto con su importe antes
-del descuento y el descuento restado en los totales, separado por tasa de IVA, de modo
-que el total coincide al céntimo con el de la factura.
+Un [descuento de documento o un cupón](/docs/cotizacion/descuentos) aparece como en el
+PDF: cada concepto con su importe antes del descuento y el descuento restado en los
+totales, separado por categoría y tipo de IVA, de modo que el total coincide al céntimo
+con el de la factura. En la Facturae, cada concepto lleva su parte del descuento.
 
 ## Facturae (España)
 
@@ -252,9 +253,53 @@ plataforma de recepción, obligatoria desde el 1 de septiembre de 2026; darte de
 Cord no la cambia.
 </Callout>
 
-Si tu cliente o una plataforma **rechaza** una factura, la factura lo dice con el motivo.
-No se corrige: anúlala con una **nota de crédito** (es una anulación contable y no se
-transmite) y emite una factura nueva con los datos correctos.
+### Estados de una factura transmitida
+
+Cada estado que notifica la plataforma queda en el detalle de la factura, con su fecha y
+su motivo, y en su historial:
+
+| Código | Estado | Qué hacer |
+|---|---|---|
+| 200 | Depositada en la plataforma | Nada: la factura salió. |
+| 201 | Emitida por la plataforma | Nada. |
+| 202 | Recibida por la plataforma del cliente | Nada. |
+| 203 | Puesta a disposición del cliente | Nada. |
+| 204 | El cliente la tomó en cuenta | Nada. |
+| 205 | Aprobada por el cliente | Nada. |
+| 206 | Aprobada en parte por el cliente | Habla con tu cliente sobre la parte no aprobada. |
+| 207 | En litigio con el cliente | Resuelve el desacuerdo con tu cliente. |
+| 208 | Suspendida: el cliente pide justificantes | Envíale los justificantes que pide. |
+| 209 | Completada con los justificantes | Nada. |
+| 210 | Rechazada por el cliente | Anúlala con una nota de crédito y emite una factura nueva. |
+| 211 | Pago transmitido | Nada: tu cliente informó que pagó. |
+| 212 | Cobrada | Nada: el cobro quedó comunicado. |
+| 213 | Rechazada por una plataforma | Anúlala con una nota de crédito y emite una factura nueva. |
+| 501 | Archivo no admitido por la plataforma | Revisa el motivo, anúlala y emite una factura nueva. |
+
+Si tu cliente o una plataforma **rechaza** una factura (210, 213 o 501), la factura lo
+dice con el motivo. No se corrige: anúlala con una **nota de crédito** (es una anulación
+contable y no se transmite) y emite una factura nueva con los datos correctos.
+
+### Qué se declara de tus ventas y tus cobros
+
+| Venta | Cómo la comunica Cord | Sus cobros |
+|---|---|---|
+| A una empresa establecida en Francia, con SIREN | Transmite la factura (Factur-X) por la plataforma. | Si la TVA es exigible al cobro, cada cobro como estado **212 Cobrada**. |
+| A una empresa de otro país, con identificador fiscal | La declara una por una en el e-reporting. | En el e-reporting de pagos. |
+| A un particular, francés o no | La suma del día, por divisa y por tipo (bienes, servicios u operaciones fuera del ámbito de la TVA francesa). | Lo cobrado del día. |
+
+- **Qué cobros se comunican:** solo los de **servicios**, cuando no optaste por pagar la
+  TVA sobre los débitos. En una factura mixta solo viaja la parte de servicios, repartida
+  por tipo de TVA.
+- **Devoluciones:** en una factura transmitida, una devolución se comunica como un cobro
+  negativo con su motivo. En el e-reporting de pagos la plataforma no admite importes
+  negativos: Cord la deja marcada para que la regularices en la consola de la plataforma.
+- **Divisa:** el e-reporting de pagos va en euros, con el tipo de cambio congelado de la
+  factura.
+- **Plazos:** Cord envía cada día en cuanto cierra. La plataforma agrupa lo enviado en el
+  periodo que corresponde a tu **régimen de TVA**: por décadas en el régimen real
+  mensual, por mes en el trimestral y el simplificado, y por bimestre en la franquicia.
+  **Ajustes › Perfil fiscal** cuenta lo que esté vencido.
 
 ## Leitweg-ID
 

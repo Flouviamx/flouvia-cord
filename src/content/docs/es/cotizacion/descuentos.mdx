@@ -1,0 +1,256 @@
+---
+title: "Descuentos y cupones"
+seoTitle: "Descuento de documento y cupones en cotizaciones y facturas"
+description: "Aplica un descuento por porcentaje o monto a toda una cotización o factura, crea cupones con vigencia y límite de usos, y entiende cómo se calcula, cuándo se cuenta un uso y cómo viaja al CFDI, a Verifactu y a la factura electrónica."
+lastUpdated: "2026-10-10"
+reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Permiso Cotizaciones para aplicar un descuento o un cupón", "Permiso Ajustes para crear y administrar cupones"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Descuentos y cupones</h1>
+  <p class="page-subtitle">Una rebaja sobre la venta completa, antes de impuestos, repartida entre las líneas. A mano o con un código que administras tú.</p>
+</header>
+
+<Callout type="info">
+Esta función es nueva y puede no estar habilitada todavía en tu cuenta. Si no la ves, escríbenos.
+</Callout>
+
+## Qué es
+
+Cord tiene dos maneras de bajar el precio de una venta, y conviven en el mismo
+documento:
+
+- **Precio negociado por línea.** Bajas el precio de una partida concreta. Es la
+  diferencia entre el precio de lista y el negociado, y el panel la muestra como **Le
+  descontaste**. Ver [Productos y descuentos](/docs/cotizacion/productos).
+- **Descuento de documento.** Una rebaja sobre **toda** la cotización o factura: un
+  **porcentaje** o un **monto** en la divisa del documento. Cord la aplica **antes de
+  impuestos** y la reparte entre las líneas en proporción a su importe. Puedes
+  capturarla a mano o con un **cupón**.
+
+Un **cupón** es un código reutilizable (por ejemplo, `BIENVENIDA10`) que creas en
+**Ajustes › Descuentos › Cupones**, con su valor, su vigencia y cuántas veces se puede
+usar. Tu equipo lo aplica en el editor, y tus compradores pueden capturarlo cuando
+cotizan desde tu sitio con la API o Cord Elements.
+
+<DmCotDiscount lang="es" />
+
+## Requisitos
+
+| | Detalle |
+|---|---|
+| **Plan** | Todos los planes. |
+| **Permiso para aplicar** | **Cotizaciones**: aplicar un descuento o validar un cupón en el editor de cotizaciones o de facturas. |
+| **Permiso para administrar cupones** | **Ajustes**: crear, editar, desactivar y eliminar cupones. |
+| **País** | Los 12 mercados. Cada riel fiscal declara el descuento como lo pide su autoridad (ver [En tu factura fiscal](#en-tu-factura-fiscal)). |
+
+## Aplicar un descuento
+
+El control vive en el panel **Revisa y envía** del editor, entre el subtotal y los
+impuestos. Está en el editor de cotización nueva, en la edición de una cotización y en
+el editor de facturas.
+
+<Steps>
+1. En **Revisa y envía**, pulsa **+ Agregar descuento o cupón**.
+2. Elige el tipo: **Porcentaje** (de 0 a 100), **Monto** (en la divisa del documento)
+   o **Cupón**.
+3. Escribe el valor o el código y pulsa **Aplicar**. Un cupón se valida en ese momento:
+   si no aplica, el panel te dice por qué (ver [Mensajes de un cupón](#mensajes-de-un-cupón)).
+4. El resumen muestra el renglón **Descuento (10 %)** o **Descuento (BIENVENIDA10)**
+   con el importe en verde, y los impuestos y el total ya calculados sobre la base
+   descontada. Para quitarlo, pulsa **Quitar** junto a la etiqueta.
+</Steps>
+
+Un documento lleva **un** descuento de documento a la vez. Si mandas un cupón y un
+descuento manual al mismo tiempo (por ejemplo, desde la API), manda el cupón.
+
+## Cómo se calcula
+
+1. **Subtotal bruto:** la suma de las líneas con su precio negociado, antes de impuestos.
+2. **Descuento:** el porcentaje sobre ese subtotal, o el monto capturado. Un monto
+   mayor que el subtotal se topa en el subtotal: el descuento nunca deja la venta en
+   negativo.
+3. **Reparto por línea:** cada línea recibe una parte proporcional a su importe bruto.
+   El reparto se hace en la unidad mínima de la divisa (centavos en MXN, céntimos en
+   EUR, unidades enteras en CLP o JPY), de modo que la suma de las partes es
+   exactamente el descuento y ninguna línea queda en negativo.
+4. **Impuestos:** cada línea calcula su impuesto sobre su base ya descontada, con su
+   propia tasa. Por eso una línea exenta y una gravada reciben su parte del descuento y
+   el impuesto baja solo en lo que corresponde.
+5. **Retenciones:** si tu catálogo tiene retenciones (por ejemplo, ISR o IRPF), se
+   calculan sobre las bases descontadas.
+
+| Ejemplo (México, IVA 16 %) | Sin descuento | Con 10 % |
+|---|---:|---:|
+| Subtotal | 169,370.00 MXN | 169,370.00 MXN |
+| Descuento (BIENVENIDA10) | — | −16,937.00 MXN |
+| IVA 16 % | 27,099.20 MXN | 24,389.28 MXN |
+| **Total** | **196,469.20 MXN** | **176,822.28 MXN** |
+
+**Precios con impuesto incluido.** Si activaste **Precios con IVA incluido** (o con el
+impuesto de tu país), un descuento por **monto** rebaja lo que paga tu cliente, y la
+base sin impuesto se desagrega después. Un porcentaje funciona igual con o sin
+impuesto incluido.
+
+<Callout type="warning">
+El navegador y la API nunca mandan el importe del descuento: mandan la **definición**
+(porcentaje o monto) o el **código** del cupón. Cord recalcula en el servidor con el
+mismo motor que usa el editor, así que lo que ves es lo que se guarda, se cobra y se
+factura.
+</Callout>
+
+## Crear y administrar cupones
+
+<DmCouponsSettings lang="es" />
+
+<Steps>
+1. Abre **Ajustes › Descuentos › Cupones** con el permiso **Ajustes**.
+2. Pulsa **Nuevo cupón**.
+3. Escribe el **Código**: de 3 a 32 letras, números, guion o guion bajo. Cord lo
+   convierte a mayúsculas y no admite dos cupones con el mismo código en tu cuenta.
+4. Opcional: un **Nombre** interno (por ejemplo, "Promoción de bienvenida").
+5. Elige el **Descuento**: **Porcentaje** o **Monto fijo**, y su **Valor**. Un monto
+   fijo pide además su **Divisa**, entre las que tu cuenta ofrece al cotizar.
+6. Opcional: **Válido desde** y **Válido hasta**. Las fechas se leen en la zona horaria
+   de tu negocio.
+7. Opcional: **Usos en total** y **Usos por cliente**. Vacío significa sin límite.
+8. Pulsa **Crear cupón**.
+</Steps>
+
+| Regla | Detalle |
+|---|---|
+| **Divisa** | Un cupón de porcentaje sirve en cualquier divisa. Uno de monto solo se aplica a documentos en **su** divisa: un cupón de 2,500 MXN no se puede aplicar a una cotización en USD. |
+| **Qué se puede editar** | El nombre, la vigencia, los límites de uso y si está activo. El **código, el tipo, el valor y la divisa no cambian** una vez creado: un documento que ya lo lleva conserva lo que descontó. Para otro valor, crea otro cupón. |
+| **Desactivar** | El interruptor de cada fila. Un cupón desactivado ya no se puede aplicar a documentos nuevos; los que ya lo llevan lo conservan. |
+| **Eliminar** | Solo un cupón que nunca se usó. Uno con usos se desactiva, para conservar su historial. |
+| **Límite por cliente** | Un cupón con **Usos por cliente** exige elegir al cliente antes de aplicarlo. |
+
+## Cuándo se cuenta un uso
+
+Un cupón se **aplica** al documento cuando lo validas, pero su uso se **cuenta** cuando
+el documento se vuelve vinculante:
+
+| Documento | Se cuenta el uso | Se devuelve el uso |
+|---|---|---|
+| **Cotización** | Cuando se **aprueba**: el cliente pulsa **Aprobar cotización** en el link, o tú usas **Marcar aprobada**. | Si la cotización se **rechaza** o **vence**. |
+| **Factura** | Cuando se **emite**, antes de asignarle número. | Si la factura se **anula**, o si borras un borrador cuya emisión había fallado. |
+| **Factura de una cotización** | No cuenta otra vez: reutiliza el uso de la cotización. | Con la cotización. |
+
+- La **vigencia** y si el cupón está **activo** se revisan al **aplicarlo**. Un
+  documento armado mientras el cupón era válido lo conserva aunque después el cupón
+  venza o lo desactives.
+- Los **límites de uso** se revisan al aplicar y otra vez al aprobar o emitir, porque
+  son el presupuesto del cupón. Si los usos se agotaron entre el borrador y ese
+  momento:
+  - **Factura:** no se emite y no se gasta un número. Cord te dice "El cupón … ya no
+    tiene usos disponibles. Quítalo del borrador para emitir la factura."
+  - **Cotización aprobada por el cliente:** la aprobación no procede. Tu cliente lee
+    que la cotización necesita una actualización tuya, y en la actividad ves que
+    intentó aprobar con un cupón agotado. Quita el cupón y vuelve a enviarla.
+
+## Mensajes de un cupón
+
+| Mensaje | Qué hacer |
+|---|---|
+| Ese cupón no existe. | Revisa el código; los espacios y las minúsculas no importan. |
+| Ese cupón está desactivado. | Actívalo en **Ajustes › Descuentos › Cupones** si quieres seguir usándolo. |
+| Ese cupón todavía no está vigente. / Ese cupón ya venció. | Revisa **Válido desde** y **Válido hasta**. |
+| Ese cupón es de otra divisa que la del documento. | Usa un cupón de porcentaje o uno de monto en la divisa del documento. |
+| Ese cupón ya no tiene usos disponibles. | Sube **Usos en total** o crea otro cupón. |
+| Este cliente ya usó ese cupón todas las veces permitidas. | El límite por cliente se alcanzó. |
+| Ese cupón está limitado por cliente: elige un cliente primero. | Elige el cliente en **¿A quién le cotizas?** y vuelve a aplicarlo. |
+
+## Dónde se ve el descuento
+
+- **Link de la cotización y PDF:** el renglón **Descuento (BIENVENIDA10)** o
+  **Descuento (10 %)** entre el subtotal y los impuestos. Cada concepto conserva su
+  importe antes del descuento.
+- **Detalle de la cotización y de la factura**, y el **link de la factura**: el mismo
+  renglón.
+- **Google Sheets y Excel:** la columna **descuento** de la hoja de cotizaciones, con el
+  subtotal antes del descuento.
+- **QuickBooks Online y Xero:** cada concepto llega con su precio ya descontado.
+
+## En tu factura fiscal
+
+El descuento viaja repartido por concepto a cada documento fiscal, con la forma que
+pide cada autoridad:
+
+| Documento | Cómo se declara |
+|---|---|
+| **CFDI 4.0 (México)** | Cada concepto lleva su valor unitario **antes** del descuento y su parte del descuento en el atributo **Descuento**; la base del IVA es el importe menos el descuento. Un concepto que el descuento deja en cero no se puede timbrar (el SAT exige una base mayor que cero para un impuesto trasladado): Cord lo rechaza antes de timbrar y te dice cuál es. En la [factura global](/docs/pagos/facturacion#factura-global), cada venta lleva su parte del descuento. |
+| **Verifactu (España)** | Cada concepto declara su base **ya descontada**. |
+| **Factur-X, XRechnung y Peppol** | Cada línea con su importe antes del descuento y el descuento como **descuento de documento**, uno por categoría y tipo de IVA, para que cada grupo del desglose cuadre al céntimo con la factura. |
+| **Facturae (España)** | Cada concepto con su descuento propio. |
+| **Facturas autorizadas en Argentina, Brasil, Chile, Colombia y Perú** | Cada concepto con su parte del descuento, en el campo que pide la autoridad de cada país. |
+
+Una **nota de crédito** reparte su importe con la misma proporción, descuento incluido.
+
+## Copias, recurrencias y aprobación parcial
+
+| Caso | Qué pasa con el descuento |
+|---|---|
+| **Aprobación parcial** | Cord vuelve a aplicar la definición a las líneas aprobadas: un porcentaje se recalcula; un monto se topa en el nuevo subtotal. |
+| **Factura de una cotización** | Hereda la definición y la aplica sobre lo que se factura. |
+| **Duplicar o repetir una factura** | Copia el precio **bruto** de cada concepto y el descuento aparte. |
+| **Facturas recurrentes** | Solo llevan un descuento **manual**: un cupón no se repite cada mes. |
+| **Duplicar una cotización** | La copia no lleva el descuento de documento: agrégalo de nuevo si corresponde. |
+| **Sustituir un CFDI (México)** | El sustituto hereda el descuento del original, con su cupón, sin contar otro uso. |
+| **Pedido en Shopify** | El pedido que Cord crea en tu tienda lleva el precio negociado de cada línea, pero todavía **no** el descuento de documento. Revisa el total del pedido en Shopify. |
+
+## Descuentos y aprobaciones internas
+
+Si tu organización tiene [aprobaciones internas](/docs/cotizacion/aprobaciones-internas):
+
+- Un descuento **manual** de documento cuenta como descuento de cada línea para el tope
+  de **descuento máximo** y para el de **margen mínimo**. Mover la rebaja al pie no
+  esquiva la regla.
+- Un **cupón** no cuenta para esos topes: lo creó quien administra Ajustes y ya es una
+  rebaja autorizada.
+
+## Desde la API y Cord Elements
+
+- `POST /api/v1/cotizaciones` y `POST /api/v1/facturas` aceptan `descuento`
+  (`{ "tipo": "porcentaje" | "monto", "valor": 10 }`) o `cupon` (`"BIENVENIDA10"`).
+  Ver [API de Cotizaciones](/docs/desarrolladores/funciones/cotizaciones) y [API de
+  Facturas](/docs/desarrolladores/funciones/facturas).
+- Con una **llave publicable** (la de tu sitio), el único descuento que se admite es un
+  `cupon`: un comprador no puede fijarse un porcentaje a sí mismo.
+- Un cupón que no existe responde `404` con `code: "coupon_no_existe"`; uno vencido,
+  agotado o de otra divisa, `409` con `coupon_vencido`, `coupon_agotado`,
+  `coupon_moneda`, etc.
+
+## Límites
+
+- Un descuento de documento por documento.
+- Porcentaje de 0 a 100; un monto se topa en el subtotal bruto.
+- Código de cupón de 3 a 32 caracteres (`A-Z`, `0-9`, `-`, `_`), único en tu cuenta.
+- Los usos se cuentan por documento vinculante: aprobar y luego facturar la misma venta
+  cuenta un solo uso.
+
+## Problemas comunes
+
+**El cupón dice que está agotado, pero hay documentos que no se aprobaron.** Un uso se
+cuenta al aprobar o emitir. Revisa qué cotizaciones aprobadas o facturas emitidas lo
+llevan; al anular una factura o rechazarse una cotización, el uso vuelve.
+
+**No puedo cambiar el valor de un cupón.** El valor no se edita para no cambiar lo que
+ya descontó en documentos existentes. Desactívalo y crea otro.
+
+**El CFDI se rechaza por un concepto en cero.** El descuento dejó sin base un concepto.
+Baja el descuento o quita ese concepto antes de timbrar.
+
+**El cupón no aparece en la cotización duplicada.** Duplicar no copia el descuento de
+documento: vuelve a aplicarlo.
+
+## Relacionadas
+
+- [Productos y descuentos](/docs/cotizacion/productos)
+- [Aprobaciones internas](/docs/cotizacion/aprobaciones-internas)
+- [Opciones avanzadas](/docs/cotizacion/opciones)
+- [Crear, emitir y cobrar facturas](/docs/pagos/facturas-emitidas)
+- [Facturación fiscal por país](/docs/pagos/facturacion)
+- [Factura electrónica europea](/docs/pagos/factura-electronica)

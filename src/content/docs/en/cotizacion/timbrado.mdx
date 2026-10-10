@@ -2,7 +2,7 @@
 title: "Approval and invoicing"
 seoTitle: "From approved quote to invoice: CFDI, Verifactu, or commercial invoice"
 description: "What happens when the client approves, how you record a payment, and how you issue the document that applies to your country: CFDI 4.0, Verifactu, pro forma, or commercial invoice."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-10"
 reviewedBy: "Cord product and operations"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -35,7 +35,8 @@ Cord doesn't issue the same kind of receipt everywhere — your business's count
 
 - **Mexico:** on the Starter plan or higher, the button is **Stamp CFDI 4.0** and it stamps with the SAT through a certified electronic-invoicing provider. On the Free plan the button is **Issue pro forma**: a numbered pro forma that does not replace a tax invoice.
 - **Spain:** on the Starter plan or higher, with your organization's certificate uploaded and the Verifactu integration enabled, Cord issues the invoice with its chained Verifactu record. Until those conditions are met, the button is **Issue pro forma**: a numbered pro forma that does not replace a tax invoice.
-- **Other supported markets** (United States, Canada, Brazil, United Kingdom, Germany, France, Colombia, Argentina, Chile, and Peru): the button is **Issue invoice** and it creates a commercial invoice with sequential numbering and taxes configured by the business, without automatic filing with the local tax authority.
+- **Argentina, Brazil, Chile, Colombia, and Peru:** the button is **Issue invoice**. If issuing with the country's authority is active on your account (new feature, from Starter), it creates the authorized e-invoice, with the legal number the authority assigns; if not, a commercial invoice.
+- **Other supported markets** (United States, Canada, United Kingdom, Germany, and France): the button is **Issue invoice** and it creates a commercial invoice with sequential numbering and taxes configured by the business, without automatic filing with the local tax authority. In Germany and France it can also be downloaded as a European e-invoice (see [European e-invoicing](/en/docs/pagos/factura-electronica)).
 
 See the full country-by-country detail in [Fiscal invoicing by country](/en/docs/pagos/facturacion).
 
@@ -43,8 +44,9 @@ See the full country-by-country detail in [Fiscal invoicing by country](/en/docs
 
 1. Go to the approved (or paid) quote and click **Stamp CFDI 4.0**. Cord asks you to confirm before issuing.
 2. Cord builds the CFDI with the data the client already has: the name entered under **Company**, their RFC, tax regime, postal code, and CFDI use. There's no extra step to fill them in: if the client has no RFC on file, the CFDI is issued with the **generic general-public RFC** (XAXX010101000), so review their data on their profile before stamping (see [Client data](/en/docs/cotizacion/cliente)).
-3. If the client approved only some line items, only the approved lines are invoiced.
-4. When it's done, the receipt appears in the **Tax documents** section of the details, with its number, its UUID, and links to download the **PDF** and the **XML**, and the quote moves to *Invoiced*. Cord doesn't email the receipt to the client automatically from this step: download it and share it, or email it from **Invoices**.
+3. If the client approved only some line items, only the approved lines are invoiced. If the quote carries a [document discount or a coupon](/en/docs/cotizacion/descuentos), it's reapplied to what was approved and the coupon doesn't count another use.
+4. Cord sets the **payment method** from what you've already collected: if the quote is already **fully paid**, the CFDI goes out **PUE** with the payment's form; if it will be collected later (for example, with Net 30 terms), it goes out **PPD** and Cord stamps a **payment complement** for each payment it receives. See [Payment method: PUE or PPD](/en/docs/pagos/facturacion#payment-method-pue-or-ppd).
+5. When it's done, the receipt appears in the **Tax documents** section of the details, with its number, its UUID, and links to download the **PDF** and the **XML**, and the quote moves to *Invoiced*. Cord doesn't email the receipt to the client automatically from this step: download it and share it, or email it from **Invoices**.
 
 <Callout type="info">
 **Active stamping:** to stamp on behalf of your business you need the Starter plan or higher and your CSD uploaded (see [CSD](/en/docs/cuenta/csd)). If tax stamping isn't active on your account yet, the document is marked as **Simulated** or **Tax test mode**: it's recorded for audit purposes, but it is not a valid CFDI before the SAT.
@@ -52,7 +54,7 @@ See the full country-by-country detail in [Fiscal invoicing by country](/en/docs
 
 ## Collections and Treasury
 
-For quotes with credit terms (Net 30/60) or those where the client only paid the advance, Cord has a **Collections** and **Treasury** module — the full picture lives in [Treasury and FX Lock](/en/docs/pagos/tesoreria-fx) and [Autonomous Collections (AI)](/en/docs/pagos/cobranza-ia); here's a summary of how it connects to a closed quote.
+For quotes with credit terms (Net 7 to Net 90) or those where the client only paid the advance, Cord has a **Collections** and **Treasury** module — the full picture lives in [Treasury and FX Lock](/en/docs/pagos/tesoreria-fx) and [Autonomous Collections (AI)](/en/docs/pagos/cobranza-ia); here's a summary of how it connects to a closed quote.
 
 ### Late interest
 
@@ -74,6 +76,8 @@ In **Reports › Cash flow · 90 days** (Pro plan or higher), Cord crosses the c
 **The document came out as Simulated or Tax test mode.** Stamping isn't active on your account yet: check your plan and your [CSD](/en/docs/cuenta/csd).
 
 **The invoice has fewer lines than the quote.** The client approved only some lines; only approved lines are invoiced.
+
+**The CFDI came out PPD.** The quote wasn't fully paid when it was stamped. Each payment that arrives later gets its automatic payment complement.
 
 ## Related
 

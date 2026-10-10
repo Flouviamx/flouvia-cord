@@ -2,7 +2,7 @@
 title: "API de Facturas"
 seoTitle: "API de facturas de Cord"
 description: "Lista, crea, emite, envía, cobra y anula facturas desde tu sistema con la API v1 de Cord: borradores, emisión irreversible, pagos parciales y notas de crédito."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-10"
 reviewedBy: "Ingeniería de Cord"
 availablePlans: [Free, Starter, Pro, Scale, Developer]
 prerequisites: ["Una llave con permiso sobre el recurso facturas", "En México, emitir CFDI requiere plan Starter o superior y tu CSD"]
@@ -59,7 +59,7 @@ curl "https://cordhq.app/api/v1/facturas?limit=20" \
 |---|---|
 | `estado` | `draft` (borrador), `open` (emitida y por cobrar), `paid` (pagada), `void` (anulada) o `uncollectible` (incobrable). |
 | `estado_fiscal` | `pending`, `issued` (registrada ante el proveedor fiscal), `cancelled` o `error`. |
-| `tipo` | `cfdi_40` (CFDI de ingreso, México), `cfdi_egreso` (nota de crédito CFDI), `proforma` (documento comercial en México y España), `commercial_invoice` (factura comercial), `commercial_credit_note` (nota de crédito comercial), `verifactu_invoice` o `verifactu_credit_note` (España con Verifactu). |
+| `tipo` | `cfdi_40` (CFDI de ingreso, México), `cfdi_egreso` (nota de crédito CFDI), `proforma` (documento comercial en México, España y los países con factura autorizada), `commercial_invoice` (factura comercial), `commercial_credit_note` (nota de crédito comercial), `verifactu_invoice` o `verifactu_credit_note` (España con Verifactu). Con la emisión ante la autoridad activa: `arca_invoice` (Argentina), `nfse_invoice` y `nfe_invoice` (Brasil), `sii_invoice` (Chile), `dian_invoice` (Colombia) y `sunat_invoice` (Perú), con sus notas de crédito `*_credit_note` y, en Chile, `sii_debit_note`. |
 
 ## Crear un borrador
 
@@ -68,15 +68,20 @@ curl "https://cordhq.app/api/v1/facturas?limit=20" \
 | Campo | Obligatorio | Detalle |
 |---|---|---|
 | `cliente_id` | Sí | Un cliente de tu organización. |
-| `items` | Sí | De 1 a 200 conceptos. Cada uno con `descripcion` y `cantidad`; opcionales `precio_unitario`, `precio_negociado`, `producto_id`, `costo_unitario` y `tax_rate`. |
+| `items` | Sí | De 1 a 200 conceptos. Cada uno con `descripcion` y `cantidad`; opcionales `precio_unitario`, `precio_negociado`, `producto_id`, `costo_unitario`, `tax_rate`, `exemption_reason` y, en México, `clave_sat` y `clave_unidad_sat`. |
 | `currency` | No | Divisa de la factura; por defecto la de tu cuenta. |
 | `due_date` | No | Vencimiento en `YYYY-MM-DD`. |
 | `notas` | No | Hasta 1000 caracteres. |
 | `iva_incluido` | No | `true` si los precios ya traen el impuesto. |
 | `document_mode` | No | `commercial` o `fiscal`. Sin él, Cord emite fiscal si tu plan lo incluye y tu país lo tiene habilitado, y comercial en otro caso. `fiscal` sin el plan o el país habilitado responde `400 invalid_request`. |
 | `fx_buffer_pct` | No | Cobertura en puntos porcentuales sobre el tipo de cambio de referencia cuando `currency` difiere de tu divisa contable (`2` = +2%, tope 25). Por defecto `0`. |
+| `descuento` | No | Descuento de documento antes de impuestos: `{ "tipo": "porcentaje", "valor": 10 }` o `{ "tipo": "monto", "valor": 2500 }`. Cord calcula el importe y lo reparte entre los conceptos. Ver [Descuentos y cupones](/docs/cotizacion/descuentos). |
+| `cupon` | No | Código de un cupón de tu cuenta. Manda sobre `descuento`. Su uso se cuenta al emitir la factura. |
+| `service_date`, `service_date_end` | No | Fecha o periodo de prestación, `YYYY-MM-DD`. El fin requiere el inicio y no puede ser anterior. Sin ella, la factura indica que coincide con la fecha de emisión (obligatoria en Alemania). |
+| `buyer_reference` | No | Referencia del comprador (BT-10 de la factura electrónica europea; en Alemania, el Leitweg-ID de la administración pública). Sin ella, la del cliente. Si la dirección electrónica del cliente es un Leitweg-ID, se comprueban sus dígitos de control y uno que no pase responde `400`. |
+| `purchase_order` | No | Número de la orden de compra del cliente (BT-13). |
 
-`tax_rate` es una fracción (`0.16`, no `16`) y se valida contra tu catálogo de impuestos: no puedes declarar una línea exenta en una venta gravada. `0` significa exenta a propósito; omitirla usa la tasa de tu cuenta.
+`tax_rate` es una fracción (`0.16`, no `16`) y se valida contra tu catálogo de impuestos: no puedes declarar una línea exenta en una venta gravada. `0` significa exenta a propósito; omitirla usa la tasa de tu cuenta. `clave_sat` y `clave_unidad_sat` ganan sobre las claves del producto; sin ninguna, el CFDI usa 01010101 y H87. Una clave con forma inválida responde `400`.
 
 ```bash
 curl -X POST "https://cordhq.app/api/v1/facturas" \
@@ -99,7 +104,16 @@ Si la factura va en otra divisa que tu divisa contable y no se puede obtener un 
 
 ## Consultar una factura
 
-`GET /api/v1/facturas/{id}` devuelve los campos del listado más `subtotal`, `impuestos`, `moneda_contable`, `tipo_cambio`, `total_contable`, `notas`, `emisor`, `receptor`, `conceptos` y `pagos`.
+`GET /api/v1/facturas/{id}` devuelve los campos del listado más `subtotal`, `impuestos`, `moneda_contable`, `tipo_cambio`, `total_contable`, `notas`, `nota_credito_de`, `emisor`, `receptor`, `descuento`, `conceptos` y `pagos`.
+
+| Campo | Detalle |
+|---|---|
+| `descuento` | `null`, o `{ tipo, valor, cupon, monto, moneda }`: la definición, el cupón del que salió y el importe antes de impuestos. `subtotal` ya es neto. |
+| `conceptos[].precio_unitario` | Precio unitario **neto**, después del descuento de documento, sin impuesto. |
+| `conceptos[].subtotal` | Base neta del concepto. |
+| `conceptos[].descuento` | La parte del descuento de documento que le tocó a ese concepto; `0` si no hay. |
+| `conceptos[].clave_sat`, `conceptos[].clave_unidad_sat` | México: las claves del SAT con que se timbró el concepto; `null` fuera de México. |
+| `pagos` | Cada pago con `monto`, `moneda`, `metodo`, `referencia` y `cuando`. Un cobro que pagó varias facturas aparece en cada una con la parte que le tocó. |
 
 ## Cambiar el estado
 
@@ -117,11 +131,18 @@ Si la factura va en otra divisa que tu divisa contable y no se puede obtener un 
 
 Si una factura ya timbrada no puede anularse directamente, `void` responde `409` con `code: "credit_note_required"`: emite una nota de crédito.
 
+En México:
+
+- `void` pide la cancelación del CFDI con el motivo **02** del SAT. Si el SAT todavía no la confirma, responde `202` con `{ "data": { "id": "…", "estado": "open", "cancelacion": "pendiente" } }` y la factura sigue vigente; no se dispara `invoice.voided` hasta que se confirma. La sustitución con el motivo 01 y la factura global solo están en la app.
+- `payment` sobre un CFDI **PPD** dispara el [complemento de pago automático](/docs/pagos/facturacion#complemento-de-pago-automático) de ese cobro.
+
 ## Errores frecuentes
 
 | Código | Cuándo |
 |---|---|
-| `invalid_request` (400) | Falta `cliente_id` o `items`, una línea no trae descripción o cantidad, o `due_date` no es `YYYY-MM-DD`. |
+| `invalid_request` (400) | Falta `cliente_id` o `items`, una línea no trae descripción o cantidad, `due_date` no es `YYYY-MM-DD`, el descuento no tiene la forma `{ tipo, valor }` o un Leitweg-ID no pasa sus dígitos de control. |
+| `coupon_no_existe` (404) | El cupón no existe en tu cuenta. |
+| `coupon_inactivo`, `coupon_vencido`, `coupon_aun_no_vigente`, `coupon_agotado`, `coupon_agotado_cliente`, `coupon_moneda`, `coupon_requiere_cliente` (409) | El cupón no aplica a esta factura; el mensaje dice por qué. |
 | `invalid_state` (409) | La acción no aplica al estado actual (por ejemplo, enviar un borrador). Enviar a un cliente sin correo responde `400` con este mismo código. |
 | `credit_note_required` (409) | La factura ya timbrada no se puede anular directamente: emite una nota de crédito. |
 | `not_found` (404) | La factura no existe en tu organización. |

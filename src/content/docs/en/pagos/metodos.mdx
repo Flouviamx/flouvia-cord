@@ -1,8 +1,8 @@
 ---
 title: "Payment methods"
-seoTitle: "Payment methods in Cord: card, SPEI, Mercado Pago, and transfer"
-description: "Which payment methods Cord offers by country and currency, how to turn them on, how each one is confirmed, what the quote accepts versus the invoice, and how to switch between SPEI and card without charging twice."
-lastUpdated: "2026-10-07"
+seoTitle: "Payment methods: card, SPEI, SEPA, ACH, Mercado Pago, and transfer"
+description: "Which payment methods Cord offers by country and currency, how to turn them on, how each one is confirmed, SEPA and ACH bank debit, what the quote, the invoice, and the portal accept, and how to switch between SPEI and card without charging twice."
+lastUpdated: "2026-10-10"
 reviewedBy: "Cord product and operations"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -11,25 +11,27 @@ prerequisites: ["Active Cord Payments account or connected Mercado Pago to colle
 
 <header class="content-header">
   <h1 class="page-title">Payment methods</h1>
-  <p class="page-subtitle">Card, SPEI, Mercado Pago, and manual transfer: where each applies, how it's confirmed, and what your customer sees.</p>
+  <p class="page-subtitle">Card, SPEI, bank debit, Mercado Pago, and manual transfer: where each applies, how it's confirmed, and what your customer sees.</p>
 </header>
 
 ## What it is
 
 Cord has **two online payment rails** and one manual option:
 
-- **Cord Payments:** card and, in Mexico, automatic SPEI transfer. The money lands in your own [payments account](/en/docs/pagos/onboarding) and from there reaches your bank at the [payout frequency](/en/docs/pagos/depositos) you choose.
+- **Cord Payments:** card; in Mexico, automatic SPEI transfer; and in the euro area and the United States, bank debit (SEPA and ACH). The money lands in your own [payments account](/en/docs/pagos/onboarding) and from there reaches your bank at the [payout frequency](/en/docs/pagos/depositos) you choose.
 - **[Mercado Pago](/en/docs/pagos/mercado-pago):** your customer pays with your own Mercado Pago account, using the methods Mercado Pago offers in your country.
 - **Manual transfer:** you share your bank details and record the payment yourself once you verify it.
 
 ## Method by country and currency
 
-| Method | Countries | Payment currency | Quote | Invoice | Retainer |
-|---|---|---|---|---|---|
-| **Card** (Cord Payments) | MX, US, CA, BR, ES, GB, DE, FR | The document's sale currency, if the processor supports it | Yes | Yes | Yes |
-| **Automatic SPEI** (Cord Payments) | MX only | MXN only | Yes | No | No |
-| **Mercado Pago** | MX, BR, CO, AR, CL, PE | Whatever Mercado Pago supports on your account | Yes | Yes | No |
-| **Manual transfer** | All 12 Cord countries | Any | Yes | Yes (manual record) | No |
+| Method | Countries | Payment currency | Quote | Invoice | Client portal | Retainer | Automatic payments |
+|---|---|---|---|---|---|---|---|
+| **Card** (Cord Payments) | MX, US, CA, BR, ES, GB, DE, FR | The document's sale currency, if the processor supports it | Yes | Yes | Yes | Yes | Yes |
+| **Automatic SPEI** (Cord Payments) | MX only | MXN only | Yes | No | No | No | No |
+| **SEPA Direct Debit** (Cord Payments) | ES, DE, FR | EUR only | No | Yes | Yes | No | Yes |
+| **ACH bank debit** (Cord Payments) | US only | USD only | No | Yes | Yes | No | Yes |
+| **Mercado Pago** | MX, BR, CO, AR, CL, PE | Whatever Mercado Pago supports on your account | Yes | Yes | No | No | No |
+| **Manual transfer** | All 12 Cord countries | Any | Yes | Yes (manual record) | No | No | No |
 
 <Callout type="info">
 In Mexico and Brazil both rails coexist: Cord Payments is the primary one and Mercado Pago appears as an alternative on the same page. In Colombia, Argentina, Chile, and Peru, Mercado Pago is the way to collect online. See [Cord Payments fees](/en/docs/pagos/condiciones) for the cost of each method.
@@ -39,10 +41,11 @@ In Mexico and Brazil both rails coexist: Cord Payments is the primary one and Me
 
 <Steps>
 1. Open **Settings › Payments** with the **Payment settings** permission.
-2. Under **Payment methods**, turn on **Card** and, if your business is in Mexico, **SPEI**. Both become available once your payments account is **Active**; before that they appear locked.
-3. If the screen shows the current fee schedule with an acceptance checkbox, review and accept it. See [Cord Payments fees](/en/docs/pagos/condiciones#how-your-fee-schedule-is-activated).
-4. To offer manual transfer, turn it on and enter the **bank**, the account in your country's format, and the **beneficiary**.
-5. For Mercado Pago, click **Connect Mercado Pago** on its card. See [Mercado Pago](/en/docs/pagos/mercado-pago).
+2. Under **Payment methods**, turn on **Credit and debit card** and, depending on your country, **SPEI** (Mexico), **SEPA Direct Debit** (Spain, Germany, and France), or **ACH bank debit** (United States). They become available once your payments account is **Active**; before that they appear locked.
+3. Leave **Automatic payments** on if you want your clients to be able to save a method in their portal. See [Automatic payments](/en/docs/pagos/cobro-automatico).
+4. If the screen shows the current fee schedule with an acceptance checkbox, review and accept it. See [Cord Payments fees](/en/docs/pagos/condiciones#how-your-fee-schedule-is-activated).
+5. To offer manual transfer, turn it on and enter the **bank**, the account in your country's format, and the **beneficiary**.
+6. For Mercado Pago, click **Connect Mercado Pago** on its card. See [Mercado Pago](/en/docs/pagos/mercado-pago).
 </Steps>
 
 ## Card
@@ -76,6 +79,62 @@ From that screen they can **Print or save PDF**, or click **Email these to me**.
 
 Each charge keeps its own bank reference, so Cord recognizes the funds without anyone cross-checking receipts. When the money arrives, the charge is marked paid and the quote changes status. Confirmation depends on the bank's notice and **isn't always instant**: if your customer already transferred, they should check the status before trying a card.
 
+## Bank debit (SEPA and ACH)
+
+<Callout type="info">
+This feature is new and may not be enabled on your account yet. If you don't see it, write to us.
+</Callout>
+
+With bank debit, your client pays with a **direct debit from their bank account**
+instead of a card. Cord offers the scheme that matches your business's country:
+
+| | SEPA Direct Debit | ACH bank debit |
+|---|---|---|
+| **Businesses in** | Spain, Germany, and France | United States |
+| **Currency** | EUR only | USD only |
+| **Client's account** | IBAN in the SEPA area | United States bank account |
+| **Confirmation** | Up to 6 business days | Up to 4 business days |
+| **Refunds** | Full or partial | Full only |
+| **Notice to the account holder** | The processor notifies them before each debit | The processor confirms the authorization |
+
+<DmPaymentSettings lang="en" />
+
+### Turn it on
+
+<Steps>
+1. Open **Settings › Payments** with the **Payment settings** permission. Your payments
+   account must be **Active**.
+2. Under **Payment methods**, turn on **SEPA Direct Debit** or **ACH bank debit**.
+3. Cord requests the capability for your payments account. While the processor reviews
+   it, the method shows **Under review** and isn't offered to any client yet.
+4. Once approved, it changes to **Active** and shows up as an option on the link of your
+   invoices in EUR (SEPA) or in USD (ACH), in the [client
+   portal](/en/docs/pagos/portal-facturas), and in [automatic
+   payments](/en/docs/pagos/cobro-automatico).
+</Steps>
+
+If it shows **Unavailable: check your verification**, the processor didn't enable the
+capability: review the pending requirements of your [payments
+account](/en/docs/pagos/onboarding).
+
+### How a debit works
+
+- **Where it's offered:** on the invoice link, in the client portal, and as the saved
+  method for automatic payments, only on invoices in its currency. It isn't offered on
+  the quote link or for retainers.
+- **It takes days.** While the bank confirms, the invoice shows **Payment processing**:
+  it can't be charged again or voided, and the invoice detail says so. When the debit is
+  confirmed, the payment is applied like any other; if the bank declines it, the invoice
+  goes back to being payable.
+- **Where Cord charges a fee (today, in MXN), it isn't offered.** Cord's fee is a card
+  fee and there's no approved rate for debits. Outside MXN, Cord charges no fee; see
+  [Fees](/en/docs/pagos/condiciones).
+- **Turning it off** stops offering it on new charges; debits already in progress carry
+  on.
+- **With SEPA, the account holder can return a debit** without giving a reason for 8
+  weeks. Keep it in mind before handing over something of high value against a debit
+  that was just confirmed.
+
 ## Mercado Pago
 
 The quote's payment page and the invoice link show **Pay with Mercado Pago**. Your customer goes to Mercado Pago's checkout and returns to your link when done. Cord marks the charge paid only when it **reads the approved payment** in your Mercado Pago account. Details in [Mercado Pago](/en/docs/pagos/mercado-pago).
@@ -84,15 +143,17 @@ The quote's payment page and the invoice link show **Pay with Mercado Pago**. Yo
 
 Your customer sees your bank details and transfers from their bank. When you verify the deposit in your bank, you record the payment in Cord: on the quote, on the invoice, or with **Record payment** from [receivables](/en/docs/pagos/cartera-cobranza). A receipt sent by the customer doesn't replace that verification. Refunding a manual transfer is handled directly with your customer.
 
-## What the quote accepts versus the invoice
+## What the quote, the invoice, and the portal accept
 
-| | Quote link | Invoice link |
-|---|---|---|
-| Card | Yes | Yes, if **Card** is turned on |
-| Automatic SPEI | Yes, in MXN | No |
-| Mercado Pago | Yes | Yes |
-| Partial payment | In defined parts: deposit, balance, or installments | Free amount: your customer chooses how much to pay |
-| Retainers | Yes, by card | No |
+| | Quote link | Invoice link | Client portal |
+|---|---|---|---|
+| Card | Yes | Yes, if **Card** is turned on | Yes |
+| Automatic SPEI | Yes, in MXN | No | No |
+| SEPA or ACH debit | No | Yes, in EUR or USD | Yes, in EUR or USD |
+| Mercado Pago | Yes | Yes | No |
+| Partial payment | In defined parts: deposit, balance, or installments | Free amount: your customer chooses how much to pay | No: each invoice is paid at its balance |
+| Several invoices in one charge | No | No | Yes, in the same currency |
+| Retainers | Yes, by card | No | No |
 
 ### Partial payment of an invoice
 
@@ -119,6 +180,7 @@ While a payment is pending clarification, your customer shouldn't repeat the tra
 ## Limits
 
 - SPEI: Mexico only, MXN only, quotes only.
+- Bank debit: SEPA only in EUR for businesses in Spain, Germany, and France; ACH only in USD for businesses in the United States. Only on invoices, the portal, and automatic payments.
 - The invoice doesn't offer SPEI or retainers.
 - Mercado Pago doesn't run recurring charges and Cord doesn't read its chargebacks today.
 - In Colombia, Argentina, Chile, and Peru there's no Cord Payments: online collection is through Mercado Pago.
@@ -129,6 +191,8 @@ While a payment is pending clarification, your customer shouldn't repeat the tra
 **My customer doesn't see the SPEI option.** The quote isn't in MXN, SPEI is off in **Settings › Payments**, or your account isn't active.
 
 **My customer doesn't see a pay button on the invoice.** Your payments account isn't active, **Card** is off and Mercado Pago isn't connected, or the invoice is a test document.
+
+**My customer doesn't see bank debit.** The invoice isn't in the method's currency (EUR for SEPA, USD for ACH), the method isn't **Active** in **Settings › Payments**, or it's a charge in MXN.
 
 **"Email these to me" fails.** The quote has no customer email or the sending limit was reached. Your customer can **Print or save PDF**.
 
@@ -144,4 +208,6 @@ If an integration still requests a quote's previous checkout, it receives a link
 - [Cord Payments fees](/en/docs/pagos/condiciones)
 - [Mercado Pago](/en/docs/pagos/mercado-pago)
 - [Create, issue, and collect invoices](/en/docs/pagos/facturas-emitidas)
+- [Client portal: invoices and payments](/en/docs/pagos/portal-facturas)
+- [Automatic payments](/en/docs/pagos/cobro-automatico)
 - [Your Cord subscription currency](/en/docs/cuenta/suscripcion)

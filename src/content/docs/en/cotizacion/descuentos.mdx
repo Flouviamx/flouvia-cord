@@ -1,0 +1,252 @@
+---
+title: "Discounts and coupons"
+seoTitle: "Document discounts and coupons on quotes and invoices"
+description: "Apply a percentage or fixed-amount discount to a whole quote or invoice, create coupons with validity dates and usage limits, and understand how it's calculated, when a use is counted, and how it travels to the CFDI, Verifactu, and e-invoices."
+lastUpdated: "2026-10-10"
+reviewedBy: "Cord product and operations"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Quotes permission to apply a discount or a coupon", "Settings permission to create and manage coupons"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Discounts and coupons</h1>
+  <p class="page-subtitle">A reduction on the whole sale, before tax, spread across the lines. Entered by hand or with a code you manage.</p>
+</header>
+
+<Callout type="info">
+This feature is new and may not be enabled on your account yet. If you don't see it, write to us.
+</Callout>
+
+## What it is
+
+Cord has two ways to lower the price of a sale, and both can live on the same document:
+
+- **Negotiated price per line.** You lower the price of one specific line. It's the
+  difference between the list price and the negotiated price, and the panel shows it as
+  **You discounted them**. See [Products and discounts](/en/docs/cotizacion/productos).
+- **Document discount.** A reduction on the **whole** quote or invoice: a
+  **percentage** or an **amount** in the document's currency. Cord applies it **before
+  tax** and spreads it across the lines in proportion to their amount. You can enter it
+  by hand or with a **coupon**.
+
+A **coupon** is a reusable code (for example, `WELCOME10`) that you create under
+**Settings › Discounts › Coupons**, with its value, its validity dates, and how many
+times it can be used. Your team applies it in the editor, and your buyers can enter it
+when they quote from your website through the API or Cord Elements.
+
+<DmCotDiscount lang="en" />
+
+## Requirements
+
+| | Details |
+|---|---|
+| **Plan** | All plans. |
+| **Permission to apply** | **Quotes**: apply a discount or validate a coupon in the quote or invoice editor. |
+| **Permission to manage coupons** | **Settings**: create, edit, deactivate, and delete coupons. |
+| **Country** | All 12 markets. Each tax rail declares the discount the way its authority requires (see [On your tax invoice](#on-your-tax-invoice)). |
+
+## Apply a discount
+
+The control lives in the editor's **Review and send** panel, between the subtotal and
+the taxes. It's in the new-quote editor, when editing a quote, and in the invoice
+editor.
+
+<Steps>
+1. In **Review and send**, click **+ Add discount or coupon**.
+2. Choose the type: **Percent** (0 to 100), **Amount** (in the document's currency), or
+   **Coupon**.
+3. Type the value or the code and click **Apply**. A coupon is validated right then: if
+   it doesn't apply, the panel tells you why (see [Coupon messages](#coupon-messages)).
+4. The summary shows the row **Discount (10%)** or **Discount (WELCOME10)** with the
+   amount in green, and the taxes and total already calculated on the discounted base.
+   To take it off, click **Remove** next to the label.
+</Steps>
+
+A document carries **one** document discount at a time. If you send a coupon and a
+manual discount together (for example, from the API), the coupon wins.
+
+## How it's calculated
+
+1. **Gross subtotal:** the sum of the lines at their negotiated price, before tax.
+2. **Discount:** the percentage of that subtotal, or the amount you entered. An amount
+   larger than the subtotal is capped at the subtotal: the discount never makes the sale
+   negative.
+3. **Spread per line:** each line gets a share proportional to its gross amount. The
+   spread is done in the currency's smallest unit (cents in MXN, cents in EUR, whole
+   units in CLP or JPY), so the shares add up to exactly the discount and no line goes
+   negative.
+4. **Taxes:** each line calculates its tax on its already-discounted base, with its own
+   rate. That's why an exempt line and a taxed line each get their share of the
+   discount and the tax only drops where it should.
+5. **Withholdings:** if your catalog has withholdings (for example, ISR or IRPF), they're
+   calculated on the discounted bases.
+
+| Example (Mexico, 16% VAT) | No discount | With 10% |
+|---|---:|---:|
+| Subtotal | 169,370.00 MXN | 169,370.00 MXN |
+| Discount (WELCOME10) | — | −16,937.00 MXN |
+| IVA 16% | 27,099.20 MXN | 24,389.28 MXN |
+| **Total** | **196,469.20 MXN** | **176,822.28 MXN** |
+
+**Tax-inclusive prices.** If you turned on **Prices include IVA** (or your country's
+tax), an **amount** discount lowers what your client pays, and the pre-tax base is
+broken out afterwards. A percentage works the same with or without tax-inclusive prices.
+
+<Callout type="warning">
+The browser and the API never send the discount amount: they send the **definition**
+(percentage or amount) or the coupon **code**. Cord recalculates on the server with the
+same engine the editor uses, so what you see is what's saved, charged, and invoiced.
+</Callout>
+
+## Create and manage coupons
+
+<DmCouponsSettings lang="en" />
+
+<Steps>
+1. Open **Settings › Discounts › Coupons** with the **Settings** permission.
+2. Click **New coupon**.
+3. Type the **Code**: 3 to 32 letters, numbers, hyphens, or underscores. Cord turns it
+   into uppercase and doesn't allow two coupons with the same code on your account.
+4. Optional: an internal **Name** (for example, "New client promotion").
+5. Choose the **Discount**: **Percentage** or **Fixed amount**, and its **Value**. A
+   fixed amount also asks for its **Currency**, among the ones your account offers when
+   quoting.
+6. Optional: **Valid from** and **Valid until**. The dates are read in your business's
+   time zone.
+7. Optional: **Total uses** and **Uses per client**. Empty means unlimited.
+8. Click **Create coupon**.
+</Steps>
+
+| Rule | Details |
+|---|---|
+| **Currency** | A percentage coupon works in any currency. A fixed-amount coupon only applies to documents in **its** currency: a 2,500 MXN coupon can't be applied to a quote in USD. |
+| **What you can edit** | The name, the validity dates, the usage limits, and whether it's active. The **code, type, value, and currency don't change** once it's created: a document that already carries it keeps what it discounted. For a different value, create another coupon. |
+| **Deactivate** | The toggle on each row. A deactivated coupon can no longer be applied to new documents; documents that already carry it keep it. |
+| **Delete** | Only a coupon that was never used. One with uses is deactivated instead, to keep its history. |
+| **Per-client limit** | A coupon with **Uses per client** requires choosing the client before applying it. |
+
+## When a use is counted
+
+A coupon is **applied** to the document when you validate it, but its use is
+**counted** when the document becomes binding:
+
+| Document | The use is counted | The use is returned |
+|---|---|---|
+| **Quote** | When it's **approved**: the client clicks **Approve quote** on the link, or you use **Mark approved**. | If the quote is **rejected** or **expires**. |
+| **Invoice** | When it's **issued**, before it gets its number. | If the invoice is **voided**, or if you delete a draft whose issuance had failed. |
+| **Invoice from a quote** | Not counted again: it reuses the quote's use. | Along with the quote. |
+
+- The **validity dates** and whether the coupon is **active** are checked when it's
+  **applied**. A document built while the coupon was valid keeps it even if the coupon
+  later expires or you deactivate it.
+- The **usage limits** are checked when applying and again when approving or issuing,
+  because they're the coupon's budget. If the uses ran out between the draft and that
+  moment:
+  - **Invoice:** it isn't issued and no number is used up. Cord tells you the coupon has
+    no uses left and to remove it from the draft to issue the invoice.
+  - **Quote approved by the client:** the approval doesn't go through. Your client reads
+    that the quote needs an update from you, and the activity shows that they tried to
+    approve with an exhausted coupon. Remove the coupon and send the quote again.
+
+## Coupon messages
+
+| Message | What to do |
+|---|---|
+| That coupon does not exist. | Check the code; spaces and lowercase don't matter. |
+| That coupon is deactivated. | Turn it back on in **Settings › Discounts › Coupons** if you want to keep using it. |
+| That coupon is not valid yet. / That coupon has expired. | Check **Valid from** and **Valid until**. |
+| That coupon is in a different currency than this document. | Use a percentage coupon or a fixed-amount one in the document's currency. |
+| That coupon has no uses left. | Raise **Total uses** or create another coupon. |
+| This client has already used that coupon as many times as allowed. | The per-client limit was reached. |
+| That coupon is limited per client: choose a client first. | Choose the client in **Who are you quoting?** and apply it again. |
+
+## Where the discount shows up
+
+- **Quote link and PDF:** the row **Discount (WELCOME10)** or **Discount (10%)** between
+  the subtotal and the taxes. Each line keeps its amount before the discount.
+- **Quote and invoice detail**, and the **invoice link**: the same row.
+- **Google Sheets and Excel:** the **discount** column of the quotes sheet, with the
+  subtotal before the discount.
+- **QuickBooks Online and Xero:** each line arrives with its already-discounted price.
+
+## On your tax invoice
+
+The discount travels, spread per line, to every tax document, in the shape each
+authority requires:
+
+| Document | How it's declared |
+|---|---|
+| **CFDI 4.0 (Mexico)** | Each line carries its unit value **before** the discount and its share of the discount in the **Descuento** attribute; the VAT base is the amount minus the discount. A line that the discount brings to zero can't be stamped (the SAT requires a base greater than zero for a transferred tax): Cord rejects it before stamping and tells you which one. In the [global invoice](/en/docs/pagos/facturacion#global-invoice), each sale carries its share of the discount. |
+| **Verifactu (Spain)** | Each line declares its **already-discounted** base. |
+| **Factur-X, XRechnung, and Peppol** | Each line with its amount before the discount, and the discount as a **document allowance**, one per VAT category and rate, so that each group in the breakdown matches the invoice to the cent. |
+| **Facturae (Spain)** | Each line with its own discount. |
+| **Authorized invoices in Argentina, Brazil, Chile, Colombia, and Peru** | Each line with its share of the discount, in the field each country's authority requires. |
+
+A **credit note** spreads its amount in the same proportion, discount included.
+
+## Copies, recurring invoices, and partial approval
+
+| Case | What happens to the discount |
+|---|---|
+| **Partial approval** | Cord reapplies the definition to the approved lines: a percentage is recalculated; an amount is capped at the new subtotal. |
+| **Invoice from a quote** | Inherits the definition and applies it to what's invoiced. |
+| **Duplicate or repeat an invoice** | Copies each line's **gross** price and the discount separately. |
+| **Recurring invoices** | Only carry a **manual** discount: a coupon isn't repeated every month. |
+| **Duplicate a quote** | The copy doesn't carry the document discount: add it again if it applies. |
+| **Replace a CFDI (Mexico)** | The replacement inherits the original's discount, with its coupon, without counting another use. |
+| **Shopify order** | The order Cord creates in your store carries each line's negotiated price, but **not yet** the document discount. Check the order total in Shopify. |
+
+## Discounts and internal approvals
+
+If your organization uses [internal approvals](/en/docs/cotizacion/aprobaciones-internas):
+
+- A **manual** document discount counts as a discount on each line for the **maximum
+  discount** threshold and the **minimum margin** threshold. Moving the reduction to
+  the footer doesn't get around the rule.
+- A **coupon** doesn't count toward those thresholds: it was created by whoever manages
+  Settings and is already an authorized reduction.
+
+## From the API and Cord Elements
+
+- `POST /api/v1/cotizaciones` and `POST /api/v1/facturas` accept `descuento`
+  (`{ "tipo": "porcentaje" | "monto", "valor": 10 }`) or `cupon` (`"WELCOME10"`). See
+  the [Quotes API](/en/docs/desarrolladores/funciones/cotizaciones) and the [Invoices
+  API](/en/docs/desarrolladores/funciones/facturas).
+- With a **publishable key** (your website's), the only discount accepted is a `cupon`:
+  a buyer can't set a percentage for themselves.
+- A coupon that doesn't exist responds `404` with `code: "coupon_no_existe"`; an
+  expired, exhausted, or wrong-currency one responds `409` with `coupon_vencido`,
+  `coupon_agotado`, `coupon_moneda`, and so on.
+
+## Limits
+
+- One document discount per document.
+- Percentage from 0 to 100; an amount is capped at the gross subtotal.
+- Coupon codes of 3 to 32 characters (`A-Z`, `0-9`, `-`, `_`), unique on your account.
+- Uses are counted per binding document: approving and then invoicing the same sale
+  counts a single use.
+
+## Troubleshooting
+
+**The coupon says it's exhausted, but there are documents that weren't approved.** A use
+is counted when approving or issuing. Check which approved quotes or issued invoices
+carry it; when an invoice is voided or a quote is rejected, the use comes back.
+
+**I can't change a coupon's value.** The value isn't editable so it doesn't change what
+it already discounted on existing documents. Deactivate it and create another.
+
+**The CFDI is rejected because of a line at zero.** The discount left a line without a
+base. Lower the discount or remove that line before stamping.
+
+**The coupon isn't on the duplicated quote.** Duplicating doesn't copy the document
+discount: apply it again.
+
+## Related
+
+- [Products and discounts](/en/docs/cotizacion/productos)
+- [Internal approvals](/en/docs/cotizacion/aprobaciones-internas)
+- [Advanced options](/en/docs/cotizacion/opciones)
+- [Create, issue, and collect invoices](/en/docs/pagos/facturas-emitidas)
+- [Tax invoicing by country](/en/docs/pagos/facturacion)
+- [European e-invoicing](/en/docs/pagos/factura-electronica)

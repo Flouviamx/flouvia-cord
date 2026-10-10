@@ -2,7 +2,7 @@
 title: "API de Cotizaciones"
 seoTitle: "API de cotizaciones de Cord"
 description: "Crea, actualiza y envía cotizaciones mediante programación."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-10"
 reviewedBy: "Ingeniería de Cord"
 availablePlans: [Free, Starter, Pro, Scale, Developer]
 prerequisites: ["Una llave con permiso sobre el recurso cotizaciones"]
@@ -46,6 +46,51 @@ curl -X POST "https://cordhq.app/api/v1/cotizaciones" \
 ```
 
 Cada línea de `items` requiere `descripcion`, `cantidad` y `precio_unitario`. `producto_id` es opcional (referencia un producto de tu [catálogo](/docs/desarrolladores/funciones/productos) para heredar su nombre y precio de lista) y `precio_negociado` permite capturar un precio con descuento distinto al de lista. No existe un campo `sku`: si quieres enlazar la línea a un producto, usa su `producto_id`.
+
+### Campos de la cotización
+
+| Campo | Detalle |
+|---|---|
+| `items` | Obligatorio. Las líneas (ver la tabla siguiente). |
+| `cliente_id` o `cliente` | Un cliente de tu directorio, o los datos para darlo de alta (`empresa`, y opcionales `email`, `contacto`, `telefono`, `rfc` y `fiscal`). |
+| `terminos` | `contado`, `net7`, `net15`, `net30`, `net45`, `net60` o `net90` (N días naturales). Sin él, los términos del cliente o los de tu cuenta. |
+| `vigencia_dias` | Días que la cotización es válida desde su envío. |
+| `notas` | Notas para el cliente. |
+| `base_currency` | Divisa de venta (ISO 4217). |
+| `fiscal_currency` | Divisa contable; si difiere de la de venta, la factura declara el tipo de cambio. |
+| `iva_incluido` | `true` si los precios ya incluyen el impuesto. |
+| `descuento` | Descuento de documento antes de impuestos: `{ "tipo": "porcentaje", "valor": 10 }` o `{ "tipo": "monto", "valor": 2500 }`. Cord calcula el importe y lo reparte entre las líneas; un monto se topa en el subtotal. `null` lo quita. Ver [Descuentos y cupones](/docs/cotizacion/descuentos). |
+| `cupon` | Código de un cupón de tu cuenta (por ejemplo, `"BIENVENIDA10"`). Cord valida vigencia, divisa y usos; si viene, manda sobre `descuento`. |
+| `send` | `true` para enviarla al crearla. Solo con llave secreta. |
+
+| Campo de la línea | Detalle |
+|---|---|
+| `descripcion`, `cantidad`, `precio_unitario` | Obligatorios. |
+| `producto_id` | Producto del catálogo. |
+| `precio_negociado` | Precio final de la línea, si es distinto al de lista. |
+| `costo_unitario` | Costo interno para calcular el margen. Nunca lo ve el cliente. |
+| `tax_rate` | Fracción de 0 a 1 (`0.16`, no `16`), validada contra tu catálogo de impuestos. `0` significa exenta a propósito. |
+| `exemption_reason` | Solo con `tax_rate` 0. España: la causa de exención o no sujeción de Verifactu (E1–E6, N1, N2, S2). Resto de la UE: el código VATEX de la factura electrónica. |
+| `clave_sat`, `clave_unidad_sat` | Solo México: clave de producto o servicio del SAT (8 dígitos) y clave de unidad de esa línea. Ganan sobre las del producto; una clave con forma inválida responde `400`. Fuera de México se ignoran. |
+
+```bash
+curl -X POST "https://cordhq.app/api/v1/cotizaciones" \
+     -H "Authorization: Bearer sk_live_tU..." \
+     -H "Content-Type: application/json" \
+     -H "Idempotency-Key: cotizacion-pedido-4471" \
+     -d '{
+       "cliente_id": "8f7b2c1e-4d3a-4b9f-a6e2-1c5d7e9f0a3b",
+       "terminos": "net45",
+       "base_currency": "MXN",
+       "cupon": "BIENVENIDA10",
+       "items": [
+         { "descripcion": "Cemento gris CPC 30R", "cantidad": 400, "precio_unitario": 245,
+           "tax_rate": 0.16, "clave_sat": "30111601", "clave_unidad_sat": "H87" }
+       ]
+     }'
+```
+
+Con una **llave publicable** (la de tu sitio) Cord ignora `descuento`, `precio_negociado` y `costo_unitario`: el único descuento que acepta es un `cupon`. Un cupón que no existe responde `404` con `code: "coupon_no_existe"`; uno inactivo, vencido, agotado, de otra divisa o limitado por cliente sin cliente responde `409` con `coupon_inactivo`, `coupon_vencido`, `coupon_aun_no_vigente`, `coupon_agotado`, `coupon_agotado_cliente`, `coupon_moneda` o `coupon_requiere_cliente`.
 
 `base_currency` es la divisa en la que el cliente ve y paga la cotización (ISO 4217, ej. `MXN`, `USD`, `EUR`, `GBP`). Es opcional — si la omites, Cord usa la divisa contable de tu organización — pero la API es agnóstica de país: una cuenta en Madrid, Austin o Bogotá cotiza en su propia divisa sin ningún parámetro adicional.
 
@@ -91,6 +136,7 @@ El valor de `status` es el estado interno tal cual (en inglés, no traducido): `
       "total": 6000,
       "moneda": "MXN",
       "terminos": "Net 30",
+      "terminos_codigo": "net30",
       "vigencia": "10 sep 2026",
       "creada": "20 ago 2026",
       "link_publico": "https://cordhq.app/q/9f3b6c2a7e1d4f8b0a5c3e7d1b9f2a46"
@@ -101,10 +147,18 @@ El valor de `status` es el estado interno tal cual (en inglés, no traducido): `
 ```
 
 <Callout type="warning" title="Fechas y términos en formato de presentación">
-En la lista y el detalle, `terminos` llega como etiqueta (`Contado`, `Net 30`, `Net 60`) y `vigencia` y `creada` como fechas de presentación (`10 sep 2026`), no como códigos ni fechas ISO. No los parses: para la fecha exacta de cada cambio usa `created_at` del [historial de eventos](/docs/desarrolladores/funciones/eventos) con `object_id`.
+En la lista y el detalle, `terminos` llega como etiqueta en el idioma de tu cuenta (`Contado`, `Net 45`); para comparar usa `terminos_codigo` (`contado`, `net45`). `vigencia` y `creada` llegan como fechas de presentación (`10 sep 2026`), no como fechas ISO. No las parses: para la fecha exacta de cada cambio usa `created_at` del [historial de eventos](/docs/desarrolladores/funciones/eventos) con `object_id`.
 </Callout>
 
 En el listado, `link_publico` también es una URL absoluta, igual que en la respuesta de creación. Para el detalle de una sola cotización (líneas, eventos, aprobación), usa `GET /api/v1/cotizaciones/{id}`.
+
+El detalle trae además `descuento`: `null` si no hay, o el descuento de documento con su definición, el cupón del que salió y el importe calculado antes de impuestos:
+
+```json
+"descuento": { "tipo": "porcentaje", "valor": 10, "cupon": "BIENVENIDA10", "monto": 9800, "moneda": "MXN" }
+```
+
+`total` ya incluye el descuento.
 
 ## Proponer líneas con IA
 

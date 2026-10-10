@@ -1,0 +1,189 @@
+---
+title: "Automatic payments"
+seoTitle: "Automatic invoice payments with a saved method and smart retries"
+description: "Your client saves a card or a bank account in their portal and each invoice is charged on its due date. Consent, what's charged and when, retries based on the decline reason, notices, and how you stay in control."
+lastUpdated: "2026-10-10"
+reviewedBy: "Cord product and operations"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["An active Cord Payments account", "Payment settings permission to allow it or turn it off for everyone", "Clients permission to turn it off for one client", "Client portal created"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Automatic payments</h1>
+  <p class="page-subtitle">Your client authorizes once and each invoice is charged on its due date by itself. If a charge fails, Cord knows when to retry and when not to.</p>
+</header>
+
+<Callout type="info">
+This feature is new and may not be enabled on your account yet. If you don't see it, write to us.
+</Callout>
+
+## What it is
+
+With automatic payments, **your client** saves a card or a bank account in their
+[portal](/en/docs/pagos/portal-facturas) and authorizes your business to charge there
+each invoice you issue them from that day on, on its due date. Cord makes the charge,
+applies the payment to each invoice and, if the bank declines it, decides whether to
+retry, when, or whether to ask the client for another method.
+
+It's **always turned on by the client**: it's their authorization. You decide whether
+your business offers it and you can turn it off, but you can't turn it on for them.
+
+## Requirements
+
+| | Details |
+|---|---|
+| **Plan** | All plans. |
+| **Account** | [Cord Payments](/en/docs/pagos/onboarding) active. Available in Mexico, the United States, Canada, Brazil, Spain, the United Kingdom, Germany, and France. |
+| **Offering it** | **Automatic payments** turned on in **Settings › Payments** (on by default), with the **Payment settings** permission. |
+| **Turning it off for a client** | **Clients** permission, from the client's profile. |
+| **Methods** | Card in any currency. SEPA Direct Debit for invoices in EUR (businesses in Spain, Germany, and France) and ACH for invoices in USD (businesses in the United States), if you turned on [bank debit](/en/docs/pagos/metodos#bank-debit-sepa-and-ach). In MXN, card only. |
+
+## How your client turns it on
+
+<DmAutopaySetup lang="en" />
+
+<Steps>
+1. You share their [portal](/en/docs/pagos/portal-facturas) from their profile.
+2. On the **Automatic payments** card, your client clicks **Turn on automatic payments**.
+3. They read and check the authorization: "I authorize [your business] to charge this
+   method, on its due date, each invoice it issues to me from today on. I can turn this
+   off at any time from this portal." They can't continue without checking it.
+4. They click **Continue**, enter their card or bank account, and click **Save method**.
+5. Back on the portal they see "Done: automatic payments are on." If they saved a bank
+   account that needs to be verified, they see "We're verifying your bank account…":
+   automatic payments turn on as soon as it's confirmed.
+</Steps>
+
+They can also turn it on **while paying**: when they pay several invoices from the
+portal, they check **Save this method for automatic payments** along with the same
+authorization.
+
+**Consent is evidence, not a click.** Cord records on its server the date, IP address,
+and browser of the authorization, stores it as **pending**, and only turns automatic
+payments on when the processor confirms that the method was saved for that client. If
+your client changes methods, the previous one is removed: there are never two live
+authorizations.
+
+## What's charged and when
+
+Once a day, Cord reviews the clients with automatic payments on and charges the invoices
+that meet **all** of this at the same time:
+
+| Condition | Why |
+|---|---|
+| It's issued, open, with a balance, with no cancellation in progress, and isn't a test document. | Only what's owed is charged. |
+| It's due **today or earlier** (or, if it has no due date, it was issued today or earlier). | The charge arrives on the agreed date, not before. |
+| It was issued at least **one day before** the charge. | Your client receives the invoice before being charged for it. |
+| It's due **on or after the day of the authorization**. | What they already owed before authorizing isn't charged as a surprise: they pay it from the portal. |
+| The saved method **covers its currency** and your business still accepts that method. | A SEPA account doesn't pay dollars. |
+| It has no payment in progress and the retry cycle isn't stopped or waiting for its date. | Nothing is charged twice. |
+
+- **One charge per client and per currency.** All invoices due that day in the same
+  currency are charged together, up to 50: a single entry on your client's statement and,
+  where Cord charges a fee, a single fee.
+- **Recurring invoices included.** A [recurring invoice](/en/docs/pagos/facturas-recurrentes)
+  issued to a client with automatic payments is charged like any other invoice.
+- **Mexico.** A replaced CFDI, one being replaced, and the global invoice aren't charged
+  automatically.
+- **Bank debits.** They take days to confirm. Meanwhile, those invoices show **Payment
+  processing** and can't be charged again or voided.
+
+## Notices
+
+| Who | When | What they get |
+|---|---|---|
+| **Your client** | With each invoice you send them while automatic payments are on. | The invoice email adds: "You have automatic payments on: this invoice will be charged to your [method] on [date]. If you prefer to pay it earlier, use the button." |
+| **Your client** | Before each SEPA debit and when authorizing an ACH debit. | The notice the payment processor sends to the account holder. |
+| **Your client** | When an automatic charge doesn't go through. | An email with your branding: what happened, the date of the next attempt or what they need to do, and the **Open my portal** button. |
+| **Your team** | When automatic payments **stop**. | A high-priority task due today, for example "Automatic payments stopped: [client]'s method no longer works ([amount])". A scheduled retry doesn't create a task. |
+
+## Smart retries
+
+When a charge fails, Cord doesn't retry blindly. It reads the decline reason and
+classifies it:
+
+| Decline reason | What Cord does | Automatic payments |
+|---|---|---|
+| **Stolen, lost, blocked, or fraud-flagged card** | Never retries. | Turned off and the method removed. Your client must add another one. |
+| **Debit authorization withdrawn** (mandate revoked, unauthorized debit) | Doesn't retry. | Turned off and the method removed. |
+| **Method no longer works** (expired card, wrong details, closed or invalid account) | Doesn't retry: asks for another method. | Off until your client adds another one. |
+| **The bank asks for authentication** | Doesn't retry: a charge without the cardholder present can't pass that check. Asks your client to pay from their portal. | Stays on. |
+| **Insufficient funds** (card) | Retries on the next **1st or 16th of the month**, if it falls between 2 and 7 days later; otherwise after 3 days. | Stays on. |
+| **Technical failure at the issuing bank** | Retries the next day. | Stays on. |
+| **Other declines** (card) | Retries after **2, 4, and 7 days**. | Stays on. |
+
+- **Card:** up to **4 attempts** (the first one and three retries). After that, charging
+  in that currency stops as "unsuccessful after several attempts" and your client pays
+  from their portal.
+- **Bank debit (SEPA or ACH):** only retried for **insufficient funds**, up to **3
+  attempts** and within **30 days** (SEPA) or **40 days** (ACH) of the first one, the same
+  limits the banking scheme applies. The retry falls on the next 1st or 16th of the month
+  if it's between 3 and 7 days later; otherwise after 4 days. Any other debit decline is
+  for your client to sort out with their bank.
+- **A decline counts once**, even if the bank reports it through two channels.
+- **The cycle starts over** when a charge in that currency goes through (automatic or
+  from the portal) or when your client saves a new method.
+
+## What you see in Cord
+
+On the client's profile, the **Client portal** block shows:
+
+- **Automatic payments:** the method it's on with (for example, "Visa •••• 4242" or
+  "SEPA account •••• 3000"), or **Off** with the note "Your client turns it on from their
+  portal, with their authorization."
+- **Retry scheduled:** "Attempt 1 declined in MXN. Next attempt: October 16, 2026."
+- **Stopped:** "Stopped in MXN: the bank asks the client to confirm the payment."
+- **Turned off by the system:** "Turned off automatically: the bank blocked the card."
+
+<DmClientPortalCard lang="en" />
+
+Each invoice also records in its history the charge that didn't go through ("Automatic
+payment did not go through") and, when it does, the payment like any other.
+
+## Turn off automatic payments
+
+| Who | Where | What happens |
+|---|---|---|
+| **Your client** | In their portal, **Turn off**. | Charging stops and their saved method is removed. Their invoices stay in the portal to pay whenever they want. |
+| **You, for one client** | On their profile, **Turn off automatic payments** (Clients permission). | The same. Your client can turn it back on from their portal. |
+| **You, for everyone** | **Settings › Payments › Automatic payments** (Payment settings permission). | Charging stops for everyone and it's no longer offered in the portal. Saved methods aren't deleted: if you turn it back on, it resumes with them. |
+
+Disabling the portal link does **not** turn off automatic payments.
+
+## Limits
+
+- Only with Cord Payments: it doesn't work with Mercado Pago or in Colombia, Argentina,
+  Chile, and Peru.
+- One saved method per client.
+- Up to 50 invoices per charge, all in the same currency.
+- What the client already owed when authorizing isn't charged automatically.
+- Charges go out once a day; a bank debit takes days to confirm.
+
+## Troubleshooting
+
+**My client doesn't see the automatic payments option.** Check that **Automatic
+payments** is on in **Settings › Payments** and that your Cord Payments account is
+active.
+
+**Automatic payments are on but an invoice wasn't charged.** Check that it's already
+due, that it was issued at least one day before, that it's due after the authorization
+date, and that the method covers its currency (for example, a SEPA account doesn't cover
+an invoice in USD).
+
+**It turned itself off.** The bank declined the method for good (blocked card,
+withdrawn authorization, or expired method). Your client must add another method from
+their portal.
+
+**My client says their bank asks them to confirm.** It's an authentication decline: your
+client pays that invoice from their portal and automatic payments stay on for the next
+ones.
+
+## Related
+
+- [Client portal: invoices and payments](/en/docs/pagos/portal-facturas)
+- [Payment methods](/en/docs/pagos/metodos)
+- [Automatic reminders](/en/docs/pagos/recordatorios)
+- [Recurring invoices](/en/docs/pagos/facturas-recurrentes)
+- [Tasks and follow-up](/en/docs/gestion/tareas)
+- [Refunds](/en/docs/pagos/reembolsos)

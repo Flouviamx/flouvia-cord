@@ -1,7 +1,7 @@
 ---
 title: "Create, issue, and collect invoices"
 description: "Create an invoice, assign its number when issuing, deliver it, and track its balance in Cord."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-10"
 reviewedBy: "Cord product and operations"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -24,7 +24,11 @@ Drafts do not have an official number yet. Cord labels them **No number** and ad
 <Steps>
 1. **Select the client.** Cord reads the email, payment terms, and tax details from the client record.
 2. **Add line items.** Use catalog products, kits, a free-form line, or **Build with AI**. You can set quantity, price, and tax per item.
-3. **Review total and due date.** Confirm taxes, withholdings, currency, exchange rate when applicable, and the payment due date.
+3. **Review total and due date.** Confirm taxes, withholdings, currency, exchange rate when applicable, and the payment due date. If it applies, add a **discount or coupon** with **+ Add discount or coupon** (see [Discounts and coupons](/en/docs/cotizacion/descuentos)).
+   - **Date of supply** and **End of period**: only if the sale or service happened on a date other than the issue date. It's required in Germany; if empty, the invoice says it matches the issue date.
+   - **Buyer reference** and **Purchase order** (optional): printed on the invoice and carried by its [e-invoice](/en/docs/pagos/factura-electronica). If you leave the reference empty, the client's is used.
+   - **CFDI details** (Mexico): that invoice's **CFDI use** and **Payment method**. See [PUE or PPD](/en/docs/pagos/facturacion#payment-method-pue-or-ppd).
+   - **Delivery address** (France): only if the goods are delivered somewhere other than the client's address.
 4. **Issue.** Choose **Issue and send** to assign the number and email the invoice in the same flow, or **Issue without sending** if you want to deliver it later.
 </Steps>
 
@@ -34,7 +38,9 @@ Issuing is irreversible: it assigns the official number and locks the fiscal doc
 
 ## What your client receives
 
-The email includes the PDF and the public invoice link. From that page, the client can review the balance and payment history; if your payments account is enabled, they can also pay by card, and with [Mercado Pago](/en/docs/pagos/mercado-pago) if you connected it. They can pay the full balance or choose **Pay another amount** to pay part of it.
+The email includes the PDF and the public invoice link. From that page, the client can review the balance and payment history; if your payments account is enabled, they can also pay by card, and with [Mercado Pago](/en/docs/pagos/mercado-pago) if you connected it. They can pay the full balance or choose **Pay another amount** to pay part of it. If you turned on [bank debit](/en/docs/pagos/metodos#bank-debit-sepa-and-ach), on invoices in EUR (SEPA) or USD (ACH) they can also pay with a debit from their account.
+
+Besides each invoice's link, you can give your client their [portal](/en/docs/pagos/portal-facturas), with all their invoices and paying several in a single charge. If they turned on [automatic payments](/en/docs/pagos/cobro-automatico), each invoice's email tells them on which day and to which method it will be charged.
 
 The public page presents your business brand, invoice number, balance, parties, line items, and downloads in one view. If the document was created in test mode or without fiscal issuance, Cord displays a clear warning and disables online payment.
 
@@ -55,7 +61,7 @@ keeps **Test** from replacing or contradicting states such as **Open** or **Paid
 
 ## Actions from the invoice detail
 
-You can resend the email, record manual or partial payments, copy the public link, download PDF and XML when available, void, create a credit note, use **Duplicate invoice** to open a new copy in the editor, or start a monthly recurrence with **Repeat monthly**.
+You can resend the email, record manual or partial payments, copy the public link, download PDF and XML when available, void, create a credit note, use **Duplicate invoice** to open a new copy in the editor, or start a monthly recurrence with **Repeat monthly**. In Mexico, **Replace CFDI** also corrects an issued CFDI under SAT reason 01, and the history records the **payment complement** for each payment on a PPD invoice (see [Invoicing by country](/en/docs/pagos/facturacion#automatic-payment-complement)).
 
 The progress bar separates five moments: **Draft**, **Issued**, **Sent**, **Viewed**, and **Paid**. The action column provides direct access to open or copy the client link, download the PDF, and share through WhatsApp. Exceptional actions, such as voiding or marking an invoice uncollectible, stay under **More actions**.
 

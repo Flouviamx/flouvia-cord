@@ -2,7 +2,7 @@
 title: "Quotes API"
 seoTitle: "Cord Quotes API"
 description: "Create, update, and send quotes programmatically."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-10"
 reviewedBy: "Cord engineering"
 availablePlans: [Free, Starter, Pro, Scale, Developer]
 prerequisites: ["A key with permission on the cotizaciones resource"]
@@ -46,6 +46,51 @@ curl -X POST "https://cordhq.app/api/v1/cotizaciones" \
 ```
 
 Every line in `items` requires `descripcion`, `cantidad`, and `precio_unitario` — field names stay in Spanish regardless of the request's language, since they are the API's canonical schema. `producto_id` is optional (it references a product from your [catalog](/en/docs/desarrolladores/funciones/productos) to inherit its name and list price), and `precio_negociado` lets you capture a discounted price different from the list price. There is no `sku` field: to link a line to a product, use its `producto_id`.
+
+### Quote fields
+
+| Field | Details |
+|---|---|
+| `items` | Required. The lines (see the next table). |
+| `cliente_id` or `cliente` | A client from your directory, or the details to create one (`empresa`, plus optional `email`, `contacto`, `telefono`, `rfc`, and `fiscal`). |
+| `terminos` | `contado`, `net7`, `net15`, `net30`, `net45`, `net60`, or `net90` (N calendar days). Without it, the client's terms or your account's. |
+| `vigencia_dias` | Days the quote is valid from when it's sent. |
+| `notas` | Notes for the client. |
+| `base_currency` | Sale currency (ISO 4217). |
+| `fiscal_currency` | Accounting currency; if it differs from the sale currency, the invoice declares the exchange rate. |
+| `iva_incluido` | `true` if prices already include tax. |
+| `descuento` | Document discount before tax: `{ "tipo": "porcentaje", "valor": 10 }` or `{ "tipo": "monto", "valor": 2500 }`. Cord calculates the amount and spreads it across the lines; an amount is capped at the subtotal. `null` removes it. See [Discounts and coupons](/en/docs/cotizacion/descuentos). |
+| `cupon` | A coupon code from your account (for example, `"WELCOME10"`). Cord validates its dates, currency, and uses; if present, it wins over `descuento`. |
+| `send` | `true` to send it on creation. Secret key only. |
+
+| Line field | Details |
+|---|---|
+| `descripcion`, `cantidad`, `precio_unitario` | Required. |
+| `producto_id` | Catalog product. |
+| `precio_negociado` | The line's final price, if different from the list price. |
+| `costo_unitario` | Internal cost to calculate margin. The client never sees it. |
+| `tax_rate` | Fraction from 0 to 1 (`0.16`, not `16`), validated against your tax catalog. `0` means deliberately exempt. |
+| `exemption_reason` | Only with `tax_rate` 0. Spain: the Verifactu exemption or non-subject reason (E1–E6, N1, N2, S2). Rest of the EU: the e-invoice VATEX code. |
+| `clave_sat`, `clave_unidad_sat` | Mexico only: the SAT product or service key (8 digits) and unit key for that line. They win over the product's; a key with an invalid format responds `400`. Ignored outside Mexico. |
+
+```bash
+curl -X POST "https://cordhq.app/api/v1/cotizaciones" \
+     -H "Authorization: Bearer sk_live_tU..." \
+     -H "Content-Type: application/json" \
+     -H "Idempotency-Key: quote-order-4471" \
+     -d '{
+       "cliente_id": "8f7b2c1e-4d3a-4b9f-a6e2-1c5d7e9f0a3b",
+       "terminos": "net45",
+       "base_currency": "MXN",
+       "cupon": "WELCOME10",
+       "items": [
+         { "descripcion": "Gray cement CPC 30R", "cantidad": 400, "precio_unitario": 245,
+           "tax_rate": 0.16, "clave_sat": "30111601", "clave_unidad_sat": "H87" }
+       ]
+     }'
+```
+
+With a **publishable key** (your website's), Cord ignores `descuento`, `precio_negociado`, and `costo_unitario`: the only discount it accepts is a `cupon`. A coupon that doesn't exist responds `404` with `code: "coupon_no_existe"`; an inactive, expired, exhausted, wrong-currency, or per-client coupon without a client responds `409` with `coupon_inactivo`, `coupon_vencido`, `coupon_aun_no_vigente`, `coupon_agotado`, `coupon_agotado_cliente`, `coupon_moneda`, or `coupon_requiere_cliente`.
 
 `base_currency` is the currency the client sees and pays the quote in (ISO 4217, e.g. `MXN`, `USD`, `EUR`, `GBP`). It's optional — omit it and Cord falls back to your organization's accounting currency — but the API is country-agnostic: an account in Madrid, Austin, or Bogotá quotes in its own currency with no extra parameter.
 
@@ -91,6 +136,7 @@ The `status` value is the internal state as-is (English, never translated): `dra
       "total": 6000,
       "moneda": "MXN",
       "terminos": "Net 30",
+      "terminos_codigo": "net30",
       "vigencia": "10 sep 2026",
       "creada": "20 ago 2026",
       "link_publico": "https://cordhq.app/q/9f3b6c2a7e1d4f8b0a5c3e7d1b9f2a46"
@@ -101,10 +147,18 @@ The `status` value is the internal state as-is (English, never translated): `dra
 ```
 
 <Callout type="warning" title="Dates and terms in display format">
-In the list and the detail, `terminos` comes as a label (`Contado`, `Net 30`, `Net 60`) and `vigencia` and `creada` as display dates (`10 sep 2026`), not as codes or ISO dates. Don't parse them: for the exact time of each change, use `created_at` from the [event history](/en/docs/desarrolladores/funciones/eventos) with `object_id`.
+In the list and the detail, `terminos` comes as a label in your account's language (`Due on receipt`, `Net 45`); to compare, use `terminos_codigo` (`contado`, `net45`). `vigencia` and `creada` come as display dates (`Sep 10, 2026`), not as ISO dates. Don't parse them: for the exact time of each change, use `created_at` from the [event history](/en/docs/desarrolladores/funciones/eventos) with `object_id`.
 </Callout>
 
 In the list, `link_publico` is also an absolute URL, just like in the creation response. For the detail of a single quote (line items, event timeline, approval), use `GET /api/v1/cotizaciones/{id}`.
+
+The detail also includes `descuento`: `null` if there's none, or the document discount with its definition, the coupon it came from, and the calculated amount before tax:
+
+```json
+"descuento": { "tipo": "porcentaje", "valor": 10, "cupon": "WELCOME10", "monto": 9800, "moneda": "MXN" }
+```
+
+`total` already includes the discount.
 
 ## Proposing lines with AI
 

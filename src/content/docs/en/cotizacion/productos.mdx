@@ -2,7 +2,7 @@
 title: "Products and discounts"
 seoTitle: "Products, kits, discounts, and margin in a quote"
 description: "Add products, kits, and free lines, negotiate prices, use the price suggested by your history, watch your margin, and understand how taxes and discounts are calculated."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-10"
 reviewedBy: "Cord product and operations"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -63,7 +63,9 @@ client** (see [Advanced options](/en/docs/cotizacion/opciones)).
 4. **Manual negotiated price:** you can lower the negotiated price of any line.
 
 In **Review and send**, **You discounted them** adds up the difference between list and
-negotiated across the whole quote. Cord has no global discount on the subtotal.
+negotiated across the whole quote. You can also apply a **document discount** to the
+whole sale (percentage, amount, or coupon), which Cord spreads across the lines before
+tax: see [Discounts and coupons](/en/docs/cotizacion/descuentos).
 
 <Callout type="warning">
 Discounts are always calculated **before** taxes. The editor and the server use the
@@ -102,6 +104,7 @@ The **Review and send** panel updates instantly:
 
 - **Subtotal:** the sum of the lines before taxes.
 - **You discounted them:** total difference between list and negotiated (only if there's a discount).
+- **Discount:** the document discount or the coupon, if you applied one, with its label (for example, "Discount (WELCOME10)").
 - **Taxes:** one row per rate, with your country's name for it (IVA in Mexico and Spain, VAT in the United Kingdom, GST in Canada, Sales tax by state in the United States).
 - **Withholding:** if your catalog has any, it's subtracted.
 - **Total:** what the client will pay.
@@ -126,6 +129,7 @@ The **Review and send** panel updates instantly:
 
 ## Related
 
+- [Discounts and coupons](/en/docs/cotizacion/descuentos)
 - [Client data](/en/docs/cotizacion/cliente)
 - [Advanced options](/en/docs/cotizacion/opciones)
 - [Import your catalog](/en/docs/cuenta/catalogo)

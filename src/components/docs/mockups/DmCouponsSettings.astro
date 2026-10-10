@@ -1,0 +1,112 @@
+---
+// Mockup: Ajustes › Descuentos › Cupones con cuatro cupones, uno desactivado.
+//
+// Calca de src/pages/app/ajustes/cupones.astro: chasis de Ajustes (SetHead,
+// categoría "Descuentos" de una sola pestaña, sin barra de pestañas), la
+// bajada de la página, el bloque "Cupones" con su icono `tag`, "Nuevo cupón"
+// alineado a la derecha y una fila por cupón con el código en monoespaciada,
+// el valor (porcentaje o monto con su divisa), el nombre, la línea
+// "vigencia · usos" que arman vigencia() y usos(), el interruptor Activo y
+// los botones Editar y Eliminar. Al pie, la nota sobre desactivar y contar
+// usos. Un cupón desactivado se atenúa (`.cup-row.off`).
+//
+// Los textos de la página están escritos en línea (no viven en el diccionario
+// de la app), así que se copian aquí tal cual; si cambian allá, cambian aquí.
+import DocsMockup from './DocsMockup.astro';
+import DmIcon from './DmIcon.astro';
+import DmMoney from './DmMoney.astro';
+import SetHead from './SetHead.astro';
+import { dmMoney, pick, type DmLang } from './format';
+
+interface Props {
+    lang: DmLang;
+    caption?: string;
+}
+const { lang } = Astro.props;
+
+type Cup = { code: string; pct?: number; monto?: number; cur?: string; nombre?: string; vigencia: string; usos: string; activo: boolean };
+const DATA: { es: { caption: string; intro: string; titulo: string; nuevo: string; editar: string; eliminar: string; nota: string; cupones: Cup[] }; en: { caption: string; intro: string; titulo: string; nuevo: string; editar: string; eliminar: string; nota: string; cupones: Cup[] } } = {
+    es: {
+        caption: `Ajustes › Descuentos › Cupones con cuatro cupones: BIENVENIDA10 de 10 % sin fecha de fin, con 14 de 100 usos y 1 por cliente; OBRA2026 de ${dmMoney(2500, 'MXN', 'es')} del 1 oct 2026 al 31 dic 2026 con 3 usos; DISTRIB5 de 5 % con 27 usos, y VERANO15 de 15 %, vencido el 31 ago 2026 y desactivado. Cada fila tiene su interruptor Activo y los botones Editar y Eliminar.`,
+        intro: 'Códigos de descuento que tu equipo aplica en cotizaciones y facturas, y que tus compradores pueden capturar en el cotizador embebible. El descuento se aplica antes de impuestos y se reparte entre las líneas.',
+        titulo: 'Cupones', nuevo: 'Nuevo cupón', editar: 'Editar', eliminar: 'Eliminar',
+        nota: 'Un cupón desactivado ya no se puede aplicar en documentos nuevos; los que ya lo llevan lo conservan. Un uso se cuenta cuando la factura se emite o la cotización se aprueba, y se devuelve si la factura se anula. Un cupón que ya se usó no se puede eliminar: desactívalo.',
+        cupones: [
+            { code: 'BIENVENIDA10', pct: 10, nombre: 'Promoción de bienvenida', vigencia: 'Sin fecha de fin', usos: '14 / 100 usos · 1 por cliente', activo: true },
+            { code: 'OBRA2026', monto: 2500, cur: 'MXN', nombre: 'Obras de fin de año', vigencia: '1 oct 2026 – 31 dic 2026', usos: '3 usos', activo: true },
+            { code: 'DISTRIB5', pct: 5, nombre: 'Distribuidores', vigencia: 'Sin fecha de fin', usos: '27 usos', activo: true },
+            { code: 'VERANO15', pct: 15, vigencia: 'Hasta el 31 ago 2026', usos: '41 / 50 usos', activo: false },
+        ],
+    },
+    en: {
+        caption: `Settings › Discounts › Coupons with four coupons: WELCOME10 for 10% with no end date, with 14 of 100 uses and 1 per client; OBRA2026 for ${dmMoney(2500, 'MXN', 'en')} from Oct 1, 2026 to Dec 31, 2026 with 3 uses; DISTRIB5 for 5% with 27 uses, and SUMMER15 for 15%, expired on Aug 31, 2026 and deactivated. Each row has its Active toggle and the Edit and Delete buttons.`,
+        intro: 'Discount codes your team applies to quotes and invoices, and that buyers can enter in your embedded quote builder. The discount is applied before tax and spread across the lines.',
+        titulo: 'Coupons', nuevo: 'New coupon', editar: 'Edit', eliminar: 'Delete',
+        nota: 'A deactivated coupon cannot be applied to new documents; documents that already carry it keep it. A coupon is counted as used when the invoice is issued or the quote is approved, and the use is returned if the invoice is voided. Once used, a coupon cannot be deleted — deactivate it instead.',
+        cupones: [
+            { code: 'WELCOME10', pct: 10, nombre: 'New client promotion', vigencia: 'No end date', usos: '14 / 100 uses · 1 per client', activo: true },
+            { code: 'OBRA2026', monto: 2500, cur: 'MXN', nombre: 'Year-end projects', vigencia: 'Oct 1, 2026 – Dec 31, 2026', usos: '3 uses', activo: true },
+            { code: 'DISTRIB5', pct: 5, nombre: 'Distributors', vigencia: 'No end date', usos: '27 uses', activo: true },
+            { code: 'SUMMER15', pct: 15, vigencia: 'Until Aug 31, 2026', usos: '41 / 50 uses', activo: false },
+        ],
+    },
+};
+const d = pick(DATA, lang);
+const caption = Astro.props.caption ?? d.caption;
+const pct = (v: number) => `${v}${lang === 'en' ? '%' : ' %'}`;
+---
+<DocsMockup lang={lang} variant="app" chrome="full" sidebar="rail" active="" height={700} caption={caption} class="dm-cup-figure">
+    <SetHead lang={lang} tab="cupones" />
+    <div class="dm-cup">
+        <span class="dm-cup-intro">{d.intro}</span>
+        <div class="dm-cup-block">
+            <span class="dm-cup-h3"><DmIcon name="tag" />{d.titulo}</span>
+            <div class="dm-cup-actions"><span class="dm-cup-new">{d.nuevo}</span></div>
+            <div class="dm-cup-list">
+                {d.cupones.map((c) => (
+                    <div class:list={['dm-cup-row', { 'is-off': !c.activo }]}>
+                        <span class="dm-cup-code">{c.code}</span>
+                        <span class="dm-cup-body">
+                            <span class="dm-cup-value">{c.pct !== undefined ? pct(c.pct) : <DmMoney amount={c.monto!} currency={c.cur} lang={lang} />}</span>
+                            {c.nombre && <span class="dm-cup-name">{c.nombre}</span>}
+                            <span class="dm-cup-meta">{c.vigencia} · {c.usos}</span>
+                        </span>
+                        <span class:list={['dm-toggle', { 'is-on': c.activo }]}></span>
+                        <span class="dm-cup-btn dm-hide-narrow">{d.editar}</span>
+                        <span class="dm-cup-btn dm-hide-narrow">{d.eliminar}</span>
+                    </div>
+                ))}
+            </div>
+            <span class="dm-cup-note">{d.nota}</span>
+        </div>
+    </div>
+</DocsMockup>
+
+<style is:global>
+    .dm-cup-figure .dm-content { padding-top: 18px; padding-right: calc(18px + var(--dm-bleed)); }
+    .dm-cup { max-width: 760px; }
+    .dm-cup-intro { display: block; font-size: 11.5px; line-height: 1.5; color: var(--dm-muted); max-width: 62ch; margin-bottom: 16px; }
+    /* = .set2 .s-block: superficie blanca, borde fino, radio amplio. */
+    .dm-cup-block { display: flex; flex-direction: column; gap: 16px; padding: 22px; background: #fff; border: 1px solid rgba(10, 25, 47, 0.06); border-radius: 20px; box-shadow: var(--dm-shadow-card); }
+    .dm-cup-h3 { display: flex; align-items: center; gap: 10px; font-size: 13.5px; font-weight: 600; letter-spacing: -0.015em; color: var(--dm-text); }
+    .dm-cup-h3 .dm-ico { width: 18px; height: 18px; color: var(--dm-muted); }
+    .dm-cup-actions { display: flex; justify-content: flex-end; margin-top: -4px; }
+    /* = .dev-new */
+    .dm-cup-new { display: inline-flex; align-items: center; height: 30px; padding: 0 13px; border-radius: 9px; background: var(--dm-navy); color: #fff; font-size: 11.5px; font-weight: 600; }
+    .dm-cup-list { display: flex; flex-direction: column; margin-top: -6px; }
+    /* = .cup-row: código · cuerpo · interruptor · Editar · Eliminar */
+    .dm-cup-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto auto; align-items: center; gap: 12px; padding: 12px 3px; border-bottom: 1px solid var(--dm-border); }
+    .dm-cup-row.is-off .dm-cup-code, .dm-cup-row.is-off .dm-cup-value { opacity: 0.5; }
+    .dm-cup-code { font-family: var(--dm-mono); font-size: 10.5px; font-weight: 700; letter-spacing: 0.4px; color: var(--dm-navy); background: rgba(10, 25, 47, 0.07); padding: 4px 9px; border-radius: 7px; white-space: nowrap; }
+    .dm-cup-body { display: flex; align-items: baseline; flex-wrap: wrap; gap: 3px 10px; min-width: 0; }
+    .dm-cup-value { font-size: 13px; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; color: var(--dm-text); }
+    .dm-cup-name { font-size: 11.5px; font-weight: 600; color: var(--dm-text); }
+    .dm-cup-meta { flex-basis: 100%; font-size: 10.5px; color: var(--dm-muted); }
+    .dm-cup-btn { display: inline-flex; align-items: center; height: 26px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--dm-border-strong); font-size: 10.5px; font-weight: 600; color: var(--dm-muted); white-space: nowrap; }
+    .dm-cup-note { font-size: 10.5px; line-height: 1.5; color: var(--dm-muted); max-width: 70ch; }
+    @container dm (max-width: 520px) {
+        .dm-cup-figure .dm-stage { height: auto; }
+        .dm-cup-block { padding: 16px 14px; border-radius: 16px; }
+        .dm-cup-row { grid-template-columns: auto minmax(0, 1fr) auto; }
+    }
+</style>

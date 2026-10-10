@@ -2,7 +2,7 @@
 title: "Aprobación y facturación"
 seoTitle: "De cotización aprobada a factura: CFDI, Verifactu o factura comercial"
 description: "Qué pasa cuando el cliente aprueba, cómo registras un pago y cómo emites el documento que corresponde a tu país: CFDI 4.0, Verifactu, proforma o factura comercial."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-10"
 reviewedBy: "Producto y operaciones de Cord"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -35,7 +35,8 @@ Cord no emite el mismo tipo de comprobante en todos lados — el país de tu neg
 
 - **México:** con plan Starter o superior, el botón es **Timbrar CFDI 4.0** y timbra ante el SAT a través de un proveedor certificado de facturación electrónica. En el plan Gratis el botón es **Emitir proforma**: una proforma numerada que no sustituye una factura fiscal.
 - **España:** con plan Starter o superior, el certificado de tu organización cargado y la integración con Verifactu habilitada, Cord emite la factura con su registro encadenado de Verifactu. Mientras no se cumplan esas condiciones, el botón es **Emitir proforma**: una proforma numerada que no sustituye una factura fiscal.
-- **Demás mercados soportados** (Estados Unidos, Canadá, Brasil, Reino Unido, Alemania, Francia, Colombia, Argentina, Chile y Perú): el botón es **Emitir factura** y genera una factura comercial con folio e impuestos configurados por el negocio, sin presentación automática ante la autoridad fiscal local.
+- **Argentina, Brasil, Chile, Colombia y Perú:** el botón es **Emitir factura**. Si la emisión ante la autoridad del país está activa en tu cuenta (función nueva, desde Starter), genera la factura electrónica autorizada, con el número legal que asigna la autoridad; si no, una factura comercial.
+- **Demás mercados soportados** (Estados Unidos, Canadá, Reino Unido, Alemania y Francia): el botón es **Emitir factura** y genera una factura comercial con folio e impuestos configurados por el negocio, sin presentación automática ante la autoridad fiscal local. En Alemania y Francia también se descarga como factura electrónica europea (ver [Factura electrónica europea](/docs/pagos/factura-electronica)).
 
 Ver el detalle completo por país en [Facturación fiscal por país](/docs/pagos/facturacion).
 
@@ -43,8 +44,9 @@ Ver el detalle completo por país en [Facturación fiscal por país](/docs/pagos
 
 1. Ve a la cotización aprobada (o pagada) y haz clic en **Timbrar CFDI 4.0**. Cord te pide confirmar antes de emitir.
 2. Cord arma el CFDI con los datos que ya tiene el cliente: el nombre capturado en **Empresa**, su RFC, régimen fiscal, código postal y uso del CFDI. No hay un paso extra para completarlos: si el cliente no tiene RFC capturado, el CFDI se emite con el **RFC genérico de público en general** (XAXX010101000), así que revisa sus datos en su ficha antes de timbrar (ver [Datos del cliente](/docs/cotizacion/cliente)).
-3. Si el cliente aprobó solo algunas partidas, se facturan únicamente las líneas aprobadas.
-4. Al terminar, el comprobante aparece en la sección **Documentos fiscales** del detalle, con su folio, su UUID y los enlaces para descargar el **PDF** y el **XML**, y la cotización pasa a *Facturada*. Cord no le envía el comprobante al cliente automáticamente desde este paso: descárgalo y compártelo, o envíalo por correo desde **Facturas**.
+3. Si el cliente aprobó solo algunas partidas, se facturan únicamente las líneas aprobadas. Si la cotización lleva un [descuento de documento o un cupón](/docs/cotizacion/descuentos), se vuelve a aplicar sobre lo aprobado y el cupón no cuenta otro uso.
+4. Cord elige el **método de pago** con lo que ya cobraste: si la cotización ya está **pagada por completo**, el CFDI sale **PUE** con la forma del cobro; si se va a cobrar después (por ejemplo, con términos Net 30), sale **PPD** y Cord timbra un **complemento de pago** por cada cobro que reciba. Ver [Método de pago: PUE o PPD](/docs/pagos/facturacion#método-de-pago-pue-o-ppd).
+5. Al terminar, el comprobante aparece en la sección **Documentos fiscales** del detalle, con su folio, su UUID y los enlaces para descargar el **PDF** y el **XML**, y la cotización pasa a *Facturada*. Cord no le envía el comprobante al cliente automáticamente desde este paso: descárgalo y compártelo, o envíalo por correo desde **Facturas**.
 
 <Callout type="info">
 **Timbrado activo:** para timbrar a nombre de tu negocio necesitas plan Starter o superior y tu CSD cargado (ver [CSD](/docs/cuenta/csd)). Si el timbrado fiscal todavía no está activo en tu cuenta, el documento aparece marcado como **Simulado** o **Modo de prueba fiscal**: queda registrado para auditoría, pero no es un CFDI válido ante el SAT.
@@ -52,7 +54,7 @@ Ver el detalle completo por país en [Facturación fiscal por país](/docs/pagos
 
 ## Cobranza y Tesorería
 
-Para las cotizaciones con términos de crédito (Net 30/60) o aquellas donde el cliente solo pagó el anticipo, Cord tiene un módulo de **Cobranza** y **Tesorería** — la vista completa vive en [Tesorería y FX Lock](/docs/pagos/tesoreria-fx) y en [Cobranza Autónoma (IA)](/docs/pagos/cobranza-ia); aquí un resumen de cómo se conecta con el cierre de la cotización.
+Para las cotizaciones con términos de crédito (de Net 7 a Net 90) o aquellas donde el cliente solo pagó el anticipo, Cord tiene un módulo de **Cobranza** y **Tesorería** — la vista completa vive en [Tesorería y FX Lock](/docs/pagos/tesoreria-fx) y en [Cobranza Autónoma (IA)](/docs/pagos/cobranza-ia); aquí un resumen de cómo se conecta con el cierre de la cotización.
 
 ### Intereses moratorios
 
@@ -74,6 +76,8 @@ En **Informes › Flujo de caja · 90 días** (plan Pro o superior), Cord cruza 
 **El documento salió como Simulado o Modo de prueba fiscal.** El timbrado todavía no está activo en tu cuenta: revisa tu plan y tu [CSD](/docs/cuenta/csd).
 
 **La factura incluye menos líneas que la cotización.** El cliente aprobó solo algunas partidas; se facturan solo las aprobadas.
+
+**El CFDI salió PPD.** La cotización no estaba pagada por completo al timbrar. Cada cobro que llegue después lleva su complemento de pago automático.
 
 ## Relacionadas
 

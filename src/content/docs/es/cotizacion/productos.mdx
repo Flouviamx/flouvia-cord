@@ -2,7 +2,7 @@
 title: "Productos y descuentos"
 seoTitle: "Productos, kits, descuentos y margen en una cotización"
 description: "Agrega productos, kits y líneas libres, negocia precios, usa el precio sugerido por tu historial, vigila el margen y entiende cómo se calculan impuestos y descuentos."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-10"
 reviewedBy: "Producto y operaciones de Cord"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -63,7 +63,9 @@ cliente** (ver [Opciones avanzadas](/docs/cotizacion/opciones)).
 4. **Negociado manual:** puedes bajar el negociado de cualquier línea.
 
 En **Revisa y envía**, **Le descontaste** suma la diferencia entre lista y negociado de
-toda la cotización. Cord no tiene un descuento global sobre el subtotal.
+toda la cotización. Además puedes aplicar un **descuento de documento** a toda la venta
+(porcentaje, monto o cupón), que Cord reparte entre las líneas antes de impuestos: ver
+[Descuentos y cupones](/docs/cotizacion/descuentos).
 
 <Callout type="warning">
 Los descuentos siempre se calculan **antes** de impuestos. El editor y el servidor usan
@@ -103,6 +105,7 @@ El panel **Revisa y envía** se actualiza al instante:
 
 - **Subtotal:** suma de las partidas sin impuestos.
 - **Le descontaste:** diferencia total entre lista y negociado (solo si hay descuento).
+- **Descuento:** el descuento de documento o el cupón, si aplicaste uno, con su etiqueta (por ejemplo, "Descuento (BIENVENIDA10)").
 - **Impuestos:** un renglón por tasa, con el nombre de tu país (IVA en México y España, VAT en Reino Unido, GST en Canadá, Sales tax por estado en Estados Unidos).
 - **Retenciones:** si tu catálogo las tiene, se restan.
 - **Total:** lo que pagará el cliente.
@@ -127,6 +130,7 @@ El panel **Revisa y envía** se actualiza al instante:
 
 ## Relacionadas
 
+- [Descuentos y cupones](/docs/cotizacion/descuentos)
 - [Datos del cliente](/docs/cotizacion/cliente)
 - [Opciones avanzadas](/docs/cotizacion/opciones)
 - [Importa tu catálogo](/docs/cuenta/catalogo)

@@ -1,7 +1,7 @@
 ---
 title: "Invoicing by country"
 seoTitle: "Invoicing by country in Cord: CFDI, Spain, and commercial invoices"
-description: "Which document Cord issues by country and plan: CFDI 4.0 in Mexico, proformas in Spain while tax registration is enabled, commercial invoices in other markets, monthly quotas per plan, and the tax receipt for Cord's fee in Mexico."
+description: "Which document Cord issues by country and plan: CFDI 4.0 in Mexico with PUE or PPD and automatic payment complements, proformas in Spain while tax registration is enabled, commercial or authorized invoices in other markets, quotas, and Cord's fee CFDI."
 lastUpdated: "2026-10-10"
 reviewedBy: "Cord product and operations"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
@@ -26,11 +26,13 @@ For the full life of an invoice (draft, issue, delivery, payment, credit notes, 
 |---|---|---|
 | **Mexico** | Proforma (number with the `PRO` series) | **CFDI 4.0** stamped with the SAT, with your CSD uploaded. You can also choose a proforma. |
 | **Spain** | Proforma (`PRO` series) | Proforma today. Spanish tax registration will be enabled later; see [Spain](#spain-verifactu). |
-| **United States, Canada, Brazil, United Kingdom, Germany, France, Colombia, Argentina, Chile, and Peru** | Commercial invoice | Commercial invoice |
+| **Argentina, Brazil, Chile, Colombia, and Peru** | Commercial invoice | Commercial invoice. When issuing with the country's authority is active on your account, the authorized e-invoice (new feature; see [Other markets](#other-markets-commercial-invoice)). |
+| **United States, Canada, United Kingdom, Germany, and France** | Commercial invoice | Commercial invoice |
 
 - **Proforma:** a commercial document that explicitly states it doesn't replace a tax invoice. It's for collecting and for your customer to process payment, not for tax deductions.
 - **Commercial invoice:** an invoice with a sequential number, per-line taxes and withholdings, and both parties' tax details. Cord doesn't file it with any authority.
 - **CFDI 4.0:** Mexico's digital tax receipt, stamped with the SAT using your business's certificate.
+- **Authorized invoice:** in Argentina, Brazil, Chile, Colombia, and Peru, the e-invoice authorized by the country's tax authority, with its legal number.
 
 In all three cases, tax is calculated **per line**: you can mix a taxed item with an exempt one, and each prints your country's tax name (IVA in Mexico and Spain, VAT in the United Kingdom, GST in Canada, Sales tax per state in the United States).
 
@@ -53,6 +55,7 @@ Invoices have their own monthly quotas, separate from quote sends:
 | Developer | Unlimited | 1,000 |
 
 - Beyond the included tax quota, from Starter up, additional documents are billed as usage overage on your subscription. See [Subscription](/en/docs/cuenta/suscripcion).
+- In Mexico, each **payment complement** Cord stamps counts as one more tax document.
 - On Free, after 10 commercial documents in a month, issuing stops until the next month or until you change plans.
 - Drafts and test documents don't consume quota.
 - Running out of quota or downgrading does **not** block downloading, sending, or collecting documents already issued.
@@ -86,11 +89,65 @@ Each product can carry its **product or service key** (c_ClaveProdServ, 8 digits
 
 ### Taxes and issuing
 
-Cord sends each item's taxes as you entered them: 16% IVA, 8% IVA, or exempt, plus IVA and ISR withholdings. It doesn't collapse them into a single rate. If the quote is in a currency different from your accounting currency, the CFDI declares the exchange rate locked at quoting time.
+Cord sends each item's taxes as you entered them: 16% IVA, 8% IVA, or exempt, plus IVA and ISR withholdings. It doesn't collapse them into a single rate. If the quote is in a currency different from your accounting currency, the CFDI declares the exchange rate locked at quoting time. A [document discount](/en/docs/cotizacion/descuentos) travels spread per item in the **Descuento** attribute.
+
+In the invoice editor, the **CFDI details** section lets you set that invoice's **CFDI use** (by default, **From the client's record**) and **Payment method** (by default, **Automatic from the payments**). If you replace the invoice, the replacement inherits them.
 
 A confirmed payment and an issued invoice are different states. Paying doesn't create, stamp, or send an invoice by itself; check each document's tax and delivery status. If stamping succeeds and the email fails, the number is kept and you can resend from the detail page.
 
 Credit notes for a Mexican invoice are an expense CFDI (egreso) related to the original UUID. A cancellation request doesn't void the CFDI until the SAT confirms it; meanwhile you can click **Check cancellation status** on the detail page.
+
+### Payment method: PUE or PPD
+
+<Callout type="info">
+This feature is new and may not be enabled on your account yet. If you don't see it, write to us.
+</Callout>
+
+When stamping, Cord sets the CFDI's **payment method** from what actually happened with
+the money:
+
+| Situation when stamping | Method | Payment form |
+|---|---|---|
+| The invoice is already **fully paid** (on its link, on the source quote, or with payments you recorded) | **PUE**, single payment | The payment's: 04 card, 03 transfer (including SPEI), 01 cash, 02 check. If you set one under **CFDI details**, that one. |
+| The invoice will be collected **later**, in full or in installments (for example, Net 30) | **PPD**, installments or deferred | 99, to be defined |
+| The recipient is the **general public** (generic RFC XAXX010101000) | Always **PUE**: that recipient doesn't accept payment complements | The payment's, or 03 if there's none yet |
+
+Cord used to stamp everything as PUE even when the invoice was on credit. Not anymore: an
+invoice that isn't paid when issued goes out as PPD, as the SAT requires.
+
+### Automatic payment complement
+
+For each payment a **PPD** invoice receives, the SAT requires a **payment receipt
+complement** (type P CFDI, also called REP) no later than the 5th of the following month.
+Cord stamps it **by itself**, as soon as the payment is recorded:
+
+- **However the payment is recorded:** a card, SPEI, or Mercado Pago payment on the
+  invoice link, a payment from the [client portal](/en/docs/pagos/portal-facturas) or
+  [automatic payments](/en/docs/pagos/cobro-automatico), a payment you record by hand, or
+  the source quote's payments applied to the invoice.
+- **One complement per payment.** Each payment gets its own, related to the invoice's UUID
+  and with its installment number and previous balance. A retry never stamps the same
+  payment twice.
+- **Complement payment form:** the payment's (04 card, 03 transfer, 01 cash, 02 check);
+  if it can't be known, 03.
+- **It uses your tax quota:** each complement counts as one tax document for the month.
+- **It's recorded in the invoice history** (in Spanish): "Complemento de pago emitido"
+  with its tax folio (UUID). If it couldn't be stamped, the history says "Complemento de
+  pago pendiente" with the reason.
+
+Cord does **not** issue it by itself, and says so in the invoice history, in two cases the
+SAT documents differently:
+
+| Case | What to do |
+|---|---|
+| The payment is in **a currency other than MXN**. | The complement needs the official exchange rate for the payment date, which Cord doesn't have. Issue it with your accountant. |
+| The payment is **earlier than the invoice** (an advance). | It's documented with the SAT's advance-payment procedure, not with a payment complement. |
+
+<Callout type="warning">
+Today Cord doesn't send the complement to your client or offer it for download from the
+invoice detail, and a complement that's left pending isn't retried on its own. If your
+client needs a complement's XML or PDF, or one is pending, write to us.
+</Callout>
 
 ### Cancellation and replacement
 
@@ -102,7 +159,7 @@ Sales collected without the customer asking for an invoice are documented under 
 
 ### What Cord doesn't do in Mexico today
 
-- **Payment receipt complement (REP).** Cord stamps with the PUE payment method (single payment) and doesn't issue payment complements. If you invoice on credit with PPD and need the REP for each payment, you must do it outside Cord today.
+- **Payment complement for a payment in another currency or an advance.** See [Automatic payment complement](#automatic-payment-complement).
 - **Foreign trade complement (Comercio Exterior).** Definitive export of goods (key A1) requires it; Cord stamps the operation as "not applicable" for export and doesn't issue that complement.
 
 ## Spain: Verifactu
@@ -136,6 +193,21 @@ We'll announce it in [what's new in payments and invoicing](/en/docs/pagos/mejor
 
 In the United States, Canada, Brazil, the United Kingdom, Germany, France, Colombia, Argentina, Chile, and Peru, Cord issues a **commercial invoice** with a sequential number per organization, per-line taxes and withholdings, and both parties' tax details. Cord doesn't file it with the local tax authority. Whether you must issue, report, or complement that document depends on your country and regime; confirm with your tax advisor.
 
+<Callout type="info">
+This feature is new and may not be enabled on your account yet. If you don't see it, write to us.
+</Callout>
+
+- **Argentina, Brazil, Chile, Colombia, and Peru.** Cord can issue the e-invoice
+  **authorized by each country's tax authority** (ARCA in Argentina; NFS-e and NF-e in
+  Brazil; SII in Chile; DIAN in Colombia; SUNAT in Peru), with Starter or higher and your
+  business's credentials in **Settings › Tax profile**. When issuing is active on your
+  account, the invoice carries the legal number the authority assigns and the commercial
+  option goes out as a proforma. Until then, you keep issuing commercial invoices.
+- **Germany, France, and Spain.** Each invoice can also be downloaded as a European
+  e-invoice (Factur-X, XRechnung, Peppol, and, in Spain, Facturae). In France, issuing
+  through an approved platform is built and coming soon. See [European
+  e-invoicing](/en/docs/pagos/factura-electronica).
+
 ## The tax receipt for Cord's fee (Mexico)
 
 Besides the CFDIs you issue to your customers, in Mexico Cord issues its **own income CFDI** for the fee it charges on your MXN Cord Payments payments (see [Fees](/en/docs/pagos/condiciones)). It's the receipt for the processing service Cord provides you, not for your sale.
@@ -155,13 +227,16 @@ If your RFC, tax regime, or postal code aren't complete in **Settings › Tax de
 
 - CFDI: Mexico only, from Starter, with a CSD uploaded.
 - Spain: proformas only today.
+- Argentina, Brazil, Chile, Colombia, and Peru: authorized invoice only when its issuing is active on your account; otherwise, commercial invoice.
 - Other markets: commercial invoice not filed with the authority.
 - Free: 10 commercial documents per month and no tax issuing.
-- No payment complement (REP) in Mexico.
+- Mexico: the payment complement is automatic for MXN payments after the invoice; payments in another currency and advances are documented outside Cord.
 
 ## Common problems
 
 **My invoice came out as a proforma and I expected a CFDI.** Check your plan (Starter or higher), that your CSD is uploaded and valid, and that you didn't choose the commercial option when issuing.
+
+**My CFDI came out PPD and I expected PUE.** When it was stamped, the invoice wasn't fully paid. Cord will issue a payment complement for each payment it receives. If the invoice was already paid, check that the payment was recorded before issuing it.
 
 **My customer says their CFDI is unusable.** Check their tax regime, postal code, and CFDI use in their record; if they were missing, Cord used defaults.
 
@@ -175,4 +250,6 @@ If your RFC, tax regime, or postal code aren't complete in **Settings › Tax de
 - [Recurring invoices](/en/docs/pagos/facturas-recurrentes)
 - [Digital Seal Certificate](/en/docs/cuenta/csd)
 - [Stamping from the quote](/en/docs/cotizacion/timbrado)
+- [Discounts and coupons](/en/docs/cotizacion/descuentos)
+- [European e-invoicing](/en/docs/pagos/factura-electronica)
 - [Subscription](/en/docs/cuenta/suscripcion)

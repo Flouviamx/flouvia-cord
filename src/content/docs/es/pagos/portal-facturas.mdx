@@ -1,0 +1,187 @@
+---
+title: "Portal del cliente: facturas y pagos"
+seoTitle: "Portal de facturas del cliente: saldo por divisa y pago múltiple"
+description: "Un link por cliente con todas sus facturas, el saldo por divisa, el pago de varias facturas en un solo cargo y el cobro automático. Cómo crearlo, compartirlo, rotarlo o desactivarlo, y qué ve tu cliente."
+lastUpdated: "2026-10-10"
+reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Permiso Clientes para crear, enviar, rotar o desactivar el link", "Facturas emitidas a ese cliente", "Cuenta de Cord Payments activa para que tu cliente pague en línea"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Portal del cliente: facturas y pagos</h1>
+  <p class="page-subtitle">Un solo link por cliente con todas sus facturas, su saldo en cada divisa y el pago de varias a la vez.</p>
+</header>
+
+<Callout type="info">
+Esta función es nueva y puede no estar habilitada todavía en tu cuenta. Si no la ves, escríbenos.
+</Callout>
+
+## Qué es
+
+El **portal del cliente** es una página privada, una por cliente, donde ese cliente ve
+**todas las facturas que le emitiste**, lo que debe en cada divisa y lo que ya pagó. Desde
+ahí descarga cada factura, **paga varias en un solo cargo** y puede activar el
+[cobro automático](/docs/pagos/cobro-automatico) para que las siguientes se cobren solas
+en su fecha de vencimiento.
+
+No necesita cuenta ni contraseña: el link es su acceso. Lo creas y lo administras desde la
+ficha del cliente.
+
+<Callout type="info">
+No es lo mismo que **Ajustes › Marca y apariencia › Portal del cliente**. Esa pestaña
+personaliza el link de cada **cotización** (aviso, bienvenida, comentarios). Ver
+[Portal del cliente (link de la cotización)](/docs/cuenta/portal-cliente).
+</Callout>
+
+<DmInvoicePortal lang="es" />
+
+## Requisitos
+
+| | Detalle |
+|---|---|
+| **Plan** | Todos los planes. |
+| **Permiso** | **Clientes** para crear, enviar, generar de nuevo o desactivar el link, y para desactivar el cobro automático de un cliente. |
+| **Facturas** | Facturas **emitidas** a ese cliente. Las cotizaciones no aparecen en el portal. |
+| **Pago en línea** | Tu cuenta de [Cord Payments](/docs/pagos/onboarding) activa, con **Tarjeta** (o la domiciliación bancaria) encendida en **Ajustes › Cobros**. Disponible en México, Estados Unidos, Canadá, Brasil, España, Reino Unido, Alemania y Francia. En Colombia, Argentina, Chile y Perú el portal muestra las facturas y el saldo, y le dice a tu cliente que se ponga en contacto contigo para pagar. |
+
+## Crear y compartir el link
+
+<Steps>
+1. Abre **Clientes** y entra a la ficha del cliente.
+2. En la columna derecha, en **Portal del cliente**, pulsa **Crear link del portal**.
+3. Comparte el link:
+   - **Copiar** lo copia para pegarlo en un correo, WhatsApp o tu sistema.
+   - **Enviar por correo** le manda a tu cliente el correo "Tus facturas con
+     [tu negocio]" con el botón **Abrir mi portal**, con tu marca y tu correo de
+     respuesta. Aparece solo si el cliente tiene correo en su ficha.
+   - **Abrir** te muestra el portal en otra pestaña, tal como lo ve tu cliente.
+</Steps>
+
+<DmClientPortalCard lang="es" />
+
+El link es el mismo hasta que generes otro: puedes volver a copiarlo o enviarlo cuando
+quieras.
+
+## Qué ve tu cliente
+
+| Elemento | Detalle |
+|---|---|
+| **Encabezado** | Tu logo (o tu inicial con tu color de marca), **Tus facturas** y el nombre del cliente. |
+| **Saldo pendiente por divisa** | Una tarjeta por divisa con el saldo, cuántas facturas están por pagar y cuánto está **vencido**. Las divisas **nunca se suman**: un saldo en MXN y otro en USD son dos tarjetas. Sin saldo, dice "No tienes saldo pendiente." |
+| **Cobro automático** | Si lo permites en **Ajustes › Cobros**, la tarjeta para activarlo, el método con el que está activo o el motivo por el que se detuvo. Ver [Cobro automático](/docs/pagos/cobro-automatico). |
+| **Por pagar** | Cada factura abierta con su número, su vencimiento (o la fecha de emisión si no vence), el saldo y, si ya hubo abonos, "de [total]". Las vencidas llevan **Vencida**; una con un cargo a cuenta bancaria pendiente, **Pago en proceso**. Cada una con **Ver** (su link) y **PDF**. |
+| **Pagadas** | Las últimas 24 facturas pagadas, plegadas, con su total y sus enlaces. |
+| **Pie** | Tu correo de contacto, el aviso "Este enlace es personal: da acceso a tus facturas y pagos con [tu negocio]. No lo compartas." y la marca de Cord, salvo que la hayas ocultado. |
+
+El portal habla el idioma de tu cuenta y usa el formato de fechas y montos de tu país,
+igual que el link de una factura.
+
+### Qué facturas aparecen
+
+- Las facturas **emitidas** a ese cliente, abiertas o pagadas, en todas sus divisas.
+- No aparecen borradores, facturas anuladas ni notas de crédito.
+- En México, un CFDI sustituido no aparece (aparece el que lo sustituye), y la factura
+  global tampoco, porque no es de ningún cliente.
+- Un documento de prueba aparece, pero no se puede pagar en línea.
+
+## Pagar varias facturas a la vez
+
+<Steps>
+1. Tu cliente marca las facturas que quiere pagar. Solo puede elegir **una divisa a la
+   vez**: al marcar una factura en MXN, las de otras divisas se deshabilitan.
+2. Abajo aparece la barra con el resumen, por ejemplo "2 facturas · $101,256.40", y el
+   botón **Pagar seleccionadas**.
+3. En la hoja de pago ve el total. Si permites el cobro automático, puede marcar
+   **Guardar este método para el cobro automático**, junto con la autorización.
+4. Pulsa **Continuar**, completa los datos de su tarjeta o su cuenta bancaria y pulsa
+   **Pagar [monto]**.
+5. Al volver al portal ve "Estamos confirmando tu pago". Con tarjeta tarda unos segundos;
+   con un cargo a cuenta bancaria, unos días.
+</Steps>
+
+Cómo se cobra y se reparte:
+
+- **Cada factura se paga por su saldo real.** El navegador solo elige qué facturas;
+  el importe de cada una lo lee Cord de tu cuenta en el momento de crear el cobro. Si
+  un saldo cambió (por ejemplo, porque registraste otro pago), tu cliente lee "El saldo
+  de alguna factura cambió o ya tiene un pago en proceso. Actualiza la página."
+- **Un solo cargo, varias facturas.** El cliente ve un solo cargo en su estado de cuenta.
+  Cuando el pago se confirma, cada factura registra su parte en su historial de pagos y
+  su saldo baja; la que llega a cero queda **Pagada**.
+- **Métodos:** tarjeta y, si encendiste la [domiciliación
+  bancaria](/docs/pagos/metodos#domiciliación-bancaria-sepa-y-ach), cargo a cuenta SEPA
+  en facturas en EUR (negocios en España, Alemania y Francia) o ACH en facturas en USD
+  (negocios en Estados Unidos). En MXN solo se ofrece tarjeta.
+- **Comisión:** donde Cord cobra comisión (hoy, cobros en MXN), se cobra **una** por el
+  cargo completo, no una por factura. Ver [Tarifas](/docs/pagos/condiciones).
+- **Pago en proceso.** Mientras un cargo a cuenta bancaria se confirma, esas facturas
+  muestran **Pago en proceso**: no se pueden pagar otra vez ni anular.
+
+Si después reembolsas parte de un cobro que pagó varias facturas, Cord reparte la
+devolución entre ellas: ver [Reembolsos](/docs/pagos/reembolsos#reembolso-de-un-cobro-que-pagó-varias-facturas).
+
+## Generar un link nuevo o desactivarlo
+
+Desde el bloque **Portal del cliente** de la ficha:
+
+| Acción | Qué pasa |
+|---|---|
+| **Generar link nuevo** | El link anterior deja de abrir en ese momento y Cord crea otro. Úsalo si el link se compartió de más; después comparte el nuevo con tu cliente. |
+| **Desactivar link** | Tu cliente no puede abrir su portal hasta que generes otro link. El cobro automático no cambia. |
+
+Las dos acciones piden confirmación y quedan en la auditoría de tu cuenta. Si el cobro
+automático sigue activo y un cargo falla, el correo que Cord le manda al cliente incluye
+el botón a su portal, y para eso genera un link nuevo si lo habías desactivado. Para que
+no vuelva a haber link, desactiva también el cobro automático.
+
+## Privacidad y seguridad
+
+- **El link es una credencial.** Se genera al azar (32 bytes) y no se puede adivinar.
+  Quien lo tiene ve las facturas y puede pagarlas: compártelo solo con tu cliente.
+- **No se indexa ni se mide.** La página no aparece en buscadores, no envía la dirección
+  a otros sitios y no lleva analítica. Cord tampoco registra cuándo tu cliente la abre.
+- **Vive en cordhq.app.** Aunque tengas [dominio propio](/docs/cuenta/dominio-propio),
+  el portal no se sirve desde tu dominio: tu dominio solo sirve los links de cotizaciones
+  y facturas, nunca una página con métodos de pago guardados.
+- **Los datos de pago no pasan por Cord.** La tarjeta o la cuenta bancaria se capturan en
+  el formulario del procesador de pagos; Cord solo guarda el tipo, la marca y los últimos
+  cuatro dígitos.
+
+## Límites
+
+- Hasta 50 facturas en un solo pago, todas en la misma divisa.
+- El monto mínimo por cargo es el del procesador: 0.50 en la divisa (por ejemplo, 0.50
+  USD o 0.50 EUR), o 50 unidades en divisas sin decimales.
+- El portal no ofrece Mercado Pago, SPEI ni transferencia: el pago en línea es con Cord
+  Payments.
+- No se puede pagar una parte de una factura desde el portal; para un abono parcial, tu
+  cliente usa **Ver** y paga desde el link de esa factura.
+- Las cotizaciones no aparecen en el portal.
+
+## Problemas comunes
+
+**Mi cliente no ve botones para pagar.** Tu cuenta de Cord Payments no está activa, la
+**Tarjeta** está apagada en **Ajustes › Cobros**, tu país no tiene Cord Payments, o la
+cuenta es de prueba ("Portal de prueba: el pago en línea está desactivado.").
+
+**Una factura no aparece.** Revisa que esté emitida a ese cliente. Un borrador, una
+factura anulada o una nota de crédito no se listan.
+
+**No puedo marcar una factura.** Tu cliente ya marcó facturas en otra divisa, la factura
+tiene un pago en proceso, o en esa divisa no hay un método disponible.
+
+**El link dice que la página no existe.** Generaste un link nuevo o desactivaste el
+portal. Comparte el link actual de la ficha del cliente.
+
+**No aparece Enviar por correo.** El cliente no tiene correo en su ficha.
+
+## Relacionadas
+
+- [Cobro automático](/docs/pagos/cobro-automatico)
+- [Métodos de cobro](/docs/pagos/metodos)
+- [Crear, emitir y cobrar facturas](/docs/pagos/facturas-emitidas)
+- [Clientes y estado de cuenta](/docs/gestion/clientes)
+- [Reembolsos](/docs/pagos/reembolsos)
+- [Portal del cliente (link de la cotización)](/docs/cuenta/portal-cliente)

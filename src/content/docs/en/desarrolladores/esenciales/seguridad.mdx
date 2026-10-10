@@ -25,7 +25,7 @@ This page describes controls that exist in the product today. If your team needs
 
 - **Database:** PostgreSQL on Neon, AWS region `us-east-1` (Virginia, United States).
 - **Compute:** functions run on Vercel, region `iad1` (Washington D.C., United States).
-- **Invoicing in Mexico:** CFDI 4.0 stamping is done by Facturapi as the PAC, with each business's CSD. Cord cancels CFDIs with their SAT reason and issues credit sales with the PPD method. The payment receipt complement is not generated automatically yet.
+- **Invoicing in Mexico:** CFDI 4.0 stamping is done by Facturapi as the PAC, with each business's CSD. Cord cancels CFDIs with their SAT reason and issues credit sales with the PPD method. For each MXN payment on a PPD invoice, Cord automatically stamps its payment receipt complement (type P CFDI), idempotent per payment.
 - **Invoicing in Spain:** Cord generates the chained Verifactu records; direct submission to the AEAT is built and pending activation. Until then the invoice is issued as a commercial document.
 - **Certifications:** Cord has no SOC 2 or ISO 27001 today. See [security audits](https://cordhq.app/en/support/auditorias-seguridad).
 

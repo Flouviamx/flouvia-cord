@@ -1,8 +1,8 @@
 ---
 title: "Reembolsos"
 seoTitle: "Reembolsos de pagos en Cord"
-description: "Cómo devolverle dinero a un cliente desde Mis cobros: reembolsos totales o parciales, la diferencia entre tarjeta y SPEI, y qué pasa con la comisión."
-lastUpdated: "2026-10-07"
+description: "Cómo devolverle dinero a un cliente desde Mis cobros: reembolsos totales o parciales, la diferencia entre tarjeta y SPEI, qué pasa con la comisión y cómo se reparte el reembolso de un cobro que pagó varias facturas."
+lastUpdated: "2026-10-10"
 reviewedBy: "Producto y operaciones de Cord"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -18,7 +18,7 @@ prerequisites: ["Permiso Reembolsos, concedido por el dueño", "Cobro conciliado
 
 Los reembolsos viven en **Mis cobros** (`/app/cobros`), no en el detalle de la cotización. En el widget "Cobros recientes", cada fila que corresponde a un pago **conciliado a través de Cord Payments** tiene un botón **Reembolsar**. Un cobro registrado manualmente (transferencia fuera de Cord Payments) no tiene este botón — para ese caso, la devolución la manejas directamente con tu cliente por fuera de Cord.
 
-El botón aparece en los cobros de **cotizaciones**, incluidos los cargos mensuales de una [iguala](/docs/pagos/igualas). Un pago hecho desde el link de una **factura** no tiene hoy botón de reembolso en Cord; si necesitas devolverlo, escríbenos. Cuando un reembolso de ese pago se confirma, Cord lo refleja en el saldo de la factura (ver [Efecto en una factura vinculada](#efecto-en-una-factura-vinculada)). Un pago cobrado por Mercado Pago se reembolsa desde tu cuenta de Mercado Pago (ver [Mercado Pago](/docs/pagos/mercado-pago)).
+El botón aparece en los cobros de **cotizaciones**, incluidos los cargos mensuales de una [iguala](/docs/pagos/igualas). Un pago hecho desde el link de una **factura**, desde el [portal del cliente](/docs/pagos/portal-facturas) o por el [cobro automático](/docs/pagos/cobro-automatico) no tiene hoy botón de reembolso en Cord; si necesitas devolverlo, escríbenos. Cuando un reembolso de ese pago se confirma, Cord lo refleja en el saldo de cada factura que pagó (ver [Efecto en una factura vinculada](#efecto-en-una-factura-vinculada) y [Reembolso de un cobro que pagó varias facturas](#reembolso-de-un-cobro-que-pagó-varias-facturas)). Un pago cobrado por Mercado Pago se reembolsa desde tu cuenta de Mercado Pago (ver [Mercado Pago](/docs/pagos/mercado-pago)).
 
 <Callout type="warning">
 Reembolsar requiere el permiso **Reembolsos**. Este permiso **no se otorga automáticamente** a los administradores del equipo — el dueño de la cuenta tiene que concederlo explícitamente a cada miembro que necesite hacer devoluciones, desde Ajustes › Equipo. Es intencional: mover dinero hacia afuera de la cuenta es una acción más sensible que administrarla.
@@ -62,7 +62,42 @@ Un reembolso **no revierte el estado de la cotización** — sigue marcada como 
 ## Efecto en una factura vinculada
 
 Cord distingue un reembolso solicitado de uno confirmado. Solo el confirmado se
-incorpora al dinero devuelto de la factura; un evento repetido no debe restarlo
-otra vez. Puede llegar antes que el registro del pago y quedar pendiente de esa
-vinculación. La nota de crédito reduce el importe del documento y el reembolso
-devuelve dinero: son acciones separadas. Revisa [el cálculo de saldo](/docs/pagos/facturas-emitidas).
+incorpora al dinero devuelto de la factura; un evento repetido no lo resta otra vez.
+Puede llegar antes que el registro del pago y quedar pendiente de esa vinculación.
+
+Un reembolso confirmado **vuelve a abrir** ese importe en el saldo de la factura: la
+factura deja de estar pagada por esa cantidad. Si la devolución corresponde a algo que
+ya no se va a cobrar (un producto devuelto, un servicio que no se prestó), emite además
+una **nota de crédito** por ese importe: la nota de crédito reduce el importe del
+documento y el reembolso devuelve dinero, y son acciones separadas. Revisa [el cálculo
+de saldo](/docs/pagos/facturas-emitidas).
+
+## Reembolso de un cobro que pagó varias facturas
+
+<Callout type="info">
+Esta función es nueva y puede no estar habilitada todavía en tu cuenta. Si no la ves, escríbenos.
+</Callout>
+
+Desde el [portal del cliente](/docs/pagos/portal-facturas) y con el [cobro
+automático](/docs/pagos/cobro-automatico), un solo cargo puede pagar varias facturas. Si
+después se devuelve parte de ese cargo, Cord reparte la devolución entre las facturas
+que pagó:
+
+1. **De la última a la primera.** La devolución se asigna empezando por la última
+   factura a la que se aplicó el cobro y sigue hacia atrás.
+2. **Hasta lo que cada factura recibió.** A cada factura se le asigna como máximo lo que
+   recibió de ese cargo, menos lo que otros reembolsos del mismo cargo ya le asignaron.
+3. **Completo o nada.** Si el reembolso no cabe completo en lo que el cargo aplicó
+   (por ejemplo, porque el aviso del reembolso llegó antes que el del pago), no se
+   reparte a medias: queda pendiente y se reparte en cuanto el pago se registra.
+
+| Ejemplo | F-0231 | F-0236 | Total del cargo |
+|---|---:|---:|---:|
+| Pago aplicado (en este orden) | 48,940.00 MXN | 52,316.40 MXN | 101,256.40 MXN |
+| Reembolso de 60,000.00 MXN | −7,683.60 MXN | −52,316.40 MXN | −60,000.00 MXN |
+| Saldo que vuelve a quedar abierto | 7,683.60 MXN | 52,316.40 MXN | |
+
+- Un cargo que pagó **una sola** factura asigna el reembolso completo a esa factura.
+- Los reembolsos de cobros anteriores a octubre de 2026 no tienen reparto: solo cuentan
+  en el saldo si su cobro pagó una sola factura.
+- Un cargo a cuenta bancaria **ACH** solo admite reembolsos **completos**.

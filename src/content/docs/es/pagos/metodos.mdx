@@ -1,8 +1,8 @@
 ---
 title: "Métodos de cobro"
-seoTitle: "Métodos de cobro en Cord: tarjeta, SPEI, Mercado Pago y transferencia"
-description: "Qué métodos de cobro ofrece Cord por país y divisa, cómo se activan, cómo se confirma cada uno, qué acepta la cotización y qué acepta la factura, y cómo cambiar entre SPEI y tarjeta sin cobrar dos veces."
-lastUpdated: "2026-10-07"
+seoTitle: "Métodos de cobro en Cord: tarjeta, SPEI, SEPA, ACH y Mercado Pago"
+description: "Qué métodos de cobro ofrece Cord por país y divisa, cómo se activan, cómo se confirma cada uno, la domiciliación bancaria SEPA y ACH, qué acepta la cotización, la factura y el portal, y cómo cambiar entre SPEI y tarjeta sin cobrar dos veces."
+lastUpdated: "2026-10-10"
 reviewedBy: "Producto y operaciones de Cord"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -11,25 +11,27 @@ prerequisites: ["Cuenta de Cord Payments activa o Mercado Pago conectado para co
 
 <header class="content-header">
   <h1 class="page-title">Métodos de cobro</h1>
-  <p class="page-subtitle">Tarjeta, SPEI, Mercado Pago y transferencia manual: dónde aplica cada uno, cómo se confirma y qué ve tu cliente.</p>
+  <p class="page-subtitle">Tarjeta, SPEI, domiciliación bancaria, Mercado Pago y transferencia manual: dónde aplica cada uno, cómo se confirma y qué ve tu cliente.</p>
 </header>
 
 ## Qué es
 
 Cord tiene **dos rieles de cobro en línea** y una opción manual:
 
-- **Cord Payments:** tarjeta y, en México, transferencia SPEI automática. El dinero entra a tu propia [cuenta de cobros](/docs/pagos/onboarding) y de ahí a tu banco con la [frecuencia de depósito](/docs/pagos/depositos) que elijas.
+- **Cord Payments:** tarjeta; en México, transferencia SPEI automática, y en la zona euro y Estados Unidos, domiciliación bancaria (SEPA y ACH). El dinero entra a tu propia [cuenta de cobros](/docs/pagos/onboarding) y de ahí a tu banco con la [frecuencia de depósito](/docs/pagos/depositos) que elijas.
 - **[Mercado Pago](/docs/pagos/mercado-pago):** tu cliente paga con tu propia cuenta de Mercado Pago, con los métodos que Mercado Pago tenga habilitados en tu país.
 - **Transferencia manual:** compartes tus datos bancarios y registras el pago tú mismo cuando lo verificas.
 
 ## Método por país y divisa
 
-| Método | Países | Divisa del cobro | Cotización | Factura | Iguala |
-|---|---|---|---|---|---|
-| **Tarjeta** (Cord Payments) | MX, US, CA, BR, ES, GB, DE, FR | La divisa de venta del documento, si el procesador la admite | Sí | Sí | Sí |
-| **SPEI automático** (Cord Payments) | Solo MX | Solo MXN | Sí | No | No |
-| **Mercado Pago** | MX, BR, CO, AR, CL, PE | La que Mercado Pago admita en tu cuenta | Sí | Sí | No |
-| **Transferencia manual** | Los 12 países de Cord | Cualquiera | Sí | Sí (registro manual) | No |
+| Método | Países | Divisa del cobro | Cotización | Factura | Portal del cliente | Iguala | Cobro automático |
+|---|---|---|---|---|---|---|---|
+| **Tarjeta** (Cord Payments) | MX, US, CA, BR, ES, GB, DE, FR | La divisa de venta del documento, si el procesador la admite | Sí | Sí | Sí | Sí | Sí |
+| **SPEI automático** (Cord Payments) | Solo MX | Solo MXN | Sí | No | No | No | No |
+| **Domiciliación SEPA** (Cord Payments) | ES, DE, FR | Solo EUR | No | Sí | Sí | No | Sí |
+| **Cargo a cuenta bancaria ACH** (Cord Payments) | Solo US | Solo USD | No | Sí | Sí | No | Sí |
+| **Mercado Pago** | MX, BR, CO, AR, CL, PE | La que Mercado Pago admita en tu cuenta | Sí | Sí | No | No | No |
+| **Transferencia manual** | Los 12 países de Cord | Cualquiera | Sí | Sí (registro manual) | No | No | No |
 
 <Callout type="info">
 En México y Brasil conviven los dos rieles: Cord Payments es el principal y Mercado Pago aparece como alternativa en la misma página. En Colombia, Argentina, Chile y Perú, Mercado Pago es la forma de cobrar en línea. Ver [Tarifas de Cord Payments](/docs/pagos/condiciones) para el costo de cada método.
@@ -39,10 +41,11 @@ En México y Brasil conviven los dos rieles: Cord Payments es el principal y Mer
 
 <Steps>
 1. Abre **Ajustes › Cobros** con el permiso **Configurar cobros**.
-2. En **Métodos de pago**, enciende **Tarjeta** y, si tu negocio está en México, **SPEI**. Los dos se habilitan cuando tu cuenta de cobros está **Activa**; antes aparecen bloqueados.
-3. Si la pantalla te muestra la tabla de tarifas vigente con una casilla de aceptación, revísala y acéptala. Ver [Tarifas de Cord Payments](/docs/pagos/condiciones#cómo-se-activa-tu-tabla-de-tarifas).
-4. Si quieres ofrecer transferencia manual, enciéndela y captura **banco**, la cuenta en el formato de tu país y el **beneficiario**.
-5. Para Mercado Pago, pulsa **Conectar Mercado Pago** en su tarjeta. Ver [Mercado Pago](/docs/pagos/mercado-pago).
+2. En **Métodos de pago**, enciende **Tarjeta de crédito y débito** y, según tu país, **SPEI** (México), **Domiciliación SEPA** (España, Alemania y Francia) o **Cargo a cuenta bancaria (ACH)** (Estados Unidos). Se habilitan cuando tu cuenta de cobros está **Activa**; antes aparecen bloqueados.
+3. Deja encendido **Cobro automático** si quieres que tus clientes puedan guardar un método en su portal. Ver [Cobro automático](/docs/pagos/cobro-automatico).
+4. Si la pantalla te muestra la tabla de tarifas vigente con una casilla de aceptación, revísala y acéptala. Ver [Tarifas de Cord Payments](/docs/pagos/condiciones#cómo-se-activa-tu-tabla-de-tarifas).
+5. Si quieres ofrecer transferencia manual, enciéndela y captura **banco**, la cuenta en el formato de tu país y el **beneficiario**.
+6. Para Mercado Pago, pulsa **Conectar Mercado Pago** en su tarjeta. Ver [Mercado Pago](/docs/pagos/mercado-pago).
 </Steps>
 
 ## Tarjeta
@@ -76,6 +79,61 @@ Desde esa pantalla puede **Imprimir o guardar PDF**, o pulsar **Enviar a mi corr
 
 Cada cobro conserva su propia referencia bancaria, así que Cord reconoce los fondos sin que nadie cruce comprobantes. Cuando el dinero llega, el cobro pasa a pagado y la cotización cambia de estado. La confirmación depende del aviso del banco y **no siempre es instantánea**: si tu cliente ya transfirió, que consulte el estado antes de intentar con tarjeta.
 
+## Domiciliación bancaria (SEPA y ACH)
+
+<Callout type="info">
+Esta función es nueva y puede no estar habilitada todavía en tu cuenta. Si no la ves, escríbenos.
+</Callout>
+
+Con la domiciliación, tu cliente paga con un **cargo directo a su cuenta bancaria** en
+lugar de una tarjeta. Cord ofrece el esquema que corresponde al país de tu negocio:
+
+| | Domiciliación SEPA | Cargo a cuenta bancaria (ACH) |
+|---|---|---|
+| **Negocios en** | España, Alemania y Francia | Estados Unidos |
+| **Divisa** | Solo EUR | Solo USD |
+| **Cuenta del cliente** | IBAN de la zona SEPA | Cuenta bancaria de Estados Unidos |
+| **Confirmación** | Hasta 6 días hábiles | Hasta 4 días hábiles |
+| **Reembolsos** | Totales o parciales | Solo totales |
+| **Aviso al titular** | El procesador le avisa antes de cada cargo | El procesador le confirma la autorización |
+
+<DmPaymentSettings lang="es" />
+
+### Activarla
+
+<Steps>
+1. Abre **Ajustes › Cobros** con el permiso **Configurar cobros**. Tu cuenta de cobros
+   tiene que estar **Activa**.
+2. En **Métodos de pago**, enciende **Domiciliación SEPA** o **Cargo a cuenta bancaria
+   (ACH)**.
+3. Cord pide la capacidad a tu cuenta de cobros. Mientras el procesador la revisa, el
+   método muestra **En revisión** y todavía no se ofrece a ningún cliente.
+4. Cuando la aprueba, cambia a **Activa** y aparece como opción en el link de tus
+   facturas en EUR (SEPA) o en USD (ACH), en el [portal del
+   cliente](/docs/pagos/portal-facturas) y en el [cobro
+   automático](/docs/pagos/cobro-automatico).
+</Steps>
+
+Si muestra **No disponible: revisa tu verificación**, el procesador no habilitó la
+capacidad: revisa los requisitos pendientes de tu [cuenta de cobros](/docs/pagos/onboarding).
+
+### Cómo funciona un cargo
+
+- **Dónde se ofrece:** en el link de la factura, en el portal del cliente y como método
+  guardado del cobro automático, solo en facturas de su divisa. No se ofrece en el link
+  de la cotización ni en igualas.
+- **Tarda días.** Mientras el banco confirma, la factura muestra **Pago en proceso**: no
+  se puede cobrar otra vez ni anular, y el detalle de la factura lo dice. Cuando el cargo
+  se confirma, el pago se aplica como cualquier otro; si el banco lo rechaza, la factura
+  vuelve a quedar por pagar.
+- **Donde Cord cobra comisión (hoy, en MXN), no se ofrece.** La comisión de Cord es de
+  tarjeta y no hay una tarifa aprobada para débitos. Fuera de MXN, Cord no cobra
+  comisión; ver [Tarifas](/docs/pagos/condiciones).
+- **Apagarla** deja de ofrecerla en cobros nuevos; los cargos que ya están en proceso
+  siguen su curso.
+- **En SEPA, el titular puede devolver un cargo** sin dar motivo durante 8 semanas. Tenlo
+  en cuenta antes de entregar algo de mucho valor contra un cargo recién confirmado.
+
 ## Mercado Pago
 
 En la página de pago de la cotización y en el link de la factura aparece **Pagar con Mercado Pago**. Tu cliente va al checkout de Mercado Pago y regresa a tu link al terminar. Cord marca el cobro como pagado solo cuando **lee el pago aprobado** en tu cuenta de Mercado Pago. Detalle en [Mercado Pago](/docs/pagos/mercado-pago).
@@ -84,15 +142,17 @@ En la página de pago de la cotización y en el link de la factura aparece **Pag
 
 Tu cliente ve tus datos bancarios y transfiere desde su banco. Cuando verificas el depósito en tu banco, registras el pago en Cord: en la cotización, en la factura o con **Registrar pago** desde la [cartera](/docs/pagos/cartera-cobranza). Un comprobante enviado por el cliente no sustituye esa verificación. La devolución de una transferencia manual se gestiona directamente con tu cliente.
 
-## Qué acepta la cotización y qué acepta la factura
+## Qué acepta la cotización, la factura y el portal
 
-| | Link de la cotización | Link de la factura |
-|---|---|---|
-| Tarjeta | Sí | Sí, si tienes **Tarjeta** activada |
-| SPEI automático | Sí, en MXN | No |
-| Mercado Pago | Sí | Sí |
-| Pago parcial | Por partes definidas: anticipo, saldo o cuotas | Abono libre: tu cliente elige cuánto pagar |
-| Igualas | Sí, con tarjeta | No |
+| | Link de la cotización | Link de la factura | Portal del cliente |
+|---|---|---|---|
+| Tarjeta | Sí | Sí, si tienes **Tarjeta** activada | Sí |
+| SPEI automático | Sí, en MXN | No | No |
+| Domiciliación SEPA o ACH | No | Sí, en EUR o USD | Sí, en EUR o USD |
+| Mercado Pago | Sí | Sí | No |
+| Pago parcial | Por partes definidas: anticipo, saldo o cuotas | Abono libre: tu cliente elige cuánto pagar | No: cada factura se paga por su saldo |
+| Varias facturas en un cargo | No | No | Sí, de la misma divisa |
+| Igualas | Sí, con tarjeta | No | No |
 
 ### Pago parcial de una factura
 
@@ -119,6 +179,7 @@ Mientras un pago esté pendiente de aclarar, tu cliente no debe repetir la trans
 ## Límites
 
 - SPEI: solo México, solo MXN, solo cotizaciones.
+- Domiciliación: SEPA solo en EUR para negocios en España, Alemania y Francia; ACH solo en USD para negocios en Estados Unidos. Solo en facturas, portal y cobro automático.
 - La factura no ofrece SPEI ni igualas.
 - Mercado Pago no hace cobros recurrentes y Cord no lee hoy sus contracargos.
 - En Colombia, Argentina, Chile y Perú no hay Cord Payments: el cobro en línea es con Mercado Pago.
@@ -129,6 +190,8 @@ Mientras un pago esté pendiente de aclarar, tu cliente no debe repetir la trans
 **Mi cliente no ve la opción SPEI.** La cotización no está en MXN, SPEI está apagado en **Ajustes › Cobros** o tu cuenta no está activa.
 
 **Mi cliente no ve botón de pago en la factura.** Tu cuenta de cobros no está activa, **Tarjeta** está apagada y no tienes Mercado Pago conectado, o la factura es un documento de prueba.
+
+**Mi cliente no ve la domiciliación.** La factura no está en la divisa del método (EUR para SEPA, USD para ACH), el método no está **Activa** en **Ajustes › Cobros**, o es un cobro en MXN.
 
 **"Enviar a mi correo" falla.** La cotización no tiene correo del cliente registrado o se alcanzó el límite de envíos. Tu cliente puede **Imprimir o guardar PDF**.
 
@@ -144,4 +207,6 @@ Si una integración todavía solicita el checkout anterior de una cotización, r
 - [Tarifas de Cord Payments](/docs/pagos/condiciones)
 - [Mercado Pago](/docs/pagos/mercado-pago)
 - [Crear, emitir y cobrar facturas](/docs/pagos/facturas-emitidas)
+- [Portal del cliente: facturas y pagos](/docs/pagos/portal-facturas)
+- [Cobro automático](/docs/pagos/cobro-automatico)
 - [La moneda de tu suscripción a Cord](/docs/cuenta/suscripcion)

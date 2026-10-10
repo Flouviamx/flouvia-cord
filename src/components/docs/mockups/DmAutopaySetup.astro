@@ -1,0 +1,134 @@
+---
+// Mockup: el cliente activa el cobro automático desde su portal
+// (/portal/[token]), con el formulario para guardar el método ya abierto.
+//
+// Calca de la tarjeta "Cobro automático" de src/pages/portal/[token].astro
+// después de pulsar "Activar cobro automático" y "Continuar": la casilla de
+// autorización (portal.consentimiento) marcada y bloqueada, el aviso de
+// domiciliación (portal.debito_aviso, porque el negocio ofrece SEPA), el
+// formulario del procesador montado en #pvAutopayEl y el botón que pasó a
+// "Guardar método". El formulario es del procesador de pagos (no de Cord): se
+// dibuja simplificado, con las dos opciones que ofrece este negocio.
+//
+// Escena en España, porque la domiciliación SEPA solo existe en la zona euro
+// (src/lib/cobros/metodos.ts); en México el cobro automático es solo con
+// tarjeta. Saldo: 3 facturas por 12,480.50 EUR, 2,150.00 EUR vencido.
+import DocsMockup from './DocsMockup.astro';
+import DmIcon from './DmIcon.astro';
+import { dmT, dmMoney, pick, tpl, type DmLang } from './format';
+
+interface Props {
+    lang: DmLang;
+    caption?: string;
+}
+const { lang } = Astro.props;
+const ORG = 'Estructuras Levante';
+const CLIENTE = 'Reformas Albufera S.L.';
+const BRAND = '#1f4e79';
+const LOC = lang === 'en' ? 'en-IE' : 'es-ES';
+const eur = (n: number) => new Intl.NumberFormat(LOC, { style: 'currency', currency: 'EUR', minimumFractionDigits: 2 }).format(n);
+
+const DATA = {
+    es: {
+        caption: `Portal de ${CLIENTE} con ${ORG}: saldo pendiente de ${dmMoney(12480.5, 'EUR', 'es', 'es-ES')} y, en la tarjeta Cobro automático, la autorización aceptada, el aviso de que un cargo a cuenta bancaria tarda unos días en confirmarse, el formulario para guardar una tarjeta o una cuenta SEPA con el IBAN capturado y el botón Guardar método.`,
+        tabs: ['Tarjeta', 'SEPA'],
+        iban: 'IBAN', titular: 'Titular de la cuenta', titularV: 'Reformas Albufera S.L.',
+    },
+    en: {
+        caption: `${CLIENTE}'s portal with ${ORG}: a balance due of ${dmMoney(12480.5, 'EUR', 'en', 'en-IE')} and, on the Automatic payments card, the authorization accepted, the notice that a bank debit takes a few days to confirm, the form to save a card or a SEPA account with the IBAN entered, and the Save method button.`,
+        tabs: ['Card', 'SEPA'],
+        iban: 'IBAN', titular: 'Account holder', titularV: 'Reformas Albufera S.L.',
+    },
+};
+const d = pick(DATA, lang);
+const caption = Astro.props.caption ?? d.caption;
+---
+<DocsMockup lang={lang} variant="browser" url="cordhq.app/portal/Hx4pN8tRw2" brand={BRAND} height={820} caption={caption} class="dm-aps-figure">
+    <div class="dm-aps">
+        <div class="dm-aps-brand"><span class="dm-aps-mark">E</span><span class="dm-strong">{ORG}</span></div>
+        <span class="dm-aps-h1">{dmT(lang, 'portal.titulo')}</span>
+        <span class="dm-aps-sub">{CLIENTE}</span>
+
+        <div class="dm-aps-saldo">
+            <span class="dm-aps-label">{dmT(lang, 'portal.saldo')} · EUR</span>
+            <span class="dm-aps-amt">{eur(12480.5)}</span>
+            <span class="dm-aps-meta">{tpl(dmT(lang, 'portal.abiertas_n'), { n: 3 })}<span class="dm-aps-late"> · {tpl(dmT(lang, 'portal.vencido'), { monto: eur(2150) })}</span></span>
+        </div>
+
+        <div class="dm-aps-card">
+            <div class="dm-aps-head">
+                <span class="dm-aps-icon"><DmIcon name="refresh" /></span>
+                <span class="dm-aps-htext">
+                    <span class="dm-aps-h2">{dmT(lang, 'portal.autopay_titulo')}</span>
+                    <span class="dm-aps-p">{dmT(lang, 'portal.autopay_off')}</span>
+                </span>
+            </div>
+            <div class="dm-aps-acts"><span class="dm-aps-btn is-primary">{dmT(lang, 'portal.autopay_activar')}</span></div>
+
+            <div class="dm-aps-consent">
+                <span class="dm-aps-check"><DmIcon name="check" stroke={2.4} /></span>
+                <span>{tpl(dmT(lang, 'portal.consentimiento'), { org: ORG })}</span>
+            </div>
+            <span class="dm-aps-hint">{dmT(lang, 'portal.debito_aviso')}</span>
+
+            <div class="dm-aps-el">
+                <div class="dm-aps-tabs">
+                    <span class="dm-aps-tab"><DmIcon name="card" />{d.tabs[0]}</span>
+                    <span class="dm-aps-tab is-on"><DmIcon name="bank" />{d.tabs[1]}</span>
+                </div>
+                <div class="dm-aps-field">
+                    <span class="dm-aps-flabel">{d.iban}</span>
+                    <span class="dm-aps-input is-focus dm-mono">ES91 2100 0418 4502 0005 1332</span>
+                </div>
+                <div class="dm-aps-field">
+                    <span class="dm-aps-flabel">{d.titular}</span>
+                    <span class="dm-aps-input">{d.titularV}</span>
+                </div>
+            </div>
+            <span class="dm-aps-btn is-primary is-block">{dmT(lang, 'portal.autopay_guardar')}</span>
+        </div>
+    </div>
+</DocsMockup>
+
+<style is:global>
+    .dm-aps { display: flex; flex-direction: column; max-width: 560px; margin: 0 auto; padding: 28px 18px 30px; }
+    .dm-aps-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; font-size: 12.5px; }
+    .dm-aps-mark { width: 32px; height: 32px; border-radius: 10px; display: grid; place-items: center; background: var(--dm-brand); color: #fff; font-size: 14px; font-weight: 700; }
+    .dm-aps-h1 { font-size: 28px; font-weight: 700; letter-spacing: -0.04em; line-height: 1.1; color: #050505; }
+    .dm-aps-sub { margin: 6px 0 18px; font-size: 12.5px; color: var(--dm-muted); }
+    .dm-aps-saldo { display: flex; flex-direction: column; gap: 5px; padding: 18px; margin-bottom: 12px; border-radius: 20px; background: #fff; box-shadow: 0 1px 2px rgba(10, 25, 47, 0.04), 0 12px 40px -18px rgba(10, 25, 47, 0.12); }
+    .dm-aps-label { font-size: 9.5px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--dm-muted); }
+    .dm-aps-amt { font-size: 24px; font-weight: 600; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; color: #050505; }
+    .dm-aps-meta { font-size: 10.5px; color: var(--dm-muted); }
+    .dm-aps-late { color: #b45309; font-weight: 600; }
+    .dm-aps-card { display: flex; flex-direction: column; padding: 20px; border-radius: 22px; background: #fff; border: 1px solid rgba(10, 25, 47, 0.05); box-shadow: 0 4px 6px rgba(10, 25, 47, 0.02), 0 20px 60px -24px rgba(10, 25, 47, 0.12); }
+    .dm-aps-head { display: flex; gap: 12px; align-items: flex-start; }
+    .dm-aps-htext { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+    .dm-aps-h2 { font-size: 14px; font-weight: 700; letter-spacing: -0.02em; color: #050505; }
+    .dm-aps-p { font-size: 11.5px; line-height: 1.55; color: #4b5563; }
+    .dm-aps-icon { width: 34px; height: 34px; flex-shrink: 0; border-radius: 10px; display: grid; place-items: center; background: var(--dm-canvas); color: var(--dm-brand); }
+    .dm-aps-icon .dm-ico { width: 17px; height: 17px; }
+    .dm-aps-acts { display: flex; margin: 14px 0 10px; }
+    .dm-aps-btn { display: inline-flex; align-items: center; justify-content: center; height: 36px; padding: 0 16px; border-radius: 999px; border: 1px solid #e5e7eb; font-size: 11.5px; font-weight: 600; color: #111827; white-space: nowrap; }
+    .dm-aps-btn.is-primary { background: var(--dm-brand); border-color: transparent; color: #fff; }
+    .dm-aps-btn.is-block { display: flex; width: 100%; margin-top: 12px; }
+    /* = .pv-consent: caja gris con la casilla y el texto de autorización. */
+    .dm-aps-consent { display: flex; gap: 9px; align-items: flex-start; padding: 12px; border-radius: 12px; background: var(--dm-canvas); font-size: 11px; line-height: 1.55; color: #374151; }
+    .dm-aps-check { width: 15px; height: 15px; margin-top: 2px; flex-shrink: 0; border-radius: 4px; display: grid; place-items: center; background: var(--dm-brand); color: #fff; opacity: 0.7; }
+    .dm-aps-check .dm-ico { width: 10px; height: 10px; }
+    .dm-aps-hint { margin: 9px 0 2px; font-size: 10.5px; line-height: 1.5; color: var(--dm-muted); }
+    /* Formulario del procesador (simplificado). */
+    .dm-aps-el { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+    .dm-aps-tabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .dm-aps-tab { display: flex; flex-direction: column; gap: 4px; padding: 9px 11px; border-radius: 9px; border: 1px solid #e3e6ea; font-size: 11px; font-weight: 600; color: #4b5563; box-shadow: 0 1px 2px rgba(10, 25, 47, 0.04); }
+    .dm-aps-tab .dm-ico { width: 15px; height: 15px; }
+    .dm-aps-tab.is-on { border-color: var(--dm-brand); color: var(--dm-brand); box-shadow: 0 0 0 1px var(--dm-brand); }
+    .dm-aps-field { display: flex; flex-direction: column; gap: 4px; }
+    .dm-aps-flabel { font-size: 10.5px; font-weight: 500; color: #30313d; }
+    .dm-aps-input { display: flex; align-items: center; height: 34px; padding: 0 11px; border-radius: 7px; border: 1px solid #e3e6ea; background: #fff; font-size: 11.5px; color: #30313d; box-shadow: 0 1px 2px rgba(10, 25, 47, 0.04); white-space: nowrap; overflow: hidden; }
+    .dm-aps-input.is-focus { border-color: var(--dm-brand); box-shadow: 0 0 0 3px rgba(31, 78, 121, 0.18); }
+    @container dm (max-width: 520px) {
+        .dm-aps { padding: 20px 12px 24px; }
+        .dm-aps-card { padding: 16px 14px; }
+    }
+</style>

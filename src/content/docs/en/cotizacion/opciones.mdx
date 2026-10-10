@@ -2,7 +2,7 @@
 title: "Advanced options"
 seoTitle: "Quote options: validity, currency, deposit, retainer, and taxes"
 description: "Payment terms, deposit, monthly retainer, tax-inclusive prices, withholding, sales versus accounting currency, locked rate, validity, notes, and the defaults in Settings › Quotes."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-10"
 reviewedBy: "Cord product and operations"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -31,11 +31,13 @@ starts with are set once in **Settings › Quotes**.
 
 ## Payment terms
 
-In **Who are you quoting?** you choose **Cash**, **Net 30**, or
-**Net 60**. When you pick a client, Cord preselects the terms from their profile.
+In **Who are you quoting?** you choose **Due on receipt**, **Net 15**, **Net 30**, or
+**Net 60**, or under **Other term**, **Net 7**, **Net 45**, or **Net 90**. Net N means N
+calendar days of credit. When you pick a client, Cord preselects the terms from their
+profile.
 
-- **Cash:** payment is available as soon as the client approves.
-- **Net 30 / Net 60:** the pay button doesn't appear on approval. The client sees that the order is confirmed on credit and the date it's due; online payment is enabled on that date, counted from approval.
+- **Due on receipt:** payment is available as soon as the client approves.
+- **Net 7 to Net 90:** the pay button doesn't appear on approval. The client sees that the order is confirmed on credit and the date it's due; online payment is enabled on that date, counted from approval.
 
 ## Deposit
 
@@ -49,7 +51,7 @@ balance](/en/docs/pagos/anticipos).
 
 Turn on **Monthly recurring charge** to charge the total every month by card.
 
-- It only exists with **cash** terms: if you choose Net 30 or Net 60, the switch disappears.
+- It only exists with **Due on receipt** terms: if you choose a credit term (Net N), the switch disappears.
 - It excludes a deposit: when on, the deposit field is hidden.
 - The client authorizes their card once from the link on approval; they pay the first month then, and the same amount is charged every month until it's canceled.
 
@@ -114,7 +116,7 @@ In **Settings › Quotes › Numbering & tax** you define what every quote start
 | **Default rate (%)** | The rate new lines get when your catalog has no profile marked as default. |
 | **Withholding applied** | Read only: lists your catalog's default withholding, with the **Manage taxes** link. |
 | **Default validity (days)** | Between 1 and 365. The editor starts with this value. |
-| **Default payment terms** | Cash, Net 30, or Net 60. Preselected on creation; the client's profile wins when you pick one. |
+| **Default payment terms** | Due on receipt or Net 7, 15, 30, 45, 60, or 90. Preselected on creation; the client's profile wins when you pick one. |
 | **Default deposit (%)** | Between 1 and 99, or empty for no deposit. Prefills the editor field. |
 | **Default legal text** | Saved on your organization, but today it isn't printed on the link or in the PDF. For text that is printed, use **PDF document**. |
 
@@ -128,7 +130,7 @@ methods](/en/docs/pagos/metodos)).
 
 ## Common problems
 
-**I don't see the retainer switch.** You chose Net 30 or Net 60; retainers only exist with cash terms.
+**I don't see the retainer switch.** You chose a credit term (Net N); retainers only exist with Due on receipt.
 
 **I don't see the deposit field.** You have the retainer turned on.
 

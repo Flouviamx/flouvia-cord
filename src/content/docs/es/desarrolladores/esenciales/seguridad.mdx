@@ -25,7 +25,7 @@ Esta página describe controles que existen hoy en el producto. Si tu equipo nec
 
 - **Base de datos:** PostgreSQL en Neon, región AWS `us-east-1` (Virginia, Estados Unidos).
 - **Ejecución:** las funciones corren en Vercel, región `iad1` (Washington D.C., Estados Unidos).
-- **Facturación en México:** el timbrado de CFDI 4.0 lo hace Facturapi como PAC, con el CSD de cada negocio. Cord cancela CFDI con su motivo del SAT y, en ventas a crédito, emite con método PPD. El complemento de recepción de pagos todavía no se genera automáticamente.
+- **Facturación en México:** el timbrado de CFDI 4.0 lo hace Facturapi como PAC, con el CSD de cada negocio. Cord cancela CFDI con su motivo del SAT y, en ventas a crédito, emite con método PPD. Por cada cobro en MXN de una factura PPD, Cord timbra automáticamente su complemento de recepción de pagos (CFDI tipo P), idempotente por pago.
 - **Facturación en España:** Cord genera los registros encadenados de Verifactu; el envío directo a la AEAT está construido y pendiente de activarse. Mientras tanto la factura se emite como documento comercial.
 - **Certificaciones:** Cord no tiene hoy SOC 2 ni ISO 27001. Ver [auditorías de seguridad](https://cordhq.app/soporte/auditorias-seguridad).
 

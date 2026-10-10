@@ -2,7 +2,7 @@
 title: "Clients API"
 seoTitle: "Cord Clients API"
 description: "Synchronize and manage the client directory from your accounting systems."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-10"
 reviewedBy: "Cord engineering"
 availablePlans: [Free, Starter, Pro, Scale, Developer]
 prerequisites: ["A key with permission on the clientes resource"]
@@ -95,6 +95,12 @@ curl -X GET "https://cordhq.app/api/v1/clientes?limit=100" \
 ```
 
 When **creating** a client, `POST /api/v1/clientes` also accepts the recipient's address and tax details: `country_code` (ISO 3166-1 alpha-2), `direccion_line1` and `direccion_line2` (up to 200 characters), `ciudad` and `region` (up to 100), and for Mexico `regimen_fiscal`, `uso_cfdi`, and `cp_fiscal`. On reads they come back as `countryCode`, `direccionLine1`, `direccionLine2`, `ciudad`, `region`, `regimenFiscal`, `usoCfdi`, and `cpFiscal`. When **updating** with `PATCH`, only `country_code` from that group can be changed; the address and tax details are edited from the client's record in the app.
+
+When creating you can also send `buyer_reference`: the buyer reference their European e-invoices carry by default (in Germany, a public body's Leitweg-ID). An invoice can carry its own; see the [Invoices API](/en/docs/desarrolladores/funciones/facturas).
+
+### Validated tax ID
+
+Cord validates `rfc` with the check digits of the client's country or, if you don't send `country_code`, your account's country: RFC in Mexico, NIF/NIE/CIF in Spain, EIN in the United States, CNPJ or CPF in Brazil, NIT in Colombia, CUIT in Argentina, RUT in Chile, RUC in Peru, SIREN, SIRET, or TVA in France, USt-IdNr. or Steuernummer in Germany, VAT or UTR in the United Kingdom, and Business Number in Canada. One that fails responds `422` with `code: "invalid_tax_id"` and a reason that names the local ID. When updating, it's only validated if you change the ID or the country: an old value doesn't block you from fixing the phone or the email.
 
 ### Searching clients
 

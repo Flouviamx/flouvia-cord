@@ -1,7 +1,7 @@
 ---
 title: "Clientes, condiciones y estado de cuenta"
 description: "Cómo crear e importar clientes, configurar descuentos, crédito, términos y datos fiscales, y leer su historial comercial y saldo."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-10"
 reviewedBy: "Producto y operaciones de Cord"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -30,7 +30,7 @@ cobrarse o facturarse.
 | Contacto | persona, correo y teléfono | Destinatario de cotizaciones, facturas y seguimiento. |
 | Identidad fiscal | RFC o identificador local, régimen, uso de CFDI y código postal | Datos del receptor usados al preparar el documento fiscal. |
 | Dirección | país, líneas de dirección, ciudad y región | Dirección del receptor y contexto fiscal por país. |
-| Condiciones | contado, Net 30 o Net 60 | Vencimiento predeterminado al crear operaciones para el cliente. |
+| Condiciones | Contado, Net 15, Net 30 o Net 60, y en **Otro plazo** Net 7, Net 45 o Net 90 | Vencimiento predeterminado al crear operaciones para el cliente. |
 | Crédito | límite mayor o igual a cero | Referencia para mostrar exposición y alertar cuando el saldo lo supera. |
 | Nivel de precio | Estándar, Plata, Oro o Distribuidor | Clasificación comercial y descuento sugerido. |
 
@@ -103,6 +103,23 @@ para cotizaciones y facturas: saldo, vencido, documento más antiguo y bandas co
 Una operación facturada aparece como factura, no también como cotización, para evitar
 duplicar el saldo.
 
+## Portal del cliente y cobro automático
+
+En la columna derecha de la ficha, el bloque **Portal del cliente** reúne el link
+privado donde tu cliente ve todas sus facturas, su saldo por divisa y paga varias a la
+vez:
+
+- **Crear link del portal**, **Copiar**, **Enviar por correo** (si el cliente tiene
+  correo) y **Abrir**.
+- **Generar link nuevo** invalida el anterior; **Desactivar link** deja al cliente sin
+  acceso hasta que generes otro.
+- **Cobro automático:** el método que tu cliente guardó (por ejemplo, "Visa •••• 4242"),
+  el siguiente reintento si un cargo falló, o el motivo por el que se detuvo. Con el
+  permiso Clientes puedes **Desactivar cobro automático**.
+
+Ver [Portal del cliente: facturas y pagos](/docs/pagos/portal-facturas) y [Cobro
+automático](/docs/pagos/cobro-automatico).
+
 ## Origen del cliente
 
 La ficha indica en **Origen** cómo llegó el cliente:
@@ -164,4 +181,5 @@ anticipo o detienes nuevas ventas.
 - [Datos del cliente en una cotización](/docs/cotizacion/cliente)
 - [Cartera y cobranza](/docs/pagos/cartera-cobranza)
 - [Términos de crédito](/docs/pagos/credito)
+- [Portal del cliente: facturas y pagos](/docs/pagos/portal-facturas)
 - [API de clientes](/docs/desarrolladores/funciones/clientes)

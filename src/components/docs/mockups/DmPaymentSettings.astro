@@ -1,0 +1,141 @@
+---
+// Mockup: Ajustes › Cobros de un negocio en España con la domiciliación SEPA
+// activa y el cobro automático permitido.
+//
+// Calca de src/pages/app/ajustes/cobros.astro: encabezado de la categoría,
+// estado de la cuenta activa y la sección "Métodos de pago" en su orden real:
+// Tarjeta de crédito y débito, Domiciliación SEPA con su chip de estado
+// (DOMI_CHIP: Activa / En revisión / No disponible), Cobro automático y
+// Transferencia bancaria manual con banco, IBAN (el formato de cuenta del país,
+// payout-fields.ts) y beneficiario. SPEI no se dibuja: es solo de México. Se
+// omiten las secciones de tarifas y depósitos: el mockup recorta, no inventa.
+//
+// La descripción real de la categoría nombraba al proveedor; el mockup usa la
+// bajada de la pestaña (set.cobros.intro), como DmPayoutSchedule.
+import DocsMockup from './DocsMockup.astro';
+import DmIcon from './DmIcon.astro';
+import { dmT, pick, type DmLang } from './format';
+
+interface Props {
+    lang: DmLang;
+    caption?: string;
+}
+const { lang } = Astro.props;
+const ORG = 'Estructuras Levante';
+const DATA = {
+    es: {
+        caption: `Ajustes › Cobros de ${ORG} (Valencia) con la cuenta de cobros activa. En Métodos de pago están encendidos Tarjeta de crédito y débito, Domiciliación SEPA con el estado Activa, Cobro automático y Transferencia bancaria manual con el banco, el IBAN y el beneficiario.`,
+        categoria: 'Cobros',
+        banco: 'CaixaBank', iban: 'ES91 2100 0418 4502 0005 1332', beneficiario: 'Estructuras Levante S.L.',
+    },
+    en: {
+        caption: `${ORG}'s (Valencia, Spain) Settings › Payments with an active payments account. Under Payment methods, Credit and debit card, SEPA Direct Debit with the Active status, Automatic payments and Manual bank transfer with the bank, IBAN and beneficiary are turned on.`,
+        categoria: 'Payments',
+        banco: 'CaixaBank', iban: 'ES91 2100 0418 4502 0005 1332', beneficiario: 'Estructuras Levante S.L.',
+    },
+};
+const d = pick(DATA, lang);
+const caption = Astro.props.caption ?? d.caption;
+const ROWS = [
+    { icon: 'card' as const, t: 'set.cobros.tarjeta_titulo' as const, s: 'set.cobros.tarjeta_desc' as const },
+    { icon: 'bank' as const, t: 'set.cobros.dom_sepa_titulo' as const, s: 'set.cobros.dom_sepa_desc' as const, chip: 'set.cobros.dom_activa' as const },
+    { icon: 'refresh' as const, t: 'set.cobros.autopay_titulo' as const, s: 'set.cobros.autopay_desc' as const },
+];
+---
+<DocsMockup lang={lang} variant="app" chrome="full" sidebar="rail" active="" org={ORG} height={900} caption={caption} class="dm-psg-figure">
+    <div class="dm-psg">
+        <div class="dm-psg-crumb"><DmIcon name="chevron-left" stroke={2} />{dmT(lang, 'settings.configuracion')}</div>
+        <div class="dm-psg-heading">
+            <span class="dm-psg-cat"><DmIcon name="wallet" /></span>
+            <span class="dm-psg-heading-text">
+                <span class="dm-psg-h2">{d.categoria}</span>
+                <span class="dm-psg-desc">{dmT(lang, 'set.cobros.intro')}</span>
+            </span>
+        </div>
+
+        <div class="dm-psg-surface">
+            <span class="dm-psg-h3">{dmT(lang, 'set.cobros.estado_cuenta')}</span>
+            <div class="dm-psg-status">
+                <span class="dm-psg-dot"></span>
+                <span class="dm-psg-status-text">
+                    <span class="dm-strong">{dmT(lang, 'set.cobros.activo_titulo')}</span>
+                    <span class="dm-psg-muted">{dmT(lang, 'set.cobros.activo_desc')}</span>
+                </span>
+            </div>
+        </div>
+
+        <div class="dm-psg-surface">
+            <span class="dm-psg-h3">{dmT(lang, 'set.cobros.metodos_pago')}</span>
+            <div class="dm-psg-methods">
+                {ROWS.map((r) => (
+                    <div class="dm-psg-method">
+                        <span class="dm-psg-ico"><DmIcon name={r.icon} /></span>
+                        <span class="dm-psg-text">
+                            <span class="dm-psg-mt">{dmT(lang, r.t)}{r.chip && <span class="dm-psg-chip">{dmT(lang, r.chip)}</span>}</span>
+                            <span class="dm-psg-muted">{dmT(lang, r.s)}</span>
+                        </span>
+                        <span class="dm-toggle is-on"></span>
+                    </div>
+                ))}
+                <div class="dm-psg-method is-stack">
+                    <div class="dm-psg-mhead">
+                        <span class="dm-psg-ico"><DmIcon name="bank" /></span>
+                        <span class="dm-psg-text">
+                            <span class="dm-psg-mt">{dmT(lang, 'set.cobros.manual_titulo')}</span>
+                            <span class="dm-psg-muted">{dmT(lang, 'set.cobros.manual_desc')}</span>
+                        </span>
+                        <span class="dm-toggle is-on"></span>
+                    </div>
+                    <div class="dm-psg-bank">
+                        <div class="dm-psg-row">
+                            <div class="dm-psg-field"><span class="dm-psg-label">{dmT(lang, 'set.cobros.banco')}</span><span class="dm-psg-input">{d.banco}</span></div>
+                            <div class="dm-psg-field"><span class="dm-psg-label">IBAN</span><span class="dm-psg-input dm-mono">{d.iban}</span></div>
+                        </div>
+                        <div class="dm-psg-field"><span class="dm-psg-label">{dmT(lang, 'set.cobros.beneficiario')}</span><span class="dm-psg-input">{d.beneficiario}</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</DocsMockup>
+
+<style is:global>
+    .dm-psg-figure .dm-content { padding-top: 18px; }
+    .dm-psg { max-width: 720px; padding-right: var(--dm-bleed); }
+    .dm-psg-crumb { display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; font-weight: 600; color: var(--dm-muted); margin-bottom: 10px; }
+    .dm-psg-crumb .dm-ico { width: 13px; height: 13px; }
+    .dm-psg-heading { display: flex; align-items: center; gap: 13px; margin-bottom: 20px; }
+    .dm-psg-cat { width: 42px; height: 42px; border-radius: 13px; display: grid; place-items: center; flex-shrink: 0; background: #fff; color: var(--dm-muted); box-shadow: var(--dm-shadow-card); }
+    .dm-psg-cat .dm-ico { width: 21px; height: 21px; }
+    .dm-psg-heading-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+    .dm-psg-h2 { font-size: 21px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.15; color: var(--dm-text); }
+    .dm-psg-desc { font-size: 12px; line-height: 1.5; color: var(--dm-muted); max-width: 62ch; }
+    .dm-psg-surface { display: flex; flex-direction: column; gap: 10px; padding: 20px 22px; margin-bottom: 16px; background: #fff; border: 1px solid rgba(10, 25, 47, 0.06); border-radius: 20px; box-shadow: var(--dm-shadow-card); }
+    .dm-psg-h3 { font-size: 13.5px; font-weight: 600; letter-spacing: -0.015em; color: var(--dm-text); }
+    .dm-psg-muted { font-size: 10.5px; line-height: 1.45; color: var(--dm-muted); }
+    .dm-psg-status { display: flex; align-items: center; gap: 12px; }
+    .dm-psg-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; background: var(--dm-ok); box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.14); }
+    .dm-psg-status-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; font-size: 12.5px; }
+    /* = .pay-method: icono, texto y su interruptor, separados por hairlines. */
+    .dm-psg-methods { display: flex; flex-direction: column; }
+    .dm-psg-method { display: flex; align-items: center; gap: 12px; padding: 13px 3px; border-bottom: 1px solid var(--dm-border); }
+    .dm-psg-method:last-child { border-bottom: 0; }
+    .dm-psg-method.is-stack { flex-direction: column; align-items: stretch; gap: 0; }
+    .dm-psg-mhead { display: flex; align-items: center; gap: 12px; }
+    .dm-psg-ico { width: 34px; height: 34px; flex-shrink: 0; border-radius: 10px; display: grid; place-items: center; background: rgba(10, 25, 47, 0.06); color: var(--dm-navy); }
+    .dm-psg-ico .dm-ico { width: 17px; height: 17px; }
+    .dm-psg-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+    .dm-psg-mt { font-size: 12px; font-weight: 600; letter-spacing: -0.01em; color: var(--dm-text); }
+    .dm-psg-chip { display: inline-flex; margin-left: 7px; padding: 1px 7px; border-radius: 999px; vertical-align: 1px; font-size: 9.5px; font-weight: 600; background: rgba(20, 104, 63, 0.1); color: #14683f; }
+    .dm-psg-bank { display: flex; flex-direction: column; gap: 12px; margin: 12px 0 2px 46px; padding-top: 12px; border-top: 1px solid var(--dm-border); }
+    .dm-psg-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .dm-psg-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+    .dm-psg-label { font-size: 9.5px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dm-muted); }
+    .dm-psg-input { display: flex; align-items: center; height: 36px; padding: 0 12px; border-radius: 10px; background: var(--dm-canvas); border: 1px solid var(--dm-border); font-size: 11.5px; color: var(--dm-text); white-space: nowrap; overflow: hidden; }
+    @container dm (max-width: 520px) {
+        .dm-psg-figure .dm-stage { height: auto; }
+        .dm-psg-surface { padding: 16px 14px; border-radius: 16px; }
+        .dm-psg-row { grid-template-columns: minmax(0, 1fr); }
+        .dm-psg-bank { margin-left: 0; }
+    }
+</style>

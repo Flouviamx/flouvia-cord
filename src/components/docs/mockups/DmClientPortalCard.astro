@@ -1,0 +1,94 @@
+---
+// Mockup: el bloque "Portal del cliente" de la ficha de un cliente
+// (/app/clientes/[id]) con el link creado y el cobro automático activo, en
+// pleno reintento.
+//
+// Calca de la columna lateral de src/pages/app/clientes/[id].astro: el bloque
+// "Condiciones" de arriba (recortado) y, debajo, `#dcPortal`: título, la
+// descripción cdet.portal_desc, el link en un campo de solo lectura con
+// "Copiar", las acciones Enviar por correo · Abrir · Generar link nuevo ·
+// Desactivar link (esta en rojo), y la sección de cobro automático: el método
+// guardado ("Visa •••• 4242", etiquetaMetodo), el aviso del reintento
+// programado (cdet.portal_reintento) y "Desactivar cobro automático".
+//
+// El reintento: fondos insuficientes el 10 oct 2026 → siguiente 1 o 16 del
+// mes a partir de dos días (proximoDiaDePago en src/lib/cobros/reintentos.ts)
+// = 16 oct 2026.
+import DocsMockup from './DocsMockup.astro';
+import DmMoney from './DmMoney.astro';
+import { dmT, pick, tpl, DEMO, type DmLang } from './format';
+
+interface Props {
+    lang: DmLang;
+    caption?: string;
+}
+const { lang } = Astro.props;
+const URL_PORTAL = 'https://cordhq.app/portal/Qm7xV2kLp9sT4wYb8NcRf1aJ6hEzD3uGqLkPvXo0iM';
+const DATA = {
+    es: {
+        caption: `Ficha de ${DEMO.cliente}, columna lateral: el bloque Portal del cliente con el link copiable y las acciones Enviar por correo, Abrir, Generar link nuevo y Desactivar link; debajo, Cobro automático con Visa •••• 4242, el aviso "Intento 1 rechazado en MXN. Siguiente intento: 16 de octubre de 2026." y el enlace Desactivar cobro automático.`,
+        fecha: '16 de octubre de 2026', terminos: 'Net 30',
+    },
+    en: {
+        caption: `${DEMO.cliente}'s profile, side column: the Client portal block with the copyable link and the Send by email, Open, Generate new link and Disable link actions; below, Automatic payments with Visa •••• 4242, the notice "Attempt 1 declined in MXN. Next attempt: October 16, 2026." and the Turn off automatic payments link.`,
+        fecha: 'October 16, 2026', terminos: 'Net 30',
+    },
+};
+const d = pick(DATA, lang);
+const caption = Astro.props.caption ?? d.caption;
+---
+<DocsMockup lang={lang} variant="panel" panelWidth={420} caption={caption} class="dm-cpc-figure">
+    <div class="dm-cpc">
+        <div class="dm-cpc-block is-faded">
+            <span class="dm-cpc-title">{dmT(lang, 'cdet.condiciones_titulo')}</span>
+            <div class="dm-cpc-kv"><span class="dm-cpc-label">RFC</span><span>DEZ0903114T2</span></div>
+            <div class="dm-cpc-kv"><span class="dm-cpc-label">{dmT(lang, 'cdet.limite_label')}</span><DmMoney amount={350000} currency={DEMO.currency} lang={lang} /></div>
+            <div class="dm-cpc-kv"><span class="dm-cpc-label">{dmT(lang, 'cdet.terminos_label')}</span><span>{d.terminos}</span></div>
+        </div>
+
+        <div class="dm-cpc-block">
+            <span class="dm-cpc-title">{dmT(lang, 'cdet.portal_titulo')}</span>
+            <span class="dm-cpc-desc">{dmT(lang, 'cdet.portal_desc')}</span>
+            <div class="dm-cpc-link">
+                <span class="dm-cpc-url">{URL_PORTAL}</span>
+                <span class="dm-cpc-copy">{dmT(lang, 'cdet.portal_copiar')}</span>
+            </div>
+            <div class="dm-cpc-acts">
+                <span>{dmT(lang, 'cdet.portal_enviar')}</span>
+                <span>{dmT(lang, 'cdet.portal_abrir')}</span>
+                <span>{dmT(lang, 'cdet.portal_rotar')}</span>
+                <span class="is-danger">{dmT(lang, 'cdet.portal_apagar')}</span>
+            </div>
+            <div class="dm-cpc-autopay">
+                <div class="dm-cpc-kv"><span class="dm-cpc-label">{dmT(lang, 'cdet.portal_autopay')}</span><span>Visa •••• 4242</span></div>
+                <span class="dm-cpc-warn">{tpl(dmT(lang, 'cdet.portal_reintento'), { n: 1, moneda: 'MXN', fecha: d.fecha })}</span>
+                <span class="dm-cpc-off">{dmT(lang, 'cdet.portal_autopay_off')}</span>
+            </div>
+        </div>
+    </div>
+</DocsMockup>
+
+<style is:global>
+    .dm-cpc-figure .dm-v-panel { padding: 30px 24px; }
+    .dm-cpc { display: flex; flex-direction: column; padding: 22px 22px 18px; }
+    .dm-cpc-block { display: flex; flex-direction: column; gap: 9px; }
+    .dm-cpc-block + .dm-cpc-block { border-top: 1px solid var(--dm-border); padding-top: 18px; margin-top: 16px; }
+    .dm-cpc-block.is-faded { opacity: 0.55; }
+    .dm-cpc-title { font-size: 13px; font-weight: 600; letter-spacing: -0.015em; color: var(--dm-text); margin-bottom: 2px; }
+    .dm-cpc-kv { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 11.5px; color: var(--dm-text); }
+    .dm-cpc-kv .dm-money { font-size: 12px; }
+    .dm-cpc-label { font-size: 10.5px; color: var(--dm-muted); }
+    .dm-cpc-desc { font-size: 10.5px; line-height: 1.5; color: var(--dm-muted); }
+    .dm-cpc-link { display: flex; align-items: center; gap: 7px; }
+    .dm-cpc-url { flex: 1; min-width: 0; padding: 8px 9px; border-radius: 9px; background: var(--dm-canvas); font-size: 10.5px; color: var(--dm-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    /* = .dc-btn-ghost */
+    .dm-cpc-copy { display: inline-flex; align-items: center; height: 30px; padding: 0 12px; border-radius: 999px; background: var(--dm-soft); border: 1px solid var(--dm-border); font-size: 10.5px; font-weight: 600; color: var(--dm-text); flex-shrink: 0; }
+    .dm-cpc-acts { display: flex; flex-wrap: wrap; gap: 3px 13px; font-size: 10.5px; font-weight: 600; color: var(--dm-navy); }
+    .dm-cpc-acts .is-danger, .dm-cpc-off { color: #b42318; }
+    .dm-cpc-autopay { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; padding-top: 12px; border-top: 1px solid var(--dm-border); }
+    .dm-cpc-warn { font-size: 10.5px; line-height: 1.5; color: #b45309; }
+    .dm-cpc-off { font-size: 10.5px; font-weight: 600; }
+    @container dm (max-width: 520px) {
+        .dm-cpc { padding: 18px 16px 14px; }
+    }
+</style>

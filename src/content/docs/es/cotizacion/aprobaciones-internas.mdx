@@ -2,7 +2,7 @@
 title: "Aprobaciones internas"
 seoTitle: "Aprobaciones internas de cotizaciones por descuento, monto o margen"
 description: "Cómo configurar topes de descuento, monto y margen que detienen una cotización hasta que un responsable la aprueba, y cómo se decide desde Cord, Slack o Teams."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-10"
 reviewedBy: "Producto y operaciones de Cord"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Scale, Developer]
@@ -48,6 +48,11 @@ link](/docs/interaccion/firma); esta es un control interno de tu equipo.
 | **Descuento máx. sin aprobación (%)** | El mayor descuento de cualquier línea: la diferencia entre su precio de lista y su precio negociado. | Si alguna línea tiene un descuento mayor al tope. |
 | **Monto máx. sin aprobación** | El total de la cotización. | Si el total es mayor al tope. |
 | **Margen bruto mínimo sin aprobación (%)** | El margen de cada línea con costo capturado: (precio negociado − costo) ÷ precio negociado. | Si alguna línea con costo queda por debajo del mínimo. Las líneas sin costo no cuentan. |
+
+Si la cotización lleva un [descuento de documento](/docs/cotizacion/descuentos)
+**manual**, Cord lo cuenta como descuento de cada línea para el tope de descuento y para
+el de margen: mover la rebaja al pie no esquiva la regla. Un **cupón** no cuenta para
+esos topes, porque lo creó quien administra Ajustes y ya es una rebaja autorizada.
 
 <Callout type="warning">
 **El monto se compara sin convertir divisas.** Cord compara el número del tope contra

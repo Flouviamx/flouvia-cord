@@ -1,8 +1,8 @@
 ---
 title: "Refunds"
 seoTitle: "Payment refunds in Cord"
-description: "How to give money back to a customer from My Payments: full or partial refunds, the difference between card and SPEI, and what happens to the fee."
-lastUpdated: "2026-10-07"
+description: "How to give money back to a customer from My Payments: full or partial refunds, the difference between card and SPEI, what happens to the fee, and how the refund of a charge that paid several invoices is allocated."
+lastUpdated: "2026-10-10"
 reviewedBy: "Cord product and operations"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -16,9 +16,9 @@ prerequisites: ["Refunds permission, granted by the owner", "Payment reconciled 
 
 ## Where to refund
 
-Refunds live in **My Payments** (`/app/cobros`), not in the cotización's detail page. In the "Recent payments" widget, every row that corresponds to a payment **reconciled through Cord Payments** has a **Refund** button. A payment recorded manually (a transfer outside Cord Payments) doesn't have this button — for that case, you handle the refund directly with your customer outside Cord.
+Refunds live in **My Payments** (`/app/cobros`), not in the quote's detail page. In the "Recent payments" widget, every row that corresponds to a payment **reconciled through Cord Payments** has a **Refund** button. A payment recorded manually (a transfer outside Cord Payments) doesn't have this button — for that case, you handle the refund directly with your customer outside Cord.
 
-The button appears on **quote** payments, including the monthly charges of a [retainer](/en/docs/pagos/igualas). A payment made from an **invoice** link doesn't have a refund button in Cord today; if you need to return it, contact us. Once a refund of that payment is confirmed, Cord reflects it in the invoice balance (see [Effect on a linked invoice](#effect-on-a-linked-invoice)). A payment collected through Mercado Pago is refunded from your Mercado Pago account (see [Mercado Pago](/en/docs/pagos/mercado-pago)).
+The button appears on **quote** payments, including the monthly charges of a [retainer](/en/docs/pagos/igualas). A payment made from an **invoice** link, from the [client portal](/en/docs/pagos/portal-facturas), or by [automatic payments](/en/docs/pagos/cobro-automatico) doesn't have a refund button in Cord today; if you need to return it, contact us. Once a refund of that payment is confirmed, Cord reflects it in the balance of each invoice it paid (see [Effect on a linked invoice](#effect-on-a-linked-invoice) and [Refunding a charge that paid several invoices](#refunding-a-charge-that-paid-several-invoices)). A payment collected through Mercado Pago is refunded from your Mercado Pago account (see [Mercado Pago](/en/docs/pagos/mercado-pago)).
 
 <Callout type="warning">
 Refunding requires the **Refunds** permission. This permission is **not granted automatically** to team administrators — the account owner has to explicitly grant it to each member who needs to issue refunds, from Settings › Team. This is intentional: moving money out of the account is a more sensitive action than administering it.
@@ -56,13 +56,49 @@ In Cord, the SPEI refund flow requires a manual transfer by the business. Reques
 - If the refunded payment was part of a quote with an [upfront deposit and balance](/en/docs/pagos/anticipos), the refund only affects the specific payment you chose — not the rest of that quote's slices.
 
 <Callout type="info">
-A refund **does not revert the cotización's status** — it stays marked as paid. If you also need to cancel the cotización itself (for example, because the entire order was called off), do that from the cotización's detail page separately.
+A refund **does not revert the quote's status** — it stays marked as paid. If you also need to cancel the quote itself (for example, because the entire order was called off), do that from the quote's detail page separately.
 </Callout>
 
 ## Effect on a linked invoice
 
 Cord distinguishes a requested refund from a confirmed one. Only confirmed refunds
-count toward money returned on the invoice; repeated events must not subtract it
-again. A refund can arrive before the payment record and await that link. A credit
-note reduces the document amount while a refund returns money: these are separate
-actions. Review [balance calculation](/en/docs/pagos/facturas-emitidas).
+count toward money returned on the invoice; a repeated event doesn't subtract it again.
+A refund can arrive before the payment record and await that link.
+
+A confirmed refund **reopens** that amount in the invoice balance: the invoice is no
+longer paid for that amount. If the refund is for something that won't be collected
+anymore (a returned product, a service that wasn't delivered), also issue a **credit
+note** for that amount: a credit note reduces the document amount while a refund
+returns money, and they're separate actions. Review [balance
+calculation](/en/docs/pagos/facturas-emitidas).
+
+## Refunding a charge that paid several invoices
+
+<Callout type="info">
+This feature is new and may not be enabled on your account yet. If you don't see it, write to us.
+</Callout>
+
+From the [client portal](/en/docs/pagos/portal-facturas) and with [automatic
+payments](/en/docs/pagos/cobro-automatico), a single charge can pay several invoices. If
+part of that charge is later refunded, Cord allocates the refund among the invoices it
+paid:
+
+1. **From the last one to the first.** The refund is assigned starting with the last
+   invoice the charge was applied to, and works backwards.
+2. **Up to what each invoice received.** Each invoice is assigned at most what it
+   received from that charge, minus what other refunds of the same charge already
+   assigned to it.
+3. **All or nothing.** If the refund doesn't fit entirely in what the charge applied
+   (for example, because the refund notice arrived before the payment notice), it isn't
+   split halfway: it waits and is allocated as soon as the payment is recorded.
+
+| Example | F-0231 | F-0236 | Charge total |
+|---|---:|---:|---:|
+| Payment applied (in this order) | 48,940.00 MXN | 52,316.40 MXN | 101,256.40 MXN |
+| Refund of 60,000.00 MXN | −7,683.60 MXN | −52,316.40 MXN | −60,000.00 MXN |
+| Balance that reopens | 7,683.60 MXN | 52,316.40 MXN | |
+
+- A charge that paid **a single** invoice assigns the whole refund to that invoice.
+- Refunds of charges from before October 2026 have no allocation: they only count in the
+  balance if their charge paid a single invoice.
+- An **ACH** bank debit only supports **full** refunds.

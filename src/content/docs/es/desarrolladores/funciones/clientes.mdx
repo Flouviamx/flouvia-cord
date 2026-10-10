@@ -2,7 +2,7 @@
 title: "API de Clientes"
 seoTitle: "API de clientes de Cord"
 description: "Sincroniza y administra el directorio de clientes desde tus sistemas contables."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-10"
 reviewedBy: "Ingeniería de Cord"
 availablePlans: [Free, Starter, Pro, Scale, Developer]
 prerequisites: ["Una llave con permiso sobre el recurso clientes"]
@@ -95,6 +95,12 @@ curl -X GET "https://cordhq.app/api/v1/clientes?limit=100" \
 ```
 
 Al **crear** un cliente, `POST /api/v1/clientes` acepta además los datos del domicilio y fiscales del receptor: `country_code` (ISO 3166-1 alfa-2), `direccion_line1` y `direccion_line2` (hasta 200 caracteres), `ciudad` y `region` (hasta 100), y para México `regimen_fiscal`, `uso_cfdi` y `cp_fiscal`. En la lectura viajan como `countryCode`, `direccionLine1`, `direccionLine2`, `ciudad`, `region`, `regimenFiscal`, `usoCfdi` y `cpFiscal`. Al **actualizar** con `PATCH`, solo `country_code` de ese grupo se puede cambiar; el domicilio y los datos fiscales se editan desde la ficha del cliente en la app.
+
+Al crear también puedes mandar `buyer_reference`: la referencia del comprador que llevan por defecto sus facturas electrónicas europeas (en Alemania, el Leitweg-ID de una administración pública). Una factura puede llevar la suya propia; ver [API de Facturas](/docs/desarrolladores/funciones/facturas).
+
+### Identificador fiscal validado
+
+Cord valida `rfc` con el dígito de control del país del cliente o, si no mandas `country_code`, del país de tu cuenta: RFC en México, NIF/NIE/CIF en España, EIN en Estados Unidos, CNPJ o CPF en Brasil, NIT en Colombia, CUIT en Argentina, RUT en Chile, RUC en Perú, SIREN, SIRET o TVA en Francia, USt-IdNr. o Steuernummer en Alemania, VAT o UTR en Reino Unido y Business Number en Canadá. Uno que no pasa responde `422` con `code: "invalid_tax_id"` y un motivo que nombra el dato local. Al actualizar, solo se valida si cambias el identificador o el país: un dato antiguo no bloquea que corrijas el teléfono o el correo.
 
 ### Buscar clientes
 

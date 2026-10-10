@@ -1,7 +1,7 @@
 ---
 title: "Facturación fiscal por país"
 seoTitle: "Facturación por país en Cord: CFDI, España y factura comercial"
-description: "Qué documento emite Cord según el país y el plan: CFDI 4.0 en México, proforma en España mientras se habilita el registro fiscal, factura comercial en los demás mercados, cuotas mensuales por plan y el comprobante fiscal de la comisión de Cord en México."
+description: "Qué documento emite Cord según el país y el plan: CFDI 4.0 en México con PUE o PPD y complemento de pago automático, proforma en España mientras se habilita el registro fiscal, factura comercial o factura autorizada en los demás mercados, cuotas por plan y el CFDI de la comisión de Cord."
 lastUpdated: "2026-10-10"
 reviewedBy: "Producto y operaciones de Cord"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
@@ -26,11 +26,13 @@ Para el ciclo completo de una factura (borrador, emisión, envío, cobro, notas 
 |---|---|---|
 | **México** | Proforma (folio con serie `PRO`) | **CFDI 4.0** timbrado ante el SAT, con CSD cargado. También puedes elegir proforma. |
 | **España** | Proforma (serie `PRO`) | Proforma hoy. El registro fiscal español se activará más adelante; ver [España](#españa-verifactu). |
-| **Estados Unidos, Canadá, Brasil, Reino Unido, Alemania, Francia, Colombia, Argentina, Chile y Perú** | Factura comercial | Factura comercial |
+| **Argentina, Brasil, Chile, Colombia y Perú** | Factura comercial | Factura comercial. Cuando la emisión ante la autoridad del país está activa en tu cuenta, la factura electrónica autorizada (función nueva; ver [Otros mercados](#otros-mercados-factura-comercial)). |
+| **Estados Unidos, Canadá, Reino Unido, Alemania y Francia** | Factura comercial | Factura comercial |
 
 - **Proforma:** documento comercial que dice expresamente que no sustituye una factura fiscal. Sirve para cobrar y para que tu cliente tramite su pago, no para deducir.
 - **Factura comercial:** factura con folio consecutivo, impuestos y retenciones por línea y los datos fiscales de las dos partes. Cord no la presenta ante ninguna autoridad.
 - **CFDI 4.0:** comprobante fiscal digital mexicano, timbrado ante el SAT con el certificado de tu negocio.
+- **Factura autorizada:** en Argentina, Brasil, Chile, Colombia y Perú, la factura electrónica que autoriza la autoridad del país, con su número legal.
 
 En los tres casos, el impuesto se calcula **por línea**: puedes mezclar un concepto gravado con uno exento, y cada uno imprime el nombre del impuesto de tu país (IVA en México y España, VAT en Reino Unido, GST en Canadá, Sales tax por estado en Estados Unidos).
 
@@ -53,6 +55,7 @@ Las facturas tienen cuotas mensuales propias, independientes de los envíos de c
 | Developer | Ilimitadas | 1,000 |
 
 - Al superar la cuota fiscal incluida, desde Starter, los documentos adicionales se cobran como consumo excedente en tu suscripción. Ver [Suscripción](/docs/cuenta/suscripcion).
+- En México, cada **complemento de pago** que Cord timbra cuenta como un documento fiscal más.
 - En Gratis, al llegar a 10 documentos comerciales en el mes, la emisión se detiene hasta el mes siguiente o hasta que cambies de plan.
 - Los borradores y los documentos de prueba no consumen cuota.
 - Agotar la cuota o bajar de plan **no** bloquea descargar, enviar o cobrar documentos ya emitidos.
@@ -86,11 +89,65 @@ Cada producto puede llevar su **clave de producto o servicio** (c_ClaveProdServ,
 
 ### Impuestos y emisión
 
-Cord envía los impuestos de cada concepto tal como los capturaste: IVA 16%, IVA 8% o exento, y las retenciones de IVA e ISR. No los convierte en una tasa única. Si la cotización está en una divisa distinta de la contable, el CFDI declara el tipo de cambio congelado al cotizar.
+Cord envía los impuestos de cada concepto tal como los capturaste: IVA 16%, IVA 8% o exento, y las retenciones de IVA e ISR. No los convierte en una tasa única. Si la cotización está en una divisa distinta de la contable, el CFDI declara el tipo de cambio congelado al cotizar. Un [descuento de documento](/docs/cotizacion/descuentos) viaja repartido por concepto en el atributo **Descuento**.
+
+En el editor de facturas, la sección **Datos del CFDI** te deja fijar el **Uso del CFDI** (por defecto, **Según la ficha del cliente**) y la **Forma de pago** (por defecto, **Automática según los cobros**) de esa factura. Si la sustituyes, el sustituto los hereda.
 
 Un pago confirmado y una factura emitida son estados diferentes. Pagar no crea, timbra ni envía una factura por sí solo; revisa el estado fiscal y de entrega de cada documento. Si el timbrado termina y el correo falla, el folio se conserva y puedes reenviar desde el detalle.
 
 Las notas de crédito de una factura mexicana son un CFDI de egreso relacionado con el UUID original. Una solicitud de cancelación no anula el CFDI hasta que el SAT la confirma; mientras tanto puedes pulsar **Consultar cancelación** en el detalle.
+
+### Método de pago: PUE o PPD
+
+<Callout type="info">
+Esta función es nueva y puede no estar habilitada todavía en tu cuenta. Si no la ves, escríbenos.
+</Callout>
+
+Al timbrar, Cord decide el **método de pago** del CFDI con lo que de verdad pasó con el
+dinero:
+
+| Situación al timbrar | Método | Forma de pago |
+|---|---|---|
+| La factura ya está **pagada por completo** (en su link, en la cotización de origen o con pagos que registraste) | **PUE**, pago en una sola exhibición | La del cobro: 04 tarjeta, 03 transferencia (incluido SPEI), 01 efectivo, 02 cheque. Si fijaste una en **Datos del CFDI**, esa. |
+| La factura se va a cobrar **después**, total o en abonos (por ejemplo, Net 30) | **PPD**, pago en parcialidades o diferido | 99, por definir |
+| El receptor es **público en general** (RFC genérico XAXX010101000) | **PUE** siempre: ese receptor no admite complemento de pago | La del cobro, o 03 si todavía no hay |
+
+Antes, Cord timbraba todo como PUE aunque la factura fuera a crédito. Ya no: una factura
+que no está pagada al emitirse sale PPD, como pide el SAT.
+
+### Complemento de pago automático
+
+Por cada cobro que recibe una factura **PPD**, el SAT exige un **complemento de
+recepción de pagos** (CFDI tipo P, también llamado REP) a más tardar el día 5 del mes
+siguiente. Cord lo timbra **solo**, en cuanto el pago queda registrado:
+
+- **Cualquier forma de registrar el pago:** un pago con tarjeta, SPEI o Mercado Pago en
+  el link de la factura, un pago desde el [portal del cliente](/docs/pagos/portal-facturas)
+  o el [cobro automático](/docs/pagos/cobro-automatico), un pago que registras a mano, o
+  los cobros de la cotización de origen que se aplican a la factura.
+- **Un complemento por pago.** Cada abono lleva el suyo, relacionado con el UUID de la
+  factura y con su número de parcialidad y saldo anterior. Un reintento nunca timbra dos
+  veces el mismo pago.
+- **Forma de pago del complemento:** la del cobro (04 tarjeta, 03 transferencia, 01
+  efectivo, 02 cheque); si no se puede saber, 03.
+- **Consume tu cuota fiscal:** cada complemento cuenta como un documento fiscal del mes.
+- **Queda en el historial de la factura:** "Complemento de pago emitido" con su folio
+  fiscal (UUID). Si no se pudo timbrar, el historial dice "Complemento de pago
+  pendiente" con el motivo.
+
+Cord **no** lo emite solo, y lo dice en el historial de la factura, en dos casos que el
+SAT documenta de otra forma:
+
+| Caso | Qué hacer |
+|---|---|
+| El cobro está en **otra divisa que MXN**. | El complemento necesita el tipo de cambio oficial del día del pago, que Cord no tiene. Emítelo con tu contador. |
+| El cobro es **anterior a la factura** (un anticipo). | Se documenta con el procedimiento de anticipos del SAT, no con un complemento de pago. |
+
+<Callout type="warning">
+Hoy Cord no le envía el complemento a tu cliente ni lo ofrece para descargar desde el
+detalle de la factura, y un complemento que quedó pendiente no se reintenta solo. Si tu
+cliente necesita el XML o el PDF de un complemento, o uno quedó pendiente, escríbenos.
+</Callout>
 
 ### Cancelación y sustitución
 
@@ -102,7 +159,7 @@ Las ventas cobradas sin que el cliente pidiera factura se documentan en **Factur
 
 ### Lo que Cord no hace hoy en México
 
-- **Complemento de Recepción de Pagos (REP).** Cord timbra con método de pago PUE (una sola exhibición) y no emite complementos de pago. Si facturas a crédito con PPD y necesitas el REP de cada abono, hoy debes hacerlo fuera de Cord.
+- **Complemento de pago de un cobro en otra divisa o de un anticipo.** Ver [Complemento de pago automático](#complemento-de-pago-automático).
 - **Complemento de Comercio Exterior.** La exportación definitiva de mercancías (clave A1) lo exige; Cord timbra la operación como "No aplica" en exportación y no emite ese complemento.
 
 ## España: Verifactu
@@ -136,6 +193,21 @@ Lo anunciaremos en las [novedades de pagos y facturación](/docs/pagos/mejoras-c
 
 En Estados Unidos, Canadá, Brasil, Reino Unido, Alemania, Francia, Colombia, Argentina, Chile y Perú, Cord emite una **factura comercial** con folio consecutivo por organización, impuestos y retenciones por línea, y los datos fiscales de las dos partes. Cord no la presenta ante la autoridad fiscal local. La obligación de emitir, reportar o complementar ese documento depende de tu país y régimen; confírmala con tu asesor fiscal.
 
+<Callout type="info">
+Esta función es nueva y puede no estar habilitada todavía en tu cuenta. Si no la ves, escríbenos.
+</Callout>
+
+- **Argentina, Brasil, Chile, Colombia y Perú.** Cord puede emitir la factura electrónica
+  **autorizada por la autoridad de cada país** (ARCA en Argentina; NFS-e y NF-e en Brasil;
+  SII en Chile; DIAN en Colombia; SUNAT en Perú), con plan Starter o superior y las
+  credenciales de tu negocio en **Ajustes › Perfil fiscal**. Cuando la emisión está activa
+  en tu cuenta, la factura lleva el número legal que asigna la autoridad y la opción
+  comercial sale como proforma. Mientras no lo esté, sigues emitiendo factura comercial.
+- **Alemania, Francia y España.** Cada factura también se descarga como factura
+  electrónica europea (Factur-X, XRechnung, Peppol y, en España, Facturae). En Francia,
+  la emisión por plataforma autorizada está construida y llega pronto. Ver [Factura
+  electrónica europea](/docs/pagos/factura-electronica).
+
 ## El comprobante fiscal de la comisión de Cord (México)
 
 Además de los CFDI que emites a tus clientes, en México Cord emite su **propio CFDI de ingreso** por la comisión que te cobra en los cobros en MXN de Cord Payments (ver [Tarifas](/docs/pagos/condiciones)). Es el comprobante del servicio de procesamiento que Cord te presta, no el de tu venta.
@@ -155,13 +227,16 @@ Si tu RFC, régimen fiscal o código postal no están completos en **Ajustes ›
 
 - CFDI: solo México, desde Starter, con CSD cargado.
 - España: solo proformas hoy.
+- Argentina, Brasil, Chile, Colombia y Perú: factura autorizada solo cuando su emisión está activa en tu cuenta; si no, factura comercial.
 - Otros mercados: factura comercial sin presentación ante la autoridad.
 - Gratis: 10 documentos comerciales al mes y sin emisión fiscal.
-- Sin complemento de pagos (REP) en México.
+- México: el complemento de pago es automático para cobros en MXN posteriores a la factura; los cobros en otra divisa y los anticipos se documentan fuera de Cord.
 
 ## Problemas comunes
 
 **Mi factura salió como proforma y esperaba un CFDI.** Revisa tu plan (Starter o superior), que tu CSD esté cargado y vigente, y que no hayas elegido la opción comercial al emitir.
+
+**Mi CFDI salió PPD y lo esperaba PUE.** Al timbrar, la factura no estaba pagada por completo. Cord emitirá un complemento de pago por cada cobro que reciba. Si la factura ya estaba pagada, revisa que el pago estuviera registrado antes de emitirla.
 
 **Mi cliente dice que su CFDI no le sirve.** Revisa su régimen fiscal, código postal y uso de CFDI en su ficha; si faltaban, Cord usó valores predeterminados.
 
@@ -175,4 +250,6 @@ Si tu RFC, régimen fiscal o código postal no están completos en **Ajustes ›
 - [Facturas recurrentes](/docs/pagos/facturas-recurrentes)
 - [Certificado de Sello Digital](/docs/cuenta/csd)
 - [Timbrado desde la cotización](/docs/cotizacion/timbrado)
+- [Descuentos y cupones](/docs/cotizacion/descuentos)
+- [Factura electrónica europea](/docs/pagos/factura-electronica)
 - [Suscripción](/docs/cuenta/suscripcion)

@@ -91,6 +91,7 @@ export const DOCS_NAV: NavSection[] = [
           { slug: 'cotizacion/ia', label: { es: 'Generar con IA', en: 'Generate with AI' } },
           { slug: 'cotizacion/cliente', label: { es: 'Datos del cliente', en: 'Client data' } },
           { slug: 'cotizacion/productos', label: { es: 'Productos y descuentos', en: 'Products and discounts' } },
+          { slug: 'cotizacion/descuentos', label: { es: 'Descuentos y cupones', en: 'Discounts and coupons' } },
           { slug: 'cotizacion/opciones', label: { es: 'Opciones avanzadas', en: 'Advanced options' } },
           { slug: 'cotizacion/envio', label: { es: 'Vista previa y envío', en: 'Preview and sending' } },
           { slug: 'cotizacion/aprobaciones-internas', label: { es: 'Aprobaciones internas', en: 'Internal approvals' } },
@@ -172,6 +173,8 @@ export const DOCS_NAV: NavSection[] = [
         collapsible: true,
         items: [
           { slug: 'pagos/recordatorios', label: { es: 'Recordatorios automáticos', en: 'Automatic reminders' } },
+          { slug: 'pagos/portal-facturas', label: { es: 'Portal de facturas', en: 'Invoice portal' } },
+          { slug: 'pagos/cobro-automatico', label: { es: 'Cobro automático', en: 'Automatic payments' } },
           { slug: 'pagos/cartera-cobranza', label: { es: 'Cartera y seguimiento', en: 'Receivables and follow-up' } },
           { slug: 'pagos/cobranza-ia', label: { es: 'Cobranza autónoma (IA)', en: 'Autonomous collections (AI)' } },
           { slug: 'pagos/tesoreria-fx', label: { es: 'Tesorería y FX Lock', en: 'Treasury and FX Lock' } },

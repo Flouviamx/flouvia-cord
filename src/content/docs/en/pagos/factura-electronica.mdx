@@ -2,7 +2,7 @@
 title: "E-invoicing: Factur-X, XRechnung, Peppol, and Facturae"
 seoTitle: "E-invoicing: Factur-X, XRechnung, Peppol, and Facturae"
 description: "Download each invoice as Factur-X, XRechnung, or Peppol BIS (EN 16931), or as Facturae in Spain, attach it to the email, issue it through an approved platform in France, and get ready for e-invoicing between businesses with the AEAT."
-lastUpdated: "2026-10-09"
+lastUpdated: "2026-10-10"
 reviewedBy: "Cord product and operations"
 appliesToMarkets: [ES, DE, FR]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -117,9 +117,10 @@ and keep the rate. **IGIC at 0%** can be downloaded as XRechnung (UBL), Peppol, 
 Facturae, but not as Factur-X or XRechnung (CII): the official validator of that syntax
 requires a rate above zero.
 
-A **document discount** appears as it does on the PDF: each line with its amount before
-the discount and the discount subtracted in the totals, split by VAT rate, so the total
-matches the invoice to the cent.
+A [document discount or a coupon](/en/docs/cotizacion/descuentos) appears as it does on
+the PDF: each line with its amount before the discount and the discount subtracted in the
+totals, split by VAT category and rate, so the total matches the invoice to the cent. In
+the Facturae, each line carries its share of the discount.
 
 ## Facturae (Spain)
 
@@ -242,9 +243,54 @@ Cord **only issues**. To receive your suppliers' invoices you need your own rece
 platform, mandatory since 1 September 2026; registering in Cord does not change it.
 </Callout>
 
-If your client or a platform **rejects** an invoice, the invoice says so with the
-reason. It is not corrected: cancel it with a **credit note** (it is an accounting
-cancellation and is not transmitted) and issue a new invoice with the right data.
+### Statuses of a transmitted invoice
+
+Each status the platform reports is kept on the invoice detail, with its date and reason,
+and in its history:
+
+| Code | Status | What to do |
+|---|---|---|
+| 200 | Submitted to the platform | Nothing: the invoice went out. |
+| 201 | Issued by the platform | Nothing. |
+| 202 | Received by the client's platform | Nothing. |
+| 203 | Made available to the client | Nothing. |
+| 204 | Acknowledged by the client | Nothing. |
+| 205 | Approved by the client | Nothing. |
+| 206 | Partially approved by the client | Talk to your client about the part that wasn't approved. |
+| 207 | Disputed by the client | Resolve the disagreement with your client. |
+| 208 | Suspended: the client asks for supporting documents | Send them the documents they ask for. |
+| 209 | Completed with supporting documents | Nothing. |
+| 210 | Refused by the client | Cancel it with a credit note and issue a new invoice. |
+| 211 | Payment sent | Nothing: your client reported that they paid. |
+| 212 | Payment received | Nothing: the payment was reported. |
+| 213 | Rejected by a platform | Cancel it with a credit note and issue a new invoice. |
+| 501 | File not accepted by the platform | Check the reason, cancel it, and issue a new invoice. |
+
+If your client or a platform **rejects** an invoice (210, 213, or 501), the invoice says
+so with the reason. It is not corrected: cancel it with a **credit note** (it is an
+accounting cancellation and is not transmitted) and issue a new invoice with the right
+data.
+
+### What's reported about your sales and payments
+
+| Sale | How Cord reports it | Its payments |
+|---|---|---|
+| To a business established in France, with a SIREN | Transmits the invoice (Factur-X) through the platform. | If VAT is due on payment, each payment as status **212 Payment received**. |
+| To a business in another country, with a tax ID | Reports it one by one in the e-reporting. | In the payments e-reporting. |
+| To a consumer, French or not | The day's total, per currency and per type (goods, services, or transactions outside the scope of French VAT). | The day's collected amount. |
+
+- **Which payments are reported:** only those for **services**, when you didn't opt to
+  pay VAT on debits. On a mixed invoice only the services part is sent, split by VAT
+  rate.
+- **Refunds:** on a transmitted invoice, a refund is reported as a negative payment with
+  its reason. In the payments e-reporting the platform doesn't accept negative amounts:
+  Cord leaves it flagged so you can regularize it in the platform's console.
+- **Currency:** the payments e-reporting goes in euros, with the invoice's locked
+  exchange rate.
+- **Deadlines:** Cord sends every day as soon as it closes. The platform groups what was
+  sent into the period that matches your **VAT regime**: by ten-day periods in the
+  monthly standard regime, by month in the quarterly and simplified ones, and every two
+  months under the franchise. **Settings › Tax profile** counts what's overdue.
 
 ## Leitweg-ID
 

@@ -2,7 +2,7 @@
 title: "Invoices API"
 seoTitle: "Cord invoices API"
 description: "List, create, issue, send, collect and void invoices from your system with Cord's API v1: drafts, irreversible issuing, partial payments and credit notes."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-10"
 reviewedBy: "Cord engineering"
 availablePlans: [Free, Starter, Pro, Scale, Developer]
 prerequisites: ["A key with permission on the facturas resource", "In Mexico, issuing CFDI requires the Starter plan or higher and your CSD"]
@@ -59,7 +59,7 @@ curl "https://cordhq.app/api/v1/facturas?limit=20" \
 |---|---|
 | `estado` | `draft`, `open` (issued and awaiting payment), `paid`, `void` or `uncollectible`. |
 | `estado_fiscal` | `pending`, `issued` (registered with the tax provider), `cancelled` or `error`. |
-| `tipo` | `cfdi_40` (income CFDI, Mexico), `cfdi_egreso` (CFDI credit note), `proforma` (commercial document in Mexico and Spain), `commercial_invoice` (commercial invoice), `commercial_credit_note` (commercial credit note), `verifactu_invoice` or `verifactu_credit_note` (Spain with Verifactu). |
+| `tipo` | `cfdi_40` (income CFDI, Mexico), `cfdi_egreso` (CFDI credit note), `proforma` (commercial document in Mexico, Spain, and countries with authorized invoices), `commercial_invoice` (commercial invoice), `commercial_credit_note` (commercial credit note), `verifactu_invoice` or `verifactu_credit_note` (Spain with Verifactu). With issuing through the tax authority active: `arca_invoice` (Argentina), `nfse_invoice` and `nfe_invoice` (Brazil), `sii_invoice` (Chile), `dian_invoice` (Colombia), and `sunat_invoice` (Peru), with their `*_credit_note` credit notes and, in Chile, `sii_debit_note`. |
 
 ## Create a draft
 
@@ -68,15 +68,20 @@ curl "https://cordhq.app/api/v1/facturas?limit=20" \
 | Field | Required | Detail |
 |---|---|---|
 | `cliente_id` | Yes | A client in your organization. |
-| `items` | Yes | From 1 to 200 line items. Each with `descripcion` and `cantidad`; optional `precio_unitario`, `precio_negociado`, `producto_id`, `costo_unitario` and `tax_rate`. |
+| `items` | Yes | From 1 to 200 line items. Each with `descripcion` and `cantidad`; optional `precio_unitario`, `precio_negociado`, `producto_id`, `costo_unitario`, `tax_rate`, `exemption_reason` and, in Mexico, `clave_sat` and `clave_unidad_sat`. |
 | `currency` | No | Invoice currency; defaults to your account's. |
 | `due_date` | No | Due date as `YYYY-MM-DD`. |
 | `notas` | No | Up to 1000 characters. |
 | `iva_incluido` | No | `true` if prices already include tax. |
 | `document_mode` | No | `commercial` or `fiscal`. Without it, Cord issues a tax document if your plan includes it and your country has it enabled, and a commercial one otherwise. `fiscal` without the plan or an enabled country responds `400 invalid_request`. |
 | `fx_buffer_pct` | No | Coverage in percentage points over the reference exchange rate when `currency` differs from your accounting currency (`2` = +2%, capped at 25). Defaults to `0`. |
+| `descuento` | No | Document discount before tax: `{ "tipo": "porcentaje", "valor": 10 }` or `{ "tipo": "monto", "valor": 2500 }`. Cord calculates the amount and spreads it across the line items. See [Discounts and coupons](/en/docs/cotizacion/descuentos). |
+| `cupon` | No | A coupon code from your account. It wins over `descuento`. Its use is counted when the invoice is issued. |
+| `service_date`, `service_date_end` | No | Date or period of supply, `YYYY-MM-DD`. The end requires the start and can't be earlier. Without it, the invoice says it matches the issue date (required in Germany). |
+| `buyer_reference` | No | Buyer reference (BT-10 of the European e-invoice; in Germany, the public body's Leitweg-ID). Without it, the client's. If the client's electronic address is a Leitweg-ID, its check digits are verified and one that fails responds `400`. |
+| `purchase_order` | No | The client's purchase order number (BT-13). |
 
-`tax_rate` is a fraction (`0.16`, not `16`) and is validated against your tax catalog: you cannot declare an exempt line on a taxed sale. `0` means deliberately exempt; omitting it uses your account's rate.
+`tax_rate` is a fraction (`0.16`, not `16`) and is validated against your tax catalog: you cannot declare an exempt line on a taxed sale. `0` means deliberately exempt; omitting it uses your account's rate. `clave_sat` and `clave_unidad_sat` win over the product's keys; with neither, the CFDI uses 01010101 and H87. A key with an invalid format responds `400`.
 
 ```bash
 curl -X POST "https://cordhq.app/api/v1/facturas" \
@@ -99,7 +104,16 @@ If the invoice is in a currency other than your ledger currency and no verifiabl
 
 ## Get an invoice
 
-`GET /api/v1/facturas/{id}` returns the list fields plus `subtotal`, `impuestos`, `moneda_contable`, `tipo_cambio`, `total_contable`, `notas`, `emisor`, `receptor`, `conceptos` and `pagos`.
+`GET /api/v1/facturas/{id}` returns the list fields plus `subtotal`, `impuestos`, `moneda_contable`, `tipo_cambio`, `total_contable`, `notas`, `nota_credito_de`, `emisor`, `receptor`, `descuento`, `conceptos` and `pagos`.
+
+| Field | Details |
+|---|---|
+| `descuento` | `null`, or `{ tipo, valor, cupon, monto, moneda }`: the definition, the coupon it came from, and the amount before tax. `subtotal` is already net. |
+| `conceptos[].precio_unitario` | **Net** unit price, after the document discount, before tax. |
+| `conceptos[].subtotal` | The line's net base. |
+| `conceptos[].descuento` | The share of the document discount that went to that line; `0` if there's none. |
+| `conceptos[].clave_sat`, `conceptos[].clave_unidad_sat` | Mexico: the SAT keys the line was stamped with; `null` outside Mexico. |
+| `pagos` | Each payment with `monto`, `moneda`, `metodo`, `referencia`, and `cuando`. A charge that paid several invoices shows up on each one with its share. |
 
 ## Change status
 
@@ -117,11 +131,18 @@ If the invoice is in a currency other than your ledger currency and no verifiabl
 
 If an already stamped invoice cannot be voided directly, `void` responds `409` with `code: "credit_note_required"`: issue a credit note instead.
 
+In Mexico:
+
+- `void` requests the CFDI's cancellation under SAT reason **02**. If the SAT hasn't confirmed it yet, it responds `202` with `{ "data": { "id": "…", "estado": "open", "cancelacion": "pendiente" } }` and the invoice stays valid; `invoice.voided` isn't fired until it's confirmed. Replacement under reason 01 and the global invoice are only in the app.
+- `payment` on a **PPD** CFDI triggers the [automatic payment complement](/en/docs/pagos/facturacion#automatic-payment-complement) for that payment.
+
 ## Common errors
 
 | Code | When |
 |---|---|
-| `invalid_request` (400) | `cliente_id` or `items` is missing, a line has no description or quantity, or `due_date` is not `YYYY-MM-DD`. |
+| `invalid_request` (400) | `cliente_id` or `items` is missing, a line has no description or quantity, `due_date` is not `YYYY-MM-DD`, the discount isn't shaped `{ tipo, valor }`, or a Leitweg-ID fails its check digits. |
+| `coupon_no_existe` (404) | The coupon doesn't exist on your account. |
+| `coupon_inactivo`, `coupon_vencido`, `coupon_aun_no_vigente`, `coupon_agotado`, `coupon_agotado_cliente`, `coupon_moneda`, `coupon_requiere_cliente` (409) | The coupon doesn't apply to this invoice; the message says why. |
 | `invalid_state` (409) | The action does not apply to the current status (for example, sending a draft). Sending to a client with no email responds `400` with this same code. |
 | `credit_note_required` (409) | The invoice is already stamped and can't be voided directly: issue a credit note. |
 | `not_found` (404) | The invoice doesn't exist in your organization. |

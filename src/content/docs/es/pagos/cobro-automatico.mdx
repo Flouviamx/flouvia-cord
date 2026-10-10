@@ -1,0 +1,187 @@
+---
+title: "Cobro automático"
+seoTitle: "Cobro automático de facturas con método guardado y reintentos"
+description: "Tu cliente guarda una tarjeta o una cuenta bancaria en su portal y cada factura se le cobra en su fecha de vencimiento. Consentimiento, qué se cobra y cuándo, reintentos según el motivo del rechazo, avisos y cómo lo controlas tú."
+lastUpdated: "2026-10-10"
+reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Cuenta de Cord Payments activa", "Permiso Configurar cobros para permitirlo o apagarlo para todos", "Permiso Clientes para apagarlo a un cliente", "Portal del cliente creado"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Cobro automático</h1>
+  <p class="page-subtitle">Tu cliente autoriza una vez y cada factura se le cobra sola en su fecha de vencimiento. Si un cargo falla, Cord sabe cuándo reintentar y cuándo no.</p>
+</header>
+
+<Callout type="info">
+Esta función es nueva y puede no estar habilitada todavía en tu cuenta. Si no la ves, escríbenos.
+</Callout>
+
+## Qué es
+
+Con el cobro automático, **tu cliente** guarda una tarjeta o una cuenta bancaria en su
+[portal](/docs/pagos/portal-facturas) y autoriza a tu negocio a cobrarle ahí cada factura
+que le emitas a partir de ese día, en su fecha de vencimiento. Cord hace el cargo, aplica
+el pago a cada factura y, si el banco lo rechaza, decide si conviene reintentar, cuándo,
+o si hay que pedirle otro método al cliente.
+
+Lo **activa siempre el cliente**: es su autorización. Tú decides si tu negocio lo ofrece
+y puedes apagarlo, pero no puedes activarlo por él.
+
+## Requisitos
+
+| | Detalle |
+|---|---|
+| **Plan** | Todos los planes. |
+| **Cuenta** | [Cord Payments](/docs/pagos/onboarding) activa. Disponible en México, Estados Unidos, Canadá, Brasil, España, Reino Unido, Alemania y Francia. |
+| **Ofrecerlo** | **Cobro automático** encendido en **Ajustes › Cobros** (viene encendido), con el permiso **Configurar cobros**. |
+| **Apagarlo a un cliente** | Permiso **Clientes**, desde la ficha del cliente. |
+| **Métodos** | Tarjeta en cualquier divisa. Domiciliación SEPA para facturas en EUR (negocios en España, Alemania y Francia) y ACH para facturas en USD (negocios en Estados Unidos), si encendiste la [domiciliación bancaria](/docs/pagos/metodos#domiciliación-bancaria-sepa-y-ach). En MXN, solo tarjeta. |
+
+## Cómo lo activa tu cliente
+
+<DmAutopaySetup lang="es" />
+
+<Steps>
+1. Le compartes su [portal](/docs/pagos/portal-facturas) desde su ficha.
+2. En la tarjeta **Cobro automático**, tu cliente pulsa **Activar cobro automático**.
+3. Lee y marca la autorización: "Autorizo a [tu negocio] a cobrar a este método, en su
+   fecha de vencimiento, cada factura que me emita a partir de hoy. Puedo desactivarlo
+   en cualquier momento desde este portal." Sin marcarla no puede continuar.
+4. Pulsa **Continuar**, captura su tarjeta o su cuenta bancaria y pulsa **Guardar método**.
+5. Al volver ve "Listo: el cobro automático está activo." Si guardó una cuenta bancaria
+   que hay que verificar, ve "Estamos verificando tu cuenta bancaria…": el cobro
+   automático se activa en cuanto se confirma.
+</Steps>
+
+También puede activarlo **al pagar**: cuando paga varias facturas desde el portal, marca
+**Guardar este método para el cobro automático** junto con la misma autorización.
+
+**El consentimiento es evidencia, no un clic.** Cord registra en su servidor la fecha, la
+IP y el navegador de la autorización, la guarda como **pendiente** y solo activa el
+cobro automático cuando el procesador confirma que ese método quedó guardado para ese
+cliente. Si tu cliente cambia de método, el anterior se da de baja: nunca quedan dos
+autorizaciones vivas.
+
+## Qué se cobra y cuándo
+
+Una vez al día, Cord revisa a los clientes con el cobro automático activo y cobra las
+facturas que cumplen **todo** esto a la vez:
+
+| Condición | Por qué |
+|---|---|
+| Está emitida, abierta, con saldo, sin cancelación en trámite y no es de prueba. | Solo se cobra lo que se debe. |
+| Vence **hoy o antes** (o, si no tiene vencimiento, se emitió hoy o antes). | El cargo llega en la fecha pactada, no antes. |
+| Se emitió al menos **un día antes** del cargo. | Tu cliente recibe la factura antes de que se le cobre. |
+| Vence **el día de la autorización o después**. | Lo que ya debía antes de autorizar no se le carga por sorpresa: lo paga desde el portal. |
+| El método guardado **cubre su divisa** y tu negocio sigue aceptando ese método. | Una cuenta SEPA no paga dólares. |
+| No tiene un pago en proceso ni el ciclo de reintentos está detenido o esperando su fecha. | No se cobra dos veces. |
+
+- **Un cargo por cliente y por divisa.** Todas las facturas que tocan ese día en la misma
+  divisa se cobran juntas, hasta 50: un solo movimiento en el estado de cuenta de tu
+  cliente y, donde Cord cobra comisión, una sola comisión.
+- **Facturas recurrentes incluidas.** Una [factura recurrente](/docs/pagos/facturas-recurrentes)
+  emitida a un cliente con cobro automático se cobra igual que cualquier otra factura.
+- **México.** Un CFDI sustituido o en sustitución y la factura global no se cobran
+  automáticamente.
+- **Cargos a cuenta bancaria.** Tardan días en confirmarse. Mientras tanto, esas facturas
+  muestran **Pago en proceso** y no se pueden cobrar otra vez ni anular.
+
+## Avisos
+
+| A quién | Cuándo | Qué recibe |
+|---|---|---|
+| **Tu cliente** | Con cada factura que le envías mientras el cobro automático está activo. | El correo de la factura agrega: "Tienes el cobro automático activo: esta factura se cargará a tu [método] el [fecha]. Si prefieres pagarla antes, usa el botón." |
+| **Tu cliente** | Antes de cada cargo a cuenta SEPA y al autorizar un débito ACH. | El aviso que manda el procesador de pagos al titular de la cuenta. |
+| **Tu cliente** | Cuando un cargo automático no pasa. | Un correo con tu marca: qué pasó, la fecha del siguiente intento o lo que tiene que hacer, y el botón **Abrir mi portal**. |
+| **Tu equipo** | Cuando el cobro automático **se detiene**. | Una tarea con prioridad alta para hoy, por ejemplo "Cobro automático detenido: el método de [cliente] ya no sirve ([monto])". Un reintento programado no crea tarea. |
+
+## Reintentos inteligentes
+
+Cuando un cargo falla, Cord no reintenta a ciegas. Lee el motivo del rechazo y lo
+clasifica:
+
+| Motivo del rechazo | Qué hace Cord | Cobro automático |
+|---|---|---|
+| **Tarjeta robada, extraviada, bloqueada o marcada como fraude** | No reintenta nunca. | Se apaga y se da de baja el método. Tu cliente debe registrar otro. |
+| **Autorización de cargo retirada** (mandato revocado, cargo no autorizado) | No reintenta. | Se apaga y se da de baja el método. |
+| **Método que ya no sirve** (tarjeta vencida, datos incorrectos, cuenta cerrada o inválida) | No reintenta: pide otro método. | Se apaga hasta que tu cliente registre otro. |
+| **El banco pide autenticación** | No reintenta: un cargo sin el titular presente no puede pasar esa verificación. Le pide a tu cliente pagar desde su portal. | Sigue activo. |
+| **Fondos insuficientes** (tarjeta) | Reintenta el siguiente **1 o 16 del mes**, si cae entre 2 y 7 días después; si no, a los 3 días. | Sigue activo. |
+| **Falla técnica del banco emisor** | Reintenta al día siguiente. | Sigue activo. |
+| **Otros rechazos** (tarjeta) | Reintenta a los **2, 4 y 7 días**. | Sigue activo. |
+
+- **Tarjeta:** hasta **4 intentos** (el primero y tres reintentos). Después, el cobro
+  de esa divisa se detiene "sin éxito tras varios intentos" y tu cliente paga desde su
+  portal.
+- **Cargo a cuenta bancaria (SEPA o ACH):** solo se reintenta por **fondos
+  insuficientes**, hasta **3 intentos** y dentro de **30 días** (SEPA) o **40 días** (ACH)
+  desde el primero, los mismos topes que aplica el esquema bancario. El reintento cae el
+  siguiente 1 o 16 del mes si está entre 3 y 7 días después; si no, a los 4 días.
+  Cualquier otro rechazo de un débito lo resuelve tu cliente con su banco.
+- **Un rechazo cuenta una vez**, aunque el banco lo avise por dos caminos.
+- **El ciclo vuelve a empezar** cuando un cargo de esa divisa pasa (automático o desde el
+  portal) o cuando tu cliente guarda un método nuevo.
+
+## Qué ves en Cord
+
+En la ficha del cliente, el bloque **Portal del cliente** muestra:
+
+- **Cobro automático:** el método con el que está activo (por ejemplo, "Visa •••• 4242"
+  o "Cuenta SEPA •••• 3000"), o **Inactivo** con la nota "Lo activa tu cliente desde su
+  portal, con su autorización."
+- **Reintento programado:** "Intento 1 rechazado en MXN. Siguiente intento: 16 de
+  octubre de 2026."
+- **Detenido:** "Detenido en MXN: el banco pide que el cliente confirme el pago."
+- **Apagado por el sistema:** "Se desactivó solo: el banco bloqueó la tarjeta."
+
+<DmClientPortalCard lang="es" />
+
+Además, cada factura registra en su historial el cargo que no pasó ("El cobro
+automático no pasó") y, cuando pasa, el pago como cualquier otro.
+
+## Apagar el cobro automático
+
+| Quién | Dónde | Qué pasa |
+|---|---|---|
+| **Tu cliente** | En su portal, **Desactivar**. | Deja de cobrarse y su método guardado se da de baja. Sus facturas siguen en el portal para pagarlas cuando quiera. |
+| **Tú, para un cliente** | En su ficha, **Desactivar cobro automático** (permiso Clientes). | Lo mismo. Tu cliente puede volver a activarlo desde su portal. |
+| **Tú, para todos** | **Ajustes › Cobros › Cobro automático** (permiso Configurar cobros). | Deja de cobrarse a todos y deja de ofrecerse en el portal. Los métodos guardados no se borran: si lo vuelves a encender, se reanuda con ellos. |
+
+Desactivar el link del portal **no** apaga el cobro automático.
+
+## Límites
+
+- Solo con Cord Payments: no funciona con Mercado Pago ni en Colombia, Argentina, Chile y Perú.
+- Un método guardado por cliente.
+- Hasta 50 facturas por cargo, todas en la misma divisa.
+- Lo que el cliente ya debía al autorizar no se cobra automáticamente.
+- Los cargos salen una vez al día; un cargo a cuenta bancaria tarda días en confirmarse.
+
+## Problemas comunes
+
+**Mi cliente no ve la opción de cobro automático.** Revisa que **Cobro automático** esté
+encendido en **Ajustes › Cobros** y que tu cuenta de Cord Payments esté activa.
+
+**El cobro automático está activo pero una factura no se cobró.** Revisa que ya haya
+vencido, que se haya emitido al menos un día antes, que venza después de la fecha de
+autorización y que el método cubra su divisa (por ejemplo, una cuenta SEPA no cubre una
+factura en USD).
+
+**Se apagó solo.** El banco rechazó el método de forma definitiva (tarjeta bloqueada,
+autorización retirada o método vencido). Tu cliente debe registrar otro método desde su
+portal.
+
+**Mi cliente dice que su banco le pide confirmar.** Es un rechazo por autenticación: tu
+cliente paga esa factura desde su portal y el cobro automático sigue activo para las
+siguientes.
+
+## Relacionadas
+
+- [Portal del cliente: facturas y pagos](/docs/pagos/portal-facturas)
+- [Métodos de cobro](/docs/pagos/metodos)
+- [Recordatorios automáticos](/docs/pagos/recordatorios)
+- [Facturas recurrentes](/docs/pagos/facturas-recurrentes)
+- [Tareas y seguimiento](/docs/gestion/tareas)
+- [Reembolsos](/docs/pagos/reembolsos)
