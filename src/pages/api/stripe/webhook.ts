@@ -30,6 +30,7 @@ import { reconcileInvoiceCommission } from '../../../lib/invoice-payment-fees';
 import { cobroCancelado, cobroConfirmado, cobroEnProceso, cobroFallido, mandatoActualizado, metodoGuardado } from '../../../lib/cobros/webhook';
 import { resolverTipoMetodo } from '../../../lib/cobros/agrupados';
 import { metodoAnalitica } from '../../../lib/cobros/metodos';
+import { sincronizarDominiosDeCobro } from '../../../lib/cobros/billeteras-org';
 import { invalidateMoneyCaches } from '../../../lib/queries';
 import { fromMinorUnits, normalizeCurrency, toMinorUnits } from '../../../lib/currency';
 import { log } from '../../../lib/log';
@@ -1512,6 +1513,15 @@ async function updateAccountStatus(account: any) {
             stripe_capacidades = ${JSON.stringify(capacidadesDeCuenta(account))}::jsonb
             where id = ${orgId} returning id`);
     if (!updated.length) throw new Error(`Cuenta de cobros no actualizada para organización ${orgId}`);
+
+    // Apple Pay y Google Pay: con cargos directos el dominio del formulario se
+    // registra en la cuenta conectada. Se revisa en CADA aviso con la cuenta
+    // activa —no solo en el cambio a activa— porque el sondeo de Ajustes ›
+    // Cobros suele escribir `stripe_charges_enabled` antes de que llegue este
+    // aviso, y el cambio ya no se vería aquí. Idempotente y en segundo plano:
+    // nunca condiciona el procesamiento del evento. Nace apagado
+    // (`CORD_WALLETS_ENABLED`); ver src/lib/cobros/billeteras-org.ts.
+    if (chargesEnabled) after(sincronizarDominiosDeCobro(orgId, account.id));
 
     if (before.length) {
         const prev = before[0];

@@ -33,6 +33,7 @@
     "security:billing-live": "node --experimental-strip-types --no-warnings --import ./scripts/lib/ts-resolve.mjs --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/verify-stripe-billing.mjs",
     "stripe:us-tax-meter": "node --experimental-strip-types --no-warnings --import ./scripts/lib/ts-resolve.mjs --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/stripe-us-tax-meter.mjs",
     "stripe:us-tax-items": "node --experimental-strip-types --no-warnings --import ./scripts/lib/ts-resolve.mjs --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/stripe-us-tax-items.mjs",
+    "stripe:payment-domains": "node --experimental-strip-types --no-warnings --import ./scripts/lib/ts-resolve.mjs --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/stripe-payment-domains.mjs",
     "security:billing-db": "node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/verify-billing-db.mjs",
     "security:rls": "node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/rls-audit.mjs",
     "security:tenancy": "node scripts/tenancy-lint.mjs",
