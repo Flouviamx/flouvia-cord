@@ -1,4 +1,6 @@
 import { sql, withOrgTx } from '../db';
+import { currencyDecimals } from '../currency';
+import { logInvoiceEvent } from './timeline';
 
 export const invoicePaymentLock = (orgId: string, pi: string) => sql`
   select pg_advisory_xact_lock(hashtextextended(${`invoice-payment:${orgId}:${pi}`}, 0))`;
@@ -78,6 +80,11 @@ export async function reconcileInvoice(orgId: string, id: string) {
  * si el webhook del reembolso llegó antes que el del pago, la capacidad no
  * alcanza y el reparto se hace al asentar el cobro
  * (`allocatePendingInvoiceRefunds`). Ejecutar bajo `invoicePaymentLock`.
+ *
+ * Un reembolso pedido DESDE una factura en Cord (solicitud de alcance
+ * 'factura', `src/lib/cobros/reembolsos.ts`) va solo a esa factura: la persona
+ * eligió cuál devolver, y el orden inverso le reabriría otra. Si esa factura ya
+ * no tiene el pago (se movió a un sustituto), rige la regla general.
  */
 export const allocateInvoiceRefund = (orgId: string, refundId: string) => sql`
   with r as (
@@ -86,6 +93,12 @@ export const allocateInvoiceRefund = (orgId: string, refundId: string) => sql`
        and status not in ('failed', 'canceled')
        and not exists (select 1 from documento_reembolso_asignaciones a
          where a.org_id = ${orgId} and a.stripe_refund_id = ${refundId})
+  ), objetivo as (
+    select s.documento_id from documento_reembolso_solicitudes s, r
+     where s.org_id = ${orgId} and s.stripe_refund_id = r.stripe_refund_id and s.alcance = 'factura'
+       and exists (select 1 from documento_pagos p where p.org_id = ${orgId} and p.documento_id = s.documento_id
+         and p.stripe_payment_intent_id = r.stripe_payment_intent_id)
+     limit 1
   ), cap as (
     select p.documento_id, max(p.aplicado_at) as orden_at,
            sum(p.monto) - coalesce((select sum(a.monto) from documento_reembolso_asignaciones a
@@ -96,6 +109,7 @@ export const allocateInvoiceRefund = (orgId: string, refundId: string) => sql`
       from documento_pagos p, r
      where p.org_id = ${orgId} and p.stripe_payment_intent_id = r.stripe_payment_intent_id
        and p.currency = r.currency
+       and (not exists (select 1 from objetivo) or p.documento_id = (select documento_id from objetivo))
      group by p.documento_id, r.stripe_payment_intent_id
   ), orden as (
     select documento_id, greatest(capacidad, 0) as capacidad,
@@ -133,50 +147,140 @@ export async function allocatePendingInvoiceRefunds(orgId: string, paymentIntent
   for (const doc of docs) await reconcileInvoice(orgId, String(doc.documento_id));
 }
 
-/** Conserva reembolsos aun si su webhook llega antes que el pago de la factura. */
+/** Qué cambió con UNA llamada: lo que el historial de la factura cuenta una sola vez. */
+export interface InvoiceRefundOutcome {
+  /** El reembolso pasó a efectivo o a fallido en ESTA llamada (null: nada nuevo). */
+  transicion: 'succeeded' | 'failed' | null;
+  /** Facturas cuyo saldo se recalculó. */
+  documentos: string[];
+}
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const solicitudValida = (id: string | null | undefined) => (id && UUID_RE.test(id) ? id : null);
+
+// Antes y después del upsert en la MISMA sentencia: el CTE `prev` ve la fila
+// como estaba. Bajo `invoicePaymentLock` el webhook y la ruta se serializan, así
+// que solo uno de los dos ve la transición y el historial no la cuenta dos veces.
+const transicionDe = (antes: unknown, despues: unknown): InvoiceRefundOutcome['transicion'] => {
+  const d = despues === null || despues === undefined ? null : String(despues);
+  if (!d || d === antes) return null;
+  if (d === 'succeeded') return 'succeeded';
+  if ((d === 'failed' || d === 'canceled') && antes !== 'failed' && antes !== 'canceled') return 'failed';
+  return null;
+};
+
+const importe = (monto: number, currency: string) => {
+  const dec = currencyDecimals(currency);
+  return `${Number(monto).toFixed(dec)} ${currency}`;
+};
+
+/** Una línea en el historial de cada factura tocada, solo en la transición. */
+async function logRefundTransition(orgId: string, transicion: InvoiceRefundOutcome['transicion'], partes: Array<{ documentoId: string; monto: number }>, currency: string) {
+  if (!transicion) return;
+  for (const p of partes) {
+    await logInvoiceEvent(orgId, p.documentoId, 'refund', transicion === 'succeeded'
+      ? `Reembolso de ${importe(p.monto, currency)}`
+      : `El reembolso de ${importe(p.monto, currency)} no se completó`);
+  }
+}
+
+/**
+ * Conserva reembolsos aun si su webhook llega antes que el pago de la factura.
+ *
+ * Es el ÚNICO camino del ledger para un reembolso de Stripe: lo usan el webhook
+ * (reembolsos hechos dentro o fuera de Cord) y la ruta de reembolso de la
+ * factura. La idempotencia es el índice único `(org_id, stripe_refund_id)`: el
+ * webhook que llega después de un reembolso pedido en Cord solo actualiza su
+ * estado. `solicitudId` (metadata `cord_reembolso` del reembolso) liga la
+ * solicitud hecha en Cord ANTES de repartir, para que el reparto la respete
+ * llegue primero quien llegue.
+ */
 export async function recordInvoiceRefund(orgId: string, refund: {
   id: string; paymentIntentId: string; amount: number; currency: string; status: string; eventCreated: number;
-}) {
+  solicitudId?: string | null;
+}): Promise<InvoiceRefundOutcome> {
   if (!refund.id.startsWith('re_') || !refund.paymentIntentId.startsWith('pi_')
     || !Number.isFinite(refund.amount) || refund.amount <= 0 || !Number.isSafeInteger(refund.eventCreated) || refund.eventCreated < 0
     || !['pending', 'requires_action', 'succeeded', 'failed', 'canceled'].includes(refund.status)) {
     throw new Error('El reembolso no contiene un desglose válido.');
   }
+  const solicitud = solicitudValida(refund.solicitudId);
   // El llamador consulta el estado vigente al proveedor. No se usan snapshots
   // antiguos del webhook para decidir qué dinero ya salió.
-  const [, , , docs] = await withOrgTx(orgId, invoicePaymentLock(orgId, refund.paymentIntentId), sql`
-    insert into documento_reembolsos (org_id, stripe_refund_id, stripe_payment_intent_id, monto, currency, status, provider_event_created)
-    values (${orgId}, ${refund.id}, ${refund.paymentIntentId}, ${refund.amount}, ${refund.currency}, ${refund.status}, ${refund.eventCreated})
-    on conflict (org_id, stripe_refund_id) where stripe_refund_id is not null do update set
-      status = excluded.status, provider_event_created = excluded.provider_event_created, updated_at = now()
-    where documento_reembolsos.stripe_payment_intent_id = excluded.stripe_payment_intent_id
-      and documento_reembolsos.currency = excluded.currency and documento_reembolsos.monto = excluded.monto
-      and documento_reembolsos.provider_event_created <= excluded.provider_event_created`,
+  const [, , [cambio], , docs, partes] = await withOrgTx(orgId, invoicePaymentLock(orgId, refund.paymentIntentId),
+  sql`
+    update documento_reembolso_solicitudes set stripe_refund_id = ${refund.id}, estado = 'registrada', updated_at = now()
+     where org_id = ${orgId} and id = ${solicitud}::uuid and proveedor = 'stripe'
+       and stripe_payment_intent_id = ${refund.paymentIntentId}
+       and (stripe_refund_id is null or stripe_refund_id = ${refund.id})`,
+  sql`
+    with prev as (
+      select status from documento_reembolsos where org_id = ${orgId} and stripe_refund_id = ${refund.id}
+    ), up as (
+      insert into documento_reembolsos (org_id, stripe_refund_id, stripe_payment_intent_id, monto, currency, status, provider_event_created)
+      values (${orgId}, ${refund.id}, ${refund.paymentIntentId}, ${refund.amount}, ${refund.currency}, ${refund.status}, ${refund.eventCreated})
+      on conflict (org_id, stripe_refund_id) where stripe_refund_id is not null do update set
+        status = excluded.status, provider_event_created = excluded.provider_event_created, updated_at = now()
+      where documento_reembolsos.stripe_payment_intent_id = excluded.stripe_payment_intent_id
+        and documento_reembolsos.currency = excluded.currency and documento_reembolsos.monto = excluded.monto
+        and documento_reembolsos.provider_event_created <= excluded.provider_event_created
+      returning status
+    )
+    select (select status from prev) as antes, (select status from up) as despues`,
   allocateInvoiceRefund(orgId, refund.id),
   sql`
     select distinct documento_id from documento_pagos
-    where org_id = ${orgId} and stripe_payment_intent_id = ${refund.paymentIntentId} and currency = ${refund.currency}`);
-  for (const doc of docs) await reconcileInvoice(orgId, String(doc.documento_id));
+    where org_id = ${orgId} and stripe_payment_intent_id = ${refund.paymentIntentId} and currency = ${refund.currency}`,
+  sql`
+    select documento_id, monto from documento_reembolso_asignaciones
+     where org_id = ${orgId} and stripe_refund_id = ${refund.id}
+     order by documento_id`);
+  const documentos = docs.map((doc: any) => String(doc.documento_id));
+  for (const doc of documentos) await reconcileInvoice(orgId, doc);
+  const transicion = transicionDe(cambio?.antes, cambio?.despues);
+  await logRefundTransition(orgId, transicion,
+    (partes ?? []).map((p: any) => ({ documentoId: String(p.documento_id), monto: Number(p.monto) })), refund.currency);
+  return { transicion, documentos };
 }
 
 /** Mismo contrato que `recordInvoiceRefund`, con el par de ids de Mercado Pago. */
 export async function recordMpInvoiceRefund(orgId: string, refund: {
   id: string; paymentId: string; amount: number; currency: string; status: string;
-}) {
+  solicitudId?: string | null;
+}): Promise<InvoiceRefundOutcome> {
   if (!refund.id || !refund.paymentId || !Number.isFinite(refund.amount) || refund.amount <= 0
     || !/^[A-Z]{3}$/.test(refund.currency)
     || !['pending', 'succeeded', 'failed'].includes(refund.status)) {
     throw new Error('El reembolso no contiene un desglose válido.');
   }
-  const [, , docs] = await withOrgTx(orgId, invoicePaymentLock(orgId, refund.paymentId), sql`
-    insert into documento_reembolsos (org_id, mp_refund_id, mp_payment_id, monto, currency, status)
-    values (${orgId}, ${refund.id}, ${refund.paymentId}, ${refund.amount}, ${refund.currency}, ${refund.status})
-    on conflict (org_id, mp_refund_id) where mp_refund_id is not null do update set
-      status = excluded.status, updated_at = now()
-    where documento_reembolsos.mp_payment_id = excluded.mp_payment_id
-      and documento_reembolsos.currency = excluded.currency and documento_reembolsos.monto = excluded.monto`,
+  const solicitud = solicitudValida(refund.solicitudId);
+  const [, , [cambio], docs] = await withOrgTx(orgId, invoicePaymentLock(orgId, refund.paymentId),
+  sql`
+    update documento_reembolso_solicitudes set mp_refund_id = ${refund.id}, estado = 'registrada', updated_at = now()
+     where org_id = ${orgId} and id = ${solicitud}::uuid and proveedor = 'mercadopago'
+       and mp_payment_id = ${refund.paymentId}
+       and (mp_refund_id is null or mp_refund_id = ${refund.id})`,
+  sql`
+    with prev as (
+      select status from documento_reembolsos where org_id = ${orgId} and mp_refund_id = ${refund.id}
+    ), up as (
+      insert into documento_reembolsos (org_id, mp_refund_id, mp_payment_id, monto, currency, status)
+      values (${orgId}, ${refund.id}, ${refund.paymentId}, ${refund.amount}, ${refund.currency}, ${refund.status})
+      on conflict (org_id, mp_refund_id) where mp_refund_id is not null do update set
+        status = excluded.status, updated_at = now()
+      where documento_reembolsos.mp_payment_id = excluded.mp_payment_id
+        and documento_reembolsos.currency = excluded.currency and documento_reembolsos.monto = excluded.monto
+      returning status
+    )
+    select (select status from prev) as antes, (select status from up) as despues`,
   sql`
     select distinct documento_id from documento_pagos
     where org_id = ${orgId} and mp_payment_id = ${refund.paymentId} and currency = ${refund.currency}`);
-  for (const doc of docs) await reconcileInvoice(orgId, String(doc.documento_id));
+  const documentos = docs.map((doc: any) => String(doc.documento_id));
+  for (const doc of documentos) await reconcileInvoice(orgId, doc);
+  const transicion = transicionDe(cambio?.antes, cambio?.despues);
+  // Mercado Pago no reparte: un pago de Mercado Pago paga UNA factura.
+  await logRefundTransition(orgId, transicion,
+    documentos.length === 1 ? [{ documentoId: documentos[0], monto: refund.amount }] : [], refund.currency);
+  return { transicion, documentos };
 }

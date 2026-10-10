@@ -22,6 +22,7 @@ export type InvoiceEventType =
     | 'payment'      // abono aplicado
     | 'payment_failed' // un cobro en línea (portal o automático) no pasó
     | 'paid'         // saldo en cero
+    | 'refund'       // reembolso de un pago: solicitado, efectivo o fallido
     | 'reminder'     // etapa de la escalera de cobranza
     | 'void'         // anulada
     | 'credit_note'  // nota de crédito emitida

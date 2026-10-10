@@ -618,7 +618,12 @@ async function recordRefundEvent(refundOrCharge: any, account: string | undefine
     const currency = String(refundOrCharge.currency || '').toUpperCase();
     if (!Number.isSafeInteger(amount) || amount <= 0 || !/^[A-Z]{3}$/.test(currency)) throw new Error('Importe o divisa del reembolso inválidos.');
     if (paymentIntentId) {
-        await recordInvoiceRefund(orgId, { id: refundId, paymentIntentId, amount: fromMinorUnits(amount, currency), currency, status, eventCreated });
+        // `cord_reembolso`: la solicitud hecha en Cord desde una factura. Si este
+        // evento llega antes que la respuesta a la ruta, el reparto ya la respeta.
+        await recordInvoiceRefund(orgId, {
+            id: refundId, paymentIntentId, amount: fromMinorUnits(amount, currency), currency, status, eventCreated,
+            solicitudId: typeof refundOrCharge?.metadata?.cord_reembolso === 'string' ? refundOrCharge.metadata.cord_reembolso : null,
+        });
         invalidateMoneyCaches(orgId);
     }
     // Reembolso EFECTIVO: monto negativo contra el revenue. Va antes del enlace

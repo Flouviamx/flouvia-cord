@@ -78,6 +78,9 @@ beforeAll(async () => {
   for (const sentencia of splitStatements(portal.slice(0, fin)).filter((x: string) => /\b(documento_reembolso_asignaciones|pagos_agrupados|pago_agrupado_documentos)\b/.test(x) && !/grant /.test(x))) {
     await db.exec(sentencia);
   }
+  // Una solicitud de reembolso hecha en Cord dirige el reparto (cobros/reembolsos.ts).
+  await db.exec('create table users (id uuid primary key)');
+  await db.exec(schema.slice(schema.indexOf('-- BEGIN reembolsos-facturas'), schema.indexOf('-- END reembolsos-facturas')));
   m.tx.mockImplementation((orgId: string, ...queries: Array<{ text: string; values: unknown[] }>) => db.transaction(async (tx) => {
     await tx.query("select set_config('app.org_id', $1, true)", [orgId]);
     const results = [];

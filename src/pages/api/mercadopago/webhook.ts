@@ -248,6 +248,14 @@ async function registrarReembolsosDeCobro(orgId: string, pago: MpPayment): Promi
             accion: 'cord_pagos.reembolso_actualizado', entidad: 'refund', entidad_id: String(r.id),
             detalle: `Mercado Pago ${r.monto} ${pago.moneda}; ${r.status}`,
         });
+        // Si la cotización ya se facturó, su cobro también está en el ledger de la
+        // factura (carryQuotePayments): el reembolso tiene que reabrirla igual que
+        // el de Stripe. Mismo camino, mismo índice único: un reenvío no resta dos veces.
+        try {
+            await recordMpInvoiceRefund(orgId, { id: r.id, paymentId: pago.id, amount: r.monto, currency: pago.moneda, status: r.status });
+        } catch (err) {
+            log.error('no se pudo llevar el reembolso de Mercado Pago a la factura', { route: 'mercadopago/webhook', orgId, err });
+        }
     }
     // El vendedor lo ve en la cotización, no solo en Mercado Pago.
     const total = pago.reembolsos.filter((r) => r.status === 'succeeded').reduce((a, r) => a + r.monto, 0);

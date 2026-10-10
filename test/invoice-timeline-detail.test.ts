@@ -30,6 +30,12 @@ describe('detalle de la actividad de una factura', () => {
         expect(invoiceEventDetail('sent', 'Enviada automáticamente', 'en')).toBe('Sent automatically');
         expect(invoiceEventDetail('payment', 'Abono de $96,000.00 MXN', 'en')).toBe('Payment of $96,000.00 MXN');
         expect(invoiceEventDetail('created', 'Error al emitir: desconocido', 'en')).toBe('Issuing failed: unknown');
+        // Reembolsos (fiscal/reconciliation.ts y cobros/reembolsos.ts).
+        expect(invoiceEventDetail('refund', 'Reembolso de 40.00 MXN', 'en')).toBe('Refund of 40.00 MXN');
+        expect(invoiceEventDetail('refund', 'Reembolso de 40.00 MXN solicitado', 'en')).toBe('Refund of 40.00 MXN requested');
+        expect(invoiceEventDetail('refund', 'Reembolso de 160.00 EUR solicitado (cobro de 2 facturas)', 'en')).toBe('Refund of 160.00 EUR requested (payment of 2 invoices)');
+        expect(invoiceEventDetail('refund', 'El reembolso de 40.00 MXN no se completó', 'en')).toBe('The refund of 40.00 MXN did not go through');
+        expect(invoiceEventDetail('refund', 'Reembolso de 40.00 MXN', 'es')).toBe('Reembolso de 40.00 MXN');
     });
 
     it('traduce la sustitución, la factura global y el motivo del SAT', () => {
