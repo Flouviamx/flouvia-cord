@@ -3,6 +3,7 @@
 // Un mockup grande (estilo ElevenLabs "Flows") que cambia según la pestaña activa
 // debajo; barra indicadora que se desliza + rellena como temporizador de autoplay.
 import ShowcaseMockup from './ShowcaseMockup.astro';
+import { navEnFrase } from '../../lib/producto';
 import CordDynamicBg from '../CordDynamicBg.jsx';
 
 // Shader estándar de Cord dentro de .shw-stage. La `base` es EXACTAMENTE el gris
@@ -32,8 +33,8 @@ const { slug, tabs, nav, isEn = false } = Astro.props as Props;
         <p class="shw-eyebrow reveal">{isEn ? 'WHY IT MATTERS' : 'POR QUÉ IMPORTA'}</p>
         <h2 class="shw-h2 masked-title">
             {isEn
-                ? `This is what ${nav.toLowerCase()} actually changes.`
-                : `Esto es lo que ${nav.toLowerCase()} cambia de verdad.`}
+                ? `This is what ${navEnFrase(nav)} actually changes.`
+                : `Esto es lo que ${navEnFrase(nav)} cambia de verdad.`}
         </h2>
     </div>
 

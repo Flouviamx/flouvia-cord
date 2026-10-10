@@ -32,8 +32,8 @@ const base = isEn ? `${SITE}/en` : SITE;
 // desactualizada sobre otra empresa es una afirmación falsa con su logo al lado.
 const FILAS = isEn ? [
     { q: 'Where the invoice lives', hoy: 'A PDF in an email thread, plus a row in a spreadsheet', cord: 'A record with its own state: draft, open, paid, void or uncollectible' },
-    { q: 'How the client pays it', hoy: 'They read the PDF, then look for your bank details somewhere else', cord: 'The invoice has its own page with a card checkout for the balance' },
-    { q: 'How you know the balance', hoy: 'Someone reconciles the bank statement against the spreadsheet by hand', cord: 'Card payments and wires you record both reduce the same balance automatically' },
+    { q: 'How the client pays it', hoy: 'They read the PDF, then look for your bank details somewhere else', cord: 'The invoice has its own page where the client pays the balance, in full or in part, with the methods you have turned on' },
+    { q: 'How you know the balance', hoy: 'Someone reconciles the bank statement against the spreadsheet by hand', cord: 'Online payments and the wires you record both reduce the same balance automatically' },
     { q: 'Numbering', hoy: 'A counter someone maintains, easy to skip or duplicate', cord: 'Sequential per country and document type, reserved transactionally at issue time' },
     { q: 'Stamping (Mexico)', hoy: 'You log into the PAC portal and re-key the invoice there', cord: 'CFDI 4.0 stamped from Cord under your own digital seal certificate' },
     { q: 'Cancelling', hoy: 'Back to the portal, and the spreadsheet may never find out', cord: 'Cancelled with the SAT and only marked void once the SAT confirms' },
@@ -42,8 +42,8 @@ const FILAS = isEn ? [
     { q: 'From your own systems', hoy: 'Copy and paste', cord: 'v1 API, webhooks per state change, and an MCP server' },
 ] : [
     { q: 'Dónde vive la factura', hoy: 'Un PDF en un hilo de correo, más una fila en una hoja de cálculo', cord: 'Un registro con su propio estado: borrador, abierta, pagada, anulada o incobrable' },
-    { q: 'Cómo la paga el cliente', hoy: 'Lee el PDF y luego busca tus datos bancarios en otro lado', cord: 'La factura tiene su propia página con cobro del saldo con tarjeta' },
-    { q: 'Cómo sabes el saldo', hoy: 'Alguien concilia el estado de cuenta contra la hoja de cálculo a mano', cord: 'Los pagos con tarjeta y las transferencias que registras bajan el mismo saldo' },
+    { q: 'Cómo la paga el cliente', hoy: 'Lee el PDF y luego busca tus datos bancarios en otro lado', cord: 'La factura tiene su propia página donde tu cliente paga el saldo, completo o en partes, con los métodos que tengas activos' },
+    { q: 'Cómo sabes el saldo', hoy: 'Alguien concilia el estado de cuenta contra la hoja de cálculo a mano', cord: 'Los pagos en línea y las transferencias que registras bajan el mismo saldo' },
     { q: 'La numeración', hoy: 'Un contador que alguien mantiene, fácil de saltar o duplicar', cord: 'Consecutiva por país y tipo de documento, reservada transaccionalmente al emitir' },
     { q: 'El timbrado (México)', hoy: 'Entras al portal del PAC y recapturas ahí la factura', cord: 'CFDI 4.0 timbrado desde Cord con tu propio Certificado de Sello Digital' },
     { q: 'Cancelar', hoy: 'De vuelta al portal, y la hoja de cálculo puede no enterarse nunca', cord: 'Se cancela ante el SAT y solo se marca anulada cuando el SAT lo confirma' },
@@ -56,13 +56,13 @@ const FILAS = isEn ? [
 // enumera ventajas no es una comparación, es un anuncio — y la Regla 15 aplica
 // igual aquí que en la app.
 const LIMITES = isEn ? [
-    'Outside Mexico, Cord issues a commercial invoice: it does not file or clear anything with your local tax authority.',
-    'Invoice payments are card-only for now. SPEI is a Mexico-only rail with per-client CLABE requirements and is not wired into the invoice page yet.',
-    'There is no recurring invoicing yet: a Cord subscription charges the card each cycle, but does not issue an invoice per period.',
+    'Outside Mexico, Cord does not file anything with your tax authority yet. In Germany and France it generates and attaches the European e-invoice without transmitting it; in Spain, Argentina, Brazil, Chile, Colombia and Peru the connection to the authority is being activated, and until then you issue a commercial invoice or a pro forma.',
+    'Online, the client pays by card, with Mercado Pago where you have it, or by SEPA or ACH direct debit where it is being rolled out. Bank transfers are recorded by hand: automatic matching of transfers to invoices is not connected yet.',
+    'Recurring invoices go out monthly from the app, from the Professional plan; quarterly or yearly schedules are only available through the API.',
 ] : [
-    'Fuera de México, Cord emite una factura comercial: no presenta ni autoriza nada ante la autoridad fiscal de tu país.',
-    'El pago de facturas es con tarjeta por ahora. SPEI es un riel exclusivo de México y exige CLABE por cliente; todavía no está conectado a la página de la factura.',
-    'Todavía no hay facturación recurrente: una suscripción de Cord cobra la tarjeta cada ciclo, pero no emite una factura por periodo.',
+    'Fuera de México, Cord todavía no presenta nada ante tu autoridad fiscal. En Alemania y Francia genera y adjunta la factura electrónica europea, sin transmitirla; en España, Argentina, Brasil, Chile, Colombia y Perú la conexión con la autoridad está en activación, y mientras tanto emites factura comercial o proforma.',
+    'En línea, tu cliente paga con tarjeta, con Mercado Pago donde lo tienes, o con domiciliación SEPA o ACH donde se está habilitando. Las transferencias se registran a mano: la conciliación automática de transferencias con la factura todavía no está conectada.',
+    'Las facturas recurrentes salen cada mes desde la app, desde el plan Profesional; la recurrencia trimestral o anual solo existe por API.',
 ];
 
 const FAQS = isEn ? [
