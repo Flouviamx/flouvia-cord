@@ -195,7 +195,7 @@ export const COMPARATIVA: CompareGroup[] = [
             { label: 'Aprobación parcial por línea', free: true, starter: true, pro: true, scale: true, developer: true },
             { label: 'Pipeline Kanban (arrastrar para avanzar)', free: true, starter: true, pro: true, scale: true, developer: true },
             { label: 'Tareas y recordatorios (CRM)', free: true, starter: true, pro: true, scale: true, developer: true },
-            { label: 'Impuestos configurables (IVA, IEPS, retenciones)', free: true, starter: true, pro: true, scale: true, developer: true },
+            { label: 'Impuestos configurables por línea (IVA, retenciones, exentos)', free: true, starter: true, pro: true, scale: true, developer: true },
         ],
     },
     {

@@ -137,7 +137,7 @@ export const COMPARATIVA_EN: CompareGroup[] = [
             { label: 'Partial approval per line item', free: true, starter: true, pro: true, scale: true, developer: true },
             { label: 'Kanban pipeline (drag to advance)', free: true, starter: true, pro: true, scale: true, developer: true },
             { label: 'Tasks and reminders (CRM)', free: true, starter: true, pro: true, scale: true, developer: true },
-            { label: 'Configurable taxes (VAT, excise, withholdings)', free: true, starter: true, pro: true, scale: true, developer: true },
+            { label: 'Configurable taxes per line (VAT, withholdings, exempt)', free: true, starter: true, pro: true, scale: true, developer: true },
         ],
     },
     {
