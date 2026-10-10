@@ -21,6 +21,7 @@ import {
     type UsAddress, type UsAddressFaltante,
 } from './core';
 import { loadUsTaxConfig, usTaxConfigProblem, usTaxEntitled, type UsTaxConfig } from './calculo';
+import { usTaxCuota, type UsTaxCuota } from './cuota';
 import {
     createUsRegistration, expireUsRegistration, listActiveUsRegistrations, syncUsTaxSettings,
 } from './stripe';
@@ -168,11 +169,15 @@ async function sincronizarRegistrosProveedor(orgId: string, account: string, loc
 /** Estado para Ajustes y los editores: preferencia, si corre hoy y qué falta. */
 export async function usTaxStatus(orgId: string): Promise<{
     config: UsTaxConfig; entitled: boolean; activo: boolean; problema: string | null;
+    /** La cuota mensual de ventas registradas (null si no aplica o no se pudo leer). */
+    cuota: UsTaxCuota | null;
 }> {
     const config = await loadUsTaxConfig(orgId);
     const entitled = config.country === 'US' ? await usTaxEntitled(orgId) : false;
     const problema = config.country === 'US' ? usTaxConfigProblem(config) : null;
-    return { config, entitled, activo: config.auto && entitled && !problema, problema };
+    let cuota: UsTaxCuota | null = null;
+    if (entitled) { try { cuota = await usTaxCuota(orgId); } catch { /* la pantalla no inventa la cifra */ } }
+    return { config, entitled, activo: config.auto && entitled && !problema, problema, cuota };
 }
 
 export type { UsAddress };

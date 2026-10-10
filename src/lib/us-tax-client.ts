@@ -31,6 +31,12 @@ type Estado = 'no_aplica' | 'calculando' | 'listo' | 'error';
 export function createUsTaxPreview(opts: {
     boot: UsTaxBoot | null | undefined;
     getClienteId: () => string | null;
+    /**
+     * El documento que se edita, para el tope de cálculos por documento y día
+     * del servidor: 'cotizacion:<id>' o 'documento:<id>'. Un documento nuevo
+     * (null) usa una clave 'borrador:<id>' propia de esta sesión del editor.
+     */
+    getDocumento?: () => string | null;
     /** Lo que define el cálculo: currency, iva_incluido, items, descuento/cupon. */
     buildRequest: () => Record<string, unknown>;
     /** Se llama cuando llega (o falla) un cálculo: el editor recalcula. */
@@ -41,6 +47,10 @@ export function createUsTaxPreview(opts: {
     let resultado: { key: string; aplica: boolean; calculoId: string | null; lineas: UsTaxLineaPreview[] } | null = null;
     let fallo: { key: string; mensaje: string } | null = null;
     let timer: ReturnType<typeof setTimeout> | undefined;
+    const sesion = `borrador:${typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+        ? crypto.randomUUID()
+        : '00000000-0000-4000-8000-000000000000'.replace(/0/g, () => Math.floor(Math.random() * 16).toString(16))}`;
+    const documento = () => opts.getDocumento?.() || sesion;
 
     const applies = () => {
         const cid = opts.getClienteId();
@@ -64,7 +74,7 @@ export function createUsTaxPreview(opts: {
                 const res = await fetch('/api/impuestos/us-calculo', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ ...req, us_tax_calculo_id: resultado?.calculoId ?? null }),
+                    body: JSON.stringify({ ...req, us_tax_calculo_id: resultado?.calculoId ?? null, documento: documento() }),
                 });
                 const d = await res.json().catch(() => ({}));
                 if (k !== key) return;

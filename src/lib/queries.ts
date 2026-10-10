@@ -12,6 +12,7 @@ import { dispatchQuoteEvent } from './webhooks';
 import { notifyQuoteEvent } from './notify';
 import { memberCan, planLabel, type Membership, type PermKey, type PermMap } from './permissions';
 import { INCLUDED } from './billing';
+import { usTaxVentasSinCuota } from './us-tax/cuota';
 import { checkEntitlement, getEntitlementContext } from './org-entitlements';
 import { planIncludes, resourceLimit } from './entitlements';
 import { cached, invalidate } from './cache';
@@ -799,6 +800,10 @@ export async function getBillingUsage() {
         const [[r]] = await withOrgTx(orgId, sql`select * from uso_periodo where org_id = ${orgId} and periodo = ${periodo}`);
         row = r ?? {};
     } catch { /* tabla aún no migrada */ }
+    // Ventas con sales tax de EE. UU. que esperan cupo para registrarse en la
+    // declaración del negocio: la página de Plan lo dice, no se calla.
+    let usTaxSinCuota = 0;
+    try { usTaxSinCuota = await usTaxVentasSinCuota(orgId); } catch { /* sin el dato no se inventa el aviso */ }
 
     const dim = (usado: number, incl: number | null) => ({
         usado, incluido: incl, ilimitado: incl === null,
@@ -817,6 +822,9 @@ export async function getBillingUsage() {
         api: dim(Number(row.api) || 0, inc.api),
         envios: dim(Number(row.envios) || 0, inc.envios),
         docs: dim(Number(row.docs) || 0, inc.docs),
+        // Ventas registradas con sales tax automático de EE. UU. (su propia cuota).
+        us_tax: dim(Number(row.us_tax) || 0, inc.us_tax),
+        usTaxSinCuota,
     };
 }
 

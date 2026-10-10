@@ -15,6 +15,14 @@
 //      `/api/cron/us-tax`), `recordUsTaxTransaction()` registra la venta para
 //      la declaración del negocio, una sola vez por cálculo.
 //
+// Lo que cuesta (lo paga Cord, la plataforma): cada venta registrada USD 0.50
+// y cada cálculo USD 0.05 pasados los 10 que incluye cada venta. La venta
+// consume la cuota mensual del plan (`INCLUDED.us_tax`, src/lib/us-tax/cuota.ts):
+// se verifica al preparar el documento y se reserva antes de registrarla. Los
+// cálculos se acotan aquí, donde se gastan: 30/min, 300/h y
+// `US_TAX_CALCULOS_ORG_DIA` por organización, y `US_TAX_CALCULOS_DOCUMENTO_DIA`
+// por documento en la vista previa del editor.
+//
 // Cualquier hueco —sin cuenta de cobros, sin domicilio, sin estados, dirección
 // del cliente incompleta o no ubicable, proveedor caído— es `UsTaxError`: el
 // documento no se guarda y dice qué falta (regla 22). La excepción legítima es
@@ -32,11 +40,12 @@ import { currencyDecimals, normalizeCurrency, toMinorUnits } from '../currency';
 import { taxRoundingFor, taxRoundingGuardado } from '../countries';
 import { descuentoDesdeJson, descuentoParaMotor } from '../descuentos';
 import {
-    US_TAX_DEFAULT_CODE, US_TAX_MAX_LINEAS, US_TAX_REUSO_MS, UsTaxError, huellaTexto, isUsTaxCode,
-    lineasFromStripe, normalizeUsAddress, usAddressFaltante, usTaxApplies,
-    type UsAddress, type UsTaxLinea,
+    US_TAX_CALCULOS_DOCUMENTO_DIA, US_TAX_CALCULOS_ORG_DIA, US_TAX_DEFAULT_CODE, US_TAX_MAX_LINEAS, US_TAX_REUSO_MS,
+    UsTaxError, huellaTexto, isUsTaxCode, lineasFromStripe, normalizeUsAddress, usAddressFaltante, usTaxApplies,
+    usTaxDocumentoClave, usTaxVentaCobrable, type UsAddress, type UsTaxLinea,
 } from './core';
 import { createUsTaxCalculation, createUsTaxTransaction, reverseUsTaxTransaction } from './stripe';
+import { assertUsTaxCuota, confirmarUsoTransaccion, liberarUsoTransaccion, reservarUsoTransaccion, usTaxCuota } from './cuota';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const sha256 = (s: string) => createHash('sha256').update(s).digest('hex');
@@ -149,6 +158,13 @@ export interface PrepareUsTaxInput {
      * todavía: la reclama con `claimUsTaxCalculo()` después de insertarse.
      */
     venta?: string | null;
+    /**
+     * Solo la vista previa del editor: el documento que se está editando
+     * (`usTaxDocumentoClave`), para el tope de cálculos por documento y día.
+     * Un guardado no lo manda: guardar es una acción deliberada y lo acotan
+     * los topes por organización.
+     */
+    documentoClave?: unknown;
 }
 
 /** Clave de venta de un documento: una factura que salió de una cotización es la venta de la cotización. */
@@ -199,6 +215,12 @@ export async function prepareUsTaxForDocument(orgId: string, input: PrepareUsTax
     if (usAddressFaltante(cliente.destino)) throw new UsTaxError('direccion_cliente', locale);
     if (cliente.exento && (!cliente.certificado || cliente.certificadoVencido)) throw new UsTaxError('certificado', locale);
     if (input.items.length > US_TAX_MAX_LINEAS) throw new UsTaxError('demasiadas_lineas', locale);
+    // La venta de este documento consumirá una unidad de la cuota mensual al
+    // registrarse. Si ya no hay cupo (y no se cobra excedente), se dice AHORA,
+    // antes de guardar o enviar, cuando el negocio todavía puede elegir. Una
+    // venta a un estado donde el negocio no recauda no le cuesta a Cord
+    // (`usTaxVentaCobrable`) y no se frena.
+    if (cfg.registros.some((r) => r.estado === cliente.destino!.state)) await assertUsTaxCuota(orgId, locale);
 
     const currency = normalizeCurrency(input.currency);
     const montos = basesMinor(input.items, currency, input.ivaIncluido, input.descuento ?? null);
@@ -233,7 +255,7 @@ export async function prepareUsTaxForDocument(orgId: string, input: PrepareUsTax
     const fila = await calcularYGuardar(orgId, {
         account: cfg.account!, params, huella, clienteId: String(input.clienteId),
         registrados: new Set(cfg.registros.map((r) => r.estado)), certificado: cliente.certificado, locale,
-        idempotencyScope: venta ?? 'nueva', venta,
+        idempotencyScope: venta ?? 'nueva', venta, documentoClave: usTaxDocumentoClave(input.documentoClave),
     });
     return { calculoId: fila.id };
 }
@@ -272,15 +294,28 @@ async function calcularYGuardar(orgId: string, input: {
     registrados: Set<string>; certificado: string | null; locale: string;
     /** Parte de la clave de idempotencia: la venta, o el cálculo que se concilia. */
     idempotencyScope: string; venta?: string | null;
+    /** Vista previa: el documento del editor, para su tope diario. */
+    documentoClave?: string | null;
 }): Promise<{ id: string; lineas: UsTaxLinea[]; stripeCalculationId: string }> {
     const { account, params, huella, locale } = input;
-    const [porMinuto, porHora] = await Promise.all([
+    // Primero el tope del documento: un editor que ya lo agotó no gasta
+    // además el cupo diario de toda la organización.
+    if (input.documentoClave) {
+        const porDocumento = await strictRateLimit(`us-tax-calc:doc:${orgId}:${input.documentoClave}`, US_TAX_CALCULOS_DOCUMENTO_DIA, 86_400);
+        if (!porDocumento.ok) {
+            throw porDocumento.unavailable
+                ? new UsTaxError('no_disponible', locale)
+                : new UsTaxError('limite_documento', locale, undefined, { n: US_TAX_CALCULOS_DOCUMENTO_DIA });
+        }
+    }
+    const [porMinuto, porHora, porDia] = await Promise.all([
         strictRateLimit(`us-tax-calc:m:${orgId}`, 30, 60),
         strictRateLimit(`us-tax-calc:h:${orgId}`, 300, 3600),
+        strictRateLimit(`us-tax-calc:d:${orgId}`, US_TAX_CALCULOS_ORG_DIA, 86_400),
     ]);
-    if (!porMinuto.ok || !porHora.ok) {
-        throw new UsTaxError(porMinuto.unavailable || porHora.unavailable ? 'no_disponible' : 'limite', locale);
-    }
+    if (porMinuto.unavailable || porHora.unavailable || porDia.unavailable) throw new UsTaxError('no_disponible', locale);
+    if (!porMinuto.ok || !porHora.ok) throw new UsTaxError('limite', locale);
+    if (!porDia.ok) throw new UsTaxError('limite_dia', locale, undefined, { n: US_TAX_CALCULOS_ORG_DIA });
 
     const calc = await createUsTaxCalculation(account, {
         ...params,
@@ -330,7 +365,7 @@ export async function usTaxCalculoLineas(orgId: string, calculoId: string): Prom
 
 // ── Registro de la venta (Tax Transaction) ──────────────────────────────────
 
-export type UsTaxTxResultado = 'registrada' | 'ya_registrada' | 'no_aplica' | 'no_concilia' | 'error';
+export type UsTaxTxResultado = 'registrada' | 'ya_registrada' | 'no_aplica' | 'no_concilia' | 'sin_cuota' | 'error';
 
 interface DocParaTx {
     calculoId: string;
@@ -396,6 +431,13 @@ const iguales = (a: number[], b: number[]) => a.length === b.length && a.every((
  * registra si el impuesto coincide al centavo: el total legal es el que el
  * documento cobró, y la declaración no puede decir otro. Si no coincide, queda
  * `no_concilia` para revisión — nunca se reporta una cifra distinta.
+ *
+ * Cada venta registrada en un estado donde el negocio recauda consume una
+ * unidad de la cuota mensual del plan (`INCLUDED.us_tax`; las de estados sin
+ * registro no le cuestan a Cord): se reserva ANTES de llamar al proveedor, se libera si
+ * el registro falla y se confirma si sale bien (el excedente, si lo hay, va al
+ * meter por el outbox de Billing). Sin cupo, la venta queda `sin_cuota`
+ * (`transaccion_error = 'cuota'`) y el barrido la registra cuando lo haya.
  */
 export async function recordUsTaxTransaction(
     orgId: string,
@@ -406,7 +448,7 @@ export async function recordUsTaxTransaction(
     if (!doc) return 'no_aplica';
     const [calcRows] = await withOrgTx(orgId, sql`
         select id, stripe_calculation_id, stripe_account_id, currency, destino, exento, incluido, lineas,
-               expires_at, transaccion_id, reverso_id, transaccion_error, venta
+               expires_at, transaccion_id, reverso_id, transaccion_error, venta, uso_id
           from us_tax_calculos where org_id = ${orgId} and id = ${doc.calculoId}::uuid`);
     const calc = calcRows[0];
     if (!calc) return 'no_aplica';
@@ -416,18 +458,33 @@ export async function recordUsTaxTransaction(
     if (!calc.venta) await claimUsTaxCalculo(orgId, String(calc.id), doc.venta);
     if (!deOtraVenta && calc.transaccion_id && !calc.reverso_id) return 'ya_registrada';
 
+    // Sin cupo este mes no se gasta nada más: ni la conciliación (que puede
+    // pedir un cálculo nuevo) ni el registro. Si la cuota no se puede leer,
+    // decide la reserva de abajo, que también falla cerrado. Un cálculo que ya
+    // tiene su reserva (un intento anterior que murió) no se mide aquí: esa
+    // unidad ya está contada y la reserva de abajo la reusa.
+    // Una venta que no le cuesta a Cord (solo estados sin registro) tampoco.
+    const guardadas = (Array.isArray(calc.lineas) ? calc.lineas : []) as UsTaxLinea[];
+    let agotada = false;
+    if (!calc.uso_id && usTaxVentaCobrable(guardadas)) {
+        try { agotada = (await usTaxCuota(orgId)).agotada; } catch { /* la reserva decide */ }
+    }
+    if (agotada) {
+        await withOrgTx(orgId, sql`update us_tax_calculos set transaccion_error = 'cuota' where id = ${calc.id} and org_id = ${orgId} and transaccion_id is null`);
+        return 'sin_cuota';
+    }
+
     const decimals = currencyDecimals(doc.currency);
     const f = 10 ** decimals;
     const incluido = calc.incluido === true;
     const montos = doc.lineas.map((l) => Math.round((incluido ? l.base + l.impuesto : l.base) * f));
     const impuestos = doc.lineas.map((l) => Math.round(l.impuesto * f));
-    const guardadas = (Array.isArray(calc.lineas) ? calc.lineas : []) as UsTaxLinea[];
     const vigente = new Date(calc.expires_at as string).getTime() > Date.now() + 60_000;
     const coincide = !deOtraVenta && !calc.reverso_id && vigente
         && iguales(montos, guardadas.map((l) => Number(l.monto)))
         && iguales(impuestos, guardadas.map((l) => Number(l.impuesto)));
 
-    let objetivo = { id: String(calc.id), stripeCalculationId: String(calc.stripe_calculation_id) };
+    let objetivo = { id: String(calc.id), stripeCalculationId: String(calc.stripe_calculation_id), lineas: guardadas };
     if (!coincide) {
         const destino = normalizeUsAddress(calc.destino);
         if (!destino) return 'no_concilia';
@@ -452,7 +509,7 @@ export async function recordUsTaxTransaction(
             await withOrgTx(orgId, sql`update us_tax_calculos set transaccion_error = 'no_concilia' where id = ${calc.id} and org_id = ${orgId}`);
             return 'no_concilia';
         }
-        objetivo = { id: nuevo.id, stripeCalculationId: nuevo.stripeCalculationId };
+        objetivo = { id: nuevo.id, stripeCalculationId: nuevo.stripeCalculationId, lineas: nuevo.lineas };
         // El documento apunta al cálculo con el que de verdad se registró.
         if (target.documentoId) {
             await withOrgTx(orgId, sql`update documentos_fiscales set us_tax_calculo_id = ${nuevo.id}::uuid where id = ${target.documentoId} and org_id = ${orgId}`);
@@ -471,6 +528,19 @@ export async function recordUsTaxTransaction(
            and (transaccion_ref is null or transaccion_ref = ${reference})
         returning id`);
     if (!reservada.length) return 'ya_registrada';
+
+    // La unidad de cuota de ESTA venta, antes de que el proveedor la cobre.
+    // Una venta que no le cuesta a Cord (todas sus líneas en estados sin
+    // registro) se registra igual para la declaración, sin consumir cuota.
+    let usoId: string | null = null;
+    if (usTaxVentaCobrable(objetivo.lineas)) {
+        const uso = await reservarUsoTransaccion(orgId, objetivo.id);
+        if (!uso.ok) {
+            await withOrgTx(orgId, sql`update us_tax_calculos set transaccion_error = ${uso.motivo} where id = ${objetivo.id}::uuid and org_id = ${orgId}`);
+            return uso.motivo === 'cuota' ? 'sin_cuota' : 'error';
+        }
+        usoId = uso.id;
+    }
     try {
         const txId = await createUsTaxTransaction(String(calc.stripe_account_id), {
             calculationId: objetivo.stripeCalculationId, reference,
@@ -478,10 +548,13 @@ export async function recordUsTaxTransaction(
         await withOrgTx(orgId, sql`
             update us_tax_calculos set transaccion_id = ${txId}, transaccion_at = now(), transaccion_error = null
              where id = ${objetivo.id}::uuid and org_id = ${orgId}`);
+        if (usoId) await confirmarUsoTransaccion(orgId, usoId);
         return 'registrada';
     } catch (error) {
         const code = error instanceof UsTaxError ? error.code : 'no_disponible';
         log.warn('us-tax: no se pudo registrar la venta; se reintenta', { orgId, route: 'us-tax/transaction', code });
+        // Sin registro no hay costo: la unidad vuelve a la cuota.
+        if (usoId) await liberarUsoTransaccion(orgId, objetivo.id, usoId);
         await withOrgTx(orgId, sql`update us_tax_calculos set transaccion_error = ${code} where id = ${objetivo.id}::uuid and org_id = ${orgId}`);
         return 'error';
     }
@@ -496,6 +569,9 @@ async function taxCodeDe(orgId: string): Promise<string> {
  * Factura anulada: la venta registrada se revierte completa, salvo que su
  * cálculo siga respaldando una cotización COBRADA (el dinero entró: la venta
  * existe aunque la factura se rehaga). Idempotente por referencia.
+ *
+ * El reverso NO devuelve la unidad de cuota de la venta: el proveedor ya le
+ * cobró a Cord el registro original. Tampoco consume otra.
  */
 export async function reverseUsTaxForDocument(orgId: string, documentoId: string): Promise<'revertida' | 'no_aplica' | 'error'> {
     if (!UUID_RE.test(documentoId)) return 'no_aplica';
@@ -538,7 +614,7 @@ export async function orgsConUsTax(): Promise<string[]> {
  * transacción (o la tenía revertida y el documento sigue vivo). Lo que quedó
  * `no_concilia` espera revisión humana: reintentarlo daría lo mismo.
  */
-export async function sweepUsTaxForOrg(orgId: string, limite = 25): Promise<{ registradas: number; pendientes: number; errores: number }> {
+export async function sweepUsTaxForOrg(orgId: string, limite = 25): Promise<{ registradas: number; pendientes: number; errores: number; sinCuota: number }> {
     const [rows] = await withOrgTx(orgId, sql`
         select 'documento' as tipo, d.id
           from documentos_fiscales d
@@ -556,10 +632,11 @@ export async function sweepUsTaxForOrg(orgId: string, limite = 25): Promise<{ re
            and (c.transaccion_id is null or c.venta is distinct from 'cotizacion:' || q.id::text)
            and coalesce(c.transaccion_error, '') <> 'no_concilia'
          limit ${limite}`);
-    const out = { registradas: 0, pendientes: rows.length, errores: 0 };
+    const out = { registradas: 0, pendientes: rows.length, errores: 0, sinCuota: 0 };
     for (const r of rows) {
         const res = await recordUsTaxTransaction(orgId, r.tipo === 'documento' ? { documentoId: String(r.id) } : { cotizacionId: String(r.id) });
         if (res === 'registrada') out.registradas++;
+        else if (res === 'sin_cuota') out.sinCuota++;
         else if (res === 'error' || res === 'no_concilia') out.errores++;
     }
     return out;

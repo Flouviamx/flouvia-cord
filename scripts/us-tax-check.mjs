@@ -17,12 +17,15 @@
 //      esquema y en su migración de despliegue.
 //   7. La aritmética: la tasa efectiva reproduce al centavo el impuesto del
 //      proveedor a través del motor único, con y sin impuesto incluido.
+//   8. Lo que le cuesta a Cord está acotado: la venta registrada consume la
+//      cuota mensual del plan (reservada antes del proveedor) y los cálculos
+//      tienen tope por documento y por día.
 import assert from 'node:assert/strict';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { calculateDocumentTotals } from '../packages/elements/src/engine.ts';
-import { effectiveRate, usTaxMessage } from '../src/lib/us-tax/core.ts';
+import { US_TAX_CALCULOS_DOCUMENTO_DIA, US_TAX_CALCULOS_ORG_DIA, effectiveRate, usTaxDocumentoClave, usTaxMessage } from '../src/lib/us-tax/core.ts';
 import { FEATURE_MIN_PLAN } from '../src/lib/entitlements.ts';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
@@ -94,7 +97,7 @@ for (const f of ['src/components/app/settings/UsTaxSettings.astro', 'src/lib/us-
 const core = read('src/lib/us-tax/core.ts');
 const mensajes = core.slice(core.indexOf('const MENSAJES'), core.indexOf('export class UsTaxError'));
 ok(mensajes.length > 100 && !/stripe/i.test(mensajes), 'Los mensajes de fallo cerrado no nombran al proveedor.');
-for (const code of ['direccion_cliente', 'no_disponible', 'origen_incompleto', 'sin_registros', 'cuenta_cobros']) {
+for (const code of ['direccion_cliente', 'no_disponible', 'origen_incompleto', 'sin_registros', 'cuenta_cobros', 'cuota', 'cuota_techo', 'limite_documento', 'limite_dia']) {
     for (const loc of ['es', 'en']) ok(!/stripe/i.test(usTaxMessage(code, loc)) && usTaxMessage(code, loc).length > 20, `Mensaje ${code}/${loc} vacío o con el proveedor.`);
 }
 
@@ -128,6 +131,31 @@ for (const [monto, impuesto, incluido] of [[12345, 1173, false], [7000, 666, fal
         ivaIncluido: incluido, roundLines: 2, taxRounding: 'line',
     });
     ok(Math.round(t.impuestos * 100) === impuesto, `La tasa efectiva no reproduce el impuesto del proveedor (${monto} → ${impuesto}).`);
+}
+
+// 8. Costo acotado: cuota de ventas y topes de cálculos.
+const cuota = read('src/lib/us-tax/cuota.ts');
+ok(/reserveUsage\(orgId, 'us_tax', 1, \{ deferMeter: true \}\)/.test(cuota), 'La venta reserva 1 unidad de us_tax, diferida hasta confirmar el registro.');
+ok(/update us_tax_calculos set uso_id/.test(cuota), 'La reserva se liga al cálculo: un reintento o un proceso concurrente la reusan.');
+const iCuota = calculo.indexOf('assertUsTaxCuota(orgId, locale)');
+ok(iCuota > 0 && iCuota < calculo.indexOf('calcularYGuardar(orgId, {'), 'La cuota se verifica antes de pedir el cálculo de un documento.');
+const iUso = calculo.indexOf('reservarUsoTransaccion(orgId, objetivo.id)');
+ok(iUso > 0 && iUso < calculo.indexOf('createUsTaxTransaction(String(calc.stripe_account_id)'), 'La unidad se reserva ANTES de registrar la venta con el proveedor.');
+ok(/usTaxVentaCobrable\(objetivo\.lineas\)/.test(calculo), 'Solo cuenta la venta que le cuesta a Cord (estado con registro).');
+ok(/reverso NO devuelve la unidad/.test(calculo), 'El reverso documenta que no devuelve la unidad.');
+const iDoc = calculo.indexOf('`us-tax-calc:doc:');
+const iDia = calculo.indexOf('`us-tax-calc:d:');
+ok(iDoc > 0 && iDia > 0 && iDoc < iCalc && iDia < iCalc, 'Los topes por documento y por día corren antes del cálculo.');
+ok(US_TAX_CALCULOS_DOCUMENTO_DIA === 20 && US_TAX_CALCULOS_ORG_DIA === 500, 'Los topes documentados son 20 por documento al día y 500 por organización al día.');
+ok(usTaxDocumentoClave('cotizacion:00000000-0000-4000-8000-000000000001') && !usTaxDocumentoClave('otra-cosa:x') && !usTaxDocumentoClave(42),
+    'La clave de documento solo acepta sus tres formas.');
+ok(/documento: documento\(\)/.test(read('src/lib/us-tax-client.ts')) && /documentoClave: body\?\.documento/.test(read('src/pages/api/impuestos/us-calculo.ts')),
+    'La vista previa manda su documento para el tope por documento.');
+const seccionCuota = schema.slice(schema.indexOf('-- ── Cuota del sales tax automático de EE. UU.'), schema.indexOf('-- END sales-tax-cuota'));
+ok(seccionCuota.includes('alter table uso_periodo add column if not exists us_tax') && seccionCuota.includes('alter table us_tax_calculos add column if not exists uso_id'),
+    'db/schema.sql: falta la sección de la cuota del sales tax, cerrada con `-- END sales-tax-cuota`.');
+for (const s of seccionCuota.split(';').map((x) => x.replace(/--[^\n]*/g, '').trim()).filter(Boolean)) {
+    ok(read('db/deploy/2026-10-09-us-tax2-cuota.sql').replace(/\s+/g, ' ').includes(s.replace(/\s+/g, ' ')), `La migración de la cuota no refleja: ${s.slice(0, 60)}`);
 }
 
 console.log(`Contrato del sales tax de EE. UU. correcto (${checks} verificaciones).`);

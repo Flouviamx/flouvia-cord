@@ -161,7 +161,11 @@ import { iconInner } from '../../../lib/icons';
             { k: 'docs', label: t(L, 'set.plan.docs_comerciales'), m: BILL.docs },
             { k: 'cfdi', label: t(L, 'set.plan.timbres_cfdi'), m: BILL.cfdi },
             { k: 'api', label: t(L, 'set.plan.llamadas_api'), m: BILL.api },
-        ].filter(({ m }) => m.incluido !== 0).map(({ label, m }) => (
+            // Solo EE. UU. (o si ya hubo consumo): el sales tax por dirección no
+            // existe para un negocio de otro país (regla 24).
+            ...(String(ORG.countryCode).toUpperCase() === 'US' || BILL.us_tax.usado > 0
+                ? [{ k: 'us_tax', label: t(L, 'set.plan.us_tax'), m: BILL.us_tax }] : []),
+        ].filter(({ m }) => m.incluido !== 0).map(({ k, label, m }) => (
             <div class="usage">
                 <div class="usage-top">
                     <span class="usage-label">{label}</span>
@@ -175,6 +179,7 @@ import { iconInner } from '../../../lib/icons';
                         {m.excedido && <p class="usage-note">{tf('set.plan.excedente_nota', { n: String(m.usado - (m.incluido ?? 0)) })}</p>}
                     </>
                 )}
+                {k === 'us_tax' && BILL.usTaxSinCuota > 0 && <p class="usage-note">{tf('set.plan.us_tax_sin_cuota', { n: String(BILL.usTaxSinCuota) })}</p>}
             </div>
         ))}
     </SettingsSection>

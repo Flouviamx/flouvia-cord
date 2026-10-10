@@ -1,7 +1,7 @@
 // /api/impuestos/us-calculo — vista previa del sales tax de EE. UU. por
 // dirección para los editores de cotizaciones y facturas.
 //   POST { cliente_id, currency, iva_incluido, items: [{ cantidad, precio_unitario, precio_negociado? }],
-//          descuento? | cupon?, us_tax_calculo_id? }
+//          descuento? | cupon?, us_tax_calculo_id?, documento? }
 //     → { aplica: false }
 //     | { aplica: true, calculo_id, lineas: [{ tasa, impuesto, desglose }], impuestos }
 //
@@ -10,6 +10,12 @@
 // guarda —si no, calcula el suyo—, así que la vista previa no cuesta un
 // segundo cálculo y la tasa nunca la decide el navegador. Sin cálculo posible
 // responde qué falta (regla 22); nunca un mensaje del proveedor (regla 14).
+//
+// `documento` ('cotizacion:<id>', 'documento:<id>' o 'borrador:<id>' por
+// sesión de un documento nuevo) solo alimenta el tope de cálculos por
+// documento y por día (US_TAX_CALCULOS_DOCUMENTO_DIA): un editor abierto no
+// puede pedir cálculos sin fin. No es una credencial; lo que no se le puede
+// creer lo acotan los topes por organización.
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
@@ -62,6 +68,7 @@ export const POST: APIRoute = async ({ request }) => {
         const usTax = await prepareUsTaxForDocument(orgId, {
             clienteId, currency, ivaIncluido: body?.iva_incluido === true,
             descuento: descuentoParaMotor(descuento), items, calculoId: body?.us_tax_calculo_id,
+            documentoClave: body?.documento,
         });
         if (!usTax) return json({ aplica: false });
         const lineas = await usTaxCalculoLineas(orgId, usTax.calculoId);

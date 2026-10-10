@@ -270,6 +270,8 @@ import { iconInner } from '../../../../lib/icons';
     const usTax = createUsTaxPreview({
         boot: BOOT.usTax,
         getClienteId: () => BOOT.clienteId || null,
+        // Tope de cálculos por documento y día: el de esta cotización.
+        getDocumento: () => `cotizacion:${qId}`,
         buildRequest: () => ({
             currency: CORD_CURRENCY,
             iva_incluido: document.getElementById('ivaIncluido') ? document.getElementById('ivaIncluido').checked : false,
