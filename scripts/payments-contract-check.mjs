@@ -50,6 +50,9 @@ const CREA_DINERO = [
     // nueva quedaba fuera del universo que este linter dice derivar del árbol.
     /\/checkout\/preferences/,
     /createMpPreference\s*\(/,
+    // Un reembolso de Mercado Pago también mueve dinero (hacia afuera).
+    /\/v1\/payments\/[^'"\n]*\/refunds/,
+    /createMpRefund\s*\(/,
     /\/v1\/payment_intents/,
     /\/v1\/checkout\/sessions/,
     /\/v1\/subscriptions\b/,
@@ -68,6 +71,8 @@ const CREA_DINERO = [
 const CREA_OBJETO = [
     /\/checkout\/preferences['"`]/,
     /createMpPreference\s*\(/,
+    /\/v1\/payments\/[^'"\n]*\/refunds['"`]/,
+    /createMpRefund\s*\(/,
     /\/v1\/payment_intents['"`]/,
     /\/v1\/checkout\/sessions['"`]/,
     /\/v1\/customers['"`]/,

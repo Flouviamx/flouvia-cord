@@ -386,6 +386,7 @@ No es una cartera donde Cord retiene tus fondos. La cuenta de cobro pertenece a 
 - **Portal del cliente:** un link por cliente con todas sus facturas y el pago de varias en un solo cobro.
 - **Depósitos y conciliación:** el negocio consulta los depósitos enviados a su cuenta bancaria, su estado y la frecuencia configurada.
 - **Operación posterior al cobro:** reembolsos, contracargos y evidencia permanecen ligados a la organización y al movimiento que los originó.
+- **Reembolsos desde la factura:** el pago en línea de una factura —desde su link, el portal o el cobro automático, con tarjeta, débito SEPA, débito ACH o Mercado Pago— se reembolsa desde su detalle, total o parcial, con el permiso de Reembolsos y confirmación de identidad. Los límites del método (ACH solo completo, 180 días en débitos) se dicen antes de confirmar, la factura reabre su saldo y, en México, Cord recuerda documentar la devolución con una nota de crédito.
 - **Mercado Pago como segundo riel:** el cliente paga la cotización o la factura desde el mismo link con el botón de Mercado Pago, y el dinero llega a la cuenta de Mercado Pago del negocio. Admite abono parcial de una factura, Cord confirma el pago leyéndolo en Mercado Pago —no confiando en el aviso— y lee los reembolsos hechos ahí para reabrir el saldo. En México y Brasil es la alternativa y Cord Payments sigue siendo el principal.
 
 ### Disponibilidad real
@@ -410,6 +411,7 @@ This is not a wallet where Cord holds your funds. The payment account belongs to
 - **Customer portal:** one link per customer with all their invoices and payment of several in a single charge.
 - **Payouts and reconciliation:** the business can review payouts sent to its bank account, their status, and the configured schedule.
 - **After-payment operations:** refunds, disputes, and evidence remain tied to the organization and the movement that created them.
+- **Refunds from the invoice:** an invoice's online payment —from its link, the portal or automatic payments, by card, SEPA debit, ACH debit or Mercado Pago— is refunded from its detail page, fully or partially, with the Refunds permission and identity confirmation. The method's limits (ACH only in full, 180 days on debits) are stated before you confirm, the invoice reopens its balance and, in Mexico, Cord reminds you to document the return with a credit note.
 - **Mercado Pago as a second rail:** the client pays the quote or the invoice from the same link with the Mercado Pago button, and the money lands in the business's Mercado Pago account. It supports partial payment of an invoice, Cord confirms the payment by reading it in Mercado Pago — not by trusting the notice — and reads refunds issued there to reopen the balance. In Mexico and Brazil it is the alternative and Cord Payments remains the main rail.
 
 ### Actual availability
@@ -445,7 +447,7 @@ Las áreas de cuentas por pagar no pagan factura por factura: revisan todo lo pe
 - **Un link por cliente:** reúne sus facturas emitidas con su estado, su vencimiento y sus descargas. Lo creas, lo envías, lo rotas o lo apagas desde la ficha del cliente, y cada acción queda en la auditoría.
 - **Saldo por divisa:** si el cliente tiene facturas en pesos y en dólares, ve dos saldos. Cord nunca suma importes de divisas distintas.
 - **Pago de varias facturas:** el cliente elige cuáles paga y Cord fija el reparto al crear el cobro con el saldo real de cada una, no con lo que mande el navegador. Un solo cargo liquida cada factura por separado, y cada una conserva su historial.
-- **Reembolsos repartidos:** devolver parte de un cobro que pagó varias facturas reabre el saldo factura por factura, de la última aplicada a la primera, cada una completa o nada. Así el reembolso siempre sabe a qué factura le toca.
+- **Reembolsos repartidos:** desde Cord, el reembolso se pide en una de las facturas y va a esa factura, hasta lo que el cobro le aplicó, o devuelve el cobro completo. Un reembolso hecho fuera de Cord reabre el saldo factura por factura, de la última aplicada a la primera, cada una completa o nada. Así el reembolso siempre sabe a qué factura le toca.
 - **Privado por diseño:** el link es la credencial. No se comparte como origen con otros sitios, no se guarda en caché, no se indexa y no lleva analítica. Vive en cordhq.app, nunca en el dominio propio de tu negocio, porque es una superficie donde se paga.
 
 ### Límites claros
@@ -457,7 +459,7 @@ Accounts payable teams don't pay invoice by invoice: they review everything outs
 - **One link per customer:** it gathers their issued invoices with status, due date and downloads. You create, send, rotate or turn it off from the customer profile, and every action is recorded in the audit log.
 - **Balance by currency:** if the customer has invoices in pesos and in dollars, they see two balances. Cord never adds up amounts in different currencies.
 - **Paying several invoices:** the customer picks which ones to pay and Cord sets the allocation when the charge is created, using each invoice's real balance, not whatever the browser sends. One charge settles each invoice separately, and each keeps its own history.
-- **Allocated refunds:** refunding part of a charge that paid several invoices reopens the balance invoice by invoice, from the last one applied to the first, each one in full or not at all. The refund always knows which invoice it belongs to.
+- **Allocated refunds:** from Cord, the refund is requested on one of the invoices and goes to that invoice, up to what the charge applied to it, or returns the whole charge. A refund issued outside Cord reopens the balance invoice by invoice, from the last one applied to the first, each one in full or not at all. The refund always knows which invoice it belongs to.
 - **Private by design:** the link is the credential. It is not shared as a referrer with other sites, not cached, not indexed and carries no analytics. It lives on cordhq.app, never on your business's own domain, because it is a surface where people pay.
 
 ### Clear limits

@@ -116,6 +116,10 @@ describe('migración de despliegue de facturación', () => {
                   and relrowsecurity and relforcerowsecurity order by relname`)).rows.map((r) => r.relname);
             expect(rls).toEqual(['cobro_automatico_estado', 'documento_reembolso_asignaciones', 'pago_agrupado_documentos', 'pagos_agrupados']);
             expect((await db.query(`select * from cord_resolve_portal('corto')`)).rows).toEqual([]);
+            // Reembolso del pago de una factura (db/deploy/2026-10-10-reembolsos-facturas.sql).
+            const rlsReembolsos = (await db.query<{ relname: string }>(`select relname from pg_class
+                where relname = 'documento_reembolso_solicitudes' and relrowsecurity and relforcerowsecurity`)).rows;
+            expect(rlsReembolsos.map((r) => r.relname)).toEqual(['documento_reembolso_solicitudes']);
 
             // Descuentos y cupones (db/deploy/2026-10-08-descuentos.sql).
             const descuentos = (await db.query<{ c: string }>(`select table_name || '.' || column_name as c from information_schema.columns

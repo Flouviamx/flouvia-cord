@@ -2,7 +2,7 @@
 title: "Mercado Pago"
 seoTitle: "Get paid with Mercado Pago in Cord"
 description: "Collect quotes with your Mercado Pago account: which countries it applies to, how to connect, what your client sees, how payments are confirmed, and what it does not do yet."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-10"
 reviewedBy: "Cord product and operations"
 appliesToMarkets: [MX, BR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -63,7 +63,9 @@ If the same charge ends up paid through both Cord Payments and Mercado Pago, Cor
 
 ## Refunds
 
-The refund is issued **from your Mercado Pago account**. Cord reads it on its own: once Mercado Pago confirms the money went out, it lowers the paid amount, reopens the balance, and records it in the document's history. A refund Mercado Pago has not confirmed yet does not touch the balance.
+An **invoice** payment collected with Mercado Pago is refunded from Cord, fully or partially: on the invoice detail page, the **Refund** button next to the payment (see [Refunding an invoice payment](/en/docs/pagos/reembolsos#refunding-an-invoice-payment)). Cord requests it from Mercado Pago through your account's connection, so the money leaves your Mercado Pago account, just as it came in. A **quote** payment is refunded **from your Mercado Pago account**.
+
+In both cases, and also if you refund an invoice from Mercado Pago, Cord reads the refund: once Mercado Pago confirms the money went out, it lowers the paid amount, reopens the balance, and records it in the document's history. If the quote had already been invoiced, refunding its payment also reopens the invoice. A refund Mercado Pago has not confirmed yet does not touch the balance.
 
 ## What it does not do yet
 

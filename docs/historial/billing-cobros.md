@@ -1772,3 +1772,38 @@ Starter, 30.
 
 Sin cambios en Stripe: no se corrió ningún script ni `security:billing-live`. El
 orden de activación vive en `docs/estado/negocio-billing.md`.
+
+## 2026-10-10 — Reembolsar desde Cord el pago de una factura
+
+Aprobado por André (D5). El reembolso dentro de Cord existía solo para el cobro de
+una cotización; el pago de una factura se devolvía fuera de Cord y Cord lo leía por
+webhook.
+
+- **Por qué una tabla de solicitudes y no reusar `refund_nonces`.** El nonce de la
+  cotización cuelga de `cotizacion_cobros` (`cobro_id not null`). La solicitud de
+  factura necesita además reservar el monto antes de llamar al proveedor y dirigir
+  el reparto de un cobro agrupado, y eso tiene que ser visible para el webhook que
+  llega antes que la respuesta: por eso la solicitud vive en la base y su id viaja
+  en la metadata del reembolso (`cord_reembolso`).
+- **Por qué el reparto cambia solo con una solicitud.** El orden inverso (de la
+  última factura aplicada a la primera) sigue siendo la regla para lo que se
+  devuelve fuera de Cord. Pero quien reembolsa desde una factura eligió cuál
+  devolver: aplicarle el orden inverso le reabriría otra.
+- **Por qué los pagos de cotización y los manuales no tienen botón.** El dinero de
+  una cotización tiene ya su puerta (Ingresos › Cobros, o la cuenta de Mercado
+  Pago) y su ledger (`cobro_reembolsos`); una segunda puerta con otro ledger para
+  el mismo dinero es como se devuelve dos veces. Un pago manual no lo movió Cord, y
+  `documento_reembolsos` solo admite reembolsos de un proveedor.
+- **ACH solo completo y 180 días en débitos**, tomados de
+  docs.stripe.com/payments/ach-direct-debit y /payments/sepa-debit el 10 oct 2026.
+  El reembolso de Mercado Pago (`POST /v1/payments/{id}/refunds`, `{ amount }` en
+  unidades mayores, `X-Idempotency-Key`) se verificó contra el SDK oficial
+  `mercadopago` 3.6.1.
+- De paso: el reembolso de Mercado Pago del cobro de una cotización ya facturada no
+  llegaba a la factura (el webhook solo escribía `cobro_reembolsos`), y la factura
+  seguía pagada con el dinero ya devuelto. Ahora pasa también por
+  `recordMpInvoiceRefund`, como el de Stripe.
+- El historial de la factura no anotaba ningún reembolso. Ahora lo anota una vez,
+  en la transición a efectivo o fallido, también para los hechos fuera de Cord.
+- No se emite CFDI de egreso automático: no todo reembolso es una devolución de la
+  venta. Cord lo dice y lo recuerda en el detalle.

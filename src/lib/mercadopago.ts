@@ -281,7 +281,7 @@ export interface MpPayment {
 }
 
 /** `approved` es el único estado que sacó dinero; el resto todavía puede caerse. */
-const refundStatus = (raw: unknown): MpRefund['status'] => {
+export const refundStatus = (raw: unknown): MpRefund['status'] => {
     const v = String(raw ?? '').toLowerCase();
     if (v === 'approved') return 'succeeded';
     if (v === 'rejected' || v === 'cancelled' || v === 'canceled') return 'failed';
@@ -293,6 +293,50 @@ export function parseMpRefunds(data: any): MpRefund[] {
     return raw
         .filter((r: any) => r?.id !== undefined && r?.id !== null && Number(r?.amount) > 0)
         .map((r: any) => ({ id: String(r.id), monto: Number(r.amount), status: refundStatus(r.status) }));
+}
+
+export type MpRefundResult =
+    | { ok: true; refund: MpRefund }
+    /** `red`: no se sabe si el reembolso se creó (sin respuesta, 5xx o cuerpo ilegible). */
+    | { ok: false; reason: 'sin_credenciales' | 'rechazo' | 'red'; status?: number };
+
+/**
+ * Reembolsa un pago, total o parcial, con las credenciales del NEGOCIO: el
+ * dinero sale de su cuenta de Mercado Pago, igual que entró.
+ *
+ * Verificado el 2026-10-10 contra el SDK oficial `mercadopago` 3.6.1
+ * (`PaymentRefund.create` y `.total`): `POST /v1/payments/{id}/refunds`, cuerpo
+ * `{ amount }` en unidades MAYORES (sin `amount` es el reembolso total) y la
+ * cabecera `X-Idempotency-Key`. Un reintento con la misma llave no devuelve dos
+ * veces (regla 33).
+ */
+export async function createMpRefund(orgId: string, input: {
+    paymentId: string; monto: number; idempotencyKey: string;
+}): Promise<MpRefundResult> {
+    const token = await mpAccessToken(orgId);
+    if (!token) return { ok: false, reason: 'sin_credenciales' };
+    try {
+        const { status, data } = await mpFetch(`/v1/payments/${encodeURIComponent(input.paymentId)}/refunds`, {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+                'X-Idempotency-Key': input.idempotencyKey,
+            },
+            // Unidades MAYORES, como el cobro: mandar centavos devolvería cien veces de más.
+            body: JSON.stringify({ amount: Number(input.monto) }),
+        });
+        if (status >= 500) return { ok: false, reason: 'red', status };
+        if (status >= 400) {
+            log.error('Mercado Pago rechazó el reembolso', { route: 'mercadopago', orgId, status });
+            return { ok: false, reason: 'rechazo', status };
+        }
+        if (data?.id === undefined || data?.id === null || !(Number(data?.amount) > 0)) return { ok: false, reason: 'red', status };
+        return { ok: true, refund: { id: String(data.id), monto: Number(data.amount), status: refundStatus(data.status) } };
+    } catch (err) {
+        log.error('Mercado Pago no respondió al reembolsar', { route: 'mercadopago', orgId, err });
+        return { ok: false, reason: 'red' };
+    }
 }
 
 /** Lee el pago en el proveedor. El webhook NUNCA confía en el cuerpo que recibe. */

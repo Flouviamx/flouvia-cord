@@ -23,6 +23,7 @@ export type InvoiceEventType =
     | 'payment_failed' // un cobro en línea (portal o automático) no pasó
     | 'transferencia' // SPEI: llegó dinero que todavía NO es un pago (incompleta o de más)
     | 'paid'         // saldo en cero
+    | 'refund'       // reembolso de un pago: solicitado, efectivo o fallido
     | 'reminder'     // etapa de la escalera de cobranza
     | 'void'         // anulada
     | 'credit_note'  // nota de crédito emitida

@@ -1992,10 +1992,30 @@ export async function getFacturaDetalle(id: string) {
               left join documentos_fiscales sp on sp.id = d.sustituida_por and sp.org_id = d.org_id
              where d.id = ${id} and d.org_id = ${orgId}
              limit 1`,
-        sql`select id, monto, currency, metodo, referencia, nota, aplicado_at
-              from documento_pagos
-             where documento_id = ${id} and org_id = ${orgId}
-             order by aplicado_at asc`,
+        // Por pago: si entró en línea (y por qué carril) y lo que se le devolvió a
+        // ESTA factura, para el botón de reembolso (src/lib/cobros/reembolsos.ts).
+        sql`select p.id, p.monto, p.currency, p.metodo, p.referencia, p.nota, p.aplicado_at,
+                   (p.stripe_payment_intent_id is not null or p.mp_payment_id is not null) as en_linea,
+                   (p.cobro_id is not null or exists (select 1 from cotizacion_cobros cc where cc.org_id = p.org_id
+                      and ((p.stripe_payment_intent_id is not null and cc.stripe_payment_intent_id = p.stripe_payment_intent_id)
+                        or (p.mp_payment_id is not null and cc.mp_payment_id = p.mp_payment_id)))) as de_cotizacion,
+                   coalesce((select sum(a.monto) filter (where r.status = 'succeeded')
+                               from documento_reembolso_asignaciones a
+                               join documento_reembolsos r on r.org_id = a.org_id and r.stripe_refund_id = a.stripe_refund_id
+                              where a.org_id = p.org_id and a.documento_id = p.documento_id
+                                and r.stripe_payment_intent_id = p.stripe_payment_intent_id), 0)
+                   + coalesce((select sum(r.monto) filter (where r.status = 'succeeded') from documento_reembolsos r
+                              where r.org_id = p.org_id and p.mp_payment_id is not null and r.mp_payment_id = p.mp_payment_id), 0) as reembolsado,
+                   coalesce((select sum(a.monto) filter (where r.status in ('pending', 'requires_action'))
+                               from documento_reembolso_asignaciones a
+                               join documento_reembolsos r on r.org_id = a.org_id and r.stripe_refund_id = a.stripe_refund_id
+                              where a.org_id = p.org_id and a.documento_id = p.documento_id
+                                and r.stripe_payment_intent_id = p.stripe_payment_intent_id), 0)
+                   + coalesce((select sum(r.monto) filter (where r.status = 'pending') from documento_reembolsos r
+                              where r.org_id = p.org_id and p.mp_payment_id is not null and r.mp_payment_id = p.mp_payment_id), 0) as reembolso_en_curso
+              from documento_pagos p
+             where p.documento_id = ${id} and p.org_id = ${orgId}
+             order by p.aplicado_at asc`,
         // Ventas que documenta una factura global (vacío en cualquier otra).
         sql`select g.cotizacion_id, g.folio, g.liberada_at, c.total
               from factura_global_ventas g
@@ -2070,6 +2090,10 @@ export async function getFacturaDetalle(id: string) {
             referencia: (pg.referencia as string) || null,
             nota: (pg.nota as string) || null,
             cuando: fmtDate(pg.aplicado_at as string),
+            enLinea: !!pg.en_linea,
+            deCotizacion: !!pg.de_cotizacion,
+            reembolsado: num(pg.reembolsado),
+            reembolsoEnCurso: num(pg.reembolso_en_curso),
         })),
     };
 }

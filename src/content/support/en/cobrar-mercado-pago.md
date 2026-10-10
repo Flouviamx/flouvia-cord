@@ -39,7 +39,7 @@ The breakdown is the same as in Cord: if the quote has a deposit and balance, or
 
 ### Refunds
 
-You issue the refund from your Mercado Pago account, and Cord reads it on its own. Once Mercado Pago confirms the money went out, Cord lowers the paid amount, reopens the balance, and records it in the history. A refund still in process does not change the balance.
+You refund an **invoice** payment from Cord: on the invoice detail page, the **Refund** button next to the payment, fully or partially. The money leaves your Mercado Pago account, just as it came in (see [Issue refunds](/en/support/emitir-reembolsos)). You refund a **quote** payment from your Mercado Pago account. In both cases Cord reads the refund: once Mercado Pago confirms the money went out, it lowers the paid amount, reopens the balance, and records it in the history. A refund still in process does not change the balance.
 
 ### When it is marked paid
 

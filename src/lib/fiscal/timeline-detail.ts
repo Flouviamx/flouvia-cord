@@ -78,6 +78,11 @@ export function invoiceEventDetail(tipo: string, detalle: string, locale: Timeli
     if ((m = d.match(/^Enviada a (.+) \(envío masivo\)$/))) return `Sent to ${m[1]} (bulk send)`;
     if ((m = d.match(/^Enviada a (.+)$/))) return `Sent to ${m[1]}`;
     if ((m = d.match(/^Abono de (.+)$/))) return `Payment of ${m[1]}`;
+    // Reembolsos (fiscal/reconciliation.ts y cobros/reembolsos.ts).
+    if ((m = d.match(/^Reembolso de (.+) solicitado$/))) return `Refund of ${m[1]} requested`;
+    if ((m = d.match(/^Reembolso de (.+) solicitado \(cobro de (\d+) facturas\)$/))) return `Refund of ${m[1]} requested (payment of ${m[2]} invoices)`;
+    if ((m = d.match(/^El reembolso de (.+) no se completó$/))) return `The refund of ${m[1]} did not go through`;
+    if ((m = d.match(/^Reembolso de (.+)$/))) return `Refund of ${m[1]}`;
     if ((m = d.match(/^Anulada: (0[1-4]) · (.+)$/))) {
         // Motivo del SAT: "Anulada: 02 · Comprobante emitido con errores sin relación[ — nota]".
         const motivo = MOTIVOS_CANCELACION[m[1] as keyof typeof MOTIVOS_CANCELACION];
