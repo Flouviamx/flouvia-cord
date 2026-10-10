@@ -244,6 +244,7 @@ const datosCliente = {
 </Layout>
 
 <script>
+    import { WALLETS_PAYMENT_ELEMENT } from '../../lib/cobros/billeteras';
     const main = document.querySelector('.pv-main') as HTMLElement | null;
     const D = JSON.parse(main?.dataset.portal || '{}');
     const T = D.i18n || {};
@@ -335,7 +336,7 @@ const datosCliente = {
             await cargarStripe();
             payStripe = (window as any).Stripe(data.publishableKey, { stripeAccount: data.accountId });
             payElements = payStripe.elements({ clientSecret: data.clientSecret });
-            payElements.create('payment').mount('#pvPayEl');
+            payElements.create('payment', { wallets: WALLETS_PAYMENT_ELEMENT }).mount('#pvPayEl');
             if (guardar) guardar.disabled = true;
             payGo.disabled = false;
             payGo.textContent = fill(T.pagarMonto, { monto: payTotal?.textContent || '' });
@@ -375,7 +376,7 @@ const datosCliente = {
             await cargarStripe();
             apStripe = (window as any).Stripe(data.publishableKey, { stripeAccount: data.accountId });
             apElements = apStripe.elements({ clientSecret: data.clientSecret });
-            apElements.create('payment').mount('#pvAutopayEl');
+            apElements.create('payment', { wallets: WALLETS_PAYMENT_ELEMENT }).mount('#pvAutopayEl');
             apAcepto.disabled = true;
             apGo.disabled = false; apGo.textContent = T.guardar;
         } catch (e) {

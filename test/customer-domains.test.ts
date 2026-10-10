@@ -1,11 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 const m = vi.hoisted(() => ({ enabled: vi.fn(), access: vi.fn(), tx: vi.fn(), dns: vi.fn(), fetch: vi.fn(),
-    get: vi.fn(), add: vi.fn(), config: vi.fn(), verify: vi.fn(), remove: vi.fn(), audit: vi.fn() }));
+    get: vi.fn(), add: vi.fn(), config: vi.fn(), verify: vi.fn(), remove: vi.fn(), audit: vi.fn(), dominios: vi.fn() }));
 vi.mock('node:dns/promises', () => ({ Resolver: class { resolveTxt = m.dns; } }));
 vi.mock('../src/lib/db', () => ({ withOrgTx: m.tx, logAudit: m.audit,
     sql: (s: TemplateStringsArray, ...values: unknown[]) => ({ text: s.join('?'), values }) }));
 vi.mock('../src/lib/org-entitlements', () => ({ checkEntitlement: m.access }));
 vi.mock('../src/lib/ssrf', () => ({ safeFetch: m.fetch }));
+vi.mock('../src/lib/cobros/billeteras-org', () => ({ sincronizarDominiosDeCobro: m.dominios }));
 vi.mock('../src/lib/vercel-domains', () => ({ domainsEnabled: m.enabled,
     domainProviderConfig: () => ({ project: 'prj_a', team: 'team_a' }),
     getProviderDomain: m.get, addProviderDomain: m.add, getProviderConfig: m.config,
@@ -79,6 +80,12 @@ describe('domain lifecycle', () => {
     it('a TLS error or an unrelated server never activates the domain', async () => {
         m.fetch.mockResolvedValue({ ok: true, body: 'attacker' }); await verifyCustomerDomain('org-a');
         expect(checks().map(c => c[0])).toEqual(['tls_pending', 'tls_pending']);
+        await new Promise(r => setTimeout(r, 0));
+        expect(m.dominios).not.toHaveBeenCalled();
+    });
+    it('registers the payment domain (Apple Pay, Google Pay) only once the domain is active', async () => {
+        await verifyCustomerDomain('org-a');
+        await vi.waitFor(() => expect(m.dominios).toHaveBeenCalledWith('org-a'));
     });
     it('will not operate in a different provider project/team', async () => {
         domain.provider_project = 'other'; domain.provider_team = 'team_a'; domain.provider_owned = true;
