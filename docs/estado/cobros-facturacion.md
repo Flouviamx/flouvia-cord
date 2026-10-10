@@ -3052,17 +3052,36 @@ Fuente primaria (verificada el 2026-10-09):
   `type: 'custom'` (`createConnectAccount`, `src/lib/billing.ts`), así que
   `controller.fees.payer = application_custom`: **lo paga Cord**, no el negocio.
 
-Decisión: no se le cobra por uso al negocio (eso exigiría precios y medidores
-nuevos en Stripe Billing). La capacidad es un **feature gate** desde **Starter**
-(`FEATURE_MIN_PLAN.us_sales_tax`, regla 18), con el mismo criterio que la
-emisión fiscal integrada; la UI lo dice como "Incluido en tu plan: no se te
-cobra por cálculo". Para acotar lo que paga Cord: `strictRateLimit` por
-organización en el punto donde se gasta (30/min y 300/h, `calcularYGuardar`),
-otro por persona e IP en la vista previa, y el **reuso** del cálculo de la
-vista previa al guardar (huella idéntica en las últimas 24 h): una cotización
-típica cuesta 1–3 cálculos y una transacción. Con un plan que ya no la incluye
-(downgrade) la preferencia se conserva pero queda inoperante: los documentos
-usan el catálogo manual (regla 17).
+Decisión (André, oct 2026): la capacidad es un **feature gate** desde
+**Starter** (`FEATURE_MIN_PLAN.us_sales_tax`, regla 18), con el mismo criterio
+que la emisión fiscal integrada, y las **ventas registradas se cobran como los
+timbres de CFDI, con su propio contador y su propio precio** (soft limit
+`INCLUDED.us_tax`): 10/25/60/150 incluidas al mes en
+Starter/Profesional/Scale/Developer y excedente de USD 0.75, MXN 15.00 o EUR
+0.70 por venta (Developer sin tarifa EUR). Sin tope, un negocio de alto volumen
+le costaba a Flouvia más de lo que pagaba; reusar la cuota de los timbres
+(30 en Starter a USD 0.15 el extra) habría perdido dinero en cada venta. Solo
+cuenta una venta en un estado donde el negocio recauda —la que el proveedor
+cobra—; una de solo 0 % "sin obligación de recaudar" se registra sin consumir
+cuota. Mientras el meter y los Price de esta dimensión no existan en Stripe
+(hoy), pasado lo incluido la operación se rechaza con "Llegaste a las N facturas
+con sales tax automático de tu plan este mes. Mejora tu plan o captura la tasa a
+mano"; con ellos, se cobra el excedente con el techo de 10× lo incluido.
+Mecánica, orden de activación en Stripe y verificación: sección "Sales tax
+automático (EE. UU.): cuota y excedente" de
+[`negocio-billing.md`](negocio-billing.md).
+
+Para acotar los cálculos, que no tienen cuota: `strictRateLimit` por
+organización en el punto donde se gasta (`calcularYGuardar`: 30/min, 300/h y
+**500 al día**), un tope de **20 cálculos nuevos por documento y por día** en la
+vista previa del editor (el editor manda `cotizacion:<id>`, `documento:<id>` o
+una clave `borrador:<id>` por sesión), otro por persona e IP en la vista previa,
+y el **reuso** del cálculo de la vista previa al guardar (huella idéntica en las
+últimas 24 h): una cotización típica cuesta 1–3 cálculos y una transacción. Peor
+caso: USD 1.00 al día por un documento que nunca se vende y USD 25 al día por
+organización. Con un plan que ya no la incluye (downgrade) la preferencia se
+conserva pero queda inoperante: los documentos usan el catálogo manual
+(regla 17).
 
 ### Configuración (Ajustes › Impuestos)
 
@@ -3180,14 +3199,18 @@ Dashboard), la plataforma los descarga con la Report API
 desglose, notas, errores) y `test/us-tax-db.test.ts` (PGlite + proveedor
 simulado: reuso, aislamiento por organización, fallo cerrado, exención,
 transacción única, conciliación, dos ventas, barrido, reverso y la
-sincronización de Ajustes). `npm run security:us-tax`
+sincronización de Ajustes). `test/us-tax-cuota.test.ts` (Billing real: cuota,
+reserva antes del proveedor y liberación, fallo cerrado sin meter, excedente al
+meter, venta sin registro que no cuenta, reverso, topes de cálculos).
+`npm run security:us-tax`
 (`scripts/us-tax-check.mjs`, encadenado en `test:payments`): una sola puerta a
 `/v1/tax/*`, idempotencia en cada creación, límite antes del cálculo, plan
 efectivo, `taxCatalogFor` acotado a la organización y vigente, rate limit y
 sin mensajes crudos en las rutas, la UI sin el nombre del proveedor, RLS
-forzada y grants en esquema y migración, el cron registrado y la aritmética.
-Esquema: sección final de `db/schema.sql` (`-- END us-tax`) con su espejo
-`db/deploy/2026-10-09-us-tax.sql`.
+forzada y grants en esquema y migración, el cron registrado, la aritmética, y
+la cuota y los topes de cálculos. Esquema: secciones de `db/schema.sql`
+(`-- END us-tax` y `-- END sales-tax-cuota`) con sus espejos
+`db/deploy/2026-10-09-us-tax.sql` y `db/deploy/2026-10-09-us-tax2-cuota.sql`.
 
 ### Pendiente
 
@@ -3197,6 +3220,11 @@ Esquema: sección final de `db/schema.sql` (`-- END us-tax`) con su espejo
   test con una cuenta Custom de EE. UU. (registro en CA, una dirección de Los
   Ángeles, un cliente en TX y uno exento) y confirmar que la cuenta de la
   plataforma tiene Stripe Tax habilitado para cuentas conectadas.
+- **El excedente de la cuota de ventas no se cobra todavía**: el meter y los
+  Price de `us_tax` no existen en Stripe y sus ids están vacíos en
+  `src/lib/billing.ts`, así que lo incluido opera como tope duro. Los scripts
+  (`npm run stripe:us-tax-meter`, `npm run stripe:us-tax-items`) y el orden están
+  en [`negocio-billing.md`](negocio-billing.md).
 - Notas de crédito de una factura con sales tax por dirección: copian el
   desglose para imprimirlo, pero no crean el reverso PARCIAL de la
   transacción.
