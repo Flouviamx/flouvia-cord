@@ -101,6 +101,16 @@ Mientras no se publique, la declaración de datos de Google vive en
 `/integraciones/gmail`. Detalle en
 [`../historial/revisiones-legales/2026-09-28-integraciones-google-contabilidad.md`](../historial/revisiones-legales/2026-09-28-integraciones-google-contabilidad.md).
 
+El 10 de octubre se preparó la revisión candidata `2026-10-10.1` (facturación,
+impuestos y cobros por país): autoridades fiscales de LatAm y Francia, la
+plataforma autorizada francesa (Iopole), Stripe Tax, credenciales fiscales,
+recepción de documentos en Chile, portal y cobro automático, y cupones. **No se
+publicó.** `legal-providers.ts` no cambia hasta publicarla: nombre, rol,
+finalidad, condición y orden de cada tercero entran en el `sourceInputsSha256`
+del Aviso vigente y el build falla si difieren. El bloque listo para aplicar,
+los textos exactos y la justificación viven en
+[`../historial/revisiones-legales/2026-10-10-facturacion-paises.md`](../historial/revisiones-legales/2026-10-10-facturacion-paises.md).
+
 ## Corpus complementario — estado
 
 Además de las cuatro variantes públicas hay **22 extractos complementarios + 2
@@ -159,10 +169,13 @@ de admisión: regla 28 de [`../estandares-ingenieria.md`](../estandares-ingenier
 
 Cadena SHA-256 encadenada construida y verificada contra los vectores oficiales
 de la AEAT; envío SOAP construido desde el WSDL/XSD reales. El envío a la AEAT
-está **desactivado por defecto** (`VERIFACTU_AEAT_ENABLED`) y `VERIFACTU_SIF_NIF`
-aún no se configura porque Flouvia no tiene NIF español. Sin esas variables,
-`issueDocument()` lanza y la factura no se marca emitida; sin certificado de la
-org, el rail degrada a `commercial_only`. Detalle operativo en
+está **desactivado por defecto** (`VERIFACTU_AEAT_ENABLED`); con él apagado no se
+encadena nada y, encendido, se envía cada hora y tras emitir o anular. Flouvia se
+identifica como productor sin NIF español (`VERIFACTU_SIF_ID_OTRO_*`) y la
+declaración responsable vive en `/verifactu/declaracion-responsable`; sin la
+identidad configurada, emitir falla cerrado; sin certificado de la org, el rail
+degrada a `commercial_only`. Los Términos vigentes todavía dicen "procesamiento
+programado diario": lo corrige la revisión `2026-10-10.1`. Detalle operativo en
 [`../proyecto.md`](../proyecto.md) y regla 29 de
 [`../estandares-ingenieria.md`](../estandares-ingenieria.md).
 
@@ -191,15 +204,53 @@ archivos publicados con `artifactSha256` = sha256(`restoreLegacyLegalHtml`) y
 
 ## Pendientes operativos, no de código
 
-- **España**: conseguir NIF (gestor), presentar la declaración responsable del
-  software (RD 1007/2023) y probar un envío real contra el sandbox de la AEAT
-  antes de `VERIFACTU_AEAT_ENABLED=true`.
+- **España**: cargar en Vercel la identidad del productor (sin NIF español, vía
+  `VERIFACTU_SIF_ID_OTRO_*`) y los datos de la declaración responsable, firmarla y
+  archivarla, y probar con el certificado cualificado de un contribuyente español
+  contra el portal de pruebas antes de `VERIFACTU_AEAT_ENABLED=true` (pasos en
+  "Activación paso a paso" de [`cobros-facturacion.md`](cobros-facturacion.md)).
 - **Estados Unidos**: solicitar EIN propio (Formulario SS-4, responsible party por
   pasaporte, sin SSN/ITIN) para retomar el wizard de 1099-K de Stripe Connect.
 - **Legal, datos de André**: domicilio verificable, RFC, correo de contacto de
   privacidad, ley aplicable y foro (`src/lib/legal-identity.ts`); evidencia de
-  cuenta de 9 proveedores (contrato/DPA aceptado, región, retención): Neon,
-  Vercel, Anthropic, PostHog, Upstash, Slack, Facturapi, Google y Apple.
+  cuenta de 10 proveedores (contrato/DPA aceptado, región, retención): Neon,
+  Vercel, Anthropic, PostHog, Upstash, Slack, Facturapi, Google, Apple y Mercado
+  Pago. Al publicar `2026-10-10.1` se suman Iopole y el proveedor de correo
+  entrante.
+- **Legal, revisión preparada `2026-10-10.1` (facturación, impuestos y cobros por
+  país), sin publicar.** Términos y Aviso ES/EN completos en
+  `src/content/legal-revisions/`; textos exactos, justificación, hechos de código y
+  procedimiento en
+  [`../historial/revisiones-legales/2026-10-10-facturacion-paises.md`](../historial/revisiones-legales/2026-10-10-facturacion-paises.md).
+  Los borradores de facturación, pagos, subencargados, DPA y retención ya se
+  actualizaron (la sustitución de CFDI dejó de figurar como pendiente). Bloquean
+  su publicación:
+  - la **decisión de André**, porque obliga a toda la base a aceptar de nuevo;
+  - revisión jurídica (roles ante cada autoridad, mandato y contrato de la
+    plataforma francesa, autorización del cobro automático, IP completa como
+    evidencia);
+  - el **contrato de producción con Iopole** y su región de tratamiento;
+  - **identificar el proveedor de correo entrante** (casilla del SII y respuestas a
+    la cobranza; hoy no figura en el Aviso publicado);
+  - **decidir la conservación fiscal tras el cierre**: hoy solo Verifactu impide
+    borrar la organización; los CFDI y los XML de ARCA, NFS-e, NF-e, SUNAT, SII,
+    DIAN y Francia se borran con ella;
+  - aplicar el bloque de `legal-providers.ts` en el mismo cambio que la
+    publicación (cambia el hash de insumos del Aviso);
+  - los cinco campos de identidad, que siguen pendientes.
+- **Legal, riesgo de fusión**: portal del cliente, cobro automático, cupones,
+  rieles de LatAm y Francia y sales tax por dirección **no están en `main`**. Si
+  se fusionan antes de publicar `2026-10-10.1`, Cord tratará datos que el Aviso
+  vigente no describe (IP completa de la autorización de cobro, credenciales
+  fiscales, dirección para el sales tax, documentos de proveedores). Publicar
+  antes o junto con la fusión; si no, mantener apagados los rieles y retener el
+  portal y el cobro automático.
+- **Legal, cambios de producto que pide esta revisión** (no hechos): conservar el
+  historial de autorizaciones de cobro automático (hoy una nueva sobrescribe la
+  anterior); enlazar un aviso de privacidad desde el portal; exportación masiva
+  de documentos fiscales antes del cierre; plazos de purga para
+  `us_tax_calculos`, redenciones de cupones y documentos recibidos; comprobar en
+  una cuenta Custom real los avisos de débito SEPA y ACH.
 - **Legal, 12 documentos en borrador** que NO están listos para publicar, cada
   uno con bloqueos propios además de la revisión jurídica: términos de pagos,
   de facturación, KYC, aviso de cobranza, divulgación de IA, evidencia de
@@ -212,7 +263,12 @@ archivos publicados con `artifactSha256` = sha256(`restoreLegacyLegalHtml`) y
   export completo; inventario de cookies; calendario de retención; activar el rol
   `cord_app`.
 - **Legal, lo que no existe**: anexos de los 12 países, anexo de estados de
-  EE.UU. y todo `pt-BR` (53 variantes).
+  EE.UU. y todo `pt-BR` (53 variantes). Ahora que hay flujo real con autoridades,
+  los más urgentes son `country-es` (Verifactu y factura entre empresarios),
+  `country-fr` (plataforma autorizada), `country-cl` (intercambio de documentos y
+  Leyes 19.983 y 20.956), `country-co`, `country-pe`, `country-ar`, `country-br`,
+  `country-mx` (sustitución y complemento de pago) y `country-us` con
+  `us-state-privacy-annex` (sales tax por dirección del cliente).
 - **Legal (resto)**: domicilio verificable del responsable, RFC/contactos dedicados,
   confirmación de foro; DPA completo + subprocesadores verificables +
   transferencias + AUP + SLA + anexos jurisdiccionales; política de retención y

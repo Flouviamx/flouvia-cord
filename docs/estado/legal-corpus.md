@@ -29,6 +29,14 @@ contradicciones de KYC/borrado, export parcial, analítica server-side y límite
 las sondas diarias en
 [revisión de gobierno de datos 2026-09-01](../historial/revisiones-legales/2026-09-01-data-governance.md).
 
+Las propuestas de la fase 5.1 se publicaron como `2026-09-28` y salieron de
+`src/content/legal-revisions`. Desde el 10 de octubre esa colección contiene la
+revisión candidata `2026-10-10.1` de Términos y Aviso ES/EN (facturación,
+impuestos y cobros por país), con el mismo contrato: sin vigencia, sin hash y sin
+acción de aceptación. Esa pasada también actualizó los borradores de facturación,
+pagos, subencargados, DPA y retención. Detalle en
+[revisión de facturación por país 2026-10-10](../historial/revisiones-legales/2026-10-10-facturacion-paises.md).
+
 ## Inventario verificable
 
 `src/lib/legal-corpus-plan.ts` define 27 documentos objetivo en tres idiomas:

@@ -1,7 +1,7 @@
 ---
 docId: retention-policy
-version: "2026-09-01"
-effectiveDate: "2026-09-01"
+version: "2026-10-10"
+effectiveDate: "2026-10-10"
 supersedes: null
 locale: es-MX
 jurisdiction: GLOBAL
@@ -15,11 +15,11 @@ editorialStage: technical-draft
 sourceOfTruth: src/content/legal/es-MX/retention-policy.md
 artifactRoute: /legal/retention-policy
 artifactSha256: "0000000000000000000000000000000000000000000000000000000000000000"
-lastReviewed: "2026-09-01"
+lastReviewed: "2026-10-10"
 reviewedBy: Redacción técnica; revisión jurídica externa pendiente
 dependsOn: ["privacy"]
 sourceSections: ["privacy@2026-09-28#seguridad", "privacy@2026-09-28#portabilidad"]
-releaseBlockers: ["record-level-schedule", "kyc-deletion-conflict", "durable-deletion-evidence", "provider-retention", "backup-rotation", "legal-acceptance-period", "complete-export", "legal-review", "versioned-publication"]
+releaseBlockers: ["record-level-schedule", "kyc-deletion-conflict", "durable-deletion-evidence", "provider-retention", "backup-rotation", "legal-acceptance-period", "complete-export", "fiscal-retention-after-closure", "legal-review", "versioned-publication"]
 ---
 
 # Conservación, exportación y eliminación
@@ -56,6 +56,11 @@ una cuenta u organización no produce el mismo resultado en todas esas capas.
 | Llaves de idempotencia de la API | Vencen a las 24 horas, pero sólo se borran cuando la misma llave se reutiliza |
 | Preferencia de cookies | 6 meses; idioma, organización, sandbox y visitante público, hasta 1 año |
 | Muestras de salud | La página consulta como máximo 90 días; no existe purga equivalente en código |
+| Enlace del portal del cliente | Vigente hasta que el negocio lo rota o lo apaga |
+| Ticket de acceso a una autoridad fiscal | Cifrado; se renueva al vencer (ARCA: 12 horas) y se borra al quitar la credencial |
+| Credenciales fiscales | Hasta que el negocio las reemplaza o elimina; un certificado vencido no se borra solo; un CAF con folios usados no se puede quitar |
+| Cálculo de sales tax de EE. UU. | El proveedor lo vence a los 90 días; la fila en Cord, con la dirección del cliente, no tiene purga |
+| Alta en la plataforma autorizada de Francia | Una incierta sin rastro se descarta a las 2 horas; las demás no tienen purga |
 
 Una ventana de consulta no equivale a retención. Los plazos anteriores son
 comportamiento técnico observado; su fundamento y suficiencia legal deben
@@ -69,6 +74,13 @@ operativos viven mientras exista la organización o hasta una acción específic
 No hay un sweeper general por antigüedad. Lo mismo aplica al registro de eventos
 de dominio (`domain_events`), a las ejecuciones de Cord Workflows y a los vínculos
 entre registros de Cord y de HubSpot: todavía no tienen un plazo propio.
+
+Tampoco tienen plazo: la evidencia de la autorización de cobro automático (una
+autorización nueva reemplaza a la anterior, que no se conserva), el registro de
+quién lo desactivó, las redenciones de cupones (sobreviven al borrado del
+documento), los documentos recibidos de proveedores en Chile y las respuestas
+enviadas, los envíos y estados de la plataforma autorizada francesa, los mensajes
+de la solución pública de la AEAT y los intentos ante las autoridades de LatAm.
 
 `legal_acceptances` conserva identificador seudónimo de persona, organización,
 documento, versión, hash, IP completa, user-agent y fecha sin FK al usuario y sin
@@ -95,6 +107,27 @@ años uniformes ni preservación tras cierre.
 Los CFDI y registros Verifactu, pagos, reembolsos y disputas necesitan reglas por
 rol y norma. Un plazo fiscal mexicano no debe aplicarse automáticamente a todo
 dato comercial o a otro país.
+
+Documentos fiscales: Cord los conserva mientras exista la organización y, salvo
+Verifactu, los borra con ella. La ley de cada país obliga al emisor a conservarlos
+durante un plazo propio. La tabla resume referencias para la revisión jurídica,
+**no verificadas en todos los casos contra el texto vigente**:
+
+| País | Referencia de conservación (a confirmar) | Qué guarda Cord | Al eliminar la organización |
+|---|---|---|---|
+| México | CFF, art. 30: cinco años desde la declaración relacionada | Documento y respuesta del PAC | Se borra en Cord; el PAC conserva bajo sus reglas |
+| España | LGT, arts. 66 y 70; Código de Comercio, art. 30 | Registros Verifactu y respuestas; mensajes de la SPFE | Verifactu impide borrar, sin plazo de salida |
+| Argentina | Ley 11.683 y su reglamento (ligado a la prescripción); CCyC, art. 328 | Solicitud, respuesta y CAE | Se borra |
+| Brasil | CTN, arts. 173, 174 y 195; Ajuste SINIEF 07/05 | XML de NFS-e y NF-e, eventos | Se borra |
+| Perú | Código Tributario, art. 87, num. 7 | XML firmado y CDR | Se borra |
+| Chile | Código Tributario, arts. 17 y 200 | DTE, CAF, libros, documentos recibidos y respuestas | Se borra |
+| Colombia | Estatuto Tributario, art. 632; Ley 962 de 2005, art. 46 | XML firmado, ApplicationResponse y contenedor | Se borra |
+| Francia | LPF, art. L102 B; Code de commerce, art. L123-22 | Factur-X enviado, e-reporting y estados | Se borra; la plataforma conserva bajo sus reglas |
+| EE. UU. | Variable por estado | Cálculos y transacciones | Se borra; el proveedor conserva la transacción |
+
+Hasta decidir una salida —bloquear el cierre como en Verifactu, ofrecer un archivo
+fiscal completo antes de cerrar, o conservar tras el cierre con base y plazo— no
+se promete conservación fiscal posterior al cierre.
 
 ## 5. Exportación y portabilidad
 
@@ -152,4 +185,4 @@ durable del borrado; contratos y regiones; plazo/redacción de aceptaciones;
 exportación completa o límites transparentes; holds y DSAR; identidad/contacto,
 revisión jurídica y publicación versionada.
 
-Procedencia y evidencia: [revisión de gobernanza de datos de fase 5.4](../../../../docs/historial/revisiones-legales/2026-09-01-data-governance.md). Las cláusulas originales permanecen preservadas según `sourceSections`.
+Procedencia y evidencia: [revisión de gobernanza de datos de fase 5.4](../../../../docs/historial/revisiones-legales/2026-09-01-data-governance.md) y [revisión de facturación por país](../../../../docs/historial/revisiones-legales/2026-10-10-facturacion-paises.md). Las cláusulas originales permanecen preservadas según `sourceSections`.
