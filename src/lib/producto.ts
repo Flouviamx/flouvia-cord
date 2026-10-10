@@ -628,9 +628,9 @@ export const FEATURES: Feature[] = [
         nav: 'Cord Invoicing',
         eyebrow: 'CORD INVOICING',
         titulo: 'Una factura que sabe cuánto te falta por cobrar.',
-        sub: 'Cord emite tus facturas con tu numeración, se las manda a tu cliente con el PDF y un link para pagar, y lleva el saldo hasta que llega a cero. En México timbra CFDI 4.0 ante el SAT desde el plan Starter; fuera de México emite un documento comercial con los impuestos de tu país.',
-        metaTitle: 'Cord Invoicing: facturas con link de pago, recordatorios y CFDI 4.0 — Cord',
-        metaDescription: 'Emite facturas con tu numeración, envíalas con PDF y link de pago, y sigue el saldo con recordatorios automáticos, notas de crédito y facturas recurrentes. CFDI 4.0 en México desde Starter; documentos comerciales desde el plan Gratis.',
+        sub: 'Cord emite tus facturas con tu numeración y tu marca, se las manda a tu cliente con el PDF y un link donde paga completo o en partes, y lleva el saldo hasta que llega a cero. En México timbra CFDI 4.0 ante el SAT desde el plan Starter; en Alemania y Francia genera la factura electrónica europea; en Estados Unidos calcula el sales tax con la dirección de tu cliente.',
+        metaTitle: 'Cord Invoicing: factura electrónica, CFDI 4.0 y link de pago — Cord',
+        metaDescription: 'Facturas con link de pago, pagos parciales, cupones y recordatorios automáticos. CFDI 4.0 en México, XRechnung y Factur-X en Alemania y Francia, y sales tax por dirección en EE. UU.',
         plan: 'Documentos comerciales desde el plan Gratis (10 al mes; sin tope desde Starter). CFDI 4.0 en México desde Starter, con 30 facturas fiscales incluidas al mes. Facturas recurrentes desde Profesional.',
         stats: [
             { valor: '5', countup: 5, label: 'estados de una factura: borrador, abierta, pagada, anulada e incobrable' },
@@ -660,11 +660,11 @@ export const FEATURES: Feature[] = [
             },
             {
                 eyebrow: 'EL DOCUMENTO QUE TOCA',
-                titulo: 'CFDI 4.0 donde lo pide el SAT. Documento comercial donde no.',
-                copy: 'En México, desde el plan Starter y con tu certificado de sello digital cargado, Cord timbra CFDI 4.0 bajo tu propio RFC: UUID, XML y PDF, con IVA y retenciones desglosados por concepto. En el plan Gratis emites una proforma, que no sustituye una factura fiscal. Fuera de México el documento es comercial —tu numeración, tu marca y el impuesto con el nombre de tu país: VAT, TVA, IGV o sales tax—, y su pie aclara que no se presentó ante ninguna autoridad.',
+                titulo: 'CFDI 4.0 en México. Factura electrónica europea en Alemania y Francia.',
+                copy: 'En México, desde el plan Starter y con tu certificado de sello digital cargado, Cord timbra CFDI 4.0 bajo tu propio RFC: UUID, XML y PDF, con IVA y retenciones por concepto, complemento de pago automático en las facturas que se pagan después, factura global y sustitución. En Alemania y Francia, cada factura emitida se descarga como XRechnung, Factur-X o Peppol y puede ir adjunta en el correo. En los demás países el documento es comercial —tu numeración, tu marca y el impuesto con el nombre de tu país: VAT, GST, IGV o sales tax—; en España, Argentina, Brasil, Chile, Colombia y Perú la conexión con la autoridad está en activación.',
                 bullets: [
                     'CFDI 4.0 con tu propio CSD, desde Starter',
-                    'Proforma en Gratis, marcada como tal',
+                    'XRechnung, Factur-X y Peppol en Alemania y Francia',
                     'Impuestos desglosados por tasa en el PDF',
                 ],
             },
@@ -689,7 +689,23 @@ export const FEATURES: Feature[] = [
         faqs: [
             {
                 q: '¿Qué documento emite Cord si mi negocio no está en México?',
-                a: 'Un documento comercial con tu numeración, tus datos fiscales y el nombre del impuesto de tu país, en los 11 países de Cord fuera de México. En Estados Unidos, las tasas de sales tax se siembran según el estado que declares en tu perfil fiscal, junto con la opción exenta. En España emites proforma, con numeración por serie y año y retención de IRPF cuando corresponde: el registro VERI*FACTU ante la AEAT todavía no está activo en Cord, así que ningún documento se presenta ante la autoridad.',
+                a: 'Depende del país. En Alemania y Francia, una factura que además se descarga como XRechnung, Factur-X o Peppol y puede ir adjunta en el correo: Cord la genera, no la transmite. En Estados Unidos, una factura comercial con el sales tax de tu estado o, desde Starter, calculado con la dirección de tu cliente. En Canadá y Reino Unido, una factura comercial con GST, HST, QST o VAT desglosados. En España emites proforma, con numeración por serie y año e IRPF cuando corresponde, hasta que se active el registro VERI*FACTU ante la AEAT; en Argentina, Brasil, Chile, Colombia y Perú, factura comercial mientras la conexión con la autoridad está en activación. Nada se presenta ante una autoridad hasta que esa conexión esté activa.',
+            },
+            {
+                q: '¿En qué idiomas y divisas ve la factura mi cliente?',
+                a: 'La página de la factura y los correos salen en español o en inglés, según el idioma de tu cuenta, y el PDF en el idioma de tu país: español, inglés, francés, alemán o portugués. Emites en cualquiera de 14 divisas —entre ellas MXN, USD, EUR, CAD, BRL, GBP, COP, ARS, CLP y PEN—, tu cliente paga en la divisa de la factura y Cord registra la venta en tu moneda contable con una tasa fechada de una fuente publicada, nunca inventada.',
+            },
+            {
+                q: '¿Puedo dar descuentos o cupones en una factura?',
+                a: 'Sí, en todos los planes. Aplicas un descuento al documento, en porcentaje o en monto fijo, o un cupón que creas en Ajustes, con vigencia y tope de usos global o por cliente. El descuento va antes de impuestos y se reparte entre los conceptos, así que el PDF y el CFDI cuadran con lo que tu cliente paga.',
+            },
+            {
+                q: '¿Qué formatos de factura electrónica europea genera Cord?',
+                a: 'Si tu negocio está en Alemania o Francia, cada factura emitida se descarga desde su detalle y desde su link como Factur-X (un PDF con el XML dentro), XRechnung en UBL o CII, o Peppol BIS 3.0, y en Ajustes eliges cuál va adjunta en el correo. Antes de generarla, Cord revisa que la factura tenga los datos que exige cada formato y, si falta uno, te dice cuál; para la administración pública alemana capturas el Leitweg-ID de tu cliente. Cord genera y adjunta, no transmite por la red Peppol; en Francia, la emisión por plataforma autorizada que pide la reforma está en activación.',
+            },
+            {
+                q: '¿Cord calcula el sales tax de Estados Unidos?',
+                a: 'Sí, desde el plan Starter: con la dirección de tu cliente calcula la tasa de su estado, condado, ciudad y distritos, y registra cada venta en los estados donde recaudas para tu declaración, que Cord no presenta por ti. Starter incluye 10 ventas con cálculo automático al mes, Profesional 25, Scale 60 y Developer 150; al llegar al límite, mejoras tu plan o capturas la tasa a mano. A un cliente exento no se le cobra impuesto y su número de certificado sale en la factura.',
             },
             {
                 q: '¿Qué pasa si mi cliente no acepta la cancelación de un CFDI?',
@@ -698,6 +714,14 @@ export const FEATURES: Feature[] = [
             {
                 q: '¿Qué recibe mi cliente?',
                 a: 'Un correo a nombre de tu negocio con el PDF adjunto y un botón a la página de la factura. Ahí ve los conceptos, los impuestos por tasa, los pagos que ya entraron y el saldo; puede pagarlo completo o elegir Pagar otra cantidad con los métodos de cobro que tengas activos, y descargar el PDF y, en México, el XML. La misma página le avisa que tú ves cuándo la abrió y si quedó pagada.',
+            },
+            {
+                q: '¿Con qué métodos me puede pagar mi cliente?',
+                a: 'Con los que tengas activos en tu país: tarjeta con Cord Payments en México, Estados Unidos, Canadá, Brasil, España, Reino Unido, Alemania y Francia; Mercado Pago en México, Brasil, Argentina, Chile, Colombia y Perú; y domiciliación SEPA en euros (España, Alemania y Francia) o cargo ACH en dólares (Estados Unidos), que se están habilitando. Las transferencias, el efectivo y los cheques los registras tú contra el mismo saldo.',
+            },
+            {
+                q: '¿Mi cliente puede pagar en parcialidades?',
+                a: 'Sí. En la página de la factura elige Pagar otra cantidad y paga lo que quiera, hasta el saldo. Cada abono baja el mismo saldo, queda en la historia de la factura y, en México, genera su complemento de pago cuando el CFDI se emitió para pagarse después.',
             },
             {
                 q: '¿Cuándo le llegan recordatorios a mi cliente?',
@@ -1145,3 +1169,15 @@ export const FEATURES: Feature[] = [
 ];
 
 export const findFeature = (slug: string) => FEATURES.find(f => f.slug === slug);
+
+/**
+ * Nombre de una función dentro de una frase ("Lo que más nos preguntan sobre …").
+ * Una marca ("Cord Invoicing") o una sigla al inicio ("AI Collections") se
+ * quedan como están; lo demás solo baja la primera letra, para no convertir
+ * "FX" o "IA" en "fx" o "ia" como hacía `toLowerCase()`.
+ */
+export function navEnFrase(nav: string): string {
+    const primera = nav.split(/\s+/)[0] ?? '';
+    if (primera === 'Cord' || (primera.length > 1 && primera === primera.toUpperCase())) return nav;
+    return nav.charAt(0).toLowerCase() + nav.slice(1);
+}

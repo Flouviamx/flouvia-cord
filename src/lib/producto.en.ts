@@ -584,9 +584,9 @@ export const FEATURES_EN: Feature[] = [
         nav: 'Cord Invoicing',
         eyebrow: 'CORD INVOICING',
         titulo: 'An invoice that knows how much you are still owed.',
-        sub: "Cord issues your invoices under your own numbering, sends them to your client with the PDF and a payment link, and tracks the balance until it reaches zero. In Mexico it stamps CFDI 4.0 with the SAT from the Starter plan; outside Mexico it issues a commercial document with your country's taxes.",
-        metaTitle: 'Cord Invoicing: invoices with a payment link, reminders and CFDI 4.0 — Cord',
-        metaDescription: 'Issue invoices under your own numbering, send them with a PDF and a payment link, and follow the balance with automatic reminders, credit notes and recurring invoices. CFDI 4.0 in Mexico from Starter; commercial documents from the Free plan.',
+        sub: "Cord issues your invoices under your own numbering and brand, sends them to your client with the PDF and a link where they pay in full or in part, and tracks the balance until it reaches zero. In Mexico it stamps CFDI 4.0 with the SAT from the Starter plan; in Germany and France it generates the European e-invoice; in the United States it calculates sales tax from your client's address.",
+        metaTitle: 'Cord Invoicing: e-invoicing, CFDI 4.0 and payment links — Cord',
+        metaDescription: 'Invoices with a payment link, partial payments, coupons and automatic reminders. CFDI 4.0 in Mexico, XRechnung and Factur-X in Germany and France, and address-based sales tax in the US.',
         plan: 'Commercial documents from the Free plan (10 a month; no cap from Starter). CFDI 4.0 in Mexico from Starter, with 30 tax invoices included each month. Recurring invoices from Professional.',
         stats: [
             { valor: '5', countup: 5, label: 'invoice statuses: draft, open, paid, void and uncollectible' },
@@ -616,11 +616,11 @@ export const FEATURES_EN: Feature[] = [
             },
             {
                 eyebrow: 'THE RIGHT DOCUMENT',
-                titulo: "CFDI 4.0 where the SAT requires it. A commercial document where it doesn't.",
-                copy: "In Mexico, from the Starter plan and with your digital seal certificate uploaded, Cord stamps CFDI 4.0 under your own RFC: UUID, XML and PDF, with VAT and withholdings broken down per item. On the Free plan you issue a pro forma, which does not replace a tax invoice. Outside Mexico the document is commercial (your numbering, your brand and the tax under your country's name: VAT, TVA, IGV or sales tax) and its footer states that it was not filed with any authority.",
+                titulo: 'CFDI 4.0 in Mexico. The European e-invoice in Germany and France.',
+                copy: "In Mexico, from the Starter plan and with your digital seal certificate uploaded, Cord stamps CFDI 4.0 under your own RFC: UUID, XML and PDF, with VAT and withholdings per item, an automatic payment complement on invoices paid later, the global invoice and CFDI replacement. In Germany and France, every issued invoice can be downloaded as XRechnung, Factur-X or Peppol and attached to the email. Everywhere else the document is commercial (your numbering, your brand and the tax under your country's name: VAT, GST, IGV or sales tax); in Spain, Argentina, Brazil, Chile, Colombia and Peru the connection to the tax authority is being activated.",
                 bullets: [
                     'CFDI 4.0 with your own CSD, from Starter',
-                    'Pro forma on Free, labeled as such',
+                    'XRechnung, Factur-X and Peppol in Germany and France',
                     'Taxes broken down by rate on the PDF',
                 ],
             },
@@ -645,7 +645,23 @@ export const FEATURES_EN: Feature[] = [
         faqs: [
             {
                 q: "What document does Cord issue if my business isn't in Mexico?",
-                a: "A commercial document with your numbering, your tax details and your country's name for the tax, in Cord's 11 countries outside Mexico. In the United States, sales tax rates are seeded from the state you declare in your tax profile, along with the exempt option. In Spain you issue a pro forma, numbered by series and year and with IRPF withholding where it applies: VERI*FACTU registration with the AEAT is not active in Cord yet, so no document is filed with the tax authority.",
+                a: "It depends on the country. In Germany and France, an invoice that can also be downloaded as XRechnung, Factur-X or Peppol and attached to the email: Cord generates it, it doesn't transmit it. In the United States, a commercial invoice with your state's sales tax or, from Starter, the rate calculated from your client's address. In Canada and the United Kingdom, a commercial invoice with GST, HST, QST or VAT broken down. In Spain you issue a pro forma, numbered by series and year and with IRPF where it applies, until VERI*FACTU registration with the AEAT is activated; in Argentina, Brazil, Chile, Colombia and Peru, a commercial invoice while the connection to the tax authority is being activated. Nothing is filed with an authority until that connection is active.",
+            },
+            {
+                q: 'Which languages and currencies does my client see the invoice in?',
+                a: "The invoice page and emails go out in Spanish or English, following your account's language, and the PDF in your country's language: Spanish, English, French, German or Portuguese. You invoice in any of 14 currencies, including MXN, USD, EUR, CAD, BRL, GBP, COP, ARS, CLP and PEN; your client pays in the invoice's currency and Cord records the sale in your accounting currency with a dated rate from a published source, never a made-up one.",
+            },
+            {
+                q: 'Can I give discounts or coupons on an invoice?',
+                a: "Yes, on every plan. You apply a discount to the document, as a percentage or a fixed amount, or a coupon you create in Settings, with validity dates and usage limits overall or per client. The discount applies before tax and is spread across the line items, so the PDF and the CFDI match what your client pays.",
+            },
+            {
+                q: 'Which European e-invoice formats does Cord generate?',
+                a: "If your business is in Germany or France, every issued invoice can be downloaded from its detail and its link as Factur-X (a PDF with the XML inside), XRechnung in UBL or CII, or Peppol BIS 3.0, and in Settings you choose which one is attached to the email. Before generating it, Cord checks that the invoice has the data each format requires and, if something is missing, tells you what; for the German public administration you enter your client's Leitweg-ID. Cord generates and attaches, it doesn't transmit over the Peppol network; in France, issuing through an approved platform as the reform requires is being activated.",
+            },
+            {
+                q: 'Does Cord calculate US sales tax?',
+                a: "Yes, from the Starter plan: from your client's address it calculates the rate for their state, county, city and districts, and records every sale in the states where you collect for your filing, which Cord doesn't file for you. Starter includes 10 sales with automatic calculation a month, Professional 25, Scale 60 and Developer 150; when you reach the limit, you upgrade or enter the rate by hand. An exempt client is charged no tax and their certificate number appears on the invoice.",
             },
             {
                 q: "What if my client doesn't accept the cancellation of a CFDI?",
@@ -654,6 +670,14 @@ export const FEATURES_EN: Feature[] = [
             {
                 q: 'What does my client receive?',
                 a: "An email in your business's name with the PDF attached and a button to the invoice's page. There they see the items, the taxes by rate, the payments already received and the balance; they can pay it in full or choose Pay another amount with the payment methods you have turned on, and download the PDF and, in Mexico, the XML. The same page tells them you can see when they opened it and whether it was paid.",
+            },
+            {
+                q: 'Which payment methods can my client use?',
+                a: "The ones you have turned on in your country: card with Cord Payments in Mexico, the United States, Canada, Brazil, Spain, the United Kingdom, Germany and France; Mercado Pago in Mexico, Brazil, Argentina, Chile, Colombia and Peru; and SEPA Direct Debit in euros (Spain, Germany and France) or ACH debit in dollars (United States), which are being rolled out. Wires, cash and checks you record yourself against the same balance.",
+            },
+            {
+                q: 'Can my client pay in installments?',
+                a: "Yes. On the invoice page they choose Pay another amount and pay whatever they want, up to the balance. Each payment reduces the same balance, appears in the invoice's history and, in Mexico, generates its payment complement when the CFDI was issued to be paid later.",
             },
             {
                 q: 'When does my client get reminders?',
