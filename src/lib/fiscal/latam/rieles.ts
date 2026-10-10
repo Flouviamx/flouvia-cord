@@ -48,6 +48,12 @@ export interface RailDefinicion {
     /** Nombre de la autoridad tal como lo conoce el dueño del negocio (regla 14: nunca el del web service). */
     autoridad: string;
     /**
+     * Nombre corto de la factura de este riel en la UI (selector del editor,
+     * documentos ligados a una cotización). Las notas se nombran con la
+     * autoridad: ver `etiquetaDocumentoRiel()`.
+     */
+    etiqueta: { es: string; en: string };
+    /**
      * `documentos_fiscales.document_type` de los documentos de este riel. La
      * nota de débito es opcional y propia del riel que la emite: hoy solo el
      * SII (DTE 56, `documentos_fiscales.nota_debito_de`). Los demás rieles no
@@ -74,6 +80,7 @@ export const RIELES: Readonly<Record<RailId, RailDefinicion>> = {
         id: 'arca',
         pais: 'AR',
         autoridad: 'ARCA',
+        etiqueta: { es: 'Factura electrónica ARCA', en: 'ARCA e-invoice' },
         documentos: { factura: 'arca_invoice', notaCredito: 'arca_credit_note' },
         envPrefijo: 'ARCA',
         anulable: false,
@@ -86,6 +93,7 @@ export const RIELES: Readonly<Record<RailId, RailDefinicion>> = {
         id: 'nfse',
         pais: 'BR',
         autoridad: 'Sistema Nacional NFS-e',
+        etiqueta: { es: 'NFS-e', en: 'NFS-e' },
         documentos: { factura: 'nfse_invoice', notaCredito: 'nfse_credit_note' },
         envPrefijo: 'NFSE',
         anulable: true,
@@ -95,6 +103,7 @@ export const RIELES: Readonly<Record<RailId, RailDefinicion>> = {
         id: 'sunat',
         pais: 'PE',
         autoridad: 'SUNAT',
+        etiqueta: { es: 'Factura electrónica SUNAT', en: 'SUNAT e-invoice' },
         documentos: { factura: 'sunat_invoice', notaCredito: 'sunat_credit_note' },
         envPrefijo: 'SUNAT',
         // La comunicación de baja solo procede con facturas que NO se
@@ -110,6 +119,7 @@ export const RIELES: Readonly<Record<RailId, RailDefinicion>> = {
         id: 'sii',
         pais: 'CL',
         autoridad: 'SII',
+        etiqueta: { es: 'Factura electrónica SII', en: 'SII e-invoice' },
         documentos: { factura: 'sii_invoice', notaCredito: 'sii_credit_note', notaDebito: 'sii_debit_note' },
         envPrefijo: 'SII',
         // Un DTE aceptado no se anula ante el SII: se corrige o se anula con
@@ -122,6 +132,7 @@ export const RIELES: Readonly<Record<RailId, RailDefinicion>> = {
         id: 'dian',
         pais: 'CO',
         autoridad: 'DIAN',
+        etiqueta: { es: 'Factura electrónica DIAN', en: 'DIAN e-invoice' },
         documentos: { factura: 'dian_invoice', notaCredito: 'dian_credit_note' },
         envPrefijo: 'DIAN',
         // Una factura validada se ajusta con una nota crédito (Anexo Técnico 1.9).
@@ -138,6 +149,7 @@ export const RIELES: Readonly<Record<RailId, RailDefinicion>> = {
         id: 'nfe',
         pais: 'BR',
         autoridad: 'SEFAZ',
+        etiqueta: { es: 'NF-e', en: 'NF-e' },
         documentos: { factura: 'nfe_invoice', notaCredito: 'nfe_credit_note' },
         envPrefijo: 'NFE',
         // Cancelación (evento 110111) dentro de las 24 horas de la autorización.
@@ -165,6 +177,21 @@ export function rielesDePais(country: unknown): RailDefinicion[] {
 export function railDeDocumento(documentType: unknown): RailDefinicion | null {
     const type = String(documentType ?? '');
     return LISTA.find((r) => r.documentos.factura === type || r.documentos.notaCredito === type || r.documentos.notaDebito === type) ?? null;
+}
+
+/**
+ * Nombre legible de un `document_type` de riel —la factura con su etiqueta,
+ * las notas con su autoridad—, o null si el tipo no es de un riel.
+ */
+export function etiquetaDocumentoRiel(documentType: unknown, locale: 'es' | 'en'): string | null {
+    const rail = railDeDocumento(documentType);
+    if (!rail) return null;
+    const type = String(documentType);
+    if (type === rail.documentos.factura) return rail.etiqueta[locale];
+    const nota = type === rail.documentos.notaDebito
+        ? (locale === 'en' ? 'Debit note' : 'Nota de débito')
+        : (locale === 'en' ? 'Credit note' : 'Nota de crédito');
+    return `${nota} ${rail.autoridad}`;
 }
 
 /** Todos los `document_type` que pertenecen a un riel regulatorio de LatAm. */
