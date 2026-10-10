@@ -35,7 +35,7 @@ import { iconInner } from '../../../lib/icons';
                 <label class="be-label" for="emailSignature">{say('Firma','Signature')}</label>
                 <textarea class="s-input" id="emailSignature" data-field={custom?'email_firma':undefined} disabled={!custom} maxlength="300" rows="3">{org.emailFirma}</textarea>
                 <p class="be-help">{say('Personaliza con','Personalize with')} {'{cliente} · {folio} · {total} · {negocio}'}</p>
-                <p class="be-help">{say('El contenido propio se usa al enviar cotizaciones y facturas. Los recordatorios mantienen su mensaje correspondiente.','Custom content is used when sending quotes and invoices. Reminders retain their relevant message.')}</p>
+                <p class="be-help">{say('La introducción se usa al enviar cotizaciones y facturas. Los recordatorios conservan su mensaje de vencimiento y llevan tu firma.','The introduction is used when sending quotes and invoices. Reminders keep their due-date message and carry your signature.')}</p>
             </section>
         </div>
         <aside class="be-preview">

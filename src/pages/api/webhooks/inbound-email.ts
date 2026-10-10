@@ -86,7 +86,7 @@ export const POST: APIRoute = async ({ request }) => {
 
     // Contexto real: saldo pendiente y vencimiento CANÓNICO.
     const [[ctx]] = await withOrgTx(orgId, sql`
-      select c.total, c.public_token, cl.empresa, cl.email as cliente_email,
+      select c.total, c.public_token, cl.empresa, cl.email as cliente_email, coalesce(c.base_currency, o.moneda) as moneda,
              (o.stripe_charges_enabled and o.stripe_account_id is not null
               and (o.acepta_tarjeta or o.cobro_spei_auto)) as cobra_online,
              coalesce((select sum(monto) from cotizacion_cobros
@@ -168,7 +168,7 @@ export const POST: APIRoute = async ({ request }) => {
       subject: cfg.idioma === 'en' ? 'Re: your outstanding balance' : 'Re: tu saldo pendiente',
       fromName: `${cfg.creditorName} vía Cord`, replyTo: cfg.contactEmail,
       html: renderCollectionEmail({
-        cuerpo: res.mensaje, payUrl, cobraOnline, montoBoton: saldo, idioma: cfg.idioma,
+        cuerpo: res.mensaje, payUrl, cobraOnline, montoBoton: saldo, moneda: ctx.moneda as string, idioma: cfg.idioma,
         brand: cfg.brand, creditorName: cfg.creditorName, creditorTaxId: cfg.creditorTaxId, contactEmail: cfg.contactEmail,
       }),
     });

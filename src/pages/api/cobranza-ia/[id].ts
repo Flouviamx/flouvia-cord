@@ -24,7 +24,7 @@ function json(data: unknown, status = 200) {
 /** Contexto de envío de una conversación: saldo real, link y monto del botón. */
 async function loadContexto(orgId: string, cotizacionId: string) {
     const [[q]] = await withOrgTx(orgId, sql`
-        select c.id, c.folio, c.total, c.public_token, c.approved_at, c.created_at, c.terminos,
+        select c.id, c.folio, c.total, c.public_token, c.approved_at, c.created_at, c.terminos, coalesce(c.base_currency, o.moneda) as moneda,
                cl.empresa, cl.email as cliente_email, cl.terminos_default,
                (o.stripe_charges_enabled and o.stripe_account_id is not null
                 and (o.acepta_tarjeta or o.cobro_spei_auto)) as cobra_online,
@@ -191,7 +191,7 @@ export const POST: APIRoute = async ({ request, params }) => {
                 replyTo: cfg.contactEmail,
                 html: renderCollectionEmail({
                     cuerpo: msg.mensaje, payUrl: ctx.payUrl, cobraOnline: ctx.cobraOnline,
-                    montoBoton: ctx.montoBoton, idioma: cfg.idioma,
+                    montoBoton: ctx.montoBoton, moneda: ctx.q.moneda as string, idioma: cfg.idioma,
                     brand: cfg.brand, creditorName: cfg.creditorName, creditorTaxId: cfg.creditorTaxId, contactEmail: cfg.contactEmail,
                 }),
             });

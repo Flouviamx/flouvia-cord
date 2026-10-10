@@ -3672,8 +3672,16 @@ create policy "rls_documento_recordatorios" on documento_recordatorios
   with check (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
 alter table documento_recordatorios force row level security;
 
--- Cadencia configurable por organización. `null` = la escalera por defecto.
+-- Cadencia configurable por organización (Ajustes › Recordatorios, oct 2026).
+-- La pantalla y la API (src/pages/api/org/recordatorios.ts) solo aceptan el
+-- vocabulario cerrado de src/lib/recordatorios.ts (14/7/3/1 días antes, el día
+-- del vencimiento y 1/3/7/14/30/60/90 días después, máximo 8); el default es la
+-- escalera de siempre, así que una cuenta que nunca la tocó no cambia.
 alter table orgs add column if not exists recordatorio_etapas int[] not null default '{-7,-1,3,7,14,30}';
+-- Interruptor de los recordatorios automáticos AL CLIENTE (facturas y
+-- cotizaciones). Apagado no toca los avisos al dueño ni el webhook
+-- invoice.overdue. Encendido por defecto: es el comportamiento de siempre.
+alter table orgs add column if not exists recordatorios_activos boolean not null default true;
 
 -- ── Cobranza sobre los DOS rieles ───────────────────────────────────────────
 -- Toda la maquinaria de cuentas por cobrar —el agente de cobranza IA, los

@@ -23,6 +23,7 @@ import { verifyStripeSignature } from '../../../lib/stripe-signature';
 import { sanitizeStripeRequirements } from '../../../lib/connect-fields';
 import { sendOpsAlert } from '../../../lib/ops-alert';
 import { sendEmail, siteOrigin } from '../../../lib/email';
+import { t } from '../../../i18n/app';
 import { computeSubscriptionFee } from '../../../lib/fees';
 import { applyPayment } from '../../../lib/fiscal/payments';
 import { recordInvoiceRefund } from '../../../lib/fiscal/reconciliation';
@@ -737,13 +738,15 @@ async function recordDisputeEvent(dispute: any, account: string | undefined, eve
         }, dispFlags.isSandbox, dispFlags.isDemo);
         after(sendOpsAlert('Contracargo nuevo', `${amountText}; organización ${orgId}; referencia ${disputeId}`));
         const [[owner]] = await withOrgTx(orgId, sql`
-            select u.email, o.nombre from orgs o join users u on u.id = o.owner_id
+            select u.email, o.nombre, o.idioma from orgs o join users u on u.id = o.owner_id
              where o.id = ${orgId} limit 1`);
         if (owner?.email) {
+            // En el idioma de la cuenta: un webhook no tiene request con idioma.
+            const L = String(owner.idioma || '').toLowerCase().startsWith('en') ? 'en' : 'es';
             after(sendEmail({
                 to: owner.email as string,
-                subject: `Acción requerida: contracargo por ${amountText}`,
-                html: `<p>Recibiste un contracargo por <strong>${amountText}</strong>.</p><p>Prepara y revisa la evidencia antes de la fecha límite.</p><p><a href="${siteOrigin()}/app/cobros">Abrir Cord Payments</a></p>`,
+                subject: t(L, 'disp.e_asunto').replace('{monto}', amountText),
+                html: `<p>${t(L, 'disp.e_cuerpo').replace('{monto}', amountText)}</p><p>${t(L, 'disp.e_evidencia')}</p><p><a href="${siteOrigin()}/app/cobros">${t(L, 'disp.e_cta')}</a></p>`,
                 orgId, operation: 'dispute_created', fromName: owner.nombre as string,
             }));
         }

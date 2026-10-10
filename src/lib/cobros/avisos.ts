@@ -33,15 +33,23 @@ const importe = (n: number, currency: string, L: Locale) => {
     }).format(n);
 };
 
-const fecha = (d: Date, L: Locale) => d.toLocaleDateString(L === 'en' ? 'en-US' : 'es-MX', {
-    day: 'numeric', month: 'long', timeZone: 'UTC',
-});
+// El reintento es un INSTANTE: se fecha en la zona del negocio (regla 24). En
+// UTC, un reintento a las 03:00 UTC le decía "el 12" a un cliente de Ciudad de
+// México para quien todavía era el 11.
+const fecha = (d: Date, L: Locale, zona?: string | null) => {
+    const opts: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long' };
+    try {
+        return d.toLocaleDateString(L === 'en' ? 'en-US' : 'es-MX', { ...opts, timeZone: zona || 'UTC' });
+    } catch {
+        return d.toLocaleDateString(L === 'en' ? 'en-US' : 'es-MX', { ...opts, timeZone: 'UTC' });
+    }
+};
 
 async function datosAviso(orgId: string, clienteId: string) {
     const [[r]] = await withOrgTx(orgId, sql`
         select c.empresa, c.contacto, c.email,
                o.nombre as org_nombre, coalesce(o.color_marca, '#0a192f') as color, o.logo_url, o.color_secundario,
-               o.brand_profile, o.email_contacto, o.idioma, o.sandbox_of, o.is_demo
+               o.brand_profile, o.email_contacto, o.idioma, o.zona_horaria, o.sandbox_of, o.is_demo
           from clientes c join orgs o on o.id = c.org_id
          where c.id = ${clienteId} and c.org_id = ${orgId}`);
     return r ?? null;
@@ -77,7 +85,7 @@ export async function avisarFalloCobro(orgId: string, pago: PagoAgrupadoRow, dec
         const link = await linkPortal(orgId, pago.clienteId);
         if (!link) return;
         const cuerpo = decision.accion === 'reintentar'
-            ? tv(L, 'portal.e_fallo_reintento', { monto, fecha: fecha(decision.siguienteAt, L) })
+            ? tv(L, 'portal.e_fallo_reintento', { monto, fecha: fecha(decision.siguienteAt, L, r.zona_horaria) })
             : tv(L, MOTIVO[decision.motivo]?.cuerpo ?? 'portal.e_fallo_agotado', { monto });
         const brand = emailBrandFromRow(r);
         const html = brandEmailShell(brand, `

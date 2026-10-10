@@ -18,6 +18,8 @@ describe('detalle de la actividad de una factura', () => {
         expect(invoiceEventDetail('reminder', 'Aviso de vencimiento (1 días antes)', 'es')).toBe('Aviso de vencimiento (1 día antes)');
         expect(invoiceEventDetail('reminder', 'Aviso de vencimiento (7 días antes)', 'es')).toBe('Aviso de vencimiento (7 días antes)');
         expect(invoiceEventDetail('reminder', 'Recordatorio de cobro (1 día vencida)', 'es')).toBe('Recordatorio de cobro (1 día vencida)');
+        expect(invoiceEventDetail('reminder', 'Aviso de vencimiento (vence hoy)', 'es')).toBe('Aviso de vencimiento (vence hoy)');
+        expect(invoiceEventDetail('reminder', 'Aviso de vencimiento (vence hoy)', 'en')).toBe('Due-date notice (due today)');
     });
 
     it('traduce al inglés los detalles que escribe la app', () => {

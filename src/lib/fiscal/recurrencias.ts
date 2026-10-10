@@ -13,6 +13,7 @@
 import { sql, withOrgTx, withSystemTx } from '../db';
 import { createInvoiceDraft, finalizeInvoice, MAX_INVOICE_ITEMS, type DraftLineInput } from './invoices';
 import { notifyInvoiceIssued } from '../email';
+import { withOrgPresentation } from '../org-presentation';
 import { logInvoiceEvent } from './timeline';
 import { checkEntitlement } from '../org-entitlements';
 import { venceDia } from '../cobros';
@@ -142,7 +143,10 @@ export async function runRecurrencias(opts: { limit?: number } = {}): Promise<Ru
          order by r.next_run_at asc
          limit ${limite}`);
 
-    for (const r of pendientes[0] ?? []) {
+    // Cada recurrencia corre con el idioma, la divisa y la zona de SU cuenta
+    // (src/lib/org-presentation.ts): sin eso, los mensajes de error que ve el
+    // negocio salían en el idioma por defecto del cron, no en el suyo.
+    for (const r of pendientes[0] ?? []) await withOrgPresentation(String(r.org_id), async () => {
         out.revisadas++;
         const orgId = String(r.org_id);
         const recId = String(r.id);
@@ -175,7 +179,7 @@ export async function runRecurrencias(opts: { limit?: number } = {}): Promise<Ru
                    and (r.end_date is null or r.end_date >= current_date)
                    and exists (select 1 from orgs o where o.id = r.org_id and o.sandbox_of is null)
                  returning r.id`);
-            if (!claimed.length) continue;
+            if (!claimed.length) return;
             const gate = await checkEntitlement(orgId, 'recurring_invoices');
             if (!gate.ok) throw new Error('Plan sin facturas recurrentes');
             const vence = new Date(`${emitPeriod}T00:00:00Z`);
@@ -197,7 +201,7 @@ export async function runRecurrencias(opts: { limit?: number } = {}): Promise<Ru
                 await marcarError(orgId, recId, draft.error || 'No se pudo crear el borrador');
                 out.fallidas++;
                 out.detalle.push({ recurrenciaId: recId, ok: false, error: draft.error });
-                continue;
+                return;
             }
 
             await withOrgTx(orgId, sql`
@@ -209,7 +213,7 @@ export async function runRecurrencias(opts: { limit?: number } = {}): Promise<Ru
                 await marcarError(orgId, recId, emitida.error || 'No se pudo emitir');
                 out.fallidas++;
                 out.detalle.push({ recurrenciaId: recId, ok: false, error: emitida.error });
-                continue;
+                return;
             }
 
             emissionConfirmed = true;
@@ -235,7 +239,7 @@ export async function runRecurrencias(opts: { limit?: number } = {}): Promise<Ru
             out.fallidas++;
             out.detalle.push({ recurrenciaId: recId, ok: false, error: error?.message });
         }
-    }
+    });
 
     return out;
 }

@@ -55,6 +55,8 @@ export function invoiceEventDetail(tipo: string, detalle: string, locale: Timeli
             ? `Due-date notice (${m[1]} ${dias(m[1], locale)} before)`
             : `Aviso de vencimiento (${m[1]} ${dias(m[1], locale)} antes)`;
     }
+    // La etapa del día del vencimiento (Ajustes › Recordatorios, oct 2026).
+    if (d === 'Aviso de vencimiento (vence hoy)') return locale === 'en' ? 'Due-date notice (due today)' : d;
 
     if (locale === 'es') return d;
 

@@ -39,7 +39,7 @@ export const POST: APIRoute = async ({ request }) => {
     if (!rl.ok) return json({ error: 'Demasiados mensajes seguidos. Espera un momento.' }, 429);
 
     const [[q]] = await withOrgTx(orgId, sql`
-        select c.id, c.public_token, c.total,
+        select c.id, c.public_token, c.total, coalesce(c.base_currency, o.moneda) as moneda,
                cl.empresa, cl.email as cliente_email,
                (o.stripe_charges_enabled and o.stripe_account_id is not null
                 and (o.acepta_tarjeta or o.cobro_spei_auto)) as cobra_online,
@@ -63,7 +63,7 @@ export const POST: APIRoute = async ({ request }) => {
         fromName: `${cfg.creditorName} vía Cord`,
         replyTo: cfg.contactEmail,
         html: renderCollectionEmail({
-            cuerpo: texto, payUrl, cobraOnline, montoBoton: saldo, idioma: cfg.idioma,
+            cuerpo: texto, payUrl, cobraOnline, montoBoton: saldo, moneda: q.moneda as string, idioma: cfg.idioma,
             brand: cfg.brand, creditorName: cfg.creditorName, creditorTaxId: cfg.creditorTaxId, contactEmail: cfg.contactEmail,
         }),
     });
