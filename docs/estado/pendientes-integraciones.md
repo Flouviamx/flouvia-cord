@@ -24,6 +24,7 @@
 | **Mercado Pago** | En producción en México, pago real confirmado; app `7210198958457914` | Renovar el Client Secret; igualas y contracargos | André, luego Claude | Nada para México |
 | **Cord Payments: portal, cobro automático, SEPA y ACH** | Construido (8 oct 2026); falta encenderlo en Stripe | Eventos del webhook, métodos en la plataforma, prueba de punta a punta | André | Nada |
 | **Cord Payments: SPEI con CLABE en facturas** | Construido (10 oct 2026); falta encenderlo en Stripe | Dos eventos del webhook de Connect, confirmar el costo de las CLABE, prueba de punta a punta en modo de prueba | André | Nada |
+| **Apple Pay y Google Pay** | Construido (10 oct 2026), apagado; ningún cliente lo ve todavía | Revisar el Dashboard, probar en iPhone y Android en modo test, registrar dominios en live | André | Nada |
 
 ---
 
@@ -460,6 +461,40 @@ conciliación automática. Diseño, alternativas y límites en
 - [ ] Decidir quién y cómo devuelve un sobrante SPEI de una factura ya pagada: una
   cuenta Custom no tiene panel de Stripe, así que hoy lo resuelve Operaciones
   (reembolso con `origin=customer_balance`) al recibir la alerta.
+
+---
+
+## Apple Pay y Google Pay
+
+**Hecho (10 oct, código):** las tres pantallas de pago (`/q/.../pay`, `/i/...` y
+el portal) admiten las billeteras; la cabecera `Permissions-Policy` ya deja que
+el formulario de pago las use; Cord registra el dominio de cobro en cada cuenta
+conectada (cargos directos) cuando `CORD_WALLETS_ENABLED=true`, y
+`npm run stripe:payment-domains` cubre las cuentas que ya existen. Se cobran
+como tarjeta: sin costo extra del procesador y con la misma comisión de Cord.
+Detalle y fuentes en `docs/estado/cobros-facturacion.md`, "Apple Pay y Google Pay".
+
+**Falta, operativo:**
+- [ ] **Dashboard de la plataforma (test y live):** Configuración › Connect ›
+  Métodos de pago › cuentas conectadas
+  (`dashboard.stripe.com/settings/payment_methods/connected_accounts`): Apple Pay
+  y Google Pay en "Activado de forma predeterminada". No hace falta pedir ninguna
+  capacidad: vienen con la de tarjeta.
+- [ ] **Prueba en modo test:** un despliegue con llaves de prueba en un alias
+  HTTPS estable; registrar ese host en la cuenta conectada de prueba con
+  `npm run stripe:payment-domains -- --account acct_… --domain <alias> --apply`;
+  pagar una factura `/i/...` desde un iPhone (Safari, tarjeta real en Wallet: en
+  modo test no se carga) y desde un Android (Chrome, con una tarjeta real en la
+  cuenta de Google). Repetir en `/q/.../pay` y en el portal.
+- [ ] **Encender en live:** `npm run stripe:payment-domains -- --live` (lectura),
+  luego `-- --apply --live` con `DATABASE_URL` de producción (incluye los
+  dominios propios), y `CORD_WALLETS_ENABLED=true` en Vercel Production.
+- [ ] **Un cobro real pequeño** en `cordhq.app` con cada billetera, y su reembolso.
+- [ ] **Después:** avisar en las docs públicas que ya está disponible (hoy dicen
+  "en habilitación"), mover la iniciativa del roadmap a `live` y pedir los
+  mockups de la pantalla de pago con la pestaña de Apple Pay / Google Pay.
+- Apagado de emergencia: Apple Pay y Google Pay en "Bloqueado" en esa misma
+  pantalla del Dashboard; no requiere despliegue.
 
 ---
 

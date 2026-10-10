@@ -103,7 +103,11 @@ function certificado(cnpj: string) {
 
 // ── SEFAZ simulada ───────────────────────────────────────────────────────────
 type Plano = { tipo?: 'ok' | 'perdida' | 'sin_conexion' | 'paralisado' | 'async'; forzado?: { cStat: string; xMotivo?: string } };
-let sim = sefazSimulada();
+// La SEFAZ simulada fija por defecto un dhRecbto de fecha fija; la cancelación
+// solo procede dentro de las 24 horas, así que aquí la autorización es de ahora
+// (en la hora de Brasília, como la manda la SEFAZ).
+const ahoraBrasilia = () => new Date(Date.now() - 3 * 3600_000).toISOString().slice(0, 19) + '-03:00';
+let sim = sefazSimulada({ dhRecbto: ahoraBrasilia() });
 const sefaz = {
     plan: [] as Plano[],
     status: {} as Record<string, string>,

@@ -553,6 +553,45 @@ SEPA and ACH still need to be enabled for payment accounts in the payments platf
     },
     {
         id: '46',
+        slug: 'apple-pay-google-pay',
+        title: {
+            es: 'Apple Pay y Google Pay',
+            en: 'Apple Pay and Google Pay'
+        },
+        shortDesc: {
+            es: 'Tu cliente paga con la billetera de su teléfono o su navegador, sin escribir la tarjeta, en la cotización, la factura y el portal. En habilitación.',
+            en: 'Your customer pays with the wallet on their phone or browser, without typing their card, on the quote, the invoice and the portal. Being enabled.'
+        },
+        content: {
+            es: `## Pagar sin escribir la tarjeta
+Desde el celular, escribir dieciséis dígitos es el paso donde más pagos se abandonan. Con Apple Pay y Google Pay, tu cliente confirma con su huella o su rostro y la tarjeta que ya tiene guardada.
+
+### Qué incluye
+- **En las tres pantallas de pago:** la página de pago de la cotización, el link de la factura y el portal del cliente.
+- **Sin configurar nada aparte:** van incluidas con la tarjeta en Ajustes › Cobros.
+- **Se cobran como tarjeta:** misma tarifa, misma confirmación y mismos reembolsos.
+- **También en tu dominio propio:** desde el plan Profesional, en la cotización y la factura que se sirven con tu dominio.
+
+### Por qué está en beta
+El código está construido y apagado. Falta revisar la configuración de métodos de pago de las cuentas de cobro, probarlo en un iPhone y en un Android reales en modo de prueba y registrar los dominios de pago de las cuentas existentes. Hasta entonces, tus clientes no lo ven.`,
+            en: `## Pay without typing the card
+On a phone, typing sixteen digits is where most payments get abandoned. With Apple Pay and Google Pay, your customer confirms with their fingerprint or face and the card they already have saved.
+
+### What's included
+- **On all three payment screens:** the quote's payment page, the invoice link and the customer portal.
+- **Nothing extra to set up:** they come with the card in Settings › Payments.
+- **Charged as a card:** same fee, same confirmation and same refunds.
+- **On your own domain too:** from the Professional plan, on the quote and invoice served from your domain.
+
+### Why it is in beta
+The code is built and turned off. The payment method settings of the payment accounts still need to be reviewed, it needs to be tested on a real iPhone and Android in test mode, and the payment domains of existing accounts need to be registered. Until then, your customers don't see it.`
+        },
+        area: 'finanzas',
+        status: 'beta',
+        api: false
+    },
+    {
+        id: '47',
         slug: 'spei-facturas',
         title: {
             es: 'SPEI con CLABE en facturas',
@@ -2176,6 +2215,16 @@ const roadmapEnhancements = {
         scope: { es: 'SEPA en euros para negocios de España, Alemania y Francia; ACH en dólares para negocios de Estados Unidos. En el link de la factura y en el portal del cliente.', en: 'SEPA in euros for businesses in Spain, Germany and France; ACH in US dollars for businesses in the United States. On the invoice link and in the customer portal.' },
         boundaries: { es: 'SEPA solo en euros y ACH solo en dólares, sobre la cuenta de cobros del negocio. ACH no admite reembolsos parciales. Un débito rechazado por fondos se reintenta como máximo dos veces dentro del plazo del esquema.', en: 'SEPA only in euros and ACH only in US dollars, on the business\'s payment account. ACH doesn\'t support partial refunds. A debit declined for insufficient funds is retried at most twice within the scheme\'s window.' },
         related: ['portal-del-cliente', 'cobro-automatico', 'cord-payments']
+    },
+    'apple-pay-google-pay': {
+        family: 'payments', market: { es: 'MX, US, CA, BR, ES, GB, DE y FR', en: 'MX, US, CA, BR, ES, GB, DE and FR' },
+        workflow: {
+            es: ['El negocio cobra con tarjeta en Ajustes › Cobros.', 'Cord registra el dominio de pago en su cuenta de cobros.', 'El cliente ve Apple Pay o Google Pay junto a la tarjeta si su dispositivo los tiene, y paga con un toque.'],
+            en: ['The business accepts cards in Settings › Payments.', 'Cord registers the payment domain on its payment account.', 'The customer sees Apple Pay or Google Pay next to the card if their device has them, and pays with one tap.']
+        },
+        scope: { es: 'Página de pago de la cotización, link de la factura y portal del cliente, en cordhq.app y en el dominio propio del negocio.', en: 'Quote payment page, invoice link and customer portal, on cordhq.app and on the business\'s own domain.' },
+        boundaries: { es: 'Solo donde el negocio cobra con tarjeta por Cord Payments y en dispositivos compatibles. No aplica a Mercado Pago ni a la suscripción a Cord. Dentro de un embed, el pago se abre en una ventana propia de Cord.', en: 'Only where the business accepts cards through Cord Payments and on compatible devices. It doesn\'t apply to Mercado Pago or to the Cord subscription. Inside an embed, payment opens in a Cord window.' },
+        related: ['cord-payments', 'portal-del-cliente', 'domiciliacion-sepa-ach']
     },
     'identificador-fiscal': {
         family: 'platform', market: { es: '12 mercados soportados', en: '12 supported markets' },

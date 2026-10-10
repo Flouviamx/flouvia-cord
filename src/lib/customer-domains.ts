@@ -4,6 +4,7 @@ import { sql, withOrgTx, logAudit } from './db';
 import { checkEntitlement } from './org-entitlements';
 import { normalizeCustomerHostname, DOMAIN_PROBE_PATH, domainIsFresh } from './domain-policy';
 import { safeFetch } from './ssrf';
+import { after } from './after';
 import {
     domainsEnabled, domainProviderConfig, getProviderDomain, addProviderDomain,
     getProviderConfig, verifyProviderDomain, removeProviderDomain, DomainProviderError,
@@ -142,7 +143,14 @@ export async function verifyCustomerDomain(orgId: string) {
             { method: 'GET' }, { timeoutMs: 8000, maxBodyBytes: 256 });
         const ready = probe.ok && probe.body === domainProbeProof(domain, nonce);
         await saveCheck(orgId, lease, ready ? 'active' : 'tls_pending', records, ready ? null : 'tls_pending');
-        if (ready) await logAudit(orgId, { accion: 'domain.verified', entidad: 'org_domains', detalle: domain.hostname });
+        if (ready) {
+            await logAudit(orgId, { accion: 'domain.verified', entidad: 'org_domains', detalle: domain.hostname });
+            // Apple Pay y Google Pay solo aparecen en un dominio registrado en la
+            // cuenta de cobros del negocio. En segundo plano y sin condicionar la
+            // verificación; la importación es diferida para no arrastrar el
+            // cliente de pagos a cada lectura del dominio.
+            after(import('./cobros/billeteras-org').then((m) => m.sincronizarDominiosDeCobro(orgId)));
+        }
     } catch (e) {
         await saveCheck(orgId, lease, 'error', records, e instanceof DomainError ? e.code : 'provider_unavailable');
         throw e;

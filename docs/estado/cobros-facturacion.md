@@ -3421,6 +3421,136 @@ la cuota y los topes de cálculos. Esquema: secciones de `db/schema.sql`
   jurisdicción (los documentos que crean sí calculan por dirección).
 - Exponer los reportes de transacciones al negocio (Report API).
 
+## Apple Pay y Google Pay — oct 2026
+
+Estado: **código listo y apagado**. Ningún cliente ve una billetera hasta que se
+registran los dominios de cobro en las cuentas conectadas (el script o
+`CORD_WALLETS_ENABLED=true`), y eso se hace después de probar en modo test.
+
+### Cómo funciona
+
+- **Viajan sobre `card`.** Apple Pay y Google Pay no son un método del
+  PaymentIntent: el Payment Element las dibuja cuando el intento admite `card`,
+  el dispositivo tiene una tarjeta en su billetera y la opción `wallets` está en
+  `auto` ([referencia](https://docs.stripe.com/js/elements_object/create_payment_element)).
+  Por eso no se tocaron `payment-intent.ts` ni `metodos.ts`: las tres superficies
+  ya piden `card`. Se cobran como tarjeta (misma tarifa, misma comisión de Cord,
+  mismo webhook, mismos reembolsos y contracargos); el proveedor no cobra extra
+  ([objeto de configuración de métodos](https://docs.stripe.com/api/payment_method_configurations/object):
+  "There are no additional fees to process Apple Pay payments").
+- **Dónde aparecen:** `/q/[token]/pay` (`PaymentIsland.tsx`), `/i/[token]` y
+  `/portal/[token]` (pago agrupado y autorización del cobro automático). Las tres
+  pasan `WALLETS_PAYMENT_ELEMENT` (`src/lib/cobros/billeteras.ts`). Los embeds no
+  montan el formulario: abren `/q/.../pay` o `/i/...` en una ventana propia de
+  Cord, así que las restricciones de Apple Pay dentro de un iframe de terceros
+  (`allow="payment"`, Safari 17+ y registrar también el dominio anfitrión) no
+  aplican.
+- **Cargos directos → un registro por cuenta conectada.** Cord crea los cobros
+  con `Stripe-Account: acct_…`, así que el dominio se registra EN CADA cuenta
+  conectada, por API (`POST /v1/payment_method_domains` con ese header); el
+  registro en el Dashboard de la plataforma no le sirve a ninguna
+  ([pmd-registration](https://docs.stripe.com/payments/payment-methods/pmd-registration),
+  [Apple Pay web](https://docs.stripe.com/apple-pay?platform=web),
+  [Google Pay web](https://docs.stripe.com/google-pay?platform=web)). Las
+  capacidades no cambian: ambas vienen con `card_payments`
+  ([capacidades](https://docs.stripe.com/connect/account-capabilities)), y
+  México, EE. UU., Canadá, Brasil, España, Reino Unido, Alemania y Francia están
+  en la lista de países de las dos.
+- **Qué dominios:** `cordhq.app` siempre, y el dominio propio del negocio
+  (Profesional+) cuando está `active`. `billing.cordhq.app` (la suscripción a
+  Cord) queda fuera a propósito: cobra en la cuenta de la plataforma, no en las
+  conectadas; si algún día se quiere, es un registro en el Dashboard de la
+  plataforma más ampliar `politicaDePago()` a esa ruta. Al desconectar un dominio
+  propio su registro se queda: no da acceso a nada y no estorba.
+- **Sin archivo de Apple.** La documentación vigente del proveedor no pide
+  alojar `/.well-known/apple-developer-merchantid-domain-association`: él hace
+  la validación de comercio. No se publicó el archivo (una copia vieja caduca y
+  rompe el registro). Si un dominio queda `apple_pay.status = inactive`, su
+  `status_details.error_message` dice por qué y `--validate` lo revisa otra vez
+  ([validate](https://docs.stripe.com/api/payment_method_domains/validate)).
+- **Permissions-Policy.** Los marcos de Stripe.js piden `allow="payment *"`, y
+  `payment=(self)` impedía delegárselo: Google Pay no se habría dibujado aunque el
+  dominio estuviera registrado (mismo error que la cámara en la regla 34). En las
+  tres superficies la política es
+  `payment=(self "https://js.stripe.com" "https://*.js.stripe.com")` y la CSP
+  agrega `https://*.js.stripe.com` a `script-src` y `frame-src`, como pide la
+  [guía de CSP](https://docs.stripe.com/security/guide). El resto de las rutas
+  conserva `payment=(self)`. Lo decide `politicaDePago()`.
+- **Registro idempotente** (`asegurarDominiosDeCobro()`): busca por
+  `domain_name` y solo crea si no existe ("no registres tu dominio más de una vez
+  por cuenta"), con `Idempotency-Key` `cord-pmd:<cuenta>:<dominio>`. Nunca
+  reactiva un dominio deshabilitado ni borra nada. Lo disparan, si
+  `CORD_WALLETS_ENABLED=true`: el webhook `account.updated` con la cuenta cobrando
+  (en CADA aviso, no solo en el cambio: el sondeo de Ajustes › Cobros suele
+  escribir `stripe_charges_enabled` antes de que llegue el aviso) y la
+  verificación de un dominio propio que queda activo. Corre en segundo plano y
+  nunca condiciona el webhook. No se guarda nada nuevo en la base: el proveedor
+  es la fuente y el script la lee.
+
+### Activación (André)
+
+1. **Dashboard de la plataforma, modo test y live:** Configuración › Connect ›
+   Métodos de pago › pestaña de **cuentas conectadas**
+   (`dashboard.stripe.com/settings/payment_methods/connected_accounts`), en la
+   configuración predeterminada: **Apple Pay** y **Google Pay** en "Activado de
+   forma predeterminada" (no "Desactivado" ni "Bloqueado"). Ahí mismo, al
+   desplegar cada uno, se ve cuántas cuentas están Enabled/Eligible.
+2. **Prueba en modo test** (sección siguiente).
+3. **Live:** `npm run stripe:payment-domains -- --live` (lectura), luego
+   `-- --apply --live` para las cuentas existentes (con `DATABASE_URL` incluye sus
+   dominios propios), y `CORD_WALLETS_ENABLED=true` en Vercel Production para las
+   que se activen después. Redeploy.
+4. **Apagar de emergencia:** poner Apple Pay y Google Pay en "Bloqueado" en esa
+   misma pantalla del Dashboard. Es inmediato y no requiere despliegue.
+
+### Cómo se prueba
+
+- Requisitos del dispositivo: HTTPS con dominio registrado en ESA cuenta
+  conectada, tarjeta real en la billetera, sin ventana privada/incógnito, y en
+  Safari "Permitir que los sitios web comprueben Apple Pay" / en Chrome "Permitir
+  que los sitios comprueben si tienes métodos de pago guardados"
+  ([guía de prueba](https://docs.stripe.com/testing/wallets?ui=payment-element)).
+  Apple Pay en modo test acepta una tarjeta REAL y no la carga
+  ([Apple Pay, Test](https://docs.stripe.com/apple-pay?platform=web)); Google
+  Pay necesita una tarjeta real en la cuenta de Google y luego acepta las de
+  prueba.
+- Modo test: un despliegue con llaves `sk_test`/`pk_test` en un dominio HTTPS
+  estable (alias de rama de Vercel, no la URL por despliegue). Registrar ese
+  host en la cuenta conectada de prueba:
+  `npm run stripe:payment-domains -- --account acct_… --domain <alias>.vercel.app --apply`.
+  Abrir `/i/<token>` de una factura de esa cuenta en un iPhone con Safari y en un
+  Android con Chrome: debe aparecer la pestaña Apple Pay / Google Pay; pagar y
+  confirmar que la factura pasa a pagada (llega `payment_intent.succeeded` como
+  tarjeta). Repetir en `/q/<token>/pay` y en el portal.
+- Live, después: un cobro real pequeño en `cordhq.app` y su reembolso, como se
+  hizo con Mercado Pago.
+
+### Verificación de código
+
+`test/billeteras.test.ts` (registro idempotente por cuenta, dry-run, dominio
+deshabilitado, `validate`, aislamiento de fallos, apagado por defecto),
+`test/stripe-payment-domains-script.test.ts` (dry-run y modo test por defecto,
+`Stripe-Account`, idempotencia), `test/billeteras-cabeceras.test.ts`
+(Permissions-Policy y CSP en las tres superficies y en las demás), y los casos
+nuevos de `test/stripe-money-events-webhook.test.ts` y
+`test/customer-domains.test.ts`.
+
+### Pendiente
+
+- Probarlo en un iPhone y un Android reales (arriba). No se ha visto todavía una
+  billetera en pantalla.
+- Confirmar en el Dashboard que la configuración de cuentas conectadas aplica a
+  intentos con `payment_method_types` explícito (Cord no usa
+  `automatic_payment_methods`); la prueba en modo test lo resuelve.
+- Igualas y cobro automático guardan la tarjeta de Apple Pay como DPAN, que deja
+  de servir si el cliente cambia de teléfono; el cargo se rechaza y sigue la
+  política de `src/lib/cobros/reintentos.ts`, que termina pidiendo otro método. El token de comercio (MPAN,
+  `applePay.recurringPaymentRequest`) lo evita
+  ([merchant tokens](https://docs.stripe.com/apple-pay/merchant-tokens)); no está
+  construido.
+- Un aviso en Ajustes › Cobros con el estado de las billeteras por dominio no
+  existe: hoy se lee con el script.
+
 ## Seguimiento de confiabilidad
 
 El inventario transversal, evidencia y criterios de cierre de fase 1 viven en

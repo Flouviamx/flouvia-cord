@@ -15,7 +15,7 @@ import FeatureShowcase from '../../components/producto/FeatureShowcase.astro';
 import QuoteBuilderDemo from '../../components/producto/QuoteBuilderDemo.astro';
 import PaymentRailsMatrix from '../../components/producto/PaymentRailsMatrix.astro';
 import FaqAccordion from '../../components/landing/FaqAccordion.astro';
-import { FEATURES } from '../../lib/producto';
+import { FEATURES, navEnFrase } from '../../lib/producto';
 import { FEATURES_EN } from '../../lib/producto.en';
 import { flagSrc } from '../../lib/flags';
 import { WORKFLOW_ICONS } from '../../lib/workflows/icons';
@@ -1677,7 +1677,7 @@ import { iconInner } from '../../lib/icons';
         <FaqAccordion
             faqs={feature.faqs}
             eyebrow={isEn ? 'FREQUENTLY ASKED QUESTIONS' : 'PREGUNTAS FRECUENTES'}
-            title={`${isEn ? 'Most common questions about' : 'Lo que más nos preguntan sobre'} ${feature.nav.toLowerCase()}.`}
+            title={`${isEn ? 'Most common questions about' : 'Lo que más nos preguntan sobre'} ${navEnFrase(feature.nav)}.`}
             id={`producto-${feature.slug}`}
             class="pp-faq-acc"
         />
@@ -1706,8 +1706,8 @@ import { iconInner } from '../../lib/icons';
                     <div class="pp-more-info">
                         <b>{isEn ? 'Documentation' : 'Documentación'}</b>
                         <span>{isEn
-                            ? `Step-by-step guides for ${feature.nav.toLowerCase()}.`
-                            : `Guías paso a paso de ${feature.nav.toLowerCase()}.`}</span>
+                            ? `Step-by-step guides for ${navEnFrase(feature.nav)}.`
+                            : `Guías paso a paso de ${navEnFrase(feature.nav)}.`}</span>
                     </div>
                     <i class="pp-more-arrow">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-right')}></svg>
