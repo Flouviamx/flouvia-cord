@@ -7,7 +7,8 @@ export const prerender = false;
 
 import EmbedLayout from '../../../layouts/EmbedLayout.astro';
 import { getFacturaByToken } from '../../../lib/queries';
-import { moneyFull } from '../../../lib/fmt';
+// money() de fmt-server: getFacturaByToken fija la divisa de la factura (regla 21).
+import { money } from '../../../lib/fmt-server';
 import { getCountryProfile } from '../../../lib/countries';
 import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
@@ -54,7 +55,7 @@ const prueba = f.simulado || f.testMode || f.esPrueba;
 
             <section class="ci-hero">
                 <span class="ci-label">{f.esNotaCredito ? t(L, 'fact.p_total') : t(L, 'fact.e_saldo_pendiente')}</span>
-                <p class="ci-amount editorial">{moneyFull(f.esNotaCredito ? f.total : f.saldo)}</p>
+                <p class="ci-amount editorial">{money(f.esNotaCredito ? f.total : f.saldo)}</p>
                 <div class="ci-meta">
                     <span class={`ci-chip ci-${estado.tone}`}>{estado.label}</span>
                     {f.vencida && !f.esNotaCredito && <span class="ci-chip ci-late">{t(L, 'fact.p_vencida')}</span>}
@@ -67,23 +68,23 @@ const prueba = f.simulado || f.testMode || f.esPrueba;
                 <thead><tr><th scope="col">{t(L, 'fact.p_concepto')}</th><th scope="col" class="ci-num">{t(L, 'fact.p_cant')}</th><th scope="col" class="ci-num">{t(L, 'fact.p_importe')}</th></tr></thead>
                 <tbody>
                     {f.lineas.map((l) => (
-                        <tr><td>{l.descripcion}</td><td class="ci-num">{l.cantidad}</td><td class="ci-num editorial">{moneyFull(l.subtotal)}</td></tr>
+                        <tr><td>{l.descripcion}</td><td class="ci-num">{l.cantidad}</td><td class="ci-num editorial">{money(l.subtotal)}</td></tr>
                     ))}
                 </tbody>
             </table>
 
             <dl class="ci-totals">
-                <div><dt>{t(L, 'fact.p_subtotal')}</dt><dd class="editorial">{moneyFull(f.subtotal)}</dd></div>
-                {f.impuestos > 0 && <div><dt>{t(L, 'fact.p_impuestos')}</dt><dd class="editorial">{moneyFull(f.impuestos)}</dd></div>}
-                <div class="ci-strong"><dt>{t(L, 'fact.p_total')}</dt><dd class="editorial">{moneyFull(f.total)}</dd></div>
-                {f.pagado > 0 && <div><dt>{t(L, 'fact.p_pagado')}</dt><dd class="editorial">−{moneyFull(f.pagado)}</dd></div>}
-                {!f.esNotaCredito && <div class="ci-strong"><dt>{t(L, 'fact.p_saldo')}</dt><dd class="editorial">{moneyFull(f.saldo)}</dd></div>}
+                <div><dt>{t(L, 'fact.p_subtotal')}</dt><dd class="editorial">{money(f.subtotal)}</dd></div>
+                {f.impuestos > 0 && <div><dt>{t(L, 'fact.p_impuestos')}</dt><dd class="editorial">{money(f.impuestos)}</dd></div>}
+                <div class="ci-strong"><dt>{t(L, 'fact.p_total')}</dt><dd class="editorial">{money(f.total)}</dd></div>
+                {f.pagado > 0 && <div><dt>{t(L, 'fact.p_pagado')}</dt><dd class="editorial">−{money(f.pagado)}</dd></div>}
+                {!f.esNotaCredito && <div class="ci-strong"><dt>{t(L, 'fact.p_saldo')}</dt><dd class="editorial">{money(f.saldo)}</dd></div>}
             </dl>
 
             <footer class="ci-foot">
                 {pagable && (
                     <Fragment>
-                        <button type="button" class="ci-pay" id="ciPay">{t(L, 'fact.p_pagar')} {moneyFull(f.saldo)}</button>
+                        <button type="button" class="ci-pay" id="ciPay">{t(L, 'fact.p_pagar')} {money(f.saldo)}</button>
                         <p class="ci-hint">{t(L, 'fact.e_pago_ventana')}</p>
                     </Fragment>
                 )}

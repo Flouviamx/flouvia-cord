@@ -13,9 +13,11 @@ export const prerender = false;
 import Layout from '../../layouts/Layout.astro';
 import { getFacturaByToken } from '../../lib/queries';
 import { resolveViewer } from '../../lib/public-viewer';
-// moneyFull lee la divisa del request, que getFacturaByToken fija con la de la
-// FACTURA (Regla 21). Un símbolo fijo aquí mostraría "$" a un cliente en Madrid.
-import { moneyFull } from '../../lib/fmt';
+// money() lee la divisa del request, que getFacturaByToken fija con la de la
+// FACTURA (Regla 21). Tiene que ser el de fmt-server: el moneyFull de lib/fmt
+// lee el DOM y en servidor caía siempre a MXN, así que una factura en EUR se
+// le mostraba al cliente como pesos.
+import { money } from '../../lib/fmt-server';
 import { getCountryProfile } from '../../lib/countries';
 import { currencyDecimals } from '../../lib/currency';
 import { fmtTaxPct, taxDisplayRows, taxNotes } from '../../lib/tax-components';
@@ -68,7 +70,18 @@ const notasImpuesto = taxNotes(f.lineas, L);
 const hayDescuento = f.descuentoTotal > 0;
 const brutoDe = (l: (typeof f.lineas)[number]) => l.subtotal + (hayDescuento ? l.descuento : 0);
 const regresoDePago = Astro.url.searchParams.get('pagado') === '1' && f.estado !== 'paid';
-const guidance = publicInvoiceGuidance({ ...f, puedePagar, regresoDePago }, L);
+// Con Mercado Pago también se paga desde aquí: sin esto, en CO, AR, CL y PE la
+// guía decía "Contacta a la empresa para coordinar el pago" junto al botón.
+// Un saldo largo con código de divisa ("COP 33,343,800.00", unido por un
+// espacio no separable) desbordaba la tarjeta en un teléfono: pasado de 13
+// caracteres, la tipografía baja en proporción (la calca de /producto/facturacion
+// usa la misma regla).
+const montoHero = money(f.esNotaCredito ? f.total : f.saldo);
+const escalaHero = [...montoHero].length > 13 ? 13 / [...montoHero].length : 1;
+const heroFont = escalaHero < 1
+    ? `font-size:clamp(${(2.65 * escalaHero).toFixed(2)}rem, ${(8 * escalaHero).toFixed(2)}vw, ${(3.55 * escalaHero).toFixed(2)}rem);`
+    : '';
+const guidance = publicInvoiceGuidance({ ...f, puedePagar: puedePagar || puedePagarMp, regresoDePago }, L);
 const contact = publicInvoiceContact(f.org.email, f.org.telefono, f.numero ?? '', L);
 
 const ESTADO: Record<string, { label: string; tone: string }> = {
@@ -157,7 +170,7 @@ import { iconInner } from '../../lib/icons';
                     : f.estado === 'paid'
                     ? (f.acreditado ? (L === 'en' ? 'Invoice settled' : 'Factura saldada') : (L === 'en' ? 'Invoice paid' : 'Factura pagada'))
                     : (L === 'en' ? 'Balance due' : 'Saldo pendiente')}</span>
-                <h1 class="editorial" style={`color:${color}`}>{moneyFull(f.esNotaCredito ? f.total : f.saldo)}</h1>
+                <h1 class="editorial" style={`color:${color};${heroFont}`}>{montoHero}</h1>
                 <div class="iv-headmeta">
                     <span class={`iv-chip iv-chip-${estado.tone}`}>{estado.label}</span>
                     {f.vencida && !f.esNotaCredito && <span class="iv-chip iv-chip-late">{t(L, 'fact.p_vencida')}</span>}
@@ -212,8 +225,8 @@ import { iconInner } from '../../lib/icons';
                             <tr>
                                 <td>{l.descripcion}</td>
                                 <td class="iv-num">{l.cantidad}</td>
-                                <td class="iv-num editorial">{moneyFull(hayDescuento && l.cantidad > 0 ? brutoDe(l) / l.cantidad : l.precioUnitario)}</td>
-                                <td class="iv-num editorial">{moneyFull(brutoDe(l))}</td>
+                                <td class="iv-num editorial">{money(hayDescuento && l.cantidad > 0 ? brutoDe(l) / l.cantidad : l.precioUnitario)}</td>
+                                <td class="iv-num editorial">{money(brutoDe(l))}</td>
                             </tr>
                         ))}
                     </tbody>
@@ -221,25 +234,25 @@ import { iconInner } from '../../lib/icons';
             </section>
 
             <section class="iv-totals">
-                <div class="iv-row"><span>{t(L, 'fact.p_subtotal')}</span><span class="editorial">{moneyFull(f.subtotal + f.descuentoTotal)}</span></div>
+                <div class="iv-row"><span>{t(L, 'fact.p_subtotal')}</span><span class="editorial">{money(f.subtotal + f.descuentoTotal)}</span></div>
                 {hayDescuento && (
-                    <div class="iv-row"><span>{etiquetaDescuento(f.descuento, L)}</span><span class="editorial">−{moneyFull(f.descuentoTotal)}</span></div>
+                    <div class="iv-row"><span>{etiquetaDescuento(f.descuento, L)}</span><span class="editorial">−{money(f.descuentoTotal)}</span></div>
                 )}
                 {f.impuestos > 0 && (impuestosPorNombre
                     ? impuestosPorNombre.map((row) => (
-                        <div class="iv-row"><span>{row.nombre} {fmtTaxPct(row.tasa)}</span><span class="editorial">{moneyFull(row.impuesto)}</span></div>
+                        <div class="iv-row"><span>{row.nombre} {fmtTaxPct(row.tasa)}</span><span class="editorial">{money(row.impuesto)}</span></div>
                     ))
-                    : <div class="iv-row"><span>{t(L, 'fact.p_impuestos')}</span><span class="editorial">{moneyFull(f.impuestos)}</span></div>
+                    : <div class="iv-row"><span>{t(L, 'fact.p_impuestos')}</span><span class="editorial">{money(f.impuestos)}</span></div>
                 )}
                 {notasImpuesto.map((nota) => <div class="iv-row"><span>{nota}</span><span></span></div>)}
-                <div class="iv-row iv-row-total"><span>{t(L, 'fact.p_total')}</span><span class="editorial">{moneyFull(f.total)}</span></div>
+                <div class="iv-row iv-row-total"><span>{t(L, 'fact.p_total')}</span><span class="editorial">{money(f.total)}</span></div>
                 {f.pagado > 0 && (
-                    <div class="iv-row"><span>{t(L, 'fact.p_pagado')}</span><span class="editorial">−{moneyFull(f.pagado)}</span></div>
+                    <div class="iv-row"><span>{t(L, 'fact.p_pagado')}</span><span class="editorial">−{money(f.pagado)}</span></div>
                 )}
-                {f.acreditado > 0 && <div class="iv-row"><span>{L === 'en' ? 'Credit notes applied' : 'Notas de crédito aplicadas'}</span><span class="editorial">−{moneyFull(f.acreditado)}</span></div>}
-                {f.reembolsado > 0 && <div class="iv-row"><span>{L === 'en' ? 'Refunded' : 'Reembolsado'}</span><span class="editorial">+{moneyFull(f.reembolsado)}</span></div>}
-                {f.porDevolver > 0 && <div class="iv-row"><span>{L === 'en' ? 'Amount to be returned to you' : 'Importe por devolverte'}</span><span class="editorial">{moneyFull(f.porDevolver)}</span></div>}
-                {!f.esNotaCredito && <div class="iv-row iv-row-due"><span>{t(L, 'fact.p_saldo')}</span><span class="editorial">{moneyFull(f.saldo)}</span></div>}
+                {f.acreditado > 0 && <div class="iv-row"><span>{L === 'en' ? 'Credit notes applied' : 'Notas de crédito aplicadas'}</span><span class="editorial">−{money(f.acreditado)}</span></div>}
+                {f.reembolsado > 0 && <div class="iv-row"><span>{L === 'en' ? 'Refunded' : 'Reembolsado'}</span><span class="editorial">+{money(f.reembolsado)}</span></div>}
+                {f.porDevolver > 0 && <div class="iv-row"><span>{L === 'en' ? 'Amount to be returned to you' : 'Importe por devolverte'}</span><span class="editorial">{money(f.porDevolver)}</span></div>}
+                {!f.esNotaCredito && <div class="iv-row iv-row-due"><span>{t(L, 'fact.p_saldo')}</span><span class="editorial">{money(f.saldo)}</span></div>}
                 {f.fxRate && f.fxRate !== 1 && f.ledgerCurrency && (
                     <p class="iv-fx">
                         {t(L, 'fact.p_tc')}: 1 {f.currency} = {f.fxRate} {f.ledgerCurrency}
@@ -252,7 +265,7 @@ import { iconInner } from '../../lib/icons';
                     <span class="iv-label">{t(L, 'fact.p_pagos')}</span>
                     <ul>
                         {f.pagos.map((p) => (
-                            <li><span>{p.cuando}</span><span class="editorial">{moneyFull(p.monto)}</span></li>
+                            <li><span>{p.cuando}</span><span class="editorial">{money(p.monto)}</span></li>
                         ))}
                     </ul>
                 </section>
@@ -272,13 +285,13 @@ import { iconInner } from '../../lib/icons';
                 )}
                 {conSpei && !regresoDePago && (
                     <button type="button" class="iv-pay" id="ivPaySpei" style={`background:${color}`} hidden={conTarjeta}>
-                        {t(L, 'fact.p_pagar_spei').replace('{monto}', moneyFull(f.saldo))}
+                        {t(L, 'fact.p_pagar_spei').replace('{monto}', money(f.saldo))}
                     </button>
                 )}
                 {conTarjeta && !regresoDePago && (
                     <Fragment>
                         <button type="button" class="iv-pay" id="ivPay" style={`background:${color}`}>
-                            {t(L, 'fact.p_pagar')} {moneyFull(f.saldo)}
+                            {t(L, 'fact.p_pagar')} {money(f.saldo)}
                         </button>
                         {/* Un área de cuentas por pagar liquida a plazos con
                             mucha más frecuencia de lo que un botón de "pagar
@@ -860,6 +873,9 @@ import { iconInner } from '../../lib/icons';
     .iv-lines td { padding: 0.95rem 0; font-size: 0.84rem; color: #4b5563; border-bottom: 1px solid rgba(10, 25, 47, 0.045); }
     .iv-lines td:first-child { color: #111827; font-weight: 600; }
     .iv-num { text-align: right; }
+    /* `.iv-lines th` gana en especificidad a `.iv-num`: sin esto los encabezados
+       numéricos quedaban a la izquierda, sobre importes alineados a la derecha. */
+    .iv-lines th.iv-num { text-align: right; }
 
     .iv-totals { margin-top: 1.8rem; margin-left: auto; max-width: 320px; }
     .iv-row { display: flex; justify-content: space-between; padding: 0.42rem 0; font-size: 0.82rem; color: #6b7280; }

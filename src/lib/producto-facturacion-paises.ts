@@ -319,7 +319,7 @@ export function paisesCobro(lang: Lang, t: (key: any) => string): PaisCobro[] {
             mercadoPago: supportsMercadoPago(code), metodosEnLinea, speiEnLinea,
         }, true);
         const guidance = publicInvoiceGuidance({
-            estado: 'open', esNotaCredito: false, porDevolver: 0, saldo, acreditado: 0, puedePagar, regresoDePago: false,
+            estado: 'open', esNotaCredito: false, porDevolver: 0, saldo, acreditado: 0, puedePagar: puedePagar || puedePagarMp, regresoDePago: false,
         }, lang);
         const contact = publicInvoiceContact(d.email, d.tel, folio(code, d), lang);
         const proforma = code === 'ES' && ES_PROFORMA;
