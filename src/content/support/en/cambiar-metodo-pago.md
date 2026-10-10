@@ -8,8 +8,10 @@ category: "Payments & Deposits"
 ## Choose how to pay
 
 The quote link offers methods enabled by the business. Card and automatic bank
-transfer require an enabled payment account. The public invoice page has its own
-card flow; do not assume it offers every quote payment method.
+transfer require an enabled payment account. The invoice link does not offer the
+same as the quote: it offers card and, if the business turned it on, bank direct
+debit (SEPA in EUR, ACH in USD), but **not SPEI**. See
+[SEPA Direct Debit and ACH bank debit](/en/support/domiciliacion-sepa-ach).
 
 ### Card
 

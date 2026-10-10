@@ -176,8 +176,8 @@ export const COMPARATIVA: CompareGroup[] = [
         rows: [
             { label: 'Cotizaciones enviadas', free: '5 / mes', starter: 'Ilimitadas', pro: 'Ilimitadas', scale: 'Ilimitadas', developer: 'Ilimitadas' },
             { label: 'Armado de cotizaciones con IA', free: '3 / mes', starter: '20 / mes', pro: '50 / mes', scale: '500 / mes', developer: 'Ilimitado' },
-            { label: 'Facturas comerciales', free: '10 / mes', starter: 'Ilimitadas', pro: 'Ilimitadas', scale: 'Ilimitadas', developer: 'Ilimitadas', hint: 'En México y España el documento comercial es una proforma.' },
-            { label: 'Facturas con validez fiscal', free: false, starter: '30 / mes', pro: '200 / mes', scale: '500 / mes', developer: '1,000 / mes', hint: 'CFDI 4.0 en México; VERI*FACTU en España tras completar su activación. En los demás mercados Cord emite factura comercial y no timbra ante otras autoridades fiscales.' },
+            { label: 'Facturas comerciales', free: '10 / mes', starter: 'Ilimitadas', pro: 'Ilimitadas', scale: 'Ilimitadas', developer: 'Ilimitadas', hint: 'En México, en España y donde la factura electrónica del país está activa, el documento comercial es una proforma.' },
+            { label: 'Facturas con validez fiscal', free: false, starter: '30 / mes', pro: '200 / mes', scale: '500 / mes', developer: '1,000 / mes', hint: 'CFDI 4.0 en México; VERI*FACTU en España y la factura electrónica de Argentina, Brasil, Chile, Colombia y Perú tras completar su activación. También cuentan sus notas de crédito y los complementos de pago; los documentos de prueba ante la autoridad, no.' },
             { label: 'Llamadas a la API pública', free: '100 / mes', starter: '1,000 / mes', pro: '5,000 / mes', scale: '10,000 / mes', developer: '50,000 / mes' },
             { label: 'Facturas con sales tax automático', free: false, starter: '10 / mes', pro: '25 / mes', scale: '60 / mes', developer: '150 / mes', hint: US_TAX_HINT },
         ],
@@ -195,7 +195,7 @@ export const COMPARATIVA: CompareGroup[] = [
             { label: 'Aprobación parcial por línea', free: true, starter: true, pro: true, scale: true, developer: true },
             { label: 'Pipeline Kanban (arrastrar para avanzar)', free: true, starter: true, pro: true, scale: true, developer: true },
             { label: 'Tareas y recordatorios (CRM)', free: true, starter: true, pro: true, scale: true, developer: true },
-            { label: 'Impuestos configurables (IVA, IEPS, retenciones)', free: true, starter: true, pro: true, scale: true, developer: true },
+            { label: 'Impuestos configurables por línea (IVA, retenciones, exentos)', free: true, starter: true, pro: true, scale: true, developer: true },
         ],
     },
     {
@@ -222,7 +222,7 @@ export const COMPARATIVA: CompareGroup[] = [
     {
         titulo: 'Fiscal y multi-divisa',
         rows: [
-            { label: 'Emisión fiscal integrada', free: false, starter: true, pro: true, scale: true, developer: true, hint: 'CFDI 4.0 en México con emisor configurado. VERI*FACTU en España requiere activación y validación. Sin promesa de cumplimiento fiscal universal.' },
+            { label: 'Emisión fiscal integrada', free: false, starter: true, pro: true, scale: true, developer: true, hint: 'CFDI 4.0 en México con emisor configurado. VERI*FACTU en España, la factura electrónica de Argentina, Brasil, Chile, Colombia y Perú y la emisión por plataforma autorizada en Francia están en activación: cada una se enciende por país y requiere el alta del negocio ante su autoridad o plataforma. Sin promesa de cumplimiento fiscal universal.' },
             { label: 'Tu propio CSD (sello digital, México)', free: false, starter: true, pro: true, scale: true, developer: true },
             { label: 'Tipo de cambio congelado al cotizar', free: true, starter: true, pro: true, scale: true, developer: true },
         ],
@@ -331,7 +331,7 @@ export const FAQ_PRECIOS: { q: string; a: string }[] = [
     },
     {
         q: '¿Cómo funciona la facturación electrónica?',
-        a: 'Hay dos tipos de factura. La comercial (proforma en México y España) está en todos los planes: 10 al mes en Gratis e ilimitadas desde Starter. La factura con validez fiscal empieza en Starter con 30 al mes; Profesional incluye 200 y Scale 500. Hoy Cord timbra CFDI 4.0 en México, y en España VERI*FACTU requiere completar su activación. En los demás mercados Cord emite la factura comercial y no timbra ante otras autoridades. Una proforma no sustituye el CFDI.',
+        a: 'Hay dos tipos de factura. La comercial (proforma en México, en España y donde la factura electrónica del país está activa) está en todos los planes: 10 al mes en Gratis e ilimitadas desde Starter. La factura con validez fiscal empieza en Starter con 30 al mes; Profesional incluye 200 y Scale 500, y en esa cuota cuentan también las notas de crédito y los complementos de pago. Hoy Cord timbra CFDI 4.0 en México. VERI*FACTU en España y la factura electrónica de Argentina (ARCA), Brasil (NFS-e y NF-e), Chile (SII), Colombia (DIAN) y Perú (SUNAT) están construidos y se activan país por país; mientras no estén activos para tu cuenta, Cord emite la factura comercial y no la presenta ante la autoridad. La emisión por plataforma autorizada en Francia también está en activación. Una proforma no sustituye el documento fiscal.',
     },
     {
         q: '¿Qué pasa después de mis 5 envíos gratis?',

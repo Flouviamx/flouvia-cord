@@ -1,7 +1,7 @@
 ---
 docId: dpa
-version: "2026-09-01"
-effectiveDate: "2026-09-01"
+version: "2026-10-10"
+effectiveDate: "2026-10-10"
 supersedes: null
 locale: en-US
 jurisdiction: GLOBAL
@@ -13,12 +13,12 @@ publicationStatus: draft
 editorialStage: technical-draft
 dependsOn: ["terms", "privacy", "subprocessors", "retention-policy"]
 sourceSections: ["privacy@2026-09-28#dpa", "privacy@2026-09-28#internacionales"]
-releaseBlockers: ["verified-parties", "processing-schedules", "security-schedule", "account-contracts", "transfer-map", "subprocessor-notice", "incident-procedure", "retention-schedule", "legal-review", "execution-evidence", "versioned-publication"]
+releaseBlockers: ["verified-parties", "processing-schedules", "security-schedule", "account-contracts", "transfer-map", "subprocessor-notice", "incident-procedure", "retention-schedule", "fiscal-retention-after-closure", "legal-review", "execution-evidence", "versioned-publication"]
 sourceKind: markdown
 sourceOfTruth: src/content/legal/en-US/dpa.md
 artifactRoute: /en/dpa
 artifactSha256: "0000000000000000000000000000000000000000000000000000000000000000"
-lastReviewed: "2026-09-01"
+lastReviewed: "2026-10-10"
 reviewedBy: Technical drafting; external legal review pending
 ---
 
@@ -70,7 +70,10 @@ Data subjects may include users, members, prospects, customers, buyers, signers,
 commercial debtors, representatives, directors, and beneficial owners. Data may
 include identity and contact, commercial, tax and technical data, quotes,
 invoices, payments, communications, delivery or dispute evidence, files, and
-fields Customer enters.
+fields Customer enters. They may also include Customer's suppliers whose
+documents Cord receives in Chile, holders of the tax certificates Customer
+uploads, and the payment methods, mandates and automatic-payment authorizations
+Customer's customers save in their portal.
 
 The executable addendum must complete, by function, categories, people, purposes,
 frequency, recipients, countries, periods, and sensitive data. This general list
@@ -119,7 +122,9 @@ Scope, frequency, costs, and procedure remain open.
 ## 6. Sub-processors and Customer-directed integrations
 
 The proposed general authorization covers only providers actually classified as
-sub-processors. Stripe, Google, and Apple may have their own duties; SAT/PAC/AEAT
+sub-processors. Stripe, Google, Apple, and the French approved platform may have
+their own duties; tax authorities (SAT through the PAC, AEAT, ARCA, Sefin
+Nacional, SEFAZ, SUNAT, SII, DIAN, and the DGFiP through the approved platform)
 are legal recipients; SAML, MCP, Slack, HubSpot, platforms using the API with a
 Customer key (such as Zapier or Make), and webhooks configured by Customer are
 Customer-directed integrations. One table does not make every role a sub-processor.
@@ -128,6 +133,13 @@ For HubSpot, Cord stores OAuth tokens encrypted, lets Customer disconnect at any
 time, attempts to revoke access when it does, and deletes the tokens. Data already
 sent to Customer's account remains under the control of Customer and that
 provider.
+
+The tax credentials Customer uploads are a documented instruction: Cord uses
+them only to sign and transmit that organization's documents, check their status
+and, in Chile, answer its suppliers; it stores them encrypted and never returns
+them to the browser. When transmitting, Cord acts as Customer's invoicing system,
+not as its attorney-in-fact. The inbound email provider receiving Cord mailboxes
+must be identified and contracted before inbound email is enabled.
 
 Before a new sub-processor handles Customer Data, the final contract must impose
 equivalent protection and set advance notice, channel, period, and handling of
@@ -165,11 +177,14 @@ KYC evidence has a five-year sweeper, but its `on delete cascade` foreign key
 deletes it with the organization. Legal-acceptance evidence survives with no
 approved period. Organization `audit_log`, including the deletion-start event,
 also cascades. These conflicts prevent a uniform return, retention, or deletion
-certificate promise.
+certificate promise. Tax documents and authority responses for Mexico, Argentina,
+Brazil, Chile, Colombia, Peru, and France are deleted with the organization, and
+Verifactu records prevent its deletion; none has a post-closure retention period
+or bulk export, although each country's tax law requires Customer to keep them.
 
 **Blockers:** parties/contacts; processing and security schedules; roles by flow;
 contracts/regions; transfer map; sub-processor notice and objection; incident and
 rights procedures; retention and deletion evidence; legal review, execution, and
 versioned publication.
 
-Provenance and evidence: [phase 5.4 data-governance review](../../../../docs/historial/revisiones-legales/2026-09-01-data-governance.md). Original clauses remain preserved through `sourceSections`.
+Provenance and evidence: [phase 5.4 data-governance review](../../../../docs/historial/revisiones-legales/2026-09-01-data-governance.md) and [per-country invoicing review](../../../../docs/historial/revisiones-legales/2026-10-10-facturacion-paises.md). Original clauses remain preserved through `sourceSections`.

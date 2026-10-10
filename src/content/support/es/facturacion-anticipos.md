@@ -21,6 +21,6 @@ Cord divide el cobro por ti con la función de anticipo (ver [Cobrar un anticipo
 ### La parte fiscal la controlas tú
 
 > [!NOTE]
-> Cord se encarga del **cobro** dividido, pero el timbrado de cada parcialidad no es automático. Cord no genera por sí solo el Complemento de Recepción de Pagos (REP) de cada pago.
+> Cord se encarga del **cobro** dividido y del complemento de pago de cada cobro que se aplica a una factura PPD. El procedimiento de anticipos del SAT (CFDI de anticipo y su aplicación) no lo emite.
 
-Para el CFDI, timbra la factura del monto total con el método que corresponda (`PUE` si es de contado, `PPD` si es a crédito o en parcialidades) desde el detalle de la cotización, y coordina con tu contador la emisión del REP de cada pago recibido según tu operación real. La generación automática de REP está en nuestro roadmap.
+Para el CFDI, pulsa **Timbrar CFDI 4.0** desde el detalle de la cotización. Cord decide el método: si la venta ya está pagada por completo sale `PUE`; si queda saldo, sale `PPD` y cada pago que recibas después (el saldo, una cuota o un abono) emite su complemento de pago automático. Lo que se cobró **antes** de timbrar (por ejemplo, el anticipo) pasa a la factura como un pago más. Si tu operación es un anticipo real, el SAT pide su procedimiento propio: resuélvelo con tu contador **antes** de timbrar. Ver [Facturas PPD y complementos de pago](/soporte/complementos-de-pago).

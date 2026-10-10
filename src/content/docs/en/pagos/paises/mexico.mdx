@@ -1,0 +1,195 @@
+---
+title: "Invoicing in Mexico"
+seoTitle: "Invoicing in Mexico with Cord: CFDI 4.0, complements, and SAT"
+description: "CFDI 4.0 stamped with your CSD: PUE or PPD with payment complement, global invoice, replacement with reason 01, SAT keys per line item, CFDI to foreign clients, taxes and withholdings, cancellation, and collection by card, SPEI, or Mercado Pago."
+lastUpdated: "2026-10-10"
+reviewedBy: "Cord product and operations"
+appliesToMarkets: [MX]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Account with Mexico as its country", "Starter or higher to issue CFDI", "Valid Digital Seal Certificate (CSD)", "Settings permission to upload tax details; Quotes to issue; Collections to void, replace, and record payments"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Mexico</h1>
+  <p class="page-subtitle">CFDI 4.0 stamped with the SAT using your own CSD, with the payment method, complements, and keys the SAT asks for.</p>
+</header>
+
+## What it is
+
+In Mexico Cord issues **CFDI 4.0** stamped with the SAT through an authorized certification provider, **under your RFC and with your Digital Seal Certificate (CSD)**. You upload the CSD once and from then on every invoice, credit note, and payment complement is stamped in your name. On the Free plan, and when you choose the commercial option, Cord issues a **pro forma** with the `PRO` series, which does not replace a CFDI.
+
+| | In Mexico |
+|---|---|
+| Default currency | MXN (you can invoice in another currency with an exchange rate) |
+| Tax | IVA, with IVA and ISR withholdings |
+| Tax ID | RFC, validated with its check digit |
+| Document | CFDI 4.0 income, expense (credit note), and payment (complement) |
+| Authority | SAT, through an authorized certification provider |
+| PDF language | Spanish |
+| Online payments | Card and SPEI with Cord Payments, and Mercado Pago |
+
+## Requirements
+
+- **Plan:** Starter or higher to stamp. On Free you issue pro formas (10 per month).
+- A **valid CSD** for your RFC: the `.cer` and `.key` files and the key password. You obtain it from the SAT; Cord does not issue it.
+- **Complete tax details** in **Settings › Tax details**: RFC, legal name, tax regime, and issuing zip code.
+- **Permissions:** **Settings** to upload tax details and the CSD; **Quotes** to create and issue invoices; **Collections** to record payments, void, replace, and issue credit notes.
+
+## Set up your account
+
+<Steps>
+
+1. Open **Settings › Tax details** and complete **Tax identification**: RFC, legal name exactly as on your certificate, tax regime, issuing zip code, and default CFDI use.
+2. Under **Digital Seal Certificate (CSD)**, upload your `.cer` and `.key`, type the key password, and click **Upload CSD and connect**. The password is only used to decrypt the key: Cord does not store it.
+3. Review your catalog in **Settings › Taxes**: Cord seeds it with IVA 16%, IVA 8% for the border region, Exento, and the most common withholdings.
+4. Classify your products in **Products**, section **E-invoicing (SAT, Mexico)**, with their product or service key and their unit key.
+5. Complete each client's tax details on their profile: RFC, tax regime, CFDI use, and tax zip code.
+
+</Steps>
+
+<DmRailSettings lang="en" rail="csd" />
+
+## Taxes and withholdings
+
+<DmTaxCatalog lang="en" country="MX" />
+
+| Seeded profile | Rate | How it is calculated |
+|---|---|---|
+| IVA 16% | 16% | Transferred on each line item's base. It is the default. |
+| IVA 8% región fronteriza | 8% | Border region incentive, valid until December 31, 2026: check that it still applies before using it in 2027. |
+| Exento | 0% | Exempt line item: it transfers no IVA. |
+| Retención IVA 10.6667% | 10.6667% | Two thirds of the 16% IVA, only on the **taxed** amount: an exempt line item is not part of the base. |
+| Retención ISR 1.25% | 1.25% | On the subtotal (RESICO). |
+| Retención IVA 4% (autotransporte) | 4% | Road freight transport, on the taxed amount. |
+| Retención IVA 6% (servicios de personal) | 6% | Staffing services, on the taxed amount. |
+
+Cord sends the SAT the taxes of **each line item** as you captured them, not a single rate. Withholdings marked as default are subtracted from the total. If you invoice in another currency, the CFDI declares the exchange rate frozen when the quote was made.
+
+## Recipient details
+
+Cord takes the client's tax details from their profile and does not make them up:
+
+| Data | If missing |
+|---|---|
+| RFC | Stamped with the generic RFC XAXX010101000, in the client's name, with regime 616 and your business's zip code. |
+| Tax regime | 601 (General de Ley Personas Morales) if the client has an RFC. |
+| CFDI use | Your account's, or G03 (General expenses). |
+| Tax zip code | There is no substitute: the SAT may reject the stamping. |
+
+The defaults may not match your client's tax certificate. Complete them before issuing so the CFDI is useful to your client.
+
+### Foreign clients
+
+If the country on the profile is not Mexico, the CFDI is issued to a **foreign resident**: generic RFC XEXX010101000, their tax residence (the profile's country), use **S01**, and, if you captured it, their tax ID (EIN, NIF, VAT) as the tax registration number. You decide each line item's rate with your accountant; services exports usually go at 0%.
+
+<Callout type="info">
+SAT keys per line item, CFDI to foreign clients, the global invoice, and CFDI replacement are new. This feature is new and may not be enabled on your account yet. If you don't see it, contact us.
+</Callout>
+
+## SAT keys for each line item
+
+- Each product carries its **product or service key** (c_ClaveProdServ, 8 digits) and its **unit key** (c_ClaveUnidad). The product key is searched by description in the SAT catalog; the unit key, if left empty, is derived from the product's unit (hour → HUR, month → MON, kg → KGM).
+- In the invoice and quote editors, **each line item can carry its own keys**, which take precedence over the product's. Duplicating a document keeps them.
+- A line item with no keys of its own and no classified product is stamped with the generic **01010101** and **H87**, and the editor tells you how many are left that way before you issue.
+- A key with an invalid format is rejected when saving, naming the line item.
+
+## Payment method: PUE, PPD, and payment complement
+
+Cord decides the method when stamping, using the invoice's actual payments:
+
+- **PUE (single payment)** when the invoice is already fully paid at issuance, with the payment form of the charge (card 04, transfer 03, cash 01, check 02). You can set the form by hand in the editor; it only applies to a PUE.
+- **PPD (installment or deferred payment)** with form 99 when the invoice is issued before it is paid.
+- For each payment you record on a PPD CFDI, Cord automatically stamps a **payment complement (CFDI type P)** related to the invoice. You see it in the invoice's activity.
+- A CFDI to "público en general" (generic RFC) is always stamped PUE: it does not accept a complement.
+
+<Callout type="warning" title="When the complement is not automatic">
+If the payment is in another currency, the complement needs the official exchange rate of the payment date, and if the payment predates the invoice it is an advance, which the SAT documents with another procedure. In both cases Cord does not stamp it and the invoice's activity says why: issue it with your accountant. If a complement could not be stamped for another reason (for example, your plan's quota), contact us to retry it.
+</Callout>
+
+Each payment complement counts as one tax document of your monthly quota.
+
+## Invoice status
+
+<DmInvoiceAuthority lang="en" rail="cfdi" />
+
+On the invoice detail you see the **tax folio (UUID)** the SAT assigned, each line item's keys, taxes by rate, the amount paid, and the balance. The activity records issuance, sending, when the client opened it, and each payment. The PDF and XML are downloaded from the invoice and from its public link.
+
+## Global invoice to the general public
+
+Sales that were paid without the client asking for an invoice are documented in **Invoices › Global invoice**:
+
+<Steps>
+
+1. Choose the **periodicity** (daily, weekly, fortnightly, monthly, or bimonthly; bimonthly only with regime 621), the **month**, and the **year**. For short periodicities, also choose the range of days.
+2. Review the list: Cord shows the quotes **paid** in the period that have no invoice of their own or another global invoice, and says why it excludes the rest (another currency, withholdings, foreign client, or a rate other than 0, 8, or 16%).
+3. Adjust the payment form if needed (by default, the one of the largest sale) and issue.
+
+</Steps>
+
+The global invoice is stamped to PUBLICO EN GENERAL (XAXX010101000, regime 616, use S01, method PUE), with one line item per sale and per rate: key 01010101, unit ACT, and the sale's number as the identification number. A sale included in a valid global invoice cannot be invoiced separately: if the client asks for their invoice, cancel the global invoice with reason 04 and issue it again without that sale.
+
+## Cancel, replace, and credit
+
+**Cancel.** When you void a CFDI, Cord asks for the **SAT reason**:
+
+| Reason | When |
+|---|---|
+| 02 | Document issued with errors, without a relation. |
+| 03 | The transaction did not take place. |
+| 04 | Nominative transaction related in a global invoice (global invoice only). |
+| 01 | Document with errors with a relation: used with **Replace CFDI**. |
+
+A cancellation request does not void the CFDI until the SAT confirms it. Meanwhile the invoice says it is in progress and you can click **Check cancellation status**. An invoice with payments applied is not voided: it is corrected with a credit note.
+
+**Replace CFDI (reason 01).** From the invoice, **Replace CFDI** creates a draft with the original's data so you can correct what is needed. When you issue it, Cord relates it to the original (relation 04), moves the original's payments to it, and requests cancellation of the original with reason 01 and the replacement's UUID. An invoice with valid credit notes or issued payment complements cannot be replaced: the SAT does not allow canceling a CFDI with valid related documents.
+
+**Credit note.** It is an expense CFDI related to the original UUID (relation 01), with use G02 when the client has an RFC. It keeps the original line items, rates, and withholdings; it can be full or partial.
+
+## Get paid online
+
+- **Card** with Cord Payments, on the quote link and on the invoice link.
+- **Automatic SPEI** for **MXN** quote payments: each payment has its own CLABE and reconciles by itself.
+- **Mercado Pago**, as an alternative on the same page.
+- The Cord Payments fee applies to MXN payments; each month Cord issues you its own CFDI for that fee. See [Fees](/en/docs/pagos/condiciones).
+- Your payouts arrive at your **CLABE** account, validated with its check digit. See [Payouts](/en/docs/pagos/depositos).
+
+## Plan limits
+
+| Plan | Pro formas per month | CFDI included per month |
+|---|---|---|
+| Free | 10 | No stamping included |
+| Starter | Unlimited | 30 |
+| Pro | Unlimited | 200 |
+| Scale | Unlimited | 500 |
+| Developer | Unlimited | 1,000 |
+
+Each income CFDI, credit note, payment complement, and global invoice counts once. From Starter, additional ones are billed as overage. See [Your Cord subscription](/en/docs/cuenta/suscripcion).
+
+## What Cord does not cover yet
+
+- **Foreign Trade complement.** The definitive export of goods (key A1) requires it; Cord stamps the export as "Not applicable" and does not issue that complement.
+- **IEPS** and the taxed zero rate as a classification of its own: Cord does not infer them from a percentage.
+- **Payment complement in another currency and advances**: documented outside Cord, as explained above.
+- **Automatic cancellation response from the recipient**: checking the cancellation status is manual, with **Check cancellation status**.
+
+## Common problems
+
+**My invoice came out as a pro forma.** Check your plan (Starter or higher), that your CSD is uploaded and valid, and that you did not choose the commercial option when issuing.
+
+**My client says their CFDI is not usable.** Check the tax regime, tax zip code, and CFDI use on their profile; if they were missing, Cord used defaults. Correct them and replace the CFDI with reason 01.
+
+**The editor says some line items have a generic key.** Assign the key on the product or on the line item before issuing.
+
+**I can't replace an invoice.** It has valid credit notes or issued payment complements. Cancel those documents first or contact us.
+
+**The cancellation is still in progress.** In some cases the SAT waits for the recipient's acceptance. Click **Check cancellation status** to see the status.
+
+## Related
+
+- [Invoicing by country](/en/docs/pagos/paises/resumen)
+- [Digital Seal Certificate](/en/docs/cuenta/csd)
+- [Approval and invoicing](/en/docs/cotizacion/timbrado)
+- [Create, issue, and collect invoices](/en/docs/pagos/facturas-emitidas)
+- [Tax invoicing](/en/docs/pagos/facturacion)
+- [Payment methods](/en/docs/pagos/metodos)
+- [Mercado Pago](/en/docs/pagos/mercado-pago)

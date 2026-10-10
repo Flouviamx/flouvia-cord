@@ -274,14 +274,30 @@ los detalles comparten `RoadmapDetail.astro`. Los cuatro archivos de ruta solo
 resuelven idioma, slug y `getStaticPaths`, por lo que el comportamiento ES/EN no se
 duplica.
 
-- `src/lib/roadmap-data.ts` es la fuente única de 22 iniciativas. Cada entrada declara
-  familia (`quotes`, `payments`, `invoicing`, `platform`), mercado, flujo, alcance,
-  límites y relaciones además de estado y disponibilidad de API.
-- La lista separa Cord Invoicing como producto, CFDI 4.0 (México), Verifactu
-  (España), validación de Constancia/RFC y facturación comercial internacional.
-  Cord Payments tiene iniciativa propia y explicita los ocho mercados con cobro en
+- `src/lib/roadmap-data.ts` es la fuente única de 45 iniciativas (10 oct 2026: 23
+  `live`, 11 `beta`, 11 `next`). Cada entrada declara familia (`quotes`,
+  `payments`, `invoicing`, `platform`), mercado, flujo, alcance, límites y
+  relaciones además de estado y disponibilidad de API.
+- Criterio de estado: `live` funciona sin activación extra; `beta` está construido
+  y se enciende por país o necesita configuración de Flouvia (variable de entorno,
+  contrato o ajuste del proveedor); `next` no está construido o espera algo
+  externo, y su texto dice qué lo bloquea. Una fecha solo aparece si es la de una
+  obligación legal con fuente (BOE, DGFiP, HMRC, nota técnica de la NF-e) y se
+  presenta como fecha de la norma, nunca como promesa de entrega.
+- Cord Invoicing tiene una iniciativa por país y riel: CFDI completo (México),
+  identificador fiscal, Canadá, IVA por documento en Chile y factura electrónica
+  europea (`live`); Facturae, Verifactu, Francia, ARCA, Brasil (NFS-e y NF-e),
+  SII, DIAN, SUNAT y sales tax de EE. UU. (`beta`); factura entre empresarios de
+  España, Peppol en Reino Unido, boleta de Perú, devolución/ST/DIFAL de Brasil,
+  guía de despacho de Chile, RADIAN de Colombia y recepción de facturas (`next`).
+  Facturae y la factura electrónica europea de un emisor español dependen de
+  Verifactu: sin él el documento español es proforma y no tiene versión
+  electrónica.
+- Cord Payments tiene iniciativa propia y explicita los ocho mercados con cobro en
   línea, SPEI solo para MXN de cuentas mexicanas y pagos manuales donde Connect no
-  está disponible.
+  está disponible. El portal del cliente con pago de varias facturas y reparto de
+  reembolsos es `live`; el cobro automático y la domiciliación SEPA/ACH son `beta`
+  hasta completar lo pendiente en `pendientes-integraciones.md`.
 - En escritorio los filtros forman una columna lateral compacta; debajo de `1024px`
   quedan cerrados dentro de un disclosure. Tabs, filtros activos, conteo, vacío y
   navegación por teclado comparten el mismo script. Las filas filtrables no usan
@@ -309,7 +325,9 @@ duplica.
 
 El Centro de Ayuda (`/soporte`) es un sistema de documentación *Stripe-level* impulsado por **Astro Content Collections**.
 
-- **Estructura de Datos:** Los artículos viven en `src/content/support/*.md`. Contamos con ~61 artículos enriquecidos y estructurados con Markdown alerts (`> [!NOTE]`).
+- **Estructura de Datos:** Los artículos viven en `src/content/support/{es,en}/*.md`, el mismo slug en los dos idiomas (115 por idioma en oct 2026). Las categorías salen de `SUPPORT_CATEGORIES` en `src/lib/support-categories.ts` y se casan por el nombre exacto del frontmatter `category`; el orden dentro de una categoría lo da `order` (opcional) vía `sortSupportArticles()`, que usan el índice, la página de categoría y la barra lateral del artículo.
+- **Facturación por país (oct 2026):** una categoría con un artículo por país ofrecido (`facturar-en-<pais>`, los 12 de `SUPPORTED_COUNTRIES`) más la nota de débito y certificación del SII y la contingencia de la SEFAZ. Cada artículo abre con un "En resumen": el asistente de ayuda solo adjunta los primeros 2,200 caracteres de cada artículo, así que lo esencial va arriba. Un riel fiscal que nace apagado se describe "en activación, escríbenos para habilitarlo", nunca como disponible para todos.
+- **Son la base de conocimiento de Cord AI:** `src/lib/help-assistant.ts` lee títulos y descripciones en su prompt y adjunta el texto de los artículos relevantes. Un dato inexacto aquí se repite en el chat de ayuda; verifica en código antes de escribir.
 - **Ruteo Dinámico (`prerender = true`):** 
   - `src/pages/soporte/[slug].astro`: Plantilla de lectura con Sidebar dinámico izquierdo (artículos relacionados), Breadcrumbs y Paginación Siguiente/Anterior.
   - `src/pages/soporte/categoria/[categoria].astro`: Índice de categoría en formato de lista minimalista (diseño cardless corporativo).

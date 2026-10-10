@@ -32,5 +32,7 @@ Si una línea se timbraría con la genérica `01010101`, el editor lo marca en l
 Cada concepto de `POST /v1/facturas` y `POST /v1/cotizaciones` acepta `clave_sat` y `clave_unidad_sat`. Una clave con formato inválido se rechaza al guardar, con el nombre del concepto, en vez de fallar al timbrar.
 
 <Callout type="info">
+
 Al **duplicar** una factura, la copia conserva las claves SAT con las que se timbró cada concepto.
+
 </Callout>

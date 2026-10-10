@@ -1,0 +1,170 @@
+---
+title: "Facturación en Estados Unidos"
+seoTitle: "Facturación en Estados Unidos con Cord: sales tax y ACH"
+description: "Factura comercial con sales tax por estado o calculado por la dirección del cliente (estado, condado, ciudad y distritos), cuota por plan y excedente, clientes exentos con certificado, EIN validado y cobro con tarjeta o ACH."
+lastUpdated: "2026-10-10"
+reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [US]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Cuenta con país Estados Unidos", "Tu estado en Ajustes › Perfil fiscal", "Para el sales tax por dirección: Starter o superior y cuenta de Cord Payments activa"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Estados Unidos</h1>
+  <p class="page-subtitle">Factura comercial con el sales tax de tu estado o, desde Starter, el combinado de la dirección exacta de tu cliente.</p>
+</header>
+
+## Qué es
+
+En Estados Unidos no hay una factura fiscal que se presente ante una autoridad: Cord emite una **factura comercial** con folio consecutivo, el sales tax de cada concepto y los datos de las dos partes. Lo que sí cambia por lugar es el **sales tax**, que es la suma de las tasas del estado, el condado, la ciudad y los distritos especiales. Cord te da dos formas de cobrarlo:
+
+- **Tasa del catálogo:** la tasa base de tu estado, sembrada al declarar tu estado, más las que agregues a mano.
+- **Sales tax por dirección** (desde Starter): cada concepto toma la tasa combinada de la dirección del cliente, con un renglón por jurisdicción, y la venta se registra para tu declaración.
+
+| | En Estados Unidos |
+|---|---|
+| Divisa por defecto | USD |
+| Impuesto | Sales tax por estado; combinado por dirección desde Starter |
+| Identificador fiscal | EIN / Tax ID, validado (nueve dígitos y prefijo asignado) |
+| Documento | Factura comercial y nota de crédito comercial |
+| Autoridad | No aplica a la factura; el sales tax lo declaras tú en cada estado |
+| Idioma del PDF | Inglés |
+| Cobro en línea | Tarjeta y cargo a cuenta bancaria ACH (USD) con Cord Payments |
+
+## Requisitos
+
+- **Plan:** cualquiera para facturar (Gratis: 10 facturas al mes). **Starter o superior** para el sales tax por dirección.
+- **Tu estado** en **Ajustes › Perfil fiscal**: de él sale el catálogo de arranque.
+- Para el sales tax por dirección: **cuenta de Cord Payments activa**, tu domicilio completo y los estados donde tienes permiso para recaudar.
+- **Permisos:** **Ajustes** para el perfil fiscal y los impuestos; **Cotizaciones** para emitir; **Cobranza** para anular y acreditar.
+
+## Configura tu cuenta
+
+<Steps>
+
+1. En **Ajustes › Perfil fiscal** completa razón social, EIN, domicilio, ciudad, **estado** (selector de los 50 estados y D.C.), ZIP y prefijo de factura.
+2. Abre **Ajustes › Impuestos**. Si tu catálogo está vacío, pulsa **Capturar la tasa base** de tu estado: Cord agrega `Sales tax <estado> <tasa>%` y **Exempt / Resale**.
+3. Si vas a usar el sales tax por dirección, activa primero tu cuenta en **Ajustes › Cobros** y sigue con la sección de abajo.
+
+</Steps>
+
+<DmRailSettings lang="es" rail="identidad" country="US" />
+
+## Sales tax del catálogo
+
+La tasa sembrada es la **mínima estatal**: la estatal más el impuesto local que la ley hace obligatorio en todo el estado (por eso California es 7.25 % y no 6 %). No incluye condado ni ciudad. Un estado sin sales tax estatal (Oregón, Montana, New Hampshire, Delaware, Alaska) solo recibe **Exempt / Resale**: Cord no inventa un 0 % de consumo.
+
+<DmTaxCatalog lang="es" country="US" region="CA" />
+
+Si no usas el cálculo por dirección, ajusta la tasa con tu contador a la de tu domicilio y agrega las de otras jurisdicciones donde vendas.
+
+<Callout type="info">
+El sales tax calculado por la dirección del cliente es nuevo. Esta función es nueva y puede no estar habilitada todavía en tu cuenta. Si no la ves, escríbenos.
+</Callout>
+
+## Sales tax por la dirección del cliente
+
+Con **Calcular el sales tax por la dirección del cliente** encendido en **Ajustes › Impuestos**, cada línea de una cotización o factura para un cliente en Estados Unidos toma la tasa combinada de su dirección: estado, condado, ciudad y distritos especiales. El cálculo usa **tus** registros, no los de Cord: tú eres quien está registrado ante cada estado, quien recauda y quien declara.
+
+<Steps>
+
+1. En **Ajustes › Impuestos**, sección **Sales tax por dirección**, captura el **domicilio de tu negocio** completo (calle, ciudad, estado y ZIP).
+2. Elige **qué vendes**: servicios en general, bienes físicos en general, software como servicio de uso empresarial o servicios digitales en general. Decide si un estado lo grava.
+3. Marca los **estados donde recaudas sales tax**, solo los que te dieron permiso.
+4. Enciende el interruptor y pulsa **Guardar**. Si falta algo (plan, cuenta de cobros, domicilio o al menos un estado), la pantalla dice qué y el interruptor no se queda encendido.
+
+</Steps>
+
+<DmUsTaxSettings lang="es" />
+
+### Qué imprime el documento
+
+<DmSalesTaxBreakdown lang="es" />
+
+- **Un renglón por jurisdicción** en el PDF, el link del cliente, la vista previa y el detalle: por ejemplo, California 6 %, Los Angeles County 0.25 % y los distritos especiales. La suma es exactamente el impuesto cobrado.
+- La columna del concepto muestra la **tasa legal combinada** (9.5 % en ese ejemplo).
+- **Estado donde no recaudas:** la línea lleva 0 % y el documento dice "Sin obligación de recaudar sales tax en Texas". No es un error.
+- **Venta que el estado no grava** (por ejemplo, un servicio donde los servicios no pagan sales tax): la línea lleva 0 % y el documento dice "Venta no gravada con sales tax en" ese estado.
+- **Cliente exento:** la línea lleva 0 % y el documento cita su certificado.
+- La tasa y el desglose **se congelan** en el documento: si tu cliente cambia de dirección después, lo ya emitido no se recalcula.
+
+### Cuándo no se guarda el documento
+
+El cálculo **falla cerrado**: si no se puede calcular con certeza, la cotización o factura no se guarda y el editor te dice qué falta, en vez de usar una tasa estimada. Pasa cuando:
+
+- el cliente no tiene estado o ZIP de cinco dígitos (calle y ciudad mejoran la precisión);
+- la dirección no se ubica;
+- el cliente está marcado exento sin certificado, o con el certificado vencido;
+- el documento tiene más de 100 conceptos;
+- no tienes cuenta de cobros activa, tu domicilio está incompleto o no marcaste ningún estado;
+- el cálculo no está disponible en ese momento o se alcanzó un límite de uso.
+
+Un borrador sin cliente usa la tasa del catálogo; para enviarlo necesitas un cliente.
+
+### Clientes exentos
+
+En la ficha del cliente, sección **Exención de sales tax** (solo negocios de Estados Unidos), marca al cliente como exento (reventa, organización sin fines de lucro, gobierno) y captura su **certificado**: número, estado que lo emitió y vencimiento. Sin número de certificado la exención no se guarda; con el certificado vencido, el documento no se guarda.
+
+### La venta registrada
+
+Cada **factura emitida** y cada **cotización cobrada** en un estado donde recaudas se registra una vez para tu declaración de sales tax. Una cotización y la factura que sale de ella son la misma venta: se registran una sola vez. Anular una factura revierte su venta completa, salvo que esa venta ya esté cobrada en su cotización.
+
+### Cuota y excedente
+
+| Plan | Facturas con sales tax automático al mes | Cada adicional |
+|---|---|---|
+| Gratis | No incluido | No disponible |
+| Starter | 10 | 0.75 USD · 15.00 MXN · 0.70 EUR |
+| Pro | 25 | 0.75 USD · 15.00 MXN · 0.70 EUR |
+| Scale | 60 | 0.75 USD · 15.00 MXN · 0.70 EUR |
+| Developer | 150 | 0.75 USD · 15.00 MXN · a medida en EUR |
+
+- Cuenta una vez cada venta registrada en un estado donde recaudas. Las vistas previas no cuentan, una venta a un estado donde no recaudas tampoco, y anular una factura no devuelve la unidad.
+- El precio del adicional se cobra en la divisa de tu suscripción a Cord.
+- Si el cobro del excedente todavía no está habilitado en tu cuenta, al llegar a lo incluido Cord te pide mejorar tu plan o capturar la tasa a mano. Una venta que llega sin cupo no se pierde: espera y se registra sola cuando se renueva tu cuota o mejoras tu plan, y **Ajustes › Planes y suscripción** dice cuántas esperan.
+- Cord cubre el costo del cálculo; tu plan solo cuenta las ventas registradas.
+
+Detalle en [Tu suscripción a Cord](/docs/cuenta/suscripcion).
+
+## Datos del cliente y del producto
+
+- **Cliente:** país Estados Unidos, estado y ZIP de cinco dígitos (obligatorios para el cálculo por dirección), calle y ciudad recomendadas, EIN opcional y, si aplica, su exención con certificado.
+- **Producto:** no lleva clasificación propia de sales tax: la clasificación es una por negocio (lo que elegiste en **Qué vendes**).
+
+## Anular o corregir
+
+Una factura comercial se **anula** desde su detalle si no tiene pagos aplicados; con pagos, se corrige con una **nota de crédito** total o parcial. Anular una factura con sales tax por dirección revierte su venta registrada.
+
+## Cobrar en línea
+
+- **Tarjeta** con Cord Payments en el link de la cotización y de la factura.
+- **Cargo a cuenta bancaria (ACH)** en USD: lo enciendes en **Ajustes › Cobros**. Tarda hasta cuatro días hábiles en confirmarse y solo admite reembolsos completos. Esta función es nueva.
+- Tus depósitos llegan a tu cuenta con **routing number (ABA)**, validado con su dígito de control, y número de cuenta. Ver [Depósitos](/docs/pagos/depositos).
+
+## Lo que Cord no cubre todavía
+
+- **Reportes para declarar** el sales tax: Cord registra cada venta, pero todavía no te muestra el reporte por estado.
+- **Nota de crédito parcial** de una factura con sales tax por dirección: copia el desglose para imprimirlo, pero no revierte parcialmente la venta registrada.
+- **Clasificación por producto:** hoy es una por negocio.
+- La API y el servidor MCP no exponen la exención del cliente ni el desglose por jurisdicción (los documentos que crean sí calculan por dirección).
+
+## Problemas comunes
+
+**Mi catálogo está vacío.** Agrega tu estado en **Ajustes › Perfil fiscal** y vuelve a **Ajustes › Impuestos** para capturar la tasa base.
+
+**No puedo encender el cálculo por dirección.** La pantalla dice qué falta: plan Starter o superior, cuenta de cobros activa, domicilio completo o al menos un estado.
+
+**Mi cotización no se guarda y dice que falta el ZIP.** El cliente necesita estado y ZIP de cinco dígitos en su ficha.
+
+**Una línea salió con 0 %.** El cliente está en un estado donde no marcaste que recaudas, o está exento. El documento lo dice en sus notas.
+
+**Llegué a la cuota de mi plan.** Mejora tu plan o apaga el cálculo automático y captura la tasa a mano hasta el mes siguiente.
+
+## Relacionadas
+
+- [Facturación por país](/docs/pagos/paises/resumen)
+- [Crear, emitir y cobrar facturas](/docs/pagos/facturas-emitidas)
+- [Clientes y estado de cuenta](/docs/gestion/clientes)
+- [Métodos de cobro](/docs/pagos/metodos)
+- [Conectar cuenta (KYC)](/docs/pagos/onboarding)
+- [Tu suscripción a Cord](/docs/cuenta/suscripcion)

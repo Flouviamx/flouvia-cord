@@ -4,7 +4,7 @@ import { getCollection } from 'astro:content';
 import Layout from '../../../layouts/Layout.astro';
 import Nav from '../../../components/landing/Nav.astro';
 import Footer from '../../../components/landing/Footer.astro';
-import { SUPPORT_CATEGORIES } from '../../../lib/support-categories';
+import { SUPPORT_CATEGORIES, sortSupportArticles } from '../../../lib/support-categories';
 import { iconInner } from '../../../lib/icons';
 
 export const prerender = true;
@@ -22,7 +22,7 @@ const { name, desc, icon } = Astro.props;
 const allArticles = await getCollection('support');
 // We map and filter to find articles for this category.
 const langPrefix = isEn ? 'en/' : 'es/';
-const categoryArticles = allArticles.filter(a => a.id.startsWith(langPrefix) && a.data.category === name);
+const categoryArticles = sortSupportArticles(allArticles.filter(a => a.id.startsWith(langPrefix) && a.data.category === name));
 
 // If there are few articles, we'll populate the UI with 'coming soon' or just show the real ones.
 const hasArticles = categoryArticles.length > 0;

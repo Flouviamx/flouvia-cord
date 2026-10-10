@@ -12,6 +12,7 @@ import { memberCan } from '../../../lib/permissions';
 import { publicDocumentUrl } from '../../../lib/public-links';
 import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
+import { etiquetaDocumentoRiel } from '../../../lib/fiscal/latam/rieles';
 
 const L = currentLocale();
 const tf = (key: string, vars: Record<string, string> = {}) => {
@@ -35,7 +36,6 @@ const DOC_LABEL: Record<string, string> = {
     commercial_credit_note: L === 'en' ? 'Commercial credit note' : 'Nota de crédito comercial',
     invoice: t(L, 'id.doc_invoice'),
     commercial_invoice: L === 'en' ? 'Commercial invoice' : 'Factura comercial',
-    dian_einvoice: t(L, 'id.doc_dian'),
 };
 const canCotizar = memberCan(ME, 'cotizar');
 const canAprobar = memberCan(ME, 'aprobar');
@@ -275,7 +275,7 @@ import { iconInner } from '../../../lib/icons';
                                 </span>
                                 <div class="df-body">
                                     <div class="df-top">
-                                        <span class="df-type">{DOC_LABEL[d.tipo] || d.tipo}</span>
+                                        <span class="df-type">{DOC_LABEL[d.tipo] || etiquetaDocumentoRiel(d.tipo, L === 'en' ? 'en' : 'es') || d.tipo}</span>
                                         <span class="df-pais">{d.pais}</span>
                                         {d.simulado && <span class="df-sim">{t(L, 'id.simulado')}</span>}
                                         {!d.simulado && d.testMode && <span class="df-sim" title={String(d.pais || '').toUpperCase() === 'MX' ? t(L, 'id.modo_prueba_fiscal_title') : t(L, 'id.modo_prueba_fiscal_title_intl')}>{t(L, 'id.modo_prueba_fiscal')}</span>}

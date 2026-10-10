@@ -1,0 +1,136 @@
+---
+title: "Facturación en Colombia"
+seoTitle: "Facturación en Colombia con Cord: factura electrónica con la DIAN"
+description: "Factura electrónica de venta validada por la DIAN como software propio: habilitación con set de pruebas, resolución de numeración, CUFE y QR, IVA exento o excluido, ReteIVA y ReteFuente, nota crédito, certificado avalado por la ONAC y cobro con Mercado Pago."
+lastUpdated: "2026-10-10"
+reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [CO]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Cuenta con país Colombia", "Starter o superior para emitir con la DIAN", "Habilitación como facturador con software propio y certificado de firma avalado por la ONAC"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Colombia</h1>
+  <p class="page-subtitle">Factura electrónica de venta con validación previa de la DIAN, enviada por Cord como tu software propio.</p>
+</header>
+
+## Qué es
+
+En Colombia cada factura debe **validarla la DIAN antes de entregarse** (Anexo Técnico 1.9). Cord firma cada factura y nota crédito con tu certificado, la envía a la DIAN como **tu software propio** y, cuando la DIAN la valida, imprime el **CUFE** y el código QR en el PDF. Cord no es proveedor tecnológico ni usa uno: tú te habilitas como facturador con software propio y registras a Cord como ese software.
+
+<Callout type="info">
+La factura electrónica con la DIAN está construida y en activación: Cord la enciende país por país. Mientras tanto, Ajustes › Perfil fiscal dice **Próximamente** y tus facturas se emiten como factura comercial sin validez fiscal. Esta función es nueva y puede no estar habilitada todavía en tu cuenta. Si no la ves, escríbenos.
+</Callout>
+
+| | En Colombia |
+|---|---|
+| Divisa por defecto | COP (también otra divisa, con la tasa a COP del documento) |
+| Impuesto | IVA 19 % y 5 %; retenciones ReteIVA y ReteFuente |
+| Identificador fiscal | NIT, con su dígito de verificación |
+| Documento | Factura comercial hoy; factura electrónica de venta y nota crédito validadas al activarse |
+| Autoridad | DIAN |
+| Idioma del PDF | Español |
+| Cobro en línea | Mercado Pago |
+
+## Requisitos
+
+- **Plan:** Starter o superior para emitir con la DIAN. En Gratis, factura comercial (10 al mes).
+- **Habilitación en el portal de la DIAN** como facturador con **software propio**: el nombre del software y un **PIN** de cinco dígitos. La DIAN te asigna el identificador del software y un **set de pruebas**.
+- Un **certificado de firma digital** para factura electrónica a nombre de tu NIT, emitido por una entidad certificadora **avalada por la ONAC**, con su cadena completa. Su costo lo pagas directo a ella.
+- Para producción, una **resolución de numeración** solicitada a la DIAN y **asociada a tu software**.
+- **Permisos:** **Ajustes** para el perfil fiscal; **Cotizaciones** para emitir; **Cobranza** para la nota crédito.
+
+## Configura tu cuenta
+
+<Steps>
+
+1. En **Ajustes › Perfil fiscal** completa la razón social, tu **NIT con su dígito de verificación** y el domicilio en **Identidad de facturación**.
+2. En **Tu negocio en el RUT**, elige el tipo de persona, tu responsabilidad frente al IVA, el municipio de tu domicilio fiscal y tus **responsabilidades fiscales** (casilla 53 del RUT).
+3. En **Software y numeración**, captura el **identificador del software** y su **PIN**, y la numeración: en habilitación, el rango de pruebas del set con su clave técnica; en producción, tu resolución (número, prefijo, rango y vigencia). **Traer de la DIAN** consulta los rangos que la DIAN informa para tu NIT y guarda la clave técnica.
+4. Elige el prefijo de las notas crédito y si tus ventas al 0 % son **exentas** o **excluidas** de IVA.
+5. Sube tu **certificado de firma** (`.p12`, o certificado y llave) con su cadena.
+6. En habilitación, pulsa **Enviar set de pruebas** con las cantidades que indica el detalle de tu set y **Ver resultado**. Cuando la DIAN lo acepta, sincroniza a producción desde su portal.
+
+</Steps>
+
+<DmRailSettings lang="es" rail="dian" />
+
+## Impuestos y retenciones
+
+<DmTaxCatalog lang="es" country="CO" />
+
+- **IVA 19 %** (predeterminado) y **5 %**, por concepto.
+- **Exento o excluido:** las líneas al 0 % se informan como **exentas** (IVA 0.00) o **excluidas** (sin IVA) según elijas en Ajustes. Sin esa decisión, una factura con líneas al 0 % no se envía.
+- **ReteIVA 15 %** se calcula **sobre el IVA**, no sobre el subtotal, y se informa a la DIAN. **ReteFuente 2,5 %** se informa como retención en la renta. Una retención sobre el subtotal que podría ser de otro tipo (ReteICA, por ejemplo) no se informa, pero sigue restando en tu total.
+- La DIAN recibe el total sin retenciones; el total de Cord es ese importe menos las retenciones.
+
+## Documentos y numeración
+
+- **Factura electrónica de venta** y **nota crédito**, con concepto de anulación si acredita el total o de rebaja si acredita una parte. La nota débito solo se usa en el set de pruebas.
+- Cord asigna cada número **dentro de tu resolución** (prefijo, rango y vigencia). Fuera del rango o de la vigencia no se envía. Ajustes avisa cuando quedan menos de 50 números (o del 5 %) o menos de 30 días de vigencia.
+- Un rechazo libera su número.
+- El XML firmado se guarda antes de enviarse; validado, se le une la respuesta de la DIAN y se entrega como un **contenedor** (`AttachedDocument`) que viaja en el correo en un único `.zip` con el PDF.
+
+## Estado ante la DIAN
+
+<DmInvoiceAuthority lang="es" rail="dian" />
+
+| Estado | Qué significa |
+|---|---|
+| Validada por la DIAN | Con su CUFE (o CUDE en una nota) y las notificaciones de la validación. |
+| Esperando la confirmación de la DIAN | Cord consulta por el CUFE antes de hacer nada. |
+| La DIAN rechazó el documento | Con el motivo; el número queda libre. |
+| Ambiente de habilitación | Sin validez fiscal. |
+
+El PDF imprime el CUFE en el pie de todas las páginas y el QR en la primera, con la autorización de numeración, la forma de pago y la tasa a COP si aplica.
+
+## Datos del cliente
+
+En la ficha de cada cliente colombiano, sección de la DIAN, captura lo que Cord no puede deducir: tipo de documento, si es persona natural o jurídica, su responsabilidad frente al IVA y sus responsabilidades. Sin identificación, el cliente se factura como **consumidor final**. Un cliente del exterior se informa con el NIT de su país.
+
+## Anular o corregir
+
+Una factura validada **no se anula**: se ajusta con una **nota crédito** que lleva el adquiriente, la moneda y la tasa de la factura.
+
+## Cobrar en línea
+
+Cord Payments no abre cuentas en Colombia: el cobro en línea es con **[Mercado Pago](/docs/pagos/mercado-pago)**, en el link de la cotización y de la factura. También puedes registrar a mano una transferencia.
+
+## Límites por plan
+
+| Plan | Facturas comerciales al mes | Facturas validadas incluidas al mes |
+|---|---|---|
+| Gratis | 10 | No incluye emisión fiscal |
+| Starter | Ilimitadas | 30 |
+| Pro | Ilimitadas | 200 |
+| Scale | Ilimitadas | 500 |
+| Developer | Ilimitadas | 1,000 |
+
+Los documentos de habilitación no cuentan.
+
+## Lo que Cord no cubre todavía
+
+- Factura de **exportación** y de **contingencia**.
+- **INC, ICUI, ICA** e impuestos saludables; **ReteICA** informado.
+- AIU, mandatos, propinas y cargos de documento.
+- **Documento soporte**, **nómina electrónica** y eventos **RADIAN** (acuse, aceptación).
+
+Cord los rechaza o los dice antes de enviar.
+
+## Problemas comunes
+
+**Ajustes dice Próximamente.** La factura electrónica con la DIAN está en activación.
+
+**Una factura con líneas al 0 % no se envía.** Elige en Ajustes si tus ventas al 0 % son exentas o excluidas.
+
+**Ajustes dice que se agotó el rango o venció la resolución.** Solicita una nueva resolución a la DIAN, asóciala a tu software y regístrala en Ajustes.
+
+**La DIAN rechaza todo con el certificado.** El certificado debe estar avalado por la ONAC, a nombre de tu NIT y con su cadena completa.
+
+## Relacionadas
+
+- [Facturación por país](/docs/pagos/paises/resumen)
+- [Mercado Pago](/docs/pagos/mercado-pago)
+- [Crear, emitir y cobrar facturas](/docs/pagos/facturas-emitidas)
+- [Clientes y estado de cuenta](/docs/gestion/clientes)
+- [Métodos de cobro](/docs/pagos/metodos)

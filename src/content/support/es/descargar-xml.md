@@ -1,20 +1,29 @@
 ---
 title: "Descargar el PDF y el XML de una factura"
-description: "Encuentra los archivos de cualquier CFDI que hayas timbrado, folio por folio."
+description: "Dónde están el PDF de cada factura, el XML fiscal (CFDI, SUNAT, DIAN, SII, NF-e) y los formatos electrónicos europeos, factura por factura."
 category: "Facturación"
 ---
 
 
-Cada CFDI que timbras en Cord genera automáticamente su PDF (representación impresa) y su XML (el comprobante fiscal en sí, el que necesita tu contador). Fuera de México, cada factura genera su PDF de la misma forma; el XML es exclusivo del CFDI.
+Toda factura emitida en Cord tiene su PDF. Además, cuando la factura es un comprobante electrónico ante una autoridad, tiene su XML (el comprobante fiscal en sí, el que necesita tu contador):
+
+- **México (CFDI), Perú (SUNAT) y Colombia (DIAN):** **Más acciones › Descargar XML** en el detalle de la factura.
+- **Brasil (NF-e):** el XML autorizado se descarga desde el panel **NF-e** de la factura. Ver [Cómo facturar en Brasil con Cord](/soporte/facturar-en-brasil).
+- **Chile (SII):** el **XML del DTE** y la **Copia cedible** se descargan desde el panel **SII** de la factura. Ver [Cómo facturar en Chile con Cord](/soporte/facturar-en-chile).
+- **España, Alemania y Francia:** los formatos electrónicos europeos (Factur-X, XRechnung, Peppol y, en España, Facturae) están en la sección **Factura electrónica** del detalle. Ver [Factura electrónica europea](/soporte/factura-electronica-europea).
+
+Una factura comercial o una proforma solo tiene PDF. Qué documento emite Cord en tu país y qué rieles fiscales están en activación: ver [Facturación por país](/soporte/categoria/facturacion-por-pais).
 
 ### Dónde encontrarlos
 
-Ve a **Facturas** en el menú principal y abre la factura que necesitas. En su detalle encontrarás los links **PDF** y **XML** listos para descargar.
+Ve a **Facturas** en el menú principal y abre la factura que necesitas. En su detalle encontrarás **Descargar PDF** y, cuando aplica, **Más acciones › Descargar XML**.
 
 También puedes llegar al mismo archivo desde el detalle de la cotización que originó esa factura, en la sección de documentos fiscales.
 
 <Callout type="info">
+
 Hoy la descarga es individual, factura por factura, desde su propio detalle — no existe todavía una exportación masiva en `.ZIP` de todo un periodo. Si necesitas varias facturas para tu contador, ábrelas una por una desde tu bandeja de **Facturas**.
+
 </Callout>
 
 ## Desde el enlace del cliente

@@ -1,0 +1,111 @@
+---
+title: "Facturación en Reino Unido"
+seoTitle: "Facturación en Reino Unido con Cord: factura comercial con VAT"
+description: "Factura comercial con VAT por concepto (20 %, 5 %, zero-rated y exempt), VAT registration number validado, menciones de la factura, cobro con tarjeta y lo que viene con la factura electrónica obligatoria de 2029."
+lastUpdated: "2026-10-10"
+reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [GB]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Cuenta con país Reino Unido", "VAT registration number en Ajustes › Perfil fiscal si estás registrado"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Reino Unido</h1>
+  <p class="page-subtitle">Factura comercial con VAT por concepto, en inglés y en libras, lista para cobrarse con tarjeta.</p>
+</header>
+
+## Qué es
+
+En Reino Unido Cord emite una **factura comercial** con folio consecutivo, el VAT de cada concepto, tu **VAT registration number** y los datos de tu cliente. Hoy Reino Unido no tiene una autoridad que autorice o registre facturas, así que el documento de Cord **es** tu factura: no hay un registro ante HMRC que hacer desde Cord.
+
+| | En Reino Unido |
+|---|---|
+| Divisa por defecto | GBP |
+| Impuesto | VAT |
+| Identificador fiscal | VAT reg. no., validado (módulo 97 de HMRC); también Company Number |
+| Documento | Factura comercial y nota de crédito comercial |
+| Autoridad | No aplica a la factura |
+| Idioma del PDF | Inglés |
+| Cobro en línea | Tarjeta con Cord Payments |
+
+## Requisitos
+
+- **Plan:** cualquiera (Gratis: 10 facturas al mes).
+- Tu **VAT registration number** si estás registrado: es lo que la ley pide en la factura, no tu UTR.
+- **Permisos:** **Ajustes** para el perfil fiscal y los impuestos; **Cotizaciones** para emitir; **Cobranza** para anular y acreditar.
+
+## Configura tu cuenta
+
+<Steps>
+
+1. En **Ajustes › Perfil fiscal** completa la razón social, tu **VAT reg. no.** (con o sin el prefijo GB; XI para Irlanda del Norte), el domicilio, la ciudad, el código postal y el prefijo de factura.
+2. Revisa tu catálogo en **Ajustes › Impuestos**.
+3. Activa tu cuenta de cobros en **Ajustes › Cobros** para cobrar con tarjeta.
+
+</Steps>
+
+<DmRailSettings lang="es" rail="identidad" country="GB" />
+
+## Impuestos
+
+<DmTaxCatalog lang="es" country="GB" />
+
+- **VAT 20 %** (estándar, predeterminado) y **VAT 5 %** (reducido).
+- **Zero-rated** y **Exempt** son dos perfiles distintos a propósito: en Reino Unido son regímenes diferentes (el primero permite recuperar el VAT soportado; el segundo no), y tu declaración los trata distinto.
+- Cada concepto lleva su propia tasa; el documento imprime un renglón por tasa.
+
+## Identificador fiscal y vocabulario
+
+- La etiqueta del identificador es **VAT reg. no.** Cord valida el número con el módulo 97 de HMRC (incluida la variante de los números nuevos) y acepta los de departamentos de gobierno. También acepta el **Company Number** de Companies House, que es lo que pide el alta de cobros a una empresa.
+- El impuesto se llama **VAT** en toda la app, el PDF y el link de tu cliente.
+
+## Datos del cliente y del producto
+
+- **Cliente:** su país y, si es empresa registrada, su VAT number, validado con la misma regla.
+- **Producto:** su tasa predeterminada del catálogo.
+
+## Anular o corregir
+
+Una factura se **anula** desde su detalle si no tiene pagos aplicados; con pagos, se corrige con una **nota de crédito** total o parcial.
+
+## Cobrar en línea
+
+- **Tarjeta** con Cord Payments, en el link de la cotización y de la factura.
+- Tus depósitos llegan a tu cuenta con **sort code** y número de cuenta de ocho dígitos. Ver [Depósitos](/docs/pagos/depositos).
+
+## Límites por plan
+
+| Plan | Facturas al mes |
+|---|---|
+| Gratis | 10 |
+| Starter, Pro, Scale, Developer | Ilimitadas |
+
+## Lo que viene: factura electrónica obligatoria
+
+El Gobierno británico confirmó que la **factura electrónica entre empresas** será obligatoria para las facturas con VAT a partir de **abril de 2029**, con la red Peppol como base de intercambio. Las especificaciones técnicas todavía no se publican.
+
+<Callout type="warning" title="Cord no la cubre todavía">
+Hoy Cord no genera factura electrónica estructurada (Peppol) para negocios en Reino Unido: los formatos europeos que genera son para emisores establecidos en la Unión Europea. Tu factura comercial de Cord sigue siendo válida hasta que la obligación entre en vigor.
+</Callout>
+
+## Lo que Cord no cubre todavía
+
+- **Factura electrónica Peppol** para emisores en Reino Unido.
+- **Domiciliación bancaria (Bacs Direct Debit)**: el cobro en línea es con tarjeta.
+- **Making Tax Digital**: Cord no envía tu declaración de VAT; exporta tus facturas para tu software contable o conecta [QuickBooks Online](/docs/automatizacion/integraciones/quickbooks) o [Xero](/docs/automatizacion/integraciones/xero).
+
+## Problemas comunes
+
+**Cord rechaza mi VAT number.** El dígito de control no coincide. Revisa el número en tu certificado de registro de VAT.
+
+**¿Escribo mi UTR o mi VAT number?** Tu VAT registration number. Lo que escribas en **VAT reg. no.** se imprime en la factura, y el UTR nunca debe ir en una factura.
+
+**Mi cliente necesita la factura en formato electrónico.** Hoy Cord no la genera para Reino Unido; envíale el PDF.
+
+## Relacionadas
+
+- [Facturación por país](/docs/pagos/paises/resumen)
+- [Crear, emitir y cobrar facturas](/docs/pagos/facturas-emitidas)
+- [Métodos de cobro](/docs/pagos/metodos)
+- [QuickBooks Online](/docs/automatizacion/integraciones/quickbooks)
+- [Xero](/docs/automatizacion/integraciones/xero)

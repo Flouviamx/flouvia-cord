@@ -1,0 +1,167 @@
+---
+title: "Facturación en Chile"
+seoTitle: "Facturación en Chile con Cord: DTE ante el SII y certificación"
+description: "DTE emitidos directo al SII: factura 33, exenta 34, nota de crédito 61 y de débito 56, folios CAF, IVA calculado por documento, timbre PDF417 y copia cedible, certificación guiada con set de pruebas y libros, intercambio con acuses y cobro con Mercado Pago."
+lastUpdated: "2026-10-10"
+reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [CL]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Cuenta con país Chile", "Starter o superior para emitir DTE", "Certificado digital del usuario autorizado ante el SII y folios (CAF) autorizados"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Chile</h1>
+  <p class="page-subtitle">Documentos tributarios electrónicos timbrados, firmados y enviados directo al SII, con tus folios y tu certificado.</p>
+</header>
+
+## Qué es
+
+En Chile cada factura es un **documento tributario electrónico (DTE)** que debe llegar al **SII**. Cord lo emite directo, sin proveedor intermediario: toma el folio del archivo que autorizó el SII, le pone el **timbre electrónico**, lo firma con tu certificado, lo envía al SII, consulta su veredicto e imprime el timbre (PDF417) en el PDF, con la copia cedible.
+
+<Callout type="info">
+La factura electrónica con el SII está construida y en activación: Cord la enciende país por país. Mientras tanto, Ajustes › Perfil fiscal dice **Próximamente** y tus facturas se emiten como factura comercial sin validez tributaria. Esta función es nueva y puede no estar habilitada todavía en tu cuenta. Si no la ves, escríbenos.
+</Callout>
+
+| | En Chile |
+|---|---|
+| Divisa por defecto | CLP, en pesos enteros (otra divisa sería exportación) |
+| Impuesto | IVA 19 %, calculado una vez por documento |
+| Identificador fiscal | RUT, validado con su dígito verificador (incluida la K) |
+| Documento | Factura comercial hoy; DTE 33, 34, 56 y 61 al activarse |
+| Autoridad | Servicio de Impuestos Internos (SII) |
+| Idioma del PDF | Español |
+| Cobro en línea | Mercado Pago |
+
+## Requisitos
+
+- **Plan:** Starter o superior para emitir DTE. En Gratis, factura comercial (10 al mes).
+- Estar autorizado como **emisor electrónico** ante el SII (con sistema de mercado), con la resolución que te asigna.
+- El **certificado digital de la persona** autorizada ante el SII para firmar tus documentos (`.pfx`/`.p12`), emitido por una entidad certificadora acreditada. Su costo lo pagas directo a ella.
+- Los **folios (CAF)** que descargas del SII por tipo de documento.
+- **Permisos:** **Ajustes** para el perfil fiscal, los folios y el certificado; **Cotizaciones** para emitir; **Cobranza** para notas de crédito.
+
+## Configura tu cuenta
+
+<Steps>
+
+1. En **Ajustes › Perfil fiscal** completa la razón social y tu **RUT** en **Identidad de facturación**.
+2. En **Datos del emisor**, captura tu **giro** tal como está inscrito, tus códigos de **actividad económica** (hasta 4), la **unidad del SII** que te corresponde, la comuna, la ciudad, la sucursal si tienes, y el **número y la fecha de tu resolución** (0 en certificación).
+3. En **Folios (CAF)**, sube el archivo de folios de cada tipo tal como lo descargaste del SII. Cord comprueba que sea de tu RUT y de un tipo que emite.
+4. En **Certificado digital**, sube el `.pfx`/`.p12`, su contraseña y el **RUT del titular** si Cord no lo puede leer del certificado.
+5. En cada cliente chileno, captura su **giro** y su **comuna**: el SII los exige en cada factura.
+
+</Steps>
+
+<DmRailSettings lang="es" rail="sii" />
+
+## Tipos de documento
+
+| Tipo | Cuándo |
+|---|---|
+| Factura electrónica (33) | Venta con IVA. |
+| Factura no afecta o exenta (34) | Cuando todos los conceptos son exentos. |
+| Nota de crédito (61) | Anula (CodRef 1) o corrige montos (CodRef 3) de un documento aceptado. |
+| Nota de débito (56) | Cobra un monto adicional sobre un documento aceptado (intereses, diferencia de precio) o anula completa una nota de crédito. |
+
+La **nota de débito** se crea desde el panel del SII de un documento aceptado (**Emitir nota de débito**): nace como borrador y se emite como cualquier factura. Sus folios vienen de un CAF 56.
+
+## Impuestos e IVA por documento
+
+<DmTaxCatalog lang="es" country="CL" />
+
+- **IVA 19 %** (predeterminado) y **Exento**. El IVA se calcula **una vez por documento**, sobre el neto total, como lo exige el formato del SII: así lo calcula Cord en toda la app, no solo en el DTE, y lo que tu cliente vio es lo que se declara.
+- **Retención de honorarios 15,25 %** (2026): la aplica quien paga la boleta de honorarios, nace no predeterminada y **no se emite en un DTE**: Cord rechaza una factura con retenciones.
+- Los montos van en **pesos enteros**.
+
+## Folios (CAF)
+
+- Cada documento usa un folio de un archivo que autoriza el SII. **Un folio usado no se reutiliza nunca**, aunque el documento se rechace.
+- Los folios de factura, nota de débito y nota de crédito **vencen a los seis meses** de su autorización.
+- Ajustes muestra cuántos quedan de cada tipo y avisa **"solicita más al SII"** cuando quedan pocos: 20, o el 10 % del rango si es mayor.
+- Un archivo de folios del que no se usó ninguno se puede quitar y volver a subir.
+
+## Estado ante el SII
+
+<DmInvoiceAuthority lang="es" rail="sii" />
+
+| Estado | Qué significa |
+|---|---|
+| Aceptado por el SII | Con su folio y número de envío; si hubo reparos, se listan. |
+| En validación en el SII | El SII valida cada envío después de recibirlo; Cord consulta su veredicto y termina la factura sola. |
+| Esperando la confirmación del SII | Cord consulta el estado antes de hacer nada. |
+| El SII rechazó el documento | Con el motivo. El folio queda usado; el reintento toma otro. |
+
+Aceptado el documento, el panel ofrece el **XML del DTE** (dentro de un envío dirigido al RUT de tu cliente) y la **copia cedible** de las facturas 33 y 34, con el acuse de recibo de la Ley 19.983. El PDF imprime el recuadro con RUT, tipo y folio, la unidad del SII y el timbre PDF417 con la leyenda de verificación.
+
+## Anular o corregir
+
+Un DTE aceptado **no se anula** ante el SII: se anula o corrige con una **nota de crédito** que lo referencia (CodRef 1 si anula el total, 3 si corrige montos). Una nota de crédito se anula con una **nota de débito**.
+
+## Certificación ante el SII
+
+Si todavía no eres emisor electrónico, Cord te acompaña en la certificación desde **Ajustes › Perfil fiscal › Certificación ante el SII**, mientras tu cuenta está en el ambiente de certificación:
+
+<Steps>
+
+1. **Set de pruebas:** pega o abre el archivo que te asignó el SII. Cord arma cada caso, toma folios de certificación, los firma y los envía en un solo envío. Consultas el veredicto por tipo; con reparos o rechazos, el reintento usa folios nuevos.
+2. **Libros:** cuando el SII acepta el set, Cord envía también el **libro de ventas** y el **libro de compras** que pide tu set (en el de compras agregas el RUT de cada proveedor).
+3. **Simulación:** emite documentos representativos desde Facturas.
+4. **Intercambio:** recibe los documentos que te envía el SII y respóndelos (ver abajo).
+5. **Muestras impresas:** descarga el PDF de cada caso, con su copia cedible, y súbelos en el sitio del SII.
+6. **Declaración de cumplimiento:** la firma tu representante legal en el sitio del SII.
+
+</Steps>
+
+El set no puede incluir guía de despacho (52) ni su libro, documentos de exportación ni factura de compra emitida: Cord te lo dice al cargar el archivo, con su número de atención.
+
+## Intercambio con acuses
+
+Cord recibe los DTE que te envían tus proveedores (en tu casilla de intercambio o subiendo el XML) y los responde, firmados con tu certificado:
+
+- **Acuse de recibo** del envío y de cada documento al recibirlo.
+- **Resultado:** aceptado, aceptado con discrepancias o rechazado con su motivo.
+- **Recibo de mercaderías o servicios** (Ley 19.983) por lo recibido conforme.
+- La misma decisión se **registra en el SII** (aceptación o reclamo) dentro de los ocho días corridos.
+
+Una decisión no se cambia después de registrada.
+
+## Cobrar en línea
+
+Cord Payments no abre cuentas en Chile: el cobro en línea es con **[Mercado Pago](/docs/pagos/mercado-pago)**, en el link de la cotización y de la factura. También puedes registrar a mano una transferencia.
+
+## Límites por plan
+
+| Plan | Facturas comerciales al mes | DTE incluidos al mes |
+|---|---|---|
+| Gratis | 10 | No incluye emisión fiscal |
+| Starter | Ilimitadas | 30 |
+| Pro | Ilimitadas | 200 |
+| Scale | Ilimitadas | 500 |
+| Developer | Ilimitadas | 1,000 |
+
+Los documentos del set de pruebas y de certificación no cuentan.
+
+## Lo que Cord no cubre todavía
+
+- **Boleta electrónica (39/41)**: un cliente sin RUT se rechaza antes de tomar folio.
+- **Guía de despacho (52)**, **factura de exportación (110–112)** y **boleta de honorarios**.
+- **Retenciones** en el DTE.
+- Libros de compras y ventas fuera de la certificación: desde 2017 el Registro de Compras y Ventas del SII los reemplaza.
+
+## Problemas comunes
+
+**Ajustes dice Próximamente.** La factura electrónica con el SII está en activación. Tus facturas salen como factura comercial.
+
+**La factura no se emite porque falta el giro o la comuna del cliente.** Complétalos en su ficha.
+
+**Ajustes dice "solicita más al SII".** Quedan pocos folios de ese tipo: pide un CAF nuevo en el SII y súbelo.
+
+**El documento quedó en validación.** El SII valida después de recibir; Cord consulta y lo termina solo.
+
+## Relacionadas
+
+- [Facturación por país](/docs/pagos/paises/resumen)
+- [Mercado Pago](/docs/pagos/mercado-pago)
+- [Crear, emitir y cobrar facturas](/docs/pagos/facturas-emitidas)
+- [Clientes y estado de cuenta](/docs/gestion/clientes)
+- [Métodos de cobro](/docs/pagos/metodos)

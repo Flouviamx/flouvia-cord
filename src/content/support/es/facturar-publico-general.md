@@ -50,7 +50,7 @@ una factura individual: la misma venta quedaría facturada dos veces.
 
 ## Si un cliente pide su factura después
 
-1. Abre la factura global y usa **Más acciones › Anular factura** con el motivo
+1. Abre la factura global y usa **Más acciones › Anular** con el motivo
    **04 · Operación nominativa relacionada en una factura global**.
 2. Al confirmarse la cancelación, sus ventas quedan libres. Pulsa **Emitir de
    nuevo la global del periodo**, que abre la misma periodicidad, mes y año, y

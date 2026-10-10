@@ -1,27 +1,60 @@
 ---
 title: "Facturar a clientes en el extranjero"
-description: "Qué campos configurar en Cord cuando tu cliente radica fuera de tu país."
+description: "Qué hace Cord cuando tu cliente está fuera de tu país: CFDI a residente en el extranjero en México, inversión del sujeto pasivo y exportación en la UE, y qué cubre cada riel fiscal."
 category: "Facturación"
 ---
 
-Configura el cliente correctamente y Cord factura la venta en la divisa que corresponda; el tratamiento fiscal específico del extranjero varía según el país en el que emites.
+El tratamiento de una venta a un cliente extranjero depende del país **desde el que emites**. Cord lo decide con dos datos de la ficha del cliente: su **país** y su **identificador fiscal**.
 
-### Paso común a cualquier país: marca el país del cliente
+**En resumen:**
 
-Al dar de alta al cliente, selecciona su país en el campo **País** de su ficha (no "hereda del emisor"). Cord usa ese dato, junto con el identificador fiscal que captures, para aplicar el tratamiento correcto a la factura.
+- **Paso común:** en la ficha del cliente elige su **País** y captura su identificador fiscal (EIN, NIF-IVA, VAT, RFC…). Cord valida el dígito de control en los 12 países de Cord.
+- **México:** el CFDI sale automáticamente a un **residente en el extranjero**: RFC genérico XEXX010101000, su país, uso S01 y su identificador fiscal como número de registro tributario. No tienes que capturar el RFC genérico.
+- **Unión Europea (España, Alemania, Francia):** un cliente empresarial de otro país de la UE con NIF-IVA va con **inversión del sujeto pasivo**; uno fuera de la UE, como **exportación**.
+- **Divisa:** la factura sale en la divisa de venta. Si tus libros van en otra, declara el tipo de cambio que se congeló al cotizar.
+- **Limitación en México:** un concepto al 0 % se declara **exento** en el CFDI; Cord todavía no emite IVA a tasa 0 % gravada.
 
-### México: exportación de servicios
+## México: CFDI a un residente en el extranjero
 
-Vender servicios o licencias de software a un cliente fuera de México requiere un CFDI de exportación de servicios:
+Si el país del cliente no es México, Cord emite el CFDI así, sin que captures nada más:
 
-1. En el campo de identificador fiscal del cliente, usa el RFC genérico internacional del SAT: `XEXX010101000`. Cord no tiene un campo separado para el Tax ID del país de tu cliente — hoy se usa este único campo.
-2. En **Uso de CFDI** de la ficha del cliente, selecciona **S01 (Sin efectos fiscales)**, ya que el receptor extranjero no deduce impuestos ante el SAT.
-3. Al crear la cotización o factura, configura su **divisa** a la que corresponda (por ejemplo, USD) y selecciona la tasa **Exento** en el impuesto de la línea si tu contador confirma que esa venta califica para tasa 0% de exportación.
+- **RFC del receptor:** XEXX010101000, el genérico de extranjeros.
+- **Residencia fiscal:** el país de la ficha.
+- **Número de registro tributario:** el identificador fiscal que capturaste (opcional).
+- **Uso del CFDI:** S01 (sin efectos fiscales), también en sus notas de crédito.
+- El régimen fiscal y el uso de la ficha no aplican a un extranjero y no se envían.
 
-### España: cliente en la Unión Europea o fuera de ella
+**La tasa de cada concepto la decides tú con tu contador.** Ten en cuenta que Cord declara un concepto al 0 % como **exento**: todavía no distingue la **tasa 0 % gravada** que corresponde, por ejemplo, a la exportación de servicios. Si tu operación necesita tasa 0 %, emite ese CFDI fuera de Cord por ahora.
 
-Si emites Verifactu para un cliente con país distinto de España, Cord usa el país que capturaste en su ficha para decidir automáticamente el tratamiento correcto en el registro: identificación intracomunitaria si el cliente está en la UE, o identificación por país de residencia si está fuera. No necesitas elegir nada adicional más allá de guardar el país correcto del cliente.
+Cord timbra la operación como "No aplica" en exportación y **no emite el complemento de Comercio Exterior** que exige la exportación definitiva de mercancías.
 
-### Otros países
+## Unión Europea: España, Alemania y Francia
 
-Fuera de México y España, Cord no tiene un tratamiento fiscal especial para clientes extranjeros más allá de emitir la factura en la divisa de venta que elijas; consulta con tu contador el tratamiento correcto para exportación de servicios en tu país.
+- **Cliente empresarial en otro país de la UE** con NIF-IVA, y tú con el tuyo: la operación va con **inversión del sujeto pasivo** (sin IVA y con la mención legal). Elige en la línea la tasa al 0 % que corresponda, por ejemplo **Entrega intracomunitaria (art. 25)** o **Inversión del sujeto pasivo** en España.
+- **Cliente fuera de la UE:** exportación, sin IVA. En España, **Exportación (art. 21)**.
+- **Factura electrónica:** Factur-X, XRechnung y Peppol declaran la categoría que corresponde y, en una entrega intracomunitaria, la dirección completa del cliente. Ver [Factura electrónica europea](/soporte/factura-electronica-europea).
+- **Divisa extranjera:** si un emisor de la UE factura en otra divisa, el PDF imprime también la cuota en euros.
+
+En España, mientras el registro Verifactu está en activación, Cord emite proformas. Ver [Cómo facturar en España con Cord](/soporte/facturar-en-espana).
+
+## Estados Unidos, Canadá y Reino Unido
+
+La factura comercial sale con la tasa que elijas en cada línea. En Reino Unido, una exportación suele ir como **Zero-rated**; en Canadá, como **Zero-rated**; en Estados Unidos, una venta fuera del país no lleva sales tax. Confírmalo con tu asesor.
+
+## Rieles fiscales de LatAm (en activación)
+
+| País | Cliente del exterior |
+|---|---|
+| Perú (SUNAT) | Factura de exportación (operación 0200 bienes o 0201 servicios). |
+| Colombia (DIAN) | Factura con el cliente identificado como NIT de otro país. La factura de exportación todavía no. |
+| Argentina (ARCA) | No cubierto: la Factura E de exportación todavía no se emite. |
+| Chile (SII) | No cubierto: la factura de exportación todavía no se emite. |
+| Brasil (NFS-e y NF-e) | No cubierto: la exportación todavía no se emite. |
+
+Mientras esos rieles están en activación, la venta sale como factura comercial.
+
+## Relacionados
+
+- [Recibir pagos internacionales](/soporte/pagos-internacionales)
+- [Cobro en múltiples divisas](/soporte/cobro-divisas)
+- [Facturación por país](/soporte/categoria/facturacion-por-pais)

@@ -27,4 +27,4 @@ Cada parte es un cobro independiente con su propio link de pago. La cotización 
 
 ### Nota fiscal
 
-El anticipo y el saldo son una herramienta de **cobro**, no de facturación automática. Cord no genera por sí solo el Complemento de Recepción de Pagos (REP) de cada parcialidad. Consulta con tu contador el tratamiento fiscal correcto según si tu operación es un anticipo real o un pago en parcialidades. Ver también [Facturar anticipos](/soporte/facturacion-anticipos).
+El anticipo y el saldo son una herramienta de **cobro**, no de facturación automática: el CFDI lo timbras tú desde la cotización. En México, lo cobrado en la cotización pasa a la factura al timbrarla; si falta saldo, el CFDI sale PPD y cada cobro que se aplica a la factura lleva su complemento de pago automático. Si tu operación es un anticipo en el sentido del SAT (el bien, el servicio o su precio no estaban determinados), el SAT pide su procedimiento de anticipos, que Cord no emite: revísalo con tu contador antes de timbrar. Ver [Facturar anticipos](/soporte/facturacion-anticipos).

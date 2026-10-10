@@ -1,0 +1,176 @@
+---
+title: "Invoicing in France"
+seoTitle: "Invoicing in France with Cord: Factur-X and approved platform"
+description: "Invoice in French with TVA per line item and the reform's mentions (transaction category, client SIREN, VAT on debits option, delivery address), Factur-X, issuing through an approved platform with statuses 200 to 213, e-reporting, and collection by card or SEPA."
+lastUpdated: "2026-10-10"
+reviewedBy: "Cord product and operations"
+appliesToMarkets: [FR]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Account with France as its country", "SIREN or TVA number in Settings › Tax profile", "Starter or higher for issuing through the approved platform"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">France</h1>
+  <p class="page-subtitle">Invoices that already carry what the e-invoicing reform requires, in Factur-X, and issuing through an approved platform as soon as it is activated.</p>
+</header>
+
+## What it is
+
+In France Cord issues an invoice in **French**, with each line item's TVA and **the mentions the e-invoicing reform requires**, downloadable as **Factur-X** (the PDF with the XML inside), which is also what the email carries by default.
+
+The reform also requires invoices between businesses established in France to travel through an **approved platform** (PA) and sales to consumers and with other countries to be **reported** (e-reporting). Cord has built issuing through a platform: it issues, reports, and communicates your payments from the invoices you already issue. It is being activated.
+
+| | In France |
+|---|---|
+| Default currency | EUR |
+| Tax | TVA |
+| Tax ID | SIREN / N° TVA (SIREN, SIRET, and TVA validated) |
+| Document | Invoice with Factur-X; transmitted through an approved platform once activated |
+| Authority | Approved platform and the tax administration (DGFiP) |
+| PDF language | French |
+| Online payments | Card and SEPA Direct Debit (EUR) with Cord Payments |
+
+<Callout type="info">
+Issuing through an approved platform is built and being activated: meanwhile, Settings says **Coming soon** and your invoices already carry the reform's mentions. European e-invoicing is also new. This feature is new and may not be enabled on your account yet. If you don't see it, contact us.
+</Callout>
+
+## Requirements
+
+- **Plan:** any to invoice with Factur-X (Free: 10 invoices per month). **Starter or higher** to register with the platform.
+- Your **SIREN** (or your TVA number, which contains it) in **Settings › Tax profile**.
+- Your **reception platform**: since September 1, 2026 every business established in France must be able to receive e-invoices, and Cord **only issues**.
+- **Permissions:** **Settings** for the tax profile and registration; **Quotes** to issue.
+
+## Set up your account
+
+<Steps>
+
+1. In **Settings › Tax profile**, complete your legal name, your **SIREN / N° TVA**, address, and invoice prefix. If you apply the franchise, turn on **VAT small-business exemption (art. 293 B du CGI)**.
+2. Under **E-invoicing in France**, choose your **VAT regime**, the **nature** of hand-typed line items (goods or services), and, if you have it, the **option to pay VAT on debits**.
+3. In the catalog, choose each product's **type**: a product is a supply of goods; a service, subscription, or license is a supply of services.
+4. On each French business client, enter their **SIREN** (or SIRET).
+5. When issuing through the platform is active, click **Register with the platform** and follow the mandate step.
+
+</Steps>
+
+<DmRailSettings lang="en" rail="frpa" state="proximamente" />
+
+## Taxes
+
+<DmTaxCatalog lang="en" country="FR" />
+
+- **TVA 20%** (default), **10%**, **5.5%**, and **2.1%**, per line item.
+- **Exonéré de TVA** for exempt transactions; on the exempt profile you can choose its e-invoice classification.
+- **Franchise (art. 293 B du CGI):** with the option on, your tax-free invoices carry the legal notice that explains it.
+
+## The reform's mentions
+
+Every French invoice from Cord carries them, whether or not the platform is active:
+
+- **Transaction category:** supply of goods, supply of services, or mixed, according to each product's type or, for hand-typed line items, your profile's default nature. Without it, the invoice is written as before the reform and cannot be transmitted.
+- **Option for debits:** if you have it, the invoice prints "Option pour le paiement de la taxe d'après les débits" (services only).
+- **Client SIREN:** a SIRET travels as the identifier and its SIREN as the legal registration.
+- **Delivery address:** in the invoice editor (France only), when goods are delivered somewhere other than the client's address. It is not declared for a supply of services.
+- **Business-to-business conditions:** late payment penalties, the flat collection cost indemnity, and early payment discount conditions (art. L441-9 and L441-10 of the Commercial Code).
+
+## Issuing through an approved platform
+
+### What Cord does
+
+| Transaction | What Cord does | Payments |
+|---|---|---|
+| Between businesses established in France, client with SIREN | Transmits the Factur-X through the platform | If TVA is due on payment, reports each services payment as status 212 "Encaissée" |
+| With a business established outside France | Reports the invoice (e-reporting), one by one | Reports its payments |
+| To consumers | Reports the summary of each closed day, by currency and category | Reports what was collected that day |
+
+Only payments for **services** are reported, without the option for debits. A refund is reported as a negative amount with its reason.
+
+### Register
+
+<Steps>
+
+1. In **Settings › Tax profile › E-invoicing in France**, check your SIREN, regime, email, and address: Cord creates your registration with that data.
+2. If you want, enter the **legal representative** (first name, last name, and position) and click **Register with the platform**.
+3. Click **Verify identity and sign the mandate with Iopole**, the approved platform Cord issues through, and complete the identity verification and the mandate there.
+4. Come back to Cord and click **Refresh status**. When registration is complete, the section says **Registration complete: Cord issues and reports for you**.
+
+</Steps>
+
+An invoice issued before registration is complete is not transmitted; the invoice detail says so.
+
+### E-reporting deadlines
+
+| VAT regime | Transactions | Payments |
+|---|---|---|
+| Standard regime, monthly | By ten-day periods: 1–10, on the 20th; 11–20, on the last day of the month; 21–end, on the 10th of the next month | Month, on the 10th of the next month |
+| Standard regime, quarterly | Month, on the 10th of the next month | Month, on the 10th of the next month |
+| Simplified | Month, on the last day of the next month | Same |
+| Franchise | Two months, on the last day of the next month | Same |
+
+Cord sends each day as soon as it closes; Settings counts what is queued, unconfirmed, or past its deadline.
+
+### Invoice statuses
+
+<DmInvoiceAuthority lang="en" rail="frpa" />
+
+Each invoice's **E-invoicing platform** panel says how the reform treats it (transmitted or reported), how its submission is going, and each status the platform reported, with its date and reason:
+
+| Code | Status |
+|---|---|
+| 200 | Submitted to the platform |
+| 201 | Issued by the platform |
+| 202 | Received by the client's platform |
+| 203 | Made available to the client |
+| 204 | Acknowledged by the client |
+| 205 / 206 | Approved by the client (fully or partially) |
+| 207 | Disputed by the client |
+| 208 / 209 | Suspended: the client asks for supporting documents / Completed |
+| 210 | Refused by the client |
+| 211 / 212 | Payment sent / Payment received |
+| 213 | Rejected by a platform |
+| 501 | File not accepted by the platform |
+
+**A rejected invoice (210 or 213) is not corrected:** cancel it with a credit note (it is not transmitted: it is an accounting cancellation) and issue a new one with the right data. Nothing is corrected automatically.
+
+## Client and product data
+
+- **Client:** SIREN or SIRET (validated with its check digit), their VAT number if they are in another EU country, and their electronic address if they have one.
+- **Product:** its **type** (product, service, subscription, or license) decides the transaction category.
+- **Invoice:** the delivery address when applicable.
+
+## Get paid online
+
+- **Card** with Cord Payments.
+- **SEPA Direct Debit** in EUR, which you turn on in **Settings › Payments**. This feature is new.
+- Your payouts arrive at your **IBAN**. See [Payouts](/en/docs/pagos/depositos).
+
+## Plan limits
+
+| Plan | Invoices per month | Issuing through the platform |
+|---|---|---|
+| Free | 10 | Not included |
+| Starter, Pro, Scale, Developer | Unlimited | Included once activated |
+
+## What Cord does not cover yet
+
+- **Receiving** invoices from your suppliers: you need your reception platform.
+- **Correcting a report** (e-reporting) already sent: not possible from Cord.
+- **Voiding with the platform** an invoice already transmitted: it is corrected with a transmitted credit note.
+- Invoices with withholdings, self-billing, multi-vendor, down payments, and the margin scheme: not issued through the platform.
+
+## Common problems
+
+**The invoice says the transaction category is missing.** Choose the product's type or the default nature of hand-typed line items in **Settings › Tax profile**.
+
+**My invoice says "Not transmitted by Cord".** It was issued before your registration with the platform was complete.
+
+**The platform rejected an invoice.** Cancel it with a credit note and issue a new one with the right data.
+
+## Related
+
+- [Invoicing by country](/en/docs/pagos/paises/resumen)
+- [European e-invoicing](/en/docs/pagos/factura-electronica)
+- [Germany](/en/docs/pagos/paises/alemania)
+- [Create, issue, and collect invoices](/en/docs/pagos/facturas-emitidas)
+- [Products and discounts](/en/docs/cotizacion/productos)
+- [Payment methods](/en/docs/pagos/metodos)

@@ -1,0 +1,131 @@
+---
+title: "Facturación en Alemania"
+seoTitle: "Facturación en Alemania con Cord: XRechnung, ZUGFeRD y Leitweg-ID"
+description: "Factura en alemán con USt. por concepto, Leistungsdatum, Kleinunternehmer, XRechnung UBL y CII, ZUGFeRD/Factur-X y Peppol descargables, Leitweg-ID con dígito de control, USt-IdNr. validado y cobro con tarjeta o SEPA."
+lastUpdated: "2026-10-10"
+reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [DE]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Cuenta con país Alemania", "Steuernummer o USt-IdNr. en Ajustes › Perfil fiscal", "Perfil de factura electrónica completo para XRechnung"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Alemania</h1>
+  <p class="page-subtitle">La factura en alemán con las menciones del § 14 UStG, descargable como XRechnung, ZUGFeRD o Peppol para el sistema de tu cliente.</p>
+</header>
+
+## Qué es
+
+En Alemania Cord emite una factura con folio consecutivo, en **alemán**, con la USt. de cada concepto y las menciones que exige el § 14 UStG. Cada factura emitida se descarga además como **factura electrónica** según la norma europea EN 16931: **XRechnung** (UBL y CII), **ZUGFeRD/Factur-X** (el PDF con el XML dentro) y **Peppol BIS 3.0**. Por defecto, el correo de la factura lleva el PDF y el XML de XRechnung.
+
+Cord **genera** estos archivos y puede adjuntarlos al correo; **no** los transmite por la red Peppol ni a una plataforma de la administración.
+
+| | En Alemania |
+|---|---|
+| Divisa por defecto | EUR |
+| Impuesto | Umsatzsteuer (USt.) |
+| Identificador fiscal | Steuernummer / USt-IdNr. (la USt-IdNr. con su dígito de control) |
+| Documento | Factura con XRechnung, ZUGFeRD/Factur-X y Peppol descargables |
+| Autoridad | No aplica: Cord no transmite |
+| Idioma del PDF | Alemán |
+| Cobro en línea | Tarjeta y domiciliación SEPA (EUR) con Cord Payments |
+
+<Callout type="info">
+La factura electrónica europea es nueva. Esta función es nueva y puede no estar habilitada todavía en tu cuenta. Si no la ves, escríbenos.
+</Callout>
+
+## Requisitos
+
+- **Plan:** cualquiera (Gratis: 10 facturas al mes). La factura electrónica se genera en todos los planes.
+- Tu **Steuernummer** o tu **USt-IdNr.**: la factura lleva una de las dos.
+- Para XRechnung: el **contacto de facturación** con nombre, teléfono y correo, tu IBAN en **Ajustes › Cobros** y, en cada cliente, su ciudad, su código postal y la **referencia del comprador**.
+- **Permisos:** **Ajustes** para el perfil fiscal; **Cotizaciones** para emitir.
+
+## Configura tu cuenta
+
+<Steps>
+
+1. En **Ajustes › Perfil fiscal** completa la razón social, tu **Steuernummer / USt-IdNr.**, el domicilio y el prefijo de factura. Si aplicas el régimen de pequeñas empresas, activa **Kleinunternehmer (§ 19 UStG)**.
+2. En **Factura electrónica europea**, completa el **contacto de facturación** y su teléfono, tu **dirección electrónica** (esquema e identificador), el número de registro mercantil y el **BIC**. El IBAN es el de **Ajustes › Cobros**.
+3. Elige qué **adjuntar al correo de cada factura**: por defecto, PDF y XML de XRechnung.
+4. En cada cliente de la administración pública, captura su **Leitweg-ID** como referencia del comprador.
+
+</Steps>
+
+<DmRailSettings lang="es" rail="identidad" country="DE" />
+
+## Impuestos
+
+<DmTaxCatalog lang="es" country="DE" />
+
+- **USt. 19 %** (predeterminado) y **USt. 7 %** (reducido), por concepto.
+- **Steuerfrei** para las operaciones exentas. En el perfil exento puedes elegir su **clasificación en la factura electrónica** (por ejemplo, inversión del sujeto pasivo o exportación); vacía, Cord la deduce del cliente.
+- **Kleinunternehmer (§ 19 UStG):** con la opción activa, tus facturas sin impuesto llevan la mención legal que lo explica. Si una factura cobra impuesto, la mención no se imprime.
+
+## Leistungsdatum
+
+El § 14 Abs. 4 Nr. 6 UStG exige la **fecha de la prestación**. En el editor de la factura, **Fecha de prestación** acepta una fecha o un periodo (inicio y fin); el PDF la imprime como **Leistungsdatum** o **Leistungszeitraum**. Si la dejas vacía porque coincide con la fecha de emisión, la factura dice "entspricht dem Rechnungsdatum", que es la forma admitida.
+
+## Factura electrónica
+
+<DmInvoiceAuthority lang="es" rail="xrechnung" />
+
+El detalle de cada factura emitida lista los formatos que ya puede generar, listos para descargar, y para los demás dice qué dato falta y dónde se corrige. Tu cliente también los descarga desde el link de la factura.
+
+| Formato | Para qué |
+|---|---|
+| **XRechnung (UBL)** | El formato que exige la administración pública alemana y que aceptan muchas empresas. |
+| **XRechnung (CII)** | La misma factura en sintaxis CII, si tu cliente la pide. |
+| **ZUGFeRD / Factur-X (PDF)** | El PDF de siempre con el XML dentro (perfil EN 16931). |
+| **Peppol BIS 3.0 (UBL)** | Para clientes que reciben por la red Peppol (la subes tú a tu proveedor de acceso). |
+
+**Lo que pide cada formato:** XRechnung, la referencia del comprador, un contacto con nombre, teléfono y correo, la ciudad y el código postal del cliente, y el IBAN; Peppol, la referencia o la orden de compra y las dos direcciones electrónicas, y entre empresas alemanas también el IBAN. Una factura emitida conserva los datos con que se emitió: lo que corrijas después aplica a las siguientes.
+
+## Leitweg-ID
+
+El **Leitweg-ID** identifica al organismo público que recibe la factura. Cord comprueba su **dígito de control** (ISO/IEC 7064 MOD 97-10, según la especificación de la KoSIT) donde sabe que es un Leitweg-ID: en una dirección electrónica con esquema 0204 y en la referencia del comprador de un cliente con esa dirección. Un Leitweg-ID inválido se rechaza al guardar, con el motivo, y la factura electrónica no se genera. Si un valor guardado antes ya no pasa, la ficha del cliente lo marca y te pide corregirlo.
+
+## Datos del cliente y del producto
+
+- **Cliente:** su USt-IdNr. (validada), su ciudad y código postal, su **dirección electrónica** y su **referencia del comprador** (Leitweg-ID en la administración pública).
+- **Factura:** la referencia del comprador y la orden de compra se capturan en el resumen del editor; vacía, la referencia sale de la ficha del cliente.
+- **Producto:** su unidad viaja en la factura electrónica.
+
+## Anular o corregir
+
+Una factura se **anula** desde su detalle si no tiene pagos aplicados; con pagos, se corrige con una **nota de crédito**, que también se genera como factura electrónica.
+
+## Cobrar en línea
+
+- **Tarjeta** con Cord Payments.
+- **Domiciliación SEPA** en EUR, que enciendes en **Ajustes › Cobros**: hasta seis días hábiles para confirmarse y el titular puede devolverla durante ocho semanas. Esta función es nueva.
+- Tus depósitos llegan a tu **IBAN**. Ver [Depósitos](/docs/pagos/depositos).
+
+## Límites por plan
+
+| Plan | Facturas al mes |
+|---|---|
+| Gratis | 10 |
+| Starter, Pro, Scale, Developer | Ilimitadas |
+
+## Lo que Cord no cubre todavía
+
+- **Transmisión** por la red Peppol o a las plataformas de recepción de la administración: Cord genera y adjunta, tú envías.
+- **Retenciones** en la factura electrónica: la norma europea no tiene dónde declararlas, y una factura con retención no se genera en estos formatos.
+- Divisas con tres decimales en la factura electrónica.
+
+## Problemas comunes
+
+**El detalle dice que falta la referencia del comprador.** XRechnung la exige: captúrala en el editor o en la ficha del cliente.
+
+**Cord rechaza el Leitweg-ID.** El dígito de control no coincide. Pide a tu cliente el Leitweg-ID completo, con sus guiones.
+
+**Mi factura no muestra la fecha de prestación.** Si coincide con la fecha de emisión, la factura dice "entspricht dem Rechnungsdatum". Si no, captúrala en el editor antes de emitir.
+
+## Relacionadas
+
+- [Facturación por país](/docs/pagos/paises/resumen)
+- [Factura electrónica europea](/docs/pagos/factura-electronica)
+- [Francia](/docs/pagos/paises/francia)
+- [Crear, emitir y cobrar facturas](/docs/pagos/facturas-emitidas)
+- [Métodos de cobro](/docs/pagos/metodos)

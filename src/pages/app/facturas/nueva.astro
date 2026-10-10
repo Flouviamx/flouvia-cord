@@ -31,6 +31,8 @@ import { getActiveOrgId } from '../../../lib/db';
 import { checkEntitlement } from '../../../lib/org-entitlements';
 import { documentTypeForOrg, isFiscalDocument } from '../../../lib/fiscal/document-kind';
 import { invoicingFeatureFor } from '../../../lib/fiscal/gate';
+import { rielesDePais } from '../../../lib/fiscal/latam/rieles';
+import { railListoParaPais } from '../../../lib/fiscal/latam/estado';
 import { getCountryProfile, taxRoundingFor } from '../../../lib/countries';
 import { buildTaxOptions, defaultTaxRate, retencionesFrom } from '../../../lib/impuestos';
 import { CURRENCY_FLAG } from '../../../lib/flags';
@@ -82,7 +84,17 @@ const ENTREGA = draft?.entrega ?? null;
 const defaultDocumentType = draft?.tipo || (hasAccess ? await documentTypeForOrg(orgId, country) : 'proforma');
 const fiscalAccess = hasAccess ? await checkEntitlement(orgId, 'cfdi') : null;
 const fiscalSelected = isFiscalDocument(defaultDocumentType, country);
-const selectableFiscal = fiscalAccess?.ok && ['MX', 'ES'].includes(country);
+// LatAm: con el riel del país listo, el documento fiscal se puede elegir y lo
+// no fiscal es una proforma, igual que decide selectDocumentType(). Sin esto
+// el selector ofrecía "Factura comercial" (que salía como proforma) y una
+// opción fiscal con la etiqueta de España.
+const RIELES_PAIS = rielesDePais(country);
+const railActivo = RIELES_PAIS.length > 0 && fiscalAccess?.ok ? await railListoParaPais(orgId, country) : false;
+const selectableFiscal = fiscalAccess?.ok && (['MX', 'ES'].includes(country) || railActivo);
+const COMMERCIAL_LABEL = ['MX', 'ES'].includes(country) || railActivo ? 'Proforma' : (L === 'en' ? 'Commercial invoice' : 'Factura comercial');
+const FISCAL_LABEL = isMx ? 'CFDI 4.0'
+    : RIELES_PAIS.length ? RIELES_PAIS.map((r) => r.etiqueta[L === 'en' ? 'en' : 'es']).join(' / ')
+    : 'VERI*FACTU';
 // El vocabulario fiscal sale del país del EMISOR, no de un default mexicano:
 // un negocio en Madrid factura con "NIF" e "IVA"; uno en Austin, con "Tax ID".
 const TAX_ID_LABEL = profile.taxIdLabel;
@@ -413,8 +425,8 @@ import { iconInner } from '../../../lib/icons';
                     <div class="section-head"><h2>{L === 'en' ? 'Document type' : 'Tipo de documento'}</h2></div>
                     <label for="documentMode">{L === 'en' ? 'Issuance' : 'Emisión'}</label>
                     <select id="documentMode" class="ed-select" disabled={!!draft?.sustituyeA}>
-                        <option value="commercial" selected={!fiscalSelected}>{['MX', 'ES'].includes(country) ? 'Proforma' : (L === 'en' ? 'Commercial invoice' : 'Factura comercial')}</option>
-                        {(selectableFiscal || fiscalSelected) && <option value="fiscal" selected={fiscalSelected} disabled={!selectableFiscal}>{isMx ? 'CFDI 4.0' : 'VERI*FACTU'}</option>}
+                        <option value="commercial" selected={!fiscalSelected}>{COMMERCIAL_LABEL}</option>
+                        {(selectableFiscal || fiscalSelected) && <option value="fiscal" selected={fiscalSelected} disabled={!selectableFiscal}>{FISCAL_LABEL}</option>}
                     </select>
                     <p class="add-hint">{L === 'en'
                         ? 'Commercial documents are included in Free. Integrated fiscal issuance requires Starter and an enabled fiscal setup. A pro forma does not replace a tax invoice.'

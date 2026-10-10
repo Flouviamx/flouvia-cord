@@ -1,23 +1,33 @@
 ---
-title: "Receive International Payments"
-description: "Accept cards issued abroad with Cord."
+title: "Receive international payments"
+description: "Collect from clients abroad in their currency by card, direct debit or Mercado Pago, and invoice the sale according to the country you issue from."
 category: "Payments & Deposits"
 ---
 
-Selling to customers abroad is native in Cord, regardless of which supported country your business is domiciled in.
+Selling to clients abroad is native to Cord, whichever of Cord's 12 countries your business is in.
 
-### Collections and currencies
+## Payments and currencies
 
-Cord lets you create a quote in any currency the selector offers (those of the 12 supported countries, plus JPY, CNY, CHF, and AUD for international trade). When an international customer selects **Pay**, Cord validates whether their card, country, and currency are compatible with your connected payment account. Availability and settlement currency depend on that account's configuration.
+Create the quote or invoice in the currency that suits the client: those of Cord's 12 countries plus JPY, CNY, CHF and AUD. When the client clicks **Pay**, Cord offers the methods your account supports for that currency:
 
-### Tax treatment depends on your country
+- **Card** through Cord Payments (Mexico, United States, Canada, Brazil, Spain, United Kingdom, Germany and France), in the selling currency if your payments account supports it.
+- **SEPA Direct Debit** (EUR) or **ACH bank debit** (USD) on the invoice and the portal, if you turned them on.
+- **Mercado Pago** (Mexico, Brazil, Colombia, Argentina, Chile and Peru), with the methods Mercado Pago has on your account.
 
-The tax treatment of an international sale depends on where your business is domiciled, not on the client's country:
+Availability and payout currency depend on your payments account configuration. If your bank settles in another currency, the payment network may apply conversion and cross-border fees.
 
-**If your business is in Mexico**, a sale to a foreign client is an export of services and is invoiced as a CFDI:
-1. Use the generic international RFC **XEXX010101000** for the recipient.
-2. Select CFDI Use: **S01 (Without tax effects)**.
-3. Select the **0% VAT** rate — export of services from Mexico is taxed at a zero rate.
-4. Stamp the invoice. Cord generates a valid CFDI that proves your international income.
+## How the sale is invoiced
 
-**If your business is in any other supported country** (United States, Canada, Brazil, Spain, United Kingdom, Germany, France, Colombia, Argentina, Chile, or Peru), the invoice is a commercial invoice (or Verifactu in Spain) using your own country's tax vocabulary — never the SAT's. If your business is in the European Union and you're selling to a client with a VAT ID in another member state, the sale may qualify for the intra-community reverse charge (0% rate with the corresponding legal notice) instead of your local VAT. Check with your tax advisor for the exact treatment of your export.
+The tax treatment depends on where your business is, not on the client's country. Pick the client's country on their profile and Cord applies the treatment that fits:
+
+- **Mexico:** the CFDI is issued to a foreign resident (RFC XEXX010101000, their country, use S01 and their tax ID), without you entering anything else. A 0% item is declared exempt: Cord does not issue taxable 0% VAT yet, which is the rate that usually applies to the export of services; in that case, confirm it with your accountant and issue that CFDI outside Cord for now.
+- **Spain, Germany and France:** to a business client elsewhere in the EU with a VAT number, reverse charge with its notice; outside the EU, export without VAT. In Spain, while Verifactu registration is being turned on, Cord issues pro formas.
+- **Other countries:** the commercial invoice carries the rate you choose on each line, with your country's tax vocabulary.
+
+The details are in [Invoicing customers abroad](/en/support/facturas-extranjero). Confirm the exact treatment of your export with your tax advisor.
+
+## Related
+
+- [Multi-currency collections](/en/support/cobro-divisas)
+- [Collect with Mercado Pago](/en/support/cobrar-mercado-pago)
+- [SEPA Direct Debit and ACH](/en/support/domiciliacion-sepa-ach)

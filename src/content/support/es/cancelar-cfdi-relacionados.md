@@ -1,66 +1,56 @@
 ---
 title: "Cancelar CFDI con documentos relacionados"
-description: "Revisa pagos, notas y estado antes de anular."
+description: "Qué revisar antes de cancelar o sustituir un CFDI que tiene notas de crédito, complementos de pago, un sustituto en curso o que forma parte de una factura global."
 category: "Facturación"
 ---
 
+Esto aplica a organizaciones en **México**. El SAT **no deja cancelar un CFDI que tiene comprobantes relacionados vigentes**: si lo intentas, lo marca "No cancelable". Antes de anular o sustituir una factura, revisa qué documentos dependen de ella.
 
-## Anular y acreditar son acciones distintas
+**En resumen:**
 
-**Anular** cambia la vigencia de una factura. Una **nota de crédito** es otro
-documento que reduce el importe acreditable del original. Ninguna de las dos
-acciones devuelve dinero automáticamente.
+| La factura tiene… | Qué hacer |
+|---|---|
+| Notas de crédito vigentes | Anula primero las notas de crédito; después la factura. Cord no anula ni sustituye la factura mientras existan. |
+| Complementos de pago emitidos | No se puede **Sustituir CFDI** desde la app: escríbenos a soporte@flouvia.com para sustituirla. |
+| Pagos aplicados | No se anula: usa **Más acciones › Nota de crédito**. Los pagos se conservan en la factura. |
+| Un sustituto en curso | Continúa en él con **Continuar la sustitución**; no se crea otro. |
+| Ventas en una factura global | Cancela la global con el motivo 04 y emítela de nuevo sin esa venta. |
 
-En Cord, abre **Facturas**, entra al documento y usa **Más acciones > Anular
-factura**. La aplicación bloquea la anulación cuando hay pagos aplicados y propone
-una nota de crédito. También exige resolver las notas vinculadas antes de anular
-la factura original. Estas son las reglas del flujo de Cord; no sustituyen la
-revisión fiscal de cada caso.
+## Notas de crédito
 
-## México: solicitud y confirmación
+Una nota de crédito emitida es un CFDI de egreso relacionado con el UUID de la factura. Mientras esté vigente:
 
-Enviar una solicitud no significa que el CFDI esté cancelado. Cord conserva el
-estado de la solicitud y solo presenta la anulación cuando se confirma:
+- **Anular** la factura se rechaza hasta resolver la nota.
+- **Sustituir CFDI** no se ofrece: el detalle dice "Para sustituirla, primero anula sus notas de crédito".
 
-- **Pendiente o en verificación:** la factura continúa vigente.
-- **Rechazada, expirada o sin confirmación:** la factura no se marca anulada.
-- **Aceptada:** se actualiza su estado a anulada.
+Anula la nota de crédito desde su propio detalle (**Más acciones › Anular**) y, cuando el SAT confirme su cancelación, vuelve a la factura.
 
-Usa **Consultar cancelación** en el detalle para revisar una solicitud. La consulta
-es manual; no se promete seguimiento automático continuo.
+## Complementos de pago
 
-### El motivo del SAT
+Cada cobro de una factura PPD lleva un complemento de pago relacionado con ella. Para cancelar o sustituir esa factura habría que cancelar antes sus complementos, y Cord todavía no lo hace desde la app. El detalle de la factura lo dice: "Tiene complementos de pago emitidos… Escríbenos a soporte@flouvia.com para sustituirla". Ver [Facturas PPD y complementos de pago](/soporte/complementos-de-pago).
 
-Al anular un CFDI vigente, Cord te pide el motivo que exige el SAT:
+## Pagos aplicados
 
-- **02 · Comprobante emitido con errores sin relación:** tiene un error y no vas
-  a emitir otro en su lugar (por ejemplo, lo emitiste dos veces o al cliente
-  equivocado).
-- **03 · No se llevó a cabo la operación:** la venta o el servicio no se concretó.
-- **04 · Operación nominativa relacionada en una factura global:** solo para una
-  factura global de la que un cliente pidió su factura.
-- **01 · Comprobante emitido con errores con relación:** no se elige aquí. Se usa
-  **Sustituir CFDI**.
+Una factura con pagos no se anula, porque el dinero ya entró. Si hay que corregir el importe, emite una **nota de crédito**; si además hay que devolver dinero, haz el reembolso aparte desde **Cobros**.
 
-### Sustituir un CFDI
+## Sustitución en curso
 
-Si la factura tiene un error que hay que corregir con otra, usa **Sustituir
-CFDI** en su detalle. Cord crea un borrador con los mismos datos para que lo
-corrijas. Al emitirlo, el nuevo CFDI se relaciona con el original (relación
-04), sus cobros pasan a la factura nueva y Cord pide la cancelación del original
-con el motivo 01 y el folio fiscal del sustituto. Si el receptor tiene que
-aceptarla, el detalle muestra el estado; si la rechaza, los dos CFDI siguen
-vigentes y puedes reintentar.
+Cuando pulsas **Sustituir CFDI**, Cord crea un borrador ligado al original. Solo puede haber un sustituto vivo por factura: si ya existe, el detalle ofrece **Continuar la sustitución**. Mientras la cancelación del original espera la aceptación del receptor, los dos CFDI siguen vigentes; si el receptor la rechaza, reintenta la cancelación o, si el sustituto sobra, cancélalo con el motivo 02. Anular un sustituto sin pagos devuelve el saldo al original.
 
-Cord no ofrece sustituir una factura con notas de crédito vigentes o con
-complementos de pago emitidos: el SAT no deja cancelar un CFDI con comprobantes
-relacionados vigentes. No elijas una nota de crédito solo para simular una
-cancelación.
+## Factura global
 
-## Otros mercados
+Una venta incluida en una factura global vigente no puede facturarse aparte. Si un cliente pide su factura:
 
-Cord usa el carril disponible para el país y conserva el historial del documento.
-La anulación local de una factura comercial no acredita que una autoridad fiscal
-haya recibido o aceptado una cancelación.
+1. Abre la factura global y usa **Más acciones › Anular** con el motivo **04 · Operación nominativa relacionada en una factura global**.
+2. Al confirmarse la cancelación, sus ventas quedan libres. Pulsa **Emitir de nuevo la global del periodo** y desmarca la venta del cliente.
+3. Emite la factura del cliente desde su cotización.
+
+La factura global no se sustituye: se corrige cancelándola. Ver [Facturación al Público en General y factura global](/soporte/facturar-publico-general).
+
+## Relacionados
+
+- [Anular facturas y consultar cancelaciones](/soporte/cancelar-facturas)
+- [Emitir una nota de crédito](/soporte/nota-de-credito)
+- [Cómo facturar en México con Cord](/soporte/facturar-en-mexico)
 
 > La disponibilidad de las mejoras de septiembre está en verificación. Consulta [alcance y publicación](https://docs.cordhq.app/docs/pagos/mejoras-confiabilidad); contacta a soporte si una acción descrita todavía no aparece en tu cuenta.

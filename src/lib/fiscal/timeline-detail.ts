@@ -97,5 +97,12 @@ export function invoiceEventDetail(tipo: string, detalle: string, locale: Timeli
         return `Payment of ${m[1]} received AFTER the invoice was voided: it must be refunded to the client`;
     }
     if ((m = d.match(/^Error al emitir: (.+)$/))) return `Issuing failed: ${m[1] === 'desconocido' ? 'unknown' : m[1]}`;
+    // México: complemento de pago (payment-complement.ts). El motivo o el error
+    // vienen del SAT o del proveedor y se dejan tal cual.
+    if ((m = d.match(/^Complemento de pago emitido(?: \((.+)\))?$/))) return `Payment complement issued${m[1] ? ` (${m[1]})` : ''}`;
+    if ((m = d.match(/^Complemento de pago no automático: (.+)$/))) return `Payment complement not issued automatically: ${m[1]}`;
+    if ((m = d.match(/^Complemento de pago pendiente: (.+)$/))) {
+        return `Payment complement pending: ${m[1] === 'reintenta desde la factura' ? 'retry from the invoice' : m[1]}`;
+    }
     return d;
 }

@@ -1,0 +1,170 @@
+---
+title: "Invoicing in the United States"
+seoTitle: "Invoicing in the United States with Cord: sales tax and ACH"
+description: "Commercial invoice with sales tax by state or calculated from the client's address (state, county, city, and districts), per-plan quota and overage, exempt clients with a certificate, validated EIN, and collection by card or ACH."
+lastUpdated: "2026-10-10"
+reviewedBy: "Cord product and operations"
+appliesToMarkets: [US]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Account with the United States as its country", "Your state in Settings › Tax profile", "For sales tax by address: Starter or higher and an active Cord Payments account"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">United States</h1>
+  <p class="page-subtitle">Commercial invoice with your state's sales tax or, from Starter, the combined rate of your client's exact address.</p>
+</header>
+
+## What it is
+
+In the United States there is no tax invoice filed with an authority: Cord issues a **commercial invoice** with a sequential number, each line item's sales tax, and both parties' details. What does change by place is **sales tax**, which is the sum of the state, county, city, and special district rates. Cord gives you two ways to charge it:
+
+- **Catalog rate:** your state's base rate, seeded when you declare your state, plus any you add by hand.
+- **Sales tax by address** (from Starter): each line item takes the combined rate of the client's address, with one row per jurisdiction, and the sale is recorded for your filing.
+
+| | In the United States |
+|---|---|
+| Default currency | USD |
+| Tax | Sales tax by state; combined by address from Starter |
+| Tax ID | EIN / Tax ID, validated (nine digits and an assigned prefix) |
+| Document | Commercial invoice and commercial credit note |
+| Authority | Not applicable to the invoice; you file sales tax in each state |
+| PDF language | English |
+| Online payments | Card and ACH bank debit (USD) with Cord Payments |
+
+## Requirements
+
+- **Plan:** any to invoice (Free: 10 invoices per month). **Starter or higher** for sales tax by address.
+- **Your state** in **Settings › Tax profile**: the starter catalog comes from it.
+- For sales tax by address: an **active Cord Payments account**, your complete address, and the states where you have a permit to collect.
+- **Permissions:** **Settings** for the tax profile and taxes; **Quotes** to issue; **Collections** to void and credit.
+
+## Set up your account
+
+<Steps>
+
+1. In **Settings › Tax profile**, complete your legal name, EIN, address, city, **state** (a selector with the 50 states and D.C.), ZIP, and invoice prefix.
+2. Open **Settings › Taxes**. If your catalog is empty, click **Add the base rate** for your state: Cord adds `Sales tax <state> <rate>%` and **Exempt / Resale**.
+3. If you will use sales tax by address, first activate your account in **Settings › Payments** and continue with the section below.
+
+</Steps>
+
+<DmRailSettings lang="en" rail="identidad" country="US" />
+
+## Catalog sales tax
+
+The seeded rate is the **minimum statewide rate**: the state rate plus the local tax the law makes mandatory across the state (that is why California is 7.25% and not 6%). It does not include county or city. A state with no statewide sales tax (Oregon, Montana, New Hampshire, Delaware, Alaska) only gets **Exempt / Resale**: Cord does not make up a 0% consumption tax.
+
+<DmTaxCatalog lang="en" country="US" region="CA" />
+
+If you don't use the calculation by address, adjust the rate with your accountant to your location's and add those of other jurisdictions where you sell.
+
+<Callout type="info">
+Sales tax calculated from the client's address is new. This feature is new and may not be enabled on your account yet. If you don't see it, contact us.
+</Callout>
+
+## Sales tax from the client's address
+
+With **Calculate sales tax from the client's address** on in **Settings › Taxes**, each line of a quote or invoice for a client in the United States takes the combined rate of their address: state, county, city, and special districts. The calculation uses **your** registrations, not Cord's: you are the one registered with each state, who collects, and who files.
+
+<Steps>
+
+1. In **Settings › Taxes**, section **Sales tax by address**, enter your **business address** in full (street, city, state, and ZIP).
+2. Choose **what you sell**: general services, general tangible goods, software as a service for business use, or general electronically supplied services. It decides whether a state taxes it.
+3. Check the **states where you collect sales tax**, only those that gave you a permit.
+4. Turn the switch on and click **Save**. If something is missing (plan, payments account, address, or at least one state), the screen says what, and the switch does not stay on.
+
+</Steps>
+
+<DmUsTaxSettings lang="en" />
+
+### What the document prints
+
+<DmSalesTaxBreakdown lang="en" />
+
+- **One row per jurisdiction** on the PDF, the client's link, the preview, and the detail: for example, California 6%, Los Angeles County 0.25%, and the special districts. The sum is exactly the tax charged.
+- The line item column shows the **combined legal rate** (9.5% in that example).
+- **State where you don't collect:** the line carries 0% and the document says "No obligation to collect sales tax in Texas". It is not an error.
+- **Sale the state does not tax** (for example, a service where services pay no sales tax): the line carries 0% and the document says "Not subject to sales tax in" that state.
+- **Exempt client:** the line carries 0% and the document cites their certificate.
+- The rate and breakdown are **frozen** on the document: if your client changes address later, what was issued is not recalculated.
+
+### When the document is not saved
+
+The calculation **fails closed**: if it cannot be calculated with certainty, the quote or invoice is not saved and the editor tells you what is missing, instead of using an estimated rate. It happens when:
+
+- the client has no state or no five-digit ZIP (street and city improve accuracy);
+- the address cannot be located;
+- the client is marked exempt without a certificate, or with an expired certificate;
+- the document has more than 100 line items;
+- you have no active payments account, your address is incomplete, or you checked no state;
+- the calculation is not available at that moment or a usage limit was reached.
+
+A draft without a client uses the catalog rate; to send it you need a client.
+
+### Exempt clients
+
+On the client's profile, section **Sales tax exemption** (US businesses only), mark the client as exempt (resale, nonprofit, government) and enter their **certificate**: number, issuing state, and expiration. Without a certificate number the exemption is not saved; with an expired certificate, the document is not saved.
+
+### The recorded sale
+
+Each **issued invoice** and each **paid quote** in a state where you collect is recorded once for your sales tax filing. A quote and the invoice that comes from it are the same sale: they are recorded only once. Voiding an invoice reverses its whole sale, unless that sale is already paid on its quote.
+
+### Quota and overage
+
+| Plan | Invoices with automatic sales tax per month | Each additional one |
+|---|---|---|
+| Free | Not included | Not available |
+| Starter | 10 | 0.75 USD · 15.00 MXN · 0.70 EUR |
+| Pro | 25 | 0.75 USD · 15.00 MXN · 0.70 EUR |
+| Scale | 60 | 0.75 USD · 15.00 MXN · 0.70 EUR |
+| Developer | 150 | 0.75 USD · 15.00 MXN · custom in EUR |
+
+- Each sale recorded in a state where you collect counts once. Previews do not count, a sale to a state where you don't collect does not either, and voiding an invoice does not give the unit back.
+- The price of an additional one is charged in your Cord subscription's currency.
+- If overage billing for this quota is not enabled on your account yet, when you reach the included amount Cord asks you to upgrade your plan or enter the rate by hand. A sale that arrives without quota is not lost: it waits and is recorded automatically when your quota renews or you upgrade, and **Settings › Plans & subscription** says how many are waiting.
+- Cord covers the cost of the calculation; your plan only counts recorded sales.
+
+Details in [Your Cord subscription](/en/docs/cuenta/suscripcion).
+
+## Client and product data
+
+- **Client:** country United States, state and five-digit ZIP (required for the calculation by address), street and city recommended, optional EIN, and, if applicable, their exemption with a certificate.
+- **Product:** it carries no sales tax classification of its own: classification is one per business (what you chose in **What you sell**).
+
+## Void or correct
+
+A commercial invoice is **voided** from its detail if it has no payments applied; with payments, it is corrected with a full or partial **credit note**. Voiding an invoice with sales tax by address reverses its recorded sale.
+
+## Get paid online
+
+- **Card** with Cord Payments on the quote link and the invoice link.
+- **ACH bank debit** in USD: you turn it on in **Settings › Payments**. It takes up to four business days to confirm and only supports full refunds. This feature is new.
+- Your payouts arrive at your account with a **routing number (ABA)**, validated with its check digit, and an account number. See [Payouts](/en/docs/pagos/depositos).
+
+## What Cord does not cover yet
+
+- **Filing reports** for sales tax: Cord records each sale, but does not show you the report by state yet.
+- **Partial credit note** on an invoice with sales tax by address: it copies the breakdown to print it, but does not partially reverse the recorded sale.
+- **Classification by product:** today it is one per business.
+- The API and the MCP server do not expose the client's exemption or the breakdown by jurisdiction (the documents they create do calculate by address).
+
+## Common problems
+
+**My catalog is empty.** Add your state in **Settings › Tax profile** and go back to **Settings › Taxes** to add the base rate.
+
+**I can't turn on the calculation by address.** The screen says what is missing: Starter plan or higher, an active payments account, a complete address, or at least one state.
+
+**My quote is not saved and says the ZIP is missing.** The client needs a state and a five-digit ZIP on their profile.
+
+**A line came out at 0%.** The client is in a state where you did not check that you collect, or is exempt. The document says so in its notes.
+
+**I reached my plan's quota.** Upgrade your plan, or turn the automatic calculation off and enter the rate by hand until next month.
+
+## Related
+
+- [Invoicing by country](/en/docs/pagos/paises/resumen)
+- [Create, issue, and collect invoices](/en/docs/pagos/facturas-emitidas)
+- [Clients and statements](/en/docs/gestion/clientes)
+- [Payment methods](/en/docs/pagos/metodos)
+- [Connect account (KYC)](/en/docs/pagos/onboarding)
+- [Your Cord subscription](/en/docs/cuenta/suscripcion)

@@ -1,0 +1,160 @@
+---
+title: "Invoicing by country"
+seoTitle: "Invoicing by country in Cord: taxes, document and payments"
+description: "Which document Cord issues in each of the 12 countries it offers, which taxes your account starts with, which authority registers it, how you get paid online, and what is available today, being activated, or coming soon."
+lastUpdated: "2026-10-10"
+reviewedBy: "Cord product and operations"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Your business country chosen when you created the account", "Complete tax identity in Settings › Tax details (Tax profile outside Mexico)"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Invoicing by country</h1>
+  <p class="page-subtitle">One invoicing engine that speaks each country's tax language: its taxes, its tax ID, its authority, and its payment methods.</p>
+</header>
+
+## What it is
+
+Cord offers twelve countries: **Mexico, the United States, Canada, Brazil, Spain, the United Kingdom, Germany, France, Colombia, Argentina, Chile, and Peru**. The country you choose when you create your account decides five things at once:
+
+- **The taxes your catalog starts with**, under their local name (IVA, VAT, GST, Sales tax, TVA, USt., IGV) and with their standard rates, ready to edit in **Settings › Taxes**.
+- **The tax ID** requested from the business and its clients (RFC, EIN, NIF, CNPJ, RUT…), validated with its check digit before it is saved.
+- **Which document Cord issues**: a tax document registered with the country's authority when Cord has that rail, or a commercial invoice with a sequential number when it does not.
+- **The language and form of the PDF**: the invoice is written in the country's language (Spanish, English, French, German, or Portuguese) and time zone, with the legal notices the country requires.
+- **How you get paid online**: Cord Payments (card, SPEI in Mexico, SEPA Direct Debit in the euro area, and ACH in the United States) or Mercado Pago where Cord Payments does not reach.
+
+Each country has its own page with every detail: taxes, the data you capture, document types, how the status before the authority looks, how to void or correct, and what Cord does not cover yet.
+
+<Callout type="info">
+The rails that register invoices with a tax authority (Verifactu in Spain, the approved platform in France, ARCA, NFS-e, NF-e, SUNAT, the SII, and the DIAN) are turned on country by country. While one is **being activated**, its section in Settings says **Coming soon** and your invoices are still issued as commercial documents. This feature is new and may not be enabled on your account yet. If you don't see it, contact us.
+</Callout>
+
+## The 12 countries at a glance
+
+| Country | Taxes your account starts with | Document Cord issues | Authority or rail | Online payments | Status |
+|---|---|---|---|---|---|
+| [Mexico](/en/docs/pagos/paises/mexico) | IVA 16%, IVA 8% border region, exempt, IVA and ISR withholdings | CFDI 4.0 from Starter; pro forma on Free | SAT, stamped with your CSD | Card, SPEI (MXN), Mercado Pago | Available |
+| [United States](/en/docs/pagos/paises/estados-unidos) | Your state's sales tax and exempt | Commercial invoice | No invoice authority; sales tax is recorded for your filing | Card, ACH (USD) | Available; sales tax by address new |
+| [Canada](/en/docs/pagos/paises/canada) | GST, HST, and your province's combined rate (GST + QST, PST, or RST) | Commercial invoice | Not applicable | Card | Available |
+| [Brazil](/en/docs/pagos/paises/brasil) | No national rate: Isento only | Commercial invoice; NFS-e for services and NF-e for goods | National NFS-e system and your state's SEFAZ | Card, Mercado Pago | NFS-e and NF-e being activated |
+| [Spain](/en/docs/pagos/paises/espana) | IVA 21, 10, and 4%, exemptions with a reason, IRPF; IGIC in the Canary Islands | Pro forma; invoice registered with Verifactu | AEAT | Card, SEPA (EUR) | Verifactu being activated; e-invoicing between businesses coming soon |
+| [United Kingdom](/en/docs/pagos/paises/reino-unido) | VAT 20 and 5%, zero-rated, exempt | Commercial invoice | Not applicable | Card | Available |
+| [Germany](/en/docs/pagos/paises/alemania) | USt. 19 and 7%, steuerfrei | Commercial invoice with downloadable XRechnung, ZUGFeRD, and Peppol | Not applicable: Cord generates the files, it does not transmit them | Card, SEPA (EUR) | Available |
+| [France](/en/docs/pagos/paises/francia) | TVA 20, 10, 5.5, and 2.1%, exonéré | Commercial invoice with Factur-X and the reform's mentions | Approved platform (PA) | Card, SEPA (EUR) | Issuing through the platform coming soon |
+| [Colombia](/en/docs/pagos/paises/colombia) | IVA 19 and 5%, exempt, ReteIVA, ReteFuente | Commercial invoice; validated e-invoice | DIAN | Mercado Pago | Being activated |
+| [Argentina](/en/docs/pagos/paises/argentina) | IVA 21, 10.5, and 27%, exempt | Commercial invoice; type A, B, or C invoice with CAE | ARCA | Mercado Pago | Being activated |
+| [Chile](/en/docs/pagos/paises/chile) | IVA 19% calculated per document, exempt | Commercial invoice; DTE 33, 34, 56, and 61 | SII | Mercado Pago | Being activated |
+| [Peru](/en/docs/pagos/paises/peru) | IGV 18%, exonerado, inafecto | Commercial invoice; electronic invoice and credit note | SUNAT | Mercado Pago | Being activated |
+
+**How to read the status:**
+
+- **Available:** works today for every account in the country, on the plan shown.
+- **New:** built and verified, but just released; it may not be enabled on your account yet.
+- **Being activated:** the rail is built and tested against the authority's specifications, and Cord turns it on country by country. Meanwhile, the Settings section says **Coming soon**, shows no fields, and your invoices are issued as commercial invoices.
+- **Coming soon:** Cord already built it, but it depends on something external (the authority publishing its service, or Cord completing a filing).
+
+## Which document is issued
+
+The document type is decided **when you issue** and stays saved: an issued document keeps its type even if you later change your plan or configuration.
+
+| Situation | Document |
+|---|---|
+| Free plan, any country | Commercial invoice (pro forma in Mexico and Spain) |
+| Starter or higher in Mexico | **CFDI 4.0**, with your CSD uploaded. You can choose pro forma. |
+| Starter or higher in Spain, with Verifactu active and a certificate | **Invoice registered with Verifactu**. Without that, pro forma. |
+| Starter or higher in a country whose authority rail is ready (AR, BR, CL, CO, PE) | **Electronic document authorized** by the authority. If you choose the commercial option, a pro forma is issued. |
+| Any other case | Commercial invoice with a sequential number |
+
+- **Commercial invoice:** sequential number per organization, taxes and withholdings per line, the tax details of both parties, and an immutable copy. Its PDF says it is a commercial document not filed with any authority.
+- **Pro forma:** a commercial document that says explicitly that it does not replace a tax invoice. It is for getting paid, not for deducting.
+- **Tax document:** the one the authority authorizes or registers (CFDI, Verifactu record, ARCA CAE, NFS-e, NF-e, SUNAT CDR, DTE accepted by the SII, DIAN CUFE). Its legal number replaces the internal number.
+
+<Callout type="info" title="Test documents">
+A document issued in an authority's test environment (homologation, beta, certification, or enablement) says **no tax validity**, carries a number with a test prefix, cannot be paid online, and does not use your tax document quota.
+</Callout>
+
+## Taxes per line, in the country's language
+
+In every country, tax travels **with each line item**, not with the document: you can mix a taxed service with an exempt product, or two different rates, on the same invoice. Each document prints one row per rate.
+
+- When the account is created, Cord seeds the country's standard rates (and the territory's when the tax changes: Canadian province, Canary Islands, Ceuta and Melilla, US state). They are an editable starting point: the business decides.
+- Brazil starts without a national rate on purpose: there is none to suggest.
+- Rounding also belongs to the country: Chile calculates IVA **once per document**, as the SII requires; the rest round per line.
+- Withholdings are subtracted from the total and calculated on their own base: the subtotal, the IVA (Colombia's ReteIVA), or only the taxed amount (Mexico's IVA withholding).
+
+<DmTaxCatalog lang="en" country="CA" region="QC" />
+
+## Validated tax ID
+
+Cord validates the tax ID of the business and its clients with each country's rule before saving it: on the organization, on the client profile, in client imports, in the API, in the MCP server, and when a client is created from a quote.
+
+| Country | Tax ID | What is checked |
+|---|---|---|
+| Mexico | RFC | Shape, date, and SAT check digit; accepts the generic XAXX010101000 and XEXX010101000 |
+| United States | EIN / Tax ID | Nine digits and a prefix assigned by the IRS; for an individual, SSN or ITIN |
+| Canada | BN / GST/HST no. | Nine digits with a check digit, alone or with its program account (RT0001); QST number |
+| Brazil | CNPJ / CPF | Check digits; accepts the alphanumeric CNPJ |
+| Spain | NIF / CIF | NIF, NIE, and CIF with their control letter or digit, with or without the ES prefix |
+| United Kingdom | VAT reg. no. | HMRC modulus 97; also the Company Number |
+| Germany | Steuernummer / USt-IdNr. | USt-IdNr. with its check digit; Steuernummer by its shape |
+| France | SIREN / N° TVA | SIREN and SIRET with their check digit; the TVA key calculated from the SIREN |
+| Colombia | NIT | Verification digit when written with a hyphen |
+| Argentina | CUIT | Prefix and check digit |
+| Chile | RUT | Check digit, including K |
+| Peru | RUC | Prefix and check digit |
+
+Whatever cannot be proven wrong is accepted: a false rejection would leave you unable to invoice.
+
+## Series per issuer
+
+Outside Mexico, numbering belongs to the **issuer**, not to the Cord account. If two Cord organizations have the same tax ID, they cannot number with the same series: when you save your tax details, Cord asks you to choose another one (for example, by adding a 2 to the prefix). That way two invoices of your business never repeat a number. In Spain the series also carries the fiscal year and numbering starts over every year.
+
+## Online payments by country
+
+| Method | Countries | Currency |
+|---|---|---|
+| Card with Cord Payments | MX, US, CA, BR, ES, GB, DE, FR | The invoice's, if the processor supports it |
+| Automatic SPEI | MX | MXN only |
+| SEPA Direct Debit | ES, DE, FR | EUR only |
+| ACH bank debit | US | USD only |
+| Mercado Pago | MX, BR, CO, AR, CL, PE | Whatever Mercado Pago supports on your account |
+| Manual transfer | All 12 | Any, recorded by hand |
+
+In Colombia, Argentina, Chile, and Peru, Cord Payments does not open accounts: online collection is with [Mercado Pago](/en/docs/pagos/mercado-pago), and Settings › Payments says so before you start onboarding. SEPA and ACH debits are new and are turned on in **Settings › Payments**; see [Payment methods](/en/docs/pagos/metodos).
+
+## Plan limits
+
+| Plan | Commercial invoices and pro formas per month | Tax documents included per month |
+|---|---|---|
+| Free | 10 | No tax issuance included |
+| Starter | Unlimited | 30 |
+| Pro | Unlimited | 200 |
+| Scale | Unlimited | 500 |
+| Developer | Unlimited | 1,000 |
+
+- Every document the authority authorizes or registers counts as a tax document, in any country: a CFDI (also each payment complement), a Verifactu record, an ARCA document, an NFS-e, an NF-e, a SUNAT invoice, a DTE, or a DIAN invoice.
+- Drafts and test documents do not count.
+- From Starter, additional tax documents are billed as overage on your subscription. See [Your Cord subscription](/en/docs/cuenta/suscripcion).
+- In the United States, sales tax calculated by address has its own monthly quota. See [United States](/en/docs/pagos/paises/estados-unidos).
+
+## Common problems
+
+**My country says Coming soon in Settings.** Your country's rail is being activated. Your invoices are issued as commercial invoices and you can collect them normally; when the rail is activated for your account, the section will show its fields.
+
+**My invoice came out as a pro forma.** In Mexico and Spain, an invoice without tax issuance is a pro forma. Check your plan (Starter or higher) and that your certificate is uploaded and valid.
+
+**Cord rejects my client's tax ID.** The check digit does not match the country's rule. Check the number on your client's certificate; the message says which data to review.
+
+**My country doesn't have the rate I need.** Add it in **Settings › Taxes** with **+ New tax**. The seeded rates are a starting point, not a closed list.
+
+## Related
+
+- [Mexico](/en/docs/pagos/paises/mexico) · [United States](/en/docs/pagos/paises/estados-unidos) · [Canada](/en/docs/pagos/paises/canada) · [Brazil](/en/docs/pagos/paises/brasil)
+- [Spain](/en/docs/pagos/paises/espana) · [United Kingdom](/en/docs/pagos/paises/reino-unido) · [Germany](/en/docs/pagos/paises/alemania) · [France](/en/docs/pagos/paises/francia)
+- [Colombia](/en/docs/pagos/paises/colombia) · [Argentina](/en/docs/pagos/paises/argentina) · [Chile](/en/docs/pagos/paises/chile) · [Peru](/en/docs/pagos/paises/peru)
+- [Tax invoicing](/en/docs/pagos/facturacion)
+- [European e-invoicing](/en/docs/pagos/factura-electronica)
+- [Create, issue, and collect invoices](/en/docs/pagos/facturas-emitidas)
+- [Payment methods](/en/docs/pagos/metodos)
+- [Your Cord subscription](/en/docs/cuenta/suscripcion)

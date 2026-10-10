@@ -1,0 +1,620 @@
+---
+// Mockup: Ajustes › Datos fiscales (Perfil fiscal fuera de México) con la
+// sección del riel de un país, parametrizable con `rail`:
+//
+//   identidad  Identidad de facturación + aviso de factura comercial (US, CA, GB, DE…)
+//   csd        Certificado de Sello Digital (México)
+//   verifactu  Verifactu (España)
+//   spfe       Factura electrónica entre empresas por la AEAT (España)
+//   frpa       Factura electrónica en Francia (plataforma autorizada)
+//   arca · nfse · nfe · sunat · sii · dian   Rieles de LatAm
+//
+// Calca de src/pages/app/ajustes/fiscal.astro (SettingsShell, .s-block) y de
+// cada sección real: ArcaSettings, NfseSettings, NfeSettings, SunatSettings,
+// SiiSettings, DianSettings, SpfeSettings, FrPaSettings y los bloques de CSD y
+// Verifactu escritos en la página. Los textos de esas secciones están en línea
+// en los componentes reales (no en el diccionario), así que se copian aquí tal
+// cual; los que sí viven en el diccionario se leen con dmT(). La categoría, su
+// descripción y la etiqueta de la pestaña salen de localizeCategories().
+//
+// `state`: 'activo' dibuja la sección como se ve con el riel encendido para la
+// cuenta (campos y certificado); 'proximamente' como se ve hoy mientras el riel
+// está en activación: solo la explicación y el estado, sin controles, igual
+// que la pantalla real (regla 15). En Verifactu, 'pendiente' es "Certificado
+// guardado, registro aún no activo".
+//
+// Los datos de demo (razón social, identificadores, series) son plausibles y
+// sus identificadores fiscales pasan el validador real (validateTaxId).
+import DocsMockup from './DocsMockup.astro';
+import DmIcon from './DmIcon.astro';
+import { dmT, type DmLang } from './format';
+import './dm-fiscal.css';
+import { getCountryProfile } from '../../../lib/countries';
+import { localizeCategories } from '../../../lib/settings';
+import type { IconName } from '../../../lib/icons';
+
+type Rail = 'identidad' | 'csd' | 'verifactu' | 'spfe' | 'frpa' | 'arca' | 'nfse' | 'nfe' | 'sunat' | 'sii' | 'dian';
+type Estado = 'activo' | 'proximamente' | 'pendiente';
+
+interface Props {
+    lang: DmLang;
+    rail: Rail;
+    /** Solo rail="identidad": país de la cuenta (US, CA, GB, DE…). */
+    country?: string;
+    state?: Estado;
+    caption?: string;
+}
+const { lang, rail, state = 'activo' } = Astro.props;
+const en = lang === 'en';
+const tx = (es: string, enText: string) => (en ? enText : es);
+
+const PAIS: Record<Rail, string> = {
+    identidad: (Astro.props.country ?? 'US').toUpperCase(),
+    csd: 'MX', verifactu: 'ES', spfe: 'ES', frpa: 'FR',
+    arca: 'AR', nfse: 'BR', nfe: 'BR', sunat: 'PE', sii: 'CL', dian: 'CO',
+};
+const cc = PAIS[rail];
+const PROFILE = getCountryProfile(cc, lang);
+const categoria = localizeCategories(lang, cc).find((c) => c.id === 'facturacion')!;
+const intro = cc === 'MX'
+    ? dmT(lang, 'set.fiscal.intro')
+    : tx(`Configura la identidad que aparecerá en tus facturas emitidas en ${PROFILE.name}.`, `Configure the identity shown on invoices issued in ${PROFILE.name}.`);
+
+interface Campo { label: string; value: string; select?: boolean; wide?: boolean; help?: string; mono?: boolean; empty?: boolean }
+interface Archivo { ico: string; t: string; s: string }
+interface Seccion {
+    title?: string;
+    hint?: string;
+    radios?: [string, string];
+    files?: Archivo[];
+    single?: boolean;
+    fields?: Campo[];
+    pass?: string;
+    /** Ayuda bajo el campo de contraseña. */
+    passHint?: string;
+    rows?: { k: string; v: string; low?: boolean }[];
+    bullets?: string[];
+    actions?: string[];
+    link?: string;
+}
+interface Bloque {
+    title: string;
+    icon: IconName;
+    banner?: { title: string; text: string };
+    paras: string[];
+    stateBox?: { kind: 'on' | 'soon' | 'off'; title: string; subs: string[]; ghost?: string; soft?: boolean };
+    groups?: { sub?: string; fields: Campo[] }[];
+    checks?: { label: string; on: boolean }[];
+    toggles?: { label: string; on: boolean; hint?: string }[];
+    hint?: string;
+    actions?: string[];
+    sections?: Seccion[];
+    /** Lo que sigue a la sección del riel cuando la sección vive dentro de otra (Francia). */
+    after?: string[];
+}
+
+const soon = state === 'proximamente';
+const proximamente = tx('Próximamente', 'Coming soon');
+const desconectar = tx('Desconectar', 'Disconnect');
+const elige = tx('Elige…', 'Choose…');
+const subirCert = tx('Subir certificado', 'Upload certificate');
+
+function bloque(): Bloque {
+    switch (rail) {
+    case 'identidad': {
+        const isCa = cc === 'CA';
+        const isUs = cc === 'US';
+        const small = cc === 'DE' || cc === 'FR';
+        const demo: Record<string, { name: string; id: string; addr: string; city: string; region: string; cp: string; prefix: string }> = {
+            US: { name: 'Pacific Ridge Supply Co.', id: '95-4718263', addr: '1840 S Alameda St', city: 'Los Angeles', region: 'California', cp: '90021', prefix: 'INV' },
+            CA: { name: 'Maple Ridge Consulting Inc.', id: '847312659RT0001', addr: '1250 boul. René-Lévesque O.', city: 'Montréal', region: 'Quebec', cp: 'H3B 4W8', prefix: 'INV' },
+            GB: { name: 'Northgate Design Ltd', id: 'GB284619331', addr: '24 Old Street', city: 'London', region: 'Greater London', cp: 'EC1V 9AB', prefix: 'INV' },
+            DE: { name: 'Brandt Technik GmbH', id: 'DE271845634', addr: 'Torstraße 118', city: 'Berlin', region: 'Berlin', cp: '10119', prefix: 'RE' },
+            FR: { name: 'Atelier Lumière SAS', id: 'FR62843217654', addr: '18 rue de Charonne', city: 'Paris', region: 'Île-de-France', cp: '75011', prefix: 'FA' },
+        };
+        const o = demo[cc] ?? demo.US;
+        const fields: Campo[] = [
+            { label: tx('Razón social o nombre legal', 'Legal name'), value: o.name },
+            { label: PROFILE.taxIdLabel, value: o.id, mono: true },
+            { label: tx('Domicilio fiscal', 'Address'), value: o.addr, wide: true },
+            { label: tx('Ciudad', 'City'), value: o.city },
+            { label: isCa ? tx('Provincia o territorio', 'Province or territory') : tx('Estado, provincia o región', 'State or region'), value: o.region, select: isCa || isUs },
+            { label: tx('Código postal', 'Postal code'), value: o.cp },
+            { label: tx('Prefijo de factura', 'Invoice prefix'), value: o.prefix, help: `${tx('Ejemplo: ', 'Example: ')}${o.prefix}-000001` },
+        ];
+        if (isCa) fields.push({ label: tx('Número de registro de QST', 'QST registration number'), value: '1219876543TQ0001', mono: true, wide: true, help: tx('Solo si estás registrado en el impuesto de Quebec. Se imprime en tus facturas junto a tu número de GST/HST.', 'Only if you are registered for the Quebec sales tax. It is printed on your invoices next to your GST/HST number.') });
+        return {
+            title: tx('Identidad de facturación', 'Invoice identity'),
+            icon: 'building',
+            banner: {
+                title: tx('Las facturas comerciales ya están activas para tu país.', 'Commercial invoices are active for your country.'),
+                text: tx('Cord asigna el folio, conserva una copia inmutable y genera el PDF. La presentación o autorización ante tu autoridad fiscal local todavía no está conectada.', 'Cord assigns the number, preserves an immutable copy, and generates the PDF. Submission or clearance by your local tax authority is not connected yet.'),
+            },
+            paras: [],
+            groups: [{ fields }],
+            toggles: small ? [{ label: dmT(lang, cc === 'FR' ? 'set.fiscal.franquicia_fr' : 'set.fiscal.franquicia_de'), on: false, hint: dmT(lang, 'set.fiscal.franquicia_hint') }] : undefined,
+        };
+    }
+    case 'csd':
+        return {
+            title: dmT(lang, 'set.fiscal.csd'),
+            icon: 'key',
+            paras: [dmT(lang, 'set.fiscal.csd_intro')],
+            stateBox: { kind: 'on', title: dmT(lang, 'set.fiscal.csd_cargado'), subs: ['CSD 00001000000712345678 · MVA180312QK8'], ghost: dmT(lang, 'set.fiscal.quitar') },
+            sections: [{
+                files: [
+                    { ico: '.cer', t: dmT(lang, 'set.fiscal.certificado'), s: dmT(lang, 'set.fiscal.elige_cer') },
+                    { ico: '.key', t: dmT(lang, 'set.fiscal.llave_privada'), s: dmT(lang, 'set.fiscal.elige_key') },
+                ],
+                pass: dmT(lang, 'set.fiscal.contrasena'),
+                passHint: dmT(lang, 'set.fiscal.contrasena_hint'),
+                actions: [dmT(lang, 'set.fiscal.subir_csd')],
+            }],
+        };
+    case 'verifactu': {
+        const activo = state === 'activo';
+        return {
+            title: 'Verifactu',
+            icon: 'shield',
+            paras: [tx(
+                'Verifactu es el sistema de facturación certificado que exige la ley española (RD 1007/2023). Sube tu certificado electrónico (.p12/.pfx) para encadenar y registrar cada factura ante la AEAT. Sin él, las facturas se siguen emitiendo como documento comercial, pero no quedan registradas ante la autoridad fiscal.',
+                'Verifactu is the certified invoicing system required by Spanish tax law (RD 1007/2023). Upload your electronic certificate (.p12/.pfx) to chain and register every invoice with the AEAT. Without it, invoices are still issued as commercial documents, but they are not registered with the tax authority.')],
+            stateBox: {
+                kind: activo ? 'on' : 'soon',
+                title: activo ? tx('Verifactu activo', 'Verifactu active') : tx('Certificado guardado, registro aún no activo', 'Certificate saved, registration not active yet'),
+                subs: [tx('Certificado vigente hasta 2028-02-11', 'Certificate valid until 2028-02-11')],
+                ghost: desconectar,
+            },
+            sections: [
+                {
+                    files: [{ ico: '.p12', t: tx('Certificado electrónico', 'Electronic certificate'), s: tx('Elige tu archivo .p12/.pfx', 'Choose your .p12/.pfx file') }],
+                    single: true,
+                    pass: tx('Contraseña del certificado', 'Certificate password'),
+                    actions: [subirCert],
+                    link: activo ? tx('Declaración responsable del sistema de facturación', 'Responsible declaration of the invoicing system (Spanish)') : undefined,
+                },
+                ...(activo ? [{
+                    title: tx('Facturas por corregir', 'Invoices to correct'),
+                    rows: [{ k: 'F2026-000087', v: tx('Rechazada por la AEAT', 'Rejected by the AEAT'), low: true }],
+                }] : []),
+            ],
+        };
+    }
+    case 'spfe':
+        return {
+            title: dmT(lang, 'spfe.ajustes.titulo'),
+            icon: 'document',
+            paras: [dmT(lang, 'spfe.ajustes.intro')],
+            stateBox: { kind: 'soon', soft: true, title: dmT(lang, 'spfe.ajustes.proximamente'), subs: [dmT(lang, 'spfe.ajustes.proximamente_desc')] },
+            sections: [{
+                hint: `${dmT(lang, 'spfe.ajustes.cert_ok')} ${dmT(lang, 'spfe.ajustes.irpf')}`,
+                title: dmT(lang, 'spfe.ajustes.plazos'),
+                bullets: [dmT(lang, 'spfe.ajustes.plazo_grandes'), dmT(lang, 'spfe.ajustes.plazo_resto'), dmT(lang, 'spfe.ajustes.plazo_estados')],
+            }],
+        };
+    case 'frpa': {
+        const activo = state === 'activo';
+        return {
+            title: tx('Factura electrónica en Francia', 'E-invoicing in France'),
+            icon: 'document',
+            paras: [],
+            groups: [{ fields: [
+                { label: tx('Régimen de TVA', 'VAT regime'), value: tx('Régimen real normal, declaración mensual', 'Standard regime, monthly returns'), select: true },
+                { label: tx('Conceptos sin producto del catálogo', 'Lines without a catalog product'), value: tx('Servicios', 'Services'), select: true },
+            ] }],
+            toggles: [{ label: tx('Opté por pagar la TVA sobre los débitos', 'I opted to pay VAT on debits'), on: false, hint: tx('Con la opción, la TVA de tus servicios es exigible al facturar: la factura lo dice y Cord no comunica sus cobros. Sin ella, Cord comunica cada cobro de un servicio.', 'With the option, VAT on your services is due when you invoice: the invoice says so and Cord does not report its payments. Without it, Cord reports each payment of a service.') }],
+            after: [
+                tx('Desde el 1 de septiembre de 2026 las facturas entre empresas establecidas en Francia viajan por una plataforma autorizada (PA), y las ventas a particulares y con el extranjero se declaran (e-reporting). Cord emite por la plataforma y declara por ti, desde las facturas que ya emites.', 'Since 1 September 2026, invoices between businesses established in France travel through an approved platform (PA), and sales to consumers and with other countries are reported (e-reporting). Cord issues through the platform and reports for you, from the invoices you already issue.'),
+            ],
+            stateBox: activo
+                ? { kind: 'on', title: tx('Alta completada: Cord emite y declara por ti', 'Registration complete: Cord issues and reports for you'), subs: [`SIREN 843217654 · ${tx('Régimen real normal, declaración mensual', 'Standard regime, monthly returns')} · ${tx('2 oct 2026', '2 Oct 2026')}`] }
+                : { kind: 'soon', title: proximamente, subs: [tx('La emisión por plataforma autorizada todavía no está activa en Cord. Tus facturas ya llevan las menciones que exige la reforma.', 'Issuing through an approved platform is not active in Cord yet. Your invoices already carry the mentions the reform requires.')] },
+            sections: [{
+                hint: tx('Cord solo emite. Para recibir las facturas de tus proveedores necesitas tu plataforma de recepción, obligatoria para toda empresa establecida en Francia desde el 1 de septiembre de 2026; darte de alta aquí no la cambia.', 'Cord only issues. To receive your suppliers’ invoices you need your reception platform, mandatory for every business established in France since 1 September 2026; registering here does not change it.'),
+                rows: activo ? [
+                    { k: tx('En cola', 'Queued'), v: '3' },
+                    { k: tx('Sin confirmación de la plataforma', 'Without confirmation from the platform'), v: '0' },
+                ] : undefined,
+            }],
+        };
+    }
+    case 'arca':
+        return {
+            title: tx('Factura electrónica con ARCA', 'Electronic invoicing with ARCA'),
+            icon: 'shield',
+            paras: [tx(
+                'En Argentina cada factura debe autorizarla ARCA, que le asigna su número y su CAE. Conecta el certificado de ARCA de tu negocio para que Cord pida esa autorización en cada factura e imprima el CAE y el código QR en el PDF. Mientras tanto, las facturas se emiten como documento comercial sin validez fiscal.',
+                'Argentina requires every invoice to be authorized by ARCA, which assigns its number and its CAE. Connect your ARCA certificate so Cord requests that authorization for each invoice and prints the CAE and the QR code on the PDF. Until then, invoices are issued as commercial documents without tax validity.')],
+            stateBox: soon
+                ? { kind: 'off', title: proximamente, subs: [tx('La factura electrónica con ARCA todavía no está disponible en Cord. Tus facturas se siguen emitiendo como documento comercial; te avisaremos cuando puedas conectarla.', 'Electronic invoicing with ARCA is not available in Cord yet. Your invoices are still issued as commercial documents; we will let you know when you can connect it.')] }
+                : { kind: 'on', title: tx('Factura electrónica con ARCA activa', 'Electronic invoicing with ARCA active'), subs: [tx('Certificado vigente hasta 2028-03-14 · CUIT 30712345612', 'Certificate valid until 2028-03-14 · CUIT 30712345612')], ghost: desconectar },
+            groups: [{ fields: [
+                { label: tx('Punto de venta (web service)', 'Point of sale (web service)'), value: '3' },
+                { label: tx('Condición frente al IVA', 'VAT status'), value: tx('IVA Responsable Inscripto', 'VAT registered (Responsable Inscripto)'), select: true },
+                { label: tx('Qué vendes', 'What you sell'), value: tx('Servicios', 'Services'), select: true },
+                { label: tx('Ingresos Brutos (opcional)', 'Gross income tax number (optional)'), value: '901-284613-2' },
+                { label: tx('Inicio de actividades (opcional)', 'Start of activities (optional)'), value: '01/04/2019' },
+            ] }],
+            hint: tx('Crea el punto de venta en ARCA como "Factura electrónica - Web services" antes de usarlo aquí. En servicios, la factura informa también el período facturado y el vencimiento del pago.', 'Create the point of sale in ARCA as "Factura electrónica - Web services" before using it here. Services also print the billed period and the payment due date on the invoice.'),
+            actions: [tx('Guardar ajustes de ARCA', 'Save ARCA settings')],
+            sections: [{
+                title: tx('Certificado de ARCA', 'ARCA certificate'),
+                radios: [tx('Certificado + llave privada', 'Certificate + private key'), tx('Archivo .p12 / .pfx', '.p12 / .pfx file')],
+                files: [
+                    { ico: '.crt', t: tx('Certificado', 'Certificate'), s: tx('El que emitió ARCA para tu CUIT', 'Issued by ARCA for your CUIT') },
+                    { ico: '.key', t: tx('Llave privada', 'Private key'), s: tx('La que usaste para pedirlo', 'The one you used for the request') },
+                ],
+                pass: tx('Contraseña de la llave (si tiene)', 'Key password (if it has one)'),
+                actions: [subirCert],
+            }],
+        };
+    case 'nfse':
+        return {
+            title: 'NFS-e',
+            icon: 'shield',
+            paras: [
+                tx('En Brasil los servicios se facturan con la NFS-e, que genera el Sistema Nacional NFS-e a partir de una declaración (DPS) firmada con tu certificado ICP-Brasil. Conéctalo para que Cord emita la NFS-e de cada factura e imprima su chave de acceso y el código QR en el PDF. Mientras tanto, las facturas se emiten como documento comercial sin validez fiscal.', 'In Brazil, services are invoiced with the NFS-e, generated by the national NFS-e system from a declaration (DPS) signed with your ICP-Brasil certificate. Connect it so Cord issues the NFS-e of each invoice and prints its access key and QR code on the PDF. Until then, invoices are issued as commercial documents without tax validity.'),
+                tx('La NFS-e cubre solo servicios. Si tu negocio vende productos, su nota fiscal (NF-e) la autoriza la SEFAZ de tu estado: configúrala en la sección NF-e.', 'The NFS-e covers services only. If your business sells goods, their invoice (NF-e) is authorized by your state SEFAZ: set it up in the NF-e section.'),
+            ],
+            stateBox: soon
+                ? { kind: 'off', title: proximamente, subs: [tx('La NFS-e todavía no está disponible en Cord. Tus facturas se siguen emitiendo como documento comercial; te avisaremos cuando puedas conectarla.', 'The NFS-e is not available in Cord yet. Your invoices are still issued as commercial documents; we will let you know when you can connect it.')] }
+                : { kind: 'on', title: tx('NFS-e activa', 'NFS-e active'), subs: [tx('Certificado vigente hasta 2027-08-21 · 45831277000102', 'Certificate valid until 2027-08-21 · 45831277000102')], ghost: desconectar },
+            groups: [{ fields: [
+                { label: tx('Municipio de tu establecimiento (código IBGE)', 'Municipality of your establishment (IBGE code)'), value: '3550308', help: 'São Paulo / SP' },
+                { label: tx('Inscripción municipal (si tu municipio la exige)', 'Municipal registration (if your municipality requires it)'), value: '76543210' },
+                { label: tx('Situación ante el Simples Nacional', 'Simples Nacional status'), value: tx('Microempresa o empresa de pequeño porte (ME/EPP)', 'Micro or small business (ME/EPP)'), select: true },
+                { label: tx('Apuración del Simples Nacional (ME/EPP)', 'Simples Nacional assessment (ME/EPP)'), value: tx('Tributos federales y municipal por el Simples Nacional', 'Federal and municipal taxes through Simples Nacional'), select: true },
+                { label: tx('Tributos aproximados del Simples Nacional (%)', 'Approximate Simples Nacional taxes (%)'), value: '6.00' },
+                { label: tx('Régimen especial de tributación municipal', 'Special municipal tax regime'), value: tx('Ninguno', 'None'), select: true },
+                { label: tx('Servicio (lista nacional, LC 116/2003)', 'Service (national list, LC 116/2003)'), value: '17.01.01 · Assessoria ou consultoria de qualquer natureza, não contida em outros itens desta lista.', select: true, wide: true },
+                { label: tx('Perfil de retención que es el ISS retenido por el cliente', 'Withholding profile that is the ISS withheld by the client'), value: tx('Ninguno: el ISS no se retiene', 'None: ISS is never withheld'), select: true, wide: true },
+                { label: tx('Serie de la DPS (1 a 49999), exclusiva de Cord', 'DPS series (1 to 49999), exclusive to Cord'), value: '900' },
+                { label: tx('Primer número de DPS (opcional)', 'First DPS number (optional)'), value: '1' },
+            ] }],
+            hint: tx('Cord declara un servicio por NFS-e (todos los conceptos de la factura con el código de arriba), prestado en tu municipio y con el ISS incluido en el precio: los conceptos no pueden sumar impuesto. Los servicios que tributan donde se prestan, obras, eventos, exportaciones y retenciones federales todavía no los emite Cord. Usa una serie de DPS que no use ningún otro sistema tuyo.', 'Cord declares one service per NFS-e (all the lines of the invoice under the code above), provided in your municipality, with ISS included in the price: lines cannot add tax on top. Services taxed where they are provided, construction works, events, exports and federal withholdings are not issued by Cord yet. Use a DPS series that no other system of yours uses.'),
+            actions: [tx('Guardar ajustes de la NFS-e', 'Save NFS-e settings')],
+            sections: [{
+                title: tx('Certificado digital ICP-Brasil (A1)', 'ICP-Brasil digital certificate (A1)'),
+                radios: [tx('Archivo .pfx / .p12', '.pfx / .p12 file'), tx('Certificado + llave privada', 'Certificate + private key')],
+                files: [{ ico: '.pfx', t: tx('Certificado e-CNPJ', 'e-CNPJ certificate'), s: tx('Elige tu archivo .pfx/.p12', 'Choose your .pfx/.p12 file') }],
+                single: true,
+                pass: tx('Contraseña del certificado', 'Certificate password'),
+                actions: [subirCert],
+            }],
+        };
+    case 'nfe':
+        return {
+            title: 'NF-e',
+            icon: 'shield',
+            paras: [
+                tx('En Brasil la venta de mercancías se documenta con la NF-e (modelo 55), que autoriza la SEFAZ de tu estado antes de que salga la mercancía. Conéctala para que Cord envíe cada factura de productos a la SEFAZ, imprima el DANFE con su chave de acceso y su código de barras, y guarde el XML autorizado. Mientras tanto, las facturas de productos se emiten como documento comercial sin validez fiscal.', 'In Brazil, the sale of goods is documented with the NF-e (model 55), authorized by the SEFAZ of your state before the goods leave. Connect it so Cord sends each product invoice to the SEFAZ, prints the DANFE with its access key and barcode, and keeps the authorized XML. Until then, product invoices are issued as commercial documents without tax validity.'),
+                tx('Los servicios no van en la NF-e: van en la NFS-e. Una factura que mezcla productos y servicios no se emite; divídela en dos.', 'Services are not part of the NF-e: they go in the NFS-e. An invoice that mixes products and services is not issued; split it in two.'),
+            ],
+            stateBox: soon
+                ? { kind: 'off', title: proximamente, subs: [tx('La NF-e todavía no está disponible en Cord. Tus facturas de productos se siguen emitiendo como documento comercial; te avisaremos cuando puedas conectarla.', 'The NF-e is not available in Cord yet. Your product invoices are still issued as commercial documents; we will let you know when you can connect it.')] }
+                : { kind: 'on', title: tx('NF-e activa', 'NF-e active'), subs: [tx('Certificado vigente hasta 2027-08-21 · 45831277000102', 'Certificate valid until 2027-08-21 · 45831277000102'), tx('Se firma con el certificado que subiste para la NFS-e (mismo CNPJ).', 'Signed with the certificate you uploaded for the NFS-e (same CNPJ).')] },
+            groups: [
+                { sub: tx('Establecimiento', 'Establishment'), fields: [
+                    { label: tx('Régimen tributario (CRT)', 'Tax regime (CRT)'), value: 'Simples Nacional', select: true },
+                    { label: 'Inscrição Estadual', value: '110042490114' },
+                    { label: tx('Calle (logradouro)', 'Street (logradouro)'), value: 'Rua Augusta', wide: true },
+                    { label: tx('Número (o S/N)', 'Number (or S/N)'), value: '1508' },
+                    { label: tx('Barrio (bairro)', 'District (bairro)'), value: 'Consolação' },
+                    { label: 'CEP', value: '01304001' },
+                    { label: tx('Municipio (código IBGE)', 'Municipality (IBGE code)'), value: '3550308', help: 'São Paulo / SP' },
+                ] },
+                { sub: tx('Operación e impuestos', 'Operation and taxes'), fields: [
+                    { label: tx('Serie de la NF-e (0 a 889), exclusiva de Cord', 'NF-e series (0 to 889), exclusive to Cord'), value: '1' },
+                    { label: tx('Naturaleza de la operación', 'Nature of the operation'), value: 'Venda de mercadoria' },
+                    { label: tx('Cómo vendes', 'How you sell'), value: tx('No presencial, por internet', 'Not in person, online'), select: true },
+                    { label: tx('Flete', 'Freight'), value: tx('Por cuenta del remitente (CIF)', 'Paid by the sender (CIF)'), select: true },
+                    { label: tx('CST del PIS (por defecto)', 'PIS CST (default)'), value: tx('49 · Otras operaciones de salida', '49 · Other outgoing operations'), select: true },
+                    { label: tx('CST del COFINS (por defecto)', 'COFINS CST (default)'), value: tx('49 · Otras operaciones de salida', '49 · Other outgoing operations'), select: true },
+                ] },
+            ],
+            hint: tx('Cada producto del catálogo lleva su NCM, CFOP, origen y unidad, y su ICMS (CSOSN en el Simples) e IPI. Cord emite ventas dentro de tu estado y, en el Simples Nacional, a otros estados; los precios incluyen ICMS, PIS y COFINS, y el único impuesto que puede sumarse a una línea es el IPI del producto. La sustitución tributaria (ST), el DIFAL a no contribuyentes, las exportaciones y los combustibles todavía no se emiten. Usa una serie de NF-e que no use ningún otro sistema tuyo.', 'Each product in your catalog carries its NCM, CFOP, origin and unit, and its ICMS (CSOSN in Simples) and IPI. Cord issues sales within your state and, under Simples Nacional, to other states; prices include ICMS, PIS and COFINS, and the only tax that can be added on top of a line is the product IPI. Tax substitution (ST), DIFAL to non-contributors, exports and fuels are not issued yet. Use an NF-e series that no other system of yours uses.'),
+            actions: [tx('Guardar ajustes de la NF-e', 'Save NF-e settings')],
+            sections: [{
+                title: tx('Números sin usar (inutilização)', 'Unused numbers (inutilização)'),
+                hint: tx('Un número que Cord reservó y nunca llegó a ser una NF-e autorizada (por ejemplo, tras un rechazo) deja un hueco en la serie. La SEFAZ pide declararlo. Cord lista los huecos y nunca los declara por su cuenta.', 'A number that Cord reserved and that never became an authorized NF-e (for example, after a rejection) leaves a gap in the series. The SEFAZ asks you to declare it. Cord lists the gaps and never declares them by itself.'),
+            }],
+        };
+    case 'sunat':
+        return {
+            title: tx('Factura electrónica con SUNAT', 'Electronic invoicing with SUNAT'),
+            icon: 'shield',
+            paras: [tx('En Perú cada factura se envía a SUNAT, que la acepta con una constancia de recepción (CDR). Conecta el certificado digital de tu negocio y tu usuario SOL secundario para que Cord firme cada factura y nota de crédito, la envíe a SUNAT e imprima el código QR y el valor resumen en el PDF. Mientras tanto, las facturas se emiten como documento comercial sin validez fiscal.', 'In Peru each invoice must be sent to SUNAT, which accepts it with a receipt (CDR). Connect your digital certificate and your secondary SOL user so Cord signs every invoice and credit note, sends it to SUNAT and prints the QR code and the hash on the PDF. Until then, invoices are issued as commercial documents without tax validity.')],
+            stateBox: soon
+                ? { kind: 'off', title: proximamente, subs: [tx('La factura electrónica con SUNAT todavía no está disponible en Cord. Tus facturas se siguen emitiendo como documento comercial; te avisaremos cuando puedas conectarla.', 'Electronic invoicing with SUNAT is not available in Cord yet. Your invoices are still issued as commercial documents; we will let you know when you can connect it.')] }
+                : { kind: 'on', title: tx('Factura electrónica con SUNAT activa', 'Electronic invoicing with SUNAT active'), subs: [tx('Certificado vigente hasta 2027-11-30 · RUC 20601487234', 'Certificate valid until 2027-11-30 · RUC 20601487234')], ghost: desconectar },
+            groups: [{ fields: [
+                { label: tx('Serie de facturas', 'Invoice series'), value: 'F001' },
+                { label: tx('Qué vendes', 'What you sell'), value: tx('Servicios', 'Services'), select: true },
+                { label: tx('Último número de factura emitido fuera de Cord', 'Last invoice number issued outside Cord'), value: '411' },
+                { label: tx('Último número de nota de crédito emitido fuera de Cord', 'Last credit note number issued outside Cord'), value: '12' },
+                { label: tx('Tus conceptos sin IGV son', 'Items without IGV are'), value: tx('Exonerados', 'Exempt (exonerado)'), select: true },
+                { label: tx('Código de establecimiento', 'Establishment code'), value: '0000' },
+            ] }],
+            checks: [
+                { label: tx('MYPE de restaurantes, hoteles o alojamientos turísticos con IGV reducido (Ley 31556)', 'Small restaurant, hotel or lodging business under the reduced IGV regime (Law 31556)'), on: false },
+                { label: tx('Vendo bienes o servicios sujetos al sistema de detracciones (SPOT)', 'I sell goods or services subject to the SPOT withholding system (detracciones)'), on: false },
+                { label: tx('Soy agente de percepción del IGV', 'I am an IGV perception agent'), on: false },
+                { label: tx('No me retienen IGV (buen contribuyente, agente de retención o de percepción)', 'My customers do not withhold IGV from me (good taxpayer, withholding or perception agent)'), on: false },
+            ],
+            hint: tx('Usa una serie dedicada a Cord (por ejemplo F001) y, si ya emitiste facturas en ella desde otro sistema, escribe el último número para que Cord continúe después. Un cliente agente de retención retiene el 3 % de las facturas al crédito de más de S/ 700: la factura declara el monto neto pendiente. Cord todavía no emite boletas, ni facturas con detracción o percepción.', 'Use a series dedicated to Cord (for example F001) and, if you already issued invoices in it from another system, write the last number so Cord continues after it. A customer that is a withholding agent keeps 3 % of credit invoices above S/ 700: the invoice declares the net amount pending. Cord does not issue boletas, nor invoices with SPOT or IGV perception yet.'),
+            actions: [tx('Guardar ajustes de SUNAT', 'Save SUNAT settings')],
+            sections: [
+                {
+                    title: tx('Usuario SOL secundario', 'Secondary SOL user'),
+                    fields: [
+                        { label: tx('Usuario (sin el RUC)', 'User (without the RUC)'), value: 'CORDFE01' },
+                        { label: tx('Clave SOL', 'Password'), value: '••••••••' },
+                    ],
+                    hint: tx('Créalo en SUNAT Operaciones en Línea como usuario secundario con el perfil de envío de comprobantes electrónicos.', 'Create it in SUNAT Operaciones en Línea as a secondary user with the electronic document sending profile.'),
+                    actions: [tx('Guardar usuario SOL', 'Save SOL user')],
+                },
+                {
+                    title: tx('Certificado digital', 'Digital certificate'),
+                    radios: [tx('Archivo .p12 / .pfx', '.p12 / .pfx file'), tx('Certificado + llave privada', 'Certificate + private key')],
+                    files: [{ ico: '.p12', t: tx('Certificado con llave', 'Certificate with key'), s: tx('Emitido para tu RUC', 'Issued for your RUC') }],
+                    single: true,
+                    pass: tx('Contraseña (si tiene)', 'Password (if it has one)'),
+                    hint: tx('El certificado debe mencionar tu RUC y, en producción, estar registrado en SUNAT (Operaciones en Línea, actualización de certificado digital).', 'The certificate must name your RUC and, in production, be registered with SUNAT (Operaciones en Línea, digital certificate update).'),
+                    actions: [subirCert],
+                },
+            ],
+        };
+    case 'sii':
+        return {
+            title: tx('Factura electrónica con el SII', 'Electronic invoicing with the SII'),
+            icon: 'shield',
+            paras: [
+                tx('En Chile cada factura es un documento tributario electrónico (DTE) que debe llegar al SII. Cord lo emite directamente: toma el folio del archivo que autorizó el SII, le pone el timbre electrónico, lo firma con tu certificado, lo envía al SII e imprime el timbre (PDF417) en el PDF. Mientras falte algo de lo que sigue, las facturas se emiten como documento comercial sin validez tributaria.', 'In Chile every invoice is an electronic tax document (DTE) that must reach the SII. Cord issues it directly: it takes the folio from the file the SII authorized, stamps it with the electronic seal, signs it with your certificate, sends it to the SII and prints the seal (PDF417) on the PDF. Until everything below is complete, invoices are issued as commercial documents without tax validity.'),
+            ],
+            stateBox: soon
+                ? { kind: 'off', title: proximamente, subs: [tx('La factura electrónica con el SII todavía no está disponible en Cord. Tus facturas se siguen emitiendo como documento comercial; te avisaremos cuando puedas conectarla.', 'Electronic invoicing with the SII is not available in Cord yet. Your invoices are still issued as commercial documents; we will let you know when you can connect it.')] }
+                : { kind: 'on', title: tx('Factura electrónica con el SII activa', 'Electronic invoicing with the SII active'), subs: [tx('Certificado vigente hasta 2027-06-30 · RUT 76543218-9', 'Certificate valid until 2027-06-30 · RUT 76543218-9')], ghost: desconectar },
+            after: [tx('Cord emite factura electrónica (33), factura exenta (34), nota de débito (56) y nota de crédito (61), y recibe y responde los documentos que te envían tus proveedores. La boleta electrónica (39), la guía de despacho (52), la factura de exportación y la boleta de honorarios no están disponibles.', 'Cord issues electronic invoices (33), exempt invoices (34), debit notes (56) and credit notes (61), and receives and answers the documents your suppliers send you. Electronic receipts (boleta, 39), dispatch guides (52), export invoices and fees receipts (boleta de honorarios) are not available.')],
+            groups: [{ sub: tx('Datos del emisor', 'Issuer details'), fields: [
+                { label: tx('Giro, tal como está inscrito en el SII', 'Line of business (giro), as registered with the SII'), value: tx('Asesorías y servicios informáticos', 'Asesorías y servicios informáticos'), wide: true },
+                { label: tx('Códigos de actividad económica (hasta 4)', 'Economic activity codes (up to 4)'), value: '620200, 702000' },
+                { label: tx('Unidad del SII (dirección regional)', 'SII office (regional directorate)'), value: 'SANTIAGO ORIENTE' },
+                { label: 'Comuna', value: 'Providencia' },
+                { label: tx('Ciudad (opcional)', 'City (optional)'), value: 'Santiago' },
+                { label: tx('Número de resolución del SII', 'SII resolution number'), value: '80' },
+                { label: tx('Fecha de la resolución', 'Resolution date'), value: '14/08/2026' },
+            ] }],
+            hint: tx('La resolución que te autoriza como emisor electrónico se imprime bajo el timbre de cada documento.', 'The resolution that authorizes you as an electronic issuer is printed under the seal of each document.'),
+            actions: [tx('Guardar datos del SII', 'Save SII details')],
+            sections: [
+                {
+                    title: 'Folios (CAF)',
+                    hint: tx('Cada documento usa un folio de un archivo que autoriza el SII (Timbraje electrónico). Un folio usado no se reutiliza nunca. Los folios de factura, nota de débito y nota de crédito vencen a los seis meses de su autorización.', 'Each document uses one folio from a file the SII authorizes (Timbraje electrónico). A used folio is never reused. Invoice, debit-note and credit-note folios expire six months after their authorization.'),
+                    rows: [
+                        { k: tx('Factura electrónica (33)', 'Electronic invoice (33)'), v: tx('158 disponibles', '158 available') },
+                        { k: tx('Nota de crédito (61)', 'Credit note (61)'), v: tx('18 disponibles · solicita más al SII', '18 available · request more from the SII'), low: true },
+                        { k: tx('Nota de débito (56)', 'Debit note (56)'), v: tx('25 disponibles', '25 available') },
+                    ],
+                    files: [{ ico: '.xml', t: tx('Archivo de folios', 'Folio file'), s: tx('Tal como lo descargaste del SII, sin modificarlo', 'As downloaded from the SII, unmodified') }],
+                    single: true,
+                    actions: [tx('Subir folios', 'Upload folios')],
+                },
+                {
+                    title: tx('Certificado digital', 'Digital certificate'),
+                    hint: tx('El certificado de la persona autorizada ante el SII para firmar los documentos de tu negocio (.pfx/.p12, emitido por una entidad certificadora acreditada).', 'The certificate of the person authorized before the SII to sign your documents (.pfx/.p12, issued by an accredited certification authority).'),
+                    files: [{ ico: '.pfx', t: tx('Certificado con llave', 'Certificate with key'), s: tx('Elige tu archivo .pfx/.p12', 'Choose your .pfx/.p12 file') }],
+                    single: true,
+                    fields: [
+                        { label: tx('Contraseña del certificado', 'Certificate password'), value: '', empty: true },
+                        { label: tx('RUT del titular del certificado', 'RUT of the certificate holder'), value: '12345678-5', empty: true },
+                    ],
+                    actions: [subirCert],
+                },
+            ],
+        };
+    case 'dian':
+        return {
+            title: tx('Factura electrónica con la DIAN', 'Electronic invoicing with the DIAN'),
+            icon: 'shield',
+            paras: [tx('En Colombia cada factura debe validarla la DIAN antes de entregarse. Cord firma cada factura y nota crédito con tu certificado, la envía a la DIAN como tu software propio e imprime el CUFE y el código QR en el PDF. Registra Cord como software propio en el portal de la DIAN, supera el set de pruebas y completa los datos de abajo. Mientras tanto, las facturas se emiten como documento comercial sin validez fiscal.', 'In Colombia every invoice must be validated by the DIAN before it is delivered. Cord signs each invoice and credit note with your certificate, sends it to the DIAN as your own software, and prints the CUFE and the QR code on the PDF. Register Cord as your own software in the DIAN portal, complete the test set and enter the data below. Until then, invoices are issued as commercial documents without tax validity.')],
+            stateBox: soon
+                ? { kind: 'off', title: proximamente, subs: [tx('La factura electrónica con la DIAN todavía no está disponible en Cord. Tus facturas se siguen emitiendo como documento comercial; te avisaremos cuando puedas conectarla.', 'Electronic invoicing with the DIAN is not available in Cord yet. Your invoices are still issued as commercial documents; we will let you know when you can connect it.')] }
+                : { kind: 'on', title: tx('Factura electrónica con la DIAN activa', 'Electronic invoicing with the DIAN active'), subs: [tx('Certificado vigente hasta 2027-09-15 · NIT 901234567-7', 'Certificate valid until 2027-09-15 · NIT 901234567-7')], ghost: desconectar },
+            groups: [
+                { sub: tx('Tu negocio en el RUT', 'Your business in the RUT'), fields: [
+                    { label: tx('Tipo de persona', 'Type of person'), value: tx('Persona jurídica', 'Legal entity'), select: true },
+                    { label: tx('Responsabilidad frente al IVA', 'VAT responsibility'), value: tx('Responsable de IVA', 'VAT registered'), select: true },
+                    { label: tx('Municipio del domicilio fiscal', 'Municipality of your tax address'), value: 'Bogotá, D.C. (11001)', select: true },
+                    { label: tx('Correo de recepción registrado en la DIAN (opcional)', 'Reception email registered with the DIAN (optional)'), value: 'facturacion@andesdigital.co' },
+                ] },
+                { sub: tx('Software y numeración', 'Software and numbering'), fields: [
+                    { label: tx('Identificador del software (del portal de la DIAN)', 'Software identifier (from the DIAN portal)'), value: '6f0c2b8e-4d1a-4a7e-9b3c-2e5f8a1d7c40', mono: true, wide: true },
+                    { label: tx('PIN del software (5 dígitos)', 'Software PIN (5 digits)'), value: tx('Guardado', 'Saved'), empty: true },
+                    { label: tx('Número de la resolución de numeración', 'Numbering resolution number'), value: '18764081745392' },
+                    { label: tx('Prefijo', 'Prefix'), value: 'FEAD' },
+                    { label: tx('Desde el número', 'From number'), value: '1' },
+                    { label: tx('Hasta el número', 'To number'), value: '5000' },
+                    { label: tx('Vigente hasta', 'Valid until'), value: '18/08/2028' },
+                    { label: tx('Clave técnica del rango', 'Range technical key'), value: tx('Guardada', 'Saved'), empty: true },
+                    { label: tx('Prefijo de las notas crédito', 'Credit note prefix'), value: 'NCAD' },
+                    { label: tx('Tus ventas al 0 % son', 'Your 0 % sales are'), value: tx('Excluidas de IVA', 'Excluded from VAT'), select: true },
+                ] },
+            ],
+            hint: tx('Asocia la resolución a tu software en el portal de la DIAN. "Traer de la DIAN" consulta los rangos que la DIAN informa para tu NIT y guarda la clave técnica del rango configurado.', 'Associate the resolution with your software in the DIAN portal. "Get from the DIAN" checks the ranges the DIAN reports for your NIT and stores the technical key of the configured range.'),
+            actions: [tx('Guardar ajustes de la DIAN', 'Save DIAN settings'), tx('Traer de la DIAN', 'Get from the DIAN')],
+            sections: [{
+                title: tx('Certificado de firma', 'Signing certificate'),
+                hint: tx('El certificado de firma digital para factura electrónica a nombre de tu NIT, emitido por una entidad certificadora avalada por la ONAC, con su cadena de certificación completa.', 'The digital signing certificate for electronic invoicing in the name of your NIT, issued by a certification authority accredited by the ONAC, with its full certification chain.'),
+                radios: [tx('Archivo .p12 / .pfx', '.p12 / .pfx file'), tx('Certificado + llave privada', 'Certificate + private key')],
+                files: [
+                    { ico: '.p12', t: tx('Certificado con llave', 'Certificate with key'), s: tx('Elige tu archivo .p12/.pfx', 'Choose your .p12/.pfx file') },
+                    { ico: '.crt', t: tx('Cadena (si no viene en el archivo)', 'Chain (if not in the file)'), s: tx('Intermedia y raíz', 'Intermediate and root') },
+                ],
+                pass: tx('Contraseña (si tiene)', 'Password (if it has one)'),
+                actions: [subirCert],
+            }],
+        };
+    }
+}
+
+const b = bloque();
+const showControls = !(soon && ['arca', 'nfse', 'nfe', 'sunat', 'sii', 'dian'].includes(rail));
+const ORG_NAME: Record<string, string> = {
+    MX: 'Materiales del Valle', US: 'Pacific Ridge Supply Co.', CA: 'Maple Ridge Consulting', GB: 'Northgate Design',
+    DE: 'Brandt Technik', FR: 'Atelier Lumière', ES: 'Estudio Alba', AR: 'Pampa Software', BR: 'Ateliê Paulista',
+    PE: 'Inka Logística', CL: 'Cordillera Servicios', CO: 'Andes Digital',
+};
+const defaultCaption = tx(
+    `Ajustes › ${categoria.tabs[0]?.label}, sección "${b.title}" de una cuenta en ${PROFILE.name}${soon ? ', como se ve mientras está en activación, con el estado Próximamente' : rail === 'identidad' ? ': razón social, identificador fiscal, domicilio y prefijo de factura' : ', con los datos del negocio y el certificado cargado'}.`,
+    `Settings › ${categoria.tabs[0]?.label}, "${b.title}" section of an account in ${PROFILE.name}${soon ? ', as it looks while it is being activated, with the Coming soon status' : rail === 'identidad' ? ': legal name, tax ID, address and invoice prefix' : ', with the business details and the certificate uploaded'}.`,
+);
+const caption = Astro.props.caption ?? defaultCaption;
+// Alto del escenario por sección: lo que no cabe se recorta abajo (sangrado).
+const ALTO: Record<Rail, number> = {
+    identidad: 860, csd: 780, verifactu: 780, spfe: 860, frpa: 800,
+    arca: 1020, nfse: 1120, nfe: 1160, sunat: 1160, sii: 1160, dian: 1160,
+};
+const height = soon && !['verifactu', 'frpa', 'spfe'].includes(rail) ? 640 : ALTO[rail];
+---
+<DocsMockup lang={lang} variant="app" chrome="full" sidebar="rail" active="" org={ORG_NAME[cc]} height={height} caption={caption} class="dm-fx-figure">
+    <div class="dm-fx-set">
+        <div class="dm-fx-crumb"><DmIcon name="chevron-left" stroke={2} />{dmT(lang, 'settings.configuracion')}</div>
+        <div class="dm-fx-heading">
+            <span class="dm-fx-cat"><svg class="dm-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={categoria.icon}></svg></span>
+            <span class="dm-fx-heading-text">
+                <span class="dm-fx-h2">{categoria.label}</span>
+                <span class="dm-fx-desc">{categoria.desc}</span>
+            </span>
+        </div>
+        <div class="dm-fx-intro">{intro}</div>
+
+        {b.banner && (
+            <div class="dm-alert dm-alert-warn dm-fx-banner">
+                <DmIcon name="alert-circle" />
+                <span><span class="dm-strong">{b.banner.title}</span> {b.banner.text}</span>
+            </div>
+        )}
+
+        <div class="dm-fx-block">
+            <span class="dm-fx-block-title"><DmIcon name={b.icon} />{b.title}</span>
+            {b.paras.map((p) => <span class="dm-fx-p">{p}</span>)}
+
+            {rail === 'frpa' && b.groups?.map((g) => (
+                <div class="dm-fx-grid">
+                    {g.fields.map((f) => (
+                        <div class:list={['dm-fx-field', { 'dm-fx-wide': f.wide }]}>
+                            <span class="dm-fx-label">{f.label}</span>
+                            <span class:list={['dm-fx-input', { 'dm-select': f.select }]}>{f.value}</span>
+                        </div>
+                    ))}
+                </div>
+            ))}
+            {rail === 'frpa' && b.toggles?.map((tg) => (
+                <div class="dm-fx-field">
+                    <span class="dm-fx-toggle-row"><span class:list={['dm-toggle', { 'is-on': tg.on }]}></span>{tg.label}</span>
+                    {tg.hint && <span class="dm-fx-hint">{tg.hint}</span>}
+                </div>
+            ))}
+            {rail === 'frpa' && b.after?.map((p) => <span class="dm-fx-p">{p}</span>)}
+
+            {b.stateBox && (
+                <div class:list={['dm-fx-state', { 'is-on': b.stateBox.kind === 'on', 'is-soon': b.stateBox.kind === 'soon', 'is-soft': b.stateBox.soft }]}>
+                    <span class="dm-fx-dot"></span>
+                    <span class="dm-fx-state-info">
+                        <span class="dm-fx-state-title">{b.stateBox.title}</span>
+                        {b.stateBox.subs.map((s) => <span class="dm-fx-state-sub">{s}</span>)}
+                    </span>
+                    {b.stateBox.ghost && <span class="dm-fx-ghost dm-hide-narrow">{b.stateBox.ghost}</span>}
+                </div>
+            )}
+
+            {rail !== 'frpa' && b.after?.map((p) => <span class="dm-fx-p">{p}</span>)}
+
+            {showControls && rail !== 'frpa' && b.groups?.map((g) => (
+                <Fragment>
+                    {g.sub && <span class="dm-fx-sub">{g.sub}</span>}
+                    <div class="dm-fx-grid">
+                        {g.fields.map((f) => (
+                            <div class:list={['dm-fx-field', { 'dm-fx-wide': f.wide }]}>
+                                <span class="dm-fx-label">{f.label}</span>
+                                <span class:list={['dm-fx-input', { 'dm-select': f.select, 'is-mono': f.mono, 'is-empty': f.empty }]}>{f.value}</span>
+                                {f.help && <span class="dm-fx-help">{f.help}</span>}
+                            </div>
+                        ))}
+                    </div>
+                </Fragment>
+            ))}
+            {showControls && rail !== 'frpa' && b.toggles?.map((tg) => (
+                <div class="dm-fx-field">
+                    <span class="dm-fx-toggle-row"><span class:list={['dm-toggle', { 'is-on': tg.on }]}></span>{tg.label}</span>
+                    {tg.hint && <span class="dm-fx-hint">{tg.hint}</span>}
+                </div>
+            ))}
+            {showControls && b.checks && (
+                <div class="dm-fx-list">
+                    {b.checks.map((c) => <span class="dm-fx-check"><span class:list={['dm-check', { 'is-on': c.on }]}>{c.on && <DmIcon name="check" stroke={2.4} />}</span>{c.label}</span>)}
+                </div>
+            )}
+            {showControls && b.hint && <span class="dm-fx-hint">{b.hint}</span>}
+            {showControls && b.actions && (
+                <div class="dm-fx-actions">
+                    {b.actions.map((a, i) => <span class={i === 0 ? 'dm-fx-btn' : 'dm-fx-btn-line'}>{a}</span>)}
+                </div>
+            )}
+
+            {showControls && b.sections?.map((s) => (
+                <div class="dm-fx-cert">
+                    {s.title && <span class="dm-fx-sub">{s.title}</span>}
+                    {s.hint && <span class="dm-fx-hint">{s.hint}</span>}
+                    {s.bullets && <span class="dm-fx-bullets">{s.bullets.map((x) => <span>{x}</span>)}</span>}
+                    {s.rows && (
+                        <div class="dm-fx-list">
+                            {s.rows.map((r) => <span class:list={['dm-fx-li', { 'is-low': r.low }]}><span>{r.k}</span><span>{r.v}</span></span>)}
+                        </div>
+                    )}
+                    {s.radios && (
+                        <div class="dm-fx-actions">
+                            <span class="dm-fx-check"><span class="dm-fx-radio is-on"></span>{s.radios[0]}</span>
+                            <span class="dm-fx-check"><span class="dm-fx-radio"></span>{s.radios[1]}</span>
+                        </div>
+                    )}
+                    {s.files && (
+                        <div class:list={['dm-fx-files', { 'is-single': s.single }]}>
+                            {s.files.map((f) => (
+                                <span class="dm-fx-drop">
+                                    <span class="dm-fx-drop-ico">{f.ico}</span>
+                                    <span class="dm-fx-drop-t">{f.t}</span>
+                                    <span class="dm-fx-drop-s">{f.s}</span>
+                                </span>
+                            ))}
+                        </div>
+                    )}
+                    {s.fields && (
+                        <div class="dm-fx-grid">
+                            {s.fields.map((f) => (
+                                <div class="dm-fx-field">
+                                    <span class="dm-fx-label">{f.label}</span>
+                                    <span class:list={['dm-fx-input', { 'is-empty': f.empty }]}>{f.value}</span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                    {s.pass && (
+                        <div class="dm-fx-field dm-fx-pass">
+                            <span class="dm-fx-label">{s.pass}</span>
+                            <span class="dm-fx-input is-empty">••••••••</span>
+                            {s.passHint && <span class="dm-fx-help">{s.passHint}</span>}
+                        </div>
+                    )}
+                    {s.actions && <div class="dm-fx-actions">{s.actions.map((a) => <span class="dm-fx-btn">{a}</span>)}</div>}
+                    {s.link && <span class="dm-fx-hint dm-strong">{s.link}</span>}
+                </div>
+            ))}
+        </div>
+    </div>
+</DocsMockup>
+
+<style is:global>
+    .dm-fx-banner { margin-bottom: 14px; align-items: flex-start; }
+    .dm-fx-banner > span { font-size: 11.5px; line-height: 1.5; }
+</style>

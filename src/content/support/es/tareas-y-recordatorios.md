@@ -39,7 +39,9 @@ Cada mañana, a partir de las 8:00 de la zona horaria de tu negocio, cada respon
 - Para apagarlo en toda la organización, desmarca **Recordatorio de tareas** en **Ajustes › Notificaciones**.
 
 <Callout type="info">
+
 Cord también crea tareas por ti, con prioridad alta: **Responder contracargo** cuando un cliente disputa un cargo con tarjeta, con el plazo para enviar evidencia como fecha límite, y **Transferir reembolso SPEI** cuando solicitas el reembolso de un cobro por transferencia.
+
 </Callout>
 
 ### Preguntas frecuentes

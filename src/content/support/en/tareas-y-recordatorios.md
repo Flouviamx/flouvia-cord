@@ -39,7 +39,9 @@ Every morning, from 8:00 in your business's time zone, each assignee gets **a si
 - To turn it off for the whole organization, uncheck **Task reminder** in **Settings › Notifications**.
 
 <Callout type="info">
+
 Cord also creates tasks for you, with high priority: **Responder contracargo** when a client disputes a card charge, with the deadline to submit evidence as the due date, and **Transferir reembolso SPEI** when you request a refund of a bank-transfer payment.
+
 </Callout>
 
 ### Frequently asked questions

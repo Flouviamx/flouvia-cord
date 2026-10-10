@@ -1,0 +1,97 @@
+---
+// Mockup: Ajustes › Impuestos › "Sales tax por dirección" de un negocio de
+// Estados Unidos con el cálculo automático encendido.
+//
+// Calca de src/components/app/settings/UsTaxSettings.astro dentro de
+// src/pages/app/ajustes/impuestos.astro. Sus textos están en línea en el
+// componente real y se copian aquí tal cual. La lista de estados sale de
+// US_STATES y las opciones de "Qué vendes" de US_TAX_CODES (código real). Se
+// recorta, no se inventa: arriba de esta sección la página tiene el catálogo
+// de perfiles de impuesto (ver DmTaxCatalog) y la lista de estados sigue
+// hacia abajo.
+import DocsMockup from './DocsMockup.astro';
+import DmIcon from './DmIcon.astro';
+import { dmT, type DmLang } from './format';
+import './dm-fiscal.css';
+import { US_STATES } from '../../../lib/countries';
+import { US_TAX_CODES } from '../../../lib/us-tax/core';
+import { localizeCategories } from '../../../lib/settings';
+
+interface Props { lang: DmLang; caption?: string }
+const { lang } = Astro.props;
+const en = lang === 'en';
+const tx = (es: string, enText: string) => (en ? enText : es);
+
+const categoria = localizeCategories(lang, 'US').find((c) => c.id === 'cotizaciones')!;
+const tabImpuestos = categoria.tabs.find((t) => t.id === 'impuestos');
+const registrados = ['CA', 'NV'];
+const codigo = US_TAX_CODES.find((c) => c.code === 'txcd_99999999')!;
+// INCLUDED.pro.us_tax de src/lib/billing.ts. No se importa: billing.ts arrastra
+// la base de datos y el cliente de Stripe a una página de documentación.
+const incluido = 25;
+const usado = 7;
+const estados = US_STATES.slice(0, 30);
+
+const caption = Astro.props.caption ?? tx(
+    `Ajustes › Impuestos de Pacific Ridge Supply Co. con "Calcular el sales tax por la dirección del cliente" encendido: domicilio del negocio en Los Ángeles, qué vende, los estados donde recauda (California y Nevada marcados) y la cuota del plan Profesional, ${incluido} facturas al mes con ${usado} usadas.`,
+    `Pacific Ridge Supply Co.'s Settings › Taxes with "Calculate sales tax from the client's address" on: business address in Los Angeles, what it sells, the states where it collects (California and Nevada checked) and the Pro plan quota, ${incluido} invoices a month with ${usado} used.`,
+);
+---
+<DocsMockup lang={lang} variant="app" chrome="full" sidebar="rail" active="" org="Pacific Ridge Supply Co." height={1220} caption={caption} class="dm-fx-figure">
+    <div class="dm-fx-set">
+        <div class="dm-fx-crumb">
+            <DmIcon name="chevron-left" stroke={2} />{dmT(lang, 'settings.configuracion')}
+            <span class="dm-fx-crumb-sep">/</span><span class="dm-fx-crumb-here">{tabImpuestos?.label}</span>
+        </div>
+        <div class="dm-fx-heading">
+            <span class="dm-fx-cat"><svg class="dm-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={categoria.icon}></svg></span>
+            <span class="dm-fx-heading-text">
+                <span class="dm-fx-h2">{categoria.label}</span>
+                <span class="dm-fx-desc">{categoria.desc}</span>
+            </span>
+        </div>
+        <div class="dm-fx-tabs">
+            {categoria.tabs.map((t) => <span class:list={['dm-fx-tab', { 'is-on': t.id === 'impuestos' }]}>{t.label}</span>)}
+        </div>
+
+        <div class="dm-fx-block">
+            <span class="dm-fx-block-title"><DmIcon name="globe" />{tx('Sales tax por dirección', 'Sales tax by address')}</span>
+            <span class="dm-fx-p">{tx(
+                'En Estados Unidos el sales tax es la suma de las tasas del estado, el condado, la ciudad y los distritos especiales del domicilio del cliente. Con esto encendido, cada línea de una cotización o factura para un cliente en Estados Unidos toma la tasa combinada de esa dirección, congelada con su desglose por jurisdicción (se imprime en el PDF y en el link del cliente). En un estado donde no estás registrado la línea lleva 0 % y el documento lo dice. Cada factura emitida y cada cotización cobrada se registra para tu declaración de sales tax.',
+                'In the United States, sales tax is the sum of the state, county, city and special district rates at the client’s address. With this on, each line of a quote or invoice for a client in the United States takes the combined rate for that address, frozen with its breakdown by jurisdiction (it is printed on the PDF and on the client’s link). In a state where you are not registered the line carries 0 % and the document says so. Every issued invoice and every paid quote is recorded for your sales tax filing.')}</span>
+            <div class="dm-fx-state is-on">
+                <span class="dm-fx-dot"></span>
+                <span class="dm-fx-state-info">
+                    <span class="dm-fx-state-title">{tx('El cálculo automático está encendido', 'Automatic sales tax is on')}</span>
+                    <span class="dm-fx-state-sub">{tx(`Se calcula para clientes en Estados Unidos. Recaudas en: ${registrados.join(', ')}.`, `Calculating for clients in the United States. Collecting in: ${registrados.join(', ')}.`)}</span>
+                </span>
+            </div>
+            <span class="dm-fx-toggle-row"><span class="dm-toggle is-on"></span>{tx('Calcular el sales tax por la dirección del cliente', 'Calculate sales tax from the client’s address')}</span>
+
+            <span class="dm-fx-sub">{tx('Domicilio de tu negocio', 'Your business address')}</span>
+            <div class="dm-fx-grid">
+                <div class="dm-fx-field dm-fx-wide"><span class="dm-fx-label">{tx('Calle y número', 'Street address')}</span><span class="dm-fx-input">1840 S Alameda St</span></div>
+                <div class="dm-fx-field"><span class="dm-fx-label">{tx('Ciudad', 'City')}</span><span class="dm-fx-input">Los Angeles</span></div>
+                <div class="dm-fx-field"><span class="dm-fx-label">{tx('Estado', 'State')}</span><span class="dm-fx-input dm-select">California (CA)</span></div>
+                <div class="dm-fx-field"><span class="dm-fx-label">ZIP</span><span class="dm-fx-input">90021</span></div>
+                <div class="dm-fx-field"><span class="dm-fx-label">{tx('Qué vendes', 'What you sell')}</span><span class="dm-fx-input dm-select">{en ? codigo.en : codigo.es}</span></div>
+            </div>
+            <span class="dm-fx-hint">{tx('Tu domicilio decide la tasa en los estados que gravan en el lugar del vendedor. Qué vendes decide si un estado lo grava (muchos estados no gravan los servicios).', 'Your place of business decides the rate in states that tax at the seller’s location. What you sell decides whether a state taxes it at all (many states do not tax services).')}</span>
+
+            <span class="dm-fx-sub">{tx('Estados donde recaudas sales tax', 'States where you collect sales tax')}</span>
+            <div class="dm-fx-states">
+                {estados.map((s) => (
+                    <span class:list={['dm-fx-st', { 'is-on': registrados.includes(s.code) }]}>
+                        <span class:list={['dm-check', { 'is-on': registrados.includes(s.code) }]}>{registrados.includes(s.code) && <DmIcon name="check" stroke={2.4} />}</span>{s.code}
+                    </span>
+                ))}
+            </div>
+            <span class="dm-fx-hint">{tx('Marca solo los estados donde tienes permiso para recaudar sales tax. Las ventas a clientes en otros estados llevan 0 % y el documento dice que ahí no hay obligación de recaudar. Quitar un estado deja de recaudar desde hoy; los documentos ya calculados conservan su impuesto.', 'Mark only the states where you have a sales tax permit. Sales to clients in other states carry 0 % and the document says there is no obligation to collect there. Removing a state stops collecting from today; documents already calculated keep their tax.')}</span>
+            <span class="dm-fx-hint">{tx(
+                `Tu plan incluye ${incluido} facturas con sales tax automático al mes (llevas ${usado} este mes). Cuenta una vez cada factura emitida y cada cotización cobrada que se registra en un estado donde recaudas; las vistas previas no cuentan. Al llegar a ese número, mejora tu plan o captura la tasa a mano.`,
+                `Your plan includes ${incluido} invoices with automatic sales tax per month (${usado} used this month). Each issued invoice and each paid quote recorded for a state where you collect counts once; previews do not. When you reach that number, upgrade your plan or enter the rate manually.`)}</span>
+            <span class="dm-fx-hint">{tx('Un cliente exento se marca desde su ficha, con su certificado de exención.', 'Mark a client as exempt from its profile, with its exemption certificate.')}</span>
+            <div class="dm-fx-actions"><span class="dm-fx-btn">{tx('Guardar', 'Save')}</span></div>
+        </div>
+    </div>
+</DocsMockup>

@@ -11,7 +11,7 @@
 - `docs.cordhq.app` sirve el árbol `/docs` (español) y `/en/docs` (inglés) del
   mismo proyecto. El ruteo del subdominio vive en `SUBDOMAINS` de
   `src/middleware.ts`; el apex redirige `/docs/*` al subdominio.
-- Contenido: `src/content/docs/{es,en}/**/*.mdx` (122 páginas por idioma) más la
+- Contenido: `src/content/docs/{es,en}/**/*.mdx` (135 páginas por idioma) más la
   referencia de la API (`src/pages/{,en/}docs/desarrolladores/referencia.astro`,
   generada desde `src/lib/api-schema.ts`). Esquema del frontmatter en
   `src/content.config.ts`.
@@ -62,6 +62,15 @@ de `DocsSidebar.astro`.
   del menú lateral tal como los define `src/lib/sidebar-nav.ts` (hoy Ingresos,
   Análisis, Automatización). Si la app renombra algo, las docs se actualizan en
   el mismo cambio.
+- **Facturación por país** (`pagos/paises/*`): un resumen con la matriz de los
+  12 países de `SUPPORTED_COUNTRIES` y una página por país. Cuando un riel
+  fiscal se enciende o cambia de estado, o un país entra al set ofrecido, su
+  página y la matriz del resumen se actualizan en el mismo cambio. Los mockups
+  fiscales (`DmRailSettings`, `DmInvoiceAuthority`, `DmTaxCatalog`,
+  `DmSalesTaxBreakdown`, `DmUsTaxSettings`) leen tasas y catálogos del código,
+  pero los textos de cada riel están calcados de
+  `src/components/app/settings/*Settings.astro`: si esa pantalla cambia, el
+  mockup se revisa.
 
 ## Mockups
 
@@ -76,7 +85,7 @@ de `DocsSidebar.astro`.
 - Todo `Dm*.astro` de esa carpeta se registra solo en MDX (`index.ts` con
   `import.meta.glob`); se usa como `<DmNombre lang="es" />`. Archivos sin
   prefijo `Dm` son piezas internas.
-- 57 mockups. Son calca del producto real, no ilustraciones: cuando la app
+- 62 mockups. Son calca del producto real, no ilustraciones: cuando la app
   cambia una pantalla documentada, su mockup se revisa. Contenido interno
   `aria-hidden` + `inert`; el `caption` es lo que lee un lector de pantalla.
 - Prohibido HTML con `style=""` dentro del MDX.
@@ -90,6 +99,6 @@ de `DocsSidebar.astro`.
 - `npm run security:css` cubre las hojas de docs (regla 31).
 - `npm run api:spec` / `security:api-spec` cubren la referencia de la API.
 - Búsqueda: `/api/docs-search.json` indexa texto plano (`plainText()` de
-  `src/lib/docs-search.ts`) de las 244 páginas más la referencia, con campo
+  `src/lib/docs-search.ts`) de las 270 páginas más la referencia, con campo
   `section`. El MCP reutiliza el mismo índice.
 - `llms.txt`, `llms-full.txt` y `llms-full.es.txt` se generan desde la colección.

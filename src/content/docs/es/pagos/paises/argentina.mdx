@@ -1,0 +1,136 @@
+---
+title: "Facturación en Argentina"
+seoTitle: "Facturación en Argentina con Cord: factura electrónica con ARCA"
+description: "Factura electrónica autorizada por ARCA con CAE y QR: clases A, B y C según la condición frente al IVA, nota de crédito, punto de venta web service, certificado de tu CUIT, consumidor final, moneda extranjera, lo que todavía no cubre (factura E) y cobro con Mercado Pago."
+lastUpdated: "2026-10-10"
+reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [AR]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Cuenta con país Argentina", "Starter o superior para emitir con ARCA", "Punto de venta Factura electrónica - Web services y certificado de ARCA de tu CUIT"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Argentina</h1>
+  <p class="page-subtitle">Cada factura autorizada por ARCA con su CAE, en la clase que corresponde a tu condición frente al IVA y la de tu cliente.</p>
+</header>
+
+## Qué es
+
+En Argentina cada factura debe autorizarla **ARCA**, que le asigna su número y su **CAE** (código de autorización electrónico). Cord habla directo con los servicios web de ARCA, sin intermediario, con el certificado de **tu** CUIT: arma el comprobante, pide la autorización y guarda la respuesta. El PDF imprime el CAE, su vencimiento y el código QR de ARCA.
+
+<Callout type="info">
+La factura electrónica con ARCA está construida y en activación: Cord la enciende país por país. Mientras tanto, Ajustes › Perfil fiscal dice **Próximamente** y tus facturas se emiten como factura comercial sin validez fiscal. Esta función es nueva y puede no estar habilitada todavía en tu cuenta. Si no la ves, escríbenos.
+</Callout>
+
+| | En Argentina |
+|---|---|
+| Divisa por defecto | ARS (también moneda extranjera, con cotización) |
+| Impuesto | IVA |
+| Identificador fiscal | CUIT, validado con su prefijo y dígito verificador |
+| Documento | Factura comercial hoy; factura A, B o C y nota de crédito con CAE al activarse |
+| Autoridad | ARCA |
+| Idioma del PDF | Español |
+| Cobro en línea | Mercado Pago |
+
+## Requisitos
+
+- **Plan:** Starter o superior para emitir con ARCA. En Gratis, factura comercial (10 al mes).
+- Un **punto de venta** creado en ARCA como **"Factura electrónica - Web services"**.
+- El **certificado de ARCA** de tu CUIT asociado al servicio de factura electrónica (`wsfe`): el `.crt` que emite ARCA y la llave privada con que lo pediste, o un archivo `.p12`/`.pfx`. Lo generas en ARCA con tu clave fiscal.
+- Tu **condición frente al IVA**: Responsable Inscripto, Monotributo o Exento.
+- **Permisos:** **Ajustes** para el perfil fiscal; **Cotizaciones** para emitir; **Cobranza** para la nota de crédito.
+
+## Configura tu cuenta
+
+<Steps>
+
+1. En **Ajustes › Perfil fiscal** completa la razón social, tu **CUIT** y el domicilio en **Identidad de facturación**.
+2. En **Factura electrónica con ARCA**, completa el **punto de venta (web service)**, tu **condición frente al IVA**, **qué vendes** (productos, servicios o ambos) y, si quieres, tu número de Ingresos Brutos y el inicio de actividades.
+3. En **Certificado de ARCA**, sube el `.crt` y la `.key` (o el `.p12`) con la contraseña de la llave si tiene. Cord valida que sea de tu CUIT y muestra su vigencia.
+4. En cada cliente argentino, elige su **condición frente al IVA** en su ficha: decide la clase de la factura.
+
+</Steps>
+
+<DmRailSettings lang="es" rail="arca" />
+
+## Impuestos
+
+<DmTaxCatalog lang="es" country="AR" />
+
+- **IVA 21 %** (predeterminado), **10,5 %**, **27 %** y **Exento**, por concepto. ARCA recibe el IVA por alícuota; un concepto al 0 % se informa como exento.
+- **Monotributo y exentos** emiten clase C, sin IVA discriminado.
+- El descuento de documento (bonificación) viaja ya repartido en cada concepto, de modo que el neto, las bases y el IVA cuadran con la factura.
+
+## Clase de la factura
+
+La clase la decide la tabla de ARCA con tu condición y la de tu cliente:
+
+| Tu condición | Cliente | Clase |
+|---|---|---|
+| Responsable Inscripto | Responsable Inscripto o Monotributo | A |
+| Responsable Inscripto | Consumidor final, exento u otros | B |
+| Monotributo o Exento | Cualquiera | C |
+
+- **Receptor:** con CUIT, con DNI o consumidor final sin identificar (solo en B y C, y por debajo de 10,000,000 ARS). Desde ese importe hay que identificar al consumidor final con su DNI o CUIT.
+- Si tu cliente tiene CUIT y no capturaste su condición, Cord te la pide antes de emitir.
+- **Servicios:** la factura informa el período facturado (desde las fechas de prestación) y el vencimiento del pago.
+- **Moneda extranjera:** Cord informa la cotización congelada del documento si tu divisa contable es ARS; si no, la oficial de ARCA. Sin cotización no se emite.
+
+## Estado ante ARCA
+
+<DmInvoiceAuthority lang="es" rail="arca" />
+
+| Estado | Qué significa |
+|---|---|
+| Autorizada por ARCA | Tiene CAE; el panel muestra el CAE y su vencimiento. |
+| Esperando la confirmación de ARCA | Se envió y Cord consulta el resultado. |
+| ARCA no autorizó la factura | Rechazada, con el motivo. Corrige y vuelve a emitir. |
+| ARCA no registró este intento | Nunca llegó: el número queda libre. |
+
+Si una respuesta se pierde, Cord **consulta** a ARCA el último comprobante autorizado antes de hacer nada: nunca pide dos CAE para la misma factura. En el ambiente de pruebas de ARCA el número lleva el prefijo `H-` y la factura dice que no tiene validez fiscal.
+
+## Anular o corregir
+
+Un comprobante con CAE **no se anula**: se compensa con una **nota de crédito** de la misma clase, al mismo receptor y en la misma moneda, asociada a la factura que ajusta. **Anular factura** te lleva a ese camino.
+
+## Cobrar en línea
+
+Cord Payments no abre cuentas en Argentina: el cobro en línea es con **[Mercado Pago](/docs/pagos/mercado-pago)**, en el link de la cotización y de la factura, con los métodos que Mercado Pago tenga habilitados en tu cuenta. También puedes registrar a mano una transferencia.
+
+## Límites por plan
+
+| Plan | Facturas comerciales al mes | Comprobantes con CAE incluidos al mes |
+|---|---|---|
+| Gratis | 10 | No incluye emisión fiscal |
+| Starter | Ilimitadas | 30 |
+| Pro | Ilimitadas | 200 |
+| Scale | Ilimitadas | 500 |
+| Developer | Ilimitadas | 1,000 |
+
+## Lo que Cord no cubre todavía
+
+Se rechaza con un mensaje **antes** de pedir el CAE:
+
+- **Factura E** de exportación (cliente fuera de Argentina).
+- **Factura de Crédito Electrónica MiPyME**.
+- Receptor **No categorizado** (exige percepción).
+- **Retenciones** y **tributos o percepciones**.
+- **CAEA** y comprobantes **M**.
+
+## Problemas comunes
+
+**Ajustes dice Próximamente.** La factura electrónica con ARCA está en activación. Tus facturas salen como factura comercial.
+
+**Falta la condición frente al IVA del cliente.** Elígela en su ficha: decide si la factura es A o B.
+
+**ARCA pide identificar al consumidor final.** El importe supera 10,000,000 ARS. Agrega el DNI o CUIT del cliente.
+
+**El certificado no se acepta.** Debe ser de tu CUIT, estar vigente y asociado al servicio de factura electrónica en ARCA.
+
+## Relacionadas
+
+- [Facturación por país](/docs/pagos/paises/resumen)
+- [Mercado Pago](/docs/pagos/mercado-pago)
+- [Crear, emitir y cobrar facturas](/docs/pagos/facturas-emitidas)
+- [Clientes y estado de cuenta](/docs/gestion/clientes)
+- [Métodos de cobro](/docs/pagos/metodos)

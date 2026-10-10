@@ -1,0 +1,102 @@
+---
+// Mockup: Ajustes › Cotizaciones › Impuestos con el catálogo de arranque que
+// Cord siembra para un país (y su territorio cuando el territorio decide:
+// provincia de Canadá, Canarias o Ceuta y Melilla en España, estado de EE. UU.).
+//
+// Calca de src/pages/app/ajustes/impuestos.astro (SettingsShell + .imp-row).
+// Los renglones NO son datos de demo: salen de taxPresetsFor() /
+// usStateTaxPresets() de src/lib/countries.ts, los mismos que siembran una
+// cuenta nueva, y la etiqueta de cada clase sale de taxKindLabel(). Si cambia
+// una tasa allá, cambia aquí. Las pestañas y la descripción de la categoría
+// salen de localizeCategories() (src/lib/settings.ts).
+import DocsMockup from './DocsMockup.astro';
+import DmIcon from './DmIcon.astro';
+import { dmT, pick, type DmLang } from './format';
+import './dm-fiscal.css';
+import { getCountryProfile, subdivisionsFor, taxKindLabel, taxPresetsFor, usStateTaxPresets } from '../../../lib/countries';
+import { exemptionChoicesFor } from '../../../lib/fiscal/exemption';
+import { localizeCategories } from '../../../lib/settings';
+
+interface Props {
+    lang: DmLang;
+    /** País de la organización (ISO alfa-2). */
+    country: string;
+    /** Provincia (CA), código INE de provincia (ES) o estado (US). */
+    region?: string;
+    caption?: string;
+}
+const { lang, country, region } = Astro.props;
+const cc = country.toUpperCase();
+const PROFILE = getCountryProfile(cc, lang);
+const presets = cc === 'US' && region ? usStateTaxPresets(region) : taxPresetsFor(cc, region ?? null);
+const categoria = localizeCategories(lang, cc).find((c) => c.id === 'cotizaciones')!;
+const tabs = categoria.tabs;
+const tabImpuestos = tabs.find((t) => t.id === 'impuestos');
+const causas = exemptionChoicesFor(cc, lang);
+const causaAuto = lang === 'en' ? 'Automatic (from the client)' : 'Automática (según el cliente)';
+const filas = presets.map((p) => ({
+    ...p,
+    kindLabel: taxKindLabel(p.kind, lang, cc),
+    causa: p.exemptionReason ? (causas.find((c) => c.code === p.exemptionReason)?.label ?? p.exemptionReason) : causaAuto,
+}));
+
+const regionName = region ? (subdivisionsFor(cc)?.find((s) => s.code === region)?.name ?? region) : '';
+const donde = regionName ? `${PROFILE.name}, ${regionName}` : PROFILE.name;
+const DATA = {
+    es: {
+        caption: `Ajustes › Impuestos de una cuenta en ${donde}: el catálogo de arranque que Cord siembra, con ${filas.length} perfiles, el predeterminado marcado y la nota de que las tasas se aplican por línea.`,
+        nota: 'Estas tasas se aplican por línea en cotizaciones y facturas, así que un documento puede mezclar un concepto gravado con uno exento. Las retenciones marcadas como predeterminadas se restan del total del documento.',
+    },
+    en: {
+        caption: `Settings › Taxes of an account in ${donde}: the starter catalog Cord seeds, with ${filas.length} profiles, the default one marked and the note that rates apply per line.`,
+        nota: 'These rates apply per line in quotes and invoices, so a document can mix a taxed item with an exempt one. Withholding profiles marked as default are subtracted from the document total.',
+    },
+};
+const d = pick(DATA, lang);
+// Alto del escenario según los renglones: el catálogo largo se recorta abajo.
+const height = Math.min(880, 440 + filas.length * 52);
+const caption = Astro.props.caption ?? d.caption;
+---
+<DocsMockup lang={lang} variant="app" chrome="full" sidebar="rail" active="" height={height} caption={caption} class="dm-fx-figure">
+    <div class="dm-fx-set">
+        <div class="dm-fx-crumb">
+            <DmIcon name="chevron-left" stroke={2} />{dmT(lang, 'settings.configuracion')}
+            <span class="dm-fx-crumb-sep">/</span><span class="dm-fx-crumb-here">{tabImpuestos?.label}</span>
+        </div>
+        <div class="dm-fx-heading">
+            <span class="dm-fx-cat"><svg class="dm-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={categoria.icon}></svg></span>
+            <span class="dm-fx-heading-text">
+                <span class="dm-fx-h2">{categoria.label}</span>
+                <span class="dm-fx-desc">{categoria.desc}</span>
+            </span>
+        </div>
+        <div class="dm-fx-tabs">
+            {tabs.map((t) => <span class:list={['dm-fx-tab', { 'is-on': t.id === 'impuestos' }]}>{t.label}</span>)}
+        </div>
+        <div class="dm-fx-intro">{dmT(lang, 'set.imp.intro')}</div>
+
+        <div class="dm-fx-block">
+            <span class="dm-fx-block-title"><DmIcon name="chart" />{dmT(lang, 'set.imp.perfiles')}</span>
+            <span class="dm-fx-new">{dmT(lang, 'set.imp.nuevo')}</span>
+            <div class="dm-fx-imp">
+                {filas.map((f) => (
+                    <div class="dm-fx-imp-row">
+                        <span class:list={['dm-fx-imp-tipo', `is-${f.kind}`]}>{f.kindLabel}</span>
+                        <span class="dm-fx-imp-body">
+                            <span class="dm-fx-imp-name">{f.nombre}</span>
+                            <span class="dm-fx-imp-tasa">{f.tasa}%</span>
+                            {causas.length > 0 && f.kind === 'exento' && <span class="dm-fx-imp-causa">{f.causa}</span>}
+                        </span>
+                        <span class="dm-fx-imp-actions">
+                            {f.esDefault
+                                ? <span class="dm-fx-imp-default">{dmT(lang, 'set.imp.predeterminado')}</span>
+                                : <span class="dm-fx-imp-btn">{dmT(lang, 'set.imp.hacer_predeterminado')}</span>}
+                            <span class="dm-fx-imp-btn">{dmT(lang, 'set.imp.eliminar')}</span>
+                        </span>
+                    </div>
+                ))}
+            </div>
+            <span class="dm-fx-hint">{d.nota}</span>
+        </div>
+    </div>
+</DocsMockup>

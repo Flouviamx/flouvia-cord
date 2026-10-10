@@ -1,0 +1,136 @@
+---
+title: "Invoicing in Argentina"
+seoTitle: "Invoicing in Argentina with Cord: e-invoices authorized by ARCA"
+description: "Electronic invoice authorized by ARCA with CAE and QR code: types A, B, and C according to VAT status, credit note, web service point of sale, your CUIT's certificate, end consumers, foreign currency, what is not covered yet (type E), and collection with Mercado Pago."
+lastUpdated: "2026-10-10"
+reviewedBy: "Cord product and operations"
+appliesToMarkets: [AR]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Account with Argentina as its country", "Starter or higher to issue with ARCA", "A Factura electrónica - Web services point of sale and your CUIT's ARCA certificate"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Argentina</h1>
+  <p class="page-subtitle">Each invoice authorized by ARCA with its CAE, in the type that matches your VAT status and your client's.</p>
+</header>
+
+## What it is
+
+In Argentina each invoice must be authorized by **ARCA**, which assigns its number and its **CAE** (electronic authorization code). Cord talks directly to ARCA's web services, without an intermediary, using **your** CUIT's certificate: it builds the document, requests authorization, and stores the response. The PDF prints the CAE, its expiration, and ARCA's QR code.
+
+<Callout type="info">
+Electronic invoicing with ARCA is built and being activated: Cord turns it on country by country. Meanwhile, Settings › Tax profile says **Coming soon** and your invoices are issued as commercial invoices without tax validity. This feature is new and may not be enabled on your account yet. If you don't see it, contact us.
+</Callout>
+
+| | In Argentina |
+|---|---|
+| Default currency | ARS (also foreign currency, with an exchange rate) |
+| Tax | IVA |
+| Tax ID | CUIT, validated with its prefix and check digit |
+| Document | Commercial invoice today; type A, B, or C invoice and credit note with CAE once activated |
+| Authority | ARCA |
+| PDF language | Spanish |
+| Online payments | Mercado Pago |
+
+## Requirements
+
+- **Plan:** Starter or higher to issue with ARCA. On Free, commercial invoice (10 per month).
+- A **point of sale** created in ARCA as **"Factura electrónica - Web services"**.
+- Your CUIT's **ARCA certificate** associated with the electronic invoicing service (`wsfe`): the `.crt` that ARCA issues and the private key you used to request it, or a `.p12`/`.pfx` file. You generate it in ARCA with your tax password (clave fiscal).
+- Your **VAT status**: Responsable Inscripto, Monotributo, or Exento.
+- **Permissions:** **Settings** for the tax profile; **Quotes** to issue; **Collections** for the credit note.
+
+## Set up your account
+
+<Steps>
+
+1. In **Settings › Tax profile**, complete your legal name, your **CUIT**, and your address under **Invoice identity**.
+2. Under **Electronic invoicing with ARCA**, complete the **point of sale (web service)**, your **VAT status**, **what you sell** (products, services, or both) and, if you want, your gross income tax number and the start of activities.
+3. Under **ARCA certificate**, upload the `.crt` and `.key` (or the `.p12`) with the key password if it has one. Cord validates that it belongs to your CUIT and shows its validity.
+4. On each Argentine client, choose their **VAT status** on their profile: it decides the invoice type.
+
+</Steps>
+
+<DmRailSettings lang="en" rail="arca" />
+
+## Taxes
+
+<DmTaxCatalog lang="en" country="AR" />
+
+- **IVA 21%** (default), **10.5%**, **27%**, and **Exento**, per line item. ARCA receives IVA by rate; a 0% line item is reported as exempt.
+- **Monotributo and exempt** issuers issue type C, without itemized IVA.
+- The document discount (bonificación) travels already split across line items, so the net amount, the bases, and IVA match the invoice.
+
+## Invoice type
+
+The type comes from ARCA's table using your status and your client's:
+
+| Your status | Client | Type |
+|---|---|---|
+| Responsable Inscripto | Responsable Inscripto or Monotributo | A |
+| Responsable Inscripto | End consumer, exempt, or others | B |
+| Monotributo or Exento | Any | C |
+
+- **Recipient:** with CUIT, with DNI, or an unidentified end consumer (types B and C only, and below 10,000,000 ARS). From that amount, the end consumer must be identified with their DNI or CUIT.
+- If your client has a CUIT and you did not capture their status, Cord asks for it before issuing.
+- **Services:** the invoice reports the billed period (from the service dates) and the payment due date.
+- **Foreign currency:** Cord reports the document's frozen exchange rate if your accounting currency is ARS; otherwise, ARCA's official rate. Without an exchange rate it is not issued.
+
+## Status before ARCA
+
+<DmInvoiceAuthority lang="en" rail="arca" />
+
+| Status | What it means |
+|---|---|
+| Authorized by ARCA | It has a CAE; the panel shows the CAE and its expiration. |
+| Waiting for ARCA to confirm | It was sent and Cord checks the result. |
+| ARCA did not authorize the invoice | Rejected, with the reason. Correct it and issue again. |
+| ARCA did not register this attempt | It never arrived: the number is free. |
+
+If a response is lost, Cord **checks** ARCA's last authorized document before doing anything: it never requests two CAEs for the same invoice. In ARCA's test environment the number carries the `H-` prefix and the invoice says it has no tax validity.
+
+## Void or correct
+
+A document with a CAE **is not voided**: it is offset with a **credit note** of the same type, to the same recipient and in the same currency, associated with the invoice it adjusts. **Void invoice** takes you down that path.
+
+## Get paid online
+
+Cord Payments does not open accounts in Argentina: online collection is with **[Mercado Pago](/en/docs/pagos/mercado-pago)**, on the quote link and the invoice link, with the methods Mercado Pago has enabled on your account. You can also record a transfer by hand.
+
+## Plan limits
+
+| Plan | Commercial invoices per month | Documents with CAE included per month |
+|---|---|---|
+| Free | 10 | No tax issuance included |
+| Starter | Unlimited | 30 |
+| Pro | Unlimited | 200 |
+| Scale | Unlimited | 500 |
+| Developer | Unlimited | 1,000 |
+
+## What Cord does not cover yet
+
+Rejected with a message **before** requesting the CAE:
+
+- Export **type E invoice** (client outside Argentina).
+- **MiPyME Electronic Credit Invoice**.
+- **Not categorized** recipient (requires a perception).
+- **Withholdings** and **taxes or perceptions**.
+- **CAEA** and type **M** documents.
+
+## Common problems
+
+**Settings says Coming soon.** Electronic invoicing with ARCA is being activated. Your invoices come out as commercial invoices.
+
+**The client's VAT status is missing.** Choose it on their profile: it decides whether the invoice is A or B.
+
+**ARCA requires identifying the end consumer.** The amount exceeds 10,000,000 ARS. Add the client's DNI or CUIT.
+
+**The certificate is not accepted.** It must belong to your CUIT, be valid, and be associated with the electronic invoicing service in ARCA.
+
+## Related
+
+- [Invoicing by country](/en/docs/pagos/paises/resumen)
+- [Mercado Pago](/en/docs/pagos/mercado-pago)
+- [Create, issue, and collect invoices](/en/docs/pagos/facturas-emitidas)
+- [Clients and statements](/en/docs/gestion/clientes)
+- [Payment methods](/en/docs/pagos/metodos)
