@@ -574,7 +574,7 @@ export const FEATURES_EN: Feature[] = [
             },
             {
                 q: 'Can I refund a payment?',
-                a: "Yes. With Cord Payments you refund all or part of a payment from Payments, and your identity is confirmed before it's sent. Only people with the Refunds permission can do it, and that permission is separate: not even the Admin role has it by default. With Mercado Pago, the refund is made in your Mercado Pago account and Cord records it automatically.",
+                a: "Yes. You refund all or part of a quote payment from Payments, and an invoice payment from that invoice's detail page, also when Mercado Pago collected it. Cord confirms your identity before it's sent, and tells you before you confirm what the method doesn't allow, such as returning only part of an ACH debit. Only people with the Refunds permission can do it, and that permission is separate: not even the Admin role has it by default. A quote payment collected with Mercado Pago is refunded in your Mercado Pago account and Cord records it automatically.",
             },
         ],
         cta: { titulo: 'Turn on payments before you send your next quote.', sub: 'Cord Payments or Mercado Pago, from Settings › Payments. Free to start.' },

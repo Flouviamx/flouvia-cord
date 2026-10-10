@@ -55,7 +55,12 @@ Reglas que aplica Cord:
 
 ## Reembolsar un pago de varias facturas
 
-Si reembolsas parte de un cobro que pagó varias facturas, Cord asigna la devolución de la última factura aplicada a la primera, cada una completa antes de pasar a la siguiente.
+Desde Cord, el reembolso se pide en el detalle de cualquiera de las facturas que pagó el cobro, y eliges:
+
+- **Solo esta factura:** hasta lo que el cobro le aplicó a esa factura. La devolución va a esa factura.
+- **Todo el cobro:** devuelve lo que queda del cargo y reabre cada factura por lo que pagó. Un cargo ACH solo admite esta opción.
+
+Si el reembolso se hace fuera de Cord, Cord asigna la devolución de la última factura aplicada a la primera, cada una completa antes de pasar a la siguiente.
 
 ## Problemas comunes
 

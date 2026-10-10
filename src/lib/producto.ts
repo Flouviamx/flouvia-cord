@@ -618,7 +618,7 @@ export const FEATURES: Feature[] = [
             },
             {
                 q: '¿Puedo devolver un pago?',
-                a: 'Sí. Con Cord Payments reembolsas total o parcialmente un cobro desde Cobros, y se confirma tu identidad antes de mandarlo. Solo puede hacerlo quien tenga el permiso de Reembolsos, y ese permiso es aparte: ni el rol de Administrador lo trae de inicio. Con Mercado Pago, el reembolso se hace en tu cuenta de Mercado Pago y Cord lo registra solo.',
+                a: 'Sí. Reembolsas total o parcialmente el cobro de una cotización desde Cobros, y el pago de una factura desde el detalle de esa factura, también si lo cobró Mercado Pago. Cord confirma tu identidad antes de mandarlo, y te dice antes de confirmar lo que el método no permite, como devolver solo una parte de un débito ACH. Solo puede hacerlo quien tenga el permiso de Reembolsos, y ese permiso es aparte: ni el rol de Administrador lo trae de inicio. El cobro de una cotización con Mercado Pago se reembolsa en tu cuenta de Mercado Pago y Cord lo registra solo.',
             },
         ],
         cta: { titulo: 'Activa el cobro antes de mandar la siguiente cotización.', sub: 'Cord Payments o Mercado Pago, desde Ajustes › Cobros. Gratis para empezar.' },

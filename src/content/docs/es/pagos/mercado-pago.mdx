@@ -2,7 +2,7 @@
 title: "Mercado Pago"
 seoTitle: "Cobrar con Mercado Pago en Cord"
 description: "Cobra cotizaciones con tu cuenta de Mercado Pago: en qué países aplica, cómo se conecta, qué ve tu cliente, cómo se confirma el pago y lo que todavía no hace."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-10"
 reviewedBy: "Producto y operaciones de Cord"
 appliesToMarkets: [MX, BR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -63,7 +63,9 @@ Si el mismo cobro llega a pagarse por Cord Payments y por Mercado Pago, Cord lo 
 
 ## Reembolsos
 
-El reembolso se hace **desde tu cuenta de Mercado Pago**. Cord lo lee solo: cuando Mercado Pago confirma que el dinero salió, baja el importe pagado, deja el saldo abierto otra vez y lo anota en el historial del documento. Un reembolso que Mercado Pago todavía no confirma no toca el saldo.
+El pago de una **factura** cobrado con Mercado Pago se reembolsa desde Cord, total o parcialmente: en el detalle de la factura, botón **Reembolsar** junto al pago (ver [Reembolsar el pago de una factura](/docs/pagos/reembolsos#reembolsar-el-pago-de-una-factura)). Cord se lo pide a Mercado Pago con la conexión de tu cuenta, así que el dinero sale de tu cuenta de Mercado Pago, igual que entró. El cobro de una **cotización** se reembolsa **desde tu cuenta de Mercado Pago**.
+
+En los dos casos, y también si reembolsas una factura desde Mercado Pago, Cord lee el reembolso: cuando Mercado Pago confirma que el dinero salió, baja el importe pagado, deja el saldo abierto otra vez y lo anota en el historial del documento. Si la cotización ya se había facturado, el reembolso de su cobro también reabre la factura. Un reembolso que Mercado Pago todavía no confirma no toca el saldo.
 
 ## Lo que todavía no hace
 
