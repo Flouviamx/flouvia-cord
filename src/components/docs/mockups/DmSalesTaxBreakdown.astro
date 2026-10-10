@@ -1,0 +1,114 @@
+---
+// Mockup: el desglose de impuestos por jurisdicción en el detalle de una
+// factura (/app/facturas/[id], .fd-totals), parametrizable con `variant`:
+//
+//   combined    EE. UU., cliente en Los Ángeles: un renglón por jurisdicción
+//               (estado, condado, distritos especiales) del cálculo por dirección
+//   exempt      EE. UU., cliente exento: 0 % y la nota con su certificado
+//   no_collect  EE. UU., cliente en un estado donde el negocio no recauda
+//   ca          Canadá, Quebec: la tasa combinada se separa en GST y QST
+//
+// Calca de src/pages/app/facturas/[id].astro. Los renglones NO se escriben a
+// mano: salen de taxJurisdictionRows(), taxNotes() y splitTaxBucket()
+// (src/lib/tax-components.ts), los mismos constructores que usa la pantalla
+// real, con un desglose de demo como el que congela el cálculo por dirección.
+import DocsMockup from './DocsMockup.astro';
+import DmMoney from './DmMoney.astro';
+import { dmT, initials, type DmLang } from './format';
+import './dm-fiscal.css';
+import { fmtTaxPct, splitTaxBucket, taxJurisdictionRows, taxNotes, type JurisdiccionLinea } from '../../../lib/tax-components';
+
+type Variant = 'combined' | 'exempt' | 'no_collect' | 'ca';
+interface Props { lang: DmLang; variant?: Variant; caption?: string }
+const { lang, variant = 'combined' } = Astro.props;
+const en = lang === 'en';
+const tx = (es: string, enText: string) => (en ? enText : es);
+const r2 = (n: number) => Math.round(n * 100) / 100;
+
+const esCa = variant === 'ca';
+const org = esCa ? 'Maple Ridge Consulting' : 'Pacific Ridge Supply Co.';
+const currency = esCa ? 'CAD' : 'USD';
+const numero = esCa ? 'INV-000187' : 'INV-000318';
+const lineas = esCa
+    ? [
+        { d: tx('Estrategia digital, septiembre', 'Digital strategy, September'), q: 1, p: 9600 },
+        { d: tx('Taller de capacitación (horas)', 'Training workshop (hours)'), q: 12, p: 140 },
+    ]
+    : [
+        { d: tx('Exhibidor modular de aluminio', 'Modular aluminum display'), q: 4, p: 1850 },
+        { d: tx('Iluminación LED para exhibidor', 'LED display lighting'), q: 4, p: 1250 },
+    ];
+const cliente = esCa ? 'Groupe Laurentide' : variant === 'exempt' ? 'Westside Unified School District' : variant === 'no_collect' ? 'Lone Star Outfitters' : 'Sunset Retail Group';
+
+// Desglose congelado por línea, con la forma de `taxBreakdown` del snapshot.
+const LA = [{ nombre: 'California', tasa: 6 }, { nombre: 'Los Angeles County', tasa: 0.25 }, { nombre: 'Los Angeles Special Districts', tasa: 3.25 }];
+const conDesglose = lineas.map((l) => {
+    const base = r2(l.q * l.p);
+    if (esCa) return { ...l, base, impuesto: r2(base * 0.14975), taxBreakdown: null };
+    if (variant === 'exempt') return { ...l, base, impuesto: 0, taxBreakdown: { estado: 'CA', estadoNombre: 'California', motivo: 'exento', certificado: 'CA-EX-2026-0417', componentes: [] } as JurisdiccionLinea };
+    if (variant === 'no_collect') return { ...l, base, impuesto: 0, taxBreakdown: { estado: 'TX', estadoNombre: 'Texas', motivo: 'sin_registro', componentes: [] } as JurisdiccionLinea };
+    const componentes = LA.map((c) => ({ ...c, impuesto: r2(base * c.tasa / 100) }));
+    return { ...l, base, impuesto: r2(componentes.reduce((s, c) => s + c.impuesto, 0)), taxBreakdown: { estado: 'CA', estadoNombre: 'California', motivo: null, componentes } as JurisdiccionLinea };
+});
+const subtotal = r2(conDesglose.reduce((s, l) => s + l.base, 0));
+const impuestoTotal = r2(conDesglose.reduce((s, l) => s + l.impuesto, 0));
+const filas = esCa
+    ? (splitTaxBucket('CA', 14.975, subtotal, impuestoTotal, { region: 'QC', decimals: 2 }) ?? []).map((p) => ({ label: `${p.nombre} ${fmtTaxPct(p.tasa)}`, impuesto: p.impuesto }))
+    : (taxJurisdictionRows(conDesglose.map((l) => ({ base: l.base, impuesto: l.impuesto, taxBreakdown: l.taxBreakdown })), { decimals: 2 }) ?? [])
+        .filter((r) => r.impuesto !== 0).map((r) => ({ label: r.label, impuesto: r.impuesto }));
+const notas = esCa ? [] : taxNotes(conDesglose, lang);
+const total = r2(subtotal + impuestoTotal);
+const qty = (n: number) => new Intl.NumberFormat(en ? 'en-US' : 'es-MX').format(n);
+const fmt = (n: number) => new Intl.NumberFormat(en ? 'en-US' : 'es-MX', { minimumFractionDigits: 2 }).format(n);
+
+const defaultCaption = esCa
+    ? tx(`Totales de la factura ${numero} de ${org} (Quebec) a ${cliente}: subtotal de ${fmt(subtotal)} CAD, GST 5% y QST 9.975% en renglones separados, y total de ${fmt(total)} CAD.`,
+        `Totals of invoice ${numero} from ${org} (Quebec) to ${cliente}: ${fmt(subtotal)} CAD subtotal, GST 5% and QST 9.975% on separate rows, and a ${fmt(total)} CAD total.`)
+    : variant === 'combined'
+        ? tx(`Totales de la factura ${numero} de ${org} a un cliente en Los Ángeles: un renglón por jurisdicción (California 6%, Los Angeles County 0.25% y distritos especiales 3.25%) que suman ${fmt(impuestoTotal)} USD sobre ${fmt(subtotal)} USD.`,
+            `Totals of invoice ${numero} from ${org} to a client in Los Angeles: one row per jurisdiction (California 6%, Los Angeles County 0.25% and special districts 3.25%) adding up to ${fmt(impuestoTotal)} USD on ${fmt(subtotal)} USD.`)
+        : variant === 'exempt'
+            ? tx(`Totales de la factura ${numero} a un cliente exento: sin sales tax y con la nota que cita su certificado de exención.`, `Totals of invoice ${numero} to an exempt client: no sales tax and the note citing its exemption certificate.`)
+            : tx(`Totales de la factura ${numero} a un cliente en Texas, donde el negocio no recauda: 0 % y la nota "Sin obligación de recaudar sales tax en Texas".`, `Totals of invoice ${numero} to a client in Texas, where the business does not collect: 0 % and the note "No obligation to collect sales tax in Texas".`);
+const caption = Astro.props.caption ?? defaultCaption;
+---
+<DocsMockup lang={lang} variant="app" chrome="full" sidebar="rail" active="facturas" org={org} title={numero} crumbs={[dmT(lang, 'fact.heading')]} height={560} caption={caption} class="dm-fx-figure">
+    <div class="dm-fx-main dm-stb">
+        <div class="dm-fx-head">
+            <div class="dm-fx-client">
+                <span class="dm-fx-avatar">{initials(cliente).slice(0, 1)}</span>
+                <span class="dm-fx-client-copy">
+                    <span class="dm-fx-client-name">{cliente}</span>
+                    <span class="dm-fx-client-meta">{dmT(lang, 'fact.d_emitida')} {tx('8 oct 2026', 'Oct 8, 2026')} · {dmT(lang, 'fact.d_vence')} {tx('7 nov 2026', 'Nov 7, 2026')} · {tx('Enviada', 'Sent')}</span>
+                </span>
+            </div>
+            <div class="dm-fx-hero">
+                <span>TOTAL</span>
+                <strong><DmMoney amount={total} currency={currency} lang={lang} /></strong>
+            </div>
+        </div>
+        <div class="dm-fx-sec">{tx('Detalle', 'Details')}</div>
+        <div class="dm-fx-items-head">
+            <span>{dmT(lang, 'fact.d_concepto')}</span><span>{dmT(lang, 'fact.d_cant')}</span><span>{dmT(lang, 'fact.d_precio')}</span><span>{dmT(lang, 'fact.d_importe')}</span>
+        </div>
+        {conDesglose.map((l) => (
+            <div class="dm-fx-item">
+                <span class="dm-fx-desc-cell">{l.d}</span>
+                <span class="dm-fx-qty">{qty(l.q)}</span>
+                <span class="dm-fx-amt"><DmMoney amount={l.p} currency={currency} lang={lang} /></span>
+                <span class="dm-fx-amt"><DmMoney amount={l.base} currency={currency} lang={lang} /></span>
+            </div>
+        ))}
+        <div class="dm-fx-totals">
+            <span class="dm-fx-tline"><span>{dmT(lang, 'fact.d_subtotal')}</span><DmMoney amount={subtotal} currency={currency} lang={lang} /></span>
+            {filas.map((r) => <span class="dm-fx-tline"><span>{r.label}</span><DmMoney amount={r.impuesto} currency={currency} lang={lang} /></span>)}
+            {notas.map((n) => <span class="dm-fx-tline is-note"><span>{n}</span><span></span></span>)}
+            <span class="dm-fx-tline is-total"><span>{dmT(lang, 'fact.d_total')}</span><DmMoney amount={total} currency={currency} lang={lang} /></span>
+            <span class="dm-fx-tline is-due"><span>{dmT(lang, 'fact.d_saldo')}</span><DmMoney amount={total} currency={currency} lang={lang} /></span>
+        </div>
+    </div>
+</DocsMockup>
+
+<style is:global>
+    .dm-stb { max-width: 560px; }
+</style>

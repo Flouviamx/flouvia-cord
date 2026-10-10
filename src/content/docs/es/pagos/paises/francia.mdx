@@ -1,0 +1,176 @@
+---
+title: "Facturación en Francia"
+seoTitle: "Facturación en Francia con Cord: Factur-X y plataforma autorizada"
+description: "Factura en francés con TVA por concepto y las menciones de la reforma (categoría de la operación, SIREN del cliente, opción por los débitos, dirección de entrega), Factur-X, emisión por plataforma autorizada con estados 200 a 213, e-reporting y cobro con tarjeta o SEPA."
+lastUpdated: "2026-10-10"
+reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [FR]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Cuenta con país Francia", "SIREN o número de TVA en Ajustes › Perfil fiscal", "Starter o superior para la emisión por plataforma autorizada"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Francia</h1>
+  <p class="page-subtitle">Facturas que ya llevan lo que exige la reforma de la factura electrónica, en Factur-X, y la emisión por plataforma autorizada en cuanto se active.</p>
+</header>
+
+## Qué es
+
+En Francia Cord emite una factura en **francés**, con la TVA de cada concepto y **las menciones que exige la reforma** de la factura electrónica, descargable como **Factur-X** (el PDF con el XML dentro), que es también lo que viaja en el correo por defecto.
+
+La reforma pide además que las facturas entre empresas establecidas en Francia viajen por una **plataforma autorizada** (PA) y que las ventas a particulares y con el extranjero se **declaren** (e-reporting). Cord tiene construida la emisión por plataforma: emite, declara y comunica tus cobros desde las facturas que ya emites. Está en activación.
+
+| | En Francia |
+|---|---|
+| Divisa por defecto | EUR |
+| Impuesto | TVA |
+| Identificador fiscal | SIREN / N° TVA (SIREN, SIRET y TVA validados) |
+| Documento | Factura con Factur-X; transmitida por plataforma autorizada al activarse |
+| Autoridad | Plataforma autorizada y administración fiscal (DGFiP) |
+| Idioma del PDF | Francés |
+| Cobro en línea | Tarjeta y domiciliación SEPA (EUR) con Cord Payments |
+
+<Callout type="info">
+La emisión por plataforma autorizada está construida y en activación: mientras tanto, Ajustes dice **Próximamente** y tus facturas ya llevan las menciones de la reforma. La factura electrónica europea también es nueva. Esta función es nueva y puede no estar habilitada todavía en tu cuenta. Si no la ves, escríbenos.
+</Callout>
+
+## Requisitos
+
+- **Plan:** cualquiera para facturar con Factur-X (Gratis: 10 facturas al mes). **Starter o superior** para darte de alta en la plataforma.
+- Tu **SIREN** (o tu número de TVA, que lo contiene) en **Ajustes › Perfil fiscal**.
+- Tu **plataforma de recepción**: desde el 1 de septiembre de 2026 toda empresa establecida en Francia debe poder recibir facturas electrónicas, y Cord **solo emite**.
+- **Permisos:** **Ajustes** para el perfil fiscal y el alta; **Cotizaciones** para emitir.
+
+## Configura tu cuenta
+
+<Steps>
+
+1. En **Ajustes › Perfil fiscal** completa la razón social, tu **SIREN / N° TVA**, el domicilio y el prefijo de factura. Si aplicas la franquicia, activa **Franquicia en base de TVA (art. 293 B du CGI)**.
+2. En **Factura electrónica en Francia**, elige tu **régimen de TVA**, la **naturaleza** de los conceptos escritos a mano (bienes o servicios) y, si la tienes, la **opción por pagar la TVA sobre los débitos**.
+3. En el catálogo, elige el **tipo** de cada producto: un producto es una entrega de bienes; un servicio, una suscripción o una licencia, una prestación de servicios.
+4. En cada cliente francés empresa, captura su **SIREN** (o SIRET).
+5. Cuando la emisión por plataforma esté activa, pulsa **Darme de alta en la plataforma** y sigue el paso del mandato.
+
+</Steps>
+
+<DmRailSettings lang="es" rail="frpa" state="proximamente" />
+
+## Impuestos
+
+<DmTaxCatalog lang="es" country="FR" />
+
+- **TVA 20 %** (predeterminada), **10 %**, **5,5 %** y **2,1 %**, por concepto.
+- **Exonéré de TVA** para las operaciones exentas; en el perfil exento puedes elegir su clasificación en la factura electrónica.
+- **Franquicia (art. 293 B du CGI):** con la opción activa, tus facturas sin impuesto llevan la mención legal que lo explica.
+
+## Las menciones de la reforma
+
+Toda factura francesa de Cord las lleva, esté activa o no la plataforma:
+
+- **Categoría de la operación:** entrega de bienes, prestación de servicios o mixta, según el tipo de cada producto o, para los conceptos escritos a mano, la naturaleza por defecto de tu perfil. Sin ella, la factura se escribe como antes de la reforma y no se puede transmitir.
+- **Opción por los débitos:** si la tienes, la factura imprime "Option pour le paiement de la taxe d'après les débits" (solo con servicios).
+- **SIREN del cliente:** un SIRET viaja como identificador y su SIREN como registro legal.
+- **Dirección de entrega:** en el editor de facturas (solo Francia), cuando los bienes se entregan en otro lugar que la dirección del cliente. No se declara en una prestación de servicios.
+- **Condiciones entre profesionales:** penalidades por retraso, indemnización por gastos de cobro y condiciones de descuento por pronto pago (art. L441-9 y L441-10 del Código de Comercio).
+
+## Emisión por plataforma autorizada
+
+### Qué hace Cord
+
+| Operación | Qué hace Cord | Cobros |
+|---|---|---|
+| Entre empresas establecidas en Francia, cliente con SIREN | Transmite el Factur-X por la plataforma | Si la TVA es exigible al cobro, comunica cada cobro de servicios como estado 212 "Encaissée" |
+| Con una empresa establecida fuera de Francia | Declara la factura (e-reporting), una por una | Declara sus cobros |
+| A particulares | Declara el resumen del día cerrado, por divisa y categoría | Declara lo cobrado del día |
+
+Solo se comunican cobros de **servicios**, sin la opción por los débitos. Una devolución se comunica en negativo con su motivo.
+
+### Darte de alta
+
+<Steps>
+
+1. En **Ajustes › Perfil fiscal › Factura electrónica en Francia**, revisa tu SIREN, régimen, correo y dirección: Cord crea tu alta con esos datos.
+2. Si quieres, escribe el **representante legal** (nombre, apellido y cargo) y pulsa **Darme de alta en la plataforma**.
+3. Pulsa **Verificar identidad y firmar el mandato con Iopole**, la plataforma autorizada con que emite Cord, y completa ahí la verificación de identidad y el mandato.
+4. Vuelve a Cord y pulsa **Actualizar estado**. Cuando el alta se completa, la sección dice **Alta completada: Cord emite y declara por ti**.
+
+</Steps>
+
+Una factura emitida antes de completar el alta no se transmite; el detalle de la factura lo dice.
+
+### Plazos del e-reporting
+
+| Régimen de TVA | Transacciones | Cobros |
+|---|---|---|
+| Real normal mensual | Por décadas: del 1 al 10, el día 20; del 11 al 20, el último día del mes; del 21 al cierre, el día 10 siguiente | Mes, el día 10 siguiente |
+| Real normal trimestral | Mes, el día 10 siguiente | Mes, el día 10 siguiente |
+| Simplificado | Mes, el último día del mes siguiente | Igual |
+| Franquicia | Bimestre, el último día del mes siguiente | Igual |
+
+Cord envía cada día en cuanto cierra; Ajustes cuenta lo que está en cola, sin confirmación o con el plazo vencido.
+
+### Estados de la factura
+
+<DmInvoiceAuthority lang="es" rail="frpa" />
+
+El panel **Plataforma de facturación electrónica** de cada factura dice cómo la trata la reforma (transmitida o declarada), en qué va su envío y cada estado que notificó la plataforma, con su fecha y su motivo:
+
+| Código | Estado |
+|---|---|
+| 200 | Depositada en la plataforma |
+| 201 | Emitida por la plataforma |
+| 202 | Recibida por la plataforma del cliente |
+| 203 | Puesta a disposición del cliente |
+| 204 | El cliente la tomó en cuenta |
+| 205 / 206 | Aprobada por el cliente (en todo o en parte) |
+| 207 | En litigio con el cliente |
+| 208 / 209 | Suspendida: el cliente pide justificantes / Completada |
+| 210 | Rechazada por el cliente |
+| 211 / 212 | Pago transmitido / Cobrada |
+| 213 | Rechazada por una plataforma |
+| 501 | Archivo no admitido por la plataforma |
+
+**Una factura rechazada (210 o 213) no se corrige:** anúlala con una nota de crédito (no se transmite: es una anulación contable) y emite otra con los datos correctos. Nada se corrige solo.
+
+## Datos del cliente y del producto
+
+- **Cliente:** SIREN o SIRET (validados con su dígito de control), su número de TVA si es de otro país de la UE, y su dirección electrónica si la tiene.
+- **Producto:** su **tipo** (bien, servicio, suscripción o licencia) decide la categoría de la operación.
+- **Factura:** la dirección de entrega cuando aplica.
+
+## Cobrar en línea
+
+- **Tarjeta** con Cord Payments.
+- **Domiciliación SEPA** en EUR, que enciendes en **Ajustes › Cobros**. Esta función es nueva.
+- Tus depósitos llegan a tu **IBAN**. Ver [Depósitos](/docs/pagos/depositos).
+
+## Límites por plan
+
+| Plan | Facturas al mes | Emisión por plataforma |
+|---|---|---|
+| Gratis | 10 | No incluida |
+| Starter, Pro, Scale, Developer | Ilimitadas | Incluida al activarse |
+
+## Lo que Cord no cubre todavía
+
+- **Recepción** de facturas de tus proveedores: necesitas tu plataforma de recepción.
+- **Corregir una declaración** (e-reporting) ya enviada: no se puede desde Cord.
+- **Anular ante la plataforma** una factura ya transmitida: se corrige con una nota de crédito transmitida.
+- Facturas con retenciones, autofacturación, multivendedor, anticipos y régimen de margen: no se emiten por la plataforma.
+
+## Problemas comunes
+
+**La factura dice que le falta la categoría de la operación.** Elige el tipo del producto o la naturaleza por defecto de los conceptos escritos a mano en **Ajustes › Perfil fiscal**.
+
+**Mi factura dice "Cord no la transmite".** Se emitió antes de completar tu alta en la plataforma.
+
+**La plataforma rechazó una factura.** Anúlala con una nota de crédito y emite otra con los datos correctos.
+
+## Relacionadas
+
+- [Facturación por país](/docs/pagos/paises/resumen)
+- [Factura electrónica europea](/docs/pagos/factura-electronica)
+- [Alemania](/docs/pagos/paises/alemania)
+- [Crear, emitir y cobrar facturas](/docs/pagos/facturas-emitidas)
+- [Productos y descuentos](/docs/cotizacion/productos)
+- [Métodos de cobro](/docs/pagos/metodos)

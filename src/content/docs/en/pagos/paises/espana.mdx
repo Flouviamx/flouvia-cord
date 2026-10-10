@@ -1,0 +1,175 @@
+---
+title: "Invoicing in Spain"
+seoTitle: "Invoicing in Spain with Cord: Verifactu, Facturae, IRPF, and SEPA"
+description: "Verifactu with your certificate and the system's responsible declaration, Facturae with IRPF, IGIC, and IPSI, AEAT e-invoicing between businesses (coming soon), series per issuer and fiscal year, exemption reasons, and collection by card or SEPA Direct Debit."
+lastUpdated: "2026-10-10"
+reviewedBy: "Cord product and operations"
+appliesToMarkets: [ES]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Account with Spain as its country", "Valid NIF in Settings › Tax profile", "Starter or higher and an electronic certificate (.p12/.pfx) for Verifactu"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Spain</h1>
+  <p class="page-subtitle">Invoices with IVA, IRPF, IGIC, or IPSI per line item, chained and registered with the AEAT through Verifactu, and downloadable as Facturae.</p>
+</header>
+
+## What it is
+
+In Spain Cord is built for the invoicing system the law requires (**Verifactu**, RD 1007/2023): each invoice generates a record chained to your business's previous one, which is sent to the Tax Agency, and its PDF carries the verification QR code. While Verifactu is being activated, Cord issues **pro formas** with the `PRO` series and registers nothing with the AEAT.
+
+In addition, each invoice can be downloaded as **Facturae 3.2.2** (with IRPF, IGIC, or IPSI) and as Factur-X, XRechnung, and Peppol, and Cord has built **e-invoicing between businesses** through the AEAT public solution, which will be activated when the AEAT publishes its service.
+
+| | In Spain |
+|---|---|
+| Default currency | EUR |
+| Tax | IVA; IGIC in the Canary Islands; IPSI in Ceuta and Melilla; IRPF withholding |
+| Tax ID | NIF / CIF (NIF, NIE, and CIF validated, with or without the ES prefix) |
+| Document | Pro forma today; invoice registered with Verifactu once activated |
+| Authority | Tax Agency (AEAT) |
+| PDF language | Spanish |
+| Online payments | Card and SEPA Direct Debit (EUR) with Cord Payments |
+
+<Callout type="info">
+Verifactu and e-invoicing between businesses are built and being activated. Meanwhile, Cord issues pro formas and sends nothing to the AEAT. This feature is new and may not be enabled on your account yet. If you don't see it, contact us.
+</Callout>
+
+## Requirements
+
+- **Plan:** Starter or higher for Verifactu. On Free you issue pro formas (10 per month).
+- A valid **NIF** for your business in **Settings › Tax profile**.
+- A **qualified electronic certificate** (`.p12` or `.pfx`) for your business or its representative, with its password. You get it from a certification service provider (for example, the FNMT); its cost, if any, you pay directly to them.
+- **Permissions:** **Settings** for the tax profile and the certificate; **Quotes** to issue and correct records; **Collections** to void.
+
+## Set up your account
+
+<Steps>
+
+1. In **Settings › Tax profile**, complete your legal name, **NIF**, address, city, province, postal code, and **invoice prefix**. If your business is in the Canary Islands, Ceuta, or Melilla, write the province (or its code: 35, 38, 51, or 52): it decides which tax is seeded.
+2. Review the catalog in **Settings › Taxes**: IVA 21, 10, and 4%, exemptions with their reason, and IRPF withholdings.
+3. In the **Verifactu** section, upload your electronic certificate with its password. Cord validates it, reads its expiration, and stores it encrypted.
+4. Under **European e-invoicing**, complete your billing contact and, if you want, turn on **Sign the Facturae with my electronic certificate**.
+
+</Steps>
+
+<DmRailSettings lang="en" rail="verifactu" state="pendiente" />
+
+## Taxes
+
+<DmTaxCatalog lang="en" country="ES" />
+
+- **IVA** at 21, 10, and 4%, per line item.
+- **Exemptions with a reason**: Exportación (art. 21, E2), Entrega intracomunitaria (art. 25, E5), Exenta art. 20 (E1), and Inversión del sujeto pasivo (S2). The line item **freezes** the reason when you choose it, Verifactu declares it, and the PDF cites the legal provision. Plain **Exento** lets Cord derive the reason from the client: not subject outside Spain or in an intra-community transaction with an EU VAT number, exempt inside.
+- **IRPF withholding** at 15% or 7% (new self-employed): it is subtracted from what you collect. It is not a tax you pass on to your client.
+- **Canary Islands:** the catalog starts with **IGIC** at 7, 3, and 0%. **Ceuta and Melilla:** only **Exento**, because each city sets its IPSI rates; add them by hand.
+
+## Series per issuer and fiscal year
+
+A Spanish invoice is identified by **issuer's NIF + number**, so numbering belongs to the business, not to the Cord account:
+
+- The series carries the **fiscal year** attached to the prefix and numbering starts over every year. With the prefix `F`, the first invoice of 2026 is `F2026-000001`.
+- If another Cord organization has your same NIF, it cannot use your same series: when you save your tax details Cord asks you to choose another one (for example `F2`) so the two never repeat a number.
+
+## Verifactu
+
+### What it does once activated
+
+- Each invoice generates a **registration record** with a **hash** that chains it to your business's previous invoice. The chain is never edited: not even Cord can modify a record once generated.
+- The PDF carries the AEAT **verification QR code** and the **VERI\*FACTU** legend at the top. With IRPF, "Importe total factura" (the QR's amount) and "Total a pagar" are shown separately.
+- Issuing **does not wait** for the AEAT: the record is generated when you issue and the submission runs afterwards, in the background. The invoice detail says how it is going.
+- A client without a tax ID is registered as a simplified invoice (no recipient).
+- An invoice in another currency is converted with the document's exchange rate if your accounting currency is EUR.
+
+### Status before the AEAT
+
+<DmInvoiceAuthority lang="en" rail="verifactu" />
+
+| Status | What it means |
+|---|---|
+| Waiting to be sent to the AEAT | The record exists and will go out in the next submission. |
+| Registered with the AEAT | The AEAT accepted it. |
+| Registered with errors | The AEAT accepted it with warnings: it is worth correcting. |
+| Rejected by the AEAT | The AEAT did not accept it, with its code and reason. |
+| Could not be sent to the AEAT | The record does not pass the AEAT schema and was set aside without being sent. |
+
+### Correct and void
+
+- **Correct and resend:** an invoice that was rejected, set aside, or registered with errors is corrected from its detail with a **correction record**. You can set the exemption reason of 0% line items; amounts never change. **Settings › Tax profile** lists the invoices to correct.
+- **Void:** generates a chained **cancellation record**. If the invoice never reached the AEAT, it is voided "without a previous record".
+- **Credit note:** a corrective invoice by differences (R1, or R5 if the original was simplified) that cites the corrected invoice.
+
+### Responsible declaration
+
+The **responsible declaration of the invoicing system** is Cord's, as the software producer (Orden HAC/1177/2024, art. 15): you do not sign it. When Verifactu is active, **Settings › Tax profile** links to it so you can read and print it.
+
+### What you can prepare today
+
+Upload your certificate: while registration is not active, the section says **Certificate saved, registration not active yet**. If uploading it shows "Verifactu todavía no está disponible en Cord" (Verifactu is not available in Cord yet), activation has not finished: contact us and we will let you know.
+
+## Facturae, IRPF, IGIC, and IPSI
+
+Each invoice in euros can be downloaded as **Facturae 3.2.2** from its detail and from its public link, with the same amounts as the PDF:
+
+- **IRPF** as a withholding (the base and total do not change);
+- **IVA**, **IGIC**, or **IPSI** with its rate, and exempt or non-subject transactions with their reason;
+- **reverse charge** with its legal mention;
+- the **credit note** as a corrective invoice by differences.
+
+Signed with your certificate (XAdES) if you turn signing on; unsigned otherwise. Cord does not submit it to FACe and does not capture the DIR3 codes FACe requires yet. Factur-X, XRechnung, and Peppol do not support withholdings: an invoice with IRPF can only be downloaded as Facturae. Details in [European e-invoicing](/en/docs/pagos/factura-electronica).
+
+## E-invoicing between businesses (AEAT)
+
+The law requires issuing and receiving e-invoices between businesses and professionals (Ley 18/2022 and RD 238/2026). Cord will send each invoice to a client established in Spain through the **free AEAT public solution** and report when you collected it.
+
+<DmRailSettings lang="en" rail="spfe" />
+
+- **Status: Coming soon.** The AEAT has not published its service's technical specification yet. When it does, Cord will activate it. All you need is your certificate uploaded (the same one as Verifactu).
+- **Obligation dates:** October 6, 2027 for businesses invoicing more than 8 million euros a year; October 6, 2028 for everyone else; October 6, 2029 for self-employed people up to 8 million to report payment of the invoices they receive.
+- **Meanwhile**, each invoice's detail says whether it already has the data the AEAT requires or what is missing (for example, the client's NIF or full address).
+- **Does not apply** to foreign clients, and invoices with **IRPF** will be sent once the AEAT publishes how they are declared: until then, download them as Facturae. The Basque Country and Navarre depend on their regional tax authorities.
+
+## Client and product data
+
+- **Client:** validated NIF and full address (municipality, postal code, and province) for e-invoicing between businesses; their EU VAT number if they are in another EU country (for reverse charge); their electronic address and buyer reference if they ask for them for the e-invoice.
+- **Line item:** its rate and, at 0%, its exemption reason.
+
+## Get paid online
+
+- **Card** with Cord Payments.
+- **SEPA Direct Debit** in EUR, which you turn on in **Settings › Payments**: each debit takes up to six business days to confirm and the account holder can return it for eight weeks. This feature is new.
+- Your payouts arrive at your **IBAN**, validated with its check digits. See [Payouts](/en/docs/pagos/depositos).
+
+## Plan limits
+
+| Plan | Pro formas per month | Invoices registered with Verifactu per month |
+|---|---|---|
+| Free | 10 | No tax issuance included |
+| Starter | Unlimited | 30 |
+| Pro | Unlimited | 200 |
+| Scale | Unlimited | 500 |
+| Developer | Unlimited | 1,000 |
+
+## What Cord does not cover yet
+
+- **Verifactu with IGIC, IPSI, or equivalence surcharge:** today it registers invoices with IVA; an invoice from the Canary Islands or Ceuta and Melilla cannot be registered.
+- **FACe** and the public administration's DIR3 codes.
+- **E-invoicing between businesses** until the AEAT publishes its service, and with IRPF until it publishes how it is declared.
+
+## Common problems
+
+**I uploaded my certificate and still issue pro formas.** That is expected while Verifactu is being activated.
+
+**Cord asks me for another series when saving my tax details.** Another organization with your same NIF already uses that series. Choose a different one so numbers are not repeated.
+
+**My Canary Islands invoice shows IGIC and cannot be registered.** Verifactu in Cord registers invoices with IVA today. Download it as Facturae.
+
+**The AEAT rejected an invoice.** Open it and click **Correct and resend**: Cord generates the correction.
+
+## Related
+
+- [Invoicing by country](/en/docs/pagos/paises/resumen)
+- [European e-invoicing](/en/docs/pagos/factura-electronica)
+- [Tax invoicing](/en/docs/pagos/facturacion)
+- [Create, issue, and collect invoices](/en/docs/pagos/facturas-emitidas)
+- [Payment methods](/en/docs/pagos/metodos)
+- [Payouts to your bank](/en/docs/pagos/depositos)

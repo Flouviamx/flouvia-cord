@@ -1,0 +1,159 @@
+---
+title: "Facturación en Brasil"
+seoTitle: "Facturación en Brasil con Cord: NFS-e Nacional y NF-e modelo 55"
+description: "NFS-e de Padrão Nacional para servicios y NF-e modelo 55 para productos, sin mezclarse: certificado ICP-Brasil, Simples Nacional, ISS e ICMS, contingencia, cancelación, Carta de Correção, inutilização, DANFE y cobro con tarjeta o Mercado Pago."
+lastUpdated: "2026-10-10"
+reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [BR]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Cuenta con país Brasil", "Starter o superior para emitir NFS-e o NF-e", "Certificado digital ICP-Brasil A1 (e-CNPJ) vigente", "Para la NF-e: habilitación como emisor ante la SEFAZ de tu estado"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Brasil</h1>
+  <p class="page-subtitle">Servicios con NFS-e ante el Sistema Nacional NFS-e y mercancías con NF-e ante la SEFAZ de tu estado, directo y con tu certificado.</p>
+</header>
+
+## Qué es
+
+En Brasil el documento depende de **qué vendes**, y no se mezclan:
+
+- **Servicios → NFS-e de Padrão Nacional**, generada por el Sistema Nacional NFS-e a partir de una declaración (DPS) firmada con tu certificado.
+- **Mercancías → NF-e modelo 55**, autorizada por la **SEFAZ** de tu estado antes de que salga la mercancía, con su DANFE.
+
+Cord habla directo con cada autoridad, sin intermediario, con **tu** certificado ICP-Brasil. Una factura que mezcla productos y servicios **no se emite**: Cord te pide dividirla en dos.
+
+<Callout type="info">
+La NFS-e y la NF-e están en activación: Cord las enciende país por país. Mientras tanto, Ajustes › Perfil fiscal dice **Próximamente** en sus dos secciones y tus facturas se emiten como factura comercial. Esta función es nueva y puede no estar habilitada todavía en tu cuenta. Si no la ves, escríbenos.
+</Callout>
+
+| | En Brasil |
+|---|---|
+| Divisa por defecto | BRL (la NFS-e y la NF-e solo se emiten en reales) |
+| Impuesto | Sin tasa nacional: ISS (servicios) e ICMS, IPI, PIS y COFINS (mercancías) según el riel |
+| Identificador fiscal | CNPJ / CPF, validados; acepta el CNPJ alfanumérico |
+| Documento | Factura comercial hoy; NFS-e y NF-e al activarse |
+| Autoridad | Sistema Nacional NFS-e; SEFAZ de tu estado |
+| Idioma del PDF | Portugués |
+| Cobro en línea | Tarjeta con Cord Payments y Mercado Pago |
+
+## Requisitos
+
+- **Plan:** Starter o superior para emitir NFS-e o NF-e. En Gratis, factura comercial (10 al mes).
+- **Certificado digital ICP-Brasil A1** de tu CNPJ (e-CNPJ, `.pfx`/`.p12`), o el e-CPF si emites como persona física. Lo contratas con una autoridad certificadora de la ICP-Brasil y su costo lo pagas directo a ella. Un e-CNPJ de la matriz firma por sus filiales (mismo CNPJ raíz), y el mismo certificado sirve para la NFS-e y la NF-e.
+- **NFS-e:** que tu municipio esté adherido al emisor nacional.
+- **NF-e:** estar **habilitado (credenciado) como emisor de NF-e** en la SEFAZ de tu estado y tener tu Inscrição Estadual.
+- **Permisos:** **Ajustes** para el perfil fiscal; **Cotizaciones** para emitir; **Cobranza** para anular.
+
+## Impuestos
+
+Brasil **nace sin tasa nacional** a propósito: ICMS estatal, ISS municipal y PIS/COFINS no caben en una sola tasa, y sugerir una sería peor que dejarte elegir. El catálogo trae solo **Isento**; los impuestos de cada documento los declaran sus datos fiscales (Ajustes y producto), no un porcentaje de la línea.
+
+<DmTaxCatalog lang="es" country="BR" />
+
+La reforma tributaria (CBS 0,9 % e IBS 0,1 % de prueba en 2026) tampoco se siembra: no se le cobra a quien cumple las obligaciones accesorias.
+
+## NFS-e: servicios
+
+<Steps>
+
+1. En **Ajustes › Perfil fiscal**, completa tu **CNPJ** en **Identidad de facturación**.
+2. En la sección **NFS-e**, completa el **municipio** de tu establecimiento (código IBGE de siete dígitos), la inscripción municipal si tu municipio la exige, tu **situación ante el Simples Nacional** (no optante, MEI o ME/EPP; para ME/EPP, el régimen de apuración y el porcentaje aproximado de tributos), el régimen especial municipal si tienes uno y el **servicio** de la lista nacional (LC 116/2003).
+3. Elige una **serie de DPS** exclusiva de Cord (1 a 49999) y, si quieres, el primer número.
+4. Si tus clientes te retienen el ISS, elige el **perfil de retención** de **Ajustes › Impuestos** que lo representa.
+5. Sube tu **certificado ICP-Brasil A1** con su contraseña. Cord prueba la conexión con el Sistema Nacional NFS-e al subirlo, sin efectos.
+
+</Steps>
+
+<DmRailSettings lang="es" rail="nfse" />
+
+**Cómo se arma.** Cord declara **un servicio por NFS-e**: todos los conceptos de la factura con el código configurado, y la descripción los enumera con cantidad y precio. El servicio se presta en tu municipio y el **ISS va incluido en el precio**: los conceptos no pueden sumar impuesto. La alícuota del ISS la pone tu municipio. El descuento de documento viaja como descuento incondicionado.
+
+**Lo que no se emite todavía:** servicios que tributan donde se prestan o en el tomador, obras y eventos, exportación y moneda extranjera, deducciones de base, beneficios municipales, inmunidad o no incidencia, retenciones federales (IRRF, CSLL, PIS/COFINS, INSS), intermediario y el grupo de la reforma (IBS/CBS). Cord los rechaza antes de enviar, con el motivo.
+
+**Cancelar.** **Anular factura** pide a la Sefin la cancelación de la NFS-e. Fuera del plazo o del valor que tu municipio permite, la cancelación se rechaza con el motivo y la factura sigue vigente.
+
+**Sin nota de crédito.** La NFS-e no la tiene: una nota de crédito de una NFS-e se rechaza y Cord te pide anular y emitir de nuevo.
+
+**Impresión.** El PDF de Cord acompaña a la NFS-e: imprime su número, competencia, DPS, servicio, base, alícuota e ISSQN, la chave de acceso completa y el QR de la consulta pública. El XML de la NFS-e queda guardado.
+
+## NF-e: productos
+
+<Steps>
+
+1. En **Ajustes › Perfil fiscal › NF-e**, completa el **régimen tributario** (Simples Nacional, MEI o Régimen Normal), tu **Inscrição Estadual**, la dirección del establecimiento con su **municipio IBGE** (de él salen tu estado y su SEFAZ) y el CEP.
+2. En **Operación e impuestos**, elige una **serie de NF-e** exclusiva de Cord (0 a 889), la naturaleza de la operación, cómo vendes, el flete y el **CST de PIS y COFINS** por defecto.
+3. En cada producto del catálogo, completa la sección **NF-e (venta de mercancías)**: NCM, CEST si aplica, CFOP, origen, unidad, GTIN, el ICMS de tu régimen (CSOSN en el Simples, o alícuota y FCP en el Régimen Normal), el IPI y la clasificación del IBS/CBS.
+4. En cada cliente, completa número, barrio, municipio IBGE, si es **contribuyente del ICMS** (con su IE), exento o no contribuyente, y si compra como consumidor final.
+5. Si ya subiste tu e-CNPJ para la NFS-e, la NF-e lo usa. Puedes subir otro del mismo CNPJ solo para la NF-e. Cord consulta el estado del servicio de tu SEFAZ al subirlo, sin efectos.
+
+</Steps>
+
+<DmRailSettings lang="es" rail="nfe" />
+
+**Qué cubre.** Venta en reales a un destinatario brasileño con CNPJ o CPF: **Simples Nacional y MEI** dentro del estado y a otros estados; **Régimen Normal** dentro del estado con ICMS propio, IPI, PIS/COFINS e IBS/CBS (obligatorio para el Régimen Normal desde el 3 de agosto de 2026). ICMS, PIS, COFINS, IBS y CBS van por dentro del precio; **el único impuesto que se suma a la línea es el IPI** del producto, y el total de la NF-e es igual al de Cord, al centavo.
+
+**Responsable técnico.** Las SEFAZ de **AM, MS, PE, PR, SC y TO** exigen los datos del desarrollador del sistema. Cord todavía no los tiene: si tu negocio está en uno de esos estados, Ajustes te lo dice y la NF-e no se emite.
+
+**Contingencia.** Si la SEFAZ de tu estado no responde, Cord autoriza tus NF-e en el servicio virtual de contingencia que le corresponde a tu estado y vuelve solo a tu SEFAZ cuando se restablece. Ajustes muestra el aviso mientras dura.
+
+**Cancelación (24 horas).** **Anular factura** cancela la NF-e dentro de las 24 horas de su autorización; el panel de la factura dice hasta cuándo. Después, la SEFAZ la rechaza y la factura sigue vigente.
+
+**Carta de Correção.** Desde el panel de la factura puedes emitir hasta 20 CC-e. Cada carta reemplaza a la anterior y debe repetir todo lo que siga por corregir. Una CC-e **no** puede cambiar importes, cantidades, alícuotas ni bases, el emisor o el destinatario, ni la fecha de emisión o de salida.
+
+**Inutilização.** Un número que Cord reservó y nunca llegó a ser una NF-e autorizada deja un hueco en la serie. Ajustes lista los huecos y quien administra los datos fiscales declara el rango a la SEFAZ, con una justificación. Cord nunca los declara por su cuenta.
+
+**DANFE y XML.** Cord imprime el DANFE en A4 con la chave en código de barras y guarda el XML autorizado (nfeProc), que se descarga desde la factura y desde su link público.
+
+**Lo que no se emite todavía:** sustitución tributaria (ST), DIFAL a no contribuyentes de otro estado, exportación, combustibles, retenciones, el Régimen Normal hacia otro estado, la devolución de mercancía (otra NF-e de finalidad 4) y el Simples Nacional desde el 4 de enero de 2027, cuando su grupo IBS/CBS se vuelve obligatorio sin reglas publicadas todavía.
+
+## Estado ante la autoridad
+
+<DmInvoiceAuthority lang="es" rail="nfe" />
+
+El panel lateral de cada factura dice en qué está ante la autoridad:
+
+| Estado | NFS-e | NF-e |
+|---|---|---|
+| Autorizada | NFS-e generada, con su número y chave | NF-e autorizada por la SEFAZ, con número, serie, chave y protocolo |
+| En espera | Esperando la confirmación del Sistema Nacional NFS-e | Esperando la autorización (o la confirmación) de la SEFAZ |
+| Rechazada | No generó la NFS-e, con el motivo | La SEFAZ rechazó la NF-e, con el motivo; o denegó su uso |
+| Pruebas | Ambiente de pruebas: sin validez jurídica | Homologação: sin validez jurídica |
+
+Si una respuesta se pierde, Cord **consulta** a la autoridad antes de hacer nada: nunca reenvía un documento que pudo haber llegado.
+
+## Cobrar en línea
+
+- **Tarjeta** con Cord Payments y **Mercado Pago** como alternativa en la misma página.
+- Tus depósitos llegan a tu cuenta con **código del banco**, **agência** y **conta con dígito** (Brasil no usa IBAN). Ver [Depósitos](/docs/pagos/depositos).
+
+## Límites por plan
+
+| Plan | Facturas comerciales al mes | NFS-e y NF-e incluidas al mes |
+|---|---|---|
+| Gratis | 10 | No incluye emisión fiscal |
+| Starter | Ilimitadas | 30 |
+| Pro | Ilimitadas | 200 |
+| Scale | Ilimitadas | 500 |
+| Developer | Ilimitadas | 1,000 |
+
+Los documentos de homologação no cuentan.
+
+## Problemas comunes
+
+**Mi factura no se emite y dice que mezcla productos y servicios.** Divídela en dos: los servicios van en la NFS-e y las mercancías en la NF-e.
+
+**Ajustes dice que mi estado exige datos que Cord no tiene.** Tu negocio está en AM, MS, PE, PR, SC o TO, que exigen el responsable técnico. Escríbenos.
+
+**No puedo cancelar una NF-e.** Pasaron más de 24 horas desde su autorización. Corrígela con una Carta de Correção si lo que cambia lo permite.
+
+**La NFS-e se rechazó por el municipio.** Tu municipio no está adherido o no tiene convenio activo, o el servicio tributa donde se presta. El mensaje lo dice.
+
+## Relacionadas
+
+- [Facturación por país](/docs/pagos/paises/resumen)
+- [Productos y descuentos](/docs/cotizacion/productos)
+- [Clientes y estado de cuenta](/docs/gestion/clientes)
+- [Crear, emitir y cobrar facturas](/docs/pagos/facturas-emitidas)
+- [Mercado Pago](/docs/pagos/mercado-pago)
+- [Métodos de cobro](/docs/pagos/metodos)

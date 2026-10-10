@@ -1,0 +1,175 @@
+---
+title: "Facturación en España"
+seoTitle: "Facturación en España con Cord: Verifactu, Facturae, IRPF y SEPA"
+description: "Verifactu con su certificado y la declaración responsable del sistema, Facturae con IRPF, IGIC e IPSI, la factura electrónica entre empresarios de la AEAT (próximamente), serie por emisor y ejercicio, causas de exención y cobro con tarjeta o domiciliación SEPA."
+lastUpdated: "2026-10-10"
+reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [ES]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Cuenta con país España", "NIF válido en Ajustes › Perfil fiscal", "Starter o superior y certificado electrónico (.p12/.pfx) para Verifactu"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">España</h1>
+  <p class="page-subtitle">Facturas con IVA, IRPF, IGIC o IPSI por concepto, encadenadas y registradas ante la AEAT con Verifactu, y descargables como Facturae.</p>
+</header>
+
+## Qué es
+
+En España Cord está construido para el sistema de facturación que exige la ley (**Verifactu**, RD 1007/2023): cada factura genera un registro encadenado al anterior de tu negocio que se envía a la Agencia Tributaria, y su PDF lleva el código QR de cotejo. Mientras Verifactu está en activación, Cord emite **proformas** con serie `PRO` y no registra nada ante la AEAT.
+
+Además, cada factura se descarga como **Facturae 3.2.2** (con IRPF, IGIC o IPSI) y como Factur-X, XRechnung y Peppol, y Cord tiene construida la **factura electrónica entre empresarios** por la solución pública de la AEAT, que se activará cuando la AEAT publique su servicio.
+
+| | En España |
+|---|---|
+| Divisa por defecto | EUR |
+| Impuesto | IVA; IGIC en Canarias; IPSI en Ceuta y Melilla; retención de IRPF |
+| Identificador fiscal | NIF / CIF (NIF, NIE y CIF validados, con o sin prefijo ES) |
+| Documento | Proforma hoy; factura registrada con Verifactu al activarse |
+| Autoridad | Agencia Tributaria (AEAT) |
+| Idioma del PDF | Español |
+| Cobro en línea | Tarjeta y domiciliación SEPA (EUR) con Cord Payments |
+
+<Callout type="info">
+Verifactu y la factura electrónica entre empresarios están construidos y en activación. Mientras tanto, Cord emite proformas y no envía nada a la AEAT. Esta función es nueva y puede no estar habilitada todavía en tu cuenta. Si no la ves, escríbenos.
+</Callout>
+
+## Requisitos
+
+- **Plan:** Starter o superior para Verifactu. En Gratis emites proformas (10 al mes).
+- **NIF** de tu negocio válido en **Ajustes › Perfil fiscal**.
+- **Certificado electrónico cualificado** (`.p12` o `.pfx`) de tu negocio o de su representante, con su contraseña. Lo obtienes de un prestador de servicios de certificación (por ejemplo, la FNMT); su costo, si lo tiene, lo pagas directo a él.
+- **Permisos:** **Ajustes** para el perfil fiscal y el certificado; **Cotizaciones** para emitir y corregir registros; **Cobranza** para anular.
+
+## Configura tu cuenta
+
+<Steps>
+
+1. En **Ajustes › Perfil fiscal** completa razón social, **NIF**, domicilio, ciudad, provincia y código postal, y el **prefijo de factura**. Si tu negocio está en Canarias, Ceuta o Melilla, escribe la provincia (o su código: 35, 38, 51 o 52): decide qué impuesto se siembra.
+2. Revisa el catálogo en **Ajustes › Impuestos**: IVA 21, 10 y 4 %, exenciones con su causa y las retenciones de IRPF.
+3. En la sección **Verifactu**, sube tu certificado electrónico con su contraseña. Cord lo valida, lee su caducidad y lo guarda cifrado.
+4. En **Factura electrónica europea**, completa tu contacto de facturación y, si quieres, activa **Firmar la Facturae con mi certificado electrónico**.
+
+</Steps>
+
+<DmRailSettings lang="es" rail="verifactu" state="pendiente" />
+
+## Impuestos
+
+<DmTaxCatalog lang="es" country="ES" />
+
+- **IVA** al 21, 10 y 4 %, por concepto.
+- **Exenciones con causa**: Exportación (art. 21, E2), Entrega intracomunitaria (art. 25, E5), Exenta art. 20 (E1) e Inversión del sujeto pasivo (S2). El concepto **congela** la causa al elegirla, y Verifactu la declara y el PDF cita el precepto. **Exento** a secas deja que Cord derive la causa del cliente: no sujeta fuera de España o en una operación intracomunitaria con NIF-IVA, exenta dentro.
+- **Retención de IRPF** del 15 % o del 7 % (nuevo autónomo): se resta de lo que cobras. No es un impuesto que trasladas a tu cliente.
+- **Canarias:** el catálogo nace con **IGIC** 7, 3 y 0 %. **Ceuta y Melilla:** solo **Exento**, porque cada ciudad fija las tasas de su IPSI; agrégalas a mano.
+
+## Serie por emisor y ejercicio
+
+La factura española se identifica por **NIF del emisor + número**, así que la numeración es del negocio, no de la cuenta de Cord:
+
+- La serie lleva el **año del ejercicio** pegado al prefijo y la numeración vuelve a empezar cada año. Con el prefijo `F`, la primera factura de 2026 es `F2026-000001`.
+- Si otra organización de Cord tiene tu mismo NIF, no puede usar tu misma serie: al guardar tus datos fiscales Cord te pide elegir otra (por ejemplo `F2`) para que las dos nunca repitan número.
+
+## Verifactu
+
+### Qué hace al activarse
+
+- Cada factura genera un **registro de alta** con una **huella** que la encadena con la factura anterior de tu negocio. La cadena no se edita nunca: ni Cord puede modificar un registro ya generado.
+- El PDF lleva al principio el **código QR de cotejo** de la AEAT y la leyenda **VERI\*FACTU**. Con IRPF, "Importe total factura" (el del QR) y "Total a pagar" van por separado.
+- La emisión **no espera** a la AEAT: el registro se genera al emitir y el envío corre después, en segundo plano. El detalle de la factura dice en qué va.
+- Un cliente sin identificador se registra como factura simplificada (sin destinatario).
+- La factura en otra divisa se convierte con el tipo de cambio del documento si tu divisa contable es EUR.
+
+### Estado ante la AEAT
+
+<DmInvoiceAuthority lang="es" rail="verifactu" />
+
+| Estado | Qué significa |
+|---|---|
+| Pendiente de envío a la AEAT | El registro existe y saldrá en el próximo envío. |
+| Registrada ante la AEAT | La AEAT la aceptó. |
+| Registrada con errores | La AEAT la aceptó con avisos: conviene corregirla. |
+| Rechazada por la AEAT | La AEAT no la aceptó, con su código y su motivo. |
+| No se pudo enviar a la AEAT | El registro no pasa el esquema de la AEAT y se aparcó sin enviarse. |
+
+### Corregir y anular
+
+- **Corregir y reenviar:** una factura rechazada, aparcada o registrada con errores se corrige desde su detalle con un **registro de subsanación**. Puedes fijar la causa de exención de los conceptos al 0 %; los importes nunca cambian. **Ajustes › Perfil fiscal** lista las facturas por corregir.
+- **Anular:** genera un **registro de anulación** encadenado. Si la factura nunca llegó a la AEAT, se anula "sin registro previo".
+- **Nota de crédito:** es una factura rectificativa por diferencias (R1, o R5 si la original fue simplificada) que cita la factura rectificada.
+
+### Declaración responsable
+
+La **declaración responsable del sistema de facturación** es la de Cord como productor del software (Orden HAC/1177/2024, art. 15): tú no la firmas. Cuando Verifactu esté activo, **Ajustes › Perfil fiscal** la enlaza para que la consultes e imprimas.
+
+### Qué puedes preparar hoy
+
+Sube tu certificado: mientras el registro no esté activo, la sección dice **Certificado guardado, registro aún no activo**. Si al subirlo ves "Verifactu todavía no está disponible en Cord", la activación aún no termina: escríbenos y te avisamos.
+
+## Facturae, IRPF, IGIC e IPSI
+
+Cada factura en euros se descarga como **Facturae 3.2.2** desde su detalle y desde su link público, con los mismos importes del PDF:
+
+- el **IRPF** como retención (la base y el total no cambian);
+- **IVA**, **IGIC** o **IPSI** con su tipo, y las operaciones exentas o no sujetas con su causa;
+- la **inversión del sujeto pasivo** con su mención legal;
+- la **nota de crédito** como factura rectificativa por diferencias.
+
+Firmada con tu certificado (XAdES) si activas la firma; sin firmar si no. Cord no la presenta en FACe y todavía no captura los códigos DIR3 que FACe exige. Factur-X, XRechnung y Peppol no admiten retenciones: una factura con IRPF solo se descarga como Facturae. Detalle en [Factura electrónica europea](/docs/pagos/factura-electronica).
+
+## Factura electrónica entre empresarios (AEAT)
+
+La ley obliga a emitir y recibir factura electrónica entre empresas y profesionales (Ley 18/2022 y RD 238/2026). Cord enviará cada factura a un cliente establecido en España por la **solución pública y gratuita de la AEAT** y le comunicará cuándo la cobraste.
+
+<DmRailSettings lang="es" rail="spfe" />
+
+- **Estado: Próximamente.** La AEAT todavía no publicó la especificación técnica de su servicio. Cuando lo haga, Cord lo activará. Lo único que necesitas es tu certificado subido (el mismo de Verifactu).
+- **Fechas de la obligación:** 6 de octubre de 2027 para quien factura más de 8 millones de euros al año; 6 de octubre de 2028 para el resto; 6 de octubre de 2029 para que los autónomos de hasta 8 millones informen el pago de las facturas que reciben.
+- **Mientras tanto**, el detalle de cada factura dice si ya tiene los datos que pide la AEAT o qué le falta (por ejemplo, el NIF o el domicilio completo del cliente).
+- **No aplica** a clientes extranjeros, y las facturas con **IRPF** se enviarán cuando la AEAT publique cómo se declaran: hasta entonces, descárgalas como Facturae. País Vasco y Navarra dependen de sus Haciendas Forales.
+
+## Datos del cliente y del producto
+
+- **Cliente:** NIF validado y domicilio completo (municipio, código postal y provincia) para la factura entre empresarios; su NIF-IVA si es de otro país de la UE (para la inversión del sujeto pasivo); su dirección electrónica y referencia de comprador si la pide para la factura electrónica.
+- **Concepto:** su tasa y, al 0 %, su causa de exención.
+
+## Cobrar en línea
+
+- **Tarjeta** con Cord Payments.
+- **Domiciliación SEPA** en EUR, que enciendes en **Ajustes › Cobros**: cada cargo tarda hasta seis días hábiles en confirmarse y el titular puede devolverlo durante ocho semanas. Esta función es nueva.
+- Tus depósitos llegan a tu **IBAN**, validado con su dígito de control. Ver [Depósitos](/docs/pagos/depositos).
+
+## Límites por plan
+
+| Plan | Proformas al mes | Facturas registradas con Verifactu al mes |
+|---|---|---|
+| Gratis | 10 | No incluye emisión fiscal |
+| Starter | Ilimitadas | 30 |
+| Pro | Ilimitadas | 200 |
+| Scale | Ilimitadas | 500 |
+| Developer | Ilimitadas | 1,000 |
+
+## Lo que Cord no cubre todavía
+
+- **Verifactu con IGIC, IPSI o recargo de equivalencia:** hoy registra facturas con IVA; una factura canaria o de Ceuta y Melilla no se puede registrar.
+- **FACe** y los códigos DIR3 de la administración pública.
+- **Factura electrónica entre empresarios** hasta que la AEAT publique su servicio, y con IRPF hasta que publique cómo se declara.
+
+## Problemas comunes
+
+**Subí mi certificado y sigo emitiendo proformas.** Es lo esperado mientras Verifactu está en activación.
+
+**Cord me pide otra serie al guardar mis datos fiscales.** Otra organización con tu mismo NIF ya usa esa serie. Elige una distinta para que no se repitan números.
+
+**Mi factura canaria muestra IGIC y no se puede registrar.** Verifactu en Cord registra hoy facturas con IVA. Descárgala como Facturae.
+
+**La AEAT rechazó una factura.** Ábrela y pulsa **Corregir y reenviar**: Cord genera la subsanación.
+
+## Relacionadas
+
+- [Facturación por país](/docs/pagos/paises/resumen)
+- [Factura electrónica europea](/docs/pagos/factura-electronica)
+- [Facturación fiscal](/docs/pagos/facturacion)
+- [Crear, emitir y cobrar facturas](/docs/pagos/facturas-emitidas)
+- [Métodos de cobro](/docs/pagos/metodos)
+- [Depósitos a tu banco](/docs/pagos/depositos)

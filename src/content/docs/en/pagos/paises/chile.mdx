@@ -1,0 +1,167 @@
+---
+title: "Invoicing in Chile"
+seoTitle: "Invoicing in Chile with Cord: DTE with the SII and certification"
+description: "DTE issued directly to the SII: invoice 33, exempt 34, credit note 61 and debit note 56, CAF folios, IVA calculated per document, PDF417 seal and assignable copy, guided certification with test set and books, exchange with acknowledgments, and collection with Mercado Pago."
+lastUpdated: "2026-10-10"
+reviewedBy: "Cord product and operations"
+appliesToMarkets: [CL]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Account with Chile as its country", "Starter or higher to issue DTE", "Digital certificate of the user authorized before the SII and authorized folios (CAF)"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Chile</h1>
+  <p class="page-subtitle">Electronic tax documents stamped, signed, and sent directly to the SII, with your folios and your certificate.</p>
+</header>
+
+## What it is
+
+In Chile each invoice is an **electronic tax document (DTE)** that must reach the **SII**. Cord issues it directly, without an intermediary provider: it takes the folio from the file the SII authorized, applies the **electronic seal**, signs it with your certificate, sends it to the SII, checks the verdict, and prints the seal (PDF417) on the PDF, with the assignable copy.
+
+<Callout type="info">
+Electronic invoicing with the SII is built and being activated: Cord turns it on country by country. Meanwhile, Settings › Tax profile says **Coming soon** and your invoices are issued as commercial invoices without tax validity. This feature is new and may not be enabled on your account yet. If you don't see it, contact us.
+</Callout>
+
+| | In Chile |
+|---|---|
+| Default currency | CLP, in whole pesos (another currency would be an export) |
+| Tax | IVA 19%, calculated once per document |
+| Tax ID | RUT, validated with its check digit (including K) |
+| Document | Commercial invoice today; DTE 33, 34, 56, and 61 once activated |
+| Authority | Servicio de Impuestos Internos (SII) |
+| PDF language | Spanish |
+| Online payments | Mercado Pago |
+
+## Requirements
+
+- **Plan:** Starter or higher to issue DTE. On Free, commercial invoice (10 per month).
+- Be authorized as an **electronic issuer** before the SII (with a market system), with the resolution it assigns you.
+- The **digital certificate of the person** authorized before the SII to sign your documents (`.pfx`/`.p12`), issued by an accredited certification authority. You pay its cost directly to them.
+- The **folios (CAF)** you download from the SII per document type.
+- **Permissions:** **Settings** for the tax profile, folios, and certificate; **Quotes** to issue; **Collections** for credit notes.
+
+## Set up your account
+
+<Steps>
+
+1. In **Settings › Tax profile**, complete your legal name and your **RUT** under **Invoice identity**.
+2. Under **Issuer details**, enter your **line of business (giro)** as registered, your **economic activity** codes (up to 4), your **SII office**, your comuna, city, and branch if you have one, and your resolution's **number and date** (0 in certification).
+3. Under **Folios (CAF)**, upload each type's folio file exactly as downloaded from the SII. Cord checks that it belongs to your RUT and to a type it issues.
+4. Under **Digital certificate**, upload the `.pfx`/`.p12`, its password, and the **certificate holder's RUT** if Cord cannot read it from the certificate.
+5. On each Chilean client, enter their **giro** and **comuna**: the SII requires them on every invoice.
+
+</Steps>
+
+<DmRailSettings lang="en" rail="sii" />
+
+## Document types
+
+| Type | When |
+|---|---|
+| Electronic invoice (33) | Sale with IVA. |
+| Non-taxable or exempt invoice (34) | When every line item is exempt. |
+| Credit note (61) | Voids (CodRef 1) or corrects amounts (CodRef 3) of an accepted document. |
+| Debit note (56) | Charges an additional amount on an accepted document (interest, price difference) or fully voids a credit note. |
+
+The **debit note** is created from the SII panel of an accepted document (**Issue a debit note**): it starts as a draft and is issued like any invoice. Its folios come from a CAF 56.
+
+## Taxes and IVA per document
+
+<DmTaxCatalog lang="en" country="CL" />
+
+- **IVA 19%** (default) and **Exento**. IVA is calculated **once per document**, on the total net amount, as the SII format requires: Cord calculates it that way throughout the app, not only in the DTE, so what your client saw is what is declared.
+- **Fees withholding 15.25%** (2026): applied by whoever pays the fees receipt (boleta de honorarios), it starts as non-default and **is not issued on a DTE**: Cord rejects an invoice with withholdings.
+- Amounts are in **whole pesos**.
+
+## Folios (CAF)
+
+- Each document uses one folio from a file the SII authorizes. **A used folio is never reused**, even if the document is rejected.
+- Invoice, debit note, and credit note folios **expire six months** after their authorization.
+- Settings shows how many are left of each type and warns **"request more from the SII"** when few are left: 20, or 10% of the range if greater.
+- A folio file none of whose folios has been used can be removed and uploaded again.
+
+## Status before the SII
+
+<DmInvoiceAuthority lang="en" rail="sii" />
+
+| Status | What it means |
+|---|---|
+| Accepted by the SII | With its folio and submission number; if there were objections, they are listed. |
+| Being validated by the SII | The SII validates each submission after receiving it; Cord checks the verdict and completes the invoice by itself. |
+| Waiting for the SII to confirm | Cord checks the status before doing anything. |
+| The SII rejected the document | With the reason. The folio is used; the retry takes another one. |
+
+Once the document is accepted, the panel offers the **DTE XML** (inside a submission addressed to your client's RUT) and the **assignable copy (cedible)** of invoices 33 and 34, with the Law 19,983 receipt acknowledgment. The PDF prints the box with RUT, type, and folio, the SII office, and the PDF417 seal with the verification legend.
+
+## Void or correct
+
+An accepted DTE **is not voided** with the SII: it is voided or corrected with a **credit note** that references it (CodRef 1 if it voids the total, 3 if it corrects amounts). A credit note is voided with a **debit note**.
+
+## Certification with the SII
+
+If you are not an electronic issuer yet, Cord guides you through certification from **Settings › Tax profile › Certification with the SII**, while your account is in the certification environment:
+
+<Steps>
+
+1. **Test set:** paste or open the file the SII assigned you. Cord builds each case, takes certification folios, signs them, and sends them in a single submission. You check the verdict by type; with objections or rejections, the retry uses new folios.
+2. **Books:** when the SII accepts the set, Cord also sends the **sales book** and the **purchase book** your set requires (in the purchase book you add each supplier's RUT).
+3. **Simulation:** issue representative documents from Invoices.
+4. **Exchange:** receive the documents the SII sends you and answer them (see below).
+5. **Printed samples:** download each case's PDF, with its assignable copy, and upload them on the SII site.
+6. **Compliance declaration:** your legal representative signs it on the SII site.
+
+</Steps>
+
+The set cannot include a dispatch guide (52) or its book, export documents, or an issued purchase invoice: Cord tells you when you load the file, with its attention number.
+
+## Exchange with acknowledgments
+
+Cord receives the DTE your suppliers send you (in your exchange mailbox or by uploading the XML) and answers them, signed with your certificate:
+
+- **Receipt acknowledgment** of the submission and of each document when it arrives.
+- **Result:** accepted, accepted with discrepancies, or rejected with its reason.
+- **Goods or services receipt** (Law 19,983) for what was received as agreed.
+- The same decision is **registered with the SII** (acceptance or claim) within eight calendar days.
+
+A decision cannot be changed after it is registered.
+
+## Get paid online
+
+Cord Payments does not open accounts in Chile: online collection is with **[Mercado Pago](/en/docs/pagos/mercado-pago)**, on the quote link and the invoice link. You can also record a transfer by hand.
+
+## Plan limits
+
+| Plan | Commercial invoices per month | DTE included per month |
+|---|---|---|
+| Free | 10 | No tax issuance included |
+| Starter | Unlimited | 30 |
+| Pro | Unlimited | 200 |
+| Scale | Unlimited | 500 |
+| Developer | Unlimited | 1,000 |
+
+Test set and certification documents do not count.
+
+## What Cord does not cover yet
+
+- **Electronic receipt (boleta, 39/41)**: a client without a RUT is rejected before taking a folio.
+- **Dispatch guide (52)**, **export invoice (110–112)**, and **fees receipt (boleta de honorarios)**.
+- **Withholdings** on the DTE.
+- Sales and purchase books outside certification: since 2017 the SII's Purchase and Sales Register replaces them.
+
+## Common problems
+
+**Settings says Coming soon.** Electronic invoicing with the SII is being activated. Your invoices come out as commercial invoices.
+
+**The invoice is not issued because the client's giro or comuna is missing.** Complete them on their profile.
+
+**Settings says "request more from the SII".** Few folios of that type are left: request a new CAF from the SII and upload it.
+
+**The document stayed in validation.** The SII validates after receiving; Cord checks and completes it by itself.
+
+## Related
+
+- [Invoicing by country](/en/docs/pagos/paises/resumen)
+- [Mercado Pago](/en/docs/pagos/mercado-pago)
+- [Create, issue, and collect invoices](/en/docs/pagos/facturas-emitidas)
+- [Clients and statements](/en/docs/gestion/clientes)
+- [Payment methods](/en/docs/pagos/metodos)

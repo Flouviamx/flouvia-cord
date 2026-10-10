@@ -1,0 +1,111 @@
+---
+title: "Invoicing in the United Kingdom"
+seoTitle: "Invoicing in the United Kingdom with Cord: commercial VAT invoice"
+description: "Commercial invoice with VAT per line item (20%, 5%, zero-rated, and exempt), validated VAT registration number, invoice mentions, collection by card, and what is coming with mandatory e-invoicing in 2029."
+lastUpdated: "2026-10-10"
+reviewedBy: "Cord product and operations"
+appliesToMarkets: [GB]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Account with the United Kingdom as its country", "VAT registration number in Settings › Tax profile if you are registered"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">United Kingdom</h1>
+  <p class="page-subtitle">Commercial invoice with VAT per line item, in English and in pounds, ready to be paid by card.</p>
+</header>
+
+## What it is
+
+In the United Kingdom Cord issues a **commercial invoice** with a sequential number, each line item's VAT, your **VAT registration number**, and your client's details. Today the United Kingdom has no authority that authorizes or registers invoices, so Cord's document **is** your invoice: there is no registration with HMRC to make from Cord.
+
+| | In the United Kingdom |
+|---|---|
+| Default currency | GBP |
+| Tax | VAT |
+| Tax ID | VAT reg. no., validated (HMRC modulus 97); also the Company Number |
+| Document | Commercial invoice and commercial credit note |
+| Authority | Not applicable to the invoice |
+| PDF language | English |
+| Online payments | Card with Cord Payments |
+
+## Requirements
+
+- **Plan:** any (Free: 10 invoices per month).
+- Your **VAT registration number** if you are registered: it is what the law requires on the invoice, not your UTR.
+- **Permissions:** **Settings** for the tax profile and taxes; **Quotes** to issue; **Collections** to void and credit.
+
+## Set up your account
+
+<Steps>
+
+1. In **Settings › Tax profile**, complete your legal name, your **VAT reg. no.** (with or without the GB prefix; XI for Northern Ireland), address, city, postal code, and invoice prefix.
+2. Review your catalog in **Settings › Taxes**.
+3. Activate your payments account in **Settings › Payments** to get paid by card.
+
+</Steps>
+
+<DmRailSettings lang="en" rail="identidad" country="GB" />
+
+## Taxes
+
+<DmTaxCatalog lang="en" country="GB" />
+
+- **VAT 20%** (standard, default) and **VAT 5%** (reduced).
+- **Zero-rated** and **Exempt** are two different profiles on purpose: in the United Kingdom they are different regimes (the first lets you recover input VAT; the second does not), and your return treats them differently.
+- Each line item carries its own rate; the document prints one row per rate.
+
+## Tax ID and vocabulary
+
+- The tax ID label is **VAT reg. no.** Cord validates the number with HMRC modulus 97 (including the variant for new numbers) and accepts government department numbers. It also accepts the Companies House **Company Number**, which is what payments onboarding asks a company for.
+- The tax is called **VAT** throughout the app, the PDF, and your client's link.
+
+## Client and product data
+
+- **Client:** their country and, if a registered business, their VAT number, validated with the same rule.
+- **Product:** its default rate from the catalog.
+
+## Void or correct
+
+An invoice is **voided** from its detail if it has no payments applied; with payments, it is corrected with a full or partial **credit note**.
+
+## Get paid online
+
+- **Card** with Cord Payments, on the quote link and the invoice link.
+- Your payouts arrive at your account with a **sort code** and an eight-digit account number. See [Payouts](/en/docs/pagos/depositos).
+
+## Plan limits
+
+| Plan | Invoices per month |
+|---|---|
+| Free | 10 |
+| Starter, Pro, Scale, Developer | Unlimited |
+
+## What is coming: mandatory e-invoicing
+
+The UK government confirmed that **e-invoicing between businesses** will be mandatory for VAT invoices from **April 2029**, with the Peppol network as the exchange framework. The technical specifications have not been published yet.
+
+<Callout type="warning" title="Cord does not cover it yet">
+Today Cord does not generate structured e-invoices (Peppol) for businesses in the United Kingdom: the European formats it generates are for issuers established in the European Union. Your Cord commercial invoice remains valid until the obligation takes effect.
+</Callout>
+
+## What Cord does not cover yet
+
+- **Peppol e-invoicing** for issuers in the United Kingdom.
+- **Bank debit (Bacs Direct Debit)**: online collection is by card.
+- **Making Tax Digital**: Cord does not file your VAT return; export your invoices to your accounting software or connect [QuickBooks Online](/en/docs/automatizacion/integraciones/quickbooks) or [Xero](/en/docs/automatizacion/integraciones/xero).
+
+## Common problems
+
+**Cord rejects my VAT number.** The check digits do not match. Check the number on your VAT registration certificate.
+
+**Should I enter my UTR or my VAT number?** Your VAT registration number. Whatever you enter in **VAT reg. no.** is printed on the invoice, and the UTR should never go on an invoice.
+
+**My client needs the invoice in an electronic format.** Today Cord does not generate it for the United Kingdom; send them the PDF.
+
+## Related
+
+- [Invoicing by country](/en/docs/pagos/paises/resumen)
+- [Create, issue, and collect invoices](/en/docs/pagos/facturas-emitidas)
+- [Payment methods](/en/docs/pagos/metodos)
+- [QuickBooks Online](/en/docs/automatizacion/integraciones/quickbooks)
+- [Xero](/en/docs/automatizacion/integraciones/xero)

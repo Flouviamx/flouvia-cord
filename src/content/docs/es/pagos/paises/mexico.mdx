@@ -1,0 +1,195 @@
+---
+title: "Facturación en México"
+seoTitle: "Facturación en México con Cord: CFDI 4.0, complementos y SAT"
+description: "CFDI 4.0 timbrado con tu CSD: PUE o PPD con complemento de pago, factura global, sustitución con motivo 01, claves del SAT por concepto, CFDI a extranjeros, impuestos y retenciones, cancelación y cobro con tarjeta, SPEI o Mercado Pago."
+lastUpdated: "2026-10-10"
+reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [MX]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Cuenta con país México", "Starter o superior para emitir CFDI", "Certificado de Sello Digital (CSD) vigente", "Permiso Ajustes para cargar datos fiscales; Cotizaciones para emitir; Cobranza para anular, sustituir y registrar pagos"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">México</h1>
+  <p class="page-subtitle">CFDI 4.0 timbrado ante el SAT con tu propio CSD, con el método de pago, los complementos y las claves que el SAT pide.</p>
+</header>
+
+## Qué es
+
+En México Cord emite **CFDI 4.0** timbrados ante el SAT mediante un proveedor autorizado de certificación, **bajo tu RFC y con tu Certificado de Sello Digital (CSD)**. Cargas el CSD una vez y desde ahí cada factura, nota de crédito y complemento de pago sale timbrada a tu nombre. En el plan Gratis, y cuando eliges la opción comercial, Cord emite una **proforma** con serie `PRO`, que no sustituye un CFDI.
+
+| | En México |
+|---|---|
+| Divisa por defecto | MXN (puedes facturar en otra divisa con tipo de cambio) |
+| Impuesto | IVA, con retenciones de IVA e ISR |
+| Identificador fiscal | RFC, validado con su dígito verificador |
+| Documento | CFDI 4.0 de ingreso, egreso (nota de crédito) y pago (complemento) |
+| Autoridad | SAT, mediante un proveedor autorizado de certificación |
+| Idioma del PDF | Español |
+| Cobro en línea | Tarjeta y SPEI con Cord Payments, y Mercado Pago |
+
+## Requisitos
+
+- **Plan:** Starter o superior para timbrar. En Gratis emites proformas (10 al mes).
+- **CSD vigente** de tu RFC: los archivos `.cer` y `.key` y la contraseña de la llave. Lo tramitas ante el SAT; Cord no lo emite.
+- **Datos fiscales completos** en **Ajustes › Datos fiscales**: RFC, razón social, régimen fiscal y código postal de expedición.
+- **Permisos:** **Ajustes** para cargar datos fiscales y CSD; **Cotizaciones** para crear y emitir facturas; **Cobranza** para registrar pagos, anular, sustituir y emitir notas de crédito.
+
+## Configura tu cuenta
+
+<Steps>
+
+1. Abre **Ajustes › Datos fiscales** y completa **Identificación fiscal**: RFC, razón social tal como está en tu constancia, régimen fiscal, código postal de expedición y uso de CFDI por defecto.
+2. En **Certificado de Sello Digital (CSD)**, sube tu `.cer` y tu `.key`, escribe la contraseña de la llave y pulsa **Subir CSD y conectar**. La contraseña solo se usa para descifrar la llave: no se guarda en Cord.
+3. Revisa tu catálogo en **Ajustes › Impuestos**: Cord lo siembra con IVA 16 %, IVA 8 % para la región fronteriza, Exento y las retenciones más comunes.
+4. Clasifica tus productos en **Productos**, sección **Facturación electrónica (SAT)**, con su clave de producto o servicio y su clave de unidad.
+5. Completa los datos fiscales de cada cliente en su ficha: RFC, régimen fiscal, uso de CFDI y código postal fiscal.
+
+</Steps>
+
+<DmRailSettings lang="es" rail="csd" />
+
+## Impuestos y retenciones
+
+<DmTaxCatalog lang="es" country="MX" />
+
+| Perfil sembrado | Tasa | Cómo se calcula |
+|---|---|---|
+| IVA 16% | 16 % | Traslado sobre la base de cada concepto. Es el predeterminado. |
+| IVA 8% región fronteriza | 8 % | Estímulo de la región fronteriza, vigente hasta el 31 de diciembre de 2026: revisa su vigencia antes de usarlo en 2027. |
+| Exento | 0 % | Concepto exento: no traslada IVA. |
+| Retención IVA 10.6667% | 10.6667 % | Dos terceras partes del IVA del 16 %, solo sobre lo **gravado**: un concepto exento no entra en la base. |
+| Retención ISR 1.25% | 1.25 % | Sobre el subtotal (RESICO). |
+| Retención IVA 4% (autotransporte) | 4 % | Autotransporte terrestre de carga, sobre lo gravado. |
+| Retención IVA 6% (servicios de personal) | 6 % | Servicios de personal, sobre lo gravado. |
+
+Cord envía al SAT los impuestos de **cada concepto** tal como los capturaste, no una tasa única. Las retenciones marcadas como predeterminadas se restan del total. Si facturas en otra divisa, el CFDI declara el tipo de cambio congelado al cotizar.
+
+## Datos del receptor
+
+Cord toma los datos fiscales del cliente de su ficha y no los inventa:
+
+| Dato | Si falta |
+|---|---|
+| RFC | Se timbra con el RFC genérico XAXX010101000, a nombre del cliente, con régimen 616 y el código postal de tu negocio. |
+| Régimen fiscal | 601 (General de Ley Personas Morales) si el cliente tiene RFC. |
+| Uso de CFDI | El de tu cuenta, o G03 (Gastos en general). |
+| Código postal fiscal | No hay sustituto: el SAT puede rechazar el timbrado. |
+
+Los valores por defecto pueden no coincidir con la constancia de tu cliente. Complétalos antes de emitir para que el CFDI le sirva.
+
+### Clientes en el extranjero
+
+Si el país de la ficha no es México, el CFDI se emite a un **residente en el extranjero**: RFC genérico XEXX010101000, su residencia fiscal (el país de la ficha), uso **S01** y, si lo capturaste, su identificador fiscal (EIN, NIF, VAT) como número de registro tributario. La tasa de cada concepto la decides tú con tu contador; la exportación de servicios suele ir al 0 %.
+
+<Callout type="info">
+Las claves del SAT por concepto, el CFDI a extranjeros, la factura global y la sustitución de CFDI son nuevas. Esta función es nueva y puede no estar habilitada todavía en tu cuenta. Si no la ves, escríbenos.
+</Callout>
+
+## Claves del SAT de cada concepto
+
+- Cada producto lleva su **clave de producto o servicio** (c_ClaveProdServ, 8 dígitos) y su **clave de unidad** (c_ClaveUnidad). La de producto se busca por descripción en el catálogo del SAT; la de unidad, si la dejas vacía, se deduce de la unidad del producto (hora → HUR, mes → MON, kg → KGM).
+- En el editor de facturas y de cotizaciones, **cada concepto puede llevar sus propias claves**, que ganan sobre las del producto. Duplicar un documento las conserva.
+- Un concepto sin clave propia ni producto clasificado se timbra con las genéricas **01010101** y **H87**, y el editor te avisa cuántos quedan así antes de emitir.
+- Una clave con forma inválida se rechaza al guardar, con el concepto nombrado.
+
+## Método de pago: PUE, PPD y complemento de pago
+
+Cord decide el método al timbrar, con los cobros reales de la factura:
+
+- **PUE (pago en una sola exhibición)** cuando la factura ya está pagada completa al emitirse, con la forma de pago del cobro (tarjeta 04, transferencia 03, efectivo 01, cheque 02). Puedes fijar la forma a mano en el editor; solo aplica a un PUE.
+- **PPD (pago en parcialidades o diferido)** con forma 99 cuando la factura se emite antes de cobrarse.
+- Por cada pago que registres sobre un CFDI PPD, Cord timbra automáticamente un **complemento de pago (CFDI tipo P)** relacionado con la factura. Lo ves en la actividad de la factura.
+- Un CFDI a "público en general" (RFC genérico) se timbra siempre PUE: no admite complemento.
+
+<Callout type="warning" title="Cuándo el complemento no es automático">
+Si el cobro está en otra divisa, el complemento necesita el tipo de cambio oficial del día del pago, y si el cobro es anterior a la factura es un anticipo, que el SAT documenta con otro procedimiento. En los dos casos Cord no lo timbra y la actividad de la factura dice por qué: emítelo con tu contador. Si un complemento no se pudo timbrar por otra causa (por ejemplo, la cuota de tu plan), escríbenos para reintentarlo.
+</Callout>
+
+Cada complemento de pago cuenta como un documento fiscal de tu cuota mensual.
+
+## Estado de la factura
+
+<DmInvoiceAuthority lang="es" rail="cfdi" />
+
+En el detalle de la factura ves el **folio fiscal (UUID)** que asignó el SAT, las claves de cada concepto, los impuestos por tasa, lo pagado y el saldo. La actividad registra la emisión, el envío, cuándo el cliente la abrió y cada pago. El PDF y el XML se descargan desde la factura y desde su link público.
+
+## Factura global al público en general
+
+Las ventas cobradas sin que el cliente pidiera factura se documentan en **Facturas › Factura global**:
+
+<Steps>
+
+1. Elige la **periodicidad** (diaria, semanal, quincenal, mensual o bimestral; la bimestral solo con régimen 621), el **mes** y el **año**. En las periodicidades cortas, elige además el tramo de días.
+2. Revisa la lista: Cord muestra las cotizaciones **cobradas** en el periodo que no tienen factura propia ni otra global, y dice por qué excluye las demás (otra divisa, retenciones, cliente extranjero o una tasa distinta de 0, 8 o 16 %).
+3. Ajusta la forma de pago si hace falta (por defecto, la de la venta de mayor importe) y emite.
+
+</Steps>
+
+La global se timbra a PUBLICO EN GENERAL (XAXX010101000, régimen 616, uso S01, método PUE), con un concepto por venta y por tasa: clave 01010101, unidad ACT y el folio de la venta como número de identificación. Una venta incluida en una global vigente no se puede facturar aparte: si el cliente pide su factura, cancela la global con el motivo 04 y emítela de nuevo sin esa venta.
+
+## Cancelar, sustituir y acreditar
+
+**Cancelar.** Al anular un CFDI, Cord te pide el **motivo del SAT**:
+
+| Motivo | Cuándo |
+|---|---|
+| 02 | Comprobante emitido con errores, sin relación. |
+| 03 | La operación no se llevó a cabo. |
+| 04 | Operación nominativa relacionada en una factura global (solo en la global). |
+| 01 | Comprobante con errores con relación: se usa con **Sustituir CFDI**. |
+
+La solicitud de cancelación no anula el CFDI hasta que el SAT la confirma. Mientras tanto la factura dice que está en proceso y puedes pulsar **Consultar cancelación**. Una factura con pagos aplicados no se anula: se corrige con nota de crédito.
+
+**Sustituir CFDI (motivo 01).** Desde la factura, **Sustituir CFDI** crea un borrador con los datos del original para que corrijas lo necesario. Al emitirlo, Cord lo relaciona con el original (relación 04), le pasa los cobros del original y pide la cancelación del original con el motivo 01 y el UUID del sustituto. No se puede sustituir una factura con notas de crédito vigentes ni con complementos de pago emitidos: el SAT no deja cancelar un CFDI con comprobantes relacionados vigentes.
+
+**Nota de crédito.** Es un CFDI de egreso relacionado con el UUID original (relación 01), con uso G02 cuando el cliente tiene RFC. Conserva los conceptos, las tasas y las retenciones originales; puede ser total o parcial.
+
+## Cobrar en línea
+
+- **Tarjeta** con Cord Payments, en el link de la cotización y en el de la factura.
+- **SPEI automático** en cobros en **MXN** de la cotización: cada cobro tiene su propia CLABE y se concilia solo.
+- **Mercado Pago**, como alternativa en la misma página.
+- La comisión de Cord Payments aplica a los cobros en MXN; Cord te emite cada mes su propio CFDI por esa comisión. Ver [Tarifas](/docs/pagos/condiciones).
+- Tus depósitos llegan a tu cuenta **CLABE**, validada con su dígito de control. Ver [Depósitos](/docs/pagos/depositos).
+
+## Límites por plan
+
+| Plan | Proformas al mes | CFDI incluidos al mes |
+|---|---|---|
+| Gratis | 10 | No incluye timbrado |
+| Starter | Ilimitadas | 30 |
+| Pro | Ilimitadas | 200 |
+| Scale | Ilimitadas | 500 |
+| Developer | Ilimitadas | 1,000 |
+
+Cada CFDI de ingreso, nota de crédito, complemento de pago y factura global cuenta una vez. Desde Starter, los adicionales se cobran como excedente. Ver [Tu suscripción a Cord](/docs/cuenta/suscripcion).
+
+## Lo que Cord no cubre todavía
+
+- **Complemento de Comercio Exterior.** La exportación definitiva de mercancías (clave A1) lo exige; Cord timbra la exportación como "No aplica" y no emite ese complemento.
+- **IEPS** y la tasa cero gravada como clasificación propia: Cord no los infiere de un porcentaje.
+- **Complemento de pago en otra divisa y anticipos**: se documentan fuera de Cord, como se explica arriba.
+- **Cancelación con respuesta del receptor automática**: la consulta del estado de la cancelación es manual, con **Consultar cancelación**.
+
+## Problemas comunes
+
+**Mi factura salió como proforma.** Revisa tu plan (Starter o superior), que tu CSD esté cargado y vigente, y que no hayas elegido la opción comercial al emitir.
+
+**Mi cliente dice que su CFDI no le sirve.** Revisa en su ficha el régimen fiscal, el código postal fiscal y el uso de CFDI; si faltaban, Cord usó valores por defecto. Corrige y sustituye el CFDI con el motivo 01.
+
+**El editor dice que hay conceptos con clave genérica.** Asigna la clave en el producto o en el concepto antes de emitir.
+
+**No puedo sustituir una factura.** Tiene notas de crédito vigentes o complementos de pago emitidos. Cancela primero esos comprobantes o escríbenos.
+
+**La cancelación sigue en proceso.** El SAT espera la aceptación del receptor en algunos casos. Pulsa **Consultar cancelación** para ver el estado.
+
+## Relacionadas
+
+- [Facturación por país](/docs/pagos/paises/resumen)
+- [Certificado de Sello Digital](/docs/cuenta/csd)
+- [Aprobación y facturación](/docs/cotizacion/timbrado)
+- [Crear, emitir y cobrar facturas](/docs/pagos/facturas-emitidas)
+- [Facturación fiscal](/docs/pagos/facturacion)
+- [Métodos de cobro](/docs/pagos/metodos)
+- [Mercado Pago](/docs/pagos/mercado-pago)

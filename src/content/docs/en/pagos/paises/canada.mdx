@@ -1,0 +1,117 @@
+---
+title: "Invoicing in Canada"
+seoTitle: "Invoicing in Canada with Cord: GST, HST, QST, PST, and RST"
+description: "Commercial invoice with GST or HST and your province's tax (QST, PST, or RST) broken out on separate rows, catalog by province, QST number, validated Business Number, and collection by card."
+lastUpdated: "2026-10-10"
+reviewedBy: "Cord product and operations"
+appliesToMarkets: [CA]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Account with Canada as its country", "Your province or territory in Settings › Tax profile", "Settings permission for the tax profile and taxes"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Canada</h1>
+  <p class="page-subtitle">The federal and provincial taxes are charged together and printed separately, as the CRA and Revenu Québec expect.</p>
+</header>
+
+## What it is
+
+In Canada Cord issues a **commercial invoice** with a sequential number. Canada has no invoice that is filed with the authority, but it does have a rule the document must follow: in Quebec, British Columbia, Saskatchewan, and Manitoba the provincial tax (**QST**, **PST**, or **RST**) is charged **together with** the 5% **GST**, not instead of it, and in the harmonized provinces **HST** is charged. Cord stores one combined rate per line item and the document splits it into its taxes.
+
+| | In Canada |
+|---|---|
+| Default currency | CAD |
+| Tax | GST/HST and your province's tax |
+| Tax ID | BN / GST/HST no., validated; separate QST number |
+| Document | Commercial invoice and commercial credit note |
+| Authority | Not applicable to the invoice |
+| PDF language | English |
+| Online payments | Card with Cord Payments |
+
+## Requirements
+
+- **Plan:** any (Free: 10 invoices per month).
+- **Province or territory** in **Settings › Tax profile**: the catalog and the name of the provincial tax come from it.
+- **Permissions:** **Settings** for the tax profile and taxes; **Quotes** to issue.
+
+## Set up your account
+
+<Steps>
+
+1. In **Settings › Tax profile**, complete your legal name, your **BN / GST/HST no.** (nine digits, with or without the RT0001 program account), and your address, and choose your **province or territory** in the selector.
+2. If you are registered for the Quebec sales tax, enter your **QST registration number** (ten digits, TQ, and four digits). It is printed next to your GST/HST number.
+3. Open **Settings › Taxes** and review your province's catalog. If you created it before choosing a province and did not touch it, Cord seeds it again when you choose one.
+
+</Steps>
+
+<DmRailSettings lang="en" rail="identidad" country="CA" />
+
+## Taxes by province
+
+The catalog starts with **your province's rate as the default**, **GST 5%** alone (for selling to provinces without their own tax), and the **HST** of the harmonized provinces, which is charged when selling into them. Another province's provincial tax (QST, PST, or RST) is only charged if you are registered there: add it by hand.
+
+| Business's province | Default rate | Printed as |
+|---|---|---|
+| Quebec | 14.975% | GST 5% + QST 9.975% |
+| British Columbia | 12% | GST 5% + PST 7% |
+| Manitoba | 12% | GST 5% + RST 7% |
+| Saskatchewan | 11% | GST 5% + PST 6% |
+| Ontario | 13% | HST 13% |
+| Nova Scotia | 14% | HST 14% |
+| New Brunswick, Newfoundland and Labrador, Prince Edward Island | 15% | HST 15% |
+| Alberta, territories | 5% | GST 5% |
+
+The rates are the CRA's since April 1, 2025 (Nova Scotia went down from 15% to 14%). An exempt or zero-rated line item uses **Zero-rated**: Cord stores the rate, not the regime, so a single 0% row covers both cases.
+
+<DmTaxCatalog lang="en" country="CA" region="QC" />
+
+## How the breakdown looks
+
+The federal tax is calculated on the base and the provincial tax keeps the rest, so the sum of the two is exactly what was charged. The breakdown appears on the PDF, on the invoice link, on the quote link (also while your client reviews it live), on the printout, on the quote and invoice detail, and in the three editors.
+
+<DmSalesTaxBreakdown lang="en" variant="ca" />
+
+If an older quote or recurrence still had a standalone provincial rate frozen (QST 9.975%, PST or RST 7%, PST 6%), Cord reads it as the equivalent combined rate: your intention was to charge that province's tax, not to leave out the GST.
+
+## Client and product data
+
+- **Client:** their country and, if a business, their BN or GST/HST number, validated with its check digit. You choose each line item's rate according to where you sell: Cord does not calculate tax from the client's address in Canada.
+- **Product:** its default rate can be any in the catalog.
+
+## Void or correct
+
+A commercial invoice is **voided** from its detail if it has no payments applied; with payments, it is corrected with a full or partial **credit note**, which keeps the invoice's rates and breakdown.
+
+## Get paid online
+
+- **Card** with Cord Payments, on the quote link and the invoice link.
+- Your payouts arrive at your account with a **transit number**, **institution number**, and account number. See [Payouts](/en/docs/pagos/depositos).
+
+## Plan limits
+
+| Plan | Commercial invoices per month |
+|---|---|
+| Free | 10 |
+| Starter, Pro, Scale, Developer | Unlimited |
+
+## What Cord does not cover yet
+
+- **Automatic calculation from the client's address**: in Canada you choose each line item's rate (the calculation by address is for the United States only).
+- **Invoices in French with TPS, TVQ, and TVH**: invoices of an account in Canada are written in English.
+- **Bank debit**: online collection is by card.
+
+## Common problems
+
+**My invoice shows only GST on a sale in Quebec.** The line item has the 5% rate. Choose **GST 5% + QST 9.975%** on the line.
+
+**My province is not in the catalog.** Check that the province is chosen in **Settings › Tax profile**. If you had already edited your catalog, Cord does not reseed it: add the rate with **+ New tax**.
+
+**Cord rejects my QST number.** It must have ten digits, TQ, and four digits, for example 1234567890TQ0001.
+
+## Related
+
+- [Invoicing by country](/en/docs/pagos/paises/resumen)
+- [United States](/en/docs/pagos/paises/estados-unidos)
+- [Create, issue, and collect invoices](/en/docs/pagos/facturas-emitidas)
+- [Products and discounts](/en/docs/cotizacion/productos)
+- [Payment methods](/en/docs/pagos/metodos)

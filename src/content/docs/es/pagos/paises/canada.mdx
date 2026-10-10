@@ -1,0 +1,117 @@
+---
+title: "Facturación en Canadá"
+seoTitle: "Facturación en Canadá con Cord: GST, HST, QST, PST y RST"
+description: "Factura comercial con GST o HST y el impuesto provincial de tu provincia (QST, PST o RST) desglosados en renglones separados, catálogo por provincia, número de QST, Business Number validado y cobro con tarjeta."
+lastUpdated: "2026-10-10"
+reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [CA]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Cuenta con país Canadá", "Tu provincia o territorio en Ajustes › Perfil fiscal", "Permiso Ajustes para el perfil fiscal y los impuestos"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Canadá</h1>
+  <p class="page-subtitle">El impuesto federal y el provincial se cobran juntos y se imprimen por separado, como los pide la CRA y Revenu Québec.</p>
+</header>
+
+## Qué es
+
+En Canadá Cord emite una **factura comercial** con folio consecutivo. Canadá no tiene una factura que se presente ante la autoridad, pero sí una regla que el documento debe respetar: en Quebec, Columbia Británica, Saskatchewan y Manitoba el impuesto provincial (**QST**, **PST** o **RST**) se cobra **junto** al 5 % del **GST**, no en su lugar, y en las provincias armonizadas se cobra la **HST**. Cord guarda una tasa combinada por concepto y el documento la separa en sus impuestos.
+
+| | En Canadá |
+|---|---|
+| Divisa por defecto | CAD |
+| Impuesto | GST/HST y el provincial de tu provincia |
+| Identificador fiscal | BN / GST/HST no., validado; número de QST aparte |
+| Documento | Factura comercial y nota de crédito comercial |
+| Autoridad | No aplica a la factura |
+| Idioma del PDF | Inglés |
+| Cobro en línea | Tarjeta con Cord Payments |
+
+## Requisitos
+
+- **Plan:** cualquiera (Gratis: 10 facturas al mes).
+- **Provincia o territorio** en **Ajustes › Perfil fiscal**: de ella sale el catálogo y el nombre del impuesto provincial.
+- **Permisos:** **Ajustes** para el perfil fiscal y los impuestos; **Cotizaciones** para emitir.
+
+## Configura tu cuenta
+
+<Steps>
+
+1. En **Ajustes › Perfil fiscal** completa la razón social, tu **BN / GST/HST no.** (nueve dígitos, con o sin la cuenta de programa RT0001), el domicilio y elige tu **provincia o territorio** en el selector.
+2. Si estás registrado en el impuesto de Quebec, escribe tu **número de registro de QST** (diez dígitos, TQ y cuatro dígitos). Se imprime junto a tu número de GST/HST.
+3. Abre **Ajustes › Impuestos** y revisa el catálogo de tu provincia. Si lo creaste antes de elegir provincia y no lo tocaste, Cord lo vuelve a sembrar al elegirla.
+
+</Steps>
+
+<DmRailSettings lang="es" rail="identidad" country="CA" />
+
+## Impuestos por provincia
+
+El catálogo nace con la **tasa de tu provincia como predeterminada**, el **GST 5 %** solo (para vender a provincias sin impuesto propio) y las **HST** de las provincias armonizadas, que se cobran al vender hacia ellas. El impuesto provincial de **otra** provincia (QST, PST o RST) solo se cobra si estás registrado ahí: agrégalo a mano.
+
+| Provincia del negocio | Tasa predeterminada | Se imprime como |
+|---|---|---|
+| Quebec | 14.975 % | GST 5 % + QST 9.975 % |
+| Columbia Británica | 12 % | GST 5 % + PST 7 % |
+| Manitoba | 12 % | GST 5 % + RST 7 % |
+| Saskatchewan | 11 % | GST 5 % + PST 6 % |
+| Ontario | 13 % | HST 13 % |
+| Nueva Escocia | 14 % | HST 14 % |
+| Nuevo Brunswick, Terranova y Labrador, Isla del Príncipe Eduardo | 15 % | HST 15 % |
+| Alberta, territorios | 5 % | GST 5 % |
+
+Las tasas son las de la CRA desde el 1 de abril de 2025 (Nueva Escocia bajó de 15 % a 14 %). Un concepto exento o de tasa cero usa **Zero-rated**: Cord guarda la tasa, no el régimen, así que un solo renglón al 0 % sirve para los dos casos.
+
+<DmTaxCatalog lang="es" country="CA" region="QC" />
+
+## Cómo se ve el desglose
+
+El impuesto federal se calcula sobre la base y el provincial se queda con el resto, de modo que la suma de los dos es exactamente lo cobrado. El desglose aparece en el PDF, en el link de la factura, en el link de la cotización (también mientras tu cliente la revisa en vivo), en la impresión, en el detalle de la cotización y de la factura, y en los tres editores.
+
+<DmSalesTaxBreakdown lang="es" variant="ca" />
+
+Si una cotización o recurrencia anterior todavía tenía congelada una tasa provincial suelta (QST 9.975 %, PST o RST 7 %, PST 6 %), Cord la lee como la combinada equivalente: tu intención era cobrar el impuesto de esa provincia, no dejar fuera el GST.
+
+## Datos del cliente y del producto
+
+- **Cliente:** su país y, si es empresa, su BN o número de GST/HST, validado con su dígito de control. La tasa de cada concepto la eliges tú según hacia dónde vendes: Cord no calcula el impuesto por la dirección del cliente en Canadá.
+- **Producto:** su tasa predeterminada puede ser cualquiera del catálogo.
+
+## Anular o corregir
+
+Una factura comercial se **anula** desde su detalle si no tiene pagos aplicados; con pagos, se corrige con una **nota de crédito** total o parcial, que conserva las tasas y el desglose de la factura.
+
+## Cobrar en línea
+
+- **Tarjeta** con Cord Payments, en el link de la cotización y de la factura.
+- Tus depósitos llegan a tu cuenta con **transit number**, **institution number** y número de cuenta. Ver [Depósitos](/docs/pagos/depositos).
+
+## Límites por plan
+
+| Plan | Facturas comerciales al mes |
+|---|---|
+| Gratis | 10 |
+| Starter, Pro, Scale, Developer | Ilimitadas |
+
+## Lo que Cord no cubre todavía
+
+- **Cálculo automático por la dirección del cliente**: en Canadá eliges la tasa de cada concepto (el cálculo por dirección es solo de Estados Unidos).
+- **Factura en francés con TPS, TVQ y TVH**: la factura de una cuenta en Canadá se escribe en inglés.
+- **Domiciliación bancaria**: el cobro en línea es con tarjeta.
+
+## Problemas comunes
+
+**Mi factura muestra solo el GST en una venta en Quebec.** El concepto tiene la tasa de 5 %. Elige **GST 5% + QST 9.975%** en la línea.
+
+**Mi provincia no aparece en el catálogo.** Revisa que la provincia esté elegida en **Ajustes › Perfil fiscal**. Si ya habías editado tu catálogo, Cord no lo resiembra: agrega la tasa con **+ Nuevo impuesto**.
+
+**Cord rechaza mi número de QST.** Debe tener diez dígitos, TQ y cuatro dígitos, por ejemplo 1234567890TQ0001.
+
+## Relacionadas
+
+- [Facturación por país](/docs/pagos/paises/resumen)
+- [Estados Unidos](/docs/pagos/paises/estados-unidos)
+- [Crear, emitir y cobrar facturas](/docs/pagos/facturas-emitidas)
+- [Productos y descuentos](/docs/cotizacion/productos)
+- [Métodos de cobro](/docs/pagos/metodos)

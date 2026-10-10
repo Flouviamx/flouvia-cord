@@ -1,0 +1,136 @@
+---
+title: "Facturación en Perú"
+seoTitle: "Facturación en Perú con Cord: factura electrónica ante SUNAT"
+description: "Factura y nota de crédito electrónicas enviadas directo a SUNAT (SEE del contribuyente) con CDR, QR y valor resumen: serie F, IGV exonerado o inafecto, tasa MYPE, retención del IGV informada, forma de pago, lo que no cubre (boleta) y cobro con Mercado Pago."
+lastUpdated: "2026-10-10"
+reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [PE]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Cuenta con país Perú", "Starter o superior para emitir con SUNAT", "Afiliación como emisor electrónico desde tus sistemas, certificado digital registrado y usuario SOL secundario"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Perú</h1>
+  <p class="page-subtitle">Facturas y notas de crédito firmadas con tu certificado y enviadas directo a SUNAT, que las acepta con su constancia de recepción.</p>
+</header>
+
+## Qué es
+
+En Perú cada factura se envía a **SUNAT**, que la acepta con una **constancia de recepción (CDR)**. Cord la envía **directo** como tu sistema de emisión (SEE del contribuyente), sin OSE ni PSE: la firma con **tu** certificado digital, la envía con tu usuario SOL secundario e imprime el código QR y el valor resumen en el PDF.
+
+<Callout type="info">
+La factura electrónica con SUNAT está construida y en activación: Cord la enciende país por país. Mientras tanto, Ajustes › Perfil fiscal dice **Próximamente** y tus facturas se emiten como factura comercial sin validez fiscal. Esta función es nueva y puede no estar habilitada todavía en tu cuenta. Si no la ves, escríbenos.
+</Callout>
+
+| | En Perú |
+|---|---|
+| Divisa por defecto | PEN |
+| Impuesto | IGV 18 %; exonerado e inafecto; tasa MYPE |
+| Identificador fiscal | RUC, validado con su prefijo y dígito verificador |
+| Documento | Factura comercial hoy; factura (01) y nota de crédito (07) electrónicas al activarse |
+| Autoridad | SUNAT |
+| Idioma del PDF | Español |
+| Cobro en línea | Mercado Pago |
+
+## Requisitos
+
+- **Plan:** Starter o superior para emitir con SUNAT. En Gratis, factura comercial (10 al mes).
+- En **SUNAT Operaciones en Línea**: afiliarte como emisor electrónico desde tus sistemas (SEE del contribuyente), **registrar tu certificado digital**, crear un **usuario SOL secundario** con el perfil de envío de comprobantes y reservar una **serie F** para Cord.
+- Un **certificado digital** a nombre de tu RUC (`.p12`/`.pfx`, o certificado y llave). Su costo, si lo tiene, lo pagas directo a quien lo emite.
+- **Permisos:** **Ajustes** para el perfil fiscal; **Cotizaciones** para emitir; **Cobranza** para la nota de crédito.
+
+## Configura tu cuenta
+
+<Steps>
+
+1. En **Ajustes › Perfil fiscal** completa la razón social y tu **RUC** en **Identidad de facturación**.
+2. En **Factura electrónica con SUNAT**, elige tu **serie de facturas** (por ejemplo F001) y, si ya emitiste en ella desde otro sistema, el **último número**, para que Cord continúe después. Haz lo mismo con las notas de crédito.
+3. Elige **qué vendes**, si tus conceptos sin IGV son **exonerados** o **inafectos**, y tu código de establecimiento.
+4. Marca lo que aplique: régimen **MYPE** de restaurantes y hoteles, detracciones, agente de percepción o que no te retienen IGV. Lista el **RUC de tus clientes que son agentes de retención**.
+5. Guarda tu **usuario SOL secundario** (sin el RUC) y su clave. Cord los prueba con una consulta sin efectos.
+6. Sube tu **certificado digital**.
+
+</Steps>
+
+<DmRailSettings lang="es" rail="sunat" />
+
+## Impuestos
+
+<DmTaxCatalog lang="es" country="PE" />
+
+- **IGV 18 %** (predeterminado). Una factura lleva una sola tasa de IGV.
+- **Exonerado** e **Inafecto** son cosas distintas: exonerado es el término de SUNAT para una operación liberada; inafecto, una fuera del campo del impuesto. Cord declara tus conceptos al 0 % según lo que indiques en Ajustes, nunca lo adivina.
+- **Régimen MYPE** de restaurantes, hoteles y alojamientos turísticos (Leyes 31556 y 32219): solo si lo declaras en Ajustes, con la tasa publicada para el año: **10,5 % en 2026** y **15 % en 2027**. Sin tasa publicada para el año, no se acepta.
+- El catálogo no trae una "retención IGV": la retención la practica tu cliente, no tú (ver abajo).
+
+## Retención del IGV
+
+La retención del IGV la practica **el cliente** que SUNAT designó **agente de retención**, al pagarte. Tú la **informas** en la factura:
+
+- Lista en Ajustes el RUC de tus clientes que son agentes de retención (o márcate excluido si no te retienen).
+- En una venta **gravada, al crédito y de más de S/ 700** a uno de esos clientes, la factura informa la **retención del 3 %** del total y el **monto neto pendiente** la descuenta.
+- En otra moneda, Cord necesita el tipo de cambio a soles congelado del documento; sin él no se envía.
+- El total de la factura no cambia: la retención se informa, no se resta.
+
+## Forma de pago
+
+Cada factura declara su forma de pago: **contado**, o **crédito** con el monto neto pendiente y la cuota con su vencimiento (de la fecha de vencimiento de la factura), descontando lo ya cobrado. El monto en letras ("SON: …") también va impreso.
+
+## Estado ante SUNAT
+
+<DmInvoiceAuthority lang="es" rail="sunat" />
+
+| Estado | Qué significa |
+|---|---|
+| Aceptada por SUNAT | Con su constancia y su valor resumen; si hubo observaciones, se listan. |
+| Esperando la confirmación de SUNAT | Cord consulta el estado antes de hacer nada: nunca reenvía en producción. |
+| SUNAT no aceptó la factura | Rechazada con el motivo; el número quedó usado y el siguiente intento toma otro. |
+| Servicio de pruebas (beta) | Sin validez fiscal. |
+
+El PDF imprime el RUC, la serie y el número, el adquirente, las operaciones por afectación, el IGV, el total, la forma de pago, la retención si aplica, el valor resumen, la leyenda de representación impresa y el QR. El XML aceptado se descarga desde la factura y desde su link público.
+
+## Anular o corregir
+
+La comunicación de baja solo procede con facturas que no se entregaron al cliente, y Cord la entrega al emitirla. Por eso una factura aceptada **se compensa con una nota de crédito**: tipo **01 (anulación de la operación)** si la acredita completa, o **09 (disminución en el valor)** si acredita una parte. La nota de crédito comparte la serie de facturas con su propia numeración.
+
+## Clientes del exterior
+
+Un cliente fuera de Perú es una **exportación**: se informa con su identificación tributaria, como exportación de bienes o de servicios (con el país de uso).
+
+## Cobrar en línea
+
+Cord Payments no abre cuentas en Perú: el cobro en línea es con **[Mercado Pago](/docs/pagos/mercado-pago)**, en el link de la cotización y de la factura. También puedes registrar a mano una transferencia.
+
+## Límites por plan
+
+| Plan | Facturas comerciales al mes | Comprobantes SUNAT incluidos al mes |
+|---|---|---|
+| Gratis | 10 | No incluye emisión fiscal |
+| Starter | Ilimitadas | 30 |
+| Pro | Ilimitadas | 200 |
+| Scale | Ilimitadas | 500 |
+| Developer | Ilimitadas | 1,000 |
+
+## Lo que Cord no cubre todavía
+
+- **Boleta de venta** y su resumen diario: un cliente peruano sin RUC se rechaza antes de enviar, con un mensaje que lo dice.
+- **Comunicación de baja**, **nota de débito**, **detracciones (SPOT)** y **percepciones**: marcarlas en Ajustes deja el riel sin activar, para no emitir a medias.
+- Anticipos, operaciones gratuitas, ISC, ICBPER, IVAP, varias cuotas por factura y guía de remisión.
+
+## Problemas comunes
+
+**Ajustes dice Próximamente.** La factura electrónica con SUNAT está en activación.
+
+**Mi cliente no tiene RUC y la factura no se emite.** A un cliente sin RUC se le emite boleta, que Cord todavía no emite.
+
+**La factura dice que falta el tipo de cambio.** Está en otra moneda y no tiene un tipo de cambio a soles congelado: sin él, la retención del IGV no se puede informar y la factura no se envía.
+
+**SUNAT rechaza el certificado.** Debe mencionar tu RUC y, en producción, estar registrado en SUNAT Operaciones en Línea.
+
+## Relacionadas
+
+- [Facturación por país](/docs/pagos/paises/resumen)
+- [Mercado Pago](/docs/pagos/mercado-pago)
+- [Crear, emitir y cobrar facturas](/docs/pagos/facturas-emitidas)
+- [Clientes y estado de cuenta](/docs/gestion/clientes)
+- [Métodos de cobro](/docs/pagos/metodos)

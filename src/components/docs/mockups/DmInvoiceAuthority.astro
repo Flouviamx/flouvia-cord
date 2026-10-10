@@ -1,0 +1,338 @@
+---
+// Mockup: el detalle de una factura emitida (/app/facturas/[id]) con su estado
+// ante la autoridad fiscal del país, parametrizable con `rail`:
+//
+//   cfdi       México: folio fiscal (UUID) y actividad de la factura
+//   verifactu  España: registro de Verifactu + factura electrónica de la AEAT
+//   frpa       Francia: plataforma autorizada (estados 200–213)
+//   xrechnung  Alemania: formatos de factura electrónica descargables
+//   arca · nfse · nfe · sunat · sii · dian   Rieles de LatAm
+//
+// Calca de src/pages/app/facturas/[id].astro (.fd-head, .fd-items,
+// .fd-totals, .fd-side) y de los paneles reales de la columna lateral:
+// ArcaEstadoFactura, NfseEstadoFactura, NfeEstadoFactura, SunatEstadoFactura,
+// SiiEstadoFactura, DianEstadoFactura, FrPaEstadoFactura, SpfeEstadoFactura y
+// el bloque de Verifactu de la página. Los títulos de estado se copian de esos
+// componentes (viven en línea, no en el diccionario); las etiquetas comunes
+// salen de dmT(). Los renglones de impuesto se rotulan como en la pantalla real:
+// solo la tasa ("16%"), salvo Canadá y el sales tax por dirección.
+//
+// Se recorta, no se inventa: la columna lateral real empieza con Acciones y
+// Actividad; aquí se dibujan "Datos de la factura" y el panel de la autoridad.
+// A este ancho la pantalla real apila esa columna debajo del detalle; el
+// estado de la factura vive en la barra superior y no se dibuja.
+import DocsMockup from './DocsMockup.astro';
+import DmIcon from './DmIcon.astro';
+import DmMoney from './DmMoney.astro';
+import { dmT, initials, type DmLang } from './format';
+import './dm-fiscal.css';
+import { getCountryProfile } from '../../../lib/countries';
+import { ESTADOS_DGFIP } from '../../../lib/fiscal/transmision/estados';
+
+type Rail = 'cfdi' | 'verifactu' | 'frpa' | 'xrechnung' | 'arca' | 'nfse' | 'nfe' | 'sunat' | 'sii' | 'dian';
+interface Props { lang: DmLang; rail: Rail; caption?: string }
+const { lang, rail } = Astro.props;
+const en = lang === 'en';
+const tx = (es: string, enText: string) => (en ? enText : es);
+
+interface Linea { d: string; sub?: string; q: number; p: number }
+interface Estado { tone: 'ok' | 'wait' | 'err' | 'soon'; title: string; smalls: { t: string; mono?: boolean; ok?: boolean }[] }
+interface Panel {
+    h: string;
+    trat?: string;
+    estado: Estado;
+    obs?: string[];
+    links?: string[];
+    hist?: [string, string][];
+    events?: { b: string; s: string; t?: string }[];
+    details?: string;
+    note?: string;
+}
+interface Factura {
+    pais: string;
+    org: string;
+    numero: string;
+    cliente: string;
+    receptorId: string;
+    currency: string;
+    emitida: string;
+    vence: string;
+    enviada: boolean;
+    status: 'open' | 'paid';
+    lineas: Linea[];
+    impuestos: { label: string; monto: number }[];
+    pagado?: number;
+    extraMeta?: [string, string][];
+    folioFiscal?: string;
+    paneles: Panel[];
+    actividad?: [string, string][];
+    einv?: { links: string[]; note: string };
+}
+
+const dgfip = (code: string) => ESTADOS_DGFIP[code]?.[en ? 'en' : 'es'] ?? code;
+
+function factura(): Factura {
+    switch (rail) {
+    case 'cfdi': return {
+        pais: 'MX', org: 'Materiales del Valle', numero: 'FAC-000231', cliente: 'Distribuidora El Zarco', receptorId: 'DEZ090814TL6',
+        currency: 'MXN', emitida: tx('8 oct 2026', 'Oct 8, 2026'), vence: tx('7 nov 2026', 'Nov 7, 2026'), enviada: true, status: 'open',
+        lineas: [
+            { d: tx('Cemento gris CPC 30R, bulto 50 kg', 'Gray cement CPC 30R, 50 kg bag'), sub: 'SAT 30111601 · H87', q: 420, p: 238 },
+            { d: tx('Arena de río, metro cúbico', 'River sand, cubic meter'), sub: 'SAT 11111501 · MTQ', q: 48, p: 1400 },
+            { d: tx('Flete a obra', 'Freight to site'), sub: 'SAT 78101802 · E48', q: 1, p: 2210 },
+        ],
+        impuestos: [{ label: '16%', monto: 27099.2 }],
+        pagado: 98234.6,
+        folioFiscal: '5F2C8A1E-3B7D-4E19-9A6C-0D2E7B4F8A31',
+        paneles: [],
+        actividad: [
+            [dmT(lang, 'fact.ev.payment'), tx('9 oct 2026', 'Oct 9, 2026')],
+            [dmT(lang, 'fact.ev.viewed'), tx('8 oct 2026', 'Oct 8, 2026')],
+            [dmT(lang, 'fact.ev.sent'), tx('8 oct 2026', 'Oct 8, 2026')],
+            [dmT(lang, 'fact.ev.issued'), tx('8 oct 2026', 'Oct 8, 2026')],
+        ],
+    };
+    case 'verifactu': return {
+        pais: 'ES', org: 'Estudio Alba', numero: 'F2026-000086', cliente: 'Grupo Inmobiliario Retiro', receptorId: 'B12345674',
+        currency: 'EUR', emitida: tx('6 oct 2026', 'Oct 6, 2026'), vence: tx('5 nov 2026', 'Nov 5, 2026'), enviada: true, status: 'open',
+        lineas: [
+            { d: tx('Proyecto básico y de ejecución, vivienda Retiro 14', 'Basic and execution project, Retiro 14 home'), q: 1, p: 18500 },
+            { d: tx('Dirección de obra, mensualidad', 'Site supervision, monthly fee'), q: 2, p: 1450 },
+        ],
+        impuestos: [{ label: '21%', monto: 4494 }],
+        paneles: [
+            { h: 'Verifactu', estado: { tone: 'ok', title: tx('Registrada ante la AEAT', 'Registered with the AEAT'), smalls: [] } },
+            {
+                h: dmT(lang, 'spfe.titulo'),
+                estado: { tone: 'soon', title: dmT(lang, 'spfe.proximamente'), smalls: [{ t: dmT(lang, 'spfe.proximamente_desc') }, { t: dmT(lang, 'spfe.lista'), ok: true }] },
+            },
+        ],
+    };
+    case 'frpa': return {
+        pais: 'FR', org: 'Atelier Lumière', numero: 'FA-000142', cliente: 'Maison Delorme', receptorId: 'FR32512984733',
+        currency: 'EUR', emitida: tx('7 oct 2026', 'Oct 7, 2026'), vence: tx('6 nov 2026', 'Nov 6, 2026'), enviada: true, status: 'open',
+        lineas: [
+            { d: tx('Diseño de iluminación, boutique Marais', 'Lighting design, Marais boutique'), q: 1, p: 6800 },
+            { d: tx('Luminaria a medida', 'Custom luminaire'), q: 12, p: 420 },
+        ],
+        impuestos: [{ label: '20%', monto: 2368 }],
+        paneles: [{
+            h: tx('Plataforma de facturación electrónica', 'E-invoicing platform'),
+            trat: tx('Factura entre empresas establecidas en Francia: se transmite por la plataforma.', 'Invoice between businesses established in France: transmitted through the platform.'),
+            estado: { tone: 'ok', title: dgfip('203'), smalls: [{ t: tx('9 oct 2026, 10:42', '9 Oct 2026, 10:42') }] },
+            hist: [
+                [dgfip('202'), tx('7 oct 2026, 18:05', '7 Oct 2026, 18:05')],
+                [dgfip('201'), tx('7 oct 2026, 18:04', '7 Oct 2026, 18:04')],
+                [dgfip('200'), tx('7 oct 2026, 18:03', '7 Oct 2026, 18:03')],
+            ],
+        }],
+    };
+    case 'xrechnung': return {
+        pais: 'DE', org: 'Brandt Technik', numero: 'RE-000214', cliente: 'Stadtwerke Lindenau', receptorId: 'DE813476922',
+        currency: 'EUR', emitida: tx('5 oct 2026', 'Oct 5, 2026'), vence: tx('4 nov 2026', 'Nov 4, 2026'), enviada: true, status: 'open',
+        lineas: [
+            { d: 'Wartung Netzwerkinfrastruktur Q3', q: 1, p: 7800 },
+            { d: 'Vor-Ort-Einsatz (Stunden)', q: 16, p: 95 },
+        ],
+        impuestos: [{ label: '19%', monto: 1770.8 }],
+        extraMeta: [[tx('Periodo de prestación', 'Service period'), tx('1 jul 2026 – 30 sep 2026', 'Jul 1, 2026 – Sep 30, 2026')]],
+        paneles: [],
+        einv: {
+            links: ['Factur-X (PDF)', 'XRechnung (UBL)', 'XRechnung (CII)', 'Peppol BIS 3.0 (UBL)'],
+            note: tx('Cord genera estos archivos y puede adjuntarlos al correo de la factura. No los envía por la red Peppol.', 'Cord generates these files and can attach them to the invoice email. It does not send them over the Peppol network.'),
+        },
+    };
+    case 'arca': return {
+        pais: 'AR', org: 'Pampa Software', numero: 'FA-A-00003-00000127', cliente: 'Distribuidora Río de la Plata', receptorId: '30716589427',
+        currency: 'ARS', emitida: tx('10 oct 2026', 'Oct 10, 2026'), vence: tx('9 nov 2026', 'Nov 9, 2026'), enviada: true, status: 'open',
+        lineas: [
+            { d: tx('Licencia anual de software de gestión', 'Annual management software license'), q: 1, p: 1850000 },
+            { d: tx('Implementación y capacitación (horas)', 'Implementation and training (hours)'), q: 40, p: 38500 },
+        ],
+        impuestos: [{ label: '21%', monto: 711900 }],
+        paneles: [{ h: 'ARCA', estado: { tone: 'ok', title: tx('Autorizada por ARCA', 'Authorized by ARCA'), smalls: [{ t: tx('CAE 75412839104562 · vence el 20 oct 2026', 'CAE 75412839104562 · valid until Oct 20, 2026') }] } }],
+    };
+    case 'nfse': return {
+        pais: 'BR', org: 'Ateliê Paulista', numero: 'NFSE-1532', cliente: 'Construtora Horizonte', receptorId: '12398765000100',
+        currency: 'BRL', emitida: tx('6 oct 2026', 'Oct 6, 2026'), vence: tx('5 nov 2026', 'Nov 5, 2026'), enviada: true, status: 'open',
+        lineas: [{ d: 'Consultoria em gestão de projetos, setembro', q: 1, p: 18000 }],
+        impuestos: [],
+        paneles: [{ h: 'NFS-e', estado: { tone: 'ok', title: tx('NFS-e generada', 'NFS-e issued'), smalls: [
+            { t: tx('NFS-e n.º 1532', 'NFS-e no. 1532') },
+            { t: `${tx('Chave de acceso', 'Access key')} 35503082245831277000102000000000153226104829175633`, mono: true },
+        ] } }],
+    };
+    case 'nfe': return {
+        pais: 'BR', org: 'Ateliê Paulista', numero: 'NFE-1-3418', cliente: 'Construtora Horizonte', receptorId: '12398765000100',
+        currency: 'BRL', emitida: tx('9 oct 2026', 'Oct 9, 2026'), vence: tx('8 nov 2026', 'Nov 8, 2026'), enviada: true, status: 'open',
+        lineas: [
+            { d: 'Luminária pendente LED 40W', q: 24, p: 389.9 },
+            { d: 'Trilho eletrificado 2 m', q: 12, p: 214.5 },
+        ],
+        impuestos: [],
+        paneles: [{
+            h: 'NF-e',
+            estado: { tone: 'ok', title: tx('NF-e autorizada por la SEFAZ', 'NF-e authorized by the SEFAZ'), smalls: [
+                { t: tx('NF-e n.º 3418, serie 1', 'NF-e no. 3418, series 1') },
+                { t: `${tx('Chave de acceso', 'Access key')} 3526 1045 8312 7700 0102 5500 1000 0034 1810 2938 4756`, mono: true },
+                { t: tx('Protocolo de autorización 135261234567890 · 09/10/2026 14:32', 'Authorization protocol 135261234567890 · 10/09/2026 14:32') },
+                { t: tx('Puede cancelarse hasta el 10/10/2026 14:32 (Anular factura). Después se corrige con una nota de devolución o una Carta de Correção.', 'It can be cancelled until 10/10/2026 14:32 (Void invoice). After that, it is corrected with a return invoice or a correction letter.') },
+            ] },
+            links: [tx('XML de la NF-e (nfeProc)', 'NF-e XML (nfeProc)')],
+            events: [{ b: tx('Carta de Correção n.º 1', 'Correction letter (CC-e) no. 1'), s: tx('registrado · protocolo 135261234598765', 'registered · protocol 135261234598765'), t: 'O bairro do destinatário é Itaim Bibi, e não Itaim.' }],
+            details: tx('Emitir una Carta de Correção (CC-e)', 'Issue a correction letter (CC-e)'),
+        }],
+    };
+    case 'sunat': return {
+        pais: 'PE', org: 'Inka Logística', numero: 'F001-00000412', cliente: 'Minera Andina del Sur', receptorId: '20543129870',
+        currency: 'PEN', emitida: tx('8 oct 2026', 'Oct 8, 2026'), vence: tx('7 nov 2026', 'Nov 7, 2026'), enviada: true, status: 'open',
+        lineas: [
+            { d: tx('Transporte de carga Lima–Arequipa', 'Freight transport Lima–Arequipa'), q: 3, p: 4800 },
+            { d: tx('Almacenaje, pallet por mes', 'Storage, pallet per month'), q: 60, p: 35 },
+        ],
+        impuestos: [{ label: '18%', monto: 2970 }],
+        paneles: [{ h: 'SUNAT', estado: { tone: 'ok', title: tx('Aceptada por SUNAT', 'Accepted by SUNAT'), smalls: [
+            { t: `${tx('Constancia', 'Receipt')} 1759329876543` },
+            { t: `${tx('Valor resumen', 'Hash')} q2m3N8hJk1v0Zt+Y4sD7pW9xL6cR5bT2aE8fG1uH3iI=`, mono: true },
+        ] } }],
+    };
+    case 'sii': return {
+        pais: 'CL', org: 'Cordillera Servicios', numero: 'FE-1043', cliente: 'Comercial Los Andes', receptorId: '77214633-7',
+        currency: 'CLP', emitida: tx('7 oct 2026', 'Oct 7, 2026'), vence: tx('6 nov 2026', 'Nov 6, 2026'), enviada: true, status: 'open',
+        lineas: [
+            { d: tx('Mantención mensual de servidores', 'Monthly server maintenance'), q: 1, p: 1250000 },
+            { d: tx('Soporte en terreno (horas)', 'On-site support (hours)'), q: 12, p: 45000 },
+        ],
+        impuestos: [{ label: '19%', monto: 340100 }],
+        paneles: [{
+            h: 'SII',
+            estado: { tone: 'ok', title: tx('Aceptado por el SII', 'Accepted by the SII'), smalls: [{ t: tx('Folio 1043 · Envío 0234567812', 'Folio 1043 · Submission 0234567812') }] },
+            links: [tx('XML del DTE', 'DTE XML'), tx('Copia cedible', 'Assignable copy (cedible)')],
+            details: tx('Emitir nota de débito', 'Issue a debit note'),
+        }],
+    };
+    case 'dian': return {
+        pais: 'CO', org: 'Andes Digital', numero: 'FEAD10483', cliente: 'Comercializadora del Caribe', receptorId: '900874123-2',
+        currency: 'COP', emitida: tx('9 oct 2026', 'Oct 9, 2026'), vence: tx('8 nov 2026', 'Nov 8, 2026'), enviada: true, status: 'open',
+        lineas: [
+            { d: tx('Desarrollo de aplicación móvil, fase 2', 'Mobile app development, phase 2'), q: 1, p: 42000000 },
+            { d: tx('Hosting administrado, mes', 'Managed hosting, month'), q: 3, p: 1850000 },
+        ],
+        impuestos: [{ label: '19%', monto: 9034500 }],
+        paneles: [{ h: 'DIAN', estado: { tone: 'ok', title: tx('Validada por la DIAN', 'Validated by the DIAN'), smalls: [
+            { t: 'CUFE 8c3e1f0a9b27d4c65e81f3a0b9d2c7e4f61a8b3d05c9e2f7a14b6d8c3e0f9a2b5c7d1e4f8a0b3c6d9e2f5a8b1c4d7e0f3', mono: true },
+        ] } }],
+    };
+    }
+}
+
+const f = factura();
+const PROFILE = getCountryProfile(f.pais, lang);
+const subtotal = Math.round(f.lineas.reduce((s, l) => s + l.q * l.p, 0) * 100) / 100;
+const total = Math.round((subtotal + f.impuestos.reduce((s, i) => s + i.monto, 0)) * 100) / 100;
+const pagado = f.pagado ?? 0;
+const saldo = Math.round((total - pagado) * 100) / 100;
+const qty = (n: number) => new Intl.NumberFormat(en ? 'en-US' : 'es-MX').format(n);
+
+const defaultCaption = tx(
+    `Detalle de la factura ${f.numero} de ${f.org} (${PROFILE.name}) a ${f.cliente}, por ${new Intl.NumberFormat('es-MX', { minimumFractionDigits: 2 }).format(total)} ${f.currency}: conceptos, impuestos y saldo arriba; debajo, los datos de la factura y ${f.paneles.length ? `el panel ${f.paneles.map((p) => p.h).join(' y ')} con el estado ante la autoridad` : f.einv ? 'los formatos de factura electrónica descargables' : 'su folio fiscal y su actividad'}.`,
+    `Detail of invoice ${f.numero} from ${f.org} (${PROFILE.name}) to ${f.cliente}, for ${new Intl.NumberFormat('en-US', { minimumFractionDigits: 2 }).format(total)} ${f.currency}: items, taxes and balance at the top; below, the invoice details and ${f.paneles.length ? `the ${f.paneles.map((p) => p.h).join(' and ')} panel with the status before the authority` : f.einv ? 'the downloadable e-invoice formats' : 'its tax folio and its activity'}.`,
+);
+const caption = Astro.props.caption ?? defaultCaption;
+---
+<DocsMockup lang={lang} variant="app" chrome="full" sidebar="rail" active="facturas" org={f.org} title={f.numero} crumbs={[dmT(lang, 'fact.heading')]} height={f.einv ? 760 : 880} caption={caption} class="dm-fx-figure">
+    <div class="dm-fx-inv">
+        <div class="dm-fx-main">
+            <div class="dm-fx-head">
+                <div class="dm-fx-client">
+                    <span class="dm-fx-avatar">{initials(f.cliente).slice(0, 1)}</span>
+                    <span class="dm-fx-client-copy">
+                        <span class="dm-fx-client-name">{f.cliente}</span>
+                        <span class="dm-fx-client-meta">{dmT(lang, 'fact.d_emitida')} {f.emitida} · {dmT(lang, 'fact.d_vence')} {f.vence} · {f.enviada ? tx('Enviada', 'Sent') : tx('Sin enviar', 'Not sent')}</span>
+                    </span>
+                </div>
+                <div class="dm-fx-hero">
+                    <span>TOTAL</span>
+                    <strong><DmMoney amount={total} currency={f.currency} lang={lang} /></strong>
+                    {saldo !== total && <small>{tx('Saldo', 'Balance')} <DmMoney amount={saldo} currency={f.currency} lang={lang} /></small>}
+                </div>
+            </div>
+
+            <div class="dm-fx-sec">{tx('Detalle', 'Details')}</div>
+            <div class="dm-fx-items-head">
+                <span>{dmT(lang, 'fact.d_concepto')}</span><span>{dmT(lang, 'fact.d_cant')}</span><span>{dmT(lang, 'fact.d_precio')}</span><span>{dmT(lang, 'fact.d_importe')}</span>
+            </div>
+            {f.lineas.map((l) => (
+                <div class="dm-fx-item">
+                    <span class="dm-fx-desc-cell">{l.d}{l.sub && <small>{l.sub}</small>}</span>
+                    <span class="dm-fx-qty">{qty(l.q)}</span>
+                    <span class="dm-fx-amt"><DmMoney amount={l.p} currency={f.currency} lang={lang} /></span>
+                    <span class="dm-fx-amt"><DmMoney amount={Math.round(l.q * l.p * 100) / 100} currency={f.currency} lang={lang} /></span>
+                </div>
+            ))}
+            <div class="dm-fx-totals">
+                <span class="dm-fx-tline"><span>{dmT(lang, 'fact.d_subtotal')}</span><DmMoney amount={subtotal} currency={f.currency} lang={lang} /></span>
+                {f.impuestos.map((i) => <span class="dm-fx-tline"><span>{i.label}</span><DmMoney amount={i.monto} currency={f.currency} lang={lang} /></span>)}
+                <span class="dm-fx-tline is-total"><span>{dmT(lang, 'fact.d_total')}</span><DmMoney amount={total} currency={f.currency} lang={lang} /></span>
+                {pagado > 0 && <span class="dm-fx-tline"><span>{dmT(lang, 'fact.d_pagado')}</span><span>−<DmMoney amount={pagado} currency={f.currency} lang={lang} /></span></span>}
+                <span class="dm-fx-tline is-due"><span>{dmT(lang, 'fact.d_saldo')}</span><DmMoney amount={saldo} currency={f.currency} lang={lang} /></span>
+            </div>
+
+            {f.einv && (
+                <div class="dm-fx-einv">
+                    <span class="dm-fx-sec">{tx('Factura electrónica', 'E-invoice')}</span>
+                    <span class="dm-fx-einv-links">{f.einv.links.map((x) => <span class="dm-fx-link"><DmIcon name="download" />{x}</span>)}</span>
+                    <span class="dm-fx-note">{f.einv.note}</span>
+                </div>
+            )}
+        </div>
+
+        <div class="dm-fx-side">
+            {f.actividad && (
+                <div>
+                    <div class="dm-fx-sec">{dmT(lang, 'fact.d_actividad')}</div>
+                    <div class="dm-fx-meta">
+                        {f.actividad.map(([k, v]) => <span class="dm-fx-kv"><span>{k}</span><span>{v}</span></span>)}
+                    </div>
+                </div>
+            )}
+            <div>
+                <div class="dm-fx-sec">{tx('Datos de la factura', 'Invoice details')}</div>
+                <div class="dm-fx-meta">
+                    <span class="dm-fx-kv"><span>{dmT(lang, 'fact.d_emitida')}</span><span>{f.emitida}</span></span>
+                    <span class="dm-fx-kv"><span>{dmT(lang, 'fact.d_vence')}</span><span>{f.vence}</span></span>
+                    {f.extraMeta?.map(([k, v]) => <span class="dm-fx-kv"><span>{k}</span><span>{v}</span></span>)}
+                    <span class="dm-fx-kv"><span>{dmT(lang, 'fact.d_pais')}</span><span>{f.pais}</span></span>
+                    <span class="dm-fx-kv"><span>{dmT(lang, 'fact.d_divisa')}</span><span>{f.currency}</span></span>
+                    <span class="dm-fx-kv"><span>{PROFILE.taxIdLabel}</span><span>{f.receptorId}</span></span>
+                    {f.folioFiscal && <span class="dm-fx-kv is-mono"><span>{dmT(lang, 'fact.d_folio_fiscal')}</span><span>{f.folioFiscal}</span></span>}
+                </div>
+            </div>
+            {f.paneles.map((p) => (
+                <div class="dm-fx-auth">
+                    <div class="dm-fx-sec">{p.h}</div>
+                    {p.trat && <span class="dm-fx-trat">{p.trat}</span>}
+                    <div class:list={['dm-fx-auth-state', `is-${p.estado.tone}`]}>
+                        <span class="dm-fx-dot"></span>
+                        <span class="dm-fx-auth-copy">
+                            <b>{p.estado.title}</b>
+                            {p.estado.smalls.map((s) => <small class:list={{ 'is-mono': s.mono, 'is-ok': s.ok }}>{s.t}</small>)}
+                        </span>
+                    </div>
+                    {p.hist && <div class="dm-fx-hist">{p.hist.map(([a, b]) => <span><span>{a}</span><span>{b}</span></span>)}</div>}
+                    {p.links && <div class="dm-fx-auth-links">{p.links.map((x) => <span class="dm-fx-link"><DmIcon name="download" />{x}</span>)}</div>}
+                    {p.events && (
+                        <div class="dm-fx-events">
+                            {p.events.map((e) => <span class="dm-fx-event"><b>{e.b}</b><span>{e.s}</span>{e.t && <span>{e.t}</span>}</span>)}
+                        </div>
+                    )}
+                    {p.details && <span class="dm-fx-details">{p.details}</span>}
+                </div>
+            ))}
+        </div>
+    </div>
+</DocsMockup>
+
+<style is:global>
+    .dm-fx-auth-state.is-soon .dm-fx-dot { background: #d97706; }
+</style>

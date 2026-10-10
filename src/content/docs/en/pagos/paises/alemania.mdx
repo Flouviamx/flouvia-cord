@@ -1,0 +1,131 @@
+---
+title: "Invoicing in Germany"
+seoTitle: "Invoicing in Germany with Cord: XRechnung, ZUGFeRD, and Leitweg-ID"
+description: "Invoice in German with USt. per line item, Leistungsdatum, Kleinunternehmer, downloadable XRechnung UBL and CII, ZUGFeRD/Factur-X and Peppol, Leitweg-ID with check digit, validated USt-IdNr., and collection by card or SEPA."
+lastUpdated: "2026-10-10"
+reviewedBy: "Cord product and operations"
+appliesToMarkets: [DE]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Account with Germany as its country", "Steuernummer or USt-IdNr. in Settings › Tax profile", "Complete e-invoicing profile for XRechnung"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Germany</h1>
+  <p class="page-subtitle">The invoice in German with the § 14 UStG mentions, downloadable as XRechnung, ZUGFeRD, or Peppol for your client's system.</p>
+</header>
+
+## What it is
+
+In Germany Cord issues an invoice with a sequential number, in **German**, with each line item's USt. and the mentions required by § 14 UStG. Each issued invoice can also be downloaded as an **e-invoice** under the European standard EN 16931: **XRechnung** (UBL and CII), **ZUGFeRD/Factur-X** (the PDF with the XML inside), and **Peppol BIS 3.0**. By default, the invoice email carries the PDF and the XRechnung XML.
+
+Cord **generates** these files and can attach them to the email; it **does not** transmit them over the Peppol network or to a public administration platform.
+
+| | In Germany |
+|---|---|
+| Default currency | EUR |
+| Tax | Umsatzsteuer (USt.) |
+| Tax ID | Steuernummer / USt-IdNr. (the USt-IdNr. with its check digit) |
+| Document | Invoice with downloadable XRechnung, ZUGFeRD/Factur-X, and Peppol |
+| Authority | Not applicable: Cord does not transmit |
+| PDF language | German |
+| Online payments | Card and SEPA Direct Debit (EUR) with Cord Payments |
+
+<Callout type="info">
+European e-invoicing is new. This feature is new and may not be enabled on your account yet. If you don't see it, contact us.
+</Callout>
+
+## Requirements
+
+- **Plan:** any (Free: 10 invoices per month). E-invoices are generated on every plan.
+- Your **Steuernummer** or your **USt-IdNr.**: the invoice carries one of the two.
+- For XRechnung: a **billing contact** with name, phone, and email, your IBAN in **Settings › Payments**, and, on each client, their city, postal code, and **buyer reference**.
+- **Permissions:** **Settings** for the tax profile; **Quotes** to issue.
+
+## Set up your account
+
+<Steps>
+
+1. In **Settings › Tax profile**, complete your legal name, your **Steuernummer / USt-IdNr.**, address, and invoice prefix. If you apply the small business scheme, turn on **Small business (§ 19 UStG)**.
+2. Under **European e-invoicing**, complete the **billing contact** and their phone, your **electronic address** (scheme and identifier), your company registration number, and the **BIC**. The IBAN is the one in **Settings › Payments**.
+3. Choose what to **attach to invoice emails**: by default, PDF and XRechnung XML.
+4. On each public administration client, enter their **Leitweg-ID** as the buyer reference.
+
+</Steps>
+
+<DmRailSettings lang="en" rail="identidad" country="DE" />
+
+## Taxes
+
+<DmTaxCatalog lang="en" country="DE" />
+
+- **USt. 19%** (default) and **USt. 7%** (reduced), per line item.
+- **Steuerfrei** for exempt transactions. On the exempt profile you can choose its **e-invoice classification** (for example, reverse charge or export); empty, Cord derives it from the client.
+- **Small business (§ 19 UStG):** with the option on, your tax-free invoices carry the legal notice that explains it. If an invoice charges tax, the notice is not printed.
+
+## Leistungsdatum
+
+§ 14 Abs. 4 Nr. 6 UStG requires the **date of supply**. In the invoice editor, **Date of supply** accepts a date or a period (start and end); the PDF prints it as **Leistungsdatum** or **Leistungszeitraum**. If you leave it empty because it matches the issue date, the invoice says "entspricht dem Rechnungsdatum", which is the accepted form.
+
+## E-invoice
+
+<DmInvoiceAuthority lang="en" rail="xrechnung" />
+
+The detail of each issued invoice lists the formats it can already generate, ready to download, and for the rest it says which data is missing and where to fix it. Your client also downloads them from the invoice link.
+
+| Format | What for |
+|---|---|
+| **XRechnung (UBL)** | The format the German public administration requires and many businesses accept. |
+| **XRechnung (CII)** | The same invoice in CII syntax, if your client asks for it. |
+| **ZUGFeRD / Factur-X (PDF)** | The usual PDF with the XML inside (EN 16931 profile). |
+| **Peppol BIS 3.0 (UBL)** | For clients receiving over the Peppol network (you upload it to your access provider). |
+
+**What each format requires:** XRechnung, the buyer reference, a contact with name, phone, and email, the client's city and postal code, and the IBAN; Peppol, the buyer reference or purchase order and both electronic addresses, and between German businesses also the IBAN. An issued invoice keeps the data it was issued with: what you correct later applies to the next ones.
+
+## Leitweg-ID
+
+The **Leitweg-ID** identifies the public body receiving the invoice. Cord checks its **check digit** (ISO/IEC 7064 MOD 97-10, according to the KoSIT specification) wherever it knows it is a Leitweg-ID: in an electronic address with scheme 0204 and in the buyer reference of a client with that address. An invalid Leitweg-ID is rejected when saving, with the reason, and the e-invoice is not generated. If a value saved earlier no longer passes, the client profile flags it and asks you to correct it.
+
+## Client and product data
+
+- **Client:** their USt-IdNr. (validated), city and postal code, **electronic address**, and **buyer reference** (Leitweg-ID for the public administration).
+- **Invoice:** the buyer reference and purchase order are entered in the editor's summary; if left empty, the reference comes from the client profile.
+- **Product:** its unit travels in the e-invoice.
+
+## Void or correct
+
+An invoice is **voided** from its detail if it has no payments applied; with payments, it is corrected with a **credit note**, which is also generated as an e-invoice.
+
+## Get paid online
+
+- **Card** with Cord Payments.
+- **SEPA Direct Debit** in EUR, which you turn on in **Settings › Payments**: up to six business days to confirm and the account holder can return it for eight weeks. This feature is new.
+- Your payouts arrive at your **IBAN**. See [Payouts](/en/docs/pagos/depositos).
+
+## Plan limits
+
+| Plan | Invoices per month |
+|---|---|
+| Free | 10 |
+| Starter, Pro, Scale, Developer | Unlimited |
+
+## What Cord does not cover yet
+
+- **Transmission** over the Peppol network or to the public administration's receiving platforms: Cord generates and attaches, you send.
+- **Withholdings** in the e-invoice: the European standard has no place to declare them, and an invoice with a withholding is not generated in these formats.
+- Currencies with three decimals in the e-invoice.
+
+## Common problems
+
+**The detail says the buyer reference is missing.** XRechnung requires it: enter it in the editor or on the client profile.
+
+**Cord rejects the Leitweg-ID.** The check digit does not match. Ask your client for the full Leitweg-ID, with its hyphens.
+
+**My invoice does not show the date of supply.** If it matches the issue date, the invoice says "entspricht dem Rechnungsdatum". If not, enter it in the editor before issuing.
+
+## Related
+
+- [Invoicing by country](/en/docs/pagos/paises/resumen)
+- [European e-invoicing](/en/docs/pagos/factura-electronica)
+- [France](/en/docs/pagos/paises/francia)
+- [Create, issue, and collect invoices](/en/docs/pagos/facturas-emitidas)
+- [Payment methods](/en/docs/pagos/metodos)

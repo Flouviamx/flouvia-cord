@@ -20,6 +20,12 @@ imitar (`src/layouts/AppLayout.astro`, `src/pages/app/**`, `src/pages/q/**`).
 | `index.ts` | Registro automático (`import.meta.glob`): todo `Dm*.astro` de la carpeta queda disponible en el MDX por su nombre de archivo. |
 | `DmOnboardingWidget.astro` | Widget "Configura Cord" sobre Inicio. |
 | `DmQuotePayment.astro` | Página de pago del link (`/q/[token]/pay`) con anticipo. |
+| `dm-fiscal.css` | Clases `dm-fx-*` compartidas por los mockups fiscales por país (Ajustes y detalle de factura). Global por ser un `.css` importado. |
+| `DmRailSettings.astro` | Ajustes › Datos fiscales / Perfil fiscal con la sección del riel del país (`rail`: `identidad`, `csd`, `verifactu`, `spfe`, `frpa`, `arca`, `nfse`, `nfe`, `sunat`, `sii`, `dian`; `state` y `country` opcionales). Calca `src/pages/app/ajustes/fiscal.astro` y `src/components/app/settings/*Settings.astro`. |
+| `DmTaxCatalog.astro` | Ajustes › Cotizaciones › Impuestos con el catálogo de arranque real del país (`country`, `region`), sacado de `taxPresetsFor()` / `usStateTaxPresets()`. |
+| `DmInvoiceAuthority.astro` | Detalle de factura (`/app/facturas/[id]`) con el panel del estado ante la autoridad del país (`rail`: `cfdi`, `verifactu`, `frpa`, `xrechnung`, `arca`, `nfse`, `nfe`, `sunat`, `sii`, `dian`). |
+| `DmSalesTaxBreakdown.astro` | Totales de una factura con el impuesto por jurisdicción (`variant`: `combined`, `exempt`, `no_collect`, `ca`), con los helpers reales de `tax-components`. |
+| `DmUsTaxSettings.astro` | Ajustes › Impuestos › "Sales tax por dirección" de EE. UU. (estados registrados, código de producto y cuota del plan). |
 
 ## Uso desde MDX
 
