@@ -24,7 +24,7 @@ import {
 } from './countries';
 import { OFFERED_CURRENCIES, currencyDecimals } from './currency';
 import { payoutSpecFor, type PayoutFormat } from './payout-fields';
-import { DOMICILIACION, metodosPara } from './cobros/metodos';
+import { DOMICILIACION, metodosPara, speiDisponible } from './cobros/metodos';
 import { roadmapData } from './roadmap-data';
 import { docHref, findItem } from './docs-nav';
 import { docLangFor } from './fiscal/invoice-pdf';
@@ -94,10 +94,12 @@ export function fmtDay(iso: string, country: string): string {
 }
 
 // ── Métodos de cobro ────────────────────────────────────────────────────────
-// Registro único de lo que muestra la sección. Agregar un método (por ejemplo
-// SPEI en facturas, cuando se encienda) es UNA línea: `paises` y `roadmap`
-// deciden en qué pestañas aparece y con qué estado; `enFormulario` lo pinta
-// como pestaña del formulario de pago cuando su estado es `live`.
+// Registro único de lo que muestra la sección. Agregar un método es UNA línea:
+// `paises` y `roadmap` deciden en qué pestañas aparece y con qué estado, y
+// `superficie` dónde lo dibuja la calca de /i cuando su estado es `live`:
+//   · 'formulario' — pestaña del formulario de pago (Payment Element);
+//   · 'selector'   — el selector "Tarjeta / Transferencia SPEI" de la página;
+//   · 'boton'      — botón propio que redirige (Mercado Pago).
 export interface Metodo {
     key: string;
     label: L2;
@@ -105,23 +107,28 @@ export interface Metodo {
     formulario?: L2;
     paises: readonly string[];
     roadmap: string;
-    enFormulario: boolean;
+    superficie: 'formulario' | 'selector' | 'boton';
 }
 
 export const METODOS: Metodo[] = [
     // Tarjeta: Cord Payments abre cuentas en estos países (CONNECT_COUNTRIES, countries.ts).
     { key: 'card', label: { es: 'Tarjeta', en: 'Card' }, formulario: { es: 'Tarjeta', en: 'Card' },
-        paises: SUPPORTED_COUNTRIES.filter(supportsOnlinePayments), roadmap: 'cord-payments', enFormulario: true },
+        paises: SUPPORTED_COUNTRIES.filter(supportsOnlinePayments), roadmap: 'cord-payments', superficie: 'formulario' },
+    // SPEI con la CLABE de la factura: `speiDisponible` (cobros/metodos.ts) lo
+    // acota a cuentas de México en MXN. En beta en el roadmap ('spei-facturas').
+    { key: 'spei', label: { es: 'Transferencia SPEI', en: 'SPEI transfer' },
+        paises: SUPPORTED_COUNTRIES.filter((c) => speiDisponible({ pais: c, cobroSpeiAuto: true, capacidades: {} }, getCountryProfile(c).currency)),
+        roadmap: 'spei-facturas', superficie: 'selector' },
     // Mercado Pago: MERCADOPAGO_COUNTRIES (countries.ts). Redirige a su checkout:
     // Cord no lista sus métodos internos.
     { key: 'mercadopago', label: { es: 'Mercado Pago', en: 'Mercado Pago' },
-        paises: SUPPORTED_COUNTRIES.filter(supportsMercadoPago), roadmap: 'cord-payments', enFormulario: false },
+        paises: SUPPORTED_COUNTRIES.filter(supportsMercadoPago), roadmap: 'cord-payments', superficie: 'boton' },
     // Domiciliación: DOMICILIACION (src/lib/cobros/metodos.ts). Construida y en
-    // beta en el roadmap ('domiciliacion-sepa-ach'): se muestra como próximamente.
+    // beta en el roadmap ('domiciliacion-sepa-ach').
     { key: 'sepa_debit', label: { es: 'Domiciliación SEPA', en: 'SEPA Direct Debit' }, formulario: { es: 'Débito SEPA', en: 'SEPA Debit' },
-        paises: DOMICILIACION.sepa_debit.paises, roadmap: 'domiciliacion-sepa-ach', enFormulario: true },
+        paises: DOMICILIACION.sepa_debit.paises, roadmap: 'domiciliacion-sepa-ach', superficie: 'formulario' },
     { key: 'us_bank_account', label: { es: 'Cargo ACH', en: 'ACH Direct Debit' }, formulario: { es: 'Cuenta bancaria', en: 'US bank account' },
-        paises: DOMICILIACION.us_bank_account.paises, roadmap: 'domiciliacion-sepa-ach', enFormulario: true },
+        paises: DOMICILIACION.us_bank_account.paises, roadmap: 'domiciliacion-sepa-ach', superficie: 'formulario' },
 ];
 
 const PAYOUT_LABEL: Partial<Record<PayoutFormat, L2>> = {
@@ -254,6 +261,8 @@ export interface PaisCobro {
         totales: { k: string; v: string; cls?: string }[];
         pagos: { cuando: string; monto: string }[];
         puedePagar: boolean; puedePagarMp: boolean;
+        /** Selector "Tarjeta / Transferencia SPEI" de /i (`.iv-metodos`). */
+        selector: boolean;
         descargas: string[]; fiscalId: string | null; currency: string;
         formulario: { tabs: string[]; text: PeText & { locale: string }; countryLabel: string } | null;
     };
@@ -303,10 +312,11 @@ export function paisesCobro(lang: Lang, t: (key: any) => string): PaisCobro[] {
 
         // Qué botones pinta /i: la misma función que la página.
         const metodosEnLinea = metodosPara({ aceptaTarjeta: true, aceptaDomiciliacion: false, capacidades: {} }, currency);
+        const speiEnLinea = METODOS.some((m) => m.superficie === 'selector' && m.paises.includes(code) && estadoDe(m.roadmap) === 'live');
         const { puedePagar, puedePagarMp } = publicInvoicePayability({
             esNotaCredito: false, esPrueba: false, simulado: false, testMode: false,
             pagoDisponible: supportsOnlinePayments(code), aceptaTarjeta: true,
-            mercadoPago: supportsMercadoPago(code), metodosEnLinea,
+            mercadoPago: supportsMercadoPago(code), metodosEnLinea, speiEnLinea,
         }, true);
         const guidance = publicInvoiceGuidance({
             estado: 'open', esNotaCredito: false, porDevolver: 0, saldo, acreditado: 0, puedePagar, regresoDePago: false,
@@ -321,7 +331,10 @@ export function paisesCobro(lang: Lang, t: (key: any) => string): PaisCobro[] {
         if (isEuCountry(code) && !proforma) EN16931_FORMATS.forEach((f) => descargas.push(EINVOICE_LABELS[f]));
 
         const metodos = METODOS.filter((m) => m.paises.includes(code));
-        const enFormulario = metodos.filter((m) => m.enFormulario && estadoDe(m.roadmap) === 'live');
+        const vivos = metodos.filter((m) => estadoDe(m.roadmap) === 'live');
+        const enFormulario = vivos.filter((m) => m.superficie === 'formulario');
+        // /i dibuja el selector solo cuando hay tarjeta Y SPEI (`conTarjeta && conSpei`).
+        const selector = puedePagar && enFormulario.length > 0 && vivos.some((m) => m.superficie === 'selector');
         const pe = peText(code);
 
         return {
@@ -349,7 +362,7 @@ export function paisesCobro(lang: Lang, t: (key: any) => string): PaisCobro[] {
                 })),
                 totales,
                 pagos: (d.pagos ?? []).map(([cuando, monto]) => ({ cuando: fmtDay(cuando, code), monto: money(monto) })),
-                puedePagar, puedePagarMp, descargas,
+                puedePagar, puedePagarMp, descargas, selector,
                 fiscalId: code === 'MX' ? d.fiscalId ?? null : null,
                 currency,
                 formulario: puedePagar ? {
@@ -364,21 +377,26 @@ export function paisesCobro(lang: Lang, t: (key: any) => string): PaisCobro[] {
 
 // ── Lista de métodos de la cabecera (estilo checklist) ──────────────────────
 export function resumenMetodos(lang: Lang) {
-    const n = (codes: readonly string[]) => codes.length;
     const paises = (k: number) => (lang === 'en' ? `${k} countries` : `${k} países`);
     const conRiel = SUPPORTED_COUNTRIES.filter(hasOnlinePaymentRail);
-    const item = (key: string, label: L2, detalle: string, estado: Estado) => ({ key, label: pick(label, lang), detalle, estado });
     const m = (key: string) => METODOS.find((x) => x.key === key)!;
-    return [
-        item('card', { es: 'Tarjeta con Cord Payments', en: 'Cards with Cord Payments' }, paises(n(m('card').paises)), estadoDe(m('card').roadmap)),
-        item('mercadopago', { es: 'Mercado Pago, con tu propia cuenta', en: 'Mercado Pago, with your own account' }, paises(n(m('mercadopago').paises)), estadoDe(m('mercadopago').roadmap)),
-        // "Pagar otra cantidad" sale con cualquiera de los dos rieles (/i/[token]).
-        item('partial', { es: 'Pago de otra cantidad desde el link', en: 'Partial payments from the link' }, paises(conRiel.length), estadoDe('facturas-emitidas')),
+    const disponibles = [
+        { key: 'card', label: pick({ es: 'Tarjeta con Cord Payments', en: 'Cards with Cord Payments' }, lang), detalle: paises(m('card').paises.length), estado: estadoDe(m('card').roadmap) },
+        { key: 'mercadopago', label: pick({ es: 'Mercado Pago, con tu propia cuenta', en: 'Mercado Pago, with your own account' }, lang), detalle: paises(m('mercadopago').paises.length), estado: estadoDe(m('mercadopago').roadmap) },
+        // "Pagar otra cantidad" sale con cualquier riel en línea (/i/[token]).
+        { key: 'partial', label: pick({ es: 'Pago de otra cantidad desde el link', en: 'Partial payments from the link' }, lang), detalle: paises(conRiel.length), estado: estadoDe('facturas-emitidas') },
         // "Registrar pago" existe en toda factura abierta, sin depender del país.
-        item('manual', { es: 'Transferencias que registras a mano', en: 'Transfers you record by hand' }, paises(SUPPORTED_COUNTRIES.length), estadoDe('facturas-emitidas')),
-        item('sepa_debit', m('sepa_debit').label, m('sepa_debit').paises.map((c) => countryName(c, lang)).join(', '), estadoDe(m('sepa_debit').roadmap)),
-        item('us_bank_account', m('us_bank_account').label, m('us_bank_account').paises.map((c) => countryName(c, lang)).join(', '), estadoDe(m('us_bank_account').roadmap)),
+        { key: 'manual', label: pick({ es: 'Transferencias que registras a mano', en: 'Transfers you record by hand' }, lang), detalle: paises(SUPPORTED_COUNTRIES.length), estado: estadoDe('facturas-emitidas') },
     ];
+    // Lo construido que todavía no está encendido: sale del mismo registro.
+    const proximos = METODOS.filter((x) => estadoDe(x.roadmap) !== 'live').map((x) => ({
+        key: x.key, label: pick(x.label, lang), paises: x.paises.map((c) => countryName(c, lang)).join(', '),
+    }));
+    // Un método que pase a `live` entra a la lista de disponibles.
+    for (const x of METODOS.filter((y) => estadoDe(y.roadmap) === 'live' && !['card', 'mercadopago'].includes(y.key))) {
+        disponibles.push({ key: x.key, label: pick(x.label, lang), detalle: x.paises.map((c) => countryName(c, lang)).join(', '), estado: 'live' as Estado });
+    }
+    return { disponibles, proximos };
 }
 
 export const N_PAISES = SUPPORTED_COUNTRIES.length;
